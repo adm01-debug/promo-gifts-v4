@@ -158,4 +158,156 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
     const rowsAfter = await page.locator('[data-testid^="quote-row-"]').count();
     expect(rowsAfter).toBe(rowsBefore);
   });
+
+  test("clique em Desfazer ANTES do timer expirar restaura EXATAMENTE 1x, sem duplicar items", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+
+    await gotoAndSettle(page, "/orcamentos");
+    const seed = await seedQuotesForStatusChips(page);
+    expect(seed.skipped, `seed falhou: ${seed.skipped}`).toBeNull();
+
+    await gotoAndSettle(page, "/orcamentos");
+    await expect(page.locator(Sel.page.title("orcamentos")).first()).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.locator('button[data-chip-key="all"]').click();
+
+    const firstRow = page.locator('[data-testid^="quote-row-"]').first();
+    await expect(firstRow).toBeVisible({ timeout: 10_000 });
+    const rowTestId = (await firstRow.getAttribute("data-testid"))!;
+    const quoteId = rowTestId.replace(/^quote-row-/, "");
+
+    // Snapshot esperado retornado pelo fetchQuote (GET com ?id=eq.<uuid>)
+    // — usamos 3 items para provar que a lista de items é passada de uma
+    // única vez ao RPC (sem N inserts separados por item).
+    const snapshotItems = [
+      { id: "it-1", product_name: "A", unit_price: 10, quantity: 2 },
+      { id: "it-2", product_name: "B", unit_price: 20, quantity: 1 },
+      { id: "it-3", product_name: "C", unit_price: 30, quantity: 5 },
+    ];
+
+    let deleteCalls = 0;
+    let rpcCreateCalls = 0;
+    let quoteItemsInsertCalls = 0; // não deveria haver — invariante
+    const rpcBodies: unknown[] = [];
+
+    // Intercepta REST tabelas: DELETE quotes, POST quote_items (invariante = 0)
+    await page.route(QUOTES_REST, async (route, request) => {
+      const method = request.method();
+      if (method === "DELETE") {
+        deleteCalls += 1;
+        await route.fulfill({ status: 204, body: "" });
+        return;
+      }
+      if (method === "GET" && request.url().includes(`id=eq.${quoteId}`)) {
+        // resposta do fetchQuote (snapshot pré-delete)
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: quoteId,
+              quote_number: "ORC-SNAP",
+              status: "draft",
+              total: 130,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              items: snapshotItems,
+            },
+          ]),
+        });
+        return;
+      }
+      if (method === "POST") {
+        // POST direto em /rest/v1/quotes NÃO deve ocorrer no fluxo undo
+        // (createQuote usa RPC create_quote_transactional).
+        await route.continue();
+        return;
+      }
+      await route.continue();
+    });
+
+    // Intercepta insert direto em quote_items — invariante = 0 chamadas
+    await page.route(/\/rest\/v1\/quote_items(\?|$)/, async (route, request) => {
+      if (request.method() === "POST") {
+        quoteItemsInsertCalls += 1;
+      }
+      await route.fulfill({ status: 201, body: "[]" });
+    });
+
+    // Intercepta o RPC de restore — deve receber TODOS os items em 1 payload
+    await page.route(/\/rest\/v1\/rpc\/create_quote_transactional/, async (route, request) => {
+      rpcCreateCalls += 1;
+      try {
+        rpcBodies.push(JSON.parse(request.postData() || "{}"));
+      } catch {
+        rpcBodies.push(null);
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          id: `restored-${quoteId}`,
+          quote_number: "ORC-R",
+          status: "draft",
+          total: 130,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }),
+      });
+    });
+
+    await page.getByTestId(`quote-row-more-${quoteId}`).click();
+    await page.getByTestId(`quote-row-menu-delete-${quoteId}`).click();
+    await page.getByTestId("quote-list-delete-dialog-yes").click();
+
+    await expect.poll(() => deleteCalls, { timeout: 15_000 }).toBe(1);
+
+    // Toast aparece com contador > 0
+    const toast = page.locator(UNDO_TOAST);
+    await expect(toast).toBeVisible({ timeout: 10_000 });
+    const undoBtn = page.locator(UNDO_BTN);
+    const remainingSecStr = await undoBtn.getAttribute("data-remaining-sec");
+    const remainingSec = Number(remainingSecStr);
+    expect(remainingSec).toBeGreaterThan(0);
+    expect(remainingSec).toBeLessThanOrEqual(8);
+
+    // Clica em Desfazer ANTES da expiração
+    await undoBtn.click();
+
+    // Exatamente 1 chamada ao RPC
+    await expect.poll(() => rpcCreateCalls, { timeout: 10_000 }).toBe(1);
+
+    // Toast é dispensado após a ação
+    await expect(page.locator(UNDO_TOAST)).toHaveCount(0, { timeout: 5_000 });
+
+    // Cliques adicionais (mesmo forçados) NÃO chamam o RPC novamente —
+    // o wrapper `showUndoToast` guarda `undone` e o botão já saiu do DOM.
+    // Tentamos re-clicar no locator: deve resultar em 0 elementos.
+    await expect(page.locator(UNDO_BTN)).toHaveCount(0);
+
+    // Aguarda margem para garantir ausência de retry silencioso
+    await page.waitForTimeout(2000);
+    expect(rpcCreateCalls).toBe(1);
+
+    // Invariante: nenhuma inserção direta em quote_items — items foram
+    // enviados dentro do payload do RPC (evita duplicação parcial em caso
+    // de falha entre inserts).
+    expect(quoteItemsInsertCalls).toBe(0);
+
+    // Payload do RPC contém os 3 items do snapshot (sem duplicação nem perda)
+    expect(rpcBodies.length).toBe(1);
+    const body = rpcBodies[0] as { _quote?: unknown; _items?: unknown[] };
+    expect(Array.isArray(body._items)).toBe(true);
+    expect(body._items!.length).toBe(snapshotItems.length);
+
+    // Não há duplicata de ids nos items enviados
+    const itemIds = (body._items as Array<{ id?: string; product_name?: string }>).map(
+      (i) => i.id ?? i.product_name ?? "",
+    );
+    const uniq = new Set(itemIds);
+    expect(uniq.size).toBe(itemIds.length);
+  });
 });
