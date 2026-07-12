@@ -14,7 +14,17 @@ interface Props {
   onChange: (patch: Partial<MagazineContentSettings>) => void;
 }
 
-type Toggle = { key: keyof MagazineContentSettings; label: string; hint: string };
+/** Somente keys booleanas — introText/closingText são texto e têm UI própria. */
+type BooleanContentKey =
+  | 'showPrice'
+  | 'showCode'
+  | 'showPersonalization'
+  | 'showDescription'
+  | 'showDimensions'
+  | 'showMaterials'
+  | 'showColors'
+  | 'groupByCategory';
+type Toggle = { key: BooleanContentKey; label: string; hint: string };
 
 const FIELD_TOGGLES: Toggle[] = [
   { key: 'showPrice', label: 'Mostrar preço', hint: 'Preço final ao lado do produto.' },
