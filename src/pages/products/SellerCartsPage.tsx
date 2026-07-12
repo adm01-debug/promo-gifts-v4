@@ -1186,7 +1186,7 @@ function SellerCartsContent() {
         title="Remover item do carrinho?"
         description={
           pendingRemoveItem
-            ? `O item "${pendingRemoveItem.name}" será removido. Você poderá desfazer pelo toast.`
+            ? `O item "${pendingRemoveItem.name}" será removido — você pode desfazer por até 8 segundos após a confirmação.`
             : ''
         }
         confirmLabel="Remover"
