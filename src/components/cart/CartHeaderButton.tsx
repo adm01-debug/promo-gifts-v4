@@ -947,7 +947,7 @@ export function CartHeaderButton() {
               data-testid="cart-delete-cancel"
               disabled={isDeletingCart}
               aria-label="Cancelar"
-              className="mt-0 h-8 whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              className="mt-0 h-[26px] min-h-[26px] whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 py-0 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               Cancelar
             </AlertDialogCancel>
@@ -956,17 +956,37 @@ export function CartHeaderButton() {
               aria-busy={isDeletingCart}
               data-testid="cart-delete-confirm"
               disabled={isDeletingCart}
-              className="inline-flex h-8 items-center whitespace-nowrap rounded-md bg-destructive px-3.5 text-xs font-semibold text-destructive-foreground shadow-sm shadow-destructive/20 transition-all hover:bg-destructive/90 hover:shadow-md hover:shadow-destructive/30 active:scale-[0.98] disabled:opacity-60"
+              className="inline-flex h-[26px] min-h-[26px] items-center whitespace-nowrap rounded-md bg-destructive px-3.5 py-0 text-xs font-semibold text-destructive-foreground shadow-sm shadow-destructive/20 transition-all hover:bg-destructive/90 hover:shadow-md hover:shadow-destructive/30 active:scale-[0.98] disabled:opacity-60"
               onClick={async (e) => {
                 e.preventDefault();
                 if (!pendingDeleteId || isDeletingCart) return;
+                // Snapshot ANTES do DELETE para restauração fiel (Undo).
+                const snapshot = pendingDeleteCart ?? carts.find((c) => c.id === pendingDeleteId) ?? null;
                 try {
                   await deleteCart(pendingDeleteId);
                   setPendingDeleteId(null);
+                  if (!snapshot) {
+                    toast.success('Carrinho excluído.');
+                    return;
+                  }
+                  showUndoToast({
+                    title: 'Carrinho excluído',
+                    description: 'Você pode desfazer esta ação.',
+                    duration: 8000,
+                    onUndo: async () => {
+                      const newId = await restoreCart(snapshot);
+                      if (newId) {
+                        toast.success('Carrinho restaurado.');
+                      } else {
+                        toast.error('Não foi possível restaurar o carrinho.');
+                      }
+                    },
+                  });
                 } catch {
                   // toast de erro já é emitido pela mutation; mantém dialog aberto
                 }
               }}
+            >
             >
               {isDeletingCart ? (
                 <>
