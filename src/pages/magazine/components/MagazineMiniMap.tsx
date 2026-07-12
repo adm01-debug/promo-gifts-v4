@@ -218,6 +218,3 @@ const DeferredPreview = memo(function DeferredPreview({
   const deferred = useDeferredValue(idx);
   return <>{render(deferred)}</>;
 });
-    </div>
-  );
-}
