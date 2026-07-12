@@ -241,7 +241,7 @@ export default function MagazineListPage() {
                   tabIndex={0}
                   aria-label={`Abrir revista ${m.title}`}
                   className={cn(
-                    'group cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    'group cursor-pointer overflow-hidden transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                   )}
                   onClick={() => openCard(m)}
                   onKeyDown={(e) => {
