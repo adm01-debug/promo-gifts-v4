@@ -7,6 +7,7 @@
  */
 
 import { memo } from 'react';
+import { BookmarkCheck } from 'lucide-react';
 import type { Magazine, MagazinePage } from '@/types/magazine';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { MagazinePageRenderer } from './MagazinePageRenderer';
@@ -19,6 +20,7 @@ interface Props {
   pages: MagazinePage[];
   currentIndex: number;
   onGo: (index: number) => void;
+  bookmarks?: Set<number>;
 }
 
 function pageLabel(p: MagazinePage): string {
