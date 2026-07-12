@@ -62,6 +62,7 @@ export default function QuotesListPage() {
     setSortBy,
     deleteConfirmId,
     setDeleteConfirmId,
+    isDeleting,
     bulkDeleteIds,
     setBulkDeleteIds,
     isBulkDeleting,
