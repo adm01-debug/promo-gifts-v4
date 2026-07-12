@@ -11,7 +11,17 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { showUndoToast } from '@/utils/undoToast';
-import { bulkRestoreSummary } from '@/pages/products/seller-carts/bulkRestoreSummary';
+import {
+  bulkRestoreSummary,
+  UNDO_DURATION_MS,
+  UNDO_TOAST_DESCRIPTION,
+  deleteConfirmDialogTitle,
+  deleteConfirmDialogDescription,
+  deletedToastTitle,
+  confirmDialogConfirmLabel,
+  RESTORE_SINGLE_SUCCESS,
+  RESTORE_SINGLE_ERROR,
+} from '@/pages/products/seller-carts/undoCopy';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
