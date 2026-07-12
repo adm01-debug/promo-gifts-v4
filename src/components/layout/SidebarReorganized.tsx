@@ -202,6 +202,12 @@ const navGroups: NavGroup[] = [
         href: '/busca-preco',
         tooltip: 'Tem um orçamento? Encontre rapidamente produtos que cabem no bolso do cliente.',
       },
+      {
+        icon: BookOpen,
+        label: 'Magazine',
+        href: '/magazine',
+        tooltip: 'Monte revistas e catálogos personalizados com os produtos do catálogo.',
+      },
     ],
   },
   {
