@@ -59,11 +59,11 @@
     "test:cloud-status": "TZ=America/Sao_Paulo vitest run tests/components/CloudStatusBanner.test.tsx tests/hooks/useDevGate.test.ts",
     "test:cloud-status-coverage": "TZ=America/Sao_Paulo vitest run tests/components/CloudStatusBanner.test.tsx tests/hooks/useDevGate.test.ts --coverage --coverage.reporter=text --coverage.reporter=json-summary --coverage.include=src/components/system/CloudStatusBanner.tsx --coverage.include=src/hooks/admin/useDevGate.ts && node scripts/check-cloud-status-coverage.mjs",
     "lint": "node scripts/check-tsc-baseline.mjs",
-    "lint:check": "eslint src --max-warnings=0",
-    "lint:baseline": "node scripts/check-eslint-baseline.mjs",
+    "lint:check": "npm run lint:config && eslint src --max-warnings=0",
+    "lint:baseline": "npm run lint:config && node scripts/check-eslint-baseline.mjs",
     "lint:baseline:update": "node scripts/eslint-baseline-generate.mjs",
     "typecheck": "node scripts/check-tsc-baseline.mjs",
-    "qa:lint": "eslint src --max-warnings=0",
+    "qa:lint": "npm run lint:config && eslint src --max-warnings=0",
     "qa:typecheck": "tsc -p tsconfig.app.json --noEmit",
     "qa:full": "npm run check:package-duplicate-scripts && npm run lint:baseline && npm run qa:typecheck && npm run qa:lint",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
@@ -188,7 +188,8 @@
     "test:cart-header": "vitest run src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts src/pages/products/__tests__/CartHeaderExhaustiveFuzz.test.ts src/pages/products/__tests__/CartHeaderEdgeCases.test.ts",
     "test:cart-header:report": "node scripts/qa/cart-header-fuzz-report.mjs",
     "e2e:cart-header": "playwright test e2e/visual/cart-header-actions.spec.ts --project=chromium-authed",
-    "e2e:cart-header:update": "playwright test e2e/visual/cart-header-actions.spec.ts --project=chromium-authed --update-snapshots"
+    "e2e:cart-header:update": "playwright test e2e/visual/cart-header-actions.spec.ts --project=chromium-authed --update-snapshots",
+    "lint:config": "node scripts/check-eslint-config-parses.mjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

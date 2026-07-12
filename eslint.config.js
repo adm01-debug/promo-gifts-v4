@@ -1625,8 +1625,8 @@ export default [
      * SSOT do avatar de empresa em listas: força o uso de `CompanyListAvatar`
      * (tamanho responsivo lg↔md + ring padrão) em vez de importar `AvatarLogo`
      * direto e passar `size` a mão. Rotas de página (`src/pages/**`) e células
-     * de listagem (`src/components/**/*List*`) entram no escopo. O próprio
-     * arquivo do wrapper e a implementação base ficam de fora.
+     * de listagem (arquivos com "List" no nome sob `src/components/`) entram no
+     * escopo. O próprio arquivo do wrapper e a implementação base ficam de fora.
      */
     files: [
       'src/pages/**/*.{ts,tsx}',
