@@ -22,37 +22,37 @@ const state = vi.hoisted(() => ({
 }));
 
 const builder = vi.hoisted(() => {
-  return () => ({
-    insert: (rows: Row[]) => {
+  const magRow = {
+    id: 'mag_x', owner_id: 'u1', organization_id: null, title: 'T', subtitle: null,
+    template_id: 'editorial-vogue', branding: {}, content_settings: {}, page_order: null,
+    status: 'draft', public_token: null, pdf_url: null, published_at: null,
+    created_at: '', updated_at: '', deleted_at: null,
+  };
+  return (table: string) => {
+    const q: Record<string, unknown> = {};
+    q.insert = (rows: Row[]) => {
       state.insertPayload = rows;
       if (state.insertError) return Promise.resolve({ error: state.insertError });
       state.items.push(...rows);
       return Promise.resolve({ error: null });
-    },
-    update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-    select: () => ({
-      eq: () => ({
-        maybeSingle: () => Promise.resolve({
-          data: {
-            id: 'mag_x', owner_id: 'u1', organization_id: null, title: 'T', subtitle: null,
-            template_id: 'editorial-vogue', branding: {}, content_settings: {}, page_order: null,
-            status: 'draft', public_token: null, pdf_url: null, published_at: null,
-            created_at: '', updated_at: '', deleted_at: null,
-          },
-          error: null,
-        }),
-        order: () => Promise.resolve({
-          data: state.items.filter((i) => i.magazine_id === 'mag_x'),
-          error: null,
-        }),
-      }),
-    }),
-    delete: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: null }) }) }),
-  });
+    };
+    q.update = () => q;
+    q.delete = () => q;
+    q.select = () => q;
+    q.eq = () => q;
+    q.is = () => q;
+    q.order = () =>
+      Promise.resolve({
+        data: table === 'magazine_items'
+          ? state.items.filter((i) => i.magazine_id === 'mag_x')
+          : [magRow],
+        error: null,
+      });
+    q.maybeSingle = () =>
+      Promise.resolve({ data: table === 'magazines' ? magRow : null, error: null });
+    return q;
+  };
 });
-
-vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: () => builder() } }));
-vi.mock('@/lib/supabase-untyped', () => ({ untypedFrom: () => builder() }));
 
 // import DEPOIS dos mocks
 import { magazineService } from '@/services/magazineService';
