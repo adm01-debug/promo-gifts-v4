@@ -61,31 +61,31 @@ const productFactory = (id: string): Product =>
   ({ id, name: `P-${id}`, sku: id, price: 1, images: [], colors: [] }) as unknown as Product;
 
 beforeEach(() => {
-  items.length = 0;
-  insertPayload = null;
-  insertError = null;
+  state.items.length = 0;
+  state.insertPayload = null;
+  state.insertError = null;
 });
 
 describe('addProducts — dedup client-side (pré-UNIQUE)', () => {
   it('produto já presente → não insere', async () => {
-    items.push({ id: 'i1', magazine_id: 'mag_x', product_id: 'p1', position: 0 });
+    state.items.push({ id: 'i1', magazine_id: 'mag_x', product_id: 'p1', position: 0 });
     await magazineService.addProducts('mag_x', [productFactory('p1')]);
-    expect(insertPayload).toBeNull();
+    expect(state.insertPayload).toBeNull();
   });
 
   it('batch com produto novo + duplicado → insere apenas o novo (1 row)', async () => {
-    items.push({ id: 'i1', magazine_id: 'mag_x', product_id: 'p1', position: 0 });
+    state.items.push({ id: 'i1', magazine_id: 'mag_x', product_id: 'p1', position: 0 });
     await magazineService.addProducts('mag_x', [
       productFactory('p1'),
       productFactory('p2'),
     ]);
-    expect(insertPayload).not.toBeNull();
-    expect(insertPayload!.length).toBe(1);
-    expect(insertPayload![0].product_id).toBe('p2');
+    expect(state.insertPayload).not.toBeNull();
+    expect(state.insertPayload!.length).toBe(1);
+    expect(state.insertPayload![0].product_id).toBe('p2');
   });
 
   it('UNIQUE violation retornada pelo BD é tratada (não lança)', async () => {
-    insertError = { message: 'duplicate key value violates unique constraint', code: '23505' };
+    state.insertError = { message: 'duplicate key value violates unique constraint', code: '23505' };
     await expect(
       magazineService.addProducts('mag_x', [productFactory('novo')]),
     ).resolves.not.toThrow();
