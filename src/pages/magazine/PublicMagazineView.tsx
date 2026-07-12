@@ -41,6 +41,7 @@ import { Button } from '@/components/ui/button';
 import { paginateMagazine } from './pagination';
 import { MagazinePageRenderer } from './components/MagazinePageRenderer';
 import { PublicMagazineToc } from './components/PublicMagazineToc';
+import { MagazineMiniMap } from './components/MagazineMiniMap';
 import { KeyboardHelpOverlay } from './components/KeyboardHelpOverlay';
 import { useMagazineBookmarks } from './hooks/useMagazineBookmarks';
 import { usePageZoom } from './hooks/usePageZoom';
@@ -286,7 +287,7 @@ export default function PublicMagazineView() {
     );
   }
 
-  const progressPct = total > 1 ? ((safeIdx + 1) / total) * 100 : 100;
+  
 
   return (
     <div ref={rootRef} className="min-h-screen bg-neutral-950 py-6 focus:outline-none" tabIndex={-1}>
@@ -379,40 +380,13 @@ export default function PublicMagazineView() {
         </div>
       </header>
 
-      {/* Progress bar + mini-mapa de marcadores */}
-      <div className="relative mx-auto mb-3 max-w-[1100px]">
-        <div
-          className="h-[3px] overflow-hidden rounded-full bg-white/10"
-          role="progressbar"
-          aria-valuemin={1}
-          aria-valuemax={total}
-          aria-valuenow={safeIdx + 1}
-          aria-label={`Progresso da leitura: página ${safeIdx + 1} de ${total}`}
-        >
-          <div
-            className="h-full bg-white/80 transition-all duration-300"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-        {total > 1 && bookmarks.size > 0 && (
-          <div className="pointer-events-none absolute inset-x-0 -top-1 h-3">
-            {Array.from(bookmarks).map((idx) => {
-              const left = (idx / Math.max(total - 1, 1)) * 100;
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => go(idx)}
-                  className="pointer-events-auto absolute -translate-x-1/2 rounded-full bg-amber-400 shadow ring-2 ring-neutral-950 transition hover:scale-125 focus:outline-none focus-visible:ring-white"
-                  style={{ left: `${left}%`, width: 10, height: 10, top: 0 }}
-                  aria-label={`Ir para página marcada ${idx + 1}`}
-                  title={`Marcador · página ${idx + 1}`}
-                />
-              );
-            })}
-          </div>
-        )}
-      </div>
+      {/* Progress bar + mini-mapa interativo (scrub por arraste) */}
+      <MagazineMiniMap
+        total={total}
+        currentIndex={safeIdx}
+        bookmarks={bookmarks}
+        onGo={go}
+      />
 
       <main
         className="mx-auto max-w-[1100px] px-4"
