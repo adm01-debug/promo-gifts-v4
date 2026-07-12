@@ -7,7 +7,7 @@
  *  - Hover-preview: mostra miniatura da página sob o cursor (desktop)
  *  - Mouse + touch, acessível (role=slider)
  */
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 interface Props {
   total: number;
