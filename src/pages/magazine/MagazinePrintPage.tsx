@@ -64,7 +64,7 @@ export default function MagazinePrintPage() {
       <div className="mx-auto flex max-w-[1000px] flex-col gap-6">
         {pages.map((p) => (
           <div key={p.index} className="mx-auto w-full overflow-hidden rounded-lg bg-white shadow-lg">
-            <MagazinePageRenderer magazine={magazine} page={p} fitContainer />
+            <MagazinePageRenderer magazine={magazine} page={p} totalPages={pages.length} fitContainer />
           </div>
         ))}
       </div>

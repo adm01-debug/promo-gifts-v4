@@ -97,7 +97,7 @@ export default function PublicMagazineView() {
 
       <div className="mx-auto max-w-[1100px] px-4">
         <div className="overflow-hidden rounded-xl bg-white shadow-2xl">
-          {current ? <MagazinePageRenderer magazine={magazine} page={current} fitContainer /> : null}
+          {current ? <MagazinePageRenderer magazine={magazine} page={current} totalPages={pages.length} fitContainer /> : null}
         </div>
 
         <div className="mt-4 flex items-center justify-between text-white">

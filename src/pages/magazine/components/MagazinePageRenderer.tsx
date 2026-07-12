@@ -12,6 +12,8 @@ interface Props {
   page: MagazinePage;
   /** Se preenchido, escala o conteúdo para caber neste contêiner (preview). */
   fitContainer?: boolean;
+  /** Total de páginas — propagado aos templates para folio "05 / 24". */
+  totalPages?: number;
 }
 
 const GOOGLE_FONTS_URL =
@@ -27,7 +29,7 @@ function ensureFonts() {
   fontsInjected = true;
 }
 
-export function MagazinePageRenderer({ magazine, page, fitContainer }: Props) {
+export function MagazinePageRenderer({ magazine, page, fitContainer, totalPages }: Props) {
   const template = getTemplate(magazine.templateId);
   const Component = template.Component;
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -71,7 +73,7 @@ export function MagazinePageRenderer({ magazine, page, fitContainer }: Props) {
     ) : page.kind === 'section' ? (
       <SectionPage title={page.sectionTitle ?? ''} />
     ) : (
-      <Component magazine={magazine} page={page} />
+      <Component magazine={magazine} page={page} totalPages={totalPages} />
     );
 
   if (!fitContainer) {
