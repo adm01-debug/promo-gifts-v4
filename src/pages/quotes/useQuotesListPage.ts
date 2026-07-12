@@ -138,59 +138,66 @@ export function useQuotesListPage() {
   const handleDelete = async () => {
     const id = deleteConfirmId;
     if (!id) return;
+    // Guarda de reentrada: evita cliques duplicados no botão de confirmar.
+    if (isDeleting) return;
 
-    // 1) snapshot ANTES do delete
-    let snapshot: Quote | null = null;
+    setIsDeleting(true);
     try {
-      snapshot = await fetchQuote(id);
-    } catch {
-      /* segue sem snapshot — undo ficará indisponível */
-    }
+      // 1) snapshot ANTES do delete
+      let snapshot: Quote | null = null;
+      try {
+        snapshot = await fetchQuote(id);
+      } catch {
+        /* segue sem snapshot — undo ficará indisponível */
+      }
 
-    // 2) delete
-    const ok = await deleteQuote(id);
-    setDeleteConfirmId(null);
+      // 2) delete
+      const ok = await deleteQuote(id);
+      setDeleteConfirmId(null);
 
-    if (!ok) {
-      toast.error('Não foi possível excluir o orçamento. Tente novamente.');
-      return;
-    }
+      if (!ok) {
+        toast.error('Não foi possível excluir o orçamento. Tente novamente.');
+        return;
+      }
 
-    // 3) sem snapshot → sucesso simples, sem desfazer
-    if (!snapshot) {
-      toast.success('Orçamento excluído.');
-      return;
-    }
+      // 3) sem snapshot → sucesso simples, sem desfazer
+      if (!snapshot) {
+        toast.success('Orçamento excluído.');
+        return;
+      }
 
-    // 4) toast com "Desfazer"
-    showUndoToast({
-      title: 'Orçamento excluído',
-      description: 'Você pode desfazer esta ação.',
-      duration: 8000,
-      onUndo: async () => {
-        try {
-          const items: QuoteItem[] = (snapshot!.items ?? []).map((it) => ({
-            ...it,
-          })) as QuoteItem[];
-          const {
-            id: _omitId,
-            created_at: _c,
-            updated_at: _u,
-            quote_number: _qn,
-            ...rest
-          } = snapshot as Quote & { id?: string };
-          void _omitId; void _c; void _u; void _qn;
-          const created = await createQuote(rest as Partial<Quote>, items);
-          if (created) {
-            toast.success('Orçamento restaurado.');
-          } else {
+      // 4) toast com "Desfazer"
+      showUndoToast({
+        title: 'Orçamento excluído',
+        description: 'Você pode desfazer esta ação.',
+        duration: 8000,
+        onUndo: async () => {
+          try {
+            const items: QuoteItem[] = (snapshot!.items ?? []).map((it) => ({
+              ...it,
+            })) as QuoteItem[];
+            const {
+              id: _omitId,
+              created_at: _c,
+              updated_at: _u,
+              quote_number: _qn,
+              ...rest
+            } = snapshot as Quote & { id?: string };
+            void _omitId; void _c; void _u; void _qn;
+            const created = await createQuote(rest as Partial<Quote>, items);
+            if (created) {
+              toast.success('Orçamento restaurado.');
+            } else {
+              toast.error('Não foi possível restaurar o orçamento.');
+            }
+          } catch {
             toast.error('Não foi possível restaurar o orçamento.');
           }
-        } catch {
-          toast.error('Não foi possível restaurar o orçamento.');
-        }
-      },
-    });
+        },
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   /**
