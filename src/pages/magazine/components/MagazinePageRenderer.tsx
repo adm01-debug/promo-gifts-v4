@@ -6,6 +6,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Magazine, MagazinePage } from '@/types/magazine';
 import { getTemplate } from './templates/TemplateRegistry';
+import { MAGAZINE_CATEGORY_META } from './templates/chrome';
+import { CategoryIcon } from '../utils/categoryIcons';
+import { contrastRatio } from '../utils/contrast';
 
 interface Props {
   magazine: Magazine;
@@ -16,7 +19,12 @@ interface Props {
   totalPages?: number;
 }
 
-import { MAGAZINE_CATEGORY_META } from './templates/chrome';
+/** Escolhe branco ou charcoal contra `bgHex` maximizando WCAG. */
+function pickReadableInk(bgHex: string): '#ffffff' | '#1a1a1a' {
+  const white = contrastRatio('#ffffff', bgHex);
+  const dark = contrastRatio('#1a1a1a', bgHex);
+  return dark > white ? '#1a1a1a' : '#ffffff';
+}
 
 /* Fontes carregadas via @fontsource em magazine.css — sem CDN externa. */
 
