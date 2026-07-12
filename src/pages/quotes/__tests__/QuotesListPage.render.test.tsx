@@ -22,6 +22,7 @@ const baseHook: HookReturn = {
   sortBy: 'newest',
   setSortBy: vi.fn(),
   deleteConfirmId: null,
+  isDeleting: false,
   setDeleteConfirmId: vi.fn(),
   bulkDeleteIds: [],
   setBulkDeleteIds: vi.fn(),
