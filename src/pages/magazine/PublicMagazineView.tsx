@@ -95,11 +95,23 @@ export default function PublicMagazineView() {
   const safeIdx = Math.min(Math.max(pageIdx, 0), Math.max(total - 1, 0));
   const current = pages[safeIdx];
 
-  /* ---------------- Deep link sync ---------------- */
+  /* ---------------- Deep link sync (+ P: toast se clamp) ---------------- */
+  const deepLinkWarned = useRef(false);
   useEffect(() => {
     if (!total) return;
-    const currentParam = Number(searchParams.get('p'));
+    const rawParam = searchParams.get('p');
+    const currentParam = Number(rawParam);
     const desired = safeIdx + 1;
+    // P: avisa uma única vez se o usuário chegou com ?p= inválido/fora do range
+    if (
+      !deepLinkWarned.current &&
+      rawParam != null &&
+      rawParam !== '' &&
+      (!Number.isFinite(currentParam) || currentParam < 1 || currentParam > total)
+    ) {
+      deepLinkWarned.current = true;
+      toast.info(`Página ${rawParam} não existe. Abrindo página ${desired} de ${total}.`);
+    }
     if (currentParam !== desired) {
       const next = new URLSearchParams(searchParams);
       next.set('p', String(desired));
@@ -117,18 +129,27 @@ export default function PublicMagazineView() {
     };
   }, [magazine]);
 
-  /* ---------------- Fullscreen ---------------- */
+  /* ---------------- Fullscreen (+ Q: feedback se indisponível) ---------------- */
   const toggleFullscreen = useCallback(async () => {
     const el = rootRef.current;
     if (!el) return;
+    // Q: iOS Safari em <iframe> não suporta Fullscreen API
+    const supports =
+      typeof document !== 'undefined' &&
+      (('fullscreenEnabled' in document && document.fullscreenEnabled) ||
+        typeof el.requestFullscreen === 'function');
+    if (!supports) {
+      toast.info('Tela cheia indisponível neste navegador. Use F11 no desktop.');
+      return;
+    }
     try {
       if (!document.fullscreenElement) {
-        await el.requestFullscreen?.();
+        await el.requestFullscreen();
       } else {
-        await document.exitFullscreen?.();
+        await document.exitFullscreen();
       }
     } catch {
-      /* ignore */
+      toast.info('Não foi possível abrir a tela cheia.');
     }
   }, []);
   useEffect(() => {
