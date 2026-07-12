@@ -1,5 +1,5 @@
 import type { TemplatePageProps } from '../TemplateRegistry';
-import { effectiveContent, formatPrice, itemPrice, resolveItemImage } from '../shared';
+import { effectiveContent, formatPrice, itemPrice, productImageAlt, resolveItemImage } from '../shared';
 import { Folio, PriceTag, HairlineDivider } from '../chrome';
 
 /**
