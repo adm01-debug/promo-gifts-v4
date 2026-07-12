@@ -178,7 +178,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
         )}
       </div>
 
-      {/* Hover preview (desktop only — não renderiza durante drag para não competir com tooltip) */}
+      {/* I4: hover preview memoizado + hoverIdx com useDeferredValue para descolar do mousemove */}
       {showPreview && (
         <div
           className="pointer-events-none absolute z-30 hidden -translate-x-1/2 md:block"
@@ -190,13 +190,34 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
           aria-hidden
         >
           <div className="overflow-hidden rounded-md border border-white/20 bg-white shadow-2xl ring-1 ring-black/40">
-            <div className="w-[220px]">{renderPreview(hoverIdx)}</div>
+            <div className="w-[220px]">
+              <DeferredPreview idx={hoverIdx} render={renderPreview!} />
+            </div>
           </div>
           <div className="mt-1 text-center text-[10px] font-medium uppercase tabular-nums tracking-widest text-white/80">
             Página {hoverIdx + 1}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * DeferredPreview — isola o custo do renderPreview:
+ * - useDeferredValue no idx (React prioriza o mousemove ao invés do re-render caro)
+ * - React.memo garante que só re-renderiza quando idxDeferred efetivamente muda
+ */
+const DeferredPreview = memo(function DeferredPreview({
+  idx,
+  render,
+}: {
+  idx: number;
+  render: (index: number) => ReactNode;
+}) {
+  const deferred = useDeferredValue(idx);
+  return <>{render(deferred)}</>;
+});
     </div>
   );
 }
