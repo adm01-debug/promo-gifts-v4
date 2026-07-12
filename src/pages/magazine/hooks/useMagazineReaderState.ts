@@ -119,11 +119,15 @@ function isRemoteDisabled(storage: Storage | null): boolean {
 }
 
 function disableRemote(storage: Storage | null, reason: string): void {
-  if (!storage) return;
-  try {
-    storage.setItem(REMOTE_DISABLED_KEY, '1');
-  } catch {
-    /* noop */
+  // Persiste a flag SOMENTE se storage está disponível. Em modo privado
+  // extremo (sem localStorage) a flag vive apenas em memória via ref
+  // dentro do hook — mas o toast ainda precisa aparecer.
+  if (storage) {
+    try {
+      storage.setItem(REMOTE_DISABLED_KEY, '1');
+    } catch {
+      /* noop */
+    }
   }
   if (typeof console !== 'undefined' && typeof console.info === 'function') {
     // Log informativo (não é erro — é degradação esperada quando a tabela
@@ -218,6 +222,23 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
   const pendingRef = useRef<{ bookmarks: number[]; lastPageIndex: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const remoteDisabledRef = useRef<boolean>(isRemoteDisabled(storage));
+  // Refs para leitura sempre-atual do state — evita stale closures quando
+  // duas ações ocorrem no mesmo tick antes do próximo render (BUG A).
+  const bookmarksRef = useRef<Set<number>>(bookmarks);
+  const lastPageIndexRef = useRef<number>(lastPageIndex);
+  bookmarksRef.current = bookmarks;
+  lastPageIndexRef.current = lastPageIndex;
+  // Guard de unmount para evitar setState em componente desmontado (BUG B).
+  const isMountedRef = useRef<boolean>(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  const safeSetSyncStatus = useCallback((s: MagazineReaderState['syncStatus']) => {
+    if (isMountedRef.current) setSyncStatus(s);
+  }, []);
 
   // Re-hidrata local quando o token mudar (troca de revista)
   useEffect(() => {
@@ -247,14 +268,14 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
   useEffect(() => {
     if (!token) return;
     if (remoteDisabledRef.current) {
-      setSyncStatus('local-only');
+      safeSetSyncStatus('local-only');
       return;
     }
     let cancelled = false;
 
     (async () => {
       try {
-        setSyncStatus('syncing');
+        safeSetSyncStatus('syncing');
         const query = supabase
           .from(REMOTE_TABLE as never)
           .select('bookmarks,last_page_index')
@@ -281,11 +302,11 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
           ) {
             remoteDisabledRef.current = true;
             disableRemote(storage, `${code || 'unknown'}: ${msg}`);
-            setSyncStatus('local-only');
+            safeSetSyncStatus('local-only');
             return;
           }
           // Outros erros: mantém local-only nesta sessão, sem persistir flag
-          setSyncStatus('local-only');
+          safeSetSyncStatus('local-only');
           return;
         }
 
@@ -320,12 +341,12 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
           });
         }
 
-        setSyncStatus('synced');
+        safeSetSyncStatus('synced');
       } catch (err) {
         if (cancelled) return;
         // Timeout, offline, ou outro — degradar para local-only nesta sessão
         // (sem persistir a flag; próxima sessão tenta de novo).
-        setSyncStatus('local-only');
+        safeSetSyncStatus('local-only');
         if (typeof console !== 'undefined') {
           console.info('[magazine-reader-state] initial fetch failed, going local-only:', err);
         }
@@ -345,7 +366,7 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     pendingRef.current = null;
 
     try {
-      setSyncStatus('syncing');
+      safeSetSyncStatus('syncing');
       const upsert = supabase.from(REMOTE_TABLE as never).upsert(
         {
           magazine_token: token,
@@ -370,12 +391,12 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
           remoteDisabledRef.current = true;
           disableRemote(storage, `write:${code || 'unknown'}:${msg}`);
         }
-        setSyncStatus('local-only');
+        safeSetSyncStatus('local-only');
         return;
       }
-      setSyncStatus('synced');
+      safeSetSyncStatus('synced');
     } catch {
-      setSyncStatus('local-only');
+      safeSetSyncStatus('local-only');
     }
   }, [token, fingerprint, storage]);
 
@@ -415,11 +436,13 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
         else if (next.size < MAX_BOOKMARKS) next.add(index);
         else return current; // limite de segurança — ignora silenciosamente
         writeBookmarksLocal(storage, token, next);
-        scheduleRemote(Array.from(next).sort((a, b) => a - b), lastPageIndex);
+        // Ler lastPageIndex via ref — evita stale closure quando setLastPage
+        // e toggleBookmark ocorrem no mesmo tick (BUG A).
+        scheduleRemote(Array.from(next).sort((a, b) => a - b), lastPageIndexRef.current);
         return next;
       });
     },
-    [token, storage, scheduleRemote, lastPageIndex],
+    [token, storage, scheduleRemote],
   );
 
   const clearBookmarks = useCallback(() => {
@@ -427,10 +450,10 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     setBookmarks(() => {
       const next = new Set<number>();
       writeBookmarksLocal(storage, token, next);
-      scheduleRemote([], lastPageIndex);
+      scheduleRemote([], lastPageIndexRef.current);
       return next;
     });
-  }, [token, storage, scheduleRemote, lastPageIndex]);
+  }, [token, storage, scheduleRemote]);
 
   const setLastPage = useCallback(
     (index: number) => {
@@ -439,11 +462,15 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
       setLastPageIndex((current) => {
         if (current === safe) return current;
         writeLastPageLocal(storage, token, safe);
-        scheduleRemote(Array.from(bookmarks).sort((a, b) => a - b), safe);
+        // Ler bookmarks via ref — evita stale closure (BUG A).
+        scheduleRemote(
+          Array.from(bookmarksRef.current).sort((a, b) => a - b),
+          safe,
+        );
         return safe;
       });
     },
-    [token, storage, scheduleRemote, bookmarks],
+    [token, storage, scheduleRemote],
   );
 
   return {
