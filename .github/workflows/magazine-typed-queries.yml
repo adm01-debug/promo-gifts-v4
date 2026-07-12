@@ -22,7 +22,7 @@ on:
       - 'src/services/magazineService.ts'
       - 'src/integrations/supabase/types.ts'
       - 'docs/plans/apply-magazine-typed-queries.sh'
-      - 'docs/plans/magazine-typed-queries-migration.patch'
+      # .patch descontinuado — sed/awk agora vive só no .sh
       - '.github/workflows/magazine-typed-queries.yml'
   push:
     branches: [main]
