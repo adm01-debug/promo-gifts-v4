@@ -2,23 +2,28 @@
 /**
  * Roda a suíte E2E de "Desfazer" nos orçamentos (04o + 04p + 04q).
  *
- * Uso:
- *   npm run test:e2e:quotes-undo
+ * MODOS
+ *   ─────
+ *   1) **Modo real** (default): usa `E2E_USER_EMAIL` + `E2E_USER_PASSWORD`.
+ *      O `auth.setup` faz login via UI e grava `e2e/.auth/storageState.json`.
+ *
+ *   2) **Modo mock** (`--mock` ou `E2E_MOCK_AUTH=1`): não exige credenciais.
+ *      Executa `scripts/e2e-mock-auth-setup.mjs` para gerar um storageState
+ *      sintético e ativa `E2E_MOCK_AUTH=1` para os specs. Os specs em 04o/04p/04q
+ *      chamam `installMockAuth(page)` no `beforeEach` para interceptar
+ *      `/auth/v1/**` — assim o Supabase JS mantém a sessão local viva sem
+ *      contatar o servidor real. Todas as chamadas a `/rest/v1/quotes` já
+ *      são interceptadas pelos próprios specs.
+ *
+ * USO
+ *   ────
+ *   # real
+ *   E2E_USER_EMAIL=... E2E_USER_PASSWORD=... npm run test:e2e:quotes-undo
+ *   # mock (sem credenciais)
+ *   npm run test:e2e:quotes-undo:mock
+ *   # extras
  *   npm run test:e2e:quotes-undo -- --headed
- *   npm run test:e2e:quotes-undo -- --ui
- *   npm run test:e2e:quotes-undo -- --workers=1
- *
- * Variáveis de ambiente obrigatórias (credenciais de E2E autenticado):
- *   E2E_USER  ou  TEST_USER   → e-mail do usuário de teste
- *   E2E_PASS  ou  TEST_PASS   → senha do usuário de teste
- *
- * Variáveis opcionais:
- *   E2E_BASE_URL              → base URL do preview (default: usa playwright.config)
- *   E2E_PROJECT               → project Playwright (default: chromium-authed)
- *
- * O script valida as credenciais ANTES de invocar o Playwright, para
- * abortar rápido com mensagem PT-BR clara em vez de deixar a suíte
- * falhar em runtime com erro genérico de auth.
+ *   npm run test:e2e:quotes-undo -- --workers=2 --project=chromium-authed
  */
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -34,7 +39,7 @@ const SPECS = [
   "e2e/flows/04q-quotes-single-delete-undo-edge-cases.spec.ts",
 ];
 
-// 1) Confirma que os arquivos de spec existem no repo
+// ─── 1) Sanidade: specs existem ─────────────────────────────────────────
 const missing = SPECS.filter((s) => !existsSync(path.join(ROOT, s)));
 if (missing.length > 0) {
   console.error("❌ Specs E2E ausentes:");
@@ -42,25 +47,50 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-// 2) Normaliza credenciais (aceita E2E_* ou TEST_*)
-const user = process.env.E2E_USER ?? process.env.TEST_USER ?? "";
-const pass = process.env.E2E_PASS ?? process.env.TEST_PASS ?? "";
-if (!user || !pass) {
-  console.error(
-    "❌ Credenciais E2E ausentes. Defina E2E_USER/E2E_PASS (ou TEST_USER/TEST_PASS) antes de rodar.\n" +
-      "   Exemplo:\n" +
-      "     E2E_USER=qa@promogifts.com.br E2E_PASS='***' npm run test:e2e:quotes-undo",
-  );
-  process.exit(2);
-}
-// Reexporta em ambos os nomes para o Playwright encontrar qualquer variante.
-process.env.E2E_USER = user;
-process.env.E2E_PASS = pass;
-process.env.TEST_USER = user;
-process.env.TEST_PASS = pass;
+// ─── 2) Parse de flags ──────────────────────────────────────────────────
+const rawArgs = process.argv.slice(2);
+const mockFlagIndex = rawArgs.findIndex((a) => a === "--mock" || a === "--mock-auth");
+const isMock = mockFlagIndex !== -1 || process.env.E2E_MOCK_AUTH === "1";
+const passthrough = rawArgs.filter((_, i) => i !== mockFlagIndex);
 
-// 3) Monta argumentos do Playwright
-const passthrough = process.argv.slice(2);
+// ─── 3) Modo mock: gera storageState sintético ──────────────────────────
+if (isMock) {
+  process.env.E2E_MOCK_AUTH = "1";
+  console.log("🎭 Modo MOCK ativado — sem credenciais reais.");
+  const setup = spawnSync(
+    "node",
+    [path.join("scripts", "e2e-mock-auth-setup.mjs")],
+    { stdio: "inherit", cwd: ROOT, env: process.env },
+  );
+  if ((setup.status ?? 1) !== 0) {
+    console.error("❌ Falha ao gerar storageState mock.");
+    process.exit(setup.status ?? 1);
+  }
+} else {
+  // Modo real: normaliza aliases E2E_USER / TEST_USER → E2E_USER_EMAIL/PASSWORD
+  const email =
+    process.env.E2E_USER_EMAIL ??
+    process.env.E2E_USER ??
+    process.env.TEST_USER ??
+    "";
+  const password =
+    process.env.E2E_USER_PASSWORD ??
+    process.env.E2E_PASS ??
+    process.env.TEST_PASS ??
+    "";
+  if (!email || !password) {
+    console.error(
+      "❌ Credenciais E2E ausentes. Escolha um modo:\n" +
+        "   • Modo REAL: defina E2E_USER_EMAIL + E2E_USER_PASSWORD\n" +
+        "   • Modo MOCK: use `npm run test:e2e:quotes-undo:mock` (sem credenciais)\n",
+    );
+    process.exit(2);
+  }
+  process.env.E2E_USER_EMAIL = email;
+  process.env.E2E_USER_PASSWORD = password;
+}
+
+// ─── 4) Monta comando Playwright ────────────────────────────────────────
 const project = process.env.E2E_PROJECT ?? "chromium-authed";
 const hasProjectArg = passthrough.some((a) => a.startsWith("--project"));
 
@@ -68,11 +98,15 @@ const args = ["playwright", "test", ...SPECS];
 if (!hasProjectArg) args.push(`--project=${project}`);
 args.push(...passthrough);
 
-// 4) Executa
 console.log("▶ Rodando E2E: exclusão de orçamentos com Desfazer");
 console.log(`   Specs:   ${SPECS.length}`);
 console.log(`   Project: ${hasProjectArg ? "(override)" : project}`);
-console.log(`   User:    ${user.replace(/(.{2}).+(@.+)/, "$1***$2")}`);
+console.log(`   Modo:    ${isMock ? "MOCK (sem credenciais)" : "REAL (Supabase)"}`);
+if (!isMock && process.env.E2E_USER_EMAIL) {
+  console.log(
+    `   User:    ${process.env.E2E_USER_EMAIL.replace(/(.{2}).+(@.+)/, "$1***$2")}`,
+  );
+}
 
 const result = spawnSync("npx", args, {
   stdio: "inherit",
@@ -80,5 +114,4 @@ const result = spawnSync("npx", args, {
   env: process.env,
   shell: process.platform === "win32",
 });
-
 process.exit(result.status ?? 1);
