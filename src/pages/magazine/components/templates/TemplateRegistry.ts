@@ -27,6 +27,8 @@ import { CorporateExecutiveTemplate } from './corporate/CorporateExecutiveTempla
 export interface TemplatePageProps {
   magazine: Magazine;
   page: MagazinePage;
+  /** Total de páginas na revista, usado para folios "05 / 24". */
+  totalPages?: number;
 }
 
 export interface TemplateEntry extends MagazineTemplateMeta {
