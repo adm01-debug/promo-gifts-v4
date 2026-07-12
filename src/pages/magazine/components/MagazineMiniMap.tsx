@@ -7,7 +7,7 @@
  *  - Hover-preview: mostra miniatura da página sob o cursor (desktop)
  *  - Mouse + touch, acessível (role=slider)
  */
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 interface Props {
   total: number;
@@ -66,6 +66,26 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
     setScrubIdx(null);
   }, []);
 
+  // C3: durante drag, escuta mouseup/mousemove no window (não apenas no track).
+  // Cobre o caso do cursor sair pela borda superior sem disparar mouseleave.
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: MouseEvent) => handleMove(e.clientX);
+    const onUp = () => handleUp();
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [dragging, handleMove, handleUp]);
+
+  // I5: filtra marcadores que apontam para páginas que não existem mais
+  const validBookmarks = useMemo(
+    () => Array.from(bookmarks).filter((idx) => idx >= 0 && idx < total),
+    [bookmarks, total],
+  );
+
   const showPreview = !dragging && hoverIdx != null && renderPreview && total > 1;
 
   return (
@@ -114,7 +134,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
         </div>
 
         {total > 1 &&
-          Array.from(bookmarks).map((idx) => {
+          validBookmarks.map((idx) => {
             const left = (idx / Math.max(total - 1, 1)) * 100;
             return (
               <button
@@ -158,7 +178,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
         )}
       </div>
 
-      {/* Hover preview (desktop only — não renderiza durante drag para não competir com tooltip) */}
+      {/* I4: hover preview memoizado + hoverIdx com useDeferredValue para descolar do mousemove */}
       {showPreview && (
         <div
           className="pointer-events-none absolute z-30 hidden -translate-x-1/2 md:block"
@@ -170,7 +190,9 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
           aria-hidden
         >
           <div className="overflow-hidden rounded-md border border-white/20 bg-white shadow-2xl ring-1 ring-black/40">
-            <div className="w-[220px]">{renderPreview(hoverIdx)}</div>
+            <div className="w-[220px]">
+              <DeferredPreview idx={hoverIdx} render={renderPreview!} />
+            </div>
           </div>
           <div className="mt-1 text-center text-[10px] font-medium uppercase tabular-nums tracking-widest text-white/80">
             Página {hoverIdx + 1}
@@ -180,3 +202,19 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
     </div>
   );
 }
+
+/**
+ * DeferredPreview — isola o custo do renderPreview:
+ * - useDeferredValue no idx (React prioriza o mousemove ao invés do re-render caro)
+ * - React.memo garante que só re-renderiza quando idxDeferred efetivamente muda
+ */
+const DeferredPreview = memo(function DeferredPreview({
+  idx,
+  render,
+}: {
+  idx: number;
+  render: (index: number) => ReactNode;
+}) {
+  const deferred = useDeferredValue(idx);
+  return <>{render(deferred)}</>;
+});
