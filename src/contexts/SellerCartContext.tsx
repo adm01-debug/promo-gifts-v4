@@ -92,6 +92,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     duplicateItemToCart: duplicateItemMutation,
     clearCart: clearCartMutation,
     restoreItems: restoreItemsMutation,
+    restoreCartWithItems: restoreCartWithItemsMutation,
   } = useSellerCarts();
 
   const [activeCartId, setActiveCartId] = useState<string | null>(null);
