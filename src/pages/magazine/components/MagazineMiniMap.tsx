@@ -66,6 +66,26 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
     setScrubIdx(null);
   }, []);
 
+  // C3: durante drag, escuta mouseup/mousemove no window (não apenas no track).
+  // Cobre o caso do cursor sair pela borda superior sem disparar mouseleave.
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: MouseEvent) => handleMove(e.clientX);
+    const onUp = () => handleUp();
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [dragging, handleMove, handleUp]);
+
+  // I5: filtra marcadores que apontam para páginas que não existem mais
+  const validBookmarks = useMemo(
+    () => Array.from(bookmarks).filter((idx) => idx >= 0 && idx < total),
+    [bookmarks, total],
+  );
+
   const showPreview = !dragging && hoverIdx != null && renderPreview && total > 1;
 
   return (
