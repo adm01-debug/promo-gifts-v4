@@ -14,53 +14,45 @@ import type { Product } from '@/types/product-catalog';
 
 // ----- mocks Supabase in-memory ------------------------------------------------
 type Row = { id: string; magazine_id: string; product_id: string; position: number };
-const items: Row[] = [];
-let insertPayload: Row[] | null = null;
-let insertError: { message: string; code?: string } | null = null;
 
-const supabaseMock = {
-  from(_table: string) {
-    return {
-      insert: (rows: Row[]) => {
-        insertPayload = rows;
-        if (insertError) return Promise.resolve({ error: insertError });
-        items.push(...rows);
-        return Promise.resolve({ error: null });
-      },
-      update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-      select: () => ({
-        eq: () => ({
-          maybeSingle: () => Promise.resolve({
-            data: {
-              id: 'mag_x',
-              owner_id: 'u1',
-              organization_id: null,
-              title: 'T',
-              subtitle: null,
-              template_id: 'editorial-vogue',
-              branding: {},
-              content_settings: {},
-              page_order: null,
-              status: 'draft',
-              public_token: null,
-              pdf_url: null,
-              published_at: null,
-              created_at: '', updated_at: '', deleted_at: null,
-            },
-            error: null,
-          }),
-          order: () => Promise.resolve({ data: items.filter((i) => i.magazine_id === 'mag_x'), error: null }),
+const state = vi.hoisted(() => ({
+  items: [] as Row[],
+  insertPayload: null as Row[] | null,
+  insertError: null as { message: string; code?: string } | null,
+}));
+
+const builder = vi.hoisted(() => {
+  return () => ({
+    insert: (rows: Row[]) => {
+      state.insertPayload = rows;
+      if (state.insertError) return Promise.resolve({ error: state.insertError });
+      state.items.push(...rows);
+      return Promise.resolve({ error: null });
+    },
+    update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+    select: () => ({
+      eq: () => ({
+        maybeSingle: () => Promise.resolve({
+          data: {
+            id: 'mag_x', owner_id: 'u1', organization_id: null, title: 'T', subtitle: null,
+            template_id: 'editorial-vogue', branding: {}, content_settings: {}, page_order: null,
+            status: 'draft', public_token: null, pdf_url: null, published_at: null,
+            created_at: '', updated_at: '', deleted_at: null,
+          },
+          error: null,
+        }),
+        order: () => Promise.resolve({
+          data: state.items.filter((i) => i.magazine_id === 'mag_x'),
+          error: null,
         }),
       }),
-      delete: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: null }) }) }),
-    };
-  },
-};
+    }),
+    delete: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: null }) }) }),
+  });
+});
 
-vi.mock('@/integrations/supabase/client', () => ({ supabase: supabaseMock }));
-vi.mock('@/lib/supabase-untyped', () => ({
-  untypedFrom: (t: string) => supabaseMock.from(t),
-}));
+vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: () => builder() } }));
+vi.mock('@/lib/supabase-untyped', () => ({ untypedFrom: () => builder() }));
 
 // import DEPOIS dos mocks
 import { magazineService } from '@/services/magazineService';
