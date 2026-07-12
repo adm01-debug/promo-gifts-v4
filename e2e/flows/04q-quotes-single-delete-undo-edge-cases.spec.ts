@@ -495,6 +495,7 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
     );
     const uniq = new Set(itemIds);
     expect(uniq.size).toBe(itemIds.length);
+  });
 
   test("alta latência no DELETE — contador só inicia após resposta e expira corretamente", async ({
     page,
@@ -545,9 +546,12 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
       await route.continue();
     });
 
-    const clickedAt = Date.now();
+    // Abre o menu e confirma exclusão. Medimos `clickedAt` a partir do
+    // clique no dialog-yes (não do primeiro dropdown), pois é ele quem
+    // dispara o `deleteQuote` — evita medir tempo de UI intermediária.
     await page.getByTestId(`quote-row-more-${quoteId}`).click();
     await page.getByTestId(`quote-row-menu-delete-${quoteId}`).click();
+    const clickedAt = Date.now();
     await page.getByTestId("quote-list-delete-dialog-yes").click();
 
     // Enquanto o DELETE está pendente (primeiros ~2s da latência) o toast
@@ -565,8 +569,10 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
     await expect(toast).toBeVisible({ timeout: DELETE_LATENCY_MS + 10_000 });
     const toastVisibleAt = Date.now();
 
-    // Sanidade: toast surgiu depois da resposta do DELETE (não antes),
-    // provando que a latência foi respeitada sem quebrar a UX.
+    // Sanidade: latência real do DELETE >= janela solicitada (menos 500ms
+    // de tolerância para variação de scheduler). Como `clickedAt` agora é
+    // medido ATRÁS do dialog-yes, o delta reflete exclusivamente o tempo
+    // gasto no route.fulfill delayed — sem contar cliques de UI.
     expect(deleteRespondedAt - clickedAt).toBeGreaterThanOrEqual(
       DELETE_LATENCY_MS - 500,
     );
@@ -617,5 +623,4 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
       .poll(() => postCalls, { timeout: 2_000, intervals: [200, 400] })
       .toBe(0);
   });
-});
 });
