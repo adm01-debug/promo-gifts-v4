@@ -238,6 +238,20 @@ export const magazineService = {
     writeAll(all);
   },
 
+  /**
+   * Restaura uma revista deletada (usada pelo Undo do toast).
+   * Se já existir uma revista com o mesmo id, é sobrescrita.
+   */
+  restore(magazine: Magazine): Magazine {
+    const all = readAll().filter((m) => m.id !== magazine.id);
+    all.push(magazine);
+    writeAll(all);
+    if (magazine.publicToken) writeTokenIndex(magazine.publicToken, magazine.id);
+    return magazine;
+  },
+
+
+
   publish(id: string): Magazine | null {
     const current = this.get(id);
     if (!current) return null;

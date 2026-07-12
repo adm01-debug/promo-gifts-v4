@@ -1,53 +1,66 @@
 /**
  * MagazineEditorPage — /magazine/:id
- * Wizard 5 etapas + preview sticky da capa/primeira página + ações finais.
+ * Wizard 5 etapas + preview multi-página + validação por step + a11y.
  */
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   Download,
-  Eye,
   Loader2,
   Save,
   Share2,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { cn } from '@/lib/utils';
 import { useMagazineEditor } from './useMagazineEditor';
 import { paginateMagazine } from './pagination';
-import { MagazinePageRenderer } from './components/MagazinePageRenderer';
+import { PreviewSidebar } from './components/PreviewSidebar';
 import { IdentityStep } from './components/steps/IdentityStep';
 import { ProductsStep } from './components/steps/ProductsStep';
 import { ContentStep } from './components/steps/ContentStep';
 import { DesignStep } from './components/steps/DesignStep';
 import { LayoutStep } from './components/steps/LayoutStep';
+import { canPublish, validateStep, type StepId } from './utils/stepValidation';
 import './magazine.css';
 
-const STEPS = [
+const STEPS: Array<{ id: StepId; label: string }> = [
   { id: 'identity', label: 'Identidade' },
   { id: 'products', label: 'Produtos' },
   { id: 'content', label: 'Conteúdo' },
   { id: 'design', label: 'Design' },
   { id: 'layout', label: 'Layout & Gerar' },
-] as const;
-
-type StepId = (typeof STEPS)[number]['id'];
+];
 
 export default function MagazineEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [step, setStep] = useState<StepId>('identity');
+  const [previewIdx, setPreviewIdx] = useState(0);
   const editor = useMagazineEditor(id);
+
+  // Atalhos globais leves — Cmd/Ctrl+S salva imediato (autosave já roda), Cmd/Ctrl+Enter publica
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const cmd = e.metaKey || e.ctrlKey;
+      if (cmd && e.key === 's') {
+        e.preventDefault();
+        toast('Alterações salvas automaticamente.');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   if (!editor.loaded) {
     return (
-      <div className="flex h-[60vh] items-center justify-center text-muted-foreground">
+      <div className="flex h-[60vh] items-center justify-center text-muted-foreground" role="status">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Carregando revista…
       </div>
     );
@@ -55,7 +68,7 @@ export default function MagazineEditorPage() {
   if (!editor.magazine) {
     return (
       <div className="mx-auto max-w-md p-10 text-center">
-        <h2 className="mb-2 text-xl font-semibold">Revista não encontrada</h2>
+        <h1 className="mb-2 text-xl font-semibold">Revista não encontrada</h1>
         <p className="mb-6 text-sm text-muted-foreground">
           Ela pode ter sido excluída ou não pertence a este usuário.
         </p>
@@ -68,13 +81,32 @@ export default function MagazineEditorPage() {
 
   const magazine = editor.magazine;
   const pages = paginateMagazine(magazine);
-  const previewPage = pages[0];
+  const safePreviewIdx = Math.min(previewIdx, Math.max(0, pages.length - 1));
 
   const currentIdx = STEPS.findIndex((s) => s.id === step);
   const canPrev = currentIdx > 0;
   const canNext = currentIdx < STEPS.length - 1;
 
+  const validation = useMemo(() => validateStep(step, magazine), [step, magazine]);
+  const publishable = canPublish(magazine);
+
+  const goToStep = (target: StepId) => {
+    // Se pular para Design/Layout sem produtos, avisa mas permite (soft-block)
+    const targetIdx = STEPS.findIndex((s) => s.id === target);
+    if (targetIdx > currentIdx) {
+      const blocking = validation.blocks;
+      if (blocking.length > 0) {
+        toast.warning(blocking[0]);
+      }
+    }
+    setStep(target);
+  };
+
   const publish = () => {
+    if (!publishable) {
+      toast.error('Complete título e adicione produtos antes de publicar.');
+      return;
+    }
     const updated = editor.publish();
     if (updated?.publicToken) {
       const url = `${window.location.origin}/revista-publica/${updated.publicToken}`;
@@ -94,68 +126,122 @@ export default function MagazineEditorPage() {
       />
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in px-4 py-4 sm:px-6 lg:px-8">
-        <h1 data-testid="page-title-magazine-editor" className="sr-only">
-          Editor de Magazine
-        </h1>
-
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Link to="/magazine" className="text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="inline h-4 w-4" /> Magazines
-            </Link>
-            <span className="text-muted-foreground/60">/</span>
-            <span className="line-clamp-1 text-sm font-medium">{magazine.title}</span>
+        {/* Cabeçalho */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <nav aria-label="Trilha" className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <Link to="/magazine" className="hover:text-foreground">
+                Magazines
+              </Link>
+              <span aria-hidden>/</span>
+              <span className="truncate">Editor</span>
+            </nav>
+            <h1
+              data-testid="page-title-magazine-editor"
+              className="line-clamp-1 font-display text-2xl font-bold tracking-tight"
+            >
+              {magazine.title || 'Nova revista'}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
-            {editor.saving ? (
-              <span className="flex items-center text-xs text-muted-foreground">
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Salvando…
-              </span>
-            ) : (
-              <span className="flex items-center text-xs text-muted-foreground">
-                <Save className="mr-1 h-3 w-3" /> Salvo
-              </span>
-            )}
-            <Button variant="outline" size="sm" onClick={openPrint} disabled={magazine.items.length === 0}>
+            <span
+              role="status"
+              aria-live="polite"
+              className="flex items-center text-xs text-muted-foreground"
+            >
+              {editor.saving ? (
+                <>
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Salvando…
+                </>
+              ) : (
+                <>
+                  <Save className="mr-1 h-3 w-3" /> Salvo
+                </>
+              )}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={openPrint}
+              disabled={magazine.items.length === 0}
+            >
               <Download className="mr-2 h-4 w-4" /> PDF
             </Button>
-            <Button size="sm" onClick={publish} disabled={magazine.items.length === 0}>
+            <Button size="sm" onClick={publish} disabled={!publishable}>
               <Share2 className="mr-2 h-4 w-4" /> Publicar
             </Button>
           </div>
         </div>
 
-        {/* Stepper */}
-        <div className="mb-6 flex items-center gap-2 overflow-x-auto rounded-lg border bg-card p-2">
-          {STEPS.map((s, idx) => {
-            const active = s.id === step;
-            const done = idx < currentIdx;
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => setStep(s.id)}
-                className={`flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm transition ${
-                  active
-                    ? 'bg-primary text-primary-foreground'
-                    : done
-                      ? 'text-foreground hover:bg-muted'
-                      : 'text-muted-foreground hover:bg-muted'
-                }`}
-                data-testid={`magazine-step-${s.id}`}
-              >
-                <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                    active ? 'bg-primary-foreground text-primary' : 'border'
-                  }`}
-                >
-                  {done ? <Check className="h-3 w-3" /> : idx + 1}
-                </span>
-                {s.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* Stepper com barra de progresso */}
+        <nav
+          aria-label="Etapas do editor"
+          className="mb-6 overflow-hidden rounded-lg border bg-card"
+        >
+          <div
+            className="h-1 bg-primary transition-all"
+            style={{ width: `${((currentIdx + 1) / STEPS.length) * 100}%` }}
+            aria-hidden
+          />
+          <ol className="flex items-center gap-1 overflow-x-auto p-2">
+            {STEPS.map((s, idx) => {
+              const active = s.id === step;
+              const done = idx < currentIdx;
+              return (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    onClick={() => goToStep(s.id)}
+                    aria-current={active ? 'step' : undefined}
+                    className={cn(
+                      'flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                      active
+                        ? 'bg-primary text-primary-foreground'
+                        : done
+                          ? 'text-foreground hover:bg-muted'
+                          : 'text-muted-foreground hover:bg-muted',
+                    )}
+                    data-testid={`magazine-step-${s.id}`}
+                  >
+                    <span
+                      className={cn(
+                        'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold',
+                        active ? 'bg-primary-foreground text-primary' : 'border',
+                      )}
+                      aria-hidden
+                    >
+                      {done ? <Check className="h-3 w-3" /> : idx + 1}
+                    </span>
+                    {s.label}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </nav>
+
+        {/* Alertas suaves de validação */}
+        {(validation.blocks.length > 0 || validation.warnings.length > 0) && (
+          <div
+            className={cn(
+              'mb-4 flex items-start gap-3 rounded-md border px-3 py-2 text-sm',
+              validation.blocks.length > 0
+                ? 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+                : 'border-muted bg-muted/40 text-muted-foreground',
+            )}
+            role="status"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            <ul className="space-y-0.5">
+              {validation.blocks.map((b) => (
+                <li key={b}>{b}</li>
+              ))}
+              {validation.warnings.map((w) => (
+                <li key={w} className="opacity-80">{w}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
           <div>
@@ -189,16 +275,20 @@ export default function MagazineEditorPage() {
               <Button
                 variant="outline"
                 disabled={!canPrev}
-                onClick={() => setStep(STEPS[Math.max(0, currentIdx - 1)].id)}
+                onClick={() => goToStep(STEPS[Math.max(0, currentIdx - 1)].id)}
               >
                 <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
               </Button>
               {canNext ? (
-                <Button onClick={() => setStep(STEPS[Math.min(STEPS.length - 1, currentIdx + 1)].id)}>
+                <Button
+                  onClick={() =>
+                    goToStep(STEPS[Math.min(STEPS.length - 1, currentIdx + 1)].id)
+                  }
+                >
                   Avançar <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button onClick={publish} disabled={magazine.items.length === 0}>
+                <Button onClick={publish} disabled={!publishable}>
                   <Share2 className="mr-2 h-4 w-4" /> Publicar revista
                 </Button>
               )}
@@ -206,28 +296,13 @@ export default function MagazineEditorPage() {
           </div>
 
           <aside className="hidden xl:block">
-            <Card className="sticky top-4">
-              <CardContent className="space-y-3 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    Preview — Capa
-                  </span>
-                  <Button variant="ghost" size="sm" onClick={openPrint}>
-                    <Eye className="mr-1 h-3.5 w-3.5" /> Ver todas
-                  </Button>
-                </div>
-                {previewPage ? (
-                  <MagazinePageRenderer magazine={magazine} page={previewPage} totalPages={pages.length} fitContainer />
-                ) : (
-                  <div className="rounded-lg border p-8 text-center text-xs text-muted-foreground">
-                    Adicione produtos para gerar o preview.
-                  </div>
-                )}
-                <div className="text-xs text-muted-foreground">
-                  {pages.length} página(s) · {magazine.items.length} produto(s)
-                </div>
-              </CardContent>
-            </Card>
+            <PreviewSidebar
+              magazine={magazine}
+              pages={pages}
+              activeIdx={safePreviewIdx}
+              onSelect={setPreviewIdx}
+              onOpenAll={openPrint}
+            />
           </aside>
         </div>
       </div>

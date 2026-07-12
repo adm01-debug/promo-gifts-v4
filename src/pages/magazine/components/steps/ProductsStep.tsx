@@ -1,16 +1,22 @@
 /**
- * Step 2 — Produtos: busca no catálogo + multi-select + variantes.
+ * Step 2 — Produtos: busca + filtros (categoria, personalização) + multi-select
+ * com contador ao vivo de páginas geradas. Item selecionado usa VariantColorSelect.
  */
 
 import { useMemo, useState } from 'react';
-import { Search, Plus, X } from 'lucide-react';
+import { Search, Plus, X, Sparkles, Filter, EyeOff } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useProducts } from '@/hooks/products/useProducts';
 import type { Product } from '@/types/product-catalog';
 import type { Magazine, MagazineItem } from '@/types/magazine';
+import { getTemplate } from '../templates/TemplateRegistry';
+import { VariantColorSelect } from '../VariantColorSelect';
 
 interface Props {
   magazine: Magazine;
@@ -22,9 +28,35 @@ interface Props {
 export function ProductsStep({ magazine, onAdd, onRemove, onUpdateItem }: Props) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const { data: products = [], isLoading } = useProducts({ search: query, limit: 60 });
+  const [category, setCategory] = useState<string | null>(null);
+  const [onlyPersonalizable, setOnlyPersonalizable] = useState(false);
+  const [hideAdded, setHideAdded] = useState(true);
 
-  const alreadyAdded = useMemo(() => new Set(magazine.items.map((i) => i.productId)), [magazine.items]);
+  const { data: products = [], isLoading } = useProducts({ search: query, limit: 80 });
+
+  const alreadyAdded = useMemo(
+    () => new Set(magazine.items.map((i) => i.productId)),
+    [magazine.items],
+  );
+
+  const categoryOptions = useMemo(() => {
+    const set = new Map<string, number>();
+    for (const p of products) {
+      const c = p.category_name ?? null;
+      if (!c) continue;
+      set.set(c, (set.get(c) ?? 0) + 1);
+    }
+    return [...set.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    return products.filter((p) => {
+      if (hideAdded && alreadyAdded.has(p.id)) return false;
+      if (category && p.category_name !== category) return false;
+      if (onlyPersonalizable && !p.hasPersonalization) return false;
+      return true;
+    });
+  }, [products, hideAdded, alreadyAdded, category, onlyPersonalizable]);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -36,10 +68,23 @@ export function ProductsStep({ magazine, onAdd, onRemove, onUpdateItem }: Props)
   };
 
   const handleAdd = () => {
-    const toAdd = products.filter((p) => selected.has(p.id));
+    const toAdd = filtered.filter((p) => selected.has(p.id));
     onAdd(toAdd);
     setSelected(new Set());
   };
+
+  const clearFilters = () => {
+    setCategory(null);
+    setOnlyPersonalizable(false);
+    setQuery('');
+  };
+
+  const template = getTemplate(magazine.templateId);
+  const perPage = template.productsPerPage;
+  const totalItems = magazine.items.length;
+  const estimatedPages = Math.max(0, Math.ceil(totalItems / perPage));
+  const previewItems = totalItems + selected.size;
+  const previewPages = Math.max(0, Math.ceil(previewItems / perPage));
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1fr_420px]">
@@ -53,20 +98,81 @@ export function ProductsStep({ magazine, onAdd, onRemove, onUpdateItem }: Props)
               placeholder="Buscar produtos por nome, SKU ou descrição…"
               className="pl-9"
               data-testid="magazine-product-search"
+              aria-label="Buscar produtos"
             />
           </div>
+
+          {/* Filtros */}
+          <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/30 p-2">
+            <span className="flex items-center gap-1 pr-1 text-xs font-medium text-muted-foreground">
+              <Filter className="h-3.5 w-3.5" aria-hidden /> Filtros
+            </span>
+            {categoryOptions.slice(0, 8).map(([cat, count]) => {
+              const active = category === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(active ? null : cat)}
+                  className={`rounded-full border px-2 py-0.5 text-xs transition ${
+                    active
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'bg-background hover:border-primary/60'
+                  }`}
+                  aria-pressed={active}
+                >
+                  {cat} <span className="opacity-70">({count})</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setOnlyPersonalizable(!onlyPersonalizable)}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition ${
+                onlyPersonalizable
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'bg-background hover:border-primary/60'
+              }`}
+              aria-pressed={onlyPersonalizable}
+            >
+              <Sparkles className="h-3 w-3" aria-hidden /> Personalizáveis
+            </button>
+            <label className="ml-auto inline-flex items-center gap-2 text-xs text-muted-foreground">
+              <EyeOff className="h-3.5 w-3.5" aria-hidden />
+              Ocultar adicionados
+              <Switch
+                checked={hideAdded}
+                onCheckedChange={setHideAdded}
+                aria-label="Ocultar produtos já adicionados"
+              />
+            </label>
+            {(category || onlyPersonalizable || query) && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs">
+                Limpar
+              </Button>
+            )}
+          </div>
+
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
-              {isLoading ? 'Carregando…' : `${products.length} produto(s) encontrado(s)`}
+              {isLoading
+                ? 'Carregando…'
+                : `${filtered.length} produto${filtered.length === 1 ? '' : 's'} · ${selected.size} selecionado${selected.size === 1 ? '' : 's'}`}
             </span>
-            <Button size="sm" onClick={handleAdd} disabled={selected.size === 0}>
+            <Button
+              size="sm"
+              onClick={handleAdd}
+              disabled={selected.size === 0}
+              data-testid="magazine-product-add-btn"
+            >
               <Plus className="mr-1 h-3.5 w-3.5" />
               Adicionar {selected.size > 0 ? `(${selected.size})` : ''}
             </Button>
           </div>
+
           <ScrollArea className="h-[560px]">
             <div className="grid grid-cols-2 gap-3 pr-2 sm:grid-cols-3 lg:grid-cols-4">
-              {products.map((p) => {
+              {filtered.map((p) => {
                 const isIn = alreadyAdded.has(p.id);
                 const isSel = selected.has(p.id);
                 return (
@@ -75,7 +181,8 @@ export function ProductsStep({ magazine, onAdd, onRemove, onUpdateItem }: Props)
                     type="button"
                     onClick={() => !isIn && toggle(p.id)}
                     disabled={isIn}
-                    className={`group flex flex-col overflow-hidden rounded-lg border text-left transition ${
+                    aria-pressed={isSel}
+                    className={`group relative flex flex-col overflow-hidden rounded-lg border text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                       isSel
                         ? 'border-primary ring-2 ring-primary/40'
                         : isIn
@@ -92,6 +199,14 @@ export function ProductsStep({ magazine, onAdd, onRemove, onUpdateItem }: Props)
                           loading="lazy"
                         />
                       ) : null}
+                      {p.hasPersonalization && (
+                        <Badge
+                          variant="secondary"
+                          className="absolute left-2 top-2 h-5 px-1.5 text-[10px]"
+                        >
+                          <Sparkles className="mr-0.5 h-2.5 w-2.5" /> Personalizável
+                        </Badge>
+                      )}
                     </div>
                     <div className="p-2">
                       <div className="line-clamp-2 text-xs font-medium">{p.name}</div>
@@ -100,6 +215,11 @@ export function ProductsStep({ magazine, onAdd, onRemove, onUpdateItem }: Props)
                   </button>
                 );
               })}
+              {!isLoading && filtered.length === 0 && (
+                <div className="col-span-full rounded-md border border-dashed p-8 text-center text-xs text-muted-foreground">
+                  Nenhum produto corresponde aos filtros.
+                </div>
+              )}
             </div>
           </ScrollArea>
         </CardContent>
@@ -107,8 +227,19 @@ export function ProductsStep({ magazine, onAdd, onRemove, onUpdateItem }: Props)
 
       <Card>
         <CardContent className="space-y-3 p-4">
-          <div className="text-sm font-semibold">
-            Produtos selecionados ({magazine.items.length})
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold">
+              Selecionados ({magazine.items.length})
+            </div>
+            <div
+              className="rounded-md border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground"
+              aria-live="polite"
+            >
+              {estimatedPages} pág. · template {perPage}/pág
+              {selected.size > 0 && (
+                <span className="ml-1 text-primary">→ {previewPages} com +{selected.size}</span>
+              )}
+            </div>
           </div>
           <ScrollArea className="h-[600px]">
             <div className="space-y-2 pr-2">
@@ -122,29 +253,16 @@ export function ProductsStep({ magazine, onAdd, onRemove, onUpdateItem }: Props)
                   <div className="flex-1 overflow-hidden">
                     <div className="line-clamp-1 text-sm font-medium">{item.productSnapshot.name}</div>
                     <div className="text-xs text-muted-foreground">Cód. {item.productSnapshot.sku}</div>
-                    {item.productSnapshot.colors.length > 0 && (
-                      <select
-                        value={item.variantColorName ?? ''}
-                        onChange={(e) =>
-                          onUpdateItem(item.id, { variantColorName: e.target.value || null })
-                        }
-                        className="mt-1 w-full rounded border bg-background px-1 py-0.5 text-xs"
-                        aria-label="Cor selecionada"
-                      >
-                        <option value="">Imagem principal</option>
-                        {item.productSnapshot.colors.map((c) => (
-                          <option key={c.name} value={c.name}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                    <VariantColorSelect
+                      item={item}
+                      onChange={(colorName) => onUpdateItem(item.id, { variantColorName: colorName })}
+                    />
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => onRemove(item.id)}
-                    aria-label="Remover produto"
+                    aria-label={`Remover ${item.productSnapshot.name}`}
                   >
                     <X className="h-4 w-4" />
                   </Button>
