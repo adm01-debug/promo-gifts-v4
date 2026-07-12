@@ -59,7 +59,13 @@ export type FeatureFlag =
    * - Aplicado: 2026-06-22
    */
   | 'useColorSwatchesV2'
-  | 'voice_commands';
+  | 'voice_commands'
+  /**
+   * Módulo Magazine — criação de revistas/catálogos personalizados a partir
+   * do catálogo, com 10 templates de design, branding do cliente CRM,
+   * PDF (browser print) e link público via token. Rota /magazine.
+   */
+  | 'magazineModule';
 
 interface FlagConfig {
   /** Default enabled state */
@@ -135,6 +141,14 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
       'imagem e estoque por cor ao clicar na bolinha. ' +
       'Backend: fn_rebuild_color_swatches (P1→P4) + fn_get_color_swatches_batch. ' +
       'ATIVO desde 2026-06-22.',
+  },
+  magazineModule: {
+    enabled: true,
+    description:
+      'Módulo Magazine (/magazine) — cria revistas de produtos com 10 ' +
+      'templates de design, branding do cliente CRM, PDF via print e link ' +
+      'público /revista-publica/:token. v1 persiste em localStorage; ' +
+      'schema Gold em qa/migrations-draft/2026-07-12_magazines.sql.',
   },
 };
 

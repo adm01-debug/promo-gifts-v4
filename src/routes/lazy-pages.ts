@@ -175,6 +175,20 @@ export const CoverageInsightsDashboardPage = lazyWithRetry(
 export const VisualSearchPage = lazyWithRetry(() => import('@/pages/tools/VisualSearchPage'));
 
 // ─────────────────────────────────────────────────────────────────
+// Magazine (revistas de produtos)
+// ─────────────────────────────────────────────────────────────────
+export const MagazineListPage = lazyWithRetry(() => import('@/pages/magazine/MagazineListPage'));
+export const MagazineEditorPage = lazyWithRetry(
+  () => import('@/pages/magazine/MagazineEditorPage'),
+);
+export const MagazinePrintPage = lazyWithRetry(
+  () => import('@/pages/magazine/MagazinePrintPage'),
+);
+export const PublicMagazineView = lazyWithRetry(
+  () => import('@/pages/magazine/PublicMagazineView'),
+);
+
+// ─────────────────────────────────────────────────────────────────
 // Clients (CRM)
 // ─────────────────────────────────────────────────────────────────
 export const ClientsPage = lazyWithRetry(() => import('@/pages/clients/ClientsPage'));

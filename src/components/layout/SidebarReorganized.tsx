@@ -35,6 +35,7 @@ import {
   Plug,
   ChevronsDownUp,
   Cloud,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -200,6 +201,12 @@ const navGroups: NavGroup[] = [
         label: 'Busca por Preço',
         href: '/busca-preco',
         tooltip: 'Tem um orçamento? Encontre rapidamente produtos que cabem no bolso do cliente.',
+      },
+      {
+        icon: BookOpen,
+        label: 'Magazine',
+        href: '/magazine',
+        tooltip: 'Monte revistas e catálogos personalizados com os produtos do catálogo.',
       },
     ],
   },

@@ -7,6 +7,9 @@ import {
   CommercialIntelligencePage,
   DropboxBrowserPage,
   KitBuilderPage,
+  MagazineEditorPage,
+  MagazineListPage,
+  MagazinePrintPage,
   MagicUp,
   MeusKitsPage,
   MockupGenerator,
@@ -52,6 +55,11 @@ export const toolsRoutes = (
     <Route path="/simulacao" element={<SimulationPage />} />
     <Route path="/ferramentas/cobertura" element={<CoverageInsightsDashboardPage />} />
     <Route path="/raio-x" element={<VisualSearchPage />} />
+    <Route path="/magazine" element={<MagazineListPage />} />
+    <Route path="/magazine/:id" element={<MagazineEditorPage />} />
+    <Route path="/magazine/:id/print" element={<MagazinePrintPage />} />
+    <Route path="/magazine/print" element={<MagazinePrintPage />} />
     <Route path="/promoflix-playground" element={<PromoFlixPlayground />} />
+
   </>
 );

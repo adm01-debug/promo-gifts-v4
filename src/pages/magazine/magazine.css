@@ -1,0 +1,66 @@
+/**
+ * Estilos globais escopados para páginas de Magazine (usa .mag-page).
+ * Aplicado apenas dentro dos previews/print — não vaza para o resto do app.
+ */
+
+.mag-scope {
+  --mag-page-w: 1920px;
+  --mag-page-h: 2716px;
+}
+
+.mag-scope .mag-page {
+  width: var(--mag-page-w);
+  height: var(--mag-page-h);
+  overflow: hidden;
+  position: relative;
+  color: var(--mag-text, #0f172a);
+  font-family: var(--mag-body, 'Outfit', system-ui, sans-serif);
+  break-inside: avoid;
+  page-break-inside: avoid;
+  page-break-after: always;
+  break-after: page;
+}
+
+.mag-scope .mag-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+.mag-preview-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1920 / 2716;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.mag-preview-wrapper > .mag-page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
+/* Print — cada página vira uma folha A4 */
+@media print {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  .mag-print-only {
+    display: block !important;
+  }
+  .mag-hide-in-print {
+    display: none !important;
+  }
+  .mag-scope .mag-page {
+    width: 100vw;
+    height: 100vh;
+    transform: none !important;
+  }
+}
