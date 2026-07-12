@@ -34,7 +34,7 @@ export function Eyebrow({
   children,
   color,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   color?: string;
 }) {
   return (
