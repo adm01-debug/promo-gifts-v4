@@ -107,7 +107,7 @@
   background-size: 18px 18px;
 }
 
-/* Print — cada página vira uma folha A4 */
+/* Print — cada página vira uma folha A4 sem margens/sombras */
 @media print {
   html, body {
     margin: 0;
@@ -128,5 +128,19 @@
     width: 100vw;
     height: 100vh;
     transform: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .mag-preview-wrapper {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    page-break-after: always;
+    break-after: page;
+  }
+  .mag-preview-wrapper:last-child {
+    page-break-after: auto;
+    break-after: auto;
   }
 }
+

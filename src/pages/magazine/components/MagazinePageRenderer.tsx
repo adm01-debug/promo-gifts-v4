@@ -6,6 +6,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { Magazine, MagazinePage } from '@/types/magazine';
 import { getTemplate } from './templates/TemplateRegistry';
+import { MAGAZINE_CATEGORY_META } from './templates/chrome';
+import { CategoryIcon } from '../utils/categoryIcons';
+import { contrastRatio } from '../utils/contrast';
 
 interface Props {
   magazine: Magazine;
@@ -16,7 +19,12 @@ interface Props {
   totalPages?: number;
 }
 
-import { MAGAZINE_CATEGORY_META } from './templates/chrome';
+/** Escolhe branco ou charcoal contra `bgHex` maximizando WCAG. */
+function pickReadableInk(bgHex: string): '#ffffff' | '#1a1a1a' {
+  const white = contrastRatio('#ffffff', bgHex);
+  const dark = contrastRatio('#1a1a1a', bgHex);
+  return dark > white ? '#1a1a1a' : '#ffffff';
+}
 
 /* Fontes carregadas via @fontsource em magazine.css — sem CDN externa. */
 
@@ -90,10 +98,18 @@ export function MagazinePageRenderer({ magazine, page, fitContainer, totalPages 
 function CoverPage({ magazine }: { magazine: Magazine }) {
   const hero = magazine.items[0];
   const heroImage = hero?.productSnapshot.image_url;
+  const categoryHex = magazine.branding.category
+    ? MAGAZINE_CATEGORY_META[magazine.branding.category].hex
+    : MAGAZINE_CATEGORY_META.technology.hex;
+  const ink = pickReadableInk(categoryHex);
+  const isDarkInk = ink === '#1a1a1a';
   return (
     <div
-      className="mag-page relative flex flex-col overflow-hidden text-white"
-      style={{ background: 'var(--mag-category-color, var(--mag-brand-green, #2e4a3a))' }}
+      className="mag-page relative flex flex-col overflow-hidden"
+      style={{
+        background: 'var(--mag-category-color, var(--mag-brand-green, #2e4a3a))',
+        color: ink,
+      }}
     >
       {heroImage && (
         <img
@@ -101,11 +117,18 @@ function CoverPage({ magazine }: { magazine: Magazine }) {
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
           style={{ opacity: 0.55, mixBlendMode: 'luminosity' }}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = 'none';
+          }}
         />
       )}
       <div
         className="absolute inset-0"
-        style={{ background: 'linear-gradient(180deg,rgba(0,0,0,0.15) 0%,transparent 40%,rgba(0,0,0,0.55) 100%)' }}
+        style={{
+          background: isDarkInk
+            ? 'linear-gradient(180deg,rgba(255,255,255,0.15) 0%,transparent 40%,rgba(255,255,255,0.35) 100%)'
+            : 'linear-gradient(180deg,rgba(0,0,0,0.15) 0%,transparent 40%,rgba(0,0,0,0.55) 100%)',
+        }}
       />
 
       {/* Top-left: logo do cliente em caixa branca */}
@@ -127,13 +150,21 @@ function CoverPage({ magazine }: { magazine: Magazine }) {
           )}
         </div>
 
-        {/* Top-right: subtítulo serif all-caps */}
-        <div
-          className="text-right text-4xl font-bold uppercase leading-tight tracking-[0.2em]"
-          style={{ fontFamily: 'var(--mag-heading)' }}
-        >
-          {new Date().getFullYear()}<br />
-          COLEÇÃO
+        {/* Top-right: subtítulo serif all-caps + ícone categórico */}
+        <div className="flex flex-col items-end gap-4">
+          <CategoryIcon
+            category={magazine.branding.category ?? null}
+            size={72}
+            aria-hidden
+            style={{ opacity: 0.9 }}
+          />
+          <div
+            className="text-right text-4xl font-bold uppercase leading-tight tracking-[0.2em]"
+            style={{ fontFamily: 'var(--mag-heading)' }}
+          >
+            {new Date().getFullYear()}<br />
+            COLEÇÃO
+          </div>
         </div>
       </div>
 
