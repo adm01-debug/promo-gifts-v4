@@ -46,7 +46,10 @@ async function selectFirstTwoQuotes(page: import("@playwright/test").Page) {
 }
 
 test.describe("Fluxo: bulk delete + Desfazer restaura orçamentos", () => {
-  test.beforeEach(() => requireAuth());
+  test.beforeEach(async ({ page }) => {
+    requireAuth();
+    if (isMockAuthEnabled()) await installMockAuth(page);
+  });
 
   test("sucesso: DELETE em lote → clicar Desfazer dispara POSTs de restore", async ({
     page,
