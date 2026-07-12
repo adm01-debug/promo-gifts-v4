@@ -44,6 +44,10 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 import { getTemplate } from './components/templates/TemplateRegistry';
 import { MagazineCardThumbnail } from './components/MagazineCardThumbnail';
+// FIX C12 (auditoria BD, 2026-07-12): migração one-shot do localStorage
+// para o BD Gold via edge magazine-import-local. Ver hook para detalhes
+// de idempotência e fallback gracioso.
+import { useMagazineGoldImport } from './hooks/useMagazineGoldImport';
 
 type SortMode = 'updated-desc' | 'updated-asc' | 'name-asc' | 'name-desc';
 type StatusFilter = 'all' | 'draft' | 'published';
@@ -56,6 +60,11 @@ export default function MagazineListPage() {
   const [status, setStatus] = useState<StatusFilter>('all');
   const [sort, setSort] = useState<SortMode>('updated-desc');
   const [pendingDelete, setPendingDelete] = useState<Magazine | null>(null);
+
+  // FIX C12: dispara a migração 1x por usuário, em background — não bloqueia
+  // a renderização da lista (que continua lendo do localStorage normalmente
+  // até o próximo passo do roadmap trocar magazineService por Supabase).
+  useMagazineGoldImport(user?.id);
 
   const refresh = () => {
     if (!user) return;
@@ -258,6 +267,8 @@ export default function MagazineListPage() {
                       <CardTitle className="line-clamp-1 text-base">{m.title}</CardTitle>
                       {m.status === 'published' ? (
                         <Badge variant="default" className="shrink-0">Publicada</Badge>
+                      ) : m.status === 'archived' ? (
+                        <Badge variant="outline" className="shrink-0">Arquivada</Badge>
                       ) : (
                         <Badge variant="secondary" className="shrink-0">Rascunho</Badge>
                       )}
