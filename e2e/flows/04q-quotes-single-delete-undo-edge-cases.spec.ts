@@ -10,6 +10,7 @@
  *      button com `data-remaining-sec`).
  */
 import { test, expect, requireAuth } from "../fixtures/test-base";
+import { installMockAuth, isMockAuthEnabled } from "../helpers/mock-auth";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel } from "../fixtures/selectors";
 import { seedQuotesForStatusChips } from "../helpers/quotes-status-seed";
