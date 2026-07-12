@@ -132,6 +132,9 @@ export function UndoToastContent({
         data-testid="undo-toast-button"
         data-remaining-ms={remainingMs}
         data-remaining-sec={remainingSec}
+        data-expired={remainingMs <= 0 ? 'true' : 'false'}
+        disabled={remainingMs <= 0}
+        aria-disabled={remainingMs <= 0 || undefined}
         onClick={onUndo}
         aria-label={`Desfazer ação — ${remainingSec} segundos restantes de ${totalSec}`}
         className={cn(
