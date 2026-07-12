@@ -268,14 +268,14 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
   useEffect(() => {
     if (!token) return;
     if (remoteDisabledRef.current) {
-      setSyncStatus('local-only');
+      safeSetSyncStatus('local-only');
       return;
     }
     let cancelled = false;
 
     (async () => {
       try {
-        setSyncStatus('syncing');
+        safeSetSyncStatus('syncing');
         const query = supabase
           .from(REMOTE_TABLE as never)
           .select('bookmarks,last_page_index')
@@ -302,11 +302,11 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
           ) {
             remoteDisabledRef.current = true;
             disableRemote(storage, `${code || 'unknown'}: ${msg}`);
-            setSyncStatus('local-only');
+            safeSetSyncStatus('local-only');
             return;
           }
           // Outros erros: mantém local-only nesta sessão, sem persistir flag
-          setSyncStatus('local-only');
+          safeSetSyncStatus('local-only');
           return;
         }
 
@@ -341,12 +341,12 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
           });
         }
 
-        setSyncStatus('synced');
+        safeSetSyncStatus('synced');
       } catch (err) {
         if (cancelled) return;
         // Timeout, offline, ou outro — degradar para local-only nesta sessão
         // (sem persistir a flag; próxima sessão tenta de novo).
-        setSyncStatus('local-only');
+        safeSetSyncStatus('local-only');
         if (typeof console !== 'undefined') {
           console.info('[magazine-reader-state] initial fetch failed, going local-only:', err);
         }
@@ -366,7 +366,7 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
     pendingRef.current = null;
 
     try {
-      setSyncStatus('syncing');
+      safeSetSyncStatus('syncing');
       const upsert = supabase.from(REMOTE_TABLE as never).upsert(
         {
           magazine_token: token,
@@ -391,12 +391,12 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
           remoteDisabledRef.current = true;
           disableRemote(storage, `write:${code || 'unknown'}:${msg}`);
         }
-        setSyncStatus('local-only');
+        safeSetSyncStatus('local-only');
         return;
       }
-      setSyncStatus('synced');
+      safeSetSyncStatus('synced');
     } catch {
-      setSyncStatus('local-only');
+      safeSetSyncStatus('local-only');
     }
   }, [token, fingerprint, storage]);
 
