@@ -14,6 +14,11 @@ import { installMockAuth, isMockAuthEnabled } from "../helpers/mock-auth";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel } from "../fixtures/selectors";
 import { seedQuotesForStatusChips } from "../helpers/quotes-status-seed";
+import {
+  attachDiagnosticsRecorder,
+  dumpDiagnosticsIfFailed,
+  type DiagnosticsRecorder,
+} from "../helpers/diagnostics";
 
 test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
 
@@ -24,9 +29,20 @@ const UNDO_COUNTDOWN = '[data-testid="undo-toast-countdown"]';
 const UNDO_TITLE = '[data-testid="undo-toast-title"]';
 
 test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer", () => {
+  let diag: DiagnosticsRecorder;
+
   test.beforeEach(async ({ page }) => {
     requireAuth();
     if (isMockAuthEnabled()) await installMockAuth(page);
+    diag = attachDiagnosticsRecorder(page);
+  });
+
+  test.afterEach(async ({ page }, testInfo) => {
+    // Anexa screenshots + HTML + snapshot do toast + console/network
+    // APENAS quando o teste falha, ajudando a diagnosticar flakiness na
+    // expiração do contador sem impactar runs verdes.
+    const label = testInfo.title.slice(0, 40).replace(/\s+/g, "-");
+    await dumpDiagnosticsIfFailed(page, testInfo, diag, label);
   });
 
   test("contador expira → toast some → clique posterior não restaura", async ({
