@@ -21,8 +21,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
-import { magazineService } from '@/services/magazineService';
 import type { Magazine } from '@/types/magazine';
+
+const LEGACY_STORAGE_KEY = 'promobrind.magazines.v1';
 
 const MIGRATED_FLAG_KEY = 'promobrind.magazines.migratedToGold.v1';
 const IMPORT_ENDPOINT_PATH = '/functions/v1/magazine-import-local';
