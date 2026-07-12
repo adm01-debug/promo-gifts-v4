@@ -88,6 +88,19 @@ test.describe("Fluxo: bulk delete + Desfazer restaura orçamentos", () => {
 
     // Confirma exclusão em lote
     await page.getByTestId("quotes-bulk-delete-top").click();
+
+    // ── Copy SSOT do ConfirmDialog destrutivo (plural — 2 orçamentos) ──
+    // Padrão único aprovado (`QuoteViewPage` singular + `QuotesListPage` plural):
+    // inclui menção explícita ao tempo de desfazer ("por até 8 segundos").
+    const bulkDialog = page.getByTestId("quotes-bulk-delete-dialog");
+    await expect(bulkDialog).toBeVisible();
+    await expect(bulkDialog).toContainText(
+      "Os orçamentos serão removidos — você pode desfazer por até 8 segundos após a confirmação.",
+    );
+    // Guarda anti-regressão: o copy antigo NÃO pode reaparecer.
+    await expect(bulkDialog).not.toContainText("Esta ação é destrutiva");
+    await expect(bulkDialog).not.toContainText("por alguns segundos após confirmar");
+
     await page.getByTestId("quotes-bulk-delete-confirm").click();
 
     // Aguarda 2 DELETEs
