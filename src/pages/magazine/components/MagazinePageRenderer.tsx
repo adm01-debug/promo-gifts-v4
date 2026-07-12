@@ -16,28 +16,15 @@ interface Props {
   totalPages?: number;
 }
 
-const GOOGLE_FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Instrument+Serif&family=DM+Serif+Display&family=Archivo+Black&family=Outfit:wght@400;500;600;700;800;900&family=Sora:wght@400;600;700&family=Manrope:wght@400;500;600&family=Space+Grotesk:wght@400;600&family=DM+Sans:wght@400;500;600&family=Work+Sans:wght@400;500;600&family=Inter:wght@400;500;600&family=Fira+Sans:wght@400;500;600&family=Hind:wght@400;500;600&display=swap';
+import { MAGAZINE_CATEGORY_META } from './templates/chrome';
 
-let fontsInjected = false;
-function ensureFonts() {
-  if (fontsInjected || typeof document === 'undefined') return;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = GOOGLE_FONTS_URL;
-  document.head.appendChild(link);
-  fontsInjected = true;
-}
+/* Fontes carregadas via @fontsource em magazine.css — sem CDN externa. */
 
 export function MagazinePageRenderer({ magazine, page, fitContainer, totalPages }: Props) {
   const template = getTemplate(magazine.templateId);
   const Component = template.Component;
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    ensureFonts();
-  }, []);
 
   useEffect(() => {
     if (!fitContainer) return;
@@ -56,14 +43,18 @@ export function MagazinePageRenderer({ magazine, page, fitContainer, totalPages 
   const style = useMemo<CSSProperties>(() => {
     const b = magazine.branding.colors;
     const fallback = template.defaultColors;
+    const categoryHex = magazine.branding.category
+      ? MAGAZINE_CATEGORY_META[magazine.branding.category].hex
+      : MAGAZINE_CATEGORY_META.technology.hex;
     return {
       '--mag-primary': b.primary || fallback.primary,
       '--mag-secondary': b.secondary || fallback.secondary,
       '--mag-text': b.text || fallback.text,
-      '--mag-heading': `'${template.fonts.heading}', serif`,
-      '--mag-body': `'${template.fonts.body}', 'Outfit', system-ui, sans-serif`,
+      '--mag-category-color': categoryHex,
+      '--mag-heading': `'${template.fonts.heading}', 'Playfair Display', serif`,
+      '--mag-body': `'${template.fonts.body}', 'Inter', 'Outfit', system-ui, sans-serif`,
     } as CSSProperties;
-  }, [magazine.branding.colors, template]);
+  }, [magazine.branding.colors, magazine.branding.category, template]);
 
   const content =
     page.kind === 'cover' ? (
