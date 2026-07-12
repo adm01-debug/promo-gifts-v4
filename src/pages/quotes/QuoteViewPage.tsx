@@ -513,10 +513,45 @@ export default function QuoteViewPage() {
           if (!quote?.id || isDeleting) return;
           setIsDeleting(true);
           try {
+            // Snapshot da tela individual: já temos `quote` (com items) em memória.
+            // Espelha o padrão de `useQuotesListPage.handleDelete` — snapshot ANTES
+            // do DELETE + showUndoToast com contador de 8s. Sem toast.success extra.
+            const snapshot = quote;
             await deleteQuote(quote.id);
-            toast.success('Orçamento excluído');
             setDeleteOpen(false);
             navigate('/orcamentos');
+            if (!snapshot) {
+              toast.success('Orçamento excluído.');
+              return;
+            }
+            showUndoToast({
+              title: 'Orçamento excluído',
+              description: 'Você pode desfazer esta ação.',
+              duration: 8000,
+              onUndo: async () => {
+                try {
+                  const items: QuoteItem[] = (snapshot.items ?? []).map((it) => ({
+                    ...it,
+                  })) as QuoteItem[];
+                  const {
+                    id: _omitId,
+                    created_at: _c,
+                    updated_at: _u,
+                    quote_number: _qn,
+                    ...rest
+                  } = snapshot as typeof snapshot & { id?: string };
+                  void _omitId; void _c; void _u; void _qn;
+                  const created = await createQuote(rest, items);
+                  if (created) {
+                    toast.success('Orçamento restaurado.');
+                  } else {
+                    toast.error('Não foi possível restaurar o orçamento.');
+                  }
+                } catch {
+                  toast.error('Não foi possível restaurar o orçamento.');
+                }
+              },
+            });
           } catch {
             toast.error('Não foi possível excluir o orçamento. Tente novamente.');
           } finally {
