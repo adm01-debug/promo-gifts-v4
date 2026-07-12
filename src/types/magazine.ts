@@ -69,6 +69,10 @@ export interface MagazineContentSettings {
   showColors: boolean;
   /** Agrupar produtos por categoria com quebra de seção. */
   groupByCategory: boolean;
+  /** Texto de introdução opcional (exibido antes dos produtos). */
+  introText?: string;
+  /** Texto de fechamento opcional (exibido após os produtos). */
+  closingText?: string;
 }
 
 export interface MagazineClientBranding {
