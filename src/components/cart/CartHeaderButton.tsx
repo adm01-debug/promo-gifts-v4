@@ -977,15 +977,15 @@ export function CartHeaderButton() {
                     return;
                   }
                   showUndoToast({
-                    title: 'Carrinho excluído',
-                    description: 'Você pode desfazer esta ação.',
-                    duration: 8000,
+                    title: deletedToastTitle(1),
+                    description: UNDO_TOAST_DESCRIPTION,
+                    duration: UNDO_DURATION_MS,
                     onUndo: async () => {
                       const newId = await restoreCart(snapshot);
                       if (newId) {
-                        toast.success('Carrinho restaurado.');
+                        toast.success(RESTORE_SINGLE_SUCCESS);
                       } else {
-                        toast.error('Não foi possível restaurar o carrinho.');
+                        toast.error(RESTORE_SINGLE_ERROR);
                       }
                     },
                   });
