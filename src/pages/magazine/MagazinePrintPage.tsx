@@ -61,9 +61,12 @@ export default function MagazinePrintPage() {
         </span>
       </div>
 
-      <div className="mx-auto flex max-w-[1000px] flex-col gap-6">
+      <div className="mx-auto flex max-w-[1000px] flex-col gap-6 print:max-w-none print:gap-0">
         {pages.map((p) => (
-          <div key={p.index} className="mx-auto w-full overflow-hidden rounded-lg bg-white shadow-lg">
+          <div
+            key={p.index}
+            className="mx-auto w-full overflow-hidden rounded-lg bg-white shadow-lg print:rounded-none print:shadow-none"
+          >
             <MagazinePageRenderer magazine={magazine} page={p} totalPages={pages.length} fitContainer />
           </div>
         ))}
