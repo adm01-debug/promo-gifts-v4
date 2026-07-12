@@ -1,8 +1,10 @@
 /**
  * Magazine — Tipos SSOT do módulo de criação de revistas de produtos.
  *
- * v1: persistência local (localStorage) até a migração do BD Gold
- * (qa/migrations-draft/2026-07-12_magazines.sql) ser aprovada.
+ * v2: persistência no BD Gold (doufsxqlfjyuvxuezpln) via magazines/magazine_items.
+ * FIX C7 (auditoria): 'archived' adicionado — o BD arquiva rascunhos antigos
+ * automaticamente via cron (magazine_auto_archive_stale_drafts), e o front
+ * precisa reconhecer esse status sem quebrar a renderização.
  */
 
 import type { Product, ProductColor } from '@/types/product-catalog';
@@ -89,6 +91,11 @@ export interface MagazineItem {
   productSnapshot: MagazineProductSnapshot;
   /** Cor selecionada (nome). null = imagem principal do produto. */
   variantColorName: string | null;
+  /**
+   * FIX C3 (auditoria BD): position é NUMERIC no BD (não INTEGER) para permitir
+   * reordenação sem violar UNIQUE(magazine_id, position) durante o rewrite.
+   * Ex.: mover item da posição 3 para entre 1 e 2 → position = 1.5.
+   */
   position: number;
   /** Página forçada — null = layout automático. */
   pageNumber: number | null;
@@ -127,7 +134,14 @@ export interface Magazine {
   items: MagazineItem[];
   /** Ordem de páginas customizada — null = derivado de `items` + template. */
   pageOrder: number[] | null;
-  status: 'draft' | 'published';
+  /**
+   * FIX C7 (auditoria BD): 'archived' adicionado ao contrato de tipos.
+   * O BD arquiva rascunhos com mais de 365 dias sem edição automaticamente
+   * (cron magazine-cleanup-nightly → magazine_auto_archive_stale_drafts).
+   * Trate 'archived' como somente-leitura na UI (mesmo tratamento de 'draft'
+   * para renderização, mas sem permitir novas edições sem reativar).
+   */
+  status: 'draft' | 'published' | 'archived';
   publicToken: string | null;
   pdfUrl: string | null;
   publishedAt: string | null;
@@ -166,3 +180,16 @@ export const DEFAULT_BRANDING: MagazineClientBranding = {
   },
   category: 'technology',
 };
+
+/**
+ * FIX A12 (auditoria BD): limites de tamanho espelhando as CHECK constraints
+ * do banco (magazines_title_len, magazines_subtitle_len, e o limite de 500
+ * itens por revista/import). Use estes limites para validar no client ANTES
+ * de enviar ao BD — evita round-trip desnecessário com erro 23514.
+ */
+export const MAGAZINE_LIMITS = {
+  TITLE_MAX_LENGTH: 200,
+  SUBTITLE_MAX_LENGTH: 300,
+  MAX_ITEMS_PER_MAGAZINE: 500,
+  MAX_BOOKMARKS_PER_DEVICE: 500,
+} as const;
