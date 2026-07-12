@@ -37,6 +37,7 @@ export const PublicMagazineToc = memo(function PublicMagazineToc({
   pages,
   currentIndex,
   onGo,
+  bookmarks,
 }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
