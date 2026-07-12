@@ -338,6 +338,51 @@ export function useQuotesListPage() {
     [quotes],
   );
 
+  /**
+   * Duplicação com "Desfazer".
+   *
+   * Padrão espelhado do `handleDelete`: após duplicar, exibe UM único
+   * `showUndoToast` com contador de 8s. O onUndo remove o orçamento
+   * recém-criado via `deleteQuote(newId)`. Retorna a nova `Quote` (ou
+   * `null` em falha) para permitir navegação opcional pelo caller.
+   *
+   * Invariantes:
+   *  - Nenhum outro toast de sucesso é emitido no caminho feliz (o
+   *    `useQuotes.duplicateMutation` também não dispara — mesmo padrão do
+   *    fix de exclusão que removeu o `toast.success` duplicado).
+   *  - Se a duplicação falhar, mostra `toast.error` e não abre undo.
+   */
+  const handleDuplicateWithUndo = useCallback(
+    async (quoteId: string): Promise<Quote | null> => {
+      try {
+        const created = await duplicateQuote(quoteId);
+        if (!created?.id) {
+          toast.error('Não foi possível duplicar o orçamento.');
+          return null;
+        }
+        const newId = created.id;
+        showUndoToast({
+          title: 'Orçamento duplicado',
+          description: 'Você pode desfazer esta ação.',
+          duration: 8000,
+          onUndo: async () => {
+            const ok = await deleteQuote(newId);
+            if (ok) {
+              toast.success('Duplicação desfeita.');
+            } else {
+              toast.error('Não foi possível desfazer a duplicação.');
+            }
+          },
+        });
+        return created;
+      } catch {
+        toast.error('Não foi possível duplicar o orçamento.');
+        return null;
+      }
+    },
+    [duplicateQuote, deleteQuote],
+  );
+
   return {
     navigate,
     quotes,
@@ -366,6 +411,7 @@ export function useQuotesListPage() {
     handleClearFilters,
     handleMarkApproved,
     duplicateQuote,
+    handleDuplicateWithUndo,
     updateQuoteStatus,
   };
 }
