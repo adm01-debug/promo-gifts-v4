@@ -99,7 +99,7 @@ awk '
 # 4.6 — atualizar comentário do topo (linhas que mencionam untypedFrom + regeneração pendente)
 sed -i.bak \
   -e "s| \* A camada usa \`untypedFrom<Row>()\` porque as tabelas magazine_\* ainda| * 2026-07-XX (PR tipagem): tabelas presentes em types.ts após regeneração;|" \
-  -e "s| \* não estão em src/integrations/supabase/types.ts (regeneração pendente).| * migrado para \`supabase.from()\` tipado. \`untypedFrom\` removido deste módulo.|" \
+  -e "s| \* não estão em src/integrations/supabase/types.ts (regeneração pendente).| * migrado para queries tipadas via \`supabase.from()\`.|" \
   "$FILE"
 
 # 4.7 — remover bloco `void supabase;` (não é mais necessário)
