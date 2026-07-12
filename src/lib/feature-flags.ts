@@ -142,6 +142,14 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
       'Backend: fn_rebuild_color_swatches (P1→P4) + fn_get_color_swatches_batch. ' +
       'ATIVO desde 2026-06-22.',
   },
+  magazineModule: {
+    enabled: true,
+    description:
+      'Módulo Magazine (/magazine) — cria revistas de produtos com 10 ' +
+      'templates de design, branding do cliente CRM, PDF via print e link ' +
+      'público /revista-publica/:token. v1 persiste em localStorage; ' +
+      'schema Gold em qa/migrations-draft/2026-07-12_magazines.sql.',
+  },
 };
 
 // Runtime overrides (can be set via Supabase or localStorage in dev)
