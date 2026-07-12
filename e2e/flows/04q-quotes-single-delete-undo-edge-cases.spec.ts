@@ -24,7 +24,10 @@ const UNDO_COUNTDOWN = '[data-testid="undo-toast-countdown"]';
 const UNDO_TITLE = '[data-testid="undo-toast-title"]';
 
 test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer", () => {
-  test.beforeEach(() => requireAuth());
+  test.beforeEach(async ({ page }) => {
+    requireAuth();
+    if (isMockAuthEnabled()) await installMockAuth(page);
+  });
 
   test("contador expira → toast some → clique posterior não restaura", async ({
     page,
