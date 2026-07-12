@@ -3,6 +3,7 @@
  * Mantém cada template < 150 LOC e garante consistência visual.
  */
 
+import type { ReactNode } from 'react';
 import type { MagazineItem } from '@/types/magazine';
 
 export function Folio({
