@@ -12,6 +12,8 @@ interface Props {
   page: MagazinePage;
   /** Se preenchido, escala o conteúdo para caber neste contêiner (preview). */
   fitContainer?: boolean;
+  /** Total de páginas — propagado aos templates para folio "05 / 24". */
+  totalPages?: number;
 }
 
 const GOOGLE_FONTS_URL =
