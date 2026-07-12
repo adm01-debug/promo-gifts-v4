@@ -495,6 +495,7 @@ test.describe("Fluxo: exclusão individual — cenários de borda com Desfazer",
     );
     const uniq = new Set(itemIds);
     expect(uniq.size).toBe(itemIds.length);
+  });
 
   test("alta latência no DELETE — contador só inicia após resposta e expira corretamente", async ({
     page,
