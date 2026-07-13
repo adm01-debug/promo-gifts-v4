@@ -7,12 +7,21 @@ import { Building2, MapPin } from 'lucide-react';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { maskCnpj } from '@/utils/masks';
 
+interface PrefetchHandlersLike {
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  onTouchStart?: () => void;
+}
+
 interface ClientCardProps {
   client: CrmCompany;
   onClick?: () => void;
+  prefetchHandlers?: PrefetchHandlersLike;
 }
 
-export function ClientCard({ client, onClick }: ClientCardProps) {
+export function ClientCard({ client, onClick, prefetchHandlers }: ClientCardProps) {
   const name = getCompanyDisplayName(client);
   const location = [client.cidade, client.estado].filter(Boolean).join(' / ');
 
@@ -27,6 +36,7 @@ export function ClientCard({ client, onClick }: ClientCardProps) {
           onClick();
         }
       }}
+      {...prefetchHandlers}
       className="cursor-pointer transition-colors hover:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary"
     >
       <CardContent className="flex items-center gap-4 p-4">
