@@ -23,6 +23,7 @@ import { useDebouncedCartItemActions, getCartItemDebounceMs } from '@/hooks/prod
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { mapRestoreCartError } from '@/pages/products/seller-carts/mapRestoreCartError';
 
 
 interface SellerCartContextType {
