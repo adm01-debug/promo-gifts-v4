@@ -9,6 +9,12 @@ import { showUndoToast } from '@/utils/undoToast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
 import { logger } from '@/lib/logger';
+import { createRestoreLogger } from '@/lib/telemetry/restoreLogger';
+
+// Logger estruturado do fluxo restaurar-da-lixeira em favoritos.
+// Injeta `schema_version` e valida payload — SSOT em `restoreEventSchema`.
+const restoreFavoritesLog = createRestoreLogger('favorites.restore');
+
 export interface FavoriteList {
   id: string;
   user_id: string;
@@ -457,20 +463,62 @@ export function useFavoriteTrash() {
   const restoreItem = useMutation({
     mutationFn: async (trashId: string) => {
       if (!user) throw new Error('not-authenticated');
-      // Atomic RPC: handles missing original list by falling back to default list
-      const { data: rawData, error } = await untypedRpc('restore_favorite_from_trash', {
-        _trash_id: trashId,
-        _user_id: user.id,
+      const correlationId = restoreFavoritesLog.generateCorrelationId();
+      const startedAt = (typeof performance !== 'undefined' ? performance : Date).now();
+      const elapsedMs = () =>
+        Math.round(
+          (typeof performance !== 'undefined' ? performance : Date).now() -
+            startedAt,
+        );
+      restoreFavoritesLog.emit('info', 'restore_start', {
+        correlation_id: correlationId,
+        snapshot_id: trashId,
+        items_total: 1,
+        hydrated: true,
       });
-      if (error) throw error;
-      const data = rawData as RestoreResult | null;
-      if (!data?.ok) throw new Error(data?.error ?? 'Restauração falhou');
-      return data as {
-        ok: boolean;
-        list_id: string;
-        item_id: string | null;
-        original_list_changed: boolean;
-      };
+      try {
+        // Atomic RPC: handles missing original list by falling back to default list
+        const { data: rawData, error } = await untypedRpc('restore_favorite_from_trash', {
+          _trash_id: trashId,
+          _user_id: user.id,
+        });
+        if (error) throw error;
+        const data = rawData as RestoreResult | null;
+        if (!data?.ok) throw new Error(data?.error ?? 'Restauração falhou');
+        restoreFavoritesLog.emit('info', 'restore_ok', {
+          correlation_id: correlationId,
+          snapshot_id: trashId,
+          new_cart_id: data.list_id ?? null,
+          restore_result: 'success',
+          duration_ms: elapsedMs(),
+          items_total: 1,
+          items_inserted: 1,
+          items_resulting: 1,
+          items_mismatch: false,
+          has_dedup: false,
+          partial_insert: false,
+        });
+        return data as {
+          ok: boolean;
+          list_id: string;
+          item_id: string | null;
+          original_list_changed: boolean;
+        };
+      } catch (err) {
+        restoreFavoritesLog.emit('error', 'restore_failed', {
+          correlation_id: correlationId,
+          snapshot_id: trashId,
+          restore_result: 'failed',
+          duration_ms: elapsedMs(),
+          items_total: 1,
+          items_inserted: null,
+          items_resulting: 0,
+          items_mismatch: true,
+          reason: 'rpc_failed',
+          err,
+        });
+        throw err;
+      }
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: KEY });
@@ -483,6 +531,7 @@ export function useFavoriteTrash() {
     },
     onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
+
 
   const purgeItem = useMutation({
     mutationFn: async (trashId: string) => {

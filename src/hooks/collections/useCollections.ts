@@ -5,6 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { type Product } from '@/hooks/products';
 
 import { logger } from '@/lib/logger';
+import { createRestoreLogger } from '@/lib/telemetry/restoreLogger';
+
+// Logger estruturado do fluxo restaurar-da-lixeira em coleções. Injeta
+// `schema_version` e valida o payload — ver `restoreEventSchema.ts`.
+const restoreCollectionLog = createRestoreLogger('collections.restore');
+
 const LEGACY_STORAGE_KEY = 'product-collections';
 
 export interface CollectionVariantInfo {
@@ -404,6 +410,15 @@ export function useCollections() {
 
   const restoreFromTrash = useCallback(
     async (collectionId: string, productId: string) => {
+      // Correlação delete→undo estruturada (schema em `restoreEventSchema`).
+      const correlationId = restoreCollectionLog.generateCorrelationId();
+      const startedAt = (typeof performance !== 'undefined' ? performance : Date).now();
+      const elapsedMs = () =>
+        Math.round(
+          (typeof performance !== 'undefined' ? performance : Date).now() -
+            startedAt,
+        );
+
       const { data: trashed } = await supabase
         .from('collection_items_trash')
         .select('*')
@@ -412,7 +427,25 @@ export function useCollections() {
         .order('deleted_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (!trashed) return false;
+      if (!trashed) {
+        restoreCollectionLog.emit('warn', 'restore_skipped_empty_snapshot', {
+          correlation_id: correlationId,
+          snapshot_id: `${collectionId}:${productId}`,
+          restore_result: 'skipped_empty',
+          duration_ms: 0,
+          reason: 'trash_entry_not_found',
+        });
+        return false;
+      }
+      restoreCollectionLog.emit('info', 'restore_start', {
+        correlation_id: correlationId,
+        snapshot_id: `${collectionId}:${productId}`,
+        collection_id: collectionId,
+        product_id: productId,
+        items_total: 1,
+        hydrated: true,
+      });
+
       // BUG-COLLECTION-RESTORE-INSERT-SILENT-FAIL FIX: bare awaits swallowed errors —
       // if either fails, state is corrupted (item restored in UI but not in DB, or
       // deleted from trash but never re-inserted).
@@ -428,6 +461,18 @@ export function useCollections() {
       });
       if (restoreInsertErr) {
         logger.warn('[collections] restoreFromTrash insert failed:', restoreInsertErr);
+        restoreCollectionLog.emit('error', 'restore_failed', {
+          correlation_id: correlationId,
+          snapshot_id: `${collectionId}:${productId}`,
+          restore_result: 'failed',
+          duration_ms: elapsedMs(),
+          items_total: 1,
+          items_inserted: null,
+          items_resulting: 0,
+          items_mismatch: true,
+          reason: 'insert_failed',
+          err: restoreInsertErr,
+        });
         return false;
       }
       const { error: trashDeleteErr } = await supabase
@@ -436,10 +481,23 @@ export function useCollections() {
         .eq('id', trashed.id);
       if (trashDeleteErr) logger.warn('[collections] restoreFromTrash trash delete failed:', trashDeleteErr);
       await loadCollections();
+      restoreCollectionLog.emit('info', 'restore_ok', {
+        correlation_id: correlationId,
+        snapshot_id: `${collectionId}:${productId}`,
+        restore_result: 'success',
+        duration_ms: elapsedMs(),
+        items_total: 1,
+        items_inserted: 1,
+        items_resulting: 1,
+        items_mismatch: false,
+        has_dedup: false,
+        partial_insert: false,
+      });
       return true;
     },
     [loadCollections],
   );
+
 
   const removeProductFromCollection = useCallback((collectionId: string, productId: string) => {
     setCollections((prev) =>

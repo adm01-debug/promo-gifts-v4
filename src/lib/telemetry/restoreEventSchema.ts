@@ -19,7 +19,15 @@ export type RestoreEventName =
   | 'restore_skipped_empty_snapshot'
   | 'restore_start';
 
-/** Enum canônico do campo `restore_result` por evento. */
+/**
+ * Versão canônica do schema dos eventos de restore.
+ * Incremente ao mudar campos obrigatórios/enums; o validador aceita
+ * `schema_version` AUSENTE (compat legado) mas rejeita tipos inválidos.
+ * Consumidores em produção devem comparar contra este número para saber
+ * quais campos podem existir.
+ */
+export const RESTORE_EVENT_SCHEMA_VERSION = 2 as const;
+
 const OK_RESULTS = new Set(['success', 'partial', 'deduped', 'ok_no_metrics']);
 const FAILED_RESULTS = new Set(['failed']);
 const SKIPPED_RESULTS = new Set(['skipped_empty']);
@@ -94,5 +102,27 @@ export function validateRestoreEvent(
     }
   }
 
+  // 4. schema_version — OPCIONAL para compat com legados que emitiam sem o
+  //    campo; quando presente, deve ser inteiro finito >= 1. Assim o
+  //    validador aceita eventos antigos (v1 sem campo) e novos (v2+ com
+  //    campo) sem regressão. Regressões futuras devem incrementar a versão
+  //    e endurecer os requisitos aqui — nunca quebrar leituras retroativas.
+  if (fields.schema_version !== undefined) {
+    const sv = fields.schema_version;
+    if (
+      typeof sv !== 'number' ||
+      !Number.isFinite(sv) ||
+      !Number.isInteger(sv) ||
+      sv < 1
+    ) {
+      violations.push({
+        field: 'schema_version',
+        reason: 'when present, must be integer >= 1',
+        got: sv,
+      });
+    }
+  }
+
   return { valid: violations.length === 0, violations };
 }
+
