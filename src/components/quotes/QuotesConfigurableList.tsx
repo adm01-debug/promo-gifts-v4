@@ -457,8 +457,9 @@ export function QuotesConfigurableList({
           const selected = Boolean(quoteId && isSelected(quoteId)) || allPagesSelected;
 
           return (
-            <div
+            <PrefetchRow
               key={quoteId ?? quote.quote_number}
+              prefetch={prefetchQuoteRoutes}
               data-testid={quoteId ? `quote-row-${quoteId}` : undefined}
               className={cn(
                 'group grid cursor-pointer items-center gap-5 border-b border-border/30 px-5 py-3.5 transition-colors duration-150 hover:bg-muted/30',
