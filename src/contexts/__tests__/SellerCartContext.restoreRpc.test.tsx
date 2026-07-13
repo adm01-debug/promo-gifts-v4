@@ -61,7 +61,13 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('@/lib/security/sanitize-error', () => ({
-  sanitizeError: (e: unknown) => (e instanceof Error ? e.message : String(e)),
+  sanitizeError: (e: unknown) => {
+    if (e instanceof Error) return e.message;
+    if (e && typeof e === 'object' && 'message' in e) {
+      return String((e as { message: unknown }).message);
+    }
+    return String(e);
+  },
 }));
 
 vi.mock('@/hooks/products/useDebouncedCartItemActions', () => ({
