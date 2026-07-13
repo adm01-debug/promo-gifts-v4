@@ -24,7 +24,11 @@ interface UndoToastContentProps {
   title: string;
   description?: string;
   duration: number;
-  onUndo: () => void;
+  /**
+   * Pode ser assíncrono. O botão fica desabilitado enquanto a promise resolve
+   * para impedir cliques concorrentes que disparariam múltiplas restaurações.
+   */
+  onUndo: () => void | Promise<void>;
   onTimeout: () => void;
   /**
    * Se definido, congela o tempo restante no valor informado (ms) e desativa
