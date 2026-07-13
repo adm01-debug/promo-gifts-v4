@@ -19,7 +19,15 @@ export type RestoreEventName =
   | 'restore_skipped_empty_snapshot'
   | 'restore_start';
 
-/** Enum canônico do campo `restore_result` por evento. */
+/**
+ * Versão canônica do schema dos eventos de restore.
+ * Incremente ao mudar campos obrigatórios/enums; o validador aceita
+ * `schema_version` AUSENTE (compat legado) mas rejeita tipos inválidos.
+ * Consumidores em produção devem comparar contra este número para saber
+ * quais campos podem existir.
+ */
+export const RESTORE_EVENT_SCHEMA_VERSION = 2 as const;
+
 const OK_RESULTS = new Set(['success', 'partial', 'deduped', 'ok_no_metrics']);
 const FAILED_RESULTS = new Set(['failed']);
 const SKIPPED_RESULTS = new Set(['skipped_empty']);
