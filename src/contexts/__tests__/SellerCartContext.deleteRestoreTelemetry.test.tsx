@@ -25,23 +25,17 @@ import type { ReactNode } from 'react';
 const USER_ID = 'seller-x';
 const CART_ID = 'cart-to-delete-42';
 
-// Eventos capturados diretamente do structuredLogger (sem depender de spy em
-// console, que sofre com retries/spy-stacking do Vitest).
-type LogEvent = { level: 'info' | 'warn' | 'error'; scope: string; event: string; fields: Record<string, unknown> };
-const logEvents: LogEvent[] = [];
+// Telemetria capturada via helper compartilhado (`mockStructuredLogger`) —
+// evita duplicar o factory de captura em cada arquivo de teste de logger.
+vi.mock('@/lib/telemetry/structuredLogger', async () => {
+  const mod = await import('@/test/mockStructuredLogger');
+  return mod.structuredLoggerMockFactory();
+});
 
-vi.mock('@/lib/telemetry/structuredLogger', () => ({
-  createClientLogger: (scope: string) => ({
-    info: (event: string, fields: Record<string, unknown> = {}) =>
-      logEvents.push({ level: 'info', scope, event, fields }),
-    warn: (event: string, fields: Record<string, unknown> = {}) =>
-      logEvents.push({ level: 'warn', scope, event, fields }),
-    error: (event: string, fields: Record<string, unknown> = {}) =>
-      logEvents.push({ level: 'error', scope, event, fields }),
-    debug: () => {},
-    headers: () => ({}),
-  }),
-}));
+import {
+  resetStructuredLoggerMock,
+  findLoggerEvent,
+} from '@/test/mockStructuredLogger';
 
 const rpcMock = vi.fn();
 const toastError = vi.fn();
