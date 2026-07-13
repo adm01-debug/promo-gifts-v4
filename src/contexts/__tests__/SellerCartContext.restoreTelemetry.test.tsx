@@ -1179,28 +1179,73 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
       expect(ok!.fields.correlation_id).toBe(generated);
     });
 
-    it('CID inválido/inesperado (string vazia) — contrato atual reutiliza-o (documenta comportamento e trava contra regressões silenciosas)', async () => {
-      rpcMock.mockResolvedValue(rpcOk({ cartId: 'empty-cid' }));
+    it.each([
+      ['string vazia', ''],
+      ['só espaços', '   '],
+      ['só whitespace misto', ' \t\n '],
+    ])(
+      'CID inválido (%s) — endurecimento: gera CID novo, não-vazio, e propaga em todos os eventos do restore',
+      async (_label, badCid) => {
+        rpcMock.mockResolvedValue(rpcOk({ cartId: 'empty-cid' }));
+        const result = await mountSellerCart();
+
+        const snap = {
+          ...buildHydratedRow(),
+          items: buildHydratedItems(),
+          _correlation_id: badCid,
+        };
+
+        await act(async () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await result.current.restoreCart(snap as any);
+        });
+
+        const startCid = findRestore('restore_start')!.fields.correlation_id;
+        const okCid = findRestore('restore_ok')!.fields.correlation_id;
+        // Regra endurecida: '' e só-whitespace são tratados como inválidos.
+        expect(typeof startCid).toBe('string');
+        expect((startCid as string).trim().length).toBeGreaterThan(0);
+        expect(startCid).not.toBe(badCid);
+        // Consistência intra-restore.
+        expect(okCid).toBe(startCid);
+      },
+    );
+
+    it('CID inválido (só espaços) em 2 restores consecutivos — cada execução gera CID próprio, sem vazamento entre restores', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'ws-isol' }));
       const result = await mountSellerCart();
 
-      const snap = {
-        ...buildHydratedRow(),
-        items: buildHydratedItems(),
-        _correlation_id: '',
+      const snapA = {
+        ...buildHydratedRow({}, 'cart-WSA'),
+        id: 'cart-WSA',
+        items: buildHydratedItems('cart-WSA'),
+        _correlation_id: '   ',
+      };
+      const snapB = {
+        ...buildHydratedRow({}, 'cart-WSB'),
+        id: 'cart-WSB',
+        items: buildHydratedItems('cart-WSB'),
+        _correlation_id: '\t\n',
       };
 
       await act(async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await result.current.restoreCart(snap as any);
+        await result.current.restoreCart(snapA as any);
+      });
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.restoreCart(snapB as any);
       });
 
-      const cid = findRestore('restore_start')!.fields.correlation_id;
-      // O `??` só substitui em null/undefined — string vazia PASSA. Se um
-      // refactor futuro endurecer isso (ex.: `|| newRequestId()`), este teste
-      // vira sentinela: basta trocar a asserção para `.not.toBe('')`.
-      expect(cid).toBe('');
-      expect(findRestore('restore_ok')!.fields.correlation_id).toBe('');
+      const starts = filterRestore('restore_start');
+      expect(starts).toHaveLength(2);
+      const cidA = starts[0].fields.correlation_id as string;
+      const cidB = starts[1].fields.correlation_id as string;
+      expect(cidA.trim().length).toBeGreaterThan(0);
+      expect(cidB.trim().length).toBeGreaterThan(0);
+      expect(cidA).not.toBe(cidB);
     });
+
 
     it('em 2 restores consecutivos com CIDs inválidos DIFERENTES (null e undefined), cada execução recebe um CID gerado próprio, sem vazamento', async () => {
       rpcMock.mockResolvedValue(rpcOk({ cartId: 'no-leak' }));
@@ -1324,7 +1369,145 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
     );
   });
 
-  // Sanity: nenhum teste deve deixar eventos residuais escapando de outro scope.
+  describe('ordering — restore_start sempre precede o desfecho, mesmo com concorrência mista', () => {
+    it('em restores paralelos (ok + failed + partial), start[cid] < desfecho[cid] no buffer de eventos', async () => {
+      const result = await mountSellerCart();
+
+      // Roteia por company_id para desfechos distintos por chamada.
+      rpcMock.mockImplementation((_fn: string, params: { _snapshot: { company_id: string } }) => {
+        const co = params._snapshot.company_id;
+        if (co === 'co-OK') return Promise.resolve(rpcOk({ cartId: 'r-ok' }));
+        if (co === 'co-PART')
+          return Promise.resolve(rpcOk({ cartId: 'r-part', itemsInserted: 1 }));
+        return Promise.resolve(rpcErr({ message: 'boom', code: '23505' }));
+      });
+
+      const mkSnap = (id: string, co: string) => ({
+        ...buildHydratedRow({ company_id: co }, id),
+        id,
+        company_id: co,
+        items: buildHydratedItems(id),
+      });
+
+      await act(async () => {
+        await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.current.restoreCart(mkSnap('snap-ok', 'co-OK') as any),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.current.restoreCart(mkSnap('snap-part', 'co-PART') as any),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.current.restoreCart(mkSnap('snap-fail', 'co-FAIL') as any),
+        ]);
+      });
+
+      // Buffer ordenado por emissão — indexa por evento para achar posição.
+      const all = findLoggerEventsByScope(RESTORE_SCOPE);
+      const indexOf = (event: string, cid: string) =>
+        all.findIndex((e) => e.event === event && e.fields.correlation_id === cid);
+
+      const starts = filterRestore('restore_start');
+      expect(starts).toHaveLength(3);
+
+      for (const s of starts) {
+        const cid = s.fields.correlation_id as string;
+        expect(typeof cid).toBe('string');
+        expect(cid.length).toBeGreaterThan(0);
+        const startIdx = indexOf('restore_start', cid);
+        // O desfecho é ok OU failed — o que existir precisa vir DEPOIS.
+        const okIdx = indexOf('restore_ok', cid);
+        const failIdx = indexOf('restore_failed', cid);
+        const outcomeIdx = okIdx !== -1 ? okIdx : failIdx;
+        expect(outcomeIdx, `desfecho ausente para cid=${cid}`).toBeGreaterThan(-1);
+        expect(startIdx).toBeGreaterThan(-1);
+        expect(startIdx).toBeLessThan(outcomeIdx);
+      }
+    });
+  });
+
+  describe('duration_ms — resolves fora de ordem não drenam drift entre start/desfecho', () => {
+    it('dois restores paralelos com timings invertidos (o iniciado primeiro resolve depois) preservam duration_ms finito, >=0 e sem drift intra-restore', async () => {
+      const result = await mountSellerCart();
+
+      vi.useFakeTimers();
+
+      // snap-slow (co-SLOW): resolve em 800ms
+      // snap-fast (co-FAST): resolve em 200ms
+      // Iniciamos slow ANTES de fast — mas fast resolve primeiro (out-of-order).
+      rpcMock.mockImplementation(
+        (_fn: string, params: { _snapshot: { company_id: string } }) =>
+          new Promise((resolve) => {
+            const co = params._snapshot.company_id;
+            const delay = co === 'co-SLOW' ? 800 : 200;
+            const cartId = co === 'co-SLOW' ? 'r-slow' : 'r-fast';
+            setTimeout(() => resolve(rpcOk({ cartId })), delay);
+          }),
+      );
+
+      const mkSnap = (id: string, co: string) => ({
+        ...buildHydratedRow({ company_id: co }, id),
+        id,
+        company_id: co,
+        items: buildHydratedItems(id),
+      });
+
+      let pSlow: Promise<unknown> | undefined;
+      let pFast: Promise<unknown> | undefined;
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        pSlow = result.current.restoreCart(mkSnap('snap-slow', 'co-SLOW') as any);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        pFast = result.current.restoreCart(mkSnap('snap-fast', 'co-FAST') as any);
+      });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      await act(async () => {
+        await pFast;
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(600);
+        await pSlow;
+      });
+
+      vi.useRealTimers();
+
+      const starts = filterRestore('restore_start');
+      const oks = filterRestore('restore_ok');
+      expect(starts).toHaveLength(2);
+      expect(oks).toHaveLength(2);
+
+      const pairBySnap = (snapshotId: string) => ({
+        start: starts.find((e) => e.fields.snapshot_id === snapshotId)!,
+        ok: oks.find((e) => e.fields.snapshot_id === snapshotId)!,
+      });
+
+      const fast = pairBySnap('snap-fast');
+      const slow = pairBySnap('snap-slow');
+
+      // Correlação intra-restore preservada mesmo com resolve out-of-order.
+      expect(fast.ok.fields.correlation_id).toBe(fast.start.fields.correlation_id);
+      expect(slow.ok.fields.correlation_id).toBe(slow.start.fields.correlation_id);
+      // Sem cross-talk entre restores.
+      expect(fast.start.fields.correlation_id).not.toBe(slow.start.fields.correlation_id);
+
+      const fastDur = fast.ok.fields.duration_ms as number;
+      const slowDur = slow.ok.fields.duration_ms as number;
+
+      // duration_ms finito, não-negativo, e coerente com o delay simulado
+      // (tolerância +5ms p/ rounding do performance.now faked).
+      for (const d of [fastDur, slowDur]) {
+        expect(Number.isFinite(d)).toBe(true);
+        expect(d).toBeGreaterThanOrEqual(0);
+      }
+      expect(fastDur).toBeGreaterThanOrEqual(200);
+      expect(fastDur).toBeLessThanOrEqual(210);
+      expect(slowDur).toBeGreaterThanOrEqual(800);
+      expect(slowDur).toBeLessThanOrEqual(810);
+    });
+  });
+
+
   it('scope canônico = "seller_cart.restore" (evita drift de nome de scope)', async () => {
     rpcMock.mockResolvedValue(rpcOk());
     const result = await mountSellerCart();
