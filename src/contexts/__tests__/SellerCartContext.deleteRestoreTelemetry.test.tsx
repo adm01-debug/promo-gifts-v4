@@ -183,14 +183,9 @@ const HYDRATED_ROW_EMPTY = {
   seller_cart_items: [],
 };
 
-// Helper para localizar o PRIMEIRO evento emitido no scope `seller_cart.restore`
-// com o nome fornecido. Restringe pelo scope canônico para não colidir com
-// outros loggers do módulo (ex.: `seller_cart.delete`).
-function findEvent(name: string) {
-  return logEvents.find(
-    (e) => e.scope === 'seller_cart.restore' && e.event === name,
-  );
-}
+// Adaptador local: preserva `findEvent(name)` que os casos existentes usam.
+const findEvent = (name: string) =>
+  findLoggerEvent('seller_cart.restore', name);
 
 describe('SellerCartContext — telemetria integrada do fluxo delete→undo', () => {
   const originalError = console.error;
@@ -200,7 +195,7 @@ describe('SellerCartContext — telemetria integrada do fluxo delete→undo', ()
     toastError.mockReset();
     toastSuccess.mockReset();
     hydratedRow = HYDRATED_ROW_FULL;
-    logEvents.length = 0;
+    resetStructuredLoggerMock();
     console.error = vi.fn();
   });
 
