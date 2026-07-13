@@ -556,7 +556,7 @@ export function QuotesConfigurableList({
                 </DropdownMenu>
 
               </div>
-            </div>
+            </PrefetchRow>
           );
           })
         )}
