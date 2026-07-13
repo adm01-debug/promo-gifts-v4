@@ -387,6 +387,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // por `snapshot_id` no Sentry/console e detectar regressão de hidratação
       // (ex.: `items_total` cair para 0 entre delete e restore).
       restoreLog.info('restore_start', {
+        correlation_id: correlationId,
         snapshot_id: snapshot?.id ?? null,
         company_id: snapshot?.company_id ?? null,
         items_total: itemsCount,
