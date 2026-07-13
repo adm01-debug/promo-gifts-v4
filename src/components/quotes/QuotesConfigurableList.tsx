@@ -3,11 +3,12 @@
  */
 
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, type HTMLAttributes } from 'react';
 import { renderQuoteCell } from './QuoteListCellRenderer';
 import { useQuoteClientLogos } from '@/hooks/quotes/useQuoteClientLogos';
 import { useQuoteItemCounts } from '@/hooks/quotes/useQuoteItemCounts';
 import { useNavigate } from 'react-router-dom';
+import { usePrefetchOnHover } from '@/hooks/common/usePrefetchOnHover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -41,6 +42,29 @@ import {
   QUOTES_MAX_VISIBLE_ROWS,
   QUOTES_CHROME_BY_BREAKPOINT,
 } from '@/lib/quotes/quotesLayout';
+
+// ── Prefetch do bundle do QuoteBuilder/QuoteView ──
+// Dispara em hover/focus/touch de uma linha para eliminar o "flash" do lazy
+// chunk quando o usuário clicar. Idempotente — dynamic import resolve uma vez
+// e o resultado fica cacheado pelo browser + Vite.
+function prefetchQuoteRoutes(): void {
+  void import('@/pages/quotes/QuoteViewPage');
+  void import('@/pages/quotes/QuoteBuilderPage');
+}
+
+/** Wrapper que aplica `usePrefetchOnHover` no <div> da linha do orçamento. */
+interface PrefetchRowProps extends HTMLAttributes<HTMLDivElement> {
+  prefetch: () => void;
+}
+function PrefetchRow({ prefetch, children, ...rest }: PrefetchRowProps) {
+  const handlers = usePrefetchOnHover(prefetch);
+  return (
+    <div {...rest} {...handlers}>
+      {children}
+    </div>
+  );
+}
+
 
 // ── Column definitions ──
 export interface ColumnDef {
@@ -433,8 +457,9 @@ export function QuotesConfigurableList({
           const selected = Boolean(quoteId && isSelected(quoteId)) || allPagesSelected;
 
           return (
-            <div
+            <PrefetchRow
               key={quoteId ?? quote.quote_number}
+              prefetch={prefetchQuoteRoutes}
               data-testid={quoteId ? `quote-row-${quoteId}` : undefined}
               className={cn(
                 'group grid cursor-pointer items-center gap-5 border-b border-border/30 px-5 py-3.5 transition-colors duration-150 hover:bg-muted/30',
@@ -531,7 +556,7 @@ export function QuotesConfigurableList({
                 </DropdownMenu>
 
               </div>
-            </div>
+            </PrefetchRow>
           );
           })
         )}
