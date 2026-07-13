@@ -497,6 +497,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         // `err` no payload aciona `captureException` no Sentry via structuredLogger
         // e é serializado como { name, message, stack } no log JSON.
         restoreLog.error('restore_failed', {
+          correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           items_count: itemsCount,
           items_total: itemsCount,
