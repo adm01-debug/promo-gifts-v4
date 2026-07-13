@@ -480,6 +480,67 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
       // Guarda extra: nenhuma RPC foi chamada.
       expect(rpcMock).not.toHaveBeenCalled();
     });
+
+    it('restore_ok: RPC resolve imediatamente — duration_ms finito, não-negativo e sem drift entre eventos do mesmo restore', async () => {
+      // RPC resolve na próxima microtask (sem setTimeout) — cobre o cenário
+      // "hot path" onde start/ok leem `performance.now()` praticamente juntos.
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'sync-ok' }));
+      const result = await mountSellerCart();
+
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+
+      const start = findRestore('restore_start');
+      const ok = findRestore('restore_ok');
+      expect(start, 'restore_start deve ser emitido').toBeTruthy();
+      expect(ok, 'restore_ok deve ser emitido').toBeTruthy();
+
+      const startDur = start!.fields.duration_ms as number | undefined;
+      const okDur = ok!.fields.duration_ms as number;
+
+      // `restore_start` NÃO carrega duration_ms (ainda não mediu). Se aparecer,
+      // deve ser 0 — nunca negativo.
+      if (typeof startDur === 'number') {
+        expect(startDur).toBeGreaterThanOrEqual(0);
+      }
+
+      // `restore_ok` sempre carrega duration_ms — número finito, não-negativo.
+      expect(typeof okDur).toBe('number');
+      expect(Number.isFinite(okDur)).toBe(true);
+      expect(okDur).toBeGreaterThanOrEqual(0);
+      // Sem avanço relevante de clock o valor deve ser pequeno (evita drift acidental).
+      expect(okDur).toBeLessThan(1000);
+
+      // Correlação intra-restore preservada mesmo no hot path.
+      expect(ok!.fields.correlation_id).toBe(start!.fields.correlation_id);
+    });
+
+    it('restore_failed: RPC rejeita imediatamente — duration_ms finito, não-negativo e sem drift entre eventos do mesmo restore', async () => {
+      rpcMock.mockResolvedValue(rpcErr({ message: 'boom-sync', code: '23505' }));
+      const result = await mountSellerCart();
+
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+
+      const start = findRestore('restore_start');
+      const failed = findRestore('restore_failed');
+      expect(start).toBeTruthy();
+      expect(failed, 'restore_failed deve ser emitido').toBeTruthy();
+
+      const failedDur = failed!.fields.duration_ms as number;
+      expect(typeof failedDur).toBe('number');
+      expect(Number.isFinite(failedDur)).toBe(true);
+      expect(failedDur).toBeGreaterThanOrEqual(0);
+      expect(failedDur).toBeLessThan(1000);
+
+      // Mesma correlação entre start e failed no hot path.
+      expect(failed!.fields.correlation_id).toBe(start!.fields.correlation_id);
+      expect(findRestore('restore_ok')).toBeUndefined();
+    });
   });
 
   describe('E2E lógico — sequência canônica de eventos delete → undo', () => {
