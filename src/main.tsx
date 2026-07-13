@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { registerServiceWorker } from '@/lib/sw-register';
 import { installGlobalErrorHandlers } from '@/lib/error-reporter';
 import { initSentry } from '@/lib/sentry';
+import { initNavigationMetrics } from '@/lib/telemetry/navigationMetrics';
 import { installSafeToast } from '@/lib/security/safeToast';
 import { validateSupabaseConfig } from '@/integrations/supabase/runtime-validator';
 import EnhancedErrorBoundary from '@/components/errors/EnhancedErrorBoundary';
