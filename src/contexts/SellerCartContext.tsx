@@ -399,7 +399,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // carrinho vazio silenciosamente. Emitimos telemetria + toast orientando
       // o usuário a recarregar antes de tentar de novo.
       if (itemsCount === 0) {
-        restoreLog.warn('restore_skipped_empty_snapshot', {
+        emitRestore('warn', 'restore_skipped_empty_snapshot', {
           correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           company_id: snapshot?.company_id ?? null,
@@ -424,7 +424,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // Permite correlacionar `delete_ok` → `restore_start` → `restore_ok/failed`
       // por `snapshot_id` no Sentry/console e detectar regressão de hidratação
       // (ex.: `items_total` cair para 0 entre delete e restore).
-      restoreLog.info('restore_start', {
+      emitRestore('info', 'restore_start', {
         correlation_id: correlationId,
         snapshot_id: snapshot?.id ?? null,
         company_id: snapshot?.company_id ?? null,
@@ -482,7 +482,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         const createdItemsLength = Array.isArray(created?.items) ? created.items.length : null;
         const itemsResulting = metrics?.items_inserted ?? createdItemsLength ?? null;
 
-        restoreLog.info('restore_ok', {
+        emitRestore('info', 'restore_ok', {
           correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           new_cart_id: created?.id ?? null,
@@ -551,7 +551,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         const mapped = mapRestoreCartError(err);
         // `err` no payload aciona `captureException` no Sentry via structuredLogger
         // e é serializado como { name, message, stack } no log JSON.
-        restoreLog.error('restore_failed', {
+        emitRestore('error', 'restore_failed', {
           correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           items_count: itemsCount,
