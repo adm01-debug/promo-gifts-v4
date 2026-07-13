@@ -364,6 +364,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // o usuário a recarregar antes de tentar de novo.
       if (itemsCount === 0) {
         restoreLog.warn('restore_skipped_empty_snapshot', {
+          correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           company_id: snapshot?.company_id ?? null,
           reason: 'empty_snapshot',
