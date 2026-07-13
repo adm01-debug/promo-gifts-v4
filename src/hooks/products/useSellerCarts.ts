@@ -891,7 +891,7 @@ export function useSellerCarts() {
   //   • ON CONFLICT DO NOTHING contra `unique_cart_item_variant`.
   // Nunca vaza `id`, `seller_id`, `created_at`, `updated_at` do snapshot.
   const restoreCartWithItems = useMutation<
-    SellerCart | undefined,
+    RestoredSellerCart | undefined,
     Error,
     SellerCart
   >({
