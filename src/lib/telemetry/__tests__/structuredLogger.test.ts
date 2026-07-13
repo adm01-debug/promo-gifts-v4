@@ -1,3 +1,13 @@
+/**
+ * Testes unitários do `structuredLogger` (SSOT do logger cliente).
+ *
+ * NOTA sobre `mockStructuredLogger`: este helper (`src/test/mockStructuredLogger`)
+ * é usado por testes CONSUMIDORES do logger (captura eventos emitidos pelo código
+ * sob teste). Aqui testamos a IMPLEMENTAÇÃO do logger — usá-lo seria substituir
+ * o próprio módulo sob teste. Portanto este arquivo permanece com stubs diretos
+ * de `console` + Sentry. Consolidamos aqui o que antes vivia duplicado em
+ * `tests/observability/structured-logger.test.ts` (removido).
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createClientLogger } from '../structuredLogger';
 import { captureException } from '@/lib/sentry';
@@ -7,7 +17,7 @@ vi.mock('@/lib/sentry', () => ({
   captureException: vi.fn(),
 }));
 
-// Mock requestId
+// Mock requestId — determinístico para asserts estáveis.
 vi.mock('../requestId', () => ({
   newRequestId: () => 'test-request-id',
   REQUEST_ID_HEADER: 'X-Request-Id',
@@ -93,5 +103,25 @@ describe('structuredLogger.ts', () => {
     const log = createClientLogger('test', { requestId: 'custom-id' });
     expect(log.requestId).toBe('custom-id');
     expect(log.headers()).toEqual({ 'X-Request-Id': 'custom-id' });
+  });
+
+  // Herdado de `tests/observability/structured-logger.test.ts` (removido) —
+  // valida o SHAPE canônico do payload JSON usado por collectors externos.
+  it('emits payload with canonical fields (ts, level, scope, request_id, event, extras)', () => {
+    const log = createClientLogger('test.scope', { requestId: 'rid-123' });
+    log.info('hello', { foo: 'bar' });
+
+    expect(consoleSpy.info).toHaveBeenCalled();
+    // Em DEV o payload é o SEGUNDO argumento (o primeiro é o tag `[scope:event]`).
+    const payload = consoleSpy.info.mock.calls.at(-1)?.[1] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      level: 'info',
+      scope: 'test.scope',
+      request_id: 'rid-123',
+      event: 'hello',
+      foo: 'bar',
+    });
+    expect(typeof payload.ts).toBe('string');
+    expect(payload.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 });

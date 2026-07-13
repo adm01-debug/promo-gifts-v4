@@ -334,7 +334,14 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
         expect(returned).toBeUndefined();
       });
 
+      // Invariante forte: no atalho de snapshot vazio NENHUMA RPC de
+      // restauração pode ser chamada (evita recriar carrinho vazio silenciosamente).
       expect(rpcMock).not.toHaveBeenCalled();
+      // E também não deve emitir os desfechos "normais" da restauração.
+      expect(findRestore('restore_start')).toBeUndefined();
+      expect(findRestore('restore_ok')).toBeUndefined();
+      expect(findRestore('restore_failed')).toBeUndefined();
+
       const skipped = findRestore('restore_skipped_empty_snapshot');
       expect(skipped, 'restore_skipped_empty_snapshot deve ser emitido').toBeTruthy();
       expect(skipped!.level).toBe('warn');
@@ -346,6 +353,87 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
         duration_ms: 0,
         hydrated: false,
       });
+    });
+  });
+
+  describe('correlation_id — geração vs. propagação', () => {
+    // Se o snapshot vier SEM `_correlation_id` (ex.: chamada direta em cenário
+    // legado, ou perda do campo no cache), o restoreCart PRECISA gerar um novo
+    // correlation_id e propagá-lo para `restore_start` e `restore_ok/failed`.
+    // Sem isso, os eventos ficam órfãos no Sentry e a correlação quebra.
+    it('gera novo correlation_id quando o snapshot não traz `_correlation_id`', async () => {
+      rpcMock.mockResolvedValue({
+        data: { cart_id: 'new-cid', items_total: 2, items_inserted: 2, items_deduped: 0 },
+        error: null,
+      });
+      const result = await mountContext();
+
+      // Snapshot cru, sem `_correlation_id` — bypass do `deleteCart` de propósito.
+      const rawSnapshot = {
+        id: CART_ID,
+        seller_id: USER_ID,
+        company_id: 'c1',
+        company_name: 'ACME',
+        company_location: null,
+        company_logo_url: null,
+        notes: null,
+        status: 'em_separacao' as const,
+        shipping_deadline: null,
+        created_at: '2026-01-01',
+        updated_at: '2026-01-01',
+        items: HYDRATED_ITEMS,
+        // sem `_correlation_id` — a expectativa é que o context gere um.
+      };
+
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.restoreCart(rawSnapshot as any);
+      });
+
+      const start = findRestore('restore_start');
+      const ok = findRestore('restore_ok');
+      expect(start, 'restore_start deve ser emitido').toBeTruthy();
+      expect(ok, 'restore_ok deve ser emitido').toBeTruthy();
+
+      const generatedCid = start!.fields.correlation_id;
+      // Foi gerado: string não-vazia (o restoreCart chama `newRequestId()`).
+      expect(typeof generatedCid).toBe('string');
+      expect((generatedCid as string).length).toBeGreaterThan(0);
+      // E propagado — restore_ok herda o MESMO correlation_id do restore_start.
+      expect(ok!.fields.correlation_id).toBe(generatedCid);
+    });
+
+    it('propaga (NÃO gera) `_correlation_id` quando o snapshot já traz um', async () => {
+      rpcMock.mockResolvedValue({
+        data: { cart_id: 'new-cid2', items_total: 2, items_inserted: 2, items_deduped: 0 },
+        error: null,
+      });
+      const result = await mountContext();
+
+      const PRESET_CID = 'preset-correlation-abc-123';
+      const rawSnapshot = {
+        id: CART_ID,
+        seller_id: USER_ID,
+        company_id: 'c1',
+        company_name: 'ACME',
+        company_location: null,
+        company_logo_url: null,
+        notes: null,
+        status: 'em_separacao' as const,
+        shipping_deadline: null,
+        created_at: '2026-01-01',
+        updated_at: '2026-01-01',
+        items: HYDRATED_ITEMS,
+        _correlation_id: PRESET_CID,
+      };
+
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.restoreCart(rawSnapshot as any);
+      });
+
+      expect(findRestore('restore_start')!.fields.correlation_id).toBe(PRESET_CID);
+      expect(findRestore('restore_ok')!.fields.correlation_id).toBe(PRESET_CID);
     });
   });
 
