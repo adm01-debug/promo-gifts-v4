@@ -38,7 +38,13 @@ async function primeCartsWithRpc(
   await page.route(SELLER_CARTS_REST, async (route, request) => {
     if (request.method() === "DELETE") {
       calls.delete += 1;
-      await route.fulfill({ status: 204, body: "", headers: { "Content-Range": "0-0/1" } });
+      const deletedId = new URL(request.url()).searchParams.get("id")?.replace(/^eq\./, "") ?? "mock-cart-0";
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([{ id: deletedId }]),
+        headers: { "Content-Range": "0-0/1" },
+      });
       return;
     }
     await route.continue();
