@@ -6,7 +6,11 @@ import { cn } from '@/lib/utils';
 interface UndoToastOptions {
   title: string;
   description?: string;
-  onUndo: () => void;
+  /**
+   * Retorne `false` (ou lance) quando a operação de undo falhar — o toast
+   * "Ação desfeita!" só aparece em sucesso. Retornos `void`/`true` = sucesso.
+   */
+  onUndo: () => void | boolean | Promise<void | boolean>;
   duration?: number;
 }
 
