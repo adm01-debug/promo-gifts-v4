@@ -47,6 +47,8 @@ import {
   rpcOk,
   rpcErr,
 } from '@/test/sellerCartRestoreHelpers';
+import { UUID_V4_REGEX } from '@/lib/telemetry/correlationId';
+import { validateRestoreEvent } from '@/lib/telemetry/restoreEventSchema';
 
 const rpcMock = vi.fn();
 const toastError = vi.fn();
