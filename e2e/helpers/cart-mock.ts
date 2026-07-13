@@ -38,6 +38,7 @@ export interface MockCart {
   status: 'em_separacao' | 'pronto_orcamento';
   created_at: string;
   updated_at: string;
+  shipping_deadline: string | null;
   seller_cart_items: MockCartItem[];
 }
 
@@ -78,8 +79,15 @@ export function makeMockCart(idx: number, itemCount = 3): MockCart {
     status: 'em_separacao',
     created_at: ts(86400000 * (idx + 1)),
     updated_at: ts(3600000 * idx),
+    shipping_deadline: null,
     seller_cart_items: Array.from({ length: itemCount }, (_, j) => makeMockItem(id, idx, j)),
   };
+}
+
+function extractEqFilter(url: URL, column: string): string | null {
+  const raw = url.searchParams.get(column);
+  if (!raw?.startsWith('eq.')) return null;
+  return raw.slice(3);
 }
 
 /**
@@ -102,14 +110,18 @@ export async function mockSellerCartsAPI(page: Page, carts: MockCart[]): Promise
       route.continue();
       return;
     }
+    const parsedUrl = new URL(url);
+    const requestedId = extractEqFilter(parsedUrl, 'id');
+    const rows = requestedId ? carts.filter((cart) => cart.id === requestedId) : carts;
+
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       headers: {
-        'Content-Range': `0-${Math.max(0, carts.length - 1)}/${carts.length}`,
+        'Content-Range': `0-${Math.max(0, rows.length - 1)}/${rows.length}`,
         'X-Mock-Source': 'cart-mock-helper',
       },
-      body: JSON.stringify(carts),
+      body: JSON.stringify(requestedId ? (rows[0] ?? null) : rows),
     });
   });
 }
