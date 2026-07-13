@@ -881,9 +881,14 @@ export function useSellerCarts() {
   });
 
   // ============================================================
-  // RESTORE CART (Undo delete) — recria carrinho + itens a partir de snapshot.
+  // RESTORE CART (Undo delete) — restauração ATÔMICA via RPC.
   // ============================================================
-  // Allowlist estrita: só campos semânticos do carrinho vão para o INSERT.
+  // Toda a lógica de INSERT (cart + items) vive em `public.restore_seller_cart`
+  // dentro de uma única transação Postgres:
+  //   • Se qualquer item falhar (RLS, coluna, unique), o cart também rollback
+  //     — impossível ficar órfão (bug antigo do path client-side sequencial).
+  //   • Deduplica itens com mesmo (product_id, color_name) somando quantidades.
+  //   • ON CONFLICT DO NOTHING contra `unique_cart_item_variant`.
   // Nunca vaza `id`, `seller_id`, `created_at`, `updated_at` do snapshot.
   const restoreCartWithItems = useMutation<
     SellerCart | undefined,
@@ -893,38 +898,17 @@ export function useSellerCarts() {
     mutationFn: async (snapshot) => {
       if (!userId) throw new Error('Não autenticado');
 
-      // 1) INSERT do carrinho (allowlist estrita).
-      const { data: cartRow, error: cartErr } = await supabase
-        .from('seller_carts')
-        .insert({
-          seller_id: userId,
-          company_id: snapshot.company_id,
-          company_name: snapshot.company_name,
-          company_location: snapshot.company_location ?? null,
-          company_logo_url: snapshot.company_logo_url ?? null,
-          notes: snapshot.notes ?? null,
-          status: snapshot.status,
-          shipping_deadline: snapshot.shipping_deadline ?? null,
-        })
-        .select()
-        .single();
-
-      if (cartErr) {
-        if (isCartLimitError(cartErr)) {
-          throw new Error(
-            `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de restaurar.`,
-          );
-        }
-        throw cartErr;
-      }
-
-      const newCartId = (cartRow as { id: string }).id;
-
-      // 2) INSERT em massa dos itens (preservando sort_order).
-      const items = snapshot.items ?? [];
-      if (items.length > 0) {
-        const rows = items.map((it) => ({
-          cart_id: newCartId,
+      // Payload enxuto: apenas o que a RPC lê. Descarta id/timestamps por design.
+      const payload = {
+        seller_id: userId,
+        company_id: snapshot.company_id,
+        company_name: snapshot.company_name,
+        company_location: snapshot.company_location ?? null,
+        company_logo_url: snapshot.company_logo_url ?? null,
+        notes: snapshot.notes ?? null,
+        status: snapshot.status,
+        shipping_deadline: snapshot.shipping_deadline ?? null,
+        items: (snapshot.items ?? []).map((it) => ({
           product_id: it.product_id,
           product_name: it.product_name,
           product_sku: it.product_sku ?? null,
@@ -935,27 +919,56 @@ export function useSellerCarts() {
           color_hex: it.color_hex ?? null,
           notes: it.notes ?? null,
           sort_order: it.sort_order ?? null,
-        }));
-        const { error: itemsErr } = await supabase
-          .from('seller_cart_items')
-          .insert(rows);
-        if (itemsErr) throw itemsErr;
+        })),
+      };
+
+      const { data, error } = await supabase.rpc('restore_seller_cart', {
+        _snapshot: payload as never,
+      });
+
+      if (error) {
+        if (isCartLimitError(error)) {
+          throw new Error(
+            `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de restaurar.`,
+          );
+        }
+        throw error;
       }
 
+      const result = data as
+        | { cart_id: string; items_total: number; items_inserted: number; items_deduped: number }
+        | null;
+      const newCartId = result?.cart_id;
+      if (!newCartId) throw new Error('restore_seller_cart não retornou cart_id');
+
+      cartDeleteLog.info('cart_restore_ok', {
+        cart_id: newCartId,
+        items_total: result?.items_total,
+        items_inserted: result?.items_inserted,
+        items_deduped: result?.items_deduped,
+      });
+
       return {
-        ...(cartRow as Omit<SellerCart, 'items' | 'notes' | 'status' | 'shipping_deadline'>),
+        id: newCartId,
+        seller_id: userId,
+        company_id: snapshot.company_id,
+        company_name: snapshot.company_name,
+        company_location: snapshot.company_location ?? null,
+        company_logo_url: snapshot.company_logo_url ?? null,
         notes: snapshot.notes ?? null,
         status: snapshot.status,
         shipping_deadline: snapshot.shipping_deadline ?? null,
-        items,
-      } as SellerCart;
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        items: snapshot.items ?? [],
+      } satisfies SellerCart;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
-      // Toast fica sob responsabilidade do chamador (que precisa distinguir
-      // singular/plural em cenários de lote). Mantemos silêncio aqui.
+      // Log estruturado com raw_error — o toast do chamador acrescenta
+      // snapshot_id/itens + description sanitizada.
       cartDeleteLog.error('cart_restore_failed', { error: err.message });
     },
   });

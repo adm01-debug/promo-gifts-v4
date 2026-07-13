@@ -7944,6 +7944,7 @@ export type Database = {
         Args: { _only_running?: boolean }
         Returns: number
       }
+      restore_seller_cart: { Args: { _snapshot: Json }; Returns: Json }
       retry_failed_webhook_deliveries: { Args: never; Returns: Json }
       revoke_all_user_tokens: { Args: { _user_id: string }; Returns: undefined }
       search_products_semantic: {
