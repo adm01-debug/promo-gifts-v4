@@ -16,6 +16,7 @@ import './styles/diversity-overrides.css';
 
 validateSupabaseConfig();
 initSentry();
+initNavigationMetrics();
 installGlobalErrorHandlers();
 installSafeToast();
 
