@@ -23,6 +23,7 @@ import { useDebouncedCartItemActions, getCartItemDebounceMs } from '@/hooks/prod
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { mapRestoreCartError } from '@/pages/products/seller-carts/mapRestoreCartError';
 
 
 interface SellerCartContextType {
@@ -346,24 +347,30 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         // Sem este bloco o erro real (RLS, coluna, unique, FK) era engolido
         // pelo `catch {}` original e o usuário só via um toast genérico sem
-        // pista. Agora: log estruturado + description sanitizada no toast +
-        // snapshot_id / items_count pra diagnóstico rápido.
+        // pista. Agora: log estruturado + description específica por SQLSTATE
+        // + snapshot_id / items_count pra diagnóstico rápido. O fallback
+        // usa `sanitizeError` para garantir que nada sensível vaze.
         const rawMessage =
           err instanceof Error
             ? err.message
             : err && typeof err === 'object' && 'message' in err
               ? String((err as { message: unknown }).message)
               : String(err);
-        const sanitized = sanitizeError(err);
+        const pgCode =
+          err && typeof err === 'object' && 'code' in err
+            ? String((err as { code: unknown }).code ?? '')
+            : '';
+        const mapped = mapRestoreCartError(err);
         console.error('[restoreCart] falha ao restaurar carrinho', {
           snapshot_id: snapshot?.id,
           items_count: itemsCount,
           company_id: snapshot?.company_id,
+          pg_code: pgCode,
+          reason: mapped.reason,
           raw_error: rawMessage,
-          sanitized,
         });
-        toast.error('Não foi possível restaurar o carrinho.', {
-          description: `${sanitized} · snapshot ${snapshot?.id ?? '—'} · ${itemsCount} item(ns)`,
+        toast.error(mapped.title ?? 'Não foi possível restaurar o carrinho.', {
+          description: `${mapped.description} · snapshot ${snapshot?.id ?? '—'} · ${itemsCount} item(ns)`,
         });
         return undefined;
       }
