@@ -6,8 +6,10 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
 
 const cors = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
+const baseLog = createStructuredLogger("quote-sync-promo-champions");
 
 const CHAMPIONS_URL =
   "https://rapjswienfhkobhlamxb.supabase.co/functions/v1/receive-quote-sync";
