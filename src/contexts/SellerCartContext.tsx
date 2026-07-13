@@ -342,8 +342,19 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           });
         }
         return created?.id;
-      } catch {
-        // Chamador (toast Desfazer) decide o texto do erro (singular/plural).
+      } catch (err) {
+        // Diagnóstico: sem este log, o erro real do INSERT (RLS, coluna faltando,
+        // FK, unique) era engolido silenciosamente pelo `catch {}` vazio original
+        // e o usuário só via "Não foi possível restaurar o carrinho." sem pista.
+        // Também mostra o motivo sanitizado como description do toast do chamador.
+        const message = sanitizeError(err);
+        console.error('[restoreCart] falha ao restaurar carrinho', {
+          snapshot_id: snapshot?.id,
+          items: snapshot?.items?.length ?? 0,
+          raw_error: err instanceof Error ? err.message : String(err),
+          sanitized: message,
+        });
+        toast.error('Não foi possível restaurar o carrinho.', { description: message });
         return undefined;
       }
     },
