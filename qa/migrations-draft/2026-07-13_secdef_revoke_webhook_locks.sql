@@ -52,16 +52,12 @@ GRANT  EXECUTE ON FUNCTION public.cleanup_stale_webhook_locks() TO service_role;
 COMMIT;
 
 -- ----------------------------------------------------------------------------
--- Passo pós-migração (NÃO aplicar até PO aprovar a migração acima):
+-- Validação pós-migração (esperado):
+--   node scripts/check-security-definer-acl.mjs  → 0 violações
+--   (hoje: 7 violações — 3 fns × PUBLIC/anon/authenticated com overloads)
 --
--- Atualizar .security/supabase-linter-baseline.json para aceitar
--- restore_seller_cart como RPC intencional do frontend. Diff:
---
---   { "lint": "0029_authenticated_security_definer_function_executable",
---     "name": "restore_seller_cart" }
---
--- Justificativa no commit:
---   "restore_seller_cart é RPC pública do frontend (useSellerCarts.ts:325).
---    RLS interna à função filtra por auth.uid(). SECURITY DEFINER necessário
---    para bypass de RLS controlado no INSERT do cart+items."
+-- Observação sobre restore_seller_cart:
+--   NÃO precisa entrar no baseline. Migration
+--   20260713101342_*.sql já fez REVOKE ALL FROM PUBLIC/anon e GRANT
+--   apenas para authenticated+service_role — não aparece no gate.
 -- ============================================================================
