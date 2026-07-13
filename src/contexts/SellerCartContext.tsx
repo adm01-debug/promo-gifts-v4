@@ -361,6 +361,9 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           items_total: 0,
           items_inserted: 0,
           items_deduped: 0,
+          hydrated: false,
+          restore_result: 'skipped_empty' as const,
+          duration_ms: 0,
         });
         toast.error('Não foi possível desfazer: snapshot sem itens.', {
           description:
