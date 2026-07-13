@@ -994,6 +994,336 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
     });
   });
 
+  describe('concorrência mista — um restore OK e um restore FAILED em paralelo', () => {
+    it('isola correlation_id e sequência de eventos entre uma chamada bem-sucedida e uma que falha', async () => {
+      const result = await mountSellerCart();
+
+      const CID_OK = 'mixed-cid-ok';
+      const CID_FAIL = 'mixed-cid-fail';
+
+      // Distingue OK vs FAIL pelo `company_id` que sobrevive no payload da RPC.
+      rpcMock.mockImplementation(
+        (_fn: string, params: { _snapshot: { company_id: string } }) => {
+          if (params._snapshot.company_id === 'co-OK') {
+            return Promise.resolve(rpcOk({ cartId: 'new-OK' }));
+          }
+          return Promise.resolve(
+            rpcErr({ message: 'RLS bloqueou', code: '42501' }),
+          );
+        },
+      );
+
+      const snapOk = {
+        ...buildHydratedRow({ company_id: 'co-OK' }, 'cart-OK'),
+        id: 'cart-OK',
+        company_id: 'co-OK',
+        items: buildHydratedItems('cart-OK'),
+        _correlation_id: CID_OK,
+      };
+      const snapFail = {
+        ...buildHydratedRow({ company_id: 'co-FAIL' }, 'cart-FAIL'),
+        id: 'cart-FAIL',
+        company_id: 'co-FAIL',
+        items: buildHydratedItems('cart-FAIL'),
+        _correlation_id: CID_FAIL,
+      };
+
+      await act(async () => {
+        await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.current.restoreCart(snapOk as any),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.current.restoreCart(snapFail as any),
+        ]);
+      });
+
+      const starts = filterRestore('restore_start');
+      const oks = filterRestore('restore_ok');
+      const fails = filterRestore('restore_failed');
+      expect(starts).toHaveLength(2);
+      expect(oks).toHaveLength(1);
+      expect(fails).toHaveLength(1);
+
+      // Todos os eventos do restore OK carregam CID_OK e snapshot_id 'cart-OK'.
+      const okStart = starts.find((e) => e.fields.correlation_id === CID_OK);
+      const okEvt = oks[0];
+      expect(okStart, 'restore_start do lado OK').toBeTruthy();
+      expect(okStart!.fields.snapshot_id).toBe('cart-OK');
+      expect(okEvt.fields.correlation_id).toBe(CID_OK);
+      expect(okEvt.fields.snapshot_id).toBe('cart-OK');
+      expect(okEvt.fields.new_cart_id).toBe('new-OK');
+
+      // Todos os eventos do restore FAILED carregam CID_FAIL e snapshot_id 'cart-FAIL'.
+      const failStart = starts.find((e) => e.fields.correlation_id === CID_FAIL);
+      const failEvt = fails[0];
+      expect(failStart, 'restore_start do lado FAILED').toBeTruthy();
+      expect(failStart!.fields.snapshot_id).toBe('cart-FAIL');
+      expect(failEvt.fields.correlation_id).toBe(CID_FAIL);
+      expect(failEvt.fields.snapshot_id).toBe('cart-FAIL');
+
+      // Nenhum cross-talk: CID_OK não aparece em restore_failed e vice-versa.
+      expect(okEvt.fields.correlation_id).not.toBe(CID_FAIL);
+      expect(failEvt.fields.correlation_id).not.toBe(CID_OK);
+      // O ok não deve carregar 'cart-FAIL' e o failed não deve carregar 'cart-OK'.
+      expect(okEvt.fields.snapshot_id).not.toBe('cart-FAIL');
+      expect(failEvt.fields.snapshot_id).not.toBe('cart-OK');
+    });
+  });
+
+  describe('duration_ms — comparação start vs. ok/partial/deduped (mesmo restore)', () => {
+    it.each([
+      { label: 'success', rpcExtra: {}, expected: 'success' as const },
+      { label: 'partial', rpcExtra: { itemsInserted: 1 }, expected: 'partial' as const },
+      { label: 'deduped', rpcExtra: { itemsDeduped: 1 }, expected: 'deduped' as const },
+    ])(
+      '$label: duration_ms é finito, não-negativo e consistente entre restore_start e restore_ok',
+      async ({ rpcExtra, expected }) => {
+        rpcMock.mockResolvedValue(
+          rpcOk({ cartId: `cmp-${expected}`, ...rpcExtra }),
+        );
+        const result = await mountSellerCart();
+
+        await act(async () => {
+          const snap = await result.current.deleteCart(TEST_CART_ID);
+          await result.current.restoreCart(snap);
+        });
+
+        const start = findRestore('restore_start');
+        const ok = findRestore('restore_ok');
+        expect(start, 'restore_start').toBeTruthy();
+        expect(ok, 'restore_ok').toBeTruthy();
+        expect(ok!.fields.restore_result).toBe(expected);
+
+        const startDur = start!.fields.duration_ms as number | undefined;
+        const okDur = ok!.fields.duration_ms as number;
+
+        // Invariantes numéricas em restore_ok — SEM drift dentro da mesma execução.
+        expect(typeof okDur).toBe('number');
+        expect(Number.isFinite(okDur)).toBe(true);
+        expect(Number.isNaN(okDur)).toBe(false);
+        expect(okDur).toBeGreaterThanOrEqual(0);
+        expect(okDur).toBeLessThan(1000); // hot path — sem clock avançado
+
+        // Consistência intra-restore: se start emitir duration_ms, ele deve
+        // ser <= okDur (monotonicidade); caso não emita (contrato atual),
+        // o ok segue sozinho como âncora numérica.
+        if (typeof startDur === 'number') {
+          expect(Number.isFinite(startDur)).toBe(true);
+          expect(startDur).toBeGreaterThanOrEqual(0);
+          expect(startDur).toBeLessThanOrEqual(okDur);
+        }
+
+        // Releitura estável — o buffer é imutável (evita drift acidental na asserção).
+        expect(ok!.fields.duration_ms).toBe(okDur);
+
+        // Correlação preservada entre start e ok.
+        expect(ok!.fields.correlation_id).toBe(start!.fields.correlation_id);
+      },
+    );
+  });
+
+  describe('_correlation_id — reutilização apropriada vs. geração para valores inválidos', () => {
+    // Contrato atual do SUT (SellerCartContext): `snapshot?._correlation_id ?? newRequestId()`.
+    // → Apenas `undefined` / `null` disparam a geração de um novo CID.
+    // → Qualquer string (mesmo vazia) é REUTILIZADA como-is.
+    // Este bloco trava essas semânticas e garante que restores subsequentes
+    // não vazem CIDs entre si.
+
+    it('reutiliza CID string válido do snapshot', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'reuse-valid' }));
+      const result = await mountSellerCart();
+
+      const PRESET_CID = 'valid-uuid-like-abc-123';
+      const snap = {
+        ...buildHydratedRow(),
+        items: buildHydratedItems(),
+        _correlation_id: PRESET_CID,
+      };
+
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.restoreCart(snap as any);
+      });
+
+      expect(findRestore('restore_start')!.fields.correlation_id).toBe(PRESET_CID);
+      expect(findRestore('restore_ok')!.fields.correlation_id).toBe(PRESET_CID);
+    });
+
+    it.each([
+      { label: 'undefined (campo ausente)', cid: undefined },
+      { label: 'null explícito', cid: null },
+    ])('gera novo CID quando snapshot traz _correlation_id = $label', async ({ cid }) => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'gen-new' }));
+      const result = await mountSellerCart();
+
+      const snap: Record<string, unknown> = {
+        ...buildHydratedRow(),
+        items: buildHydratedItems(),
+      };
+      if (cid !== undefined) snap._correlation_id = cid;
+
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.restoreCart(snap as any);
+      });
+
+      const start = findRestore('restore_start');
+      const ok = findRestore('restore_ok');
+      const generated = start!.fields.correlation_id;
+      expect(typeof generated).toBe('string');
+      // Não pode ter herdado o "inválido" (null nunca vira string; undefined idem).
+      expect(generated).not.toBeNull();
+      expect(generated).not.toBeUndefined();
+      expect((generated as string).length).toBeGreaterThan(0);
+      // Consistência intra-restore.
+      expect(ok!.fields.correlation_id).toBe(generated);
+    });
+
+    it('CID inválido/inesperado (string vazia) — contrato atual reutiliza-o (documenta comportamento e trava contra regressões silenciosas)', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'empty-cid' }));
+      const result = await mountSellerCart();
+
+      const snap = {
+        ...buildHydratedRow(),
+        items: buildHydratedItems(),
+        _correlation_id: '',
+      };
+
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.restoreCart(snap as any);
+      });
+
+      const cid = findRestore('restore_start')!.fields.correlation_id;
+      // O `??` só substitui em null/undefined — string vazia PASSA. Se um
+      // refactor futuro endurecer isso (ex.: `|| newRequestId()`), este teste
+      // vira sentinela: basta trocar a asserção para `.not.toBe('')`.
+      expect(cid).toBe('');
+      expect(findRestore('restore_ok')!.fields.correlation_id).toBe('');
+    });
+
+    it('em 2 restores consecutivos com CIDs inválidos DIFERENTES (null e undefined), cada execução recebe um CID gerado próprio, sem vazamento', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'no-leak' }));
+      const result = await mountSellerCart();
+
+      const snapA: Record<string, unknown> = {
+        ...buildHydratedRow({}, 'cart-A'),
+        id: 'cart-A',
+        items: buildHydratedItems('cart-A'),
+        _correlation_id: null,
+      };
+      const snapB: Record<string, unknown> = {
+        ...buildHydratedRow({}, 'cart-B'),
+        id: 'cart-B',
+        items: buildHydratedItems('cart-B'),
+        // _correlation_id ausente = undefined
+      };
+
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.restoreCart(snapA as any);
+      });
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.restoreCart(snapB as any);
+      });
+
+      const starts = filterRestore('restore_start');
+      expect(starts).toHaveLength(2);
+      const cidA = starts[0].fields.correlation_id;
+      const cidB = starts[1].fields.correlation_id;
+
+      for (const c of [cidA, cidB]) {
+        expect(typeof c).toBe('string');
+        expect((c as string).length).toBeGreaterThan(0);
+      }
+      // Isolamento: cada restore recebe SEU próprio CID gerado, sem vazar.
+      expect(cidA).not.toBe(cidB);
+    });
+  });
+
+  describe('concorrência com mesmo company_id, snapshot_ids diferentes — cada chamada isola seu CID', () => {
+    it.each([
+      { label: 'partial', rpcExtra: { itemsInserted: 1 }, expected: 'partial' as const },
+      { label: 'deduped', rpcExtra: { itemsDeduped: 1 }, expected: 'deduped' as const },
+    ])(
+      '$label: 2 restores paralelos com mesmo company_id e ids distintos propagam CIDs únicos e cada restore_ok bate com seu snapshot_id',
+      async ({ rpcExtra, expected }) => {
+        const result = await mountSellerCart();
+
+        // MESMO company_id nos dois snapshots — o discriminador passa a ser
+        // o número de chamadas da RPC (ordem determinística pelo Promise.all).
+        // O 1º snapshot vira 'new-P1', o 2º 'new-P2'.
+        let call = 0;
+        rpcMock.mockImplementation(() => {
+          call += 1;
+          return Promise.resolve(
+            rpcOk({ cartId: `new-P${call}`, ...rpcExtra }),
+          );
+        });
+
+        const snap1 = {
+          ...buildHydratedRow({ company_id: 'co-SAME' }, 'snap-1'),
+          id: 'snap-1',
+          company_id: 'co-SAME',
+          items: buildHydratedItems('snap-1'),
+          // Sem `_correlation_id` — o SUT deve GERAR um único por chamada.
+        };
+        const snap2 = {
+          ...buildHydratedRow({ company_id: 'co-SAME' }, 'snap-2'),
+          id: 'snap-2',
+          company_id: 'co-SAME',
+          items: buildHydratedItems('snap-2'),
+        };
+
+        await act(async () => {
+          await Promise.all([
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            result.current.restoreCart(snap1 as any),
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            result.current.restoreCart(snap2 as any),
+          ]);
+        });
+
+        const starts = filterRestore('restore_start');
+        const oks = filterRestore('restore_ok');
+        expect(starts).toHaveLength(2);
+        expect(oks).toHaveLength(2);
+        expect(oks.every((e) => e.fields.restore_result === expected)).toBe(true);
+
+        // Pareia cada ok com seu start via snapshot_id (SSOT do restore).
+        const pairFor = (snapshotId: string) => ({
+          start: starts.find((e) => e.fields.snapshot_id === snapshotId),
+          ok: oks.find((e) => e.fields.snapshot_id === snapshotId),
+        });
+        const p1 = pairFor('snap-1');
+        const p2 = pairFor('snap-2');
+        expect(p1.start, 'start snap-1').toBeTruthy();
+        expect(p1.ok, 'ok snap-1').toBeTruthy();
+        expect(p2.start, 'start snap-2').toBeTruthy();
+        expect(p2.ok, 'ok snap-2').toBeTruthy();
+
+        const cid1 = p1.start!.fields.correlation_id;
+        const cid2 = p2.start!.fields.correlation_id;
+
+        // CIDs únicos por chamada — nenhum vazamento entre restores paralelos.
+        expect(typeof cid1).toBe('string');
+        expect((cid1 as string).length).toBeGreaterThan(0);
+        expect(typeof cid2).toBe('string');
+        expect((cid2 as string).length).toBeGreaterThan(0);
+        expect(cid1).not.toBe(cid2);
+
+        // Consistência intra-restore: start[i].cid === ok[i].cid.
+        expect(p1.ok!.fields.correlation_id).toBe(cid1);
+        expect(p2.ok!.fields.correlation_id).toBe(cid2);
+
+        // O ok correto refere ao snapshot correto — sem cross-talk de restore_result.
+        expect(p1.ok!.fields.snapshot_id).toBe('snap-1');
+        expect(p2.ok!.fields.snapshot_id).toBe('snap-2');
+      },
+    );
+  });
+
   // Sanity: nenhum teste deve deixar eventos residuais escapando de outro scope.
   it('scope canônico = "seller_cart.restore" (evita drift de nome de scope)', async () => {
     rpcMock.mockResolvedValue(rpcOk());
