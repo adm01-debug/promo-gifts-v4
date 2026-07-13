@@ -24,7 +24,11 @@ interface UndoToastContentProps {
   title: string;
   description?: string;
   duration: number;
-  onUndo: () => void;
+  /**
+   * Pode ser assíncrono. O botão fica desabilitado enquanto a promise resolve
+   * para impedir cliques concorrentes que disparariam múltiplas restaurações.
+   */
+  onUndo: () => void | Promise<void>;
   onTimeout: () => void;
   /**
    * Se definido, congela o tempo restante no valor informado (ms) e desativa
@@ -73,6 +77,11 @@ export function UndoToastContent({
   const reducedNative = usePrefersReducedMotion();
   // Harness pode congelar tempo — quando frozen também suprime animações.
   const reduced = reducedNative || frozen;
+  // Guarda anti double-click: enquanto o onUndo estiver rodando, o botão
+  // fica desabilitado e cliques subsequentes são ignorados. Combina com
+  // `pendingRef` para bloquear chamadas mesmo antes do React re-renderizar.
+  const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
 
   useEffect(() => {
     if (frozen) return;
@@ -99,11 +108,32 @@ export function UndoToastContent({
     pausedRef.current = false;
   }, []);
 
+  const handleClick = useCallback(async () => {
+    // Guarda síncrona: bloqueia cliques concorrentes antes de o React
+    // re-renderizar com `pending=true` (double-click rápido dentro do mesmo tick).
+    if (pendingRef.current) return;
+    if (remainingMs <= 0) return;
+    pendingRef.current = true;
+    setPending(true);
+    // Pausa o countdown enquanto a restauração está em andamento — evita que
+    // o toast expire no meio da requisição e chame onTimeout indevidamente.
+    pausedRef.current = true;
+    try {
+      await onUndo();
+    } finally {
+      pendingRef.current = false;
+      // Não limpamos `setPending(false)` porque o toast será dismissado pelo
+      // handler externo (showUndoToast) ao fim do onUndo. Se o componente
+      // permanecer montado por qualquer razão, mantemos o botão inerte.
+    }
+  }, [onUndo, remainingMs]);
+
   const remainingSec = Math.ceil(remainingMs / 1000);
   const R = 7;
   const C = 2 * Math.PI * R;
   const progress = remainingMs / totalMs;
   const dashoffset = C * (1 - progress);
+  const disabled = remainingMs <= 0 || pending;
 
   return (
     <div
@@ -137,20 +167,27 @@ export function UndoToastContent({
         data-remaining-ms={remainingMs}
         data-remaining-sec={remainingSec}
         data-expired={remainingMs <= 0 ? 'true' : 'false'}
-        disabled={remainingMs <= 0}
-        aria-disabled={remainingMs <= 0 || undefined}
-        onClick={onUndo}
-        aria-label={`Desfazer ação — ${remainingSec} segundos restantes de ${totalSec}`}
+        data-pending={pending ? 'true' : 'false'}
+        disabled={disabled}
+        aria-disabled={disabled || undefined}
+        aria-busy={pending || undefined}
+        onClick={handleClick}
+        aria-label={
+          pending
+            ? 'Restaurando…'
+            : `Desfazer ação — ${remainingSec} segundos restantes de ${totalSec}`
+        }
         className={cn(
           'group relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1',
           'border border-primary/30 bg-primary/10 text-primary backdrop-blur-sm',
           'text-[11px] font-semibold tracking-wide',
           'shadow-[0_2px_10px_-2px_hsl(var(--primary)/0.35)]',
           !reduced && 'transition-all duration-200 ease-out',
-          'hover:border-primary/50 hover:bg-primary/15',
-          !reduced &&
+          !disabled && 'hover:border-primary/50 hover:bg-primary/15',
+          !reduced && !disabled &&
             'hover:shadow-[0_4px_16px_-2px_hsl(var(--primary)/0.5)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98]',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          disabled && 'cursor-not-allowed opacity-60',
         )}
       >
         <span className="relative inline-flex h-4 w-4 items-center justify-center">
