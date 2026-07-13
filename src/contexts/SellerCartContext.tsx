@@ -350,17 +350,22 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           });
         }
 
-        // Métricas da RPC — visíveis no console (auditoria/diagnóstico) e
-        // resumidas no toast de sucesso quando houver dedup ou divergência
-        // entre `items_total` e `items_inserted` (senão o toast fica limpo).
+        // Métricas da RPC — telemetria estruturada (JSON + Sentry) + toast
+        // com contagem inteligente quando houver dedup ou divergência entre
+        // `items_total` e `items_inserted` (senão o toast fica limpo).
         const metrics = created?.restore_metrics;
         if (metrics) {
-          console.info('[restoreCart] carrinho restaurado', {
-            snapshot_id: snapshot?.id,
+          restoreLog.info('restore_ok', {
+            snapshot_id: snapshot?.id ?? null,
             new_cart_id: created.id,
+            company_id: snapshot?.company_id ?? null,
             items_total: metrics.items_total,
             items_inserted: metrics.items_inserted,
             items_deduped: metrics.items_deduped,
+            // Sinaliza para dashboards quando o payload chegou "sujo" (dedup
+            // necessária ou algum ON CONFLICT DO NOTHING descartou linha).
+            has_dedup: metrics.items_deduped > 0,
+            partial_insert: metrics.items_inserted !== metrics.items_total,
           });
 
           const parts: string[] = [`snapshot ${snapshot?.id ?? '—'}`];
@@ -381,9 +386,9 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         // Sem este bloco o erro real (RLS, coluna, unique, FK) era engolido
         // pelo `catch {}` original e o usuário só via um toast genérico sem
-        // pista. Agora: log estruturado + description específica por SQLSTATE
-        // + snapshot_id / items_count pra diagnóstico rápido. O fallback
-        // usa `sanitizeError` para garantir que nada sensível vaze.
+        // pista. Agora: telemetria estruturada (level=error → Sentry) +
+        // description específica por SQLSTATE + snapshot_id / items_count.
+        // O fallback usa `sanitizeError` para garantir que nada sensível vaze.
         const rawMessage =
           err instanceof Error
             ? err.message
@@ -394,14 +399,32 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           err && typeof err === 'object' && 'code' in err
             ? String((err as { code: unknown }).code ?? '')
             : '';
+        const pgDetails =
+          err && typeof err === 'object' && 'details' in err
+            ? String((err as { details: unknown }).details ?? '')
+            : '';
+        const pgHint =
+          err && typeof err === 'object' && 'hint' in err
+            ? String((err as { hint: unknown }).hint ?? '')
+            : '';
         const mapped = mapRestoreCartError(err);
-        console.error('[restoreCart] falha ao restaurar carrinho', {
-          snapshot_id: snapshot?.id,
+        // `err` no payload aciona `captureException` no Sentry via structuredLogger
+        // e é serializado como { name, message, stack } no log JSON.
+        restoreLog.error('restore_failed', {
+          snapshot_id: snapshot?.id ?? null,
           items_count: itemsCount,
-          company_id: snapshot?.company_id,
-          pg_code: pgCode,
+          company_id: snapshot?.company_id ?? null,
+          pg_code: pgCode || null,
+          pg_details: pgDetails || null,
+          pg_hint: pgHint || null,
           reason: mapped.reason,
+          // Métricas vazias no erro (a RPC não retornou nada), mas o schema
+          // permanece consistente para dashboards agregarem success + failure.
+          items_total: null,
+          items_inserted: null,
+          items_deduped: null,
           raw_error: rawMessage,
+          err,
         });
         toast.error(mapped.title ?? 'Não foi possível restaurar o carrinho.', {
           description: `${mapped.description} · snapshot ${snapshot?.id ?? '—'} · ${itemsCount} item(ns)`,
