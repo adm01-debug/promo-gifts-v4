@@ -19,8 +19,6 @@ import {
   deleteConfirmDialogDescription,
   deletedToastTitle,
   confirmDialogConfirmLabel,
-  RESTORE_SINGLE_SUCCESS,
-  RESTORE_SINGLE_ERROR,
 } from '@/pages/products/seller-carts/undoCopy';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -732,12 +730,11 @@ function CartsListContent() {
               description: UNDO_TOAST_DESCRIPTION,
               duration: UNDO_DURATION_MS,
               onUndo: async () => {
+                // O toast de sucesso (com métricas items_total/inserted/deduped)
+                // e o toast de erro (com mapping por SQLSTATE) são emitidos
+                // dentro do próprio `restoreCart` — evita duplicidade aqui.
                 const newId = await restoreCart(snapshot);
-                if (newId) {
-                  toast.success(RESTORE_SINGLE_SUCCESS);
-                } else {
-                  toast.error(RESTORE_SINGLE_ERROR);
-                }
+                return newId ? true : false;
               },
             });
           } catch {

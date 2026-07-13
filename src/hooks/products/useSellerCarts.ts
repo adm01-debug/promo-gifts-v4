@@ -64,6 +64,21 @@ export interface SellerCart {
   items: SellerCartItem[];
 }
 
+/** Métricas retornadas pela RPC `restore_seller_cart`. */
+export interface RestoreCartMetrics {
+  /** Total de itens no snapshot enviado à RPC. */
+  items_total: number;
+  /** Itens efetivamente inseridos (após dedup + ON CONFLICT DO NOTHING). */
+  items_inserted: number;
+  /** Itens deduplicados por (product_id, color_name) — quantidades foram somadas. */
+  items_deduped: number;
+}
+
+/** SellerCart devolvido pela mutation de restore, com métricas da RPC anexadas. */
+export interface RestoredSellerCart extends SellerCart {
+  restore_metrics: RestoreCartMetrics;
+}
+
 export interface SellerCartItem {
   id: string;
   cart_id: string;
@@ -891,7 +906,7 @@ export function useSellerCarts() {
   //   • ON CONFLICT DO NOTHING contra `unique_cart_item_variant`.
   // Nunca vaza `id`, `seller_id`, `created_at`, `updated_at` do snapshot.
   const restoreCartWithItems = useMutation<
-    SellerCart | undefined,
+    RestoredSellerCart | undefined,
     Error,
     SellerCart
   >({
@@ -961,7 +976,12 @@ export function useSellerCarts() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         items: snapshot.items ?? [],
-      } satisfies SellerCart;
+        restore_metrics: {
+          items_total: Number(result?.items_total ?? 0),
+          items_inserted: Number(result?.items_inserted ?? 0),
+          items_deduped: Number(result?.items_deduped ?? 0),
+        },
+      } satisfies RestoredSellerCart;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
