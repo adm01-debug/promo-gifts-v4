@@ -170,6 +170,17 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // de forma otimista: se o DELETE falhasse (RLS/rede), o carrinho reaparecia
       // na lista mas com o histórico de ações perdido e a seleção ativa descartada.
       const deletedSnapshot = await deleteCartMutation.mutateAsync(cartId);
+      // Telemetria de hidratação do snapshot ANTES de qualquer Undo. Se
+      // `items_total === 0` isso indica que a linha foi deletada sem itens
+      // reais no banco OU que o servidor devolveu snapshot parcial — em ambos
+      // os casos o Undo posterior seria vazio (guarda em restoreCart bloqueia).
+      const deletedItemsTotal = deletedSnapshot?.items?.length ?? 0;
+      restoreLog.info('delete_ok', {
+        snapshot_id: deletedSnapshot?.id ?? cartId,
+        company_id: deletedSnapshot?.company_id ?? null,
+        items_total: deletedItemsTotal,
+        hydrated: deletedItemsTotal > 0,
+      });
       if (activeCartId === cartId) {
         setActiveCartId(null);
         if (user?.id) {
@@ -184,6 +195,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     },
     [deleteCartMutation, activeCartId, user?.id],
   );
+
 
   // Retorna Promise<boolean> (true = adicionado) para que chamadores em lote
   // (bulk/template) consigam aguardar e reportar contagem real de sucesso/falha
@@ -357,9 +369,20 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         return undefined;
       }
 
-      try {
+      // Marca o início da restauração com o snapshot já validado (>=1 item).
+      // Permite correlacionar `delete_ok` → `restore_start` → `restore_ok/failed`
+      // por `snapshot_id` no Sentry/console e detectar regressão de hidratação
+      // (ex.: `items_total` cair para 0 entre delete e restore).
+      restoreLog.info('restore_start', {
+        snapshot_id: snapshot?.id ?? null,
+        company_id: snapshot?.company_id ?? null,
+        items_total: itemsCount,
+        hydrated: true,
+      });
 
+      try {
         const created = await restoreCartWithItemsMutation.mutateAsync(snapshot);
+
         // Após restaurar, garante que o ponteiro do carrinho ativo (localStorage)
         // não fique apontando para o id ANTIGO/inexistente do snapshot. Se não há
         // seleção ativa (típico após excluir o carrinho ativo), auto-foca no
