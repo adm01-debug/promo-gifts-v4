@@ -1,0 +1,128 @@
+name: migration-dry-run
+
+# =============================================================================
+# Dry-run de rascunhos em qa/migrations-draft/*.sql contra o banco canonico.
+# Roda cada draft dentro de BEGIN ... ROLLBACK, sem persistir alteracoes.
+# Valida sintaxe, assinaturas de funcao e diff de ACL previsto.
+#
+# NAO substitui db-schema-drift-check (complementar). NAO bloqueia deploy —
+# e uma checagem de pre-review para PRs que tocam drafts SECURITY DEFINER.
+#
+# Secrets (Settings -> Actions -> Secrets):
+#   PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGPORT (default 5432)
+# Sem secrets => warning + verde (safe-by-default).
+# =============================================================================
+
+on:
+  pull_request:
+    paths:
+      - 'qa/migrations-draft/**.sql'
+      - 'scripts/dry-run-migration-draft.mjs'
+  workflow_dispatch:
+    inputs:
+      draft_path:
+        description: 'Caminho do draft (relativo ao repo). Vazio = todos os *.sql do diretorio.'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: migration-dry-run-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dry-run:
+    name: Dry-run migration drafts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PGHOST: ${{ secrets.PGHOST }}
+      PGUSER: ${{ secrets.PGUSER }}
+      PGPASSWORD: ${{ secrets.PGPASSWORD }}
+      PGDATABASE: ${{ secrets.PGDATABASE }}
+      PGPORT: ${{ secrets.PGPORT || '5432' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Guard - PG secrets presentes?
+        id: guard
+        run: |
+          set -euo pipefail
+          if [ -z "${PGHOST:-}" ] || [ -z "${PGUSER:-}" ] || [ -z "${PGPASSWORD:-}" ] || [ -z "${PGDATABASE:-}" ]; then
+            echo "::warning::PG* secrets ausentes - migration dry-run PULADO (safe-by-default). Configure PGHOST/PGUSER/PGPASSWORD/PGDATABASE para ativar."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install psql client
+        if: steps.guard.outputs.enabled == 'true'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Detectar drafts alvo
+        if: steps.guard.outputs.enabled == 'true'
+        id: drafts
+        run: |
+          set -euo pipefail
+          if [ -n "${{ github.event.inputs.draft_path }}" ]; then
+            echo "${{ github.event.inputs.draft_path }}" > /tmp/drafts.txt
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+              | grep -E '^qa/migrations-draft/.*\.sql$' > /tmp/drafts.txt || true
+          else
+            ls qa/migrations-draft/*.sql > /tmp/drafts.txt
+          fi
+          if [ ! -s /tmp/drafts.txt ]; then
+            echo "::notice::Nenhum draft alterado neste PR - nada a checar."
+            echo "count=0" >> "$GITHUB_OUTPUT"
+          else
+            cnt=$(wc -l < /tmp/drafts.txt | tr -d ' ')
+            echo "count=$cnt" >> "$GITHUB_OUTPUT"
+            echo "Drafts alvo:"
+            cat /tmp/drafts.txt
+          fi
+
+      - name: Baseline SECURITY DEFINER ACL (antes)
+        if: steps.guard.outputs.enabled == 'true' && steps.drafts.outputs.count != '0'
+        continue-on-error: true
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          echo "## Baseline check-security-definer-acl" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          node scripts/check-security-definer-acl.mjs 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dry-run drafts
+        if: steps.guard.outputs.enabled == 'true' && steps.drafts.outputs.count != '0'
+        run: |
+          set -euo pipefail
+          FAIL=0
+          echo "## Dry-run de drafts" >> "$GITHUB_STEP_SUMMARY"
+          while IFS= read -r draft; do
+            [ -z "$draft" ] && continue
+            [ -f "$draft" ] || continue
+            echo "### $draft" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            if node scripts/dry-run-migration-draft.mjs "$draft" 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"; then
+              :
+            else
+              FAIL=1
+            fi
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          done < /tmp/drafts.txt
+          if [ "$FAIL" -ne 0 ]; then
+            echo "::error::Um ou mais drafts falharam no dry-run. Veja o job summary."
+            exit 1
+          fi
