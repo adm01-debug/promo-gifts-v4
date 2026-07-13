@@ -1,3 +1,13 @@
+/**
+ * Testes unitários do `structuredLogger` (SSOT do logger cliente).
+ *
+ * NOTA sobre `mockStructuredLogger`: este helper (`src/test/mockStructuredLogger`)
+ * é usado por testes CONSUMIDORES do logger (captura eventos emitidos pelo código
+ * sob teste). Aqui testamos a IMPLEMENTAÇÃO do logger — usá-lo seria substituir
+ * o próprio módulo sob teste. Portanto este arquivo permanece com stubs diretos
+ * de `console` + Sentry. Consolidamos aqui o que antes vivia duplicado em
+ * `tests/observability/structured-logger.test.ts` (removido).
+ */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createClientLogger } from '../structuredLogger';
 import { captureException } from '@/lib/sentry';
@@ -7,7 +17,7 @@ vi.mock('@/lib/sentry', () => ({
   captureException: vi.fn(),
 }));
 
-// Mock requestId
+// Mock requestId — determinístico para asserts estáveis.
 vi.mock('../requestId', () => ({
   newRequestId: () => 'test-request-id',
   REQUEST_ID_HEADER: 'X-Request-Id',
