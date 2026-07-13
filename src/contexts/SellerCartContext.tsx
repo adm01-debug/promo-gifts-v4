@@ -386,11 +386,10 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // Correlation ID propagado do `deleteCart` (ver `_correlation_id`).
       // Se o snapshot chegou por outro caminho (ex.: chamada direta em testes
       // ou fluxo legado), geramos um novo aqui para manter o schema estável.
-      // Endurecimento: strings vazias ou só-whitespace são inválidas — tratamos
-      // como ausência de ID e geramos um novo, evitando telemetria com CID "".
-      const rawCid = snapshot?._correlation_id;
-      const isValidCid = typeof rawCid === 'string' && rawCid.trim().length > 0;
-      const correlationId = isValidCid ? rawCid : newRequestId();
+      // Endurecimento: strings vazias, só-whitespace ou tipos inesperados são
+      // tratados como ausência de ID — ver `normalizeCorrelationId` (SSOT).
+      const correlationId = normalizeCorrelationId(snapshot?._correlation_id);
+
 
 
 
