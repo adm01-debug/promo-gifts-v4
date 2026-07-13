@@ -77,14 +77,6 @@ vi.mock('@/hooks/products/useDebouncedCartItemActions', () => ({
 import { SellerCartProvider, useSellerCartContext } from '../SellerCartContext';
 import type { SellerCart, SellerCartItem } from '@/hooks/products';
 
-function wrapper({ children }: { children: ReactNode }) {
-  const qc = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
-  return <QueryClientProvider client={qc}>{children}<SellerCartProvider>{children}</SellerCartProvider></QueryClientProvider>;
-}
-
-// Wrapper simplificado sem duplicar children:
 function Wrap({ children }: { children: ReactNode }) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
