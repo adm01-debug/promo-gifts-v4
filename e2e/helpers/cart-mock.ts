@@ -121,7 +121,7 @@ export async function mockSellerCartsAPI(page: Page, carts: MockCart[]): Promise
         'Content-Range': `0-${Math.max(0, rows.length - 1)}/${rows.length}`,
         'X-Mock-Source': 'cart-mock-helper',
       },
-      body: JSON.stringify(rows),
+      body: JSON.stringify(requestedId ? (rows[0] ?? null) : rows),
     });
   });
 }
