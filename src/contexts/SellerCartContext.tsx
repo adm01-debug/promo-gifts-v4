@@ -24,6 +24,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { mapRestoreCartError } from '@/pages/products/seller-carts/mapRestoreCartError';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+
+// Logger de escopo dedicado — emite JSON estruturado em PROD e encaminha
+// falhas ao Sentry automaticamente (level=error → captureException com tags
+// `scope`, `event`, `request_id`).
+const restoreLog = createClientLogger('seller_cart.restore');
 
 
 interface SellerCartContextType {
