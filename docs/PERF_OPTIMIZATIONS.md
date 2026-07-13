@@ -20,6 +20,7 @@ navegação direta em IDEs.
    - [Relatório informativo no PR](#relatório-informativo-no-pr)
    - [Workflow e idempotência do comentário](#workflow-e-idempotência-do-comentário)
    - [Separação gate × report](#separação-gate--report)
+   - [Interpretando o report — guia rápido](#interpretando-o-report--guia-rápido)
 3. [Métricas de navegação (Sentry) sem web-vitals](#métricas-de-navegação-sentry-sem-web-vitals)
    - [Métricas coletadas](#métricas-coletadas)
    - [APIs nativas usadas](#apis-nativas-usadas)
