@@ -361,6 +361,9 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           items_total: 0,
           items_inserted: 0,
           items_deduped: 0,
+          hydrated: false,
+          restore_result: 'skipped_empty' as const,
+          duration_ms: 0,
         });
         toast.error('Não foi possível desfazer: snapshot sem itens.', {
           description:
@@ -379,6 +382,12 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         items_total: itemsCount,
         hydrated: true,
       });
+
+      // Mede o tempo total da restauração (RPC + fallback + pós-processamento)
+      // com relógio monotônico — imune a ajuste de horário do sistema.
+      const startedAt = (typeof performance !== 'undefined' ? performance : Date).now();
+      const elapsedMs = () =>
+        Math.round((typeof performance !== 'undefined' ? performance : Date).now() - startedAt);
 
       try {
         const created = await restoreCartWithItemsMutation.mutateAsync(snapshot);
@@ -400,20 +409,39 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         // com contagem inteligente quando houver dedup ou divergência entre
         // `items_total` e `items_inserted` (senão o toast fica limpo).
         const metrics = created?.restore_metrics;
-        if (metrics) {
-          restoreLog.info('restore_ok', {
-            snapshot_id: snapshot?.id ?? null,
-            new_cart_id: created.id,
-            company_id: snapshot?.company_id ?? null,
-            items_total: metrics.items_total,
-            items_inserted: metrics.items_inserted,
-            items_deduped: metrics.items_deduped,
-            // Sinaliza para dashboards quando o payload chegou "sujo" (dedup
-            // necessária ou algum ON CONFLICT DO NOTHING descartou linha).
-            has_dedup: metrics.items_deduped > 0,
-            partial_insert: metrics.items_inserted !== metrics.items_total,
-          });
+        // `restore_result` categoriza o desfecho para dashboards:
+        //   success        → todos os itens do snapshot inseridos.
+        //   partial        → RPC ok mas items_inserted < items_total (RLS parcial, ON CONFLICT).
+        //   deduped        → itens duplicados no snapshot foram colapsados no INSERT.
+        //   ok_no_metrics  → RPC/fallback sem `restore_metrics` (ex.: schema legado).
+        const restoreResult: 'success' | 'partial' | 'deduped' | 'ok_no_metrics' = metrics
+          ? metrics.items_inserted < metrics.items_total
+            ? 'partial'
+            : metrics.items_deduped > 0
+              ? 'deduped'
+              : 'success'
+          : 'ok_no_metrics';
 
+        restoreLog.info('restore_ok', {
+          snapshot_id: snapshot?.id ?? null,
+          new_cart_id: created?.id ?? null,
+          company_id: snapshot?.company_id ?? null,
+          items_total: metrics?.items_total ?? itemsCount,
+          items_inserted: metrics?.items_inserted ?? null,
+          items_deduped: metrics?.items_deduped ?? null,
+          // Hidratação sempre `true` aqui — a guarda anti-vazio já bloqueou 0.
+          hydrated: true,
+          restore_result: restoreResult,
+          duration_ms: elapsedMs(),
+          // Sinaliza para dashboards quando o payload chegou "sujo" (dedup
+          // necessária ou algum ON CONFLICT DO NOTHING descartou linha).
+          has_dedup: (metrics?.items_deduped ?? 0) > 0,
+          partial_insert: metrics
+            ? metrics.items_inserted !== metrics.items_total
+            : false,
+        });
+
+        if (metrics) {
           const parts: string[] = [`snapshot ${snapshot?.id ?? '—'}`];
           if (metrics.items_deduped > 0 || metrics.items_inserted !== metrics.items_total) {
             parts.push(
@@ -459,6 +487,10 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         restoreLog.error('restore_failed', {
           snapshot_id: snapshot?.id ?? null,
           items_count: itemsCount,
+          items_total: itemsCount,
+          hydrated: true,
+          restore_result: 'failed' as const,
+          duration_ms: elapsedMs(),
           company_id: snapshot?.company_id ?? null,
           pg_code: pgCode || null,
           pg_details: pgDetails || null,
@@ -466,7 +498,6 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           reason: mapped.reason,
           // Métricas vazias no erro (a RPC não retornou nada), mas o schema
           // permanece consistente para dashboards agregarem success + failure.
-          items_total: null,
           items_inserted: null,
           items_deduped: null,
           raw_error: rawMessage,
@@ -477,6 +508,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         });
         return undefined;
       }
+
     },
     [restoreCartWithItemsMutation],
   );
