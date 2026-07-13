@@ -41,6 +41,7 @@ import {
   QUOTES_MIN_VISIBLE_ROWS,
   QUOTES_MAX_VISIBLE_ROWS,
   QUOTES_CHROME_BY_BREAKPOINT,
+} from '@/lib/quotes/quotesLayout';
 
 // ── Prefetch do bundle do QuoteBuilder/QuoteView ──
 // Dispara em hover/focus/touch de uma linha para eliminar o "flash" do lazy
