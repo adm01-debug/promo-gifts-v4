@@ -26,11 +26,42 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 import { mapRestoreCartError } from '@/pages/products/seller-carts/mapRestoreCartError';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import { newRequestId } from '@/lib/telemetry/requestId';
+import { normalizeCorrelationId } from '@/lib/telemetry/correlationId';
+import {
+  validateRestoreEvent,
+  type RestoreEventName,
+} from '@/lib/telemetry/restoreEventSchema';
 
 // Logger de escopo dedicado — emite JSON estruturado em PROD e encaminha
 // falhas ao Sentry automaticamente (level=error → captureException com tags
 // `scope`, `event`, `request_id`).
 const restoreLog = createClientLogger('seller_cart.restore');
+
+/**
+ * Wrapper que valida o payload contra `validateRestoreEvent` ANTES de emitir.
+ * Em caso de violação, dispara `restore_event_schema_violation` (warn) SEM
+ * bloquear a emissão original — telemetria nunca deve quebrar o fluxo do
+ * usuário. As violações viram sinal em dashboards e ficam localizáveis por
+ * `correlation_id`.
+ */
+function emitRestore(
+  level: 'error' | 'info' | 'warn',
+  event: RestoreEventName,
+  fields: Record<string, unknown>,
+): void {
+  const check = validateRestoreEvent(event, fields);
+  if (!check.valid) {
+    const cid = fields.correlation_id;
+    restoreLog.warn('restore_event_schema_violation', {
+      correlation_id:
+        typeof cid === 'string' && cid.trim().length > 0 ? cid : 'unknown',
+      violated_event: event,
+      violations: check.violations,
+    });
+  }
+  restoreLog[level](event, fields);
+}
+
 
 
 interface SellerCartContextType {
@@ -355,11 +386,10 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // Correlation ID propagado do `deleteCart` (ver `_correlation_id`).
       // Se o snapshot chegou por outro caminho (ex.: chamada direta em testes
       // ou fluxo legado), geramos um novo aqui para manter o schema estável.
-      // Endurecimento: strings vazias ou só-whitespace são inválidas — tratamos
-      // como ausência de ID e geramos um novo, evitando telemetria com CID "".
-      const rawCid = snapshot?._correlation_id;
-      const isValidCid = typeof rawCid === 'string' && rawCid.trim().length > 0;
-      const correlationId = isValidCid ? rawCid : newRequestId();
+      // Endurecimento: strings vazias, só-whitespace ou tipos inesperados são
+      // tratados como ausência de ID — ver `normalizeCorrelationId` (SSOT).
+      const correlationId = normalizeCorrelationId(snapshot?._correlation_id);
+
 
 
 
@@ -369,7 +399,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // carrinho vazio silenciosamente. Emitimos telemetria + toast orientando
       // o usuário a recarregar antes de tentar de novo.
       if (itemsCount === 0) {
-        restoreLog.warn('restore_skipped_empty_snapshot', {
+        emitRestore('warn', 'restore_skipped_empty_snapshot', {
           correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           company_id: snapshot?.company_id ?? null,
@@ -394,7 +424,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // Permite correlacionar `delete_ok` → `restore_start` → `restore_ok/failed`
       // por `snapshot_id` no Sentry/console e detectar regressão de hidratação
       // (ex.: `items_total` cair para 0 entre delete e restore).
-      restoreLog.info('restore_start', {
+      emitRestore('info', 'restore_start', {
         correlation_id: correlationId,
         snapshot_id: snapshot?.id ?? null,
         company_id: snapshot?.company_id ?? null,
@@ -452,7 +482,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         const createdItemsLength = Array.isArray(created?.items) ? created.items.length : null;
         const itemsResulting = metrics?.items_inserted ?? createdItemsLength ?? null;
 
-        restoreLog.info('restore_ok', {
+        emitRestore('info', 'restore_ok', {
           correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           new_cart_id: created?.id ?? null,
@@ -521,7 +551,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         const mapped = mapRestoreCartError(err);
         // `err` no payload aciona `captureException` no Sentry via structuredLogger
         // e é serializado como { name, message, stack } no log JSON.
-        restoreLog.error('restore_failed', {
+        emitRestore('error', 'restore_failed', {
           correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           items_count: itemsCount,
