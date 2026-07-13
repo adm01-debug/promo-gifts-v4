@@ -538,8 +538,9 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       const hay = cnpjErrorHaystack(err);
       if (/cnpj/i.test(hay)) {
         const mapped = mapCnpjError(err);
-        setCnpjError(mapped.message);
-        toast.error(mapped.message);
+        const cnpjCopy = mapped.message;
+        setCnpjError(cnpjCopy);
+        toast.error(cnpjCopy);
       } else {
         toast.error('Erro ao criar fornecedor');
       }
