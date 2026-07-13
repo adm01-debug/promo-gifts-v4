@@ -393,7 +393,6 @@ jobs:
 
       - name: Security definer ACL check
         run: npm run check:security-definer-acl
-        continue-on-error: true
 
   # ─── GATE 9: Suíte de regressão completa ─────────────────────────────────
   regression-suite:
