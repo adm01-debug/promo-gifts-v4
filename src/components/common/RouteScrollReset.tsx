@@ -27,6 +27,9 @@ export function RouteScrollReset() {
   const isFirstMount = useRef(true);
 
   useEffect(() => {
+    // Instrumentação leve — mede duração de troca de rota (Sentry tag `route_change`).
+    notifyRouteChange(pathname);
+
     // Libera scroll-lock residual do Radix em toda troca de rota.
     forceReleaseScrollLock();
 
