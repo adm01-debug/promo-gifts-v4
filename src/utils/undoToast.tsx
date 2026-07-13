@@ -206,15 +206,28 @@ export function UndoToastContent({
 export function showUndoToast({ title, description, onUndo, duration = 5000 }: UndoToastOptions) {
   let undone = false;
 
-  const handleUndo = () => {
+  const handleUndo = async () => {
     if (undone) return;
     undone = true;
-    onUndo();
+    // AGUARDA o resultado do onUndo antes de confirmar sucesso. Antes o toast
+    // "Ação desfeita!" aparecia imediatamente (fire-and-forget), gerando falso
+    // positivo quando a restauração falhava silenciosamente no INSERT.
+    let ok = true;
+    try {
+      const result = await onUndo();
+      if (result === false) ok = false;
+    } catch {
+      ok = false;
+    }
     sonnerToast.dismiss(toastId);
-    sonnerToast.success('Ação desfeita!', {
-      duration: 2000,
-      icon: <Undo2 className="h-4 w-4" />,
-    });
+    if (ok) {
+      sonnerToast.success('Ação desfeita!', {
+        duration: 2000,
+        icon: <Undo2 className="h-4 w-4" />,
+      });
+    }
+    // Em falha, o chamador é responsável por emitir o toast de erro
+    // (com description sanitizada + contexto do snapshot).
   };
 
   const handleTimeout = () => {
