@@ -26,11 +26,42 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 import { mapRestoreCartError } from '@/pages/products/seller-carts/mapRestoreCartError';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import { newRequestId } from '@/lib/telemetry/requestId';
+import { normalizeCorrelationId } from '@/lib/telemetry/correlationId';
+import {
+  validateRestoreEvent,
+  type RestoreEventName,
+} from '@/lib/telemetry/restoreEventSchema';
 
 // Logger de escopo dedicado — emite JSON estruturado em PROD e encaminha
 // falhas ao Sentry automaticamente (level=error → captureException com tags
 // `scope`, `event`, `request_id`).
 const restoreLog = createClientLogger('seller_cart.restore');
+
+/**
+ * Wrapper que valida o payload contra `validateRestoreEvent` ANTES de emitir.
+ * Em caso de violação, dispara `restore_event_schema_violation` (warn) SEM
+ * bloquear a emissão original — telemetria nunca deve quebrar o fluxo do
+ * usuário. As violações viram sinal em dashboards e ficam localizáveis por
+ * `correlation_id`.
+ */
+function emitRestore(
+  level: 'error' | 'info' | 'warn',
+  event: RestoreEventName,
+  fields: Record<string, unknown>,
+): void {
+  const check = validateRestoreEvent(event, fields);
+  if (!check.valid) {
+    const cid = fields.correlation_id;
+    restoreLog.warn('restore_event_schema_violation', {
+      correlation_id:
+        typeof cid === 'string' && cid.trim().length > 0 ? cid : 'unknown',
+      violated_event: event,
+      violations: check.violations,
+    });
+  }
+  restoreLog[level](event, fields);
+}
+
 
 
 interface SellerCartContextType {
