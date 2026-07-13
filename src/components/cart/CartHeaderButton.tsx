@@ -981,12 +981,10 @@ export function CartHeaderButton() {
                     description: UNDO_TOAST_DESCRIPTION,
                     duration: UNDO_DURATION_MS,
                     onUndo: async () => {
+                      // Toast de sucesso (com métricas) + toast de erro
+                      // (com mapping por SQLSTATE) já são emitidos por `restoreCart`.
                       const newId = await restoreCart(snapshot);
-                      if (newId) {
-                        toast.success(RESTORE_SINGLE_SUCCESS);
-                      } else {
-                        toast.error(RESTORE_SINGLE_ERROR);
-                      }
+                      return newId ? true : false;
                     },
                   });
                 } catch {
