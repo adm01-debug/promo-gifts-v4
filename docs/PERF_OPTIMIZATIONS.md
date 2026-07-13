@@ -236,6 +236,85 @@ Também alimenta o `$GITHUB_STEP_SUMMARY` (`bundle-size-report.mjs:160-166`)
 — o mesmo markdown aparece no resumo do run, útil quando o PR-comment
 não é útil (workflows em branches).
 
+### Interpretando o report — guia rápido
+
+Quando o comentário do bot aparece no PR, leia nesta ordem:
+
+**1. Cabeçalho `Total JS`** — o número mais importante. Se o delta absoluto do
+total já está em `+50 KB` ou mais, algo grande entrou; investigue antes de
+olhar chunk-a-chunk. Se está `±10 KB`, é ruído normal de rebuild.
+
+**2. Tabela de chunks críticos** — sempre listada. Foque na coluna `Δ %` e no
+símbolo de status:
+
+| Status | Faixa | O que significa | O que fazer |
+|---|---|---|---|
+| ✅ | \|Δ\| ≤ 5% | Ruído de build (minificação, ordem de import) | Nada. Merge normal. |
+| ⚠️ | 5% < \|Δ\| ≤ 15% | Regressão pequena — merece revisão | Ver "Ações em WARN" abaixo. |
+| 🔴 | \|Δ\| > 15% | Regressão grande — mesma faixa do gate bloqueante | Ver "Ações em FAIL" abaixo. Provavelmente o CI já falhou no `quality-gate`. |
+| 🆕 | Sem baseline | Chunk novo | Confira se o splitting foi intencional. |
+
+**3. Tabela "Outros chunks com variação relevante"** — só aparece quando há
+não-críticos com Δ ≥ 20 KB **ou** ≥ 10%. Serve para pegar bibliotecas
+importadas indiretamente que estouraram um chunk feature-specific.
+
+#### Ações em WARN (⚠️, 5–15%)
+
+1. **Cheque o `dist/stats.html`** do PR (baixe o artifact do build ou rode
+   `npm run build` local): abra o treemap e procure o chunk crítico
+   destacado. Um bloco novo grande dentro dele indica a lib culpada.
+2. **Rode `git diff origin/main -- package.json`** — nova dep pesada?
+   Frequentemente warns em `ui-vendor` ou `icons-vendor` vêm de novos
+   componentes Radix ou ícones importados sem tree-shaking.
+3. **Padrões comuns de fix:**
+   - Import específico em vez de barrel: `import { Foo } from 'lib/foo'` em
+     vez de `import { Foo } from 'lib'`.
+   - `lazyWithRetry` na rota que trouxe o peso, movendo-o para fora do
+     main chunk.
+   - Substituir dep pesada por implementação leve (documentar decisão em
+     `mem://`).
+4. **Se a mudança é intencional** (ex.: nova feature grande com
+   justificativa), avance para merge — o gate ainda passa. Se for
+   repetitivo, considere atualizar baseline após o merge (próximo item).
+
+#### Ações em FAIL (🔴, > 15%) — o gate bloqueou o PR
+
+O `quality-gate.yml` (Gate 3.5) já falhou. Não force merge sem passar
+por uma destas rotas:
+
+1. **Regressão não-intencional** — reverta o commit que trouxe o peso,
+   otimize (mesmos padrões da seção WARN) e reabra o PR.
+2. **Refactor intencional de chunking** — se você mudou deliberadamente a
+   estratégia de split (ex.: quebrou um vendor em dois, unificou dois
+   chunks feature-specific), atualize o baseline **no mesmo PR**:
+
+   ```bash
+   npm run build
+   npm run check:bundle-size:update
+   git add bundle-size-baseline.json
+   git commit -m "chore(bundle): atualiza baseline após refactor de chunking"
+   ```
+
+   Deixe claro no corpo do PR **por quê** o baseline mudou. O comando
+   grava `currentBytes` reais + limites com margem de +20% para
+   crescimento orgânico (`check-bundle-size.mjs:123`).
+
+3. **Feature grande com aval** — mesma coisa: atualize o baseline no PR
+   com justificativa no commit. Prefira dividir em PRs menores quando
+   possível para facilitar bisect de futuras regressões.
+
+#### Chunks "🆕" (novos)
+
+Aparecem quando um prefixo não existe no baseline. Duas causas comuns:
+
+- **Splitting mudou** — Vite renomeou/dividiu chunks. Confirme visualmente
+  no `stats.html` e atualize baseline se intencional.
+- **Nova feature** — chunk lazy nasceu (ex.: nova rota com `lazyWithRetry`).
+  Merge normal; o próximo build já registra o baseline.
+
+Nunca aceite 🆕 sem checar — pode ser sintoma de um `React.lazy` que
+deveria estar em um chunk existente e foi para o próprio.
+
 ---
 
 ## Métricas de navegação (Sentry) sem web-vitals
