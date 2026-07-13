@@ -1179,28 +1179,73 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
       expect(ok!.fields.correlation_id).toBe(generated);
     });
 
-    it('CID inválido/inesperado (string vazia) — contrato atual reutiliza-o (documenta comportamento e trava contra regressões silenciosas)', async () => {
-      rpcMock.mockResolvedValue(rpcOk({ cartId: 'empty-cid' }));
+    it.each([
+      ['string vazia', ''],
+      ['só espaços', '   '],
+      ['só whitespace misto', ' \t\n '],
+    ])(
+      'CID inválido (%s) — endurecimento: gera CID novo, não-vazio, e propaga em todos os eventos do restore',
+      async (_label, badCid) => {
+        rpcMock.mockResolvedValue(rpcOk({ cartId: 'empty-cid' }));
+        const result = await mountSellerCart();
+
+        const snap = {
+          ...buildHydratedRow(),
+          items: buildHydratedItems(),
+          _correlation_id: badCid,
+        };
+
+        await act(async () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await result.current.restoreCart(snap as any);
+        });
+
+        const startCid = findRestore('restore_start')!.fields.correlation_id;
+        const okCid = findRestore('restore_ok')!.fields.correlation_id;
+        // Regra endurecida: '' e só-whitespace são tratados como inválidos.
+        expect(typeof startCid).toBe('string');
+        expect((startCid as string).trim().length).toBeGreaterThan(0);
+        expect(startCid).not.toBe(badCid);
+        // Consistência intra-restore.
+        expect(okCid).toBe(startCid);
+      },
+    );
+
+    it('CID inválido (só espaços) em 2 restores consecutivos — cada execução gera CID próprio, sem vazamento entre restores', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'ws-isol' }));
       const result = await mountSellerCart();
 
-      const snap = {
-        ...buildHydratedRow(),
-        items: buildHydratedItems(),
-        _correlation_id: '',
+      const snapA = {
+        ...buildHydratedRow({}, 'cart-WSA'),
+        id: 'cart-WSA',
+        items: buildHydratedItems('cart-WSA'),
+        _correlation_id: '   ',
+      };
+      const snapB = {
+        ...buildHydratedRow({}, 'cart-WSB'),
+        id: 'cart-WSB',
+        items: buildHydratedItems('cart-WSB'),
+        _correlation_id: '\t\n',
       };
 
       await act(async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await result.current.restoreCart(snap as any);
+        await result.current.restoreCart(snapA as any);
+      });
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.restoreCart(snapB as any);
       });
 
-      const cid = findRestore('restore_start')!.fields.correlation_id;
-      // O `??` só substitui em null/undefined — string vazia PASSA. Se um
-      // refactor futuro endurecer isso (ex.: `|| newRequestId()`), este teste
-      // vira sentinela: basta trocar a asserção para `.not.toBe('')`.
-      expect(cid).toBe('');
-      expect(findRestore('restore_ok')!.fields.correlation_id).toBe('');
+      const starts = filterRestore('restore_start');
+      expect(starts).toHaveLength(2);
+      const cidA = starts[0].fields.correlation_id as string;
+      const cidB = starts[1].fields.correlation_id as string;
+      expect(cidA.trim().length).toBeGreaterThan(0);
+      expect(cidB.trim().length).toBeGreaterThan(0);
+      expect(cidA).not.toBe(cidB);
     });
+
 
     it('em 2 restores consecutivos com CIDs inválidos DIFERENTES (null e undefined), cada execução recebe um CID gerado próprio, sem vazamento', async () => {
       rpcMock.mockResolvedValue(rpcOk({ cartId: 'no-leak' }));
