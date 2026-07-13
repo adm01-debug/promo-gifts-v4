@@ -25,6 +25,7 @@
 - [Integrações](#-integrações)
 - [Convenções de Código](#-convenções-de-código)
 - [Deploy](#-deploy)
+- [Performance e Observabilidade](#-performance-e-observabilidade)
 - [Troubleshooting](#-troubleshooting)
 
 ---
