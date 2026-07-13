@@ -199,3 +199,37 @@ export function setSentryUser(user: { id: string; email?: string } | null): void
 export function getSentryErrorBoundary(): typeof SentryNS.ErrorBoundary | null {
   return sentryRef?.ErrorBoundary ?? null;
 }
+
+/**
+ * Envia uma mensagem informativa/aviso ao Sentry (breadcrumb-like). Usado por
+ * `navigationMetrics` para reportar Web Vitals com tags de rota/device.
+ * Mensagens emitidas antes do Sentry carregar são silenciosamente descartadas
+ * (não faz sentido bufferizar métricas de navegação com TTL indefinido).
+ */
+export function captureMessage(
+  message: string,
+  level: 'info' | 'warning' | 'error' = 'info',
+  tagsAndExtras?: Record<string, unknown>,
+): void {
+  if (!shouldLoadSentry()) return;
+  if (!sentryRef || !initialized) {
+    void loadSentry();
+    return;
+  }
+  try {
+    const tags: Record<string, string> = {};
+    const extras: Record<string, unknown> = {};
+    if (tagsAndExtras) {
+      for (const [k, v] of Object.entries(tagsAndExtras)) {
+        if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+          tags[k] = String(v);
+        } else {
+          extras[k] = v;
+        }
+      }
+    }
+    sentryRef.captureMessage(message, { level, tags, extra: extras });
+  } catch {
+    /* noop */
+  }
+}
