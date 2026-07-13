@@ -102,7 +102,26 @@ const SNAPSHOT: SellerCart = {
   shipping_deadline: null,
   created_at: '2026-01-01',
   updated_at: '2026-01-01',
-  items: [],
+  // Precisa ter >= 1 item para não cair na guarda anti-restore-vazio do
+  // `restoreCart` (que retorna undefined sem chamar a mutation).
+  items: [
+    {
+      id: 'it-1',
+      cart_id: 'old-cart-id',
+      product_id: 'p-1',
+      product_name: 'Caneca',
+      product_sku: null,
+      product_image_url: null,
+      product_price: 10,
+      quantity: 1,
+      color_name: null,
+      color_hex: null,
+      notes: null,
+      sort_order: 0,
+      created_at: '2026-01-01',
+      updated_at: '2026-01-01',
+    },
+  ],
 };
 
 describe('SellerCartContext — ponteiro ativo após restore (localStorage)', () => {
