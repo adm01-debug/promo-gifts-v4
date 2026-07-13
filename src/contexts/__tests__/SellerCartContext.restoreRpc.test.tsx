@@ -22,7 +22,7 @@
  * porque a lógica atômica vive no Postgres (função SECURITY DEFINER); o
  * contrato client é: "propagar erro sem engolir, incluir contexto".
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
