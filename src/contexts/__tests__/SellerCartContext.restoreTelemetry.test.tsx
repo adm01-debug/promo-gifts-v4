@@ -634,7 +634,215 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
       expect(okDur).toBeGreaterThanOrEqual(100);
       expect(okDur).toBeLessThanOrEqual(105);
       expect(ok!.fields.correlation_id).toBe(start!.fields.correlation_id);
+  });
+
+  describe('stress — RPC > 1s: duration_ms permanece finito, não-negativo e sem drift', () => {
+    afterEach(() => {
+      vi.useRealTimers();
     });
+
+    it.each([
+      { label: 'partial', rpcExtra: { itemsInserted: 1 }, expectedResult: 'partial' as const },
+      { label: 'deduped', rpcExtra: { itemsDeduped: 1 }, expectedResult: 'deduped' as const },
+    ])(
+      'restore_ok ($label) com RPC de 1500ms: duration_ms >= 1500, finito, sem drift entre start e ok',
+      async ({ rpcExtra, expectedResult }) => {
+        const result = await mountSellerCart();
+
+        vi.useFakeTimers();
+        rpcMock.mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              setTimeout(
+                () => resolve(rpcOk({ cartId: `stress-${expectedResult}`, ...rpcExtra })),
+                1500,
+              );
+            }),
+        );
+
+        let restorePromise: Promise<unknown> | undefined;
+        await act(async () => {
+          const snap = await result.current.deleteCart(TEST_CART_ID);
+          restorePromise = result.current.restoreCart(snap);
+        });
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1500);
+          await restorePromise;
+        });
+
+        const start = findRestore('restore_start');
+        const ok = findRestore('restore_ok');
+        expect(ok!.fields.restore_result).toBe(expectedResult);
+
+        const okDur = ok!.fields.duration_ms as number;
+        expect(Number.isFinite(okDur)).toBe(true);
+        expect(okDur).toBeGreaterThanOrEqual(1500);
+        expect(okDur).toBeLessThanOrEqual(1510); // tolerância +10ms de rounding
+        expect(ok!.fields.correlation_id).toBe(start!.fields.correlation_id);
+      },
+    );
+  });
+
+  describe('concorrência — restores paralelos preservam sua própria cadeia', () => {
+    it('dois restoreCart em paralelo mantêm sequência e correlation_id isolados por chamada', async () => {
+      const result = await mountSellerCart();
+
+      const CID_A = 'concurrent-cid-A';
+      const CID_B = 'concurrent-cid-B';
+
+      // Distingue as chamadas pelo `_snapshot.id` que chega em `rpc('restore_seller_cart', {_snapshot})`.
+      // Cada snapshot resolve com um new_cart_id próprio para permitir cross-check no `restore_ok`.
+      // A RPC `restore_seller_cart` recebe payload SEM `id` do snapshot (só
+      // company/items). Distinguimos as chamadas por `company_id`, que é
+      // preservado pelo `buildRestorePayload`.
+      rpcMock.mockImplementation(
+        (_fn: string, params: { _snapshot: { company_id: string } }) => {
+          if (params._snapshot.company_id === 'co-A') {
+            return Promise.resolve(rpcOk({ cartId: 'new-A' }));
+          }
+          return Promise.resolve(rpcOk({ cartId: 'new-B' }));
+        },
+      );
+
+      const snapA = {
+        ...buildHydratedRow({ company_id: 'co-A' }, 'cart-A'),
+        id: 'cart-A',
+        company_id: 'co-A',
+        items: buildHydratedItems('cart-A'),
+        _correlation_id: CID_A,
+      };
+      const snapB = {
+        ...buildHydratedRow({ company_id: 'co-B' }, 'cart-B'),
+        id: 'cart-B',
+        company_id: 'co-B',
+        items: buildHydratedItems('cart-B'),
+        _correlation_id: CID_B,
+      };
+
+      await act(async () => {
+        await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.current.restoreCart(snapA as any),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.current.restoreCart(snapB as any),
+        ]);
+      });
+
+      const starts = filterRestore('restore_start');
+      const oks = filterRestore('restore_ok');
+      expect(starts).toHaveLength(2);
+      expect(oks).toHaveLength(2);
+
+      // Cada start deve ter um par ok com a MESMA correlation_id — sem cross-talk.
+      const pair = (cid: string) => ({
+        start: starts.find((e) => e.fields.correlation_id === cid),
+        ok: oks.find((e) => e.fields.correlation_id === cid),
+      });
+      const pairA = pair(CID_A);
+      const pairB = pair(CID_B);
+
+      expect(pairA.start, 'restore_start de A').toBeTruthy();
+      expect(pairA.ok, 'restore_ok de A').toBeTruthy();
+      expect(pairB.start, 'restore_start de B').toBeTruthy();
+      expect(pairB.ok, 'restore_ok de B').toBeTruthy();
+
+      // Snapshot_id não vaza entre as cadeias.
+      expect(pairA.start!.fields.snapshot_id).toBe('cart-A');
+      expect(pairA.ok!.fields.snapshot_id).toBe('cart-A');
+      expect(pairA.ok!.fields.new_cart_id).toBe('new-A');
+      expect(pairB.start!.fields.snapshot_id).toBe('cart-B');
+      expect(pairB.ok!.fields.snapshot_id).toBe('cart-B');
+      expect(pairB.ok!.fields.new_cart_id).toBe('new-B');
+
+      // Nenhuma correlação misturada.
+      expect(pairA.start!.fields.correlation_id).not.toBe(
+        pairB.start!.fields.correlation_id,
+      );
+    });
+  });
+
+  describe('restore_start — contrato de duration_ms (defensivo)', () => {
+    it('hoje NÃO emite duration_ms; se emitir no futuro, deve ser finito, >=0 e nunca exceder duration_ms do restore_ok', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'start-dur' }));
+      const result = await mountSellerCart();
+
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+
+      const start = findRestore('restore_start');
+      const ok = findRestore('restore_ok');
+      expect(start).toBeTruthy();
+      expect(ok).toBeTruthy();
+
+      const startDur = start!.fields.duration_ms;
+      const okDur = ok!.fields.duration_ms as number;
+
+      // Contrato atual: restore_start NÃO carrega duration_ms.
+      // Se um refactor futuro passar a incluir, o campo precisa respeitar as
+      // invariantes de tempo — este teste "trava" a semântica esperada.
+      if (startDur !== undefined) {
+        expect(typeof startDur).toBe('number');
+        expect(Number.isFinite(startDur as number)).toBe(true);
+        expect(startDur as number).toBeGreaterThanOrEqual(0);
+        // Nunca pode ser MAIOR que o ok final — senão o relógio "voltou".
+        expect(startDur as number).toBeLessThanOrEqual(okDur);
+      } else {
+        // Documenta o estado atual — se um dia mudar, o ramo `if` acima assume.
+        expect(startDur).toBeUndefined();
+      }
+
+      // Sanity: duas leituras de duration_ms no MESMO evento (start ou ok) não
+      // devem "oscilar" — o campo é escrito uma vez por evento. Como o buffer
+      // guarda um snapshot imutável, garantimos que releituras batem.
+      expect(ok!.fields.duration_ms).toBe(okDur);
+    });
+  });
+
+  describe('_correlation_id pré-existente propaga em partial e deduped', () => {
+    it.each([
+      { label: 'partial', rpcExtra: { itemsInserted: 1 }, expectedResult: 'partial' as const },
+      { label: 'deduped', rpcExtra: { itemsDeduped: 1 }, expectedResult: 'deduped' as const },
+    ])(
+      'restore_ok ($label) reutiliza _correlation_id do snapshot e propaga em start e ok',
+      async ({ rpcExtra, expectedResult }) => {
+        rpcMock.mockResolvedValue(rpcOk({ cartId: `preset-${expectedResult}`, ...rpcExtra }));
+        const result = await mountSellerCart();
+
+        const PRESET_CID = `preset-cid-${expectedResult}-9f2a`;
+        const rawSnapshot = {
+          ...buildHydratedRow(),
+          items: buildHydratedItems(),
+          _correlation_id: PRESET_CID,
+        };
+
+        await act(async () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await result.current.restoreCart(rawSnapshot as any);
+        });
+
+        const start = findRestore('restore_start');
+        const ok = findRestore('restore_ok');
+        expect(start).toBeTruthy();
+        expect(ok).toBeTruthy();
+        expect(ok!.fields.restore_result).toBe(expectedResult);
+
+        // O CID pré-existente NÃO é regenerado — vira SSOT da cadeia.
+        expect(start!.fields.correlation_id).toBe(PRESET_CID);
+        expect(ok!.fields.correlation_id).toBe(PRESET_CID);
+        // Sequência mínima esperada com o CID preservado.
+        const cidChain = findLoggerEventsByScope(RESTORE_SCOPE)
+          .filter((e) => e.fields.correlation_id === PRESET_CID)
+          .map((e) => e.event);
+        expect(cidChain).toEqual(
+          expect.arrayContaining(['restore_start', 'restore_ok']),
+        );
+      },
+    );
+  });
+
+
   });
 
   describe('sequência canônica para classificações `partial` e `deduped`', () => {
