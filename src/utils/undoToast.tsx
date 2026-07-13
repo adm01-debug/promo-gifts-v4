@@ -183,10 +183,11 @@ export function UndoToastContent({
           'text-[11px] font-semibold tracking-wide',
           'shadow-[0_2px_10px_-2px_hsl(var(--primary)/0.35)]',
           !reduced && 'transition-all duration-200 ease-out',
-          'hover:border-primary/50 hover:bg-primary/15',
-          !reduced &&
+          !disabled && 'hover:border-primary/50 hover:bg-primary/15',
+          !reduced && !disabled &&
             'hover:shadow-[0_4px_16px_-2px_hsl(var(--primary)/0.5)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98]',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          disabled && 'cursor-not-allowed opacity-60',
         )}
       >
         <span className="relative inline-flex h-4 w-4 items-center justify-center">
