@@ -64,6 +64,21 @@ export interface SellerCart {
   items: SellerCartItem[];
 }
 
+/** Métricas retornadas pela RPC `restore_seller_cart`. */
+export interface RestoreCartMetrics {
+  /** Total de itens no snapshot enviado à RPC. */
+  items_total: number;
+  /** Itens efetivamente inseridos (após dedup + ON CONFLICT DO NOTHING). */
+  items_inserted: number;
+  /** Itens deduplicados por (product_id, color_name) — quantidades foram somadas. */
+  items_deduped: number;
+}
+
+/** SellerCart devolvido pela mutation de restore, com métricas da RPC anexadas. */
+export interface RestoredSellerCart extends SellerCart {
+  restore_metrics: RestoreCartMetrics;
+}
+
 export interface SellerCartItem {
   id: string;
   cart_id: string;
