@@ -47,6 +47,7 @@
     "preview": "vite preview",
     "check:bundle-size": "node scripts/check-bundle-size.mjs",
     "check:bundle-size:update": "node scripts/check-bundle-size.mjs --update-baseline",
+    "check:doc-refs": "node scripts/check-doc-refs.mjs docs/PERF_OPTIMIZATIONS.md",
     "test": "TZ=America/Sao_Paulo vitest run",
     "test:quality": "TZ=America/Sao_Paulo vitest run --exclude 'tests/hooks/**'",
     "test:ci-core": "TZ=America/Sao_Paulo vitest run tests/contracts/migrated-endpoints.contract.test.ts src/lib/theme-presets.test.ts tests/components/products/ProductSparkline.labels.test.tsx src/pages/filters/__tests__/FiltersPage.sorting.test.tsx src/components/products/__tests__/ProductSortAccessibility.test.tsx tests/unit/supabase-schema-contract.test.ts tests/unit/favorites-migration.test.ts tests/unit/trending-score.test.ts tests/unit/variant-matching.test.ts tests/unit/text-utils.test.ts tests/unit/print-area-grouping.test.ts tests/unit/format.test.ts tests/unit/to-error-message.test.ts tests/unit/catalog-stock-status.test.ts tests/unit/masked-suffix.test.ts tests/unit/forecast.test.ts tests/unit/stock-chart-utils.test.ts tests/unit/novelty-dates.test.ts tests/unit/sensitive-masking.test.ts tests/unit/error-kind-inference.test.ts tests/unit/connection-error-copy.test.ts tests/unit/roles.test.ts tests/unit/supplier-colors.test.ts tests/unit/date-utils.test.ts tests/unit/format-utils.test.ts tests/unit/quote-status-config.test.ts",
