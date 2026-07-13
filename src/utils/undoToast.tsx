@@ -108,11 +108,32 @@ export function UndoToastContent({
     pausedRef.current = false;
   }, []);
 
+  const handleClick = useCallback(async () => {
+    // Guarda síncrona: bloqueia cliques concorrentes antes de o React
+    // re-renderizar com `pending=true` (double-click rápido dentro do mesmo tick).
+    if (pendingRef.current) return;
+    if (remainingMs <= 0) return;
+    pendingRef.current = true;
+    setPending(true);
+    // Pausa o countdown enquanto a restauração está em andamento — evita que
+    // o toast expire no meio da requisição e chame onTimeout indevidamente.
+    pausedRef.current = true;
+    try {
+      await onUndo();
+    } finally {
+      pendingRef.current = false;
+      // Não limpamos `setPending(false)` porque o toast será dismissado pelo
+      // handler externo (showUndoToast) ao fim do onUndo. Se o componente
+      // permanecer montado por qualquer razão, mantemos o botão inerte.
+    }
+  }, [onUndo, remainingMs]);
+
   const remainingSec = Math.ceil(remainingMs / 1000);
   const R = 7;
   const C = 2 * Math.PI * R;
   const progress = remainingMs / totalMs;
   const dashoffset = C * (1 - progress);
+  const disabled = remainingMs <= 0 || pending;
 
   return (
     <div
