@@ -54,16 +54,17 @@ jobs:
     name: "ACL check — ${{ matrix.env_name }}"
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Filtra a matriz quando o dispatch escolhe um ambiente específico.
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.environment == 'all' ||
+      github.event.inputs.environment == matrix.env_name
     # `environment:` escopa os secrets ao ambiente correspondente.
     environment: ${{ matrix.env_name }}
     strategy:
       fail-fast: false
       matrix:
         env_name: [staging, production]
-        # Filtra a matriz quando o dispatch escolhe um ambiente específico.
-        exclude:
-          - env_name: ${{ github.event.inputs.environment == 'staging' && 'production' || '' }}
-          - env_name: ${{ github.event.inputs.environment == 'production' && 'staging' || '' }}
     steps:
       - uses: actions/checkout@v4
 
