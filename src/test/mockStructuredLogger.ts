@@ -82,30 +82,37 @@ export function findLoggerEventsByScope(scope: string): CapturedLogEvent[] {
  * Factory que devolve o shape do módulo `structuredLogger` mockado.
  * Passe a `vi.mock(..., async () => (await import(...)).structuredLoggerMockFactory())`.
  */
+interface MockLogger {
+  scope: string;
+  requestId: string;
+  info: (event: string, fields?: Record<string, unknown>) => void;
+  warn: (event: string, fields?: Record<string, unknown>) => void;
+  error: (event: string, fields?: Record<string, unknown>) => void;
+  debug: (event: string, fields?: Record<string, unknown>) => void;
+  child: (subScope: string) => MockLogger;
+  headers: () => Record<string, string>;
+}
+
 export function structuredLoggerMockFactory(): {
-  createClientLogger: (scope: string) => {
-    scope: string;
-    requestId: string;
-    info: (event: string, fields?: Record<string, unknown>) => void;
-    warn: (event: string, fields?: Record<string, unknown>) => void;
-    error: (event: string, fields?: Record<string, unknown>) => void;
-    debug: (event: string, fields?: Record<string, unknown>) => void;
-    child: (subScope: string, extra?: Record<string, unknown>) => unknown;
-    headers: () => Record<string, string>;
-  };
+  createClientLogger: (scope: string) => MockLogger;
 } {
-  const push = (level: LogLevel, scope: string, event: string, fields: Record<string, unknown> = {}) => {
+  const push = (
+    level: LogLevel,
+    scope: string,
+    event: string,
+    fields: Record<string, unknown> = {},
+  ): void => {
     events.push({ level, scope, event, fields });
   };
-  const build = (scope: string): ReturnType<typeof structuredLoggerMockFactory>['createClientLogger'] extends (s: string) => infer R ? R : never => ({
+  const build = (scope: string): MockLogger => ({
     scope,
     requestId: 'test-request-id',
     info: (event, fields) => push('info', scope, event, fields),
     warn: (event, fields) => push('warn', scope, event, fields),
     error: (event, fields) => push('error', scope, event, fields),
     debug: (event, fields) => push('debug', scope, event, fields),
-    child: (sub: string) => build(`${scope}.${sub}`),
+    child: (sub) => build(`${scope}.${sub}`),
     headers: () => ({}),
   });
-  return { createClientLogger: (scope: string) => build(scope) };
+  return { createClientLogger: (scope) => build(scope) };
 }
