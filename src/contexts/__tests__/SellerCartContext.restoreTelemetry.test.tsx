@@ -718,12 +718,6 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
         items: buildHydratedItems('cart-B'),
         _correlation_id: CID_B,
       };
-      const snapB = {
-        ...buildHydratedRow({}, 'cart-B'),
-        id: 'cart-B',
-        items: buildHydratedItems('cart-B'),
-        _correlation_id: CID_B,
-      };
 
       await act(async () => {
         await Promise.all([
