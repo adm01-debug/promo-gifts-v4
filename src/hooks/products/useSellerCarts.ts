@@ -62,6 +62,12 @@ export interface SellerCart {
   created_at: string;
   updated_at: string;
   items: SellerCartItem[];
+  /**
+   * Correlation ID transitório (não persistido) atribuído em `deleteCart` e
+   * propagado para os eventos `restore_start` / `restore_ok` / `restore_failed`
+   * a fim de correlacionar o fluxo delete→undo no logger e no Sentry.
+   */
+  _correlation_id?: string;
 }
 
 /** Métricas retornadas pela RPC `restore_seller_cart`. */
