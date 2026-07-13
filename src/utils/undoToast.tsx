@@ -167,10 +167,16 @@ export function UndoToastContent({
         data-remaining-ms={remainingMs}
         data-remaining-sec={remainingSec}
         data-expired={remainingMs <= 0 ? 'true' : 'false'}
-        disabled={remainingMs <= 0}
-        aria-disabled={remainingMs <= 0 || undefined}
-        onClick={onUndo}
-        aria-label={`Desfazer ação — ${remainingSec} segundos restantes de ${totalSec}`}
+        data-pending={pending ? 'true' : 'false'}
+        disabled={disabled}
+        aria-disabled={disabled || undefined}
+        aria-busy={pending || undefined}
+        onClick={handleClick}
+        aria-label={
+          pending
+            ? 'Restaurando…'
+            : `Desfazer ação — ${remainingSec} segundos restantes de ${totalSec}`
+        }
         className={cn(
           'group relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1',
           'border border-primary/30 bg-primary/10 text-primary backdrop-blur-sm',
