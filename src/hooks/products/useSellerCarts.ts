@@ -961,7 +961,12 @@ export function useSellerCarts() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         items: snapshot.items ?? [],
-      } satisfies SellerCart;
+        restore_metrics: {
+          items_total: Number(result?.items_total ?? 0),
+          items_inserted: Number(result?.items_inserted ?? 0),
+          items_deduped: Number(result?.items_deduped ?? 0),
+        },
+      } satisfies RestoredSellerCart;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
