@@ -193,11 +193,15 @@ describe('SellerCartContext — restoreCart via RPC (atômico, dedup, RLS)', () 
     expect(opts.description).toContain(`snapshot ${snapshot.id}`);
     expect(opts.description).toMatch(/\b2 item\(ns\)/);
 
+    // structuredLogger emite com tag `[scope:event]` + payload JSON
     expect(console.error).toHaveBeenCalledWith(
-      '[restoreCart] falha ao restaurar carrinho',
+      '[seller_cart.restore:restore_failed]',
       expect.objectContaining({
+        scope: 'seller_cart.restore',
+        event: 'restore_failed',
         snapshot_id: 'old-cart',
         items_count: 2,
+        reason: 'duplicate_item',
         raw_error: expect.stringContaining('unique_cart_item_variant'),
       }),
     );
