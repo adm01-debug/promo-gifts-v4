@@ -329,9 +329,10 @@ function CartsListContent() {
         ).length;
 
         const summary = bulkRestoreSummary(toRestore.length, restoredCount);
-        if (summary.tone === 'success') toast.success(summary.message);
-        else if (summary.tone === 'warning') toast.warning(summary.message);
-        else toast.error(summary.message);
+        const summaryText = summary.message;
+        if (summary.tone === 'success') toast.success(summaryText);
+        else if (summary.tone === 'warning') toast.warning(summaryText);
+        else toast.error(summaryText);
       },
     });
   }, [selectedIds, deleteCart, clearSelection, carts, restoreCart]);
