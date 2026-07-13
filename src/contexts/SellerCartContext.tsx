@@ -434,6 +434,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           : 'ok_no_metrics';
 
         restoreLog.info('restore_ok', {
+          correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           new_cart_id: created?.id ?? null,
           company_id: snapshot?.company_id ?? null,
