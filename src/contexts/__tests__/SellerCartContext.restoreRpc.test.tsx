@@ -133,7 +133,7 @@ describe('SellerCartContext — restoreCart via RPC (atômico, dedup, RLS)', () 
     toastSuccess.mockReset();
     console.error = vi.fn();
   });
-  afterAll?.(() => {
+  afterAll(() => {
     console.error = originalError;
   });
 
