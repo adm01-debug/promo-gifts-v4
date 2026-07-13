@@ -113,6 +113,7 @@
     "e2e:smoke-coverage-doc": "node scripts/e2e-smoke-coverage-doc.mjs",
     "e2e:smoke-coverage-check": "node scripts/e2e-smoke-coverage-doc.mjs --check",
     "check:security-definer-acl": "node scripts/check-security-definer-acl.mjs",
+    "draft:dry-run": "node scripts/dry-run-migration-draft.mjs",
     "check:client-structured-logging": "node scripts/check-client-structured-logging.mjs",
     "check:edge-cors": "node scripts/check-edge-cors-headers.mjs",
     "check:fab-a11y": "node scripts/check-fab-accessibility.mjs",
