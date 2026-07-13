@@ -92,8 +92,10 @@ function readChunkSizes() {
  */
 function extractChunkPrefix(filename) {
   const withoutExt = filename.replace(/\.js$/, '');
-  // Hash Vite: sufixo `-[A-Za-z0-9_-]{8,}` no final. Removemos apenas o último.
-  const match = withoutExt.match(/^(.+?)-[A-Za-z0-9_-]{8,}$/);
+  // Hash Vite: sufixo `-[A-Za-z0-9_-]{8,}` no FIM. Usamos greedy `.+` para
+  // preservar hífens no meio (ex.: "react-vendor-Abc12345" → "react-vendor",
+  // não "react"). `.+?` lazy quebra em nomes com múltiplos hífens.
+  const match = withoutExt.match(/^(.+)-[A-Za-z0-9_-]{8,}$/);
   return match ? match[1] : withoutExt;
 }
 
