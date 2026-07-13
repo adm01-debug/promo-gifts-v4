@@ -433,6 +433,17 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
               : 'success'
           : 'ok_no_metrics';
 
+        // `items_resulting`: contagem inequívoca de itens que o Undo deixou
+        // no carrinho recriado — SSOT para validar a consequência real da
+        // restauração em produção. Ordem de preferência:
+        //   1) `restore_metrics.items_inserted` (RPC atômica devolve o valor
+        //      exato de linhas inseridas em `seller_cart_items`).
+        //   2) `created.items.length` (fallback client-side devolve o array
+        //      já hidratado com o que entrou de fato).
+        //   3) `null` — schema legado sem nenhuma das duas fontes.
+        const createdItemsLength = Array.isArray(created?.items) ? created.items.length : null;
+        const itemsResulting = metrics?.items_inserted ?? createdItemsLength ?? null;
+
         restoreLog.info('restore_ok', {
           correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
@@ -440,6 +451,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           company_id: snapshot?.company_id ?? null,
           items_total: metrics?.items_total ?? itemsCount,
           items_inserted: metrics?.items_inserted ?? null,
+          items_resulting: itemsResulting,
           items_deduped: metrics?.items_deduped ?? null,
           // Hidratação sempre `true` aqui — a guarda anti-vazio já bloqueou 0.
           hydrated: true,
@@ -451,7 +463,12 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           partial_insert: metrics
             ? metrics.items_inserted !== metrics.items_total
             : false,
+          // Divergência entre o que o snapshot pediu e o que sobrou de fato
+          // — dispara alerta para RLS parcial ou perda silenciosa de linhas.
+          items_mismatch:
+            itemsResulting !== null && itemsResulting !== itemsCount,
         });
+
 
         if (metrics) {
           const parts: string[] = [`snapshot ${snapshot?.id ?? '—'}`];
