@@ -53,7 +53,7 @@ function prefetchQuoteRoutes(): void {
 }
 
 /** Wrapper que aplica `usePrefetchOnHover` no <div> da linha do orçamento. */
-interface PrefetchRowProps extends React.HTMLAttributes<HTMLDivElement> {
+interface PrefetchRowProps extends HTMLAttributes<HTMLDivElement> {
   prefetch: () => void;
 }
 function PrefetchRow({ prefetch, children, ...rest }: PrefetchRowProps) {
