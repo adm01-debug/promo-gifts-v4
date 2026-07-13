@@ -529,7 +529,9 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           // Métricas vazias no erro (a RPC não retornou nada), mas o schema
           // permanece consistente para dashboards agregarem success + failure.
           items_inserted: null,
+          items_resulting: 0,
           items_deduped: null,
+          items_mismatch: true,
           raw_error: rawMessage,
           err,
         });
