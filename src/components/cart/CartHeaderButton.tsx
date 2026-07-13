@@ -965,15 +965,9 @@ export function CartHeaderButton() {
               onClick={async (e) => {
                 e.preventDefault();
                 if (!pendingDeleteId || isDeletingCart) return;
-                // Snapshot ANTES do DELETE para restauração fiel (Undo).
-                const snapshot = pendingDeleteCart ?? carts.find((c) => c.id === pendingDeleteId) ?? null;
                 try {
-                  await deleteCart(pendingDeleteId);
+                  const snapshot = await deleteCart(pendingDeleteId);
                   setPendingDeleteId(null);
-                  if (!snapshot) {
-                    toast.success('Carrinho excluído.');
-                    return;
-                  }
                   showUndoToast({
                     title: deletedToastTitle(1),
                     description: UNDO_TOAST_DESCRIPTION,

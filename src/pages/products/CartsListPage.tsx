@@ -297,12 +297,6 @@ function CartsListContent() {
       return;
     }
 
-    // Snapshot ANTES do DELETE — necessário para restauração fiel (Undo).
-    // Preserva ordem para restaurar do 1º ao último se o usuário desfizer.
-    const snapshots = ids
-      .map((id) => carts.find((c) => c.id === id))
-      .filter((c): c is SellerCart => Boolean(c));
-
     setBulkDeleteOpen(false);
     clearSelection();
 
@@ -322,7 +316,10 @@ function CartsListContent() {
         const successIndexes = results
           .map((r, i) => (r.status === 'fulfilled' ? i : -1))
           .filter((i) => i >= 0);
-        const toRestore = successIndexes.map((i) => snapshots[i]).filter(Boolean);
+        const toRestore = successIndexes
+          .map((i) => results[i])
+          .filter((r): r is PromiseFulfilledResult<SellerCart> => r.status === 'fulfilled')
+          .map((r) => r.value);
 
         const restoreResults = await Promise.allSettled(
           toRestore.map((snap) => restoreCart(snap)),
@@ -719,12 +716,9 @@ function CartsListContent() {
         cancelLabel="Cancelar"
         onConfirm={async () => {
           if (!deleteConfirmId) return;
-          // Snapshot ANTES do DELETE para restauração fiel (Undo).
-          const snapshot = carts.find((c) => c.id === deleteConfirmId);
           setDeleteConfirmId(null);
-          if (!snapshot) return;
           try {
-            await deleteCart(deleteConfirmId);
+            const snapshot = await deleteCart(deleteConfirmId);
             showUndoToast({
               title: deletedToastTitle(1),
               description: UNDO_TOAST_DESCRIPTION,

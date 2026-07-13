@@ -46,7 +46,7 @@ interface SellerCartContextType {
 
   // Operations
   createCart: (input: CreateCartInput) => Promise<SellerCart | undefined>;
-  deleteCart: (cartId: string) => Promise<void>;
+  deleteCart: (cartId: string) => Promise<SellerCart>;
   /** Recria um carrinho a partir do snapshot (Undo). Resolve com o novo `id` ou `undefined` em falha. */
   restoreCart: (snapshot: SellerCart) => Promise<string | undefined>;
   isDeletingCart: boolean;
@@ -165,11 +165,11 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteCart = useCallback(
-    async (cartId: string) => {
+    async (cartId: string): Promise<SellerCart> => {
       // Limpa histórico/seleção SOMENTE após o delete confirmar. Antes isso rodava
       // de forma otimista: se o DELETE falhasse (RLS/rede), o carrinho reaparecia
       // na lista mas com o histórico de ações perdido e a seleção ativa descartada.
-      await deleteCartMutation.mutateAsync(cartId);
+      const deletedSnapshot = await deleteCartMutation.mutateAsync(cartId);
       if (activeCartId === cartId) {
         setActiveCartId(null);
         if (user?.id) {
@@ -180,6 +180,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           }
         }
       }
+      return deletedSnapshot;
     },
     [deleteCartMutation, activeCartId, user?.id],
   );

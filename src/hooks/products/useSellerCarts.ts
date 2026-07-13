@@ -123,6 +123,44 @@ type SellerCartRawRow = Omit<SellerCart, 'items'> & {
   seller_cart_items: SellerCartItem[];
 };
 
+interface RestorePayloadItem {
+  product_id: string;
+  product_name: string;
+  product_sku: string | null;
+  product_image_url: string | null;
+  product_price: number;
+  quantity: number;
+  color_name: string | null;
+  color_hex: string | null;
+  notes: string | null;
+  sort_order: number | null;
+}
+
+interface RestorePayload {
+  seller_id: string;
+  company_id: string;
+  company_name: string;
+  company_location: string | null;
+  company_logo_url: string | null;
+  notes: string | null;
+  status: CartStatus;
+  shipping_deadline: string | null;
+  items: RestorePayloadItem[];
+}
+
+interface RestoreRpcResponse {
+  cart_id: string;
+  items_total: number;
+  items_inserted: number;
+  items_deduped: number;
+}
+
+interface ErrorWithPostgrestShape {
+  code?: unknown;
+  message?: unknown;
+  status?: unknown;
+}
+
 const QUERY_KEY = 'seller-carts';
 
 // ============================================
@@ -136,6 +174,78 @@ export const MIN_ITEM_QUANTITY = 1;
 export const MAX_ITEM_QUANTITY = 999999;
 export const clampQuantity = (q: number): number =>
   Math.min(Math.max(Math.trunc(Number(q) || 0), MIN_ITEM_QUANTITY), MAX_ITEM_QUANTITY);
+
+function toSellerCart(row: SellerCartRawRow): SellerCart {
+  const { seller_cart_items: rowItems, ...cart } = row;
+  return {
+    ...cart,
+    notes: (cart.notes as string | null) ?? null,
+    status: ((cart.status as string) ?? 'em_separacao') as CartStatus,
+    shipping_deadline: (cart.shipping_deadline as string | null) ?? null,
+    items: (rowItems ?? []) as SellerCartItem[],
+  };
+}
+
+function errorCode(input: unknown): string {
+  if (!input || typeof input !== 'object') return '';
+  const value = (input as ErrorWithPostgrestShape).code;
+  return value == null ? '' : String(value);
+}
+
+function errorMessage(input: unknown): string {
+  if (input instanceof Error) return input.message;
+  if (!input || typeof input !== 'object') return String(input ?? '');
+  const value = (input as ErrorWithPostgrestShape).message;
+  return value == null ? '' : String(value);
+}
+
+function isRestoreRpcUnavailableError(input: unknown): boolean {
+  const code = errorCode(input);
+  const message = errorMessage(input);
+  return (
+    code === 'PGRST202' ||
+    code === '42883' ||
+    /supabase\.rpc is not a function/i.test(message) ||
+    (/restore_seller_cart/i.test(message) &&
+      /schema cache|could not find|function .* does not exist|not found/i.test(message))
+  );
+}
+
+function restoreVariantKey(item: RestorePayloadItem): string {
+  return `${item.product_id}\u001f${item.color_name ?? '__NULL__'}`;
+}
+
+function dedupeRestorePayloadItems(items: RestorePayloadItem[]): RestorePayloadItem[] {
+  const deduped = new Map<string, RestorePayloadItem>();
+
+  for (const item of items) {
+    if (!item.product_id) continue;
+    const key = restoreVariantKey(item);
+    const current = deduped.get(key);
+    if (!current) {
+      deduped.set(key, { ...item, quantity: clampQuantity(item.quantity) });
+      continue;
+    }
+    deduped.set(key, {
+      ...current,
+      quantity: clampQuantity(current.quantity + item.quantity),
+      product_name: current.product_name || item.product_name,
+      product_sku: current.product_sku ?? item.product_sku,
+      product_image_url: current.product_image_url ?? item.product_image_url,
+      product_price: current.product_price || item.product_price,
+      color_hex: current.color_hex ?? item.color_hex,
+      notes: current.notes ?? item.notes,
+      sort_order:
+        current.sort_order == null
+          ? item.sort_order
+          : item.sort_order == null
+            ? current.sort_order
+            : Math.min(current.sort_order, item.sort_order),
+    });
+  }
+
+  return Array.from(deduped.values());
+}
 
 // ============================================
 // HOOK
@@ -167,6 +277,126 @@ export function useSellerCarts() {
     return data ?? null;
   };
 
+  const fetchCartWithItems = async (cartId: string): Promise<SellerCart | null> => {
+    if (!userId) return null;
+    const { data, error } = await supabase
+      .from('seller_carts')
+      .select('*, seller_cart_items(*)')
+      .eq('id', cartId)
+      .eq('seller_id', userId)
+      .order('sort_order', { ascending: true, foreignTable: 'seller_cart_items' })
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return null;
+    return toSellerCart(data as unknown as SellerCartRawRow);
+  };
+
+  const buildRestorePayload = (snapshot: SellerCart): RestorePayload => ({
+    seller_id: userId ?? '',
+    company_id: snapshot.company_id,
+    company_name: snapshot.company_name,
+    company_location: snapshot.company_location ?? null,
+    company_logo_url: snapshot.company_logo_url ?? null,
+    notes: snapshot.notes ?? null,
+    status: snapshot.status,
+    shipping_deadline: snapshot.shipping_deadline ?? null,
+    items: (snapshot.items ?? []).map((it) => ({
+      product_id: it.product_id,
+      product_name: it.product_name,
+      product_sku: it.product_sku ?? null,
+      product_image_url: it.product_image_url ?? null,
+      product_price: it.product_price,
+      quantity: clampQuantity(it.quantity ?? 1),
+      color_name: it.color_name ?? null,
+      color_hex: it.color_hex ?? null,
+      notes: it.notes ?? null,
+      sort_order: it.sort_order ?? null,
+    })),
+  });
+
+  const restoreViaRpc = async (payload: RestorePayload): Promise<RestoreRpcResponse> => {
+    const { data, error } = await supabase.rpc('restore_seller_cart', {
+      _snapshot: payload as never,
+    });
+
+    if (error) throw error;
+
+    const result = data as RestoreRpcResponse | null;
+    const newCartId = result?.cart_id;
+    if (!newCartId) throw new Error('restore_seller_cart não retornou cart_id');
+    return {
+      cart_id: newCartId,
+      items_total: Number(result.items_total ?? 0),
+      items_inserted: Number(result.items_inserted ?? 0),
+      items_deduped: Number(result.items_deduped ?? 0),
+    };
+  };
+
+  const restoreViaClientFallback = async (payload: RestorePayload): Promise<RestoreRpcResponse> => {
+    if (!userId) throw new Error('Não autenticado');
+    const dedupedItems = dedupeRestorePayloadItems(payload.items);
+    const insertedIds: string[] = [];
+
+    const { data: cartData, error: cartError } = await supabase
+      .from('seller_carts')
+      .insert({
+        seller_id: userId,
+        company_id: payload.company_id,
+        company_name: payload.company_name,
+        company_location: payload.company_location,
+        company_logo_url: payload.company_logo_url,
+        notes: payload.notes,
+        status: payload.status,
+        shipping_deadline: payload.shipping_deadline,
+      })
+      .select('id')
+      .single();
+
+    if (cartError) throw cartError;
+    const newCartId = cartData?.id;
+    if (!newCartId) throw new Error('Restauração não retornou id do carrinho');
+
+    try {
+      if (dedupedItems.length > 0) {
+        const { data: insertedItems, error: itemsError } = await supabase
+          .from('seller_cart_items')
+          .insert(
+            dedupedItems.map((item) => ({
+              cart_id: newCartId,
+              product_id: item.product_id,
+              product_name: item.product_name,
+              product_sku: item.product_sku,
+              product_image_url: item.product_image_url,
+              product_price: item.product_price,
+              quantity: item.quantity,
+              color_name: item.color_name,
+              color_hex: item.color_hex,
+              notes: item.notes,
+              sort_order: item.sort_order,
+            })),
+          )
+          .select('id');
+
+        if (itemsError) throw itemsError;
+        insertedIds.push(...((insertedItems ?? []) as { id: string }[]).map((item) => item.id));
+      }
+    } catch (err) {
+      if (insertedIds.length > 0) {
+        await supabase.from('seller_cart_items').delete().in('id', insertedIds);
+      }
+      await supabase.from('seller_carts').delete().eq('id', newCartId).eq('seller_id', userId);
+      throw err;
+    }
+
+    return {
+      cart_id: newCartId,
+      items_total: dedupedItems.length,
+      items_inserted: dedupedItems.length,
+      items_deduped: Math.max(0, payload.items.length - dedupedItems.length),
+    };
+  };
+
   // Fetch all carts with items — único round-trip via PostgREST nested select.
   const cartsQuery = useQuery<SellerCart[]>({
     queryKey: [QUERY_KEY, userId],
@@ -183,16 +413,7 @@ export function useSellerCarts() {
       if (error) throw error;
       if (!data?.length) return [];
 
-      return data.map((row) => {
-        const { seller_cart_items: rowItems, ...cart } = row as unknown as SellerCartRawRow;
-        return {
-          ...cart,
-          notes: (cart.notes as string | null) ?? null,
-          status: ((cart.status as string) ?? 'em_separacao') as CartStatus,
-          shipping_deadline: (cart.shipping_deadline as string | null) ?? null,
-          items: (rowItems ?? []) as SellerCartItem[],
-        };
-      });
+      return data.map((row) => toSellerCart(row as unknown as SellerCartRawRow));
     },
     enabled: !!userId,
     staleTime: 30 * 1000,
@@ -234,12 +455,22 @@ export function useSellerCarts() {
   });
 
   // Delete cart
-  const deleteCart = useMutation<string, Error, string>({
+  const deleteCart = useMutation<SellerCart, Error, string>({
     mutationFn: async (cartId: string) => {
       if (!userId) throw new Error('Não autenticado');
 
       const startedAt = performance.now();
       cartDeleteLog.info('cart_delete_start', { cart_id: cartId });
+
+      // Snapshot server-side imediatamente antes do DELETE. Em algumas telas o
+      // cache pode estar com `items: []` por hidratação parcial; se usarmos esse
+      // objeto, o Undo recria um carrinho vazio. O retorno desta mutation vira o
+      // snapshot canônico para os chamadores exibirem o toast de Desfazer.
+      const snapshot = await fetchCartWithItems(cartId);
+      if (!snapshot) {
+        cartDeleteLog.warn('cart_delete_snapshot_missing', { cart_id: cartId });
+        throw new CartDeleteZeroRowsError('Carrinho não encontrado para remoção.');
+      }
 
       const { data, error } = await supabase
         .from('seller_carts')
@@ -274,12 +505,13 @@ export function useSellerCarts() {
         cart_id: cartId,
         rows_affected: rowsAffected,
         duration_ms: durationMs,
+        snapshot_items_count: snapshot.items.length,
       });
-      return data[0].id;
+      return snapshot;
     },
-    onSuccess: (deletedCartId) => {
+    onSuccess: (deletedSnapshot) => {
       queryClient.setQueryData<SellerCart[]>([QUERY_KEY, userId], (previous) =>
-        previous?.filter((cart) => cart.id !== deletedCartId) ?? previous,
+        previous?.filter((cart) => cart.id !== deletedSnapshot.id) ?? previous,
       );
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       // Toast de sucesso é emitido pelo chamador (showUndoToast em CartsListPage/
@@ -914,57 +1146,35 @@ export function useSellerCarts() {
       if (!userId) throw new Error('Não autenticado');
 
       // Payload enxuto: apenas o que a RPC lê. Descarta id/timestamps por design.
-      const payload = {
-        seller_id: userId,
-        company_id: snapshot.company_id,
-        company_name: snapshot.company_name,
-        company_location: snapshot.company_location ?? null,
-        company_logo_url: snapshot.company_logo_url ?? null,
-        notes: snapshot.notes ?? null,
-        status: snapshot.status,
-        shipping_deadline: snapshot.shipping_deadline ?? null,
-        items: (snapshot.items ?? []).map((it) => ({
-          product_id: it.product_id,
-          product_name: it.product_name,
-          product_sku: it.product_sku ?? null,
-          product_image_url: it.product_image_url ?? null,
-          product_price: it.product_price,
-          quantity: clampQuantity(it.quantity ?? 1),
-          color_name: it.color_name ?? null,
-          color_hex: it.color_hex ?? null,
-          notes: it.notes ?? null,
-          sort_order: it.sort_order ?? null,
-        })),
-      };
-
-      const { data, error } = await supabase.rpc('restore_seller_cart', {
-        _snapshot: payload as never,
-      });
-
-      if (error) {
-        if (isCartLimitError(error)) {
+      const payload = buildRestorePayload(snapshot);
+      let result: RestoreRpcResponse;
+      try {
+        result = await restoreViaRpc(payload);
+      } catch (err) {
+        if (isCartLimitError(err as { code?: string; message?: string | null })) {
           throw new Error(
             `Você já tem ${MAX_SELLER_CARTS} carrinhos ativos. Finalize ou exclua um antes de restaurar.`,
           );
         }
-        throw error;
+        if (!isRestoreRpcUnavailableError(err)) throw err;
+
+        cartDeleteLog.warn('cart_restore_rpc_unavailable_fallback', {
+          snapshot_id: snapshot.id,
+          items_total: payload.items.length,
+          error: errorMessage(err),
+        });
+        result = await restoreViaClientFallback(payload);
       }
 
-      const result = data as
-        | { cart_id: string; items_total: number; items_inserted: number; items_deduped: number }
-        | null;
-      const newCartId = result?.cart_id;
-      if (!newCartId) throw new Error('restore_seller_cart não retornou cart_id');
-
       cartDeleteLog.info('cart_restore_ok', {
-        cart_id: newCartId,
-        items_total: result?.items_total,
-        items_inserted: result?.items_inserted,
-        items_deduped: result?.items_deduped,
+        cart_id: result.cart_id,
+        items_total: result.items_total,
+        items_inserted: result.items_inserted,
+        items_deduped: result.items_deduped,
       });
 
       return {
-        id: newCartId,
+        id: result.cart_id,
         seller_id: userId,
         company_id: snapshot.company_id,
         company_name: snapshot.company_name,
@@ -977,9 +1187,9 @@ export function useSellerCarts() {
         updated_at: new Date().toISOString(),
         items: snapshot.items ?? [],
         restore_metrics: {
-          items_total: Number(result?.items_total ?? 0),
-          items_inserted: Number(result?.items_inserted ?? 0),
-          items_deduped: Number(result?.items_deduped ?? 0),
+          items_total: result.items_total,
+          items_inserted: result.items_inserted,
+          items_deduped: result.items_deduped,
         },
       } satisfies RestoredSellerCart;
     },
