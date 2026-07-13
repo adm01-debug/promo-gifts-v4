@@ -1507,8 +1507,223 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
     });
   });
 
+  describe('UUID format — CID gerado quando o recebido é inválido', () => {
+    it.each([
+      ['undefined', undefined],
+      ['null', null],
+      ['string vazia', ''],
+      ['só whitespace', '  \t '],
+    ])(
+      'snapshot com _correlation_id=%s → CID emitido segue formato UUID v4',
+      async (_label, badCid) => {
+        rpcMock.mockResolvedValue(rpcOk({ cartId: 'uuid-check' }));
+        const result = await mountSellerCart();
+
+        const snap: Record<string, unknown> = {
+          ...buildHydratedRow({}, 'cart-uuid'),
+          id: 'cart-uuid',
+          items: buildHydratedItems('cart-uuid'),
+          _correlation_id: badCid,
+        };
+
+        await act(async () => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await result.current.restoreCart(snap as any);
+        });
+
+        const startCid = findRestore('restore_start')!.fields.correlation_id as string;
+        expect(typeof startCid).toBe('string');
+        expect(UUID_V4_REGEX.test(startCid)).toBe(true);
+        // Consistência intra-restore (start === ok).
+        expect(findRestore('restore_ok')!.fields.correlation_id).toBe(startCid);
+      },
+    );
+  });
+
+  describe('schema validation — payload emitido nunca sai malformado', () => {
+    it('restore_ok respeita o schema (correlation_id string, duration_ms número finito >=0, restore_result no enum)', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'schema-ok' }));
+      const result = await mountSellerCart();
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+
+      const ok = findRestore('restore_ok')!;
+      const check = validateRestoreEvent('restore_ok', ok.fields);
+      expect(check.violations).toEqual([]);
+      expect(check.valid).toBe(true);
+      // Nenhum evento de violação foi disparado.
+      expect(findRestore('restore_event_schema_violation')).toBeUndefined();
+    });
+
+    it('restore_failed respeita o schema', async () => {
+      rpcMock.mockResolvedValue(rpcErr({ message: 'boom', code: '23505' }));
+      const result = await mountSellerCart();
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+      const failed = findRestore('restore_failed')!;
+      expect(validateRestoreEvent('restore_failed', failed.fields).valid).toBe(true);
+      expect(findRestore('restore_event_schema_violation')).toBeUndefined();
+    });
+
+    it('restore_skipped_empty_snapshot respeita o schema', async () => {
+      hydratedRow = buildEmptyHydratedRow();
+      const result = await mountSellerCart();
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+      const skipped = findRestore('restore_skipped_empty_snapshot')!;
+      expect(
+        validateRestoreEvent('restore_skipped_empty_snapshot', skipped.fields).valid,
+      ).toBe(true);
+      expect(findRestore('restore_event_schema_violation')).toBeUndefined();
+    });
+
+    it('nenhum evento canônico emitido pelo SUT sai com correlation_id/duration_ms/restore_result malformado', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'schema-multi' }));
+      const result = await mountSellerCart();
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+
+      const canonicalEvents = new Set([
+        'restore_start',
+        'restore_ok',
+        'restore_failed',
+        'restore_skipped_empty_snapshot',
+      ]);
+      const events = findLoggerEventsByScope(RESTORE_SCOPE).filter((e) =>
+        canonicalEvents.has(e.event),
+      );
+      expect(events.length).toBeGreaterThan(0);
+      for (const ev of events) {
+        // correlation_id nunca undefined/vazio/tipo errado.
+        const cid = ev.fields.correlation_id;
+        expect(typeof cid).toBe('string');
+        expect((cid as string).trim().length).toBeGreaterThan(0);
+
+        // duration_ms: obrigatório fora de restore_start; opcional lá.
+        const dur = ev.fields.duration_ms;
+        if (ev.event === 'restore_start') {
+          if (dur !== undefined) {
+            expect(typeof dur).toBe('number');
+            expect(Number.isFinite(dur as number)).toBe(true);
+            expect(dur as number).toBeGreaterThanOrEqual(0);
+          }
+        } else {
+          expect(typeof dur).toBe('number');
+          expect(Number.isFinite(dur as number)).toBe(true);
+          expect(dur as number).toBeGreaterThanOrEqual(0);
+        }
+
+        // restore_result: presente fora de start, string no enum.
+        if (ev.event !== 'restore_start') {
+          expect(typeof ev.fields.restore_result).toBe('string');
+        }
+      }
+    });
+  });
+
+  describe('stress — dezenas de restores concorrentes mistos', () => {
+    it('30 restores paralelos (ok/partial/deduped/failed) preservam ordering start<desfecho e isolamento de correlation_id', async () => {
+      const result = await mountSellerCart();
+
+      // Distribuição de desfechos por company_id (round-robin).
+      const outcomes = ['OK', 'PART', 'DEDUP', 'FAIL'] as const;
+      const N = 30;
+
+      rpcMock.mockImplementation(
+        (_fn: string, params: { _snapshot: { company_id: string; id: string } }) => {
+          const co = params._snapshot.company_id;
+          if (co.startsWith('co-OK'))
+            return Promise.resolve(rpcOk({ cartId: `new-${params._snapshot.id}` }));
+          if (co.startsWith('co-PART'))
+            return Promise.resolve(
+              rpcOk({ cartId: `new-${params._snapshot.id}`, itemsInserted: 1 }),
+            );
+          if (co.startsWith('co-DEDUP'))
+            return Promise.resolve(
+              rpcOk({ cartId: `new-${params._snapshot.id}`, itemsDeduped: 1 }),
+            );
+          return Promise.resolve(rpcErr({ message: 'stress-boom', code: '23505' }));
+        },
+      );
+
+      const snaps = Array.from({ length: N }, (_, i) => {
+        const kind = outcomes[i % outcomes.length];
+        const id = `snap-${i}`;
+        return {
+          ...buildHydratedRow({ company_id: `co-${kind}-${i}` }, id),
+          id,
+          company_id: `co-${kind}-${i}`,
+          items: buildHydratedItems(id),
+        };
+      });
+
+      await act(async () => {
+        await Promise.all(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          snaps.map((s) => result.current.restoreCart(s as any)),
+        );
+      });
+
+      const starts = filterRestore('restore_start');
+      const oks = filterRestore('restore_ok');
+      const fails = filterRestore('restore_failed');
+      expect(starts).toHaveLength(N);
+      expect(oks.length + fails.length).toBe(N);
+
+      // Buffer ordenado por emissão — todo start precede seu desfecho.
+      const all = findLoggerEventsByScope(RESTORE_SCOPE);
+      const cids = starts.map((s) => s.fields.correlation_id as string);
+
+      // 1) Isolamento: CIDs únicos entre os N restores.
+      expect(new Set(cids).size).toBe(N);
+
+      // 2) Cada CID é UUID v4.
+      for (const cid of cids) {
+        expect(UUID_V4_REGEX.test(cid)).toBe(true);
+      }
+
+      // 3) Ordering: start[cid] < outcome[cid] no buffer.
+      for (const cid of cids) {
+        const startIdx = all.findIndex(
+          (e) => e.event === 'restore_start' && e.fields.correlation_id === cid,
+        );
+        const okIdx = all.findIndex(
+          (e) => e.event === 'restore_ok' && e.fields.correlation_id === cid,
+        );
+        const failIdx = all.findIndex(
+          (e) => e.event === 'restore_failed' && e.fields.correlation_id === cid,
+        );
+        const outcomeIdx = okIdx !== -1 ? okIdx : failIdx;
+        expect(startIdx).toBeGreaterThanOrEqual(0);
+        expect(outcomeIdx).toBeGreaterThan(startIdx);
+      }
+
+      // 4) Isolamento por snapshot_id: start.snapshot_id === outcome.snapshot_id
+      //    para cada CID (sem cross-talk).
+      for (const cid of cids) {
+        const start = starts.find((e) => e.fields.correlation_id === cid)!;
+        const outcome =
+          oks.find((e) => e.fields.correlation_id === cid) ??
+          fails.find((e) => e.fields.correlation_id === cid);
+        expect(outcome).toBeTruthy();
+        expect(outcome!.fields.snapshot_id).toBe(start.fields.snapshot_id);
+      }
+
+      // 5) Nenhum schema violation emitido durante o stress.
+      expect(findRestore('restore_event_schema_violation')).toBeUndefined();
+    });
+  });
 
   it('scope canônico = "seller_cart.restore" (evita drift de nome de scope)', async () => {
+
     rpcMock.mockResolvedValue(rpcOk());
     const result = await mountSellerCart();
     await act(async () => {
