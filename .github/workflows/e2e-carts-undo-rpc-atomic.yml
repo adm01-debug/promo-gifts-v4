@@ -1,0 +1,58 @@
+name: E2E · Carts Undo RPC Atomic
+
+# Gate obrigatório: valida o fluxo Desfazer/restaurar via RPC atômica
+# (restore_seller_cart) — sucesso + falha por RLS — instalando Chromium
+# via `npx playwright install --with-deps chromium` para que o teste
+# realmente execute.
+
+on:
+  pull_request:
+    paths:
+      - 'src/contexts/SellerCartContext.tsx'
+      - 'src/hooks/products/useSellerCarts.ts'
+      - 'src/pages/products/seller-carts/mapRestoreCartError.ts'
+      - 'src/utils/undoToast.tsx'
+      - 'e2e/flows/13b-carts-undo-rpc-atomic.spec.ts'
+      - 'e2e/helpers/cart-mock.ts'
+      - 'playwright.config.ts'
+      - '.github/workflows/e2e-carts-undo-rpc-atomic.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-carts-undo-rpc-atomic-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: E2E · chromium-authed
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Install Chromium (Playwright)
+        run: npx playwright install --with-deps chromium
+      - name: Run undo/restore E2E
+        run: |
+          npx playwright test \
+            e2e/flows/13b-carts-undo-rpc-atomic.spec.ts \
+            --project=chromium-authed
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-carts-undo-rpc
+          path: playwright-report/
+          retention-days: 7
