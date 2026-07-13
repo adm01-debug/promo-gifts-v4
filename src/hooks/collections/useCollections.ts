@@ -5,6 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { type Product } from '@/hooks/products';
 
 import { logger } from '@/lib/logger';
+import { createRestoreLogger } from '@/lib/telemetry/restoreLogger';
+
+// Logger estruturado do fluxo restaurar-da-lixeira em coleções. Injeta
+// `schema_version` e valida o payload — ver `restoreEventSchema.ts`.
+const restoreCollectionLog = createRestoreLogger('collections.restore');
+
 const LEGACY_STORAGE_KEY = 'product-collections';
 
 export interface CollectionVariantInfo {
