@@ -327,6 +327,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
 
   const restoreCart = useCallback(
     async (snapshot: SellerCart): Promise<string | undefined> => {
+      const itemsCount = snapshot?.items?.length ?? 0;
       try {
         const created = await restoreCartWithItemsMutation.mutateAsync(snapshot);
         // Após restaurar, garante que o ponteiro do carrinho ativo (localStorage)
@@ -343,18 +344,22 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         }
         return created?.id;
       } catch (err) {
-        // Diagnóstico: sem este log, o erro real do INSERT (RLS, coluna faltando,
-        // FK, unique) era engolido silenciosamente pelo `catch {}` vazio original
-        // e o usuário só via "Não foi possível restaurar o carrinho." sem pista.
-        // Também mostra o motivo sanitizado como description do toast do chamador.
-        const message = sanitizeError(err);
+        // Sem este bloco o erro real (RLS, coluna, unique, FK) era engolido
+        // pelo `catch {}` original e o usuário só via um toast genérico sem
+        // pista. Agora: log estruturado + description sanitizada no toast +
+        // snapshot_id / items_count pra diagnóstico rápido.
+        const rawMessage = err instanceof Error ? err.message : String(err);
+        const sanitized = sanitizeError(err);
         console.error('[restoreCart] falha ao restaurar carrinho', {
           snapshot_id: snapshot?.id,
-          items: snapshot?.items?.length ?? 0,
-          raw_error: err instanceof Error ? err.message : String(err),
-          sanitized: message,
+          items_count: itemsCount,
+          company_id: snapshot?.company_id,
+          raw_error: rawMessage,
+          sanitized,
         });
-        toast.error('Não foi possível restaurar o carrinho.', { description: message });
+        toast.error('Não foi possível restaurar o carrinho.', {
+          description: `${sanitized} · snapshot ${snapshot?.id ?? '—'} · ${itemsCount} item(ns)`,
+        });
         return undefined;
       }
     },
