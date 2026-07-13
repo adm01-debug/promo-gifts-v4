@@ -348,7 +348,12 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         // pelo `catch {}` original e o usuário só via um toast genérico sem
         // pista. Agora: log estruturado + description sanitizada no toast +
         // snapshot_id / items_count pra diagnóstico rápido.
-        const rawMessage = err instanceof Error ? err.message : String(err);
+        const rawMessage =
+          err instanceof Error
+            ? err.message
+            : err && typeof err === 'object' && 'message' in err
+              ? String((err as { message: unknown }).message)
+              : String(err);
         const sanitized = sanitizeError(err);
         console.error('[restoreCart] falha ao restaurar carrinho', {
           snapshot_id: snapshot?.id,
