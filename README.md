@@ -25,6 +25,7 @@
 - [Integrações](#-integrações)
 - [Convenções de Código](#-convenções-de-código)
 - [Deploy](#-deploy)
+- [Performance e Observabilidade](#-performance-e-observabilidade)
 - [Troubleshooting](#-troubleshooting)
 
 ---
@@ -490,6 +491,20 @@ O deploy é gerenciado automaticamente pelo **Lovable Cloud**:
 ### URLs
 - **Preview**: `https://id-preview--*.lovable.app`
 - **Produção**: `https://criar-together-now.lovable.app`
+
+---
+
+## 📈 Performance e Observabilidade
+
+Documento técnico consolidado: **[`docs/PERF_OPTIMIZATIONS.md`](docs/PERF_OPTIMIZATIONS.md)** ([PDF](docs/PERF_OPTIMIZATIONS.pdf)).
+
+Cobre as três frentes ativas de otimização, todas independentes e com kill switch:
+
+- **Bundle Size Gate & Report** — gate bloqueante no CI (`scripts/check-bundle-size.mjs`) enforça limites por chunk + total + regressão vs snapshot em `bundle-size-baseline.json`; report informativo (`scripts/bundle-size-report.mjs`) posta comentário idempotente no PR com deltas por chunk crítico.
+- **Métricas de navegação no Sentry** — instrumentação leve em `src/lib/telemetry/navigationMetrics.ts` coleta TTFB, CLS, TTI aproximado e tempo de troca de rota via `PerformanceObserver`/`PerformanceNavigationTiming` (sem depender de `web-vitals`). Sample rate 10%, kill switch por `localStorage.nav_metrics_disabled=1`.
+- **Prefetch on-hover** — hook `src/hooks/common/usePrefetchOnHover.ts` antecipa o `import()` do chunk lazy da rota-alvo em hover/focus/touch dos cards de `ClientsPage` e `QuotesListPage`, respeitando `saveData`/`2g`.
+
+Guia rápido de interpretação do bundle report e ações por severidade estão na seção _"Interpretando o report"_ do documento.
 
 ---
 
