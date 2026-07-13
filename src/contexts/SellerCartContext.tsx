@@ -336,7 +336,29 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   const restoreCart = useCallback(
     async (snapshot: SellerCart): Promise<string | undefined> => {
       const itemsCount = snapshot?.items?.length ?? 0;
+
+      // Guarda anti-restore vazio: se o snapshot chegou sem itens (ex.: cache
+      // parcial no momento do delete), NÃO chama a RPC — ela reconstruiria um
+      // carrinho vazio silenciosamente. Emitimos telemetria + toast orientando
+      // o usuário a recarregar antes de tentar de novo.
+      if (itemsCount === 0) {
+        restoreLog.warn('restore_skipped_empty_snapshot', {
+          snapshot_id: snapshot?.id ?? null,
+          company_id: snapshot?.company_id ?? null,
+          reason: 'empty_snapshot',
+          items_total: 0,
+          items_inserted: 0,
+          items_deduped: 0,
+        });
+        toast.error('Não foi possível desfazer: snapshot sem itens.', {
+          description:
+            'O carrinho foi excluído antes de terminar de carregar. Recarregue a página e tente novamente antes de excluir.',
+        });
+        return undefined;
+      }
+
       try {
+
         const created = await restoreCartWithItemsMutation.mutateAsync(snapshot);
         // Após restaurar, garante que o ponteiro do carrinho ativo (localStorage)
         // não fique apontando para o id ANTIGO/inexistente do snapshot. Se não há
