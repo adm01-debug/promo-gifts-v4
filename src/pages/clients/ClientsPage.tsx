@@ -231,7 +231,7 @@ export default function ClientsPage() {
         ) : (
           <div className="grid gap-3">
             {filtered.map((client) => (
-              <ClientCard
+              <ClientRow
                 key={client.id}
                 client={client}
                 onClick={() => handleClientClick(client)}
