@@ -183,7 +183,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // devolvido para que `restoreCart` propague o MESMO id nos eventos
       // subsequentes (`restore_start` / `restore_ok` / `restore_failed`),
       // permitindo agrupar traces no Sentry e no logger por `correlation_id`.
-      const correlationId = newRequestId();
+      const correlationId = generateCorrelationId();
       const deletedItemsTotal = deletedSnapshot?.items?.length ?? 0;
       restoreLog.info('delete_ok', {
         correlation_id: correlationId,
