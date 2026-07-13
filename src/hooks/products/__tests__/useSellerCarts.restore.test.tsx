@@ -331,4 +331,56 @@ describe('useSellerCarts.restoreCartWithItems — snapshot fiel + fallback', () 
     expect(deletedSnapshot.items[0].product_id).toBe('prod-1');
     expect(deleteCalls.some((call) => call.table === 'seller_carts')).toBe(true);
   });
+
+  /**
+   * INVARIANTE ANTI-REGRESSÃO — restore de snapshot com itens NUNCA
+   * pode terminar com zero itens restaurados. Se o snapshot deletado tinha N>=1
+   * itens, o fluxo delete→restore precisa reinserir >=1. Cobre tanto o caminho
+   * RPC (via `restore_metrics.items_inserted`) quanto o fallback client-side
+   * (via INSERT em `seller_cart_items`).
+   */
+  describe('INVARIANTE: snapshot com itens ⇒ restore reinsere ≥ 1', () => {
+    it('via RPC — items_inserted é ≥ 1 quando snapshot tinha itens', async () => {
+      rpcMock.mockResolvedValue({
+        data: { cart_id: 'new-cart-id-xyz', items_total: 2, items_inserted: 2, items_deduped: 0 },
+        error: null,
+      });
+
+      const { result } = renderHook(() => useSellerCarts(), { wrapper });
+      await waitFor(() => expect(result.current.deleteCart).toBeTruthy());
+
+      const deleted = await result.current.deleteCart.mutateAsync(BASE_SNAPSHOT.id);
+      expect(deleted.items.length).toBeGreaterThanOrEqual(1);
+
+      const restored = await result.current.restoreCartWithItems.mutateAsync(deleted);
+
+      // Invariante central: >=1 item precisa ter sido reinserido.
+      expect(restored?.restore_metrics?.items_total ?? 0).toBeGreaterThanOrEqual(1);
+      expect(restored?.restore_metrics?.items_inserted ?? 0).toBeGreaterThanOrEqual(1);
+    });
+
+    it('via fallback client-side — INSERT em seller_cart_items reinsere ≥ 1 linha', async () => {
+      rpcMock.mockResolvedValue({
+        data: null,
+        error: {
+          code: 'PGRST202',
+          message: 'Could not find the function public.restore_seller_cart in the schema cache',
+        },
+      });
+
+      const { result } = renderHook(() => useSellerCarts(), { wrapper });
+      await waitFor(() => expect(result.current.deleteCart).toBeTruthy());
+
+      const deleted = await result.current.deleteCart.mutateAsync(BASE_SNAPSHOT.id);
+      expect(deleted.items.length).toBeGreaterThanOrEqual(1);
+
+      const restored = await result.current.restoreCartWithItems.mutateAsync(deleted);
+
+      const itemsInsert = insertCalls.find((c) => c.table === 'seller_cart_items');
+      expect(itemsInsert, 'INSERT em seller_cart_items deve ocorrer no fallback').toBeTruthy();
+      const rows = itemsInsert!.payload as Array<Record<string, unknown>>;
+      expect(rows.length).toBeGreaterThanOrEqual(1);
+      expect(restored?.restore_metrics?.items_inserted ?? 0).toBeGreaterThanOrEqual(1);
+    });
+  });
 });
