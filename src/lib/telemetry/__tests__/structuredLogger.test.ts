@@ -104,4 +104,24 @@ describe('structuredLogger.ts', () => {
     expect(log.requestId).toBe('custom-id');
     expect(log.headers()).toEqual({ 'X-Request-Id': 'custom-id' });
   });
+
+  // Herdado de `tests/observability/structured-logger.test.ts` (removido) —
+  // valida o SHAPE canônico do payload JSON usado por collectors externos.
+  it('emits payload with canonical fields (ts, level, scope, request_id, event, extras)', () => {
+    const log = createClientLogger('test.scope', { requestId: 'rid-123' });
+    log.info('hello', { foo: 'bar' });
+
+    expect(consoleSpy.info).toHaveBeenCalled();
+    // Em DEV o payload é o SEGUNDO argumento (o primeiro é o tag `[scope:event]`).
+    const payload = consoleSpy.info.mock.calls.at(-1)?.[1] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      level: 'info',
+      scope: 'test.scope',
+      request_id: 'rid-123',
+      event: 'hello',
+      foo: 'bar',
+    });
+    expect(typeof payload.ts).toBe('string');
+    expect(payload.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
 });
