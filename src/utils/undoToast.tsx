@@ -77,6 +77,11 @@ export function UndoToastContent({
   const reducedNative = usePrefersReducedMotion();
   // Harness pode congelar tempo — quando frozen também suprime animações.
   const reduced = reducedNative || frozen;
+  // Guarda anti double-click: enquanto o onUndo estiver rodando, o botão
+  // fica desabilitado e cliques subsequentes são ignorados. Combina com
+  // `pendingRef` para bloquear chamadas mesmo antes do React re-renderizar.
+  const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
 
   useEffect(() => {
     if (frozen) return;
