@@ -41,7 +41,29 @@ import {
   QUOTES_MIN_VISIBLE_ROWS,
   QUOTES_MAX_VISIBLE_ROWS,
   QUOTES_CHROME_BY_BREAKPOINT,
-} from '@/lib/quotes/quotesLayout';
+
+// ── Prefetch do bundle do QuoteBuilder/QuoteView ──
+// Dispara em hover/focus/touch de uma linha para eliminar o "flash" do lazy
+// chunk quando o usuário clicar. Idempotente — dynamic import resolve uma vez
+// e o resultado fica cacheado pelo browser + Vite.
+function prefetchQuoteRoutes(): void {
+  void import('@/pages/quotes/QuoteViewPage');
+  void import('@/pages/quotes/QuoteBuilderPage');
+}
+
+/** Wrapper que aplica `usePrefetchOnHover` no <div> da linha do orçamento. */
+interface PrefetchRowProps extends React.HTMLAttributes<HTMLDivElement> {
+  prefetch: () => void;
+}
+function PrefetchRow({ prefetch, children, ...rest }: PrefetchRowProps) {
+  const handlers = usePrefetchOnHover(prefetch);
+  return (
+    <div {...rest} {...handlers}>
+      {children}
+    </div>
+  );
+}
+
 
 // ── Column definitions ──
 export interface ColumnDef {
