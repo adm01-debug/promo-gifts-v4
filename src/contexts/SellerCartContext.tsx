@@ -343,6 +343,34 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
             return prev;
           });
         }
+
+        // Métricas da RPC — visíveis no console (auditoria/diagnóstico) e
+        // resumidas no toast de sucesso quando houver dedup ou divergência
+        // entre `items_total` e `items_inserted` (senão o toast fica limpo).
+        const metrics = created?.restore_metrics;
+        if (metrics) {
+          console.info('[restoreCart] carrinho restaurado', {
+            snapshot_id: snapshot?.id,
+            new_cart_id: created.id,
+            items_total: metrics.items_total,
+            items_inserted: metrics.items_inserted,
+            items_deduped: metrics.items_deduped,
+          });
+
+          const parts: string[] = [`snapshot ${snapshot?.id ?? '—'}`];
+          if (metrics.items_deduped > 0 || metrics.items_inserted !== metrics.items_total) {
+            parts.push(
+              `${metrics.items_inserted}/${metrics.items_total} itens inseridos` +
+                (metrics.items_deduped > 0
+                  ? ` · ${metrics.items_deduped} deduplicado(s)`
+                  : ''),
+            );
+          } else {
+            parts.push(`${metrics.items_total} item(ns)`);
+          }
+          toast.success('Carrinho restaurado.', { description: parts.join(' · ') });
+        }
+
         return created?.id;
       } catch (err) {
         // Sem este bloco o erro real (RLS, coluna, unique, FK) era engolido
