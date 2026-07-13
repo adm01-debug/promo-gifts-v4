@@ -541,6 +541,166 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
       expect(failed!.fields.correlation_id).toBe(start!.fields.correlation_id);
       expect(findRestore('restore_ok')).toBeUndefined();
     });
+
+    it('restore_ok (partial): RPC resolve imediatamente — duration_ms finito, não-negativo e sem drift', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'sync-partial', itemsInserted: 1 }));
+      const result = await mountSellerCart();
+
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+
+      const start = findRestore('restore_start');
+      const ok = findRestore('restore_ok');
+      expect(ok!.fields.restore_result).toBe('partial');
+
+      const okDur = ok!.fields.duration_ms as number;
+      expect(typeof okDur).toBe('number');
+      expect(Number.isFinite(okDur)).toBe(true);
+      expect(okDur).toBeGreaterThanOrEqual(0);
+      expect(okDur).toBeLessThan(1000);
+      expect(ok!.fields.correlation_id).toBe(start!.fields.correlation_id);
+    });
+
+    it('restore_ok (deduped): RPC resolve imediatamente — duration_ms finito, não-negativo e sem drift', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'sync-dedup', itemsDeduped: 1 }));
+      const result = await mountSellerCart();
+
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+
+      const start = findRestore('restore_start');
+      const ok = findRestore('restore_ok');
+      expect(ok!.fields.restore_result).toBe('deduped');
+
+      const okDur = ok!.fields.duration_ms as number;
+      expect(typeof okDur).toBe('number');
+      expect(Number.isFinite(okDur)).toBe(true);
+      expect(okDur).toBeGreaterThanOrEqual(0);
+      expect(okDur).toBeLessThan(1000);
+      expect(ok!.fields.correlation_id).toBe(start!.fields.correlation_id);
+    });
+
+    it('avanço incremental de timers (5×20ms) — duration_ms cresce monotônico e nunca fica negativo entre restore_start e restore_ok', async () => {
+      const result = await mountSellerCart();
+
+      vi.useFakeTimers();
+      // RPC só resolve depois de 100ms fake, mas avançamos em 5 passos de 20ms
+      // para simular clock progredindo em micro-incrementos.
+      rpcMock.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => resolve(rpcOk({ cartId: 'incr-ok' })), 100);
+          }),
+      );
+
+      let restorePromise: Promise<unknown> | undefined;
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        restorePromise = result.current.restoreCart(snap);
+      });
+
+      // 5 passos de 20ms — em cada passo o clock avança mas o RPC ainda não resolveu.
+      for (let i = 0; i < 5; i++) {
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(20);
+        });
+      }
+      await act(async () => {
+        await restorePromise;
+      });
+
+      const start = findRestore('restore_start');
+      const ok = findRestore('restore_ok');
+      expect(start).toBeTruthy();
+      expect(ok).toBeTruthy();
+
+      const startDur = start!.fields.duration_ms as number | undefined;
+      const okDur = ok!.fields.duration_ms as number;
+
+      if (typeof startDur === 'number') {
+        expect(startDur).toBeGreaterThanOrEqual(0);
+      }
+      expect(Number.isFinite(okDur)).toBe(true);
+      expect(okDur).toBeGreaterThanOrEqual(0);
+      // Monotonicidade: ok >= start (nunca "volta no tempo").
+      if (typeof startDur === 'number') {
+        expect(okDur).toBeGreaterThanOrEqual(startDur);
+      }
+      // Bateu ~100ms de avanço acumulado (tolerância +5ms para rounding).
+      expect(okDur).toBeGreaterThanOrEqual(100);
+      expect(okDur).toBeLessThanOrEqual(105);
+      expect(ok!.fields.correlation_id).toBe(start!.fields.correlation_id);
+    });
+  });
+
+  describe('sequência canônica para classificações `partial` e `deduped`', () => {
+    it('partial: delete_ok → restore_start → restore_ok com correlation_id consistente e restore_result=partial', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'seq-partial', itemsInserted: 1 }));
+      const result = await mountSellerCart();
+
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+
+      const seq = restoreSequence().filter((e) =>
+        ['delete_ok', 'restore_start', 'restore_ok', 'restore_failed'].includes(e),
+      );
+      expect(seq).toEqual(['delete_ok', 'restore_start', 'restore_ok']);
+
+      const deleteOk = findRestore('delete_ok');
+      const start = findRestore('restore_start');
+      const ok = findRestore('restore_ok');
+      assertConsistentSnapshotId([deleteOk, start, ok], TEST_CART_ID);
+
+      const cid = deleteOk!.fields.correlation_id;
+      expect(cid).toBeTruthy();
+      expect(start!.fields.correlation_id).toBe(cid);
+      expect(ok!.fields.correlation_id).toBe(cid);
+      expect(ok!.fields.restore_result).toBe('partial');
+      expect(ok!.fields).toMatchObject({
+        items_mismatch: true,
+        partial_insert: true,
+        has_dedup: false,
+      });
+      expect(findRestore('restore_failed')).toBeUndefined();
+    });
+
+    it('deduped: delete_ok → restore_start → restore_ok com correlation_id consistente e restore_result=deduped', async () => {
+      rpcMock.mockResolvedValue(rpcOk({ cartId: 'seq-dedup', itemsDeduped: 1 }));
+      const result = await mountSellerCart();
+
+      await act(async () => {
+        const snap = await result.current.deleteCart(TEST_CART_ID);
+        await result.current.restoreCart(snap);
+      });
+
+      const seq = restoreSequence().filter((e) =>
+        ['delete_ok', 'restore_start', 'restore_ok', 'restore_failed'].includes(e),
+      );
+      expect(seq).toEqual(['delete_ok', 'restore_start', 'restore_ok']);
+
+      const deleteOk = findRestore('delete_ok');
+      const start = findRestore('restore_start');
+      const ok = findRestore('restore_ok');
+      assertConsistentSnapshotId([deleteOk, start, ok], TEST_CART_ID);
+
+      const cid = deleteOk!.fields.correlation_id;
+      expect(cid).toBeTruthy();
+      expect(start!.fields.correlation_id).toBe(cid);
+      expect(ok!.fields.correlation_id).toBe(cid);
+      expect(ok!.fields.restore_result).toBe('deduped');
+      expect(ok!.fields).toMatchObject({
+        items_mismatch: false,
+        partial_insert: false,
+        has_dedup: true,
+      });
+      expect(findRestore('restore_failed')).toBeUndefined();
+    });
   });
 
   describe('E2E lógico — sequência canônica de eventos delete → undo', () => {
