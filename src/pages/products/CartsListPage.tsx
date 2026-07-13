@@ -19,8 +19,6 @@ import {
   deleteConfirmDialogDescription,
   deletedToastTitle,
   confirmDialogConfirmLabel,
-  RESTORE_SINGLE_SUCCESS,
-  RESTORE_SINGLE_ERROR,
 } from '@/pages/products/seller-carts/undoCopy';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
