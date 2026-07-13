@@ -352,6 +352,11 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   const restoreCart = useCallback(
     async (snapshot: SellerCart): Promise<string | undefined> => {
       const itemsCount = snapshot?.items?.length ?? 0;
+      // Correlation ID propagado do `deleteCart` (ver `_correlation_id`).
+      // Se o snapshot chegou por outro caminho (ex.: chamada direta em testes
+      // ou fluxo legado), geramos um novo aqui para manter o schema estável.
+      const correlationId = snapshot?._correlation_id ?? newRequestId();
+
 
       // Guarda anti-restore vazio: se o snapshot chegou sem itens (ex.: cache
       // parcial no momento do delete), NÃO chama a RPC — ela reconstruiria um
