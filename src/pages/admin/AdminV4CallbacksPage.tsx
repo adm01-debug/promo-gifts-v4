@@ -138,7 +138,7 @@ export default function AdminV4CallbacksPage() {
       await reprocess.mutateAsync(id);
       toast.success('Callback reprocessado.');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Falha ao reprocessar.');
+      toast.error('Falha ao reprocessar.', { description: sanitizeError(e) });
     }
   }
   async function handleReprocessBatch() {
@@ -151,7 +151,7 @@ export default function AdminV4CallbacksPage() {
         `Reprocessamento em lote: ${res.success} sucesso, ${res.failed} falhas (${res.processed} totais).`,
       );
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Falha no lote.');
+      toast.error('Falha no lote.', { description: sanitizeError(e) });
     }
   }
 
