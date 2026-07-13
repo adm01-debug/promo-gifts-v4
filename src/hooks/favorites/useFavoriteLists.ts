@@ -9,6 +9,12 @@ import { showUndoToast } from '@/utils/undoToast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
 import { logger } from '@/lib/logger';
+import { createRestoreLogger } from '@/lib/telemetry/restoreLogger';
+
+// Logger estruturado do fluxo restaurar-da-lixeira em favoritos.
+// Injeta `schema_version` e valida payload — SSOT em `restoreEventSchema`.
+const restoreFavoritesLog = createRestoreLogger('favorites.restore');
+
 export interface FavoriteList {
   id: string;
   user_id: string;
