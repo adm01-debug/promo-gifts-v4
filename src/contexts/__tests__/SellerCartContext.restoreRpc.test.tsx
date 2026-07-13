@@ -220,8 +220,10 @@ describe('SellerCartContext — restoreCart via RPC (atômico, dedup, RLS)', () 
     });
 
     expect(toastError).toHaveBeenCalledTimes(1);
-    const [, opts] = toastError.mock.calls[0] as [string, { description: string }];
-    expect(opts.description).toContain('row-level security');
+    const [title, opts] = toastError.mock.calls[0] as [string, { description: string }];
+    // mapRestoreCartError promove o título para "Sem permissão para restaurar."
+    expect(title).toBe('Sem permissão para restaurar.');
+    expect(opts.description).toMatch(/não tem autorização/i);
     expect(console.error).toHaveBeenCalled();
   });
 
