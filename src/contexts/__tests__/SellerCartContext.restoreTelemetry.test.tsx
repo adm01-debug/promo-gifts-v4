@@ -692,18 +692,31 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
 
       // Distingue as chamadas pelo `_snapshot.id` que chega em `rpc('restore_seller_cart', {_snapshot})`.
       // Cada snapshot resolve com um new_cart_id próprio para permitir cross-check no `restore_ok`.
-      rpcMock.mockImplementation((_fn: string, params: { _snapshot: { id: string } }) => {
-        if (params._snapshot.id === 'cart-A') {
-          return Promise.resolve(rpcOk({ cartId: 'new-A' }));
-        }
-        return Promise.resolve(rpcOk({ cartId: 'new-B' }));
-      });
+      // A RPC `restore_seller_cart` recebe payload SEM `id` do snapshot (só
+      // company/items). Distinguimos as chamadas por `company_id`, que é
+      // preservado pelo `buildRestorePayload`.
+      rpcMock.mockImplementation(
+        (_fn: string, params: { _snapshot: { company_id: string } }) => {
+          if (params._snapshot.company_id === 'co-A') {
+            return Promise.resolve(rpcOk({ cartId: 'new-A' }));
+          }
+          return Promise.resolve(rpcOk({ cartId: 'new-B' }));
+        },
+      );
 
       const snapA = {
-        ...buildHydratedRow({}, 'cart-A'),
+        ...buildHydratedRow({ company_id: 'co-A' }, 'cart-A'),
         id: 'cart-A',
+        company_id: 'co-A',
         items: buildHydratedItems('cart-A'),
         _correlation_id: CID_A,
+      };
+      const snapB = {
+        ...buildHydratedRow({ company_id: 'co-B' }, 'cart-B'),
+        id: 'cart-B',
+        company_id: 'co-B',
+        items: buildHydratedItems('cart-B'),
+        _correlation_id: CID_B,
       };
       const snapB = {
         ...buildHydratedRow({}, 'cart-B'),
