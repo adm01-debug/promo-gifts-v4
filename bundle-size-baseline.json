@@ -1,9 +1,21 @@
 {
   "generatedAt": "2026-06-20T00:00:00.000Z",
-  "description": "Bundle size baseline (raw JS bytes). Update with: node scripts/check-bundle-size.mjs --update-baseline",
+  "description": "Bundle size baseline (raw JS bytes). Update: node scripts/check-bundle-size.mjs --update-baseline",
   "limits": {
     "maxChunkBytes": 2000000,
     "maxTotalBytes": 12000000,
-    "warningThresholdPct": 75
-  }
+    "warningThresholdPct": 75,
+    "regressionThresholdPct": 15
+  },
+  "criticalChunks": {
+    "react-vendor":    { "maxBytes": 350000, "label": "React + ReactDOM" },
+    "router-vendor":   { "maxBytes": 120000, "label": "React Router" },
+    "query-vendor":    { "maxBytes": 200000, "label": "TanStack Query" },
+    "supabase-vendor": { "maxBytes": 350000, "label": "Supabase SDK" },
+    "ui-vendor":       { "maxBytes": 500000, "label": "Radix UI + cmdk" },
+    "icons-vendor":    { "maxBytes": 250000, "label": "lucide-react" },
+    "date-vendor":     { "maxBytes": 200000, "label": "date-fns" },
+    "charts-vendor":   { "maxBytes": 700000, "label": "Recharts + D3" }
+  },
+  "snapshot": null
 }
