@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { mapRestoreCartError } from '@/pages/products/seller-carts/mapRestoreCartError';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { newRequestId } from '@/lib/telemetry/requestId';
 
 // Logger de escopo dedicado — emite JSON estruturado em PROD e encaminha
 // falhas ao Sentry automaticamente (level=error → captureException com tags
@@ -170,12 +171,14 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // de forma otimista: se o DELETE falhasse (RLS/rede), o carrinho reaparecia
       // na lista mas com o histórico de ações perdido e a seleção ativa descartada.
       const deletedSnapshot = await deleteCartMutation.mutateAsync(cartId);
-      // Telemetria de hidratação do snapshot ANTES de qualquer Undo. Se
-      // `items_total === 0` isso indica que a linha foi deletada sem itens
-      // reais no banco OU que o servidor devolveu snapshot parcial — em ambos
-      // os casos o Undo posterior seria vazio (guarda em restoreCart bloqueia).
+      // Correlation ID transitório do fluxo delete→undo. Anexado ao snapshot
+      // devolvido para que `restoreCart` propague o MESMO id nos eventos
+      // subsequentes (`restore_start` / `restore_ok` / `restore_failed`),
+      // permitindo agrupar traces no Sentry e no logger por `correlation_id`.
+      const correlationId = newRequestId();
       const deletedItemsTotal = deletedSnapshot?.items?.length ?? 0;
       restoreLog.info('delete_ok', {
+        correlation_id: correlationId,
         snapshot_id: deletedSnapshot?.id ?? cartId,
         company_id: deletedSnapshot?.company_id ?? null,
         items_total: deletedItemsTotal,
@@ -191,10 +194,11 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-      return deletedSnapshot;
+      return { ...deletedSnapshot, _correlation_id: correlationId };
     },
     [deleteCartMutation, activeCartId, user?.id],
   );
+
 
 
   // Retorna Promise<boolean> (true = adicionado) para que chamadores em lote
@@ -348,6 +352,11 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
   const restoreCart = useCallback(
     async (snapshot: SellerCart): Promise<string | undefined> => {
       const itemsCount = snapshot?.items?.length ?? 0;
+      // Correlation ID propagado do `deleteCart` (ver `_correlation_id`).
+      // Se o snapshot chegou por outro caminho (ex.: chamada direta em testes
+      // ou fluxo legado), geramos um novo aqui para manter o schema estável.
+      const correlationId = snapshot?._correlation_id ?? newRequestId();
+
 
       // Guarda anti-restore vazio: se o snapshot chegou sem itens (ex.: cache
       // parcial no momento do delete), NÃO chama a RPC — ela reconstruiria um
@@ -355,6 +364,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // o usuário a recarregar antes de tentar de novo.
       if (itemsCount === 0) {
         restoreLog.warn('restore_skipped_empty_snapshot', {
+          correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           company_id: snapshot?.company_id ?? null,
           reason: 'empty_snapshot',
@@ -377,6 +387,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // por `snapshot_id` no Sentry/console e detectar regressão de hidratação
       // (ex.: `items_total` cair para 0 entre delete e restore).
       restoreLog.info('restore_start', {
+        correlation_id: correlationId,
         snapshot_id: snapshot?.id ?? null,
         company_id: snapshot?.company_id ?? null,
         items_total: itemsCount,
@@ -423,6 +434,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           : 'ok_no_metrics';
 
         restoreLog.info('restore_ok', {
+          correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           new_cart_id: created?.id ?? null,
           company_id: snapshot?.company_id ?? null,
@@ -485,6 +497,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         // `err` no payload aciona `captureException` no Sentry via structuredLogger
         // e é serializado como { name, message, stack } no log JSON.
         restoreLog.error('restore_failed', {
+          correlation_id: correlationId,
           snapshot_id: snapshot?.id ?? null,
           items_count: itemsCount,
           items_total: itemsCount,
