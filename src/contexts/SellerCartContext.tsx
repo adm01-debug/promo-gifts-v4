@@ -170,6 +170,17 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       // de forma otimista: se o DELETE falhasse (RLS/rede), o carrinho reaparecia
       // na lista mas com o histórico de ações perdido e a seleção ativa descartada.
       const deletedSnapshot = await deleteCartMutation.mutateAsync(cartId);
+      // Telemetria de hidratação do snapshot ANTES de qualquer Undo. Se
+      // `items_total === 0` isso indica que a linha foi deletada sem itens
+      // reais no banco OU que o servidor devolveu snapshot parcial — em ambos
+      // os casos o Undo posterior seria vazio (guarda em restoreCart bloqueia).
+      const deletedItemsTotal = deletedSnapshot?.items?.length ?? 0;
+      restoreLog.info('delete_ok', {
+        snapshot_id: deletedSnapshot?.id ?? cartId,
+        company_id: deletedSnapshot?.company_id ?? null,
+        items_total: deletedItemsTotal,
+        hydrated: deletedItemsTotal > 0,
+      });
       if (activeCartId === cartId) {
         setActiveCartId(null);
         if (user?.id) {
@@ -184,6 +195,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
     },
     [deleteCartMutation, activeCartId, user?.id],
   );
+
 
   // Retorna Promise<boolean> (true = adicionado) para que chamadores em lote
   // (bulk/template) consigam aguardar e reportar contagem real de sucesso/falha
