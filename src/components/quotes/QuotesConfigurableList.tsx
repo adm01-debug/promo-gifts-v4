@@ -3,7 +3,7 @@
  */
 
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, type HTMLAttributes } from 'react';
 import { renderQuoteCell } from './QuoteListCellRenderer';
 import { useQuoteClientLogos } from '@/hooks/quotes/useQuoteClientLogos';
 import { useQuoteItemCounts } from '@/hooks/quotes/useQuoteItemCounts';
