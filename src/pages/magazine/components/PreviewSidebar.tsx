@@ -121,15 +121,18 @@ export function PreviewSidebar({
               onClick={() => stepZoom(-1)}
               disabled={!canZoomOut}
               aria-label="Diminuir zoom"
+              aria-keyshortcuts="-"
+              title="Diminuir zoom (−)"
             >
               <ZoomOut className="h-3.5 w-3.5" />
             </Button>
             <button
               type="button"
-              onClick={() => setZoom(1)}
+              onClick={resetZoom}
               className="min-w-[46px] rounded px-1 py-0.5 text-[10px] font-mono tabular-nums text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Ajustar à largura"
-              title="Ajustar à largura (Fit)"
+              aria-keyshortcuts="0"
+              title="Ajustar à largura (0)"
             >
               {zoom === 1 ? 'Fit' : `${Math.round(zoom * 100)}%`}
             </button>
@@ -140,9 +143,12 @@ export function PreviewSidebar({
               onClick={() => stepZoom(1)}
               disabled={!canZoomIn}
               aria-label="Aumentar zoom"
+              aria-keyshortcuts="+"
+              title="Aumentar zoom (+)"
             >
               <ZoomIn className="h-3.5 w-3.5" />
             </Button>
+
             <Button
               variant="ghost"
               size="sm"
