@@ -572,8 +572,20 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           raw_error: rawMessage,
           err,
         });
+        // Fallback UX: em falhas onde o snapshot local pode estar
+        // dessincronizado do servidor (RPC ausente, rede, timeout, 5xx),
+        // oferecemos "Recarregar carrinhos" no próprio toast em vez de
+        // deixar o usuário com a mensagem sem saída.
+        const canReload = RELOADABLE_REASONS.has(mapped.reason);
         toast.error(mapped.title ?? 'Não foi possível restaurar o carrinho.', {
           description: `${mapped.description} · snapshot ${snapshot?.id ?? '—'} · ${itemsCount} item(ns)`,
+          duration: canReload ? 12_000 : undefined,
+          action: canReload
+            ? {
+                label: 'Recarregar carrinhos',
+                onClick: () => reloadCarts(),
+              }
+            : undefined,
         });
         return undefined;
       }
