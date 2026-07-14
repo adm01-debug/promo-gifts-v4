@@ -39,13 +39,21 @@ const args = Object.fromEntries(
 );
 
 const RUNS = Number(args.runs ?? 10);
-const PATTERN = String(args.pattern ?? 'tests/magazine/');
+// `--pattern` aceita múltiplos padrões separados por vírgula. Ex.:
+//   --pattern=tests/magazine/,tests/utils/tailwindRings.interaction.test.tsx
+// Cada padrão vira um argumento posicional de `vitest run`.
+const PATTERN_RAW = String(args.pattern ?? 'tests/magazine/');
+const PATTERNS = PATTERN_RAW.split(',').map((p) => p.trim()).filter(Boolean);
 const STRICT = Boolean(args.strict);
 const OUT_DIR = resolve(String(args['out-dir'] ?? 'reports/flakiness'));
 const TMP_DIR = resolve('.tmp/flakiness');
 
 if (!Number.isFinite(RUNS) || RUNS < 1 || RUNS > 50) {
   console.error(`[flakiness] --runs inválido: ${RUNS} (aceito: 1..50)`);
+  process.exit(2);
+}
+if (PATTERNS.length === 0) {
+  console.error(`[flakiness] --pattern vazio`);
   process.exit(2);
 }
 
@@ -65,14 +73,14 @@ for (let i = 1; i <= RUNS; i++) {
   const outFile = join(TMP_DIR, `run-${i}.json`);
   if (existsSync(outFile)) rmSync(outFile);
 
-  console.log(`\n[flakiness] Rodada ${i}/${RUNS} — vitest run ${PATTERN}`);
+  console.log(`\n[flakiness] Rodada ${i}/${RUNS} — vitest run ${PATTERNS.join(' ')}`);
   const started = Date.now();
   const res = spawnSync(
     'npx',
     [
       'vitest',
       'run',
-      PATTERN,
+      ...PATTERNS,
       '--reporter=json',
       `--outputFile=${outFile}`,
       // Silencia o reporter default para logs mais curtos no CI.
@@ -150,7 +158,7 @@ const suites = [...bySuite.values()].sort(
 // Persistência — JSON bruto.
 const jsonReport = {
   runs: RUNS,
-  pattern: PATTERN,
+  pattern: PATTERNS,
   generatedAt: new Date().toISOString(),
   runFailures,
   totals: {
@@ -182,7 +190,7 @@ const md = [];
 md.push(`# Magazine Flakiness Report`);
 md.push('');
 md.push(`- **Rodadas:** ${RUNS}`);
-md.push(`- **Padrão:** \`${PATTERN}\``);
+md.push(`- **Padrões:** ${PATTERNS.map((p) => `\`${p}\``).join(', ')}`);
 md.push(`- **Gerado em:** ${jsonReport.generatedAt}`);
 md.push(
   `- **Totais:** ${tests.length} testes distintos · ${stable.length} estáveis · ${flaky.length} flaky · ${failAll.length} fail-all`,
