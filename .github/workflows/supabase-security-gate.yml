@@ -1,9 +1,11 @@
 name: Gate 5 — Supabase Security Audit
 
-# Executa em push para main e PRs.
-# Requer o secret SUPABASE_ACCESS_TOKEN configurado em:
-# Settings > Secrets and variables > Actions > New repository secret
-# Valor: token pessoal do Supabase CLI (supabase login --token ...)
+# Executa em push para main e PRs que tocam migrations ou integrações Supabase.
+# Usa secrets já configurados no repositório:
+#   SUPABASE_ACCESS_TOKEN      → Supabase CLI personal access token
+#   VITE_SUPABASE_URL          → https://doufsxqlfjyuvxuezpln.supabase.co
+#   VITE_SUPABASE_PROJECT_ID   → doufsxqlfjyuvxuezpln
+#   VITE_SUPABASE_PUBLISHABLE_KEY → anon key (scripts têm fallback graceful se anon não tiver acesso a system tables)
 
 on:
   push:
@@ -25,6 +27,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -32,12 +43,11 @@ jobs:
 
       # ─────────────────────────────────────────────
       # CHECK 1: lint das migrations (idempotência, style)
-      # Falha se migration tiver erros de sintaxe.
       # ─────────────────────────────────────────────
-      - name: Lint migrations
+      - name: 🔍 Lint migrations
         run: |
           supabase db lint \
-            --project-id ${{ secrets.SUPABASE_PROJECT_ID || 'doufsxqlfjyuvxuezpln' }} \
+            --project-id "${{ secrets.VITE_SUPABASE_PROJECT_ID }}" \
             --schema public \
             --level warning
         env:
@@ -46,34 +56,30 @@ jobs:
 
       # ─────────────────────────────────────────────
       # CHECK 2: auditoria de SECURITY DEFINER
-      # Garante que nenhuma nova função SECURITY DEFINER
-      # foi criada sem search_path explícito (vetor de privilege escalation).
+      # Falha se alguma função não tiver search_path explícito.
+      # Obs.: usa anon key; script tem fallback graceful se system tables
+      #       não estiverem acessíveis via PostgREST.
       # ─────────────────────────────────────────────
-      - name: Audit SECURITY DEFINER functions
-        run: |
-          node scripts/check-security-definer-audit.mjs
+      - name: 🔒 Audit SECURITY DEFINER functions
+        run: node scripts/check-security-definer-audit.mjs
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       # ─────────────────────────────────────────────
       # CHECK 3: smoke test da RPC get_profile_and_roles
-      # Verifica que a RPC existe, tem SECURITY DEFINER
-      # e statement_timeout configurado.
       # ─────────────────────────────────────────────
-      - name: RPC get_profile_and_roles smoke test
-        run: |
-          node scripts/check-rpc-get-profile-and-roles.mjs
+      - name: 🩺 RPC get_profile_and_roles smoke test
+        run: node scripts/check-rpc-get-profile-and-roles.mjs
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       # ─────────────────────────────────────────────
       # CHECK 4: verifica que anon NÃO tem EXECUTE na RPC
       # ─────────────────────────────────────────────
-      - name: Verify anon cannot execute RPC
-        run: |
-          node scripts/check-rpc-permissions.mjs
+      - name: 🚫 Verify anon cannot execute RPC
+        run: node scripts/check-rpc-permissions.mjs
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
