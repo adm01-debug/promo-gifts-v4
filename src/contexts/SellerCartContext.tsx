@@ -559,6 +559,21 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           // — dispara alerta para RLS parcial ou perda silenciosa de linhas.
           items_mismatch:
             itemsResulting !== null && itemsResulting !== itemsCount,
+          // Métricas de latência para dashboards (histograma bucketizado).
+          duration_bucket: bucketLatency(elapsedMs()),
+        });
+
+        // Evento-métrica dedicado para dashboards de latência
+        // (independente do fluxo de UX). Não passa pelo schema canônico
+        // de restore — é um sinal de observabilidade puro.
+        restoreLog.info('restore_latency', {
+          correlation_id: correlationId,
+          outcome: 'ok',
+          restore_result: restoreResult,
+          duration_ms: elapsedMs(),
+          duration_bucket: bucketLatency(elapsedMs()),
+          items_total: metrics?.items_total ?? itemsCount,
+          items_inserted: metrics?.items_inserted ?? null,
         });
 
 
