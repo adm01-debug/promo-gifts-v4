@@ -92,8 +92,9 @@ function Harness({
     <PreviewSidebar
       magazine={magazine}
       pages={pages}
-      activePageIdx={idx}
-      onSelectPage={setIdx}
+      activeIdx={idx}
+      onSelect={setIdx}
+      onOpenAll={() => {}}
       highlightedItemId={highlightedItemId}
     />
   );
