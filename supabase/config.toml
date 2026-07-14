@@ -141,10 +141,12 @@ verify_jwt = false
 [functions.magazine-reader-state-write]
 verify_jwt = false
 
-# Import de localStorage->Gold: PRECISA de usuário autenticado (grava como
-# o próprio dono via RLS) — este permanece true corretamente.
+# Import de localStorage->Gold: precisa de usuário autenticado (grava como
+# o próprio dono via RLS). Validação do JWT feita in-code via
+# userClient.auth.getUser() — gateway em false para evitar
+# UNAUTHORIZED_ASYMMETRIC_JWT enquanto o projeto ainda usa chaves HS256.
 [functions.magazine-import-local]
-verify_jwt = true
+verify_jwt = false
 
 [auth]
 enable_signup = false
