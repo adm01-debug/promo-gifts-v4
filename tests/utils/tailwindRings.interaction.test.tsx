@@ -293,3 +293,177 @@ describe('hoverRingsOf / ringsByVariant — interação', () => {
     expect(ringsByVariant(host, 'data-[state=open]')).toEqual(dataStateRingsOf(host, 'open'));
   });
 });
+
+/**
+ * (I6) `data-[state=open]` sob alternância real (mouse + teclado)
+ * ---------------------------------------------------------------
+ * Foca em REGRESSÃO DE INTEGRAÇÃO com primitivas Radix: quando o usuário
+ * alterna o estado de um Popover/Dialog/Accordion via clique OU via teclado
+ * (Enter/Space), o atributo `data-state` muda, o CSS resolve OUTRA regra
+ * `data-[state=…]:ring-*` — mas o helper declarativo `ringsByVariant`
+ * DEVE continuar entregando os tokens corretos para AMBOS os estados.
+ *
+ * Cobrimos aqui a "leitura efetiva" — o consumidor idiomático do helper
+ * em suítes reais é `dataStateRingsOf(el, el.getAttribute('data-state'))`:
+ * o que aparece pintado no elemento agora. Essa combinação precisa refletir
+ * a alternância mesmo quando o gatilho é teclado (a11y-first).
+ */
+
+/** Leitura efetiva: tokens ativos dado o `data-state` corrente. */
+function effectiveDataStateRings(el: Element) {
+  const state = el.getAttribute('data-state');
+  return state ? dataStateRingsOf(el, state) : { primary: false, amber: false };
+}
+
+describe('ringsByVariant / dataStateRingsOf — alternância de data-state (mouse + teclado)', () => {
+  it('(I6a) clique de mouse: closed → open → closed produz tokens corretos por rodada', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const host = getByTestId('data-state-host');
+    const toggle = getByTestId('data-state-toggle');
+
+    // Estado inicial: closed → amber ativo, primary inativo (via leitura efetiva).
+    expect(host.getAttribute('data-state')).toBe('closed');
+    expect(effectiveDataStateRings(host)).toEqual({ primary: false, amber: true });
+    expect(ringsByVariant(host, 'data-[state=closed]')).toEqual({ primary: false, amber: true });
+
+    // Clique 1 → open: primary ativo, amber inativo.
+    await act(async () => {
+      await user.click(toggle);
+    });
+    expect(host.getAttribute('data-state')).toBe('open');
+    expect(effectiveDataStateRings(host)).toEqual({ primary: true, amber: false });
+    expect(ringsByVariant(host, 'data-[state=open]')).toEqual({ primary: true, amber: false });
+
+    // Clique 2 → closed novamente: volta pro contrato inicial.
+    await act(async () => {
+      await user.click(toggle);
+    });
+    expect(host.getAttribute('data-state')).toBe('closed');
+    expect(effectiveDataStateRings(host)).toEqual({ primary: false, amber: true });
+  });
+
+  it('(I6b) teclado Enter: alterna data-state e leitura efetiva reflete cada rodada', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const host = getByTestId('data-state-host');
+    const toggle = getByTestId('data-state-toggle') as HTMLButtonElement;
+
+    toggle.focus();
+    expect(document.activeElement).toBe(toggle);
+    expect(host.getAttribute('data-state')).toBe('closed');
+
+    // Enter → open.
+    await act(async () => {
+      await user.keyboard('{Enter}');
+    });
+    expect(host.getAttribute('data-state')).toBe('open');
+    expect(effectiveDataStateRings(host)).toEqual({ primary: true, amber: false });
+
+    // Enter → closed.
+    await act(async () => {
+      await user.keyboard('{Enter}');
+    });
+    expect(host.getAttribute('data-state')).toBe('closed');
+    expect(effectiveDataStateRings(host)).toEqual({ primary: false, amber: true });
+  });
+
+  it('(I6c) teclado Space: comportamento idêntico a Enter em <button>', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const host = getByTestId('data-state-host');
+    const toggle = getByTestId('data-state-toggle') as HTMLButtonElement;
+
+    toggle.focus();
+    expect(host.getAttribute('data-state')).toBe('closed');
+
+    await act(async () => {
+      await user.keyboard(' '); // Space
+    });
+    expect(host.getAttribute('data-state')).toBe('open');
+    expect(effectiveDataStateRings(host)).toEqual({ primary: true, amber: false });
+  });
+
+  it('(I6d) mouse + teclado intercalados: N alternâncias convergem no estado esperado', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const host = getByTestId('data-state-host');
+    const toggle = getByTestId('data-state-toggle') as HTMLButtonElement;
+
+    // Sequência determinística: click, Enter, click, Space, click.
+    // 5 alternâncias a partir de "closed" → estado final "open".
+    const actions: Array<() => Promise<void>> = [
+      async () => { await user.click(toggle); },
+      async () => { toggle.focus(); await user.keyboard('{Enter}'); },
+      async () => { await user.click(toggle); },
+      async () => { toggle.focus(); await user.keyboard(' '); },
+      async () => { await user.click(toggle); },
+    ];
+
+    let expected: 'open' | 'closed' = 'closed';
+    for (const [i, action] of actions.entries()) {
+      await act(async () => { await action(); });
+      expected = expected === 'closed' ? 'open' : 'closed';
+      expect(host.getAttribute('data-state'), `passo #${i + 1}`).toBe(expected);
+      const eff = effectiveDataStateRings(host);
+      if (expected === 'open') {
+        expect(eff, `passo #${i + 1} open`).toEqual({ primary: true, amber: false });
+      } else {
+        expect(eff, `passo #${i + 1} closed`).toEqual({ primary: false, amber: true });
+      }
+    }
+    // Sanity final: 5 alternâncias a partir de closed → open.
+    expect(host.getAttribute('data-state')).toBe('open');
+  });
+
+  it('(I6e) alternância NÃO altera tokens declarados: ambos os variants permanecem lidos', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const host = getByTestId('data-state-host');
+    const toggle = getByTestId('data-state-toggle') as HTMLButtonElement;
+
+    // Snapshot declarativo antes de qualquer interação.
+    const openBefore = dataStateRingsOf(host, 'open');
+    const closedBefore = dataStateRingsOf(host, 'closed');
+    expect(openBefore).toEqual({ primary: true, amber: false });
+    expect(closedBefore).toEqual({ primary: false, amber: true });
+
+    // 4 alternâncias mistas.
+    await act(async () => { await user.click(toggle); });      // open
+    toggle.focus();
+    await act(async () => { await user.keyboard('{Enter}'); }); // closed
+    await act(async () => { await user.click(toggle); });      // open
+    await act(async () => { await user.keyboard(' '); });      // closed
+
+    // Contrato declarativo intacto: o helper NÃO passa a "esquecer" o outro
+    // variant nem passa a reportá-lo diferente. É esse invariante que dá
+    // segurança pra usar `dataStateRingsOf` em specs de Popover reais.
+    expect(dataStateRingsOf(host, 'open')).toEqual(openBefore);
+    expect(dataStateRingsOf(host, 'closed')).toEqual(closedBefore);
+    // E `ringsByVariant` bate exatamente com `dataStateRingsOf` após N toggles.
+    expect(ringsByVariant(host, 'data-[state=open]')).toEqual(openBefore);
+    expect(ringsByVariant(host, 'data-[state=closed]')).toEqual(closedBefore);
+  });
+
+  it('(I6f) alternância NÃO vaza tokens para hover/focus-visible/focus-within', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const host = getByTestId('data-state-host');
+    const toggle = getByTestId('data-state-toggle') as HTMLButtonElement;
+
+    // Alternância mista + hover no host + foco no filho.
+    await user.hover(host);
+    toggle.focus();
+    await act(async () => { await user.keyboard('{Enter}'); }); // open
+    await act(async () => { await user.click(toggle); });       // closed
+
+    // O host declara APENAS variants data-[state=…]. Nenhum outro variant
+    // pode aparecer com tokens de ring, senão o consumidor do helper pega
+    // um falso positivo (ex: acha que ganhou focus ring por causa do popover).
+    expect(hoverRingsOf(host)).toEqual({ primary: false, amber: false });
+    expect(focusRingsOf(host)).toEqual({ primary: false, amber: false });
+    expect(focusWithinRingsOf(host)).toEqual({ primary: false, amber: false });
+    // E a base do host continua sem rings — só via variant data-state.
+    expect(ringsOf(host)).toEqual({ primary: false, amber: false });
+  });
+});
