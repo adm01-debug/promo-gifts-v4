@@ -96,6 +96,32 @@ describe('mapRestoreCartError', () => {
     expect(r.reason).toBe('server');
   });
 
+  it('PGRST202 (RPC ausente no schema cache) → título "Restauração indisponível no momento."', () => {
+    const r = mapRestoreCartError({
+      code: 'PGRST202',
+      message:
+        'Could not find the function public.restore_seller_cart(_snapshot) in the schema cache',
+    });
+    expect(r.reason).toBe('rpc_missing');
+    expect(r.title).toBe('Restauração indisponível no momento.');
+    expect(r.description).toMatch(/fora de sincronia/i);
+  });
+
+  it('42883 (undefined_function) → rpc_missing', () => {
+    const r = mapRestoreCartError({
+      code: '42883',
+      message: 'function public.restore_seller_cart(jsonb) does not exist',
+    });
+    expect(r.reason).toBe('rpc_missing');
+  });
+
+  it('mensagem sem code mas com "restore_seller_cart ... not found" → rpc_missing', () => {
+    const r = mapRestoreCartError(
+      new Error('restore_seller_cart could not be found in schema cache'),
+    );
+    expect(r.reason).toBe('rpc_missing');
+  });
+
   it('erro desconhecido → fallback via sanitizeError (não vaza detalhes)', () => {
     const r = mapRestoreCartError({ code: 'XX999', message: 'some obscure detail' });
     expect(r.reason).toBe('unknown');

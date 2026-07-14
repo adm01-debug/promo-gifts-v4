@@ -34,6 +34,7 @@ export interface MappedRestoreError {
     | 'string_too_long'
     | 'cart_limit'
     | 'unauthenticated'
+    | 'rpc_missing'
     | 'network'
     | 'timeout'
     | 'server'
@@ -84,6 +85,25 @@ export function mapRestoreCartError(input: unknown): MappedRestoreError {
       reason: 'unauthenticated',
       title: 'Sessão expirada.',
       description: 'Faça login novamente para restaurar o carrinho.',
+    };
+  }
+
+  // ── RPC ausente no banco (PGRST202 / 42883) ──────────────────────────
+  // Cenário: função `restore_seller_cart` não existe no schema cache do
+  // Postgres (banco fora de sincronia com o app). Comunique com clareza
+  // em vez de esconder atrás do fallback genérico "operação não pôde ser
+  // concluída".
+  if (
+    code === 'PGRST202' ||
+    code === '42883' ||
+    (/restore_seller_cart/i.test(message) &&
+      /(schema cache|could not find|does not exist|not found)/i.test(message))
+  ) {
+    return {
+      reason: 'rpc_missing',
+      title: 'Restauração indisponível no momento.',
+      description:
+        'O servidor está fora de sincronia com o app. Recrie o carrinho manualmente e avise o administrador.',
     };
   }
 
