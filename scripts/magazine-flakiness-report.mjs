@@ -190,7 +190,7 @@ const md = [];
 md.push(`# Magazine Flakiness Report`);
 md.push('');
 md.push(`- **Rodadas:** ${RUNS}`);
-md.push(`- **Padrão:** \`${PATTERN}\``);
+md.push(`- **Padrões:** ${PATTERNS.map((p) => `\`${p}\``).join(', ')}`);
 md.push(`- **Gerado em:** ${jsonReport.generatedAt}`);
 md.push(
   `- **Totais:** ${tests.length} testes distintos · ${stable.length} estáveis · ${flaky.length} flaky · ${failAll.length} fail-all`,
