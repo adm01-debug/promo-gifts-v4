@@ -238,6 +238,30 @@ export default function MagazineEditorPage() {
                 </>
               )}
             </span>
+            {/* Onda 1 — Preview drawer para telas < xl (aside some) */}
+            <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="xl:hidden">
+                  <Eye className="mr-2 h-4 w-4" /> Preview
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-[min(560px,100vw)] overflow-y-auto p-4 sm:max-w-none"
+              >
+                <SheetHeader className="mb-3">
+                  <SheetTitle className="text-sm">Preview da revista</SheetTitle>
+                </SheetHeader>
+                <PreviewSidebar
+                  magazine={magazine}
+                  pages={pages}
+                  activeIdx={safePreviewIdx}
+                  onSelect={setPreviewIdx}
+                  onOpenAll={openPrint}
+                  highlightedItemId={highlightedItemId}
+                />
+              </SheetContent>
+            </Sheet>
             <Button
               variant="outline"
               size="sm"
