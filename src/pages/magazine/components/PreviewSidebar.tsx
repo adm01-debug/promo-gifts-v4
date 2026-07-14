@@ -119,7 +119,7 @@ export function PreviewSidebar({
           <div
             className={cn(
               'overflow-auto rounded-lg border bg-neutral-100',
-              zoom > 1 && 'max-h-[70vh]',
+              'max-h-[55vh] sm:max-h-[65vh] xl:max-h-[70vh]',
             )}
           >
             {/*
