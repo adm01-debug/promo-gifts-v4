@@ -1,0 +1,470 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+        "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+      },
+      "gitCommit": {
+        "shortHash": "dfc3cdf",
+        "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+        "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+        "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784031327000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784031327000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-public",
+        "name": "firefox-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-public",
+        "name": "webkit-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "commitHash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29331824463"
+          },
+          "gitCommit": {
+            "shortHash": "dfc3cdf",
+            "hash": "dfc3cdff525aedd1932cb2bcf1647dd56617d95c",
+            "subject": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles",
+            "body": "feat(types): adiciona rpc-overrides.ts — stubs tipados para get_profile_and_roles\n\nSubstitui o cast `as unknown as RPCCallerFn` disperso no código por um\nutilitário centralizado asTypedRPC<T>() + interface GetProfileAndRolesResult.\n\nRazão: types.ts é auto-gerado (supabase gen types) e seria sobrescrito;\nrpc-overrides.ts é permanente e documenta a intenção do cast explicitamente.\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031327000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'",
+      "stack": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-07-14T12:16:52.303Z",
+    "duration": 2337.508,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
