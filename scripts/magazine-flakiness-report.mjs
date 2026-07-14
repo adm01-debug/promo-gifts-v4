@@ -39,13 +39,21 @@ const args = Object.fromEntries(
 );
 
 const RUNS = Number(args.runs ?? 10);
-const PATTERN = String(args.pattern ?? 'tests/magazine/');
+// `--pattern` aceita múltiplos padrões separados por vírgula. Ex.:
+//   --pattern=tests/magazine/,tests/utils/tailwindRings.interaction.test.tsx
+// Cada padrão vira um argumento posicional de `vitest run`.
+const PATTERN_RAW = String(args.pattern ?? 'tests/magazine/');
+const PATTERNS = PATTERN_RAW.split(',').map((p) => p.trim()).filter(Boolean);
 const STRICT = Boolean(args.strict);
 const OUT_DIR = resolve(String(args['out-dir'] ?? 'reports/flakiness'));
 const TMP_DIR = resolve('.tmp/flakiness');
 
 if (!Number.isFinite(RUNS) || RUNS < 1 || RUNS > 50) {
   console.error(`[flakiness] --runs inválido: ${RUNS} (aceito: 1..50)`);
+  process.exit(2);
+}
+if (PATTERNS.length === 0) {
+  console.error(`[flakiness] --pattern vazio`);
   process.exit(2);
 }
 
