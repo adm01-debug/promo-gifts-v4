@@ -22,9 +22,26 @@ import {
 import { useDebouncedCartItemActions, getCartItemDebounceMs } from '@/hooks/products/useDebouncedCartItemActions';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { mapRestoreCartError } from '@/pages/products/seller-carts/mapRestoreCartError';
 import { createRestoreLogger } from '@/lib/telemetry/restoreLogger';
+
+// Query key da lista de carrinhos — replicado aqui (não exportado do hook)
+// só para o fallback de "recarregar carrinhos" no toast de erro. Se mudar
+// em `useSellerCarts.ts`, atualizar aqui também.
+const SELLER_CARTS_QUERY_KEY = 'seller-carts';
+
+// Categorias de falha em que o snapshot local pode estar dessincronizado
+// do servidor — nesses casos oferecemos a ação "Recarregar carrinhos" em
+// vez de deixar o usuário sem saída.
+const RELOADABLE_REASONS = new Set([
+  'rpc_missing',
+  'network',
+  'timeout',
+  'server',
+  'unknown',
+]);
 
 // Logger de escopo dedicado — emite JSON estruturado em PROD e encaminha
 // falhas ao Sentry automaticamente (level=error → captureException com tags
