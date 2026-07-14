@@ -25,6 +25,8 @@ interface Props {
   onOpenAll: () => void;
   /** Onda 1 — item destacado no LayoutStep para realçar a página correspondente. */
   highlightedItemId?: string | null;
+  /** 'sidebar' (default, sticky) ou 'drawer' (fluido, sem sticky). */
+  variant?: 'sidebar' | 'drawer';
 }
 
 /** Níveis de zoom: 1 = fit-to-width (comportamento padrão do renderer). */
