@@ -236,19 +236,22 @@ export default function MagazineEditorPage() {
               </SheetTrigger>
               <SheetContent
                 side="right"
-                className="w-[min(560px,100vw)] overflow-y-auto p-4 sm:max-w-none"
+                className="flex h-full w-[min(560px,100vw)] max-w-full flex-col gap-0 p-4 sm:max-w-none"
               >
-                <SheetHeader className="mb-3">
+                <SheetHeader className="mb-3 shrink-0">
                   <SheetTitle className="text-sm">Preview da revista</SheetTitle>
                 </SheetHeader>
-                <PreviewSidebar
-                  magazine={magazine}
-                  pages={pages}
-                  activeIdx={safePreviewIdx}
-                  onSelect={setPreviewIdx}
-                  onOpenAll={openPrint}
-                  highlightedItemId={highlightedItemId}
-                />
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <PreviewSidebar
+                    magazine={magazine}
+                    pages={pages}
+                    activeIdx={safePreviewIdx}
+                    onSelect={setPreviewIdx}
+                    onOpenAll={openPrint}
+                    highlightedItemId={highlightedItemId}
+                    variant="drawer"
+                  />
+                </div>
               </SheetContent>
             </Sheet>
             <Button

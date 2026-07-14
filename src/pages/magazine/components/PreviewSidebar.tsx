@@ -25,6 +25,8 @@ interface Props {
   onOpenAll: () => void;
   /** Onda 1 — item destacado no LayoutStep para realçar a página correspondente. */
   highlightedItemId?: string | null;
+  /** 'sidebar' (default, sticky) ou 'drawer' (fluido, sem sticky). */
+  variant?: 'sidebar' | 'drawer';
 }
 
 /** Níveis de zoom: 1 = fit-to-width (comportamento padrão do renderer). */
@@ -45,6 +47,7 @@ export function PreviewSidebar({
   onSelect,
   onOpenAll,
   highlightedItemId,
+  variant = 'sidebar',
 }: Props) {
   const [zoom, setZoom] = useState<ZoomLevel>(1);
   const active = pages[activeIdx] ?? pages[0];
@@ -64,8 +67,8 @@ export function PreviewSidebar({
   };
 
   return (
-    <Card className="sticky top-4">
-      <CardContent className="space-y-3 p-3">
+    <Card className={cn(variant === 'sidebar' && 'sticky top-4', variant === 'drawer' && 'border-0 shadow-none')}>
+      <CardContent className={cn('space-y-3 p-3', variant === 'drawer' && 'p-0')}>
         <div className="flex items-center justify-between gap-2">
           <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Preview {active ? `— ${pageLabel(active)}` : ''}
@@ -116,7 +119,7 @@ export function PreviewSidebar({
           <div
             className={cn(
               'overflow-auto rounded-lg border bg-neutral-100',
-              zoom > 1 && 'max-h-[70vh]',
+              'max-h-[55vh] sm:max-h-[65vh] xl:max-h-[70vh]',
             )}
           >
             {/*
@@ -154,7 +157,7 @@ export function PreviewSidebar({
               )}
             </div>
             <ScrollArea className="h-[210px]">
-              <div className="grid grid-cols-3 gap-2 pr-2">
+              <div className="grid grid-cols-2 gap-2 pr-2 sm:grid-cols-3">
                 {pages.map((p, idx) => {
                   const isHighlighted = idx === highlightedPageIdx;
                   const isActive = idx === activeIdx;
