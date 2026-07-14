@@ -618,6 +618,11 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
             ? String((err as { hint: unknown }).hint ?? '')
             : '';
         const mapped = mapRestoreCartError(err);
+        // Metadados HTTP para correlacionar com logs do PostgREST/Supabase.
+        const { http_status, request_id, postgrest_request_id } =
+          extractApiErrorMeta(err);
+        const durationMs = elapsedMs();
+        const durationBucket = bucketLatency(durationMs);
         // `err` no payload aciona `captureException` no Sentry via structuredLogger
         // e é serializado como { name, message, stack } no log JSON.
         emitRestore('error', 'restore_failed', {
@@ -627,12 +632,17 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           items_total: itemsCount,
           hydrated: true,
           restore_result: 'failed' as const,
-          duration_ms: elapsedMs(),
+          duration_ms: durationMs,
+          duration_bucket: durationBucket,
           company_id: snapshot?.company_id ?? null,
           pg_code: pgCode || null,
           pg_details: pgDetails || null,
           pg_hint: pgHint || null,
           reason: mapped.reason,
+          // Correlação com logs do servidor.
+          http_status,
+          request_id,
+          postgrest_request_id,
           // Métricas vazias no erro (a RPC não retornou nada), mas o schema
           // permanece consistente para dashboards agregarem success + failure.
           items_inserted: null,
@@ -641,6 +651,20 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           items_mismatch: true,
           raw_error: rawMessage,
           err,
+        });
+
+        // Evento-métrica dedicado para dashboards de latência (falha).
+        restoreLog.info('restore_latency', {
+          correlation_id: correlationId,
+          outcome: 'failed',
+          restore_result: 'failed' as const,
+          duration_ms: durationMs,
+          duration_bucket: durationBucket,
+          reason: mapped.reason,
+          pg_code: pgCode || null,
+          http_status,
+          request_id,
+          postgrest_request_id,
         });
         // Fallback UX: em falhas onde o snapshot local pode estar
         // dessincronizado do servidor (RPC ausente, rede, timeout, 5xx),
