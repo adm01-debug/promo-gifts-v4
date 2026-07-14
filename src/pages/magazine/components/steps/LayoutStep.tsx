@@ -55,7 +55,14 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
             <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
               <div className="space-y-2">
                 {items.map((it, idx) => (
-                  <SortableRow key={it.id} item={it} index={idx} onRemove={onRemove} />
+                  <SortableRow
+                    key={it.id}
+                    item={it}
+                    index={idx}
+                    onRemove={onRemove}
+                    onHover={onItemHover}
+                    highlighted={highlightedItemId === it.id}
+                  />
                 ))}
               </div>
             </SortableContext>
