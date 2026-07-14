@@ -682,3 +682,161 @@ describe('focus-visible — a11y sob Tab/Shift+Tab e blur', () => {
     }
   });
 });
+
+/**
+ * P1–P7 — Ponteiro NÃO ativa `:focus-visible`
+ * -------------------------------------------
+ * Contrato WAI-ARIA / CSSWG: `:focus-visible` só deve aparecer quando o
+ * foco chega por meios não-pontuais (teclado, programático via API a11y).
+ * Cliques com mouse, toques e `pointerdown` NÃO devem pintar
+ * `focus-visible:ring-*` na renderização, mesmo que o elemento fique
+ * como `document.activeElement`.
+ *
+ * Como validamos:
+ *   - **Camada declarativa (helpers puros):** `focusRingsOf` só lê o
+ *     className — não muda com modalidade. Serve para garantir que
+ *     ninguém trocou o className via JS na tentativa de "desligar" o ring.
+ *   - **Camada runtime (jsdom):** `element.matches(':focus-visible')`
+ *     usa a heurística de modalidade do jsdom (última interação foi
+ *     ponteiro → false; teclado → true). É esta camada que prova que
+ *     o CSS renderizado NÃO ativaria `focus-visible:ring-*` no click.
+ *
+ * Regressões que estes testes pegam:
+ *   1. Alguém troca `focus-visible:` por `focus:` — o ring passa a
+ *      aparecer no click do mouse (bug clássico de a11y).
+ *   2. Alguém adiciona `.focus()` programático em `onPointerDown` sem
+ *      `{ preventScroll: true, focusVisible: false }` — em navegadores
+ *      novos isso força focus-visible.
+ *   3. Alguém aplica ring incondicional sob `:focus` (não `:focus-visible`)
+ *      em CSS global (@layer base).
+ */
+describe('ponteiro (mouse/touch) NÃO ativa focus-visible', () => {
+  it('(P1) user.click no botão foca o elemento mas :focus-visible = false', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const target = getByTestId('focus-only') as HTMLButtonElement;
+
+    await user.click(target);
+
+    // O click SIM foca (jsdom segue spec: mousedown → focus no botão).
+    expect(document.activeElement).toBe(target);
+    // Mas :focus-visible NÃO deve casar — última modalidade foi ponteiro.
+    expect(target.matches(':focus-visible')).toBe(false);
+    // Contrato declarativo permanece: o className continua declarando o ring.
+    expect(focusRingsOf(target)).toEqual({ primary: true, amber: false });
+  });
+
+  it('(P2) user.tab (teclado) DEPOIS de user.click reativa :focus-visible', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const target = getByTestId('focus-only') as HTMLButtonElement;
+
+    // Baseline: click não ativa focus-visible.
+    await user.click(target);
+    expect(target.matches(':focus-visible')).toBe(false);
+
+    // Sai do elemento e volta via teclado.
+    target.blur();
+    await user.tab();
+    while (document.activeElement !== target) {
+      await user.tab();
+      if (document.activeElement === document.body) break;
+    }
+
+    // Agora SIM — última modalidade foi teclado.
+    expect(document.activeElement).toBe(target);
+    expect(target.matches(':focus-visible')).toBe(true);
+  });
+
+  it('(P3) pointerdown + pointerup manual não deixa :focus-visible ligado', async () => {
+    const { getByTestId } = render(<Fixture />);
+    const target = getByTestId('focus-only') as HTMLButtonElement;
+
+    act(() => {
+      target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+      target.focus();
+      target.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
+    });
+
+    expect(document.activeElement).toBe(target);
+    expect(target.matches(':focus-visible')).toBe(false);
+    // Declarativo intacto.
+    expect(focusRingsOf(target)).toEqual({ primary: true, amber: false });
+  });
+
+  it('(P4) toque (pointerType=touch) também NÃO ativa focus-visible', async () => {
+    const { getByTestId } = render(<Fixture />);
+    const target = getByTestId('focus-only') as HTMLButtonElement;
+
+    act(() => {
+      target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'touch' }));
+      target.focus();
+      target.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }));
+    });
+
+    expect(document.activeElement).toBe(target);
+    expect(target.matches(':focus-visible')).toBe(false);
+  });
+
+  it('(P5) elemento com outline-none + focus-visible:ring — click NÃO renderiza ring', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const target = getByTestId('outline-suppressed') as HTMLButtonElement;
+
+    await user.click(target);
+
+    expect(document.activeElement).toBe(target);
+    // Este é o caso mais crítico: com outline-none, se :focus-visible
+    // vazasse no click, o usuário de mouse veria um ring "flutuando"
+    // sem interação de teclado — feio e confuso.
+    expect(target.matches(':focus-visible')).toBe(false);
+    // Contrato declarativo mantido (helper puro é imune a modalidade).
+    expect(focusRingsOf(target)).toEqual({ primary: true, amber: false });
+  });
+
+  it('(P6) alternância click × keyboard × click preserva a modalidade correta', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const focusOnly = getByTestId('focus-only') as HTMLButtonElement;
+    const both = getByTestId('both') as HTMLButtonElement;
+
+    // click → false
+    await user.click(focusOnly);
+    expect(focusOnly.matches(':focus-visible')).toBe(false);
+
+    // Tab para o próximo focável → true
+    await user.tab();
+    const kbdActive = document.activeElement as HTMLElement;
+    expect(kbdActive.matches(':focus-visible')).toBe(true);
+
+    // click em outro → false de novo (modalidade volta para ponteiro).
+    await user.click(both);
+    expect(both.matches(':focus-visible')).toBe(false);
+  });
+
+  it('(P7) helpers declarativos são invariantes à modalidade (click × Tab não muda o token lido)', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const target = getByTestId('focus-only') as HTMLButtonElement;
+
+    const declaredBefore = focusRingsOf(target);
+
+    await user.click(target);
+    expect(focusRingsOf(target)).toEqual(declaredBefore);
+
+    target.blur();
+    await user.tab();
+    while (document.activeElement !== target) {
+      await user.tab();
+      if (document.activeElement === document.body) break;
+    }
+    expect(focusRingsOf(target)).toEqual(declaredBefore);
+
+    // Última verificação: os DOIS estados de modalidade produzem o MESMO
+    // resultado no helper declarativo (é isso que impede um autor de
+    // "corrigir" o bug do mouse mutando o className via JS).
+    await user.click(target);
+    expect(focusRingsOf(target)).toEqual(declaredBefore);
+  });
+});
+
