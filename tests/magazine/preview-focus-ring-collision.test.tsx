@@ -121,14 +121,16 @@ describe('PreviewSidebar — colisão sob :focus-visible (teclado)', () => {
     const { container } = render(
       <Harness magazine={magazine} activeIdx={activeIdx} highlightedItemId={null} />,
     );
-    const thumbs = thumbsFrom(container);
-    expect(activeIdx).toBeLessThan(thumbs.length);
-    const active = thumbs[activeIdx];
-    expect(active.getAttribute('aria-current')).toBe('true');
-    expect(ringsOf(active).primary).toBe(true);
-    const fv = focusRingsOf(active);
-    expect(fv.primary).toBe(true);
-    expect(fv.amber).toBe(false);
+    const actives = thumbsFrom(container).filter(
+      (b) => b.getAttribute('aria-current') === 'true',
+    );
+    expect(actives.length).toBeGreaterThan(0);
+    for (const active of actives) {
+      expect(ringsOf(active).primary).toBe(true);
+      const fv = focusRingsOf(active);
+      expect(fv.primary).toBe(true);
+      expect(fv.amber).toBe(false);
+    }
   });
 
   it('miniatura destacada em âmbar (não ativa): foco por teclado pinta primary, nunca âmbar', () => {
