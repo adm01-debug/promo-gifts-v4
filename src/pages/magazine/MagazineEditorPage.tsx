@@ -298,6 +298,7 @@ export default function MagazineEditorPage() {
                     type="button"
                     onClick={() => goToStep(s.id)}
                     aria-current={active ? 'step' : undefined}
+                    aria-label={`Etapa ${idx + 1} de ${STEPS.length}: ${s.label}${done ? ' (concluída)' : active ? ' (atual)' : ''}`}
                     className={cn(
                       'flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                       active
@@ -324,6 +325,11 @@ export default function MagazineEditorPage() {
             })}
           </ol>
         </nav>
+
+        {/* aria-live para anunciar mudança de etapa a leitores de tela */}
+        <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+          Etapa {currentIdx + 1} de {STEPS.length}: {STEPS[currentIdx].label}
+        </div>
 
         {/* Alertas suaves de validação */}
         {(validation.blocks.length > 0 || validation.warnings.length > 0) && (
