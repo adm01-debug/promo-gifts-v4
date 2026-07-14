@@ -114,12 +114,14 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
 function SortableRow({
   item,
   index,
+  total,
   onRemove,
   onHover,
   highlighted,
 }: {
   item: MagazineItem;
   index: number;
+  total: number;
   onRemove: (id: string) => void;
   onHover?: (id: string | null) => void;
   highlighted?: boolean;
@@ -132,14 +134,17 @@ function SortableRow({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+  const productName = item.productSnapshot.name;
   return (
-    <div
+    <li
       ref={setNodeRef}
       style={style}
       onMouseEnter={() => onHover?.(item.id)}
       onMouseLeave={() => onHover?.(null)}
       onFocus={() => onHover?.(item.id)}
       onBlur={() => onHover?.(null)}
+      aria-current={highlighted ? 'true' : undefined}
+      aria-label={`Produto ${index + 1} de ${total}: ${productName}`}
       className={cn(
         'flex items-center gap-3 rounded-lg border bg-background p-2 transition',
         highlighted && 'border-primary ring-2 ring-primary/40',
@@ -149,30 +154,35 @@ function SortableRow({
         type="button"
         {...attributes}
         {...listeners}
-        className="cursor-grab text-muted-foreground hover:text-foreground"
-        aria-label="Arrastar"
+        className="cursor-grab text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        aria-label={`Arrastar para reordenar ${productName}`}
       >
-        <GripVertical className="h-4 w-4" />
+        <GripVertical className="h-4 w-4" aria-hidden />
       </button>
-      <span className="w-8 text-center font-mono text-xs text-muted-foreground">
+      <span className="w-8 text-center font-mono text-xs text-muted-foreground" aria-hidden>
         {String(index + 1).padStart(2, '0')}
       </span>
       <img
         src={item.productSnapshot.image_url}
-        alt={item.productSnapshot.name}
+        alt={productName}
         className="h-10 w-10 rounded object-cover"
       />
       <div className="flex-1 overflow-hidden">
-        <div className="line-clamp-1 text-sm font-medium">{item.productSnapshot.name}</div>
+        <div className="line-clamp-1 text-sm font-medium">{productName}</div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Cód. {item.productSnapshot.sku}</span>
-          <span>·</span>
+          <span aria-hidden>·</span>
           <span>{formatPrice(itemPrice(item))}</span>
         </div>
       </div>
-      <Button variant="ghost" size="icon" onClick={() => onRemove(item.id)} aria-label="Remover">
-        <Trash2 className="h-4 w-4" />
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onRemove(item.id)}
+        aria-label={`Remover ${productName} da revista`}
+      >
+        <Trash2 className="h-4 w-4" aria-hidden />
       </Button>
-    </div>
+    </li>
   );
 }
