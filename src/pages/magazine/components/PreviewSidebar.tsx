@@ -60,11 +60,51 @@ export function PreviewSidebar({
   const canZoomIn = zoom < ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
   const canZoomOut = zoom > ZOOM_LEVELS[0];
 
-  const stepZoom = (dir: 1 | -1) => {
-    const idx = ZOOM_LEVELS.indexOf(zoom);
-    const next = ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length - 1, Math.max(0, idx + dir))];
-    setZoom(next);
-  };
+  const stepZoom = useCallback((dir: 1 | -1) => {
+    setZoom((cur) => {
+      const idx = ZOOM_LEVELS.indexOf(cur);
+      return ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length - 1, Math.max(0, idx + dir))];
+    });
+  }, []);
+
+  const resetZoom = useCallback(() => setZoom(1), []);
+
+  /**
+   * Atalhos globais de zoom (`+`/`=`, `-`, `0`).
+   *
+   * - Ignoramos quando o foco está em campo editável (input/textarea/select/
+   *   contentEditable) — assim não sequestramos digitação em outras partes do
+   *   editor (título, form fields, etc.).
+   * - Ignoramos com modificadores (Ctrl/Cmd/Alt) para não colidir com o zoom
+   *   nativo do navegador.
+   * - `preventDefault` só quando de fato tratamos a tecla, preservando Tab e
+   *   demais navegação por teclado do editor.
+   */
+  useEffect(() => {
+    const isEditable = (el: EventTarget | null): boolean => {
+      if (!(el instanceof HTMLElement)) return false;
+      if (el.isContentEditable) return true;
+      const tag = el.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (isEditable(e.target)) return;
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        stepZoom(1);
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        stepZoom(-1);
+      } else if (e.key === '0') {
+        e.preventDefault();
+        resetZoom();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [stepZoom, resetZoom]);
+
 
   return (
     <Card className={cn(variant === 'sidebar' && 'sticky top-4', variant === 'drawer' && 'border-0 shadow-none')}>
