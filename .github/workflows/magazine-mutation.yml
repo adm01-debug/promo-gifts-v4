@@ -1,0 +1,81 @@
+name: Magazine Mutation Testing
+
+# Roda o catálogo de mutações M1–M6 contra `tests/magazine/` e produz
+# um mutation score consolidado. Uma mutação SURVIVED é lacuna de
+# cobertura — o CI falha o job para forçar revisão.
+
+on:
+  pull_request:
+    paths:
+      - 'tests/magazine/**'
+      - 'tests/utils/tailwindRings.ts'
+      - 'src/pages/magazine/components/PreviewSidebar.tsx'
+      - 'src/pages/magazine/components/steps/LayoutStep.tsx'
+      - 'scripts/mutation-test-magazine.mjs'
+      - '.github/workflows/magazine-mutation.yml'
+  schedule:
+    - cron: '30 6 * * 1' # Segundas 06:30 UTC (drift semanal)
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Lista de IDs de mutação (ex.: M1,M4)'
+        required: false
+        default: ''
+
+concurrency:
+  group: magazine-mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mutation:
+    name: Mutation Score (M1–M6)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run mutation suite
+        env:
+          CI: 'true'
+          NODE_ENV: 'test'
+        run: |
+          ONLY="${{ github.event.inputs.only }}"
+          if [ -n "$ONLY" ]; then
+            node scripts/mutation-test-magazine.mjs --only="$ONLY"
+          else
+            node scripts/mutation-test-magazine.mjs
+          fi
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: magazine-mutation-report
+          path: reports/mutation/
+          retention-days: 30
+
+  mutation-ok:
+    name: Magazine Mutation OK
+    needs: [mutation]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check result
+        run: |
+          if [ '${{ needs.mutation.result }}' = 'success' ]; then
+            echo '✅ Mutation score 100% — todas as mutações killed'
+          else
+            echo '❌ Alguma mutação sobreviveu ou erro de infra — ver artifact magazine-mutation-report'
+            exit 1
+          fi
