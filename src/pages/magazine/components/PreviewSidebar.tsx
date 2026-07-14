@@ -8,7 +8,7 @@
  *  - Botão "Ver todas em nova aba"
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Eye, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -104,48 +104,6 @@ export function PreviewSidebar({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [stepZoom, resetZoom]);
-
-  /**
-   * Anunciador para leitores de tela.
-   *
-   * Consolidamos zoom + página ativa + highlight numa mensagem estável, no
-   * português, publicada num live region `aria-live="polite"`. Trocas rápidas
-   * (arrow spam) não empilham anúncios: o `polite` deixa o AT interromper
-   * anúncios anteriores e o efeito só publica quando o texto muda.
-   */
-  const activePageLabel = active ? pageLabel(active) : 'nenhuma';
-  const zoomLabel = zoom === 1 ? 'Fit' : `${Math.round(zoom * 100)}%`;
-  const announcement = active
-    ? `Página ${activeIdx + 1} de ${pages.length}: ${activePageLabel}. Zoom ${zoomLabel}.`
-    : `Sem páginas. Zoom ${zoomLabel}.`;
-
-  /**
-   * Roving tabindex nas thumbs (padrão WAI-ARIA para listbox horizontal/grid).
-   *
-   *  - Container: `role="listbox"` + `aria-activedescendant`.
-   *  - Cada thumb: `role="option"` + `aria-selected` + `tabIndex` -1 exceto na
-   *    thumb "focada" (índice `focusedThumb`, default = ativa).
-   *  - Setas ↑/↓/←/→ movem o foco por passo, Home/End vão às pontas, Enter/Space
-   *    selecionam. O foco DOM segue o índice — sem sequestrar Tab do editor.
-   */
-  const [focusedThumb, setFocusedThumb] = useState<number>(activeIdx);
-  const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  // Se o número de páginas mudar, mantém o foco dentro do range.
-  useEffect(() => {
-    if (focusedThumb >= pages.length) setFocusedThumb(Math.max(0, pages.length - 1));
-  }, [pages.length, focusedThumb]);
-
-  const moveThumbFocus = useCallback(
-    (nextIdx: number) => {
-      const clamped = Math.min(pages.length - 1, Math.max(0, nextIdx));
-      setFocusedThumb(clamped);
-      // Move o foco DOM no próximo tick para vencer o re-render.
-      queueMicrotask(() => thumbRefs.current[clamped]?.focus());
-    },
-    [pages.length],
-  );
-
-
 
 
   return (
@@ -262,11 +220,7 @@ export function PreviewSidebar({
             </div>
           </div>
         ) : (
-          <div
-            role="status"
-            aria-live="polite"
-            className="rounded-lg border p-8 text-center text-xs text-muted-foreground"
-          >
+          <div className="rounded-lg border p-8 text-center text-xs text-muted-foreground">
             Adicione produtos para gerar o preview.
           </div>
         )}
@@ -286,60 +240,17 @@ export function PreviewSidebar({
               )}
             </div>
             <ScrollArea className="h-[210px]">
-              <div
-                role="listbox"
-                aria-label="Miniaturas de páginas"
-                aria-activedescendant={`magazine-thumb-${focusedThumb}`}
-                onKeyDown={(e) => {
-                  const cols = window.matchMedia('(min-width: 640px)').matches ? 3 : 2;
-                  if (e.key === 'ArrowRight') {
-                    e.preventDefault();
-                    moveThumbFocus(focusedThumb + 1);
-                  } else if (e.key === 'ArrowLeft') {
-                    e.preventDefault();
-                    moveThumbFocus(focusedThumb - 1);
-                  } else if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    moveThumbFocus(focusedThumb + cols);
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    moveThumbFocus(focusedThumb - cols);
-                  } else if (e.key === 'Home') {
-                    e.preventDefault();
-                    moveThumbFocus(0);
-                  } else if (e.key === 'End') {
-                    e.preventDefault();
-                    moveThumbFocus(pages.length - 1);
-                  } else if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onSelect(focusedThumb);
-                  }
-                }}
-                className="grid grid-cols-2 gap-2 pr-2 sm:grid-cols-3 focus:outline-none"
-              >
+              <div className="grid grid-cols-2 gap-2 pr-2 sm:grid-cols-3">
                 {pages.map((p, idx) => {
                   const isHighlighted = idx === highlightedPageIdx;
                   const isActive = idx === activeIdx;
-                  const isFocused = idx === focusedThumb;
                   return (
                     <button
                       key={idx}
-                      id={`magazine-thumb-${idx}`}
-                      ref={(el) => {
-                        thumbRefs.current[idx] = el;
-                      }}
                       type="button"
-                      role="option"
-                      aria-selected={isActive}
-                      // Roving tabindex: apenas a thumb "focada" fica no tab order.
-                      tabIndex={isFocused ? 0 : -1}
-                      onClick={() => {
-                        setFocusedThumb(idx);
-                        onSelect(idx);
-                      }}
-                      onFocus={() => setFocusedThumb(idx)}
+                      onClick={() => onSelect(idx)}
                       className={cn(
-                        'group relative overflow-hidden rounded border bg-background text-left motion-safe:transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                        'group relative overflow-hidden rounded border bg-background text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                         isActive && 'ring-2 ring-primary',
                         !isActive && isHighlighted && 'ring-2 ring-amber-500',
                         !isActive && !isHighlighted && 'hover:border-primary/60',
@@ -365,21 +276,6 @@ export function PreviewSidebar({
 
         <div className="border-t pt-2 text-xs text-muted-foreground">
           {pages.length} página(s) · {magazine.items.length} produto(s)
-        </div>
-
-        {/*
-          Live region único do preview: SR anuncia página ativa + zoom em PT-BR.
-          `polite` para não interromper leitura em andamento; texto é derivado
-          e só publica em mudança real. `sr-only` mantém visualmente oculto.
-        */}
-        <div
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-          data-testid="preview-live-region"
-          className="sr-only"
-        >
-          {announcement}
         </div>
       </CardContent>
     </Card>
