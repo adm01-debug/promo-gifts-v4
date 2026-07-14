@@ -138,10 +138,10 @@ describe("SOURCE PARITY — código de produção contém as funções esperadas
   });
 
   it("quote_not_found responde 200 (política PO — sem retry)", () => {
-    // Precisa haver um json(200, ...) próximo ao caso quote_not_found.
-    const idx = EDGE_SRC.indexOf("quote_not_found");
+    // Usa lastIndexOf para pegar a ocorrência dentro do payload de resposta
+    const idx = EDGE_SRC.lastIndexOf("quote_not_found");
     expect(idx).toBeGreaterThan(-1);
-    const near = EDGE_SRC.slice(idx - 300, idx + 400);
+    const near = EDGE_SRC.slice(idx - 300, idx + 100);
     expect(near).toMatch(/json\(200/);
   });
 });
