@@ -195,7 +195,7 @@ export function PreviewSidebar({
               {zoom !== 1 && (
                 <button
                   type="button"
-                  onClick={() => setZoom(1)}
+                  onClick={resetZoom}
                   className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted"
                 >
                   <Maximize2 className="h-3 w-3" /> Fit
