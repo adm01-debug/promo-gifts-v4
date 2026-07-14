@@ -1,5 +1,5 @@
 import type { TemplatePageProps } from '../TemplateRegistry';
-import { effectiveContent, resolveItemImage } from '../shared';
+import { effectiveContent, productImageAlt, resolveItemImage } from '../shared';
 import { PageNumberBadge, ScriptAccent } from '../chrome';
 
 /**
