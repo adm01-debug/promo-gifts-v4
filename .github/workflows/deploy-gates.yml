@@ -144,11 +144,30 @@ jobs:
       - name: Run SEO sanity check
         run: node scripts/seo-sanity-check.mjs
 
+  restore-cart-rpc-gate:
+    name: Gate 5.5 - RPC restore_seller_cart presente no canônico
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    needs: [ssot-gate]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Verificar pg_proc via PostgREST (schema cache)
+        run: npm run check:restore-seller-cart-rpc
+        env:
+          CANONICAL_SUPABASE_URL: https://doufsxqlfjyuvxuezpln.supabase.co
+          CANONICAL_SUPABASE_ANON_KEY: ${{ secrets.CANONICAL_SUPABASE_ANON_KEY }}
+          # STRICT=1 → falha o pipeline se a anon key não estiver configurada
+          # como secret. Remova/comente esta linha para permitir skip silencioso.
+          STRICT: '1'
+
   build:
     name: Gate 6 - Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [lint-typecheck, seo-sanity]
+    needs: [lint-typecheck, seo-sanity, restore-cart-rpc-gate]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
