@@ -73,14 +73,14 @@ for (let i = 1; i <= RUNS; i++) {
   const outFile = join(TMP_DIR, `run-${i}.json`);
   if (existsSync(outFile)) rmSync(outFile);
 
-  console.log(`\n[flakiness] Rodada ${i}/${RUNS} — vitest run ${PATTERN}`);
+  console.log(`\n[flakiness] Rodada ${i}/${RUNS} — vitest run ${PATTERNS.join(' ')}`);
   const started = Date.now();
   const res = spawnSync(
     'npx',
     [
       'vitest',
       'run',
-      PATTERN,
+      ...PATTERNS,
       '--reporter=json',
       `--outputFile=${outFile}`,
       // Silencia o reporter default para logs mais curtos no CI.
