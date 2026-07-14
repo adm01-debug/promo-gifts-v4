@@ -99,10 +99,14 @@ function SortableRow({
   item,
   index,
   onRemove,
+  onHover,
+  highlighted,
 }: {
   item: MagazineItem;
   index: number;
   onRemove: (id: string) => void;
+  onHover?: (id: string | null) => void;
+  highlighted?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -113,7 +117,18 @@ function SortableRow({
     opacity: isDragging ? 0.5 : 1,
   };
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-lg border bg-background p-2">
+    <div
+      ref={setNodeRef}
+      style={style}
+      onMouseEnter={() => onHover?.(item.id)}
+      onMouseLeave={() => onHover?.(null)}
+      onFocus={() => onHover?.(item.id)}
+      onBlur={() => onHover?.(null)}
+      className={cn(
+        'flex items-center gap-3 rounded-lg border bg-background p-2 transition',
+        highlighted && 'border-primary ring-2 ring-primary/40',
+      )}
+    >
       <button
         type="button"
         {...attributes}
