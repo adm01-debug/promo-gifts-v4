@@ -26,15 +26,15 @@
 const RPC_NAME = process.env.RPC_NAME || 'restore_seller_cart';
 const STRICT = process.env.STRICT === '1';
 
-const url =
-  process.env.SUPABASE_URL ||
-  process.env.VITE_SUPABASE_URL ||
-  'https://doufsxqlfjyuvxuezpln.supabase.co';
+// Canônico sempre por padrão — o .env local pode apontar para o projeto Lovable
+// Cloud (pqp), mas o gate valida SEMPRE o banco de produção do app.
+const CANONICAL_URL = 'https://doufsxqlfjyuvxuezpln.supabase.co';
+
+const url = process.env.CANONICAL_SUPABASE_URL || process.env.SUPABASE_URL || CANONICAL_URL;
 
 const anonKey =
+  process.env.CANONICAL_SUPABASE_ANON_KEY ||
   process.env.SUPABASE_ANON_KEY ||
-  process.env.VITE_SUPABASE_ANON_KEY ||
-  process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   '';
 
 const tag = '[check:restore-seller-cart-rpc]';
