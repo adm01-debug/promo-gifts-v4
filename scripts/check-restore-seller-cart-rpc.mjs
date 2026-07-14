@@ -116,6 +116,18 @@ async function main() {
     );
   }
 
+  // 401 significa que o JWT foi rejeitado ANTES do PostgREST consultar o schema
+  // cache — não conseguimos distinguir "função existe" de "função ausente".
+  // Trate como ambíguo: skip em modo normal, falha em STRICT.
+  if (res.status === 401) {
+    const msg =
+      `PostgREST retornou 401 (anon key inválida para ${url}). ` +
+      `Não é possível verificar a RPC — configure CANONICAL_SUPABASE_ANON_KEY ` +
+      `com a anon key do projeto canônico.`;
+    if (STRICT) fail(msg);
+    return skip(msg);
+  }
+
   log(`✅ RPC \`${RPC_NAME}\` presente (status=${res.status}${code ? `, code=${code}` : ''}).`);
   process.exit(0);
 }
