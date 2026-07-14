@@ -2,8 +2,12 @@ import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { logger } from '@/lib/logger';
 import type { PostgrestError } from '@supabase/supabase-js';
 
-// FIX (2026-07-14): queryRoles mantido por compatibilidade com outros callers,
-// mas useProfileRoles agora usa get_profile_and_roles RPC diretamente.
+// BUG-FIX v2.1: tipo explícito para cast seguro de supabase.rpc
+type RPCCallerFn<T = unknown> = (
+  fn: string,
+  args: Record<string, unknown>,
+) => Promise<{ data: T | null; error: PostgrestError | null }>;
+
 export const authService = {
   async signIn(email: string, password: string) {
     const supabase = await getSupabaseClient();
@@ -15,7 +19,6 @@ export const authService = {
 
   async signOut() {
     const supabase = await getSupabaseClient();
-    // Security: Log logout server-side
     try {
       await Promise.race([
         supabase.rpc('log_user_logout'),
@@ -26,7 +29,6 @@ export const authService = {
     } catch (err) {
       logger.warn('log_user_logout failed', { err: String(err) });
     }
-
     return supabase.auth.signOut({ scope: 'global' });
   },
 
@@ -44,7 +46,7 @@ export const authService = {
   },
 
   /**
-   * @deprecated Prefira get_profile_and_roles RPC diretamente.
+   * @deprecated Prefira getProfileAndRoles() que usa 1 round-trip.
    * Mantido para callers legados fora do useProfileRoles.
    */
   async queryRoles(userId: string) {
@@ -54,7 +56,7 @@ export const authService = {
 
   /**
    * RPC combinada: retorna profile + roles em um único round-trip.
-   * Equivalente ao que useProfileRoles agora usa internamente.
+   * Seguro: `as unknown as RPCCallerFn` evita erro TS em strict mode.
    */
   async getProfileAndRoles(
     userId: string,
@@ -63,13 +65,10 @@ export const authService = {
     error: PostgrestError | null;
   }> {
     const supabase = await getSupabaseClient();
-    return (supabase.rpc as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: { profile: Record<string, unknown> | null; roles: string[] | null } | null; error: PostgrestError | null }>)(
-      'get_profile_and_roles',
-      { _user_id: userId },
-    );
+    const caller = supabase.rpc as unknown as RPCCallerFn<
+      { profile: Record<string, unknown> | null; roles: string[] | null }
+    >;
+    return caller('get_profile_and_roles', { _user_id: userId });
   },
 
   async fetchProfile(userId: string) {
