@@ -46,14 +46,69 @@ const RELOADABLE_REASONS = new Set([
 // Logger de escopo dedicado — emite JSON estruturado em PROD e encaminha
 // falhas ao Sentry automaticamente (level=error → captureException com tags
 // `scope`, `event`, `request_id`). `emitRestore` valida schema + injeta
-// `schema_version`. `restoreLog` (cru) usado para `delete_ok` (fora do
-// schema canônico de restore).
+// `schema_version`. `restoreLog` (cru) usado para `delete_ok` e para
+// eventos-métrica fora do schema canônico (`restore_latency`).
 const {
   log: restoreLog,
   emit: emitRestore,
   normalizeCorrelationId,
   generateCorrelationId,
 } = createRestoreLogger('seller_cart.restore');
+
+// Buckets de latência (ms). Mantidos alinhados aos dashboards Sentry/GlitchTip
+// para permitir agregação por histograma (p50/p95) sem cardinalidade explosiva.
+function bucketLatency(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return 'invalid';
+  if (ms < 200) return '<200ms';
+  if (ms < 500) return '<500ms';
+  if (ms < 1000) return '<1s';
+  if (ms < 2000) return '<2s';
+  if (ms < 5000) return '<5s';
+  if (ms < 10000) return '<10s';
+  return '>=10s';
+}
+
+// Extrai metadados HTTP do erro Supabase/PostgREST que ajudam a correlacionar
+// com os logs do servidor. Nem toda versão do supabase-js expõe headers, então
+// tudo é opcional e defensivo.
+function extractApiErrorMeta(err: unknown): {
+  http_status: number | null;
+  request_id: string | null;
+  postgrest_request_id: string | null;
+} {
+  if (!err || typeof err !== 'object') {
+    return { http_status: null, request_id: null, postgrest_request_id: null };
+  }
+  const e = err as Record<string, unknown>;
+  const status =
+    typeof e.status === 'number'
+      ? e.status
+      : typeof e.statusCode === 'number'
+        ? (e.statusCode as number)
+        : null;
+
+  let reqId: string | null = null;
+  let pgReqId: string | null = null;
+  const headers = e.headers;
+  if (headers && typeof headers === 'object') {
+    // Headers pode ser Headers nativo (get) ou objeto plain.
+    const get =
+      typeof (headers as Headers).get === 'function'
+        ? (k: string) => (headers as Headers).get(k)
+        : (k: string) => {
+            const rec = headers as Record<string, unknown>;
+            const v = rec[k] ?? rec[k.toLowerCase()];
+            return typeof v === 'string' ? v : null;
+          };
+    reqId = get('x-request-id') || get('X-Request-Id');
+    pgReqId = get('x-postgrest-request-id') || get('X-Postgrest-Request-Id');
+  }
+  // Alguns wrappers colocam request_id direto no erro.
+  if (!reqId && typeof e.request_id === 'string') reqId = e.request_id as string;
+  if (!reqId && typeof e.requestId === 'string') reqId = e.requestId as string;
+
+  return { http_status: status, request_id: reqId, postgrest_request_id: pgReqId };
+}
 
 
 
