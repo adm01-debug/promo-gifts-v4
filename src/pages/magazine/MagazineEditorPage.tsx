@@ -415,6 +415,7 @@ export default function MagazineEditorPage() {
               activeIdx={safePreviewIdx}
               onSelect={setPreviewIdx}
               onOpenAll={openPrint}
+              highlightedItemId={highlightedItemId}
             />
           </aside>
         </div>
