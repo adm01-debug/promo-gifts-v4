@@ -46,14 +46,69 @@ const RELOADABLE_REASONS = new Set([
 // Logger de escopo dedicado — emite JSON estruturado em PROD e encaminha
 // falhas ao Sentry automaticamente (level=error → captureException com tags
 // `scope`, `event`, `request_id`). `emitRestore` valida schema + injeta
-// `schema_version`. `restoreLog` (cru) usado para `delete_ok` (fora do
-// schema canônico de restore).
+// `schema_version`. `restoreLog` (cru) usado para `delete_ok` e para
+// eventos-métrica fora do schema canônico (`restore_latency`).
 const {
   log: restoreLog,
   emit: emitRestore,
   normalizeCorrelationId,
   generateCorrelationId,
 } = createRestoreLogger('seller_cart.restore');
+
+// Buckets de latência (ms). Mantidos alinhados aos dashboards Sentry/GlitchTip
+// para permitir agregação por histograma (p50/p95) sem cardinalidade explosiva.
+function bucketLatency(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return 'invalid';
+  if (ms < 200) return '<200ms';
+  if (ms < 500) return '<500ms';
+  if (ms < 1000) return '<1s';
+  if (ms < 2000) return '<2s';
+  if (ms < 5000) return '<5s';
+  if (ms < 10000) return '<10s';
+  return '>=10s';
+}
+
+// Extrai metadados HTTP do erro Supabase/PostgREST que ajudam a correlacionar
+// com os logs do servidor. Nem toda versão do supabase-js expõe headers, então
+// tudo é opcional e defensivo.
+function extractApiErrorMeta(err: unknown): {
+  http_status: number | null;
+  request_id: string | null;
+  postgrest_request_id: string | null;
+} {
+  if (!err || typeof err !== 'object') {
+    return { http_status: null, request_id: null, postgrest_request_id: null };
+  }
+  const e = err as Record<string, unknown>;
+  const status =
+    typeof e.status === 'number'
+      ? e.status
+      : typeof e.statusCode === 'number'
+        ? (e.statusCode as number)
+        : null;
+
+  let reqId: string | null = null;
+  let pgReqId: string | null = null;
+  const headers = e.headers;
+  if (headers && typeof headers === 'object') {
+    // Headers pode ser Headers nativo (get) ou objeto plain.
+    const get =
+      typeof (headers as Headers).get === 'function'
+        ? (k: string) => (headers as Headers).get(k)
+        : (k: string) => {
+            const rec = headers as Record<string, unknown>;
+            const v = rec[k] ?? rec[k.toLowerCase()];
+            return typeof v === 'string' ? v : null;
+          };
+    reqId = get('x-request-id') || get('X-Request-Id');
+    pgReqId = get('x-postgrest-request-id') || get('X-Postgrest-Request-Id');
+  }
+  // Alguns wrappers colocam request_id direto no erro.
+  if (!reqId && typeof e.request_id === 'string') reqId = e.request_id as string;
+  if (!reqId && typeof e.requestId === 'string') reqId = e.requestId as string;
+
+  return { http_status: status, request_id: reqId, postgrest_request_id: pgReqId };
+}
 
 
 
@@ -504,6 +559,21 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           // — dispara alerta para RLS parcial ou perda silenciosa de linhas.
           items_mismatch:
             itemsResulting !== null && itemsResulting !== itemsCount,
+          // Métricas de latência para dashboards (histograma bucketizado).
+          duration_bucket: bucketLatency(elapsedMs()),
+        });
+
+        // Evento-métrica dedicado para dashboards de latência
+        // (independente do fluxo de UX). Não passa pelo schema canônico
+        // de restore — é um sinal de observabilidade puro.
+        restoreLog.info('restore_latency', {
+          correlation_id: correlationId,
+          outcome: 'ok',
+          restore_result: restoreResult,
+          duration_ms: elapsedMs(),
+          duration_bucket: bucketLatency(elapsedMs()),
+          items_total: metrics?.items_total ?? itemsCount,
+          items_inserted: metrics?.items_inserted ?? null,
         });
 
 
@@ -548,6 +618,11 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
             ? String((err as { hint: unknown }).hint ?? '')
             : '';
         const mapped = mapRestoreCartError(err);
+        // Metadados HTTP para correlacionar com logs do PostgREST/Supabase.
+        const { http_status, request_id, postgrest_request_id } =
+          extractApiErrorMeta(err);
+        const durationMs = elapsedMs();
+        const durationBucket = bucketLatency(durationMs);
         // `err` no payload aciona `captureException` no Sentry via structuredLogger
         // e é serializado como { name, message, stack } no log JSON.
         emitRestore('error', 'restore_failed', {
@@ -557,12 +632,17 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           items_total: itemsCount,
           hydrated: true,
           restore_result: 'failed' as const,
-          duration_ms: elapsedMs(),
+          duration_ms: durationMs,
+          duration_bucket: durationBucket,
           company_id: snapshot?.company_id ?? null,
           pg_code: pgCode || null,
           pg_details: pgDetails || null,
           pg_hint: pgHint || null,
           reason: mapped.reason,
+          // Correlação com logs do servidor.
+          http_status,
+          request_id,
+          postgrest_request_id,
           // Métricas vazias no erro (a RPC não retornou nada), mas o schema
           // permanece consistente para dashboards agregarem success + failure.
           items_inserted: null,
@@ -571,6 +651,20 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           items_mismatch: true,
           raw_error: rawMessage,
           err,
+        });
+
+        // Evento-métrica dedicado para dashboards de latência (falha).
+        restoreLog.info('restore_latency', {
+          correlation_id: correlationId,
+          outcome: 'failed',
+          restore_result: 'failed' as const,
+          duration_ms: durationMs,
+          duration_bucket: durationBucket,
+          reason: mapped.reason,
+          pg_code: pgCode || null,
+          http_status,
+          request_id,
+          postgrest_request_id,
         });
         // Fallback UX: em falhas onde o snapshot local pode estar
         // dessincronizado do servidor (RPC ausente, rede, timeout, 5xx),
