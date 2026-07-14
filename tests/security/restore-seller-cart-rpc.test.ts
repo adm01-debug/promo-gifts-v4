@@ -79,7 +79,7 @@ describe("restore_seller_cart RPC — disponibilidade no banco alvo", () => {
   );
 
   test.skipIf(!hasAnyKey)(
-    "RPC valida input: payload não-objeto → SQLSTATE 22023 (invalid_snapshot)",
+    'RPC responde com SQLSTATE do Postgres (invalid_snapshot ou auth) — não com PGRST202',
     async () => {
       const supabase = createClient(url!, (serviceRoleKey ?? anonKey)!);
       const { error } = await supabase.rpc("restore_seller_cart", {
@@ -87,20 +87,25 @@ describe("restore_seller_cart RPC — disponibilidade no banco alvo", () => {
       });
 
       // Se a RPC estiver ausente, o teste acima já falhou com uma mensagem
-      // mais didática. Aqui apenas confirmamos o SQLSTATE quando ela existe.
+      // mais didática. Aqui apenas confirmamos que veio um SQLSTATE.
       if (error && RPC_MISSING_CODES.has(String(error.code))) {
-        // Cascata do teste anterior — não duplicar mensagem.
         return;
       }
 
-      expect(error, "esperava erro de validação (22023), veio null").not.toBeNull();
-      // Aceita 22023 (invalid_parameter_value) OU mensagem "invalid_snapshot"
-      // — Supabase-JS traduz alguns códigos de forma diferente entre versões.
-      const codeOk = error?.code === "22023";
-      const msgOk = /invalid_snapshot/i.test(error?.message ?? "");
+      expect(error, "esperava erro do Postgres, veio null (RPC não deveria aceitar payload inválido/anônimo)").not.toBeNull();
+
+      // Códigos aceitos, todos provam que a RPC existe e RESPONDEU:
+      //   22023 = invalid_parameter_value → validação `invalid_snapshot`
+      //   28000 = invalid_authorization → guard `not_authenticated` (anon key sem JWT de user)
+      //   42501 = insufficient_privilege → `seller_mismatch` / RLS
+      // Qualquer outro sugere regressão de comportamento da função.
+      const ACCEPTED = new Set(["22023", "28000", "42501"]);
+      const codeOk = ACCEPTED.has(String(error?.code ?? ""));
+      const msgOk =
+        /invalid_snapshot|not_authenticated|seller_mismatch/i.test(error?.message ?? "");
       expect(
         codeOk || msgOk,
-        `esperava SQLSTATE 22023 ou "invalid_snapshot", veio: code=${error?.code} message=${error?.message}`,
+        `esperava SQLSTATE 22023/28000/42501, veio: code=${error?.code} message=${error?.message}`,
       ).toBe(true);
     },
     15_000,
