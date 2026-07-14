@@ -1,6 +1,13 @@
 /**
  * Step 5 — Layout & Gerar: DnD para ordenar produtos + ações finais.
  * Usa @dnd-kit (já presente no projeto).
+ *
+ * Onda 3 — acessibilidade WCAG 2.1 AA:
+ *  - Estrutura semântica <ul>/<li> na ordenação e no sumário
+ *  - aria-labelledby + aria-describedby ligando lista à instrução de DnD
+ *  - aria-label dinâmico com nome do produto nos botões arrastar/remover
+ *  - aria-current="true" no item destacado (sincroniza com Preview)
+ *  - Imagens com alt = nome do produto
  */
 
 import { useMemo } from 'react';
@@ -59,7 +66,7 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
               <ul
                 aria-labelledby="layout-step-title"
                 aria-describedby="layout-step-help"
-                className="space-y-2"
+                className="space-y-2 list-none p-0 m-0"
               >
                 {items.map((it, idx) => (
                   <SortableRow
@@ -83,10 +90,7 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
           <div className="text-sm font-semibold" id="layout-summary-title">
             Sumário
           </div>
-          <ul
-            aria-labelledby="layout-summary-title"
-            className="space-y-1 text-xs"
-          >
+          <ul aria-labelledby="layout-summary-title" className="space-y-1 text-xs list-none p-0 m-0">
             {pages.map((p) => (
               <li key={p.index} className="flex items-center justify-between rounded border px-2 py-1">
                 <span className="font-mono" aria-hidden>
@@ -139,10 +143,12 @@ function SortableRow({
     <li
       ref={setNodeRef}
       style={style}
+      data-item-id={item.id}
       onMouseEnter={() => onHover?.(item.id)}
       onMouseLeave={() => onHover?.(null)}
       onFocus={() => onHover?.(item.id)}
       onBlur={() => onHover?.(null)}
+      tabIndex={-1}
       aria-current={highlighted ? 'true' : undefined}
       aria-label={`Produto ${index + 1} de ${total}: ${productName}`}
       className={cn(
