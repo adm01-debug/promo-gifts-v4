@@ -161,12 +161,15 @@ describe('PreviewSidebar — atalhos de teclado do zoom', () => {
 
   it('Tab move o foco entre os controles (não bloqueia navegação do editor)', () => {
     renderSidebar();
+    // Sai do estado Fit para que "diminuir zoom" não fique disabled.
+    fireEvent.keyDown(window, { key: '+' });
+
     const zoomOut = screen.getByRole('button', { name: /diminuir zoom/i });
     const fit = screen.getByRole('button', { name: /ajustar à largura/i });
     const zoomIn = screen.getByRole('button', { name: /aumentar zoom/i });
 
-    // Todos são focáveis por teclado (nenhum tem tabIndex=-1).
     for (const btn of [zoomOut, fit, zoomIn]) {
+      expect(btn).not.toBeDisabled();
       expect(btn.getAttribute('tabIndex')).not.toBe('-1');
       btn.focus();
       expect(document.activeElement).toBe(btn);
