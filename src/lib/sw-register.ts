@@ -110,4 +110,41 @@ export async function unregisterServiceWorker(): Promise<void> {
  * Cobre todos os modos PWA registrados no manifest.json:
  *  - standalone + minimal-ui (Android Chrome, Edge, Samsung Internet)
  *  - fullscreen          (algumas versões do Chrome)
- *  - window-controls-overlat�6�&��RFW6�F������f�vF�"�7F�F���R���26f&�(	B�:6��7F�F&B�6W76F�6��67B����W��'BgV�7F����5t���&���V���6��7B7F�F���UVW'�Тv��F�r��F6��VF��r�F�7�����FS�7F�F���R�r���F6�W2���v��F�r��F6��VF��r�F�7�����FS�֖����V��r���F6�W2���v��F�r��F6��VF��r�F�7�����FS�gV��67&VV�r���F6�W2���v��F�r��F6��VF��r�F�7�����FS�v��F�r�6��G&��2��fW&���r���F6�W3�������26f&���f�vF�"�7F�F���R:�&���V�V�F���7F�F�6���t���67B�V6W7<:&��&�&�VFFR�:6��7F�F&BW6V�FRF�F���f�vF�"E2�6��7B��57F�F���RТ&���V₇v��F�r��f�vF�"2V���v�2&V6�&C�7G&��r�V���v���7F�F���R����&WGW&�7F�F���UVW'�����57F�F���S��Р�򢠢�6�Ɩ6�FW&֗7<:6�&��F�f�6:|;VW2�&gWGW&���V�V�F:|:6���W��'B7��2gV�7F���&WVW7D��F�f�6F���W&֗76��ₓ�&�֗6S���F�f�6F���W&֗76�������b��t��F�f�6F���r��v��F�r������vvW"�v&�~)������F�f�6:|;VW2�:6�7W�'FF2r���&WGW&�vFV�VBs��Р��b���F�f�6F����W&֗76������vw&�FVBr���&WGW&�vw&�FVBs��Р��b���F�f�6F����W&֗76�����vFV�VBr���6��7BW&֗76����v�B��F�f�6F����&WVW7EW&֗76��ₓ��&WGW&�W&֗76��㰢Р�&WGW&���F�f�6F����W&֗76��㰧�
+ *  - window-controls-overly (Chrome desktop)
+ *  - navigator.standalone     (iOS Safari — não-standard, acessado com cast)
+ */
+export function isPWA(): boolean {
+  const standaloneQuery =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: minimal-ui)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.matchMedia('(display-mode: window-controls-overlay)').matches;
+
+  // iOS Safari: navigator.standalone é boolean quando instalado como PWA.
+  // Cast necessário: propriedade não-standard ausente do tipo Navigator TS.
+  const iosStandalone =
+    Boolean((window.navigator as unknown as Record<string, unknown>).standalone);
+
+  return standaloneQuery || iosStandalone;
+}
+
+/**
+ * Solicita permissão para notificações (para futura implementação)
+ */
+export async function requestNotificationPermission(): Promise<NotificationPermission> {
+  if (!('Notification' in window)) {
+    logger.warn('⚠️ Notificações não suportadas');
+    return 'denied';
+  }
+
+  if (Notification.permission === 'granted') {
+    return 'granted';
+  }
+
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    return permission;
+  }
+
+  return Notification.permission;
+}
