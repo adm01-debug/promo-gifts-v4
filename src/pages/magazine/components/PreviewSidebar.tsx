@@ -282,17 +282,60 @@ export function PreviewSidebar({
               )}
             </div>
             <ScrollArea className="h-[210px]">
-              <div className="grid grid-cols-2 gap-2 pr-2 sm:grid-cols-3">
+              <div
+                role="listbox"
+                aria-label="Miniaturas de páginas"
+                aria-activedescendant={`magazine-thumb-${focusedThumb}`}
+                onKeyDown={(e) => {
+                  const cols = window.matchMedia('(min-width: 640px)').matches ? 3 : 2;
+                  if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    moveThumbFocus(focusedThumb + 1);
+                  } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    moveThumbFocus(focusedThumb - 1);
+                  } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    moveThumbFocus(focusedThumb + cols);
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    moveThumbFocus(focusedThumb - cols);
+                  } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    moveThumbFocus(0);
+                  } else if (e.key === 'End') {
+                    e.preventDefault();
+                    moveThumbFocus(pages.length - 1);
+                  } else if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect(focusedThumb);
+                  }
+                }}
+                className="grid grid-cols-2 gap-2 pr-2 sm:grid-cols-3 focus:outline-none"
+              >
                 {pages.map((p, idx) => {
                   const isHighlighted = idx === highlightedPageIdx;
                   const isActive = idx === activeIdx;
+                  const isFocused = idx === focusedThumb;
                   return (
                     <button
                       key={idx}
+                      id={`magazine-thumb-${idx}`}
+                      ref={(el) => {
+                        thumbRefs.current[idx] = el;
+                      }}
                       type="button"
-                      onClick={() => onSelect(idx)}
+                      role="option"
+                      aria-selected={isActive}
+                      // Roving tabindex: apenas a thumb "focada" fica no tab order.
+                      tabIndex={isFocused ? 0 : -1}
+                      onClick={() => {
+                        setFocusedThumb(idx);
+                        onSelect(idx);
+                      }}
+                      onFocus={() => setFocusedThumb(idx)}
                       className={cn(
-                        'group relative overflow-hidden rounded border bg-background text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                        'group relative overflow-hidden rounded border bg-background text-left motion-safe:transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                         isActive && 'ring-2 ring-primary',
                         !isActive && isHighlighted && 'ring-2 ring-amber-500',
                         !isActive && !isHighlighted && 'hover:border-primary/60',
