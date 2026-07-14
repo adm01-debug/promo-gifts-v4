@@ -1,15 +1,7 @@
 {
   "generatedAt": "2026-06-23T21:58:13.906Z",
-  "totalErrors": 108,
+  "totalErrors": 74,
   "counts": {
-    "src/components/admin/products/sections/engraving/useEngravingWizard.ts": {
-      "@typescript-eslint/no-unused-vars": 1,
-      "no-dupe-keys": 1,
-      "object-shorthand": 1
-    },
-    "src/components/cart/CartHeaderButton.tsx": {
-      "react-hooks/rules-of-hooks": 2
-    },
     "src/components/inventory/StockDashboard.tsx": {
       "no-duplicate-imports": 1
     },
@@ -29,10 +21,6 @@
       "no-eq-null": 1,
       "no-shadow": 1
     },
-    "src/components/products/ProductTableView.tsx": {
-      "@typescript-eslint/no-unused-vars": 5,
-      "unused-imports/no-unused-imports": 5
-    },
     "src/components/products/QuickViewThumb.tsx": {
       "prefer-arrow-callback": 1
     },
@@ -41,11 +29,6 @@
     },
     "src/components/security/useSecurityData.ts": {
       "react-hooks/exhaustive-deps": 1
-    },
-    "src/components/ui/CategoryIcon.tsx": {
-      "@typescript-eslint/no-unused-vars": 1,
-      "no-duplicate-imports": 1,
-      "unused-imports/no-unused-imports": 1
     },
     "src/components/ui/ColorSwatchPicker.tsx": {
       "@typescript-eslint/sort-type-constituents": 1
@@ -58,16 +41,6 @@
     },
     "src/hooks/products/useProductsLightweight.ts": {
       "@typescript-eslint/sort-type-constituents": 1
-    },
-    "src/hooks/quotes/useQuoteBuilderState.ts": {
-      "eqeqeq": 1,
-      "no-eq-null": 1,
-      "prefer-template": 2,
-      "react-hooks/exhaustive-deps": 1
-    },
-    "src/hooks/quotes/useQuoteTemplates.ts": {
-      "@typescript-eslint/dot-notation": 3,
-      "dot-notation": 3
     },
     "src/hooks/stock/stockFetcher.ts": {
       "@typescript-eslint/sort-type-constituents": 3
@@ -105,20 +78,11 @@
     "src/lib/products/stock-status.ts": {
       "@typescript-eslint/non-nullable-type-assertion-style": 1
     },
-    "src/lib/sw-register.ts": {
-      "@typescript-eslint/dot-notation": 1,
-      "@typescript-eslint/no-unnecessary-boolean-literal-compare": 1,
-      "dot-notation": 1
-    },
     "src/pages/auth/__tests__/auth-render.test.tsx": {
       "@typescript-eslint/require-await": 3
     },
     "src/pages/products/FiltersPage.tsx": {
       "react/jsx-props-no-multi-spaces": 1
-    },
-    "src/pages/products/SellerCartsPage.tsx": {
-      "@typescript-eslint/no-unused-vars": 1,
-      "unused-imports/no-unused-imports": 1
     },
     "src/services/quoteService.ts": {
       "@typescript-eslint/non-nullable-type-assertion-style": 1
