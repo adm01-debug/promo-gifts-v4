@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Check,
   Download,
+  Eye,
   Loader2,
   Save,
   Share2,
@@ -17,6 +18,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 import { useMagazineEditor } from './useMagazineEditor';
@@ -54,6 +62,8 @@ export default function MagazineEditorPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<StepId>('identity');
   const [previewIdx, setPreviewIdx] = useState(0);
+  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
+  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const editor = useMagazineEditor(id);
 
   // `magazine` é null enquanto carrega e quando o id não existe.
@@ -119,6 +129,15 @@ export default function MagazineEditorPage() {
       magazine?.branding?.clientLogoUrl,
     ],
   );
+
+  // Onda 1 — hover em produto no LayoutStep → salta preview p/ página que o contém.
+  useEffect(() => {
+    if (!highlightedItemId) return;
+    const idx = pages.findIndex((p) => p.items.some((it) => it.id === highlightedItemId));
+    if (idx >= 0) setPreviewIdx(idx);
+  }, [highlightedItemId, pages]);
+
+
 
   // ── A PARTIR DAQUI NENHUM HOOK PODE SER CHAMADO ────────────────────────
   if (!editor.loaded) {
@@ -219,6 +238,30 @@ export default function MagazineEditorPage() {
                 </>
               )}
             </span>
+            {/* Onda 1 — Preview drawer para telas < xl (aside some) */}
+            <Sheet open={previewSheetOpen} onOpenChange={setPreviewSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="xl:hidden">
+                  <Eye className="mr-2 h-4 w-4" /> Preview
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-[min(560px,100vw)] overflow-y-auto p-4 sm:max-w-none"
+              >
+                <SheetHeader className="mb-3">
+                  <SheetTitle className="text-sm">Preview da revista</SheetTitle>
+                </SheetHeader>
+                <PreviewSidebar
+                  magazine={magazine}
+                  pages={pages}
+                  activeIdx={safePreviewIdx}
+                  onSelect={setPreviewIdx}
+                  onOpenAll={openPrint}
+                  highlightedItemId={highlightedItemId}
+                />
+              </SheetContent>
+            </Sheet>
             <Button
               variant="outline"
               size="sm"
@@ -336,6 +379,8 @@ export default function MagazineEditorPage() {
                 magazine={magazine}
                 onReorder={editor.reorderItems}
                 onRemove={editor.removeItem}
+                onItemHover={setHighlightedItemId}
+                highlightedItemId={highlightedItemId}
               />
             )}
 
@@ -370,6 +415,7 @@ export default function MagazineEditorPage() {
               activeIdx={safePreviewIdx}
               onSelect={setPreviewIdx}
               onOpenAll={openPrint}
+              highlightedItemId={highlightedItemId}
             />
           </aside>
         </div>

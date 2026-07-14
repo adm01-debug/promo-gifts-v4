@@ -16,6 +16,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { Magazine, MagazineItem } from '@/types/magazine';
 import { paginateMagazine } from '../../pagination';
 import { formatPrice, itemPrice } from '../templates/shared';
@@ -24,9 +25,12 @@ interface Props {
   magazine: Magazine;
   onReorder: (orderedIds: string[]) => void;
   onRemove: (itemId: string) => void;
+  /** Onda 1 — coordena highlight LayoutStep ↔ Preview. */
+  onItemHover?: (itemId: string | null) => void;
+  highlightedItemId?: string | null;
 }
 
-export function LayoutStep({ magazine, onReorder, onRemove }: Props) {
+export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlightedItemId }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const items = useMemo(() => [...magazine.items].sort((a, b) => a.position - b.position), [magazine.items]);
   const pages = useMemo(() => paginateMagazine(magazine), [magazine]);
@@ -52,7 +56,14 @@ export function LayoutStep({ magazine, onReorder, onRemove }: Props) {
             <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
               <div className="space-y-2">
                 {items.map((it, idx) => (
-                  <SortableRow key={it.id} item={it} index={idx} onRemove={onRemove} />
+                  <SortableRow
+                    key={it.id}
+                    item={it}
+                    index={idx}
+                    onRemove={onRemove}
+                    onHover={onItemHover}
+                    highlighted={highlightedItemId === it.id}
+                  />
                 ))}
               </div>
             </SortableContext>
@@ -89,10 +100,14 @@ function SortableRow({
   item,
   index,
   onRemove,
+  onHover,
+  highlighted,
 }: {
   item: MagazineItem;
   index: number;
   onRemove: (id: string) => void;
+  onHover?: (id: string | null) => void;
+  highlighted?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
@@ -103,7 +118,18 @@ function SortableRow({
     opacity: isDragging ? 0.5 : 1,
   };
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center gap-3 rounded-lg border bg-background p-2">
+    <div
+      ref={setNodeRef}
+      style={style}
+      onMouseEnter={() => onHover?.(item.id)}
+      onMouseLeave={() => onHover?.(null)}
+      onFocus={() => onHover?.(item.id)}
+      onBlur={() => onHover?.(null)}
+      className={cn(
+        'flex items-center gap-3 rounded-lg border bg-background p-2 transition',
+        highlighted && 'border-primary ring-2 ring-primary/40',
+      )}
+    >
       <button
         type="button"
         {...attributes}
