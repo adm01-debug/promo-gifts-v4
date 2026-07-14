@@ -225,6 +225,10 @@ describe.skipIf(!hasServiceRole)(
             { _snapshot: snapshot as never },
           );
 
+          if (isInvalidKey(rpcErr?.message)) {
+            ctx.skip();
+            return;
+          }
           expect(rpcErr, `rpc restore_seller_cart: ${rpcErr?.message}`).toBeNull();
           expect(result, "esperava retorno da RPC").toBeTruthy();
 
