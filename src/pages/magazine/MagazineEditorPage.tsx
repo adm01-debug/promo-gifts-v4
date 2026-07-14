@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Check,
   Download,
+  Eye,
   Loader2,
   Save,
   Share2,
@@ -17,6 +18,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 import { useMagazineEditor } from './useMagazineEditor';
