@@ -1,22 +1,33 @@
 name: Magazine Flakiness Guard
 
-# Roda a suíte tests/magazine/ 10 vezes seguidas e agrega flakiness.
+# Roda a suíte tests/magazine/ + tests/utils/tailwindRings.interaction.test.tsx
+# N vezes seguidas e agrega flakiness.
 #
-# Estratégia (auditoria 2026-07-14):
-#  - PR: só executa quando arquivos de teste ou fontes do módulo Magazine mudam.
-#    Serve como gate informacional — flakiness NÃO bloqueia o PR por padrão.
-#  - Schedule diário: pega drift lento (deps, jsdom, runners novos).
-#  - Manual: workflow_dispatch permite `strict=true` para bloquear em flakiness
-#    e `runs=N` para investigações mais longas.
+# Escopo (auditoria 2026-07-14, promoção 2026-07-14):
+#  - tests/magazine/                                — fuzz de rings, breakpoints, layout.
+#  - tests/utils/tailwindRings.interaction.test.tsx — helpers SSOT ringsOf/focusRingsOf/
+#    hoverRingsOf/focusWithinRingsOf/dataStateRingsOf sob interação real (mouse+teclado).
+#    Promovido a gate obrigatório porque QUALQUER regressão nesses helpers invalida
+#    silenciosamente todos os testes de rings do Magazine e do CompareTableView.
 #
-# Falha o job apenas quando algum teste falha em 100% das rodadas (fail-all)
-# OU quando `strict=true` e há flaky detectado.
+# Estratégia:
+#  - PR: executa em modo STRICT quando arquivos relevantes mudam. Flaky OU fail-all
+#    bloqueia merge. Isso é intencional — os helpers de rings são SSOT e não podem
+#    ter comportamento não-determinístico.
+#  - Schedule diário: pega drift lento (deps, jsdom, runners novos), sem --strict
+#    para não spam-abrir issues por 1 flaky isolado.
+#  - Manual: workflow_dispatch permite ajustar `runs=N` e `strict=true|false`.
+#
+# Falha o job quando:
+#   - algum teste falha em 100% das rodadas (fail-all), OU
+#   - modo strict + qualquer teste flaky (1..N-1 falhas).
 
 on:
   pull_request:
     paths:
       - 'tests/magazine/**'
       - 'tests/utils/tailwindRings.ts'
+      - 'tests/utils/tailwindRings.interaction.test.tsx'
       - 'src/pages/magazine/**'
       - 'scripts/magazine-flakiness-report.mjs'
       - '.github/workflows/magazine-flakiness.yml'
@@ -31,7 +42,7 @@ on:
       strict:
         description: 'Falhar em qualquer flakiness detectado'
         required: false
-        default: 'false'
+        default: 'true'
 
 concurrency:
   group: magazine-flakiness-${{ github.ref }}
@@ -39,7 +50,7 @@ concurrency:
 
 jobs:
   flakiness:
-    name: Magazine Flakiness (repeat × N)
+    name: Magazine + Rings Flakiness (repeat × N)
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -62,11 +73,28 @@ jobs:
           NODE_ENV: 'test'
         run: |
           RUNS="${{ github.event.inputs.runs || '10' }}"
+          # Modo strict:
+          #   - PR:                sempre strict (gate obrigatório).
+          #   - workflow_dispatch: respeita input (default true).
+          #   - schedule:          nunca strict (evita ruído em cron diário).
           STRICT_FLAG=""
-          if [ "${{ github.event.inputs.strict }}" = "true" ]; then
-            STRICT_FLAG="--strict"
-          fi
-          node scripts/magazine-flakiness-report.mjs --runs="$RUNS" $STRICT_FLAG
+          case "${{ github.event_name }}" in
+            pull_request)
+              STRICT_FLAG="--strict"
+              ;;
+            workflow_dispatch)
+              if [ "${{ github.event.inputs.strict }}" = "true" ]; then
+                STRICT_FLAG="--strict"
+              fi
+              ;;
+            schedule)
+              STRICT_FLAG=""
+              ;;
+          esac
+          node scripts/magazine-flakiness-report.mjs \
+            --runs="$RUNS" \
+            --pattern="tests/magazine/,tests/utils/tailwindRings.interaction.test.tsx" \
+            $STRICT_FLAG
 
       - name: Upload flakiness report
         if: always()
@@ -85,7 +113,7 @@ jobs:
       - name: Check result
         run: |
           if [ '${{ needs.flakiness.result }}' = 'success' ]; then
-            echo '✅ Nenhum teste fail-all detectado'
+            echo '✅ Nenhum flaky/fail-all detectado em tests/magazine/ + tailwindRings.interaction'
           else
             echo '❌ Flakiness/fail-all detectado — ver artifact magazine-flakiness-report'
             exit 1
