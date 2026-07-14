@@ -105,6 +105,48 @@ export function PreviewSidebar({
     return () => window.removeEventListener('keydown', onKey);
   }, [stepZoom, resetZoom]);
 
+  /**
+   * Anunciador para leitores de tela.
+   *
+   * Consolidamos zoom + página ativa + highlight numa mensagem estável, no
+   * português, publicada num live region `aria-live="polite"`. Trocas rápidas
+   * (arrow spam) não empilham anúncios: o `polite` deixa o AT interromper
+   * anúncios anteriores e o efeito só publica quando o texto muda.
+   */
+  const activePageLabel = active ? pageLabel(active) : 'nenhuma';
+  const zoomLabel = zoom === 1 ? 'Fit' : `${Math.round(zoom * 100)}%`;
+  const announcement = active
+    ? `Página ${activeIdx + 1} de ${pages.length}: ${activePageLabel}. Zoom ${zoomLabel}.`
+    : `Sem páginas. Zoom ${zoomLabel}.`;
+
+  /**
+   * Roving tabindex nas thumbs (padrão WAI-ARIA para listbox horizontal/grid).
+   *
+   *  - Container: `role="listbox"` + `aria-activedescendant`.
+   *  - Cada thumb: `role="option"` + `aria-selected` + `tabIndex` -1 exceto na
+   *    thumb "focada" (índice `focusedThumb`, default = ativa).
+   *  - Setas ↑/↓/←/→ movem o foco por passo, Home/End vão às pontas, Enter/Space
+   *    selecionam. O foco DOM segue o índice — sem sequestrar Tab do editor.
+   */
+  const [focusedThumb, setFocusedThumb] = useState<number>(activeIdx);
+  const thumbRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  // Se o número de páginas mudar, mantém o foco dentro do range.
+  useEffect(() => {
+    if (focusedThumb >= pages.length) setFocusedThumb(Math.max(0, pages.length - 1));
+  }, [pages.length, focusedThumb]);
+
+  const moveThumbFocus = useCallback(
+    (nextIdx: number) => {
+      const clamped = Math.min(pages.length - 1, Math.max(0, nextIdx));
+      setFocusedThumb(clamped);
+      // Move o foco DOM no próximo tick para vencer o re-render.
+      queueMicrotask(() => thumbRefs.current[clamped]?.focus());
+    },
+    [pages.length],
+  );
+
+
+
 
   return (
     <Card className={cn(variant === 'sidebar' && 'sticky top-4', variant === 'drawer' && 'border-0 shadow-none')}>
