@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { useMagazineEditor } from './useMagazineEditor';
 import { paginateMagazine } from './pagination';
 import { PreviewSidebar } from './components/PreviewSidebar';
+import { EditorHero } from './components/EditorHero';
 import { IdentityStep } from './components/steps/IdentityStep';
 import { ProductsStep } from './components/steps/ProductsStep';
 import { ContentStep } from './components/steps/ContentStep';
@@ -205,24 +206,12 @@ export default function MagazineEditorPage() {
       />
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in px-4 py-4 sm:px-6 lg:px-8">
-        {/* Cabeçalho */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+        {/* Hero premium — miniatura real da capa + template ativo + swap inline */}
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
-            <nav aria-label="Trilha" className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <Link to="/magazine" className="hover:text-foreground">
-                Magazines
-              </Link>
-              <span aria-hidden>/</span>
-              <span className="truncate">Editor</span>
-            </nav>
-            <h1
-              data-testid="page-title-magazine-editor"
-              className="line-clamp-1 font-display text-2xl font-bold tracking-tight"
-            >
-              {magazine.title || 'Nova revista'}
-            </h1>
+            <EditorHero magazine={magazine} onChangeTemplate={editor.setTemplate} />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end lg:pt-1">
             <span
               role="status"
               aria-live="polite"
@@ -266,8 +255,6 @@ export default function MagazineEditorPage() {
               variant="outline"
               size="sm"
               onClick={openPrint}
-              // items pode vir null de linhas legadas; paginateMagazine e stepValidation
-              // já usam (m.items ?? []) — o componente era a única exceção e estourava.
               disabled={(magazine.items ?? []).length === 0}
             >
               <Download className="mr-2 h-4 w-4" /> PDF
