@@ -843,3 +843,196 @@ describe('ponteiro (mouse/touch) NÃO ativa focus-visible', () => {
   });
 });
 
+
+/**
+ * W1–W6 — Tab wrap-around no início/fim do fluxo
+ * ----------------------------------------------
+ * Contrato:
+ *   - Tab a partir do ÚLTIMO focável avança para `document.body`
+ *     (jsdom/user-event) e depois volta para o PRIMEIRO focável. Isso
+ *     é o "loop de tabulação" e deve funcionar sem que nenhum token
+ *     declarativo mude no caminho.
+ *   - Shift+Tab a partir do PRIMEIRO focável recua para `document.body`
+ *     e depois vai para o ÚLTIMO focável — mesmo contrato inverso.
+ *   - Nenhuma dessas transições — e nenhuma passagem por `body` — pode
+ *     causar drift em `focusRingsOf` de qualquer elemento do fluxo.
+ *
+ * Regressões pegadas por estes testes:
+ *   1. Handler `onKeyDown` global que muta className no `keydown` do Tab
+ *      antes de o foco chegar no próximo elemento.
+ *   2. Focus trap "vazando" — algum código chama `event.preventDefault()`
+ *      no Tab de fronteira e move foco via `.focus()` para um elemento
+ *      MUTANDO seu className (`el.classList.add(...)`).
+ *   3. `useEffect` reagindo a `document.activeElement === body` que
+ *      dispara `setState` remontando um botão com className diferente.
+ */
+describe('Tab wrap-around no início/fim do fluxo — sem drift', () => {
+  // IDs dos focáveis no fluxo, em ordem de tabulação.
+  // `skip-tab` (tabIndex=-1) está EXCLUÍDO — não participa do fluxo Tab.
+  const TABBABLES = [
+    'hover-only',
+    'focus-only',
+    'both',
+    'stacked',
+    'focus-within-child',
+    'data-state-toggle',
+    'outline-suppressed',
+  ] as const;
+
+  /**
+   * Percorre Tab N vezes e retorna a sequência de `data-testid` visitados
+   * (`null` = `document.body`). Robusto para wrap-around: NUNCA aborta,
+   * mesmo se o foco cair no body.
+   */
+  async function tabSequence(
+    user: ReturnType<typeof userEvent.setup>,
+    steps: number,
+    opts: { shift?: boolean } = {},
+  ): Promise<Array<string | null>> {
+    const visited: Array<string | null> = [];
+    for (let i = 0; i < steps; i++) {
+      await user.tab({ shift: opts.shift });
+      const el = document.activeElement;
+      if (!el || el === document.body) {
+        visited.push(null);
+      } else {
+        visited.push(el.getAttribute('data-testid'));
+      }
+    }
+    return visited;
+  }
+
+  /** Snapshot completo dos rings declarativos de todos os focáveis. */
+  function snapshotAll(getByTestId: (id: string) => HTMLElement) {
+    const snap = new Map<string, ReturnType<typeof focusRingsOf>>();
+    for (const id of TABBABLES) snap.set(id, focusRingsOf(getByTestId(id)));
+    return snap;
+  }
+
+  it('(W1) Tab a partir do último focável entra em wrap (via body → primeiro)', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const first = getByTestId(TABBABLES[0]);
+    const last = getByTestId(TABBABLES[TABBABLES.length - 1]);
+
+    // Coloca foco no ÚLTIMO.
+    last.focus();
+    expect(document.activeElement).toBe(last);
+
+    // Tab uma vez a mais → jsdom manda para body (fim do fluxo).
+    await user.tab();
+    expect(document.activeElement).toBe(document.body);
+
+    // Tab de novo → volta para o PRIMEIRO focável (wrap completo).
+    await user.tab();
+    expect(document.activeElement).toBe(first);
+  });
+
+  it('(W2) Shift+Tab a partir do primeiro focável faz o wrap inverso (body → último)', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const first = getByTestId(TABBABLES[0]);
+    const last = getByTestId(TABBABLES[TABBABLES.length - 1]);
+
+    first.focus();
+    expect(document.activeElement).toBe(first);
+
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(document.body);
+
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(last);
+  });
+
+  it('(W3) wrap forward preserva TODOS os tokens declarativos (0 drift)', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const before = snapshotAll(getByTestId);
+
+    // Coloca no último e força o wrap: último → body → primeiro.
+    getByTestId(TABBABLES[TABBABLES.length - 1]).focus();
+    await user.tab(); // → body
+    for (const id of TABBABLES) {
+      expect(focusRingsOf(getByTestId(id)), `drift em "${id}" após last→body`).toEqual(
+        before.get(id),
+      );
+    }
+    await user.tab(); // body → primeiro
+    for (const id of TABBABLES) {
+      expect(focusRingsOf(getByTestId(id)), `drift em "${id}" após body→first`).toEqual(
+        before.get(id),
+      );
+    }
+  });
+
+  it('(W4) wrap backward (Shift+Tab) preserva TODOS os tokens declarativos', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const before = snapshotAll(getByTestId);
+
+    getByTestId(TABBABLES[0]).focus();
+    await user.tab({ shift: true }); // → body
+    for (const id of TABBABLES) {
+      expect(focusRingsOf(getByTestId(id)), `drift em "${id}" após first→body (shift)`).toEqual(
+        before.get(id),
+      );
+    }
+    await user.tab({ shift: true }); // body → último
+    for (const id of TABBABLES) {
+      expect(focusRingsOf(getByTestId(id)), `drift em "${id}" após body→last (shift)`).toEqual(
+        before.get(id),
+      );
+    }
+  });
+
+  it('(W5) 3 loops completos forward + backward — nenhum drift acumulado', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const before = snapshotAll(getByTestId);
+    // Ponto de partida determinístico: primeiro focável.
+    getByTestId(TABBABLES[0]).focus();
+
+    // 3 loops forward: cada loop = tabbables.length Tabs (passa por body).
+    // Depois 3 loops backward. Total de ~48 transições.
+    const stepsPerLoop = TABBABLES.length + 1; // +1 por causa da parada em body
+    const forward = await tabSequence(user, stepsPerLoop * 3);
+    const backward = await tabSequence(user, stepsPerLoop * 3, { shift: true });
+
+    // Sanidade: cada loop DEVE ter passado por body pelo menos uma vez.
+    expect(forward, 'loop forward passa por body').toContain(null);
+    expect(backward, 'loop backward passa por body').toContain(null);
+
+    // Invariante forte: tokens de TODOS os elementos idênticos ao snapshot.
+    for (const id of TABBABLES) {
+      expect(
+        focusRingsOf(getByTestId(id)),
+        `drift em "${id}" após ${stepsPerLoop * 6} transições Tab`,
+      ).toEqual(before.get(id));
+    }
+  });
+
+  it('(W6) durante o loop, cada elemento visitado casa com seu próprio snapshot inicial', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const before = snapshotAll(getByTestId);
+
+    // Um loop forward completo, checando token do elemento CORRENTE
+    // a cada Tab. Isso prova que a leitura instantânea (não só a final)
+    // permanece estável durante toda a travessia.
+    getByTestId(TABBABLES[0]).focus();
+    for (let i = 0; i < TABBABLES.length + 2; i++) {
+      await user.tab();
+      const active = document.activeElement;
+      if (!active || active === document.body) continue;
+      const id = active.getAttribute('data-testid');
+      if (id && before.has(id)) {
+        expect(
+          focusRingsOf(active),
+          `token drift ao passar por "${id}" (iteração ${i})`,
+        ).toEqual(before.get(id));
+      }
+    }
+  });
+});
+
+
