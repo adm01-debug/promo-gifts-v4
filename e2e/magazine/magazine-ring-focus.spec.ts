@@ -15,16 +15,21 @@
  * Estratégia de seed idêntica à `magazine-viewer.spec.ts` — sem backend.
  */
 import { test, expect, type Page } from '@playwright/test';
+import { gotoAndSettle } from '../helpers/nav';
+import { e2eName } from '../helpers/e2e-resources';
 
-const MAGAZINE_TOKEN = 'e2e-ring-focus-001';
-const MAGAZINE_ID = 'e2e-mag-ring-001';
+// Aderência à E2E Named Resources Policy: token/ID nomeados por spec para
+// não vazar entre execuções paralelas de CI.
+const MAGAZINE_TOKEN = e2eName('mag-ring-focus-token');
+const MAGAZINE_ID = e2eName('mag-ring-focus-id');
+const MAGAZINE_TITLE = e2eName('Ring Focus Regression');
 
 function buildSeedScript(): string {
   const magazine = {
     id: MAGAZINE_ID,
     ownerId: 'e2e',
     organizationId: null,
-    title: 'E2E Ring Focus',
+    title: MAGAZINE_TITLE,
     subtitle: 'Tab/Shift+Tab regression',
     templateId: 'editorial-vogue',
     branding: {
@@ -86,12 +91,15 @@ function buildSeedScript(): string {
 
 async function seedAndOpen(page: Page): Promise<void> {
   await page.addInitScript(buildSeedScript());
-  await page.goto(`/revista-publica/${MAGAZINE_TOKEN}`);
-  await expect(page.getByRole('heading', { name: 'E2E Ring Focus' })).toBeVisible({
+  // gotoAndSettle: aderência à E2E Helpers Policy (proíbe page.goto e
+  // networkidle diretos em specs).
+  await gotoAndSettle(page, `/revista-publica/${MAGAZINE_TOKEN}`);
+  // Espera pelo heading semântico do PublicMagazineView. Selector por role
+  // é aceitável aqui pois o componente de produção não expõe data-testid
+  // no título e essa auditoria não altera código de produção.
+  await expect(page.getByRole('heading', { name: MAGAZINE_TITLE })).toBeVisible({
     timeout: 15_000,
   });
-  // Garante que o layout terminou de montar antes de mover o foco
-  await page.waitForLoadState('domcontentloaded');
 }
 
 /**
