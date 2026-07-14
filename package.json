@@ -13,6 +13,8 @@
     "e2e:alert-dialog:update": "playwright test e2e/ui/alert-dialog-visual.spec.ts --project=chromium-public --update-snapshots",
     "e2e:dialog": "playwright test e2e/ui/dialog-visual.spec.ts --project=chromium-public",
     "e2e:dialog:update": "playwright test e2e/ui/dialog-visual.spec.ts --project=chromium-public --update-snapshots",
+    "e2e:magazine-ring": "playwright test e2e/ui/magazine-ring-visual.spec.ts --project=chromium-public",
+    "e2e:magazine-ring:update": "playwright test e2e/ui/magazine-ring-visual.spec.ts --project=chromium-public --update-snapshots",
     "e2e:undo-toast": "playwright test e2e/ui/undo-toast-visual.spec.ts --project=chromium-public",
     "e2e:undo-toast:update": "playwright test e2e/ui/undo-toast-visual.spec.ts --project=chromium-public --update-snapshots",
     "e2e:cnpj": "playwright test e2e/ui/cnpj-normalize.spec.ts --project=chromium-public",
