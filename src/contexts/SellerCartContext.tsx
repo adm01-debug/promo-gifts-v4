@@ -22,9 +22,26 @@ import {
 import { useDebouncedCartItemActions, getCartItemDebounceMs } from '@/hooks/products/useDebouncedCartItemActions';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { mapRestoreCartError } from '@/pages/products/seller-carts/mapRestoreCartError';
 import { createRestoreLogger } from '@/lib/telemetry/restoreLogger';
+
+// Query key da lista de carrinhos — replicado aqui (não exportado do hook)
+// só para o fallback de "recarregar carrinhos" no toast de erro. Se mudar
+// em `useSellerCarts.ts`, atualizar aqui também.
+const SELLER_CARTS_QUERY_KEY = 'seller-carts';
+
+// Categorias de falha em que o snapshot local pode estar dessincronizado
+// do servidor — nesses casos oferecemos a ação "Recarregar carrinhos" em
+// vez de deixar o usuário sem saída.
+const RELOADABLE_REASONS = new Set([
+  'rpc_missing',
+  'network',
+  'timeout',
+  'server',
+  'unknown',
+]);
 
 // Logger de escopo dedicado — emite JSON estruturado em PROD e encaminha
 // falhas ao Sentry automaticamente (level=error → captureException com tags
@@ -88,6 +105,11 @@ const ACTIVE_CART_STORAGE_KEY = 'seller:active-cart-id';
 
 export function SellerCartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const reloadCarts = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [SELLER_CARTS_QUERY_KEY] });
+    toast.info('Recarregando carrinhos…');
+  }, [queryClient]);
   const {
     carts,
     isLoading,
@@ -550,14 +572,26 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           raw_error: rawMessage,
           err,
         });
+        // Fallback UX: em falhas onde o snapshot local pode estar
+        // dessincronizado do servidor (RPC ausente, rede, timeout, 5xx),
+        // oferecemos "Recarregar carrinhos" no próprio toast em vez de
+        // deixar o usuário com a mensagem sem saída.
+        const canReload = RELOADABLE_REASONS.has(mapped.reason);
         toast.error(mapped.title ?? 'Não foi possível restaurar o carrinho.', {
           description: `${mapped.description} · snapshot ${snapshot?.id ?? '—'} · ${itemsCount} item(ns)`,
+          duration: canReload ? 12_000 : undefined,
+          action: canReload
+            ? {
+                label: 'Recarregar carrinhos',
+                onClick: () => reloadCarts(),
+              }
+            : undefined,
         });
         return undefined;
       }
 
     },
-    [restoreCartWithItemsMutation],
+    [restoreCartWithItemsMutation, reloadCarts],
   );
 
   const ctxValue = useMemo(
