@@ -1,0 +1,92 @@
+name: Magazine Flakiness Guard
+
+# Roda a suíte tests/magazine/ 10 vezes seguidas e agrega flakiness.
+#
+# Estratégia (auditoria 2026-07-14):
+#  - PR: só executa quando arquivos de teste ou fontes do módulo Magazine mudam.
+#    Serve como gate informacional — flakiness NÃO bloqueia o PR por padrão.
+#  - Schedule diário: pega drift lento (deps, jsdom, runners novos).
+#  - Manual: workflow_dispatch permite `strict=true` para bloquear em flakiness
+#    e `runs=N` para investigações mais longas.
+#
+# Falha o job apenas quando algum teste falha em 100% das rodadas (fail-all)
+# OU quando `strict=true` e há flaky detectado.
+
+on:
+  pull_request:
+    paths:
+      - 'tests/magazine/**'
+      - 'tests/utils/tailwindRings.ts'
+      - 'src/pages/magazine/**'
+      - 'scripts/magazine-flakiness-report.mjs'
+      - '.github/workflows/magazine-flakiness.yml'
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC diário (03:00 BRT)
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Número de execuções consecutivas (1..50)'
+        required: false
+        default: '10'
+      strict:
+        description: 'Falhar em qualquer flakiness detectado'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: magazine-flakiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flakiness:
+    name: Magazine Flakiness (repeat × N)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run flakiness report
+        env:
+          CI: 'true'
+          NODE_ENV: 'test'
+        run: |
+          RUNS="${{ github.event.inputs.runs || '10' }}"
+          STRICT_FLAG=""
+          if [ "${{ github.event.inputs.strict }}" = "true" ]; then
+            STRICT_FLAG="--strict"
+          fi
+          node scripts/magazine-flakiness-report.mjs --runs="$RUNS" $STRICT_FLAG
+
+      - name: Upload flakiness report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: magazine-flakiness-report
+          path: reports/flakiness/
+          retention-days: 30
+
+  flakiness-ok:
+    name: Magazine Flakiness OK
+    needs: [flakiness]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check result
+        run: |
+          if [ '${{ needs.flakiness.result }}' = 'success' ]; then
+            echo '✅ Nenhum teste fail-all detectado'
+          else
+            echo '❌ Flakiness/fail-all detectado — ver artifact magazine-flakiness-report'
+            exit 1
+          fi
