@@ -792,12 +792,18 @@ describe('ponteiro (mouse/touch) NÃO ativa focus-visible', () => {
   it('(P6) múltiplos clicks em elementos diferentes preservam :focus-visible=false em todos', async () => {
     const user = userEvent.setup();
     const { getByTestId } = render(<Fixture />);
-    const focusOnly = getByTestId('focus-only') as HTMLButtonElement;
-    const both = getByTestId('both') as HTMLButtonElement;
-    const outlineSuppressed = getByTestId('outline-suppressed') as HTMLButtonElement;
+    // Cada botão tem seu próprio contrato declarativo — capturamos o
+    // snapshot inicial e exigimos IDENTIDADE após cada click.
+    const targets = [
+      getByTestId('focus-only') as HTMLButtonElement,
+      getByTestId('both') as HTMLButtonElement,
+      getByTestId('outline-suppressed') as HTMLButtonElement,
+    ];
+    const initial = new Map(targets.map((el) => [el, focusRingsOf(el)] as const));
 
     // Sequência de 6 clicks alternados — modalidade permanece "ponteiro".
-    for (const el of [focusOnly, both, outlineSuppressed, focusOnly, outlineSuppressed, both]) {
+    const sequence = [targets[0], targets[1], targets[2], targets[0], targets[2], targets[1]];
+    for (const el of sequence) {
       await user.click(el);
       expect(document.activeElement).toBe(el);
       expect(
@@ -805,9 +811,10 @@ describe('ponteiro (mouse/touch) NÃO ativa focus-visible', () => {
         `:focus-visible vazou para true após click em ${el.dataset.testid}`,
       ).toBe(false);
       // Declarativo NUNCA muda — helper puro é imune a modalidade.
-      expect(focusRingsOf(el)).toEqual({ primary: true, amber: false });
+      expect(focusRingsOf(el)).toEqual(initial.get(el));
     }
   });
+
 
 
   it('(P7) helpers declarativos são invariantes à modalidade (click × Tab não muda o token lido)', async () => {
