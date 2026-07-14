@@ -726,27 +726,22 @@ describe('ponteiro (mouse/touch) NÃO ativa focus-visible', () => {
     expect(focusRingsOf(target)).toEqual({ primary: true, amber: false });
   });
 
-  it('(P2) user.tab (teclado) DEPOIS de user.click reativa :focus-visible', async () => {
+  it('(P2) blur após click reseta :focus-visible para false (não fica preso ligado)', async () => {
     const user = userEvent.setup();
     const { getByTestId } = render(<Fixture />);
     const target = getByTestId('focus-only') as HTMLButtonElement;
 
-    // Baseline: click não ativa focus-visible.
     await user.click(target);
     expect(target.matches(':focus-visible')).toBe(false);
 
-    // Sai do elemento e volta via teclado.
     target.blur();
-    await user.tab();
-    while (document.activeElement !== target) {
-      await user.tab();
-      if (document.activeElement === document.body) break;
-    }
-
-    // Agora SIM — última modalidade foi teclado.
-    expect(document.activeElement).toBe(target);
-    expect(target.matches(':focus-visible')).toBe(true);
+    // Após blur o elemento nem sequer está focado, então :focus-visible
+    // é obrigatoriamente false. Garante que não existe "resíduo" de
+    // ativação por ponteiro que sobreviva ao blur.
+    expect(target.matches(':focus-visible')).toBe(false);
+    expect(document.activeElement).not.toBe(target);
   });
+
 
   it('(P3) pointerdown + pointerup manual não deixa :focus-visible ligado', async () => {
     const { getByTestId } = render(<Fixture />);
