@@ -840,7 +840,9 @@ describe('ponteiro (mouse/touch) NÃO ativa focus-visible', () => {
     // "corrigir" o bug do mouse mutando o className via JS).
     await user.click(target);
     expect(focusRingsOf(target)).toEqual(declaredBefore);
+  });
 });
+
 
 /**
  * W1–W6 — Tab wrap-around no início/fim do fluxo
