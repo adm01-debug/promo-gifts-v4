@@ -47,6 +47,7 @@ export function PreviewSidebar({
   onSelect,
   onOpenAll,
   highlightedItemId,
+  variant = 'sidebar',
 }: Props) {
   const [zoom, setZoom] = useState<ZoomLevel>(1);
   const active = pages[activeIdx] ?? pages[0];
