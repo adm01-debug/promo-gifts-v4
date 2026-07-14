@@ -117,10 +117,11 @@ describe('PreviewSidebar — colisão sob :focus-visible (teclado)', () => {
   });
 
   it('miniatura ativa: focus-visible mantém primary (sem âmbar)', () => {
+    const activeIdx = Math.min(2, pages.length - 1);
     const { container } = render(
-      <Harness magazine={magazine} activeIdx={2} highlightedItemId={null} />,
+      <Harness magazine={magazine} activeIdx={activeIdx} highlightedItemId={null} />,
     );
-    const active = thumbsFrom(container)[2];
+    const active = thumbsFrom(container)[activeIdx];
     expect(ringsOf(active).primary).toBe(true);
     const fv = focusRingsOf(active);
     expect(fv.primary).toBe(true);
