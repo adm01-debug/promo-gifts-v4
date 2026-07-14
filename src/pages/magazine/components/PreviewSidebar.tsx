@@ -157,7 +157,7 @@ export function PreviewSidebar({
               )}
             </div>
             <ScrollArea className="h-[210px]">
-              <div className="grid grid-cols-3 gap-2 pr-2">
+              <div className="grid grid-cols-2 gap-2 pr-2 sm:grid-cols-3">
                 {pages.map((p, idx) => {
                   const isHighlighted = idx === highlightedPageIdx;
                   const isActive = idx === activeIdx;
