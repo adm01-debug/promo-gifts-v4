@@ -75,3 +75,7 @@ theme-validation-output/
 .claude/worktrees/
 .claude/settings.local.json
 qa/migrations-draft/PR_COMMENT.md
+
+# Magazine flakiness report (gerado pelo CI)
+reports/flakiness/
+.tmp/flakiness/
