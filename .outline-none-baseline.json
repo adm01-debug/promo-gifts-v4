@@ -1,0 +1,106 @@
+{
+  "generatedAt": "2026-07-14",
+  "description": "Snapshot congelado de violações de outline-none pré-existentes. Novas violações são bloqueadas pelo gate. Regenerar com UPDATE_BASELINE=1.",
+  "entries": [
+    {
+      "file": "src/components/admin/connections/DataSourceDebugTab.tsx",
+      "hash": "bd9c0b5706e0eea3",
+      "snippet": "cursor-pointer border-b align-top outline-none last:border-0 hover:bg-muted/40 focus:bg-muted/60"
+    },
+    {
+      "file": "src/components/admin/connections/IncidentTimeline72h.tsx",
+      "hash": "b136f72573f94a82",
+      "snippet": "transition-transform hover:scale-150 focus:outline-none focus-visible:scale-150"
+    },
+    {
+      "file": "src/components/common/EnhancedSpotlight.tsx",
+      "hash": "55d048ebfb1c9552",
+      "snippet": "focus:outline-none"
+    },
+    {
+      "file": "src/components/common/EnhancedSpotlight.tsx",
+      "hash": "6a9cbba198d77c96",
+      "snippet": "flex-1 bg-transparent px-4 py-4 text-base outline-none placeholder:text-muted-foreground"
+    },
+    {
+      "file": "src/components/inventory/supplier-reliability/SupplierReliabilityTable.tsx",
+      "hash": "cb186fe5ac19bfdf",
+      "snippet": "cursor-pointer border-b border-border/60 transition-colors last:border-b-0 hover:bg-muted/40 focus-visible:bg-muted/60 focus-visible:outl…"
+    },
+    {
+      "file": "src/components/layout/MainLayout.tsx",
+      "hash": "b1b2b1c07e680ba0",
+      "snippet": "theme-transitioning relative z-0 flex-1 overflow-x-clip bg-background/30 p-2 pb-6 outline-none sm:p-4 lg:p-6 print:p-0 print:pb-0"
+    },
+    {
+      "file": "src/components/mockup/MockupClientSelector.tsx",
+      "hash": "63c7e7c57ff7fb87",
+      "snippet": "hover:bg-primary/10 focus-visible:bg-primary/10 focus-visible:outline-none"
+    },
+    {
+      "file": "src/components/quotes/QuoteBuilderStepper.tsx",
+      "hash": "ecf89a26ebe541e8",
+      "snippet": "group flex shrink-0 cursor-pointer flex-col items-center focus:outline-none disabled:cursor-not-allowed"
+    },
+    {
+      "file": "src/components/quotes/QuotesStatusChips.tsx",
+      "hash": "bd623c78351bb873",
+      "snippet": "whitespace-nowrap border outline-none"
+    },
+    {
+      "file": "src/components/search/GlobalSearch.tsx",
+      "hash": "15639185a47fdba8",
+      "snippet": "flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+    },
+    {
+      "file": "src/components/ui/chart.tsx",
+      "hash": "a7c2d4c12a72efc2",
+      "snippet": "flex aspect-video justify-center text-xs [&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[st…"
+    },
+    {
+      "file": "src/components/ui/command.tsx",
+      "hash": "6f481c2f94ac5781",
+      "snippet": ", className)}\n    {...props}\n  />\n));\nCommandSeparator.displayName = CommandPrimitive.Separator.displayName;\n\nconst CommandItem = React.f…"
+    },
+    {
+      "file": "src/components/ui/dropdown-menu.tsx",
+      "hash": "79c748d0f7b4cad6",
+      "snippet": "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent …"
+    },
+    {
+      "file": "src/components/ui/dropdown-menu.tsx",
+      "hash": "79c748d0f7b4cad6",
+      "snippet": "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent …"
+    },
+    {
+      "file": "src/components/ui/dropdown-menu.tsx",
+      "hash": "96e6f140d7d43d92",
+      "snippet": "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent"
+    },
+    {
+      "file": "src/components/ui/dropdown-menu.tsx",
+      "hash": "fddedc9cd5b8d74f",
+      "snippet": "relative flex cursor-default select-none items-center rounded-md px-3 py-2 text-sm font-medium outline-none transition-all duration-200 h…"
+    },
+    {
+      "file": "src/components/ui/hover-card.tsx",
+      "hash": "0da3d49fbe9ee180",
+      "snippet": "z-50 rounded-md border border-white/10 bg-[#1a1a1a]/95 text-white shadow-2xl outline-none backdrop-blur-md data-[state=open]:animate-in d…"
+    },
+    {
+      "file": "src/components/ui/popover.tsx",
+      "hash": "5522e4dd297a6038",
+      "snippet": "z-50 w-72 rounded-xl border-2 bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=clos…"
+    },
+    {
+      "file": "src/components/ui/select.tsx",
+      "hash": "32ce26f5b1948b7b",
+      "snippet": "relative flex w-full cursor-default select-none items-center rounded-md py-3 pl-10 pr-4 text-base font-bold outline-none transition-color…"
+    },
+    {
+      "file": "src/pages/magazine/PublicMagazineView.tsx",
+      "hash": "3c8ea3192bf483fc",
+      "snippet": "min-h-screen bg-neutral-950 py-6 focus:outline-none"
+    }
+  ]
+}

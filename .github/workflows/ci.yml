@@ -36,6 +36,9 @@ jobs:
       - name: FAB accessibility static gate
         run: npm run check:fab-a11y
 
+      - name: outline-none WCAG 2.4.7 gate (ratchet)
+        run: npm run check:outline-none
+
       - name: Banned phrases gate
         run: npm run check:removed-phrases
 
