@@ -50,6 +50,12 @@ import {
 //                          entre "closed"/"open" via botão, e o container
 //                          declara `data-[state=open]:ring-primary` +
 //                          `data-[state=closed]:ring-amber-500`.
+//   • outline-suppressed → padrão a11y comum: `outline-none` acompanhado de
+//                          `focus-visible:ring-primary` (substitui o outline
+//                          nativo). Deve preservar contrato focus-visible.
+//   • skip-tab           → `tabIndex={-1}` — não participa do fluxo Tab
+//                          mas ainda é focável programaticamente. Contrato
+//                          declarativo permanece.
 function Fixture() {
   const [open, setOpen] = useState(false);
   return (
@@ -90,6 +96,19 @@ function Fixture() {
           toggle
         </button>
       </div>
+      <button
+        data-testid="outline-suppressed"
+        className="outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        outline suprimido
+      </button>
+      <button
+        data-testid="skip-tab"
+        tabIndex={-1}
+        className="ring-0 focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        skip
+      </button>
     </div>
   );
 }
@@ -465,5 +484,201 @@ describe('ringsByVariant / dataStateRingsOf — alternância de data-state (mous
     expect(focusWithinRingsOf(host)).toEqual({ primary: false, amber: false });
     // E a base do host continua sem rings — só via variant data-state.
     expect(ringsOf(host)).toEqual({ primary: false, amber: false });
+  });
+});
+
+/**
+ * (A11Y) Consistência de focus-visible sob navegação real por teclado
+ * -------------------------------------------------------------------
+ * Invariantes de acessibilidade validados aqui — todos DECLARATIVOS
+ * (jsdom não avalia `:focus-visible` como browser real, mas nosso
+ * contrato é sobre os TOKENS presentes no className):
+ *
+ *   (A1) Tab/Shift+Tab NÃO alteram os tokens `focus-visible:ring-*`
+ *        declarados em nenhum elemento focado ou passado.
+ *   (A2) `blur()` (perda de foco) NÃO remove tokens — o ring é CSS-driven,
+ *        não JS. Anular via `element.className = ''` seria bug real.
+ *   (A3) Elementos com `outline-none` DEVEM declarar `focus-visible:ring-*`
+ *        para não zerar a affordance visual de teclado (WCAG 2.4.7).
+ *   (A4) `tabIndex={-1}` remove o elemento do fluxo Tab natural, mas
+ *        o contrato `focus-visible:ring-*` permanece — foco programático
+ *        (por Radix, dialog init, etc.) ainda deve pintar o ring.
+ *   (A5) Percorrer TODO o fluxo Tab não "gasta" o ring de nenhum elemento
+ *        — snapshot antes == snapshot depois de N tabs.
+ */
+
+/**
+ * Percorre o fluxo Tab avançando até `n` vezes, coletando o histórico de
+ * `document.activeElement`. Sai antes se o foco sair da fixture (`body`).
+ */
+async function walkTab(user: ReturnType<typeof userEvent.setup>, n: number) {
+  const trail: (Element | null)[] = [document.activeElement];
+  for (let i = 0; i < n; i++) {
+    await user.tab();
+    trail.push(document.activeElement);
+    if (document.activeElement === document.body) break;
+  }
+  return trail;
+}
+
+describe('focus-visible — a11y sob Tab/Shift+Tab e blur', () => {
+  it('(A1) Tab avança sem alterar tokens focus-visible em nenhum elemento tocado', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const testIds = [
+      'hover-only',
+      'focus-only',
+      'both',
+      'stacked',
+      'focus-within-child',
+      'data-state-toggle',
+      'outline-suppressed',
+    ] as const;
+    const before = testIds.map((id) => ({ id, snap: focusRingsOf(getByTestId(id)) }));
+
+    // Percorre o fluxo (número de tabs > número de elementos alcançáveis).
+    await walkTab(user, testIds.length + 3);
+
+    for (const { id, snap } of before) {
+      expect(focusRingsOf(getByTestId(id)), `focus-visible drift em "${id}"`).toEqual(snap);
+    }
+  });
+
+  it('(A2) Shift+Tab (reverso) preserva os mesmos tokens', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const focusOnly = getByTestId('focus-only');
+    const outlineSuppressed = getByTestId('outline-suppressed');
+
+    const snapFocus = focusRingsOf(focusOnly);
+    const snapOutline = focusRingsOf(outlineSuppressed);
+
+    // Foca no último elemento tabulável e volta 3x.
+    outlineSuppressed.focus();
+    await user.tab({ shift: true });
+    await user.tab({ shift: true });
+    await user.tab({ shift: true });
+
+    expect(focusRingsOf(focusOnly)).toEqual(snapFocus);
+    expect(focusRingsOf(outlineSuppressed)).toEqual(snapOutline);
+  });
+
+  it('(A3) blur programático NÃO remove tokens focus-visible do className', () => {
+    const { getByTestId } = render(<Fixture />);
+    const focusOnly = getByTestId('focus-only') as HTMLButtonElement;
+    const before = focusRingsOf(focusOnly);
+    expect(before).toEqual({ primary: true, amber: false });
+
+    focusOnly.focus();
+    expect(focusRingsOf(focusOnly)).toEqual(before);
+
+    focusOnly.blur();
+    // Contrato: perder foco NÃO é motivo pra remover tokens declarativos.
+    expect(focusRingsOf(focusOnly)).toEqual(before);
+    // E não vazou pra hover/data-state.
+    expect(hoverRingsOf(focusOnly)).toEqual({ primary: false, amber: false });
+  });
+
+  it('(A4) outline-none sem focus-visible:ring seria bug — invariante WCAG 2.4.7', () => {
+    const { getByTestId } = render(<Fixture />);
+    const el = getByTestId('outline-suppressed');
+    const classes = el.className.split(/\s+/);
+
+    // Se alguém declara `outline-none` (removendo o outline nativo),
+    // ESTE elemento DEVE fornecer `focus-visible:ring-*` como affordance
+    // substituta — senão usuários de teclado perdem qualquer feedback.
+    const suppressesOutline = classes.some((c) => c === 'outline-none' || c === 'outline-0');
+    if (suppressesOutline) {
+      const fv = focusRingsOf(el);
+      expect(
+        fv.primary || fv.amber,
+        'outline-none sem focus-visible:ring-* é regressão de a11y',
+      ).toBe(true);
+    }
+  });
+
+  it('(A5) tabIndex=-1 sai do fluxo Tab mas o ring declarativo permanece', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const skip = getByTestId('skip-tab') as HTMLButtonElement;
+
+    // Percorre o fluxo inteiro; o skip-tab NÃO deve virar activeElement.
+    const trail = await walkTab(user, 20);
+    expect(trail).not.toContain(skip);
+
+    // Mas foco programático (Radix, dialog init, tour) ainda funciona
+    // e o token declarativo permanece intacto antes/depois.
+    const before = focusRingsOf(skip);
+    expect(before).toEqual({ primary: true, amber: false });
+    skip.focus();
+    expect(focusRingsOf(skip)).toEqual(before);
+    skip.blur();
+    expect(focusRingsOf(skip)).toEqual(before);
+  });
+
+  it('(A6) N ciclos focus+blur não erodem o contrato declarativo', () => {
+    const { getByTestId } = render(<Fixture />);
+    const focusOnly = getByTestId('focus-only') as HTMLButtonElement;
+    const both = getByTestId('both') as HTMLButtonElement;
+    const outlineSuppressed = getByTestId('outline-suppressed') as HTMLButtonElement;
+
+    const snaps = new Map<HTMLButtonElement, ReturnType<typeof focusRingsOf>>();
+    for (const el of [focusOnly, both, outlineSuppressed]) {
+      snaps.set(el, focusRingsOf(el));
+    }
+
+    // 25 ciclos — quantidade escolhida pra pegar drift acumulativo caso
+    // algum listener global mutar className (ex: telemetria de foco).
+    for (let i = 0; i < 25; i++) {
+      for (const el of snaps.keys()) {
+        el.focus();
+        el.blur();
+      }
+    }
+
+    for (const [el, snap] of snaps) {
+      expect(focusRingsOf(el)).toEqual(snap);
+      // Base do elemento NUNCA deve pintar rings — só via variant.
+      expect(ringsOf(el)).toEqual({ primary: false, amber: false });
+    }
+  });
+
+  it('(A7) navegação completa preserva tokens em CADA elemento do fluxo', async () => {
+    const user = userEvent.setup();
+    const { getByTestId } = render(<Fixture />);
+    const tabbables = [
+      'hover-only',
+      'focus-only',
+      'both',
+      'stacked',
+      'focus-within-child',
+      'data-state-toggle',
+      'outline-suppressed',
+    ] as const;
+
+    // Snapshot INICIAL de todos os elementos.
+    const initial = new Map<string, ReturnType<typeof focusRingsOf>>();
+    for (const id of tabbables) initial.set(id, focusRingsOf(getByTestId(id)));
+
+    // Tab forward completo.
+    for (let i = 0; i < tabbables.length; i++) {
+      await user.tab();
+      // Assert token do elemento CORRENTE não mudou.
+      const active = document.activeElement;
+      if (active && active !== document.body) {
+        const testId = active.getAttribute('data-testid');
+        if (testId && initial.has(testId)) {
+          expect(
+            focusRingsOf(active),
+            `token drift no foco de "${testId}"`,
+          ).toEqual(initial.get(testId));
+        }
+      }
+    }
+
+    // Snapshot FINAL — nenhum elemento deve ter drift.
+    for (const id of tabbables) {
+      expect(focusRingsOf(getByTestId(id)), `drift final em "${id}"`).toEqual(initial.get(id));
+    }
   });
 });
