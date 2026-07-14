@@ -27,21 +27,31 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { useState } from 'react';
+import { render, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
   hoverRingsOf,
   ringsByVariant,
   focusRingsOf,
+  focusWithinRingsOf,
+  dataStateRingsOf,
   ringsOf,
 } from './tailwindRings';
 
-// Fixture — 3 elementos com contratos distintos:
-//   • hover-only    → só `hover:ring-primary`
-//   • focus-only    → só `focus-visible:ring-primary`
-//   • both          → hover-primary + focus-visible-amber (contratos separados)
-//   • stacked       → `md:focus-visible:ring-primary` (variant empilhado)
+// Fixture — elementos com contratos distintos:
+//   • hover-only         → só `hover:ring-primary`
+//   • focus-only         → só `focus-visible:ring-primary`
+//   • both               → hover-primary + focus-visible-amber
+//   • stacked            → `md:focus-visible:ring-primary` (variant empilhado)
+//   • focus-within-host  → container com `focus-within:ring-primary` +
+//                          descendente focável (padrão popover/card).
+//   • data-state-host    → simula primitiva Radix: `data-state` alterna
+//                          entre "closed"/"open" via botão, e o container
+//                          declara `data-[state=open]:ring-primary` +
+//                          `data-[state=closed]:ring-amber-500`.
 function Fixture() {
+  const [open, setOpen] = useState(false);
   return (
     <div>
       <button data-testid="hover-only" className="ring-0 hover:ring-2 hover:ring-primary">
@@ -65,6 +75,21 @@ function Fixture() {
       >
         stacked
       </button>
+      <div
+        data-testid="focus-within-host"
+        className="ring-0 focus-within:ring-2 focus-within:ring-primary"
+      >
+        <button data-testid="focus-within-child">child</button>
+      </div>
+      <div
+        data-testid="data-state-host"
+        data-state={open ? 'open' : 'closed'}
+        className="ring-0 data-[state=open]:ring-2 data-[state=open]:ring-primary data-[state=closed]:ring-2 data-[state=closed]:ring-amber-500"
+      >
+        <button data-testid="data-state-toggle" onClick={() => setOpen((v) => !v)}>
+          toggle
+        </button>
+      </div>
     </div>
   );
 }
