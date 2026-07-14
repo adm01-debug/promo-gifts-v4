@@ -1,1 +1,113 @@
-Ly8gc3JjL2xpYi9zdy1yZWdpc3Rlci50cwoKaW1wb3J0IHsgbG9nZ2VyIH0gZnJvbSAnQC9saWIvbG9nZ2VyJzsKaW1wb3J0IHsgc3dDb25maXJtZWRTdGFsZVVybHMgfSBmcm9tICdAL2xpYi9jaHVuay1yZWNvdmVyeSc7CgovLyBHdWFyZDogcHJldmVudHMgY29uY3VycmVudCByZWxvYWQgbG9vcHMgaWYgbXVsdGlwbGUgU1dfU1RBTEVfQ0hVTksgbWVzc2FnZXMgYXJyaXZlLgpsZXQgX3N0YWxlQ2h1bmtSZWxvYWRTY2hlZHVsZWQgPSBmYWxzZTsKCi8qKgogKiBSZWdpc3RyYSBTZXJ2aWNlIFdvcmtlciBwYXJhIFBXQQogKgogKiBEZXZlIHNlciBjaGFtYWRvIG5vIG1haW4udHN4IGFww7NzIHNldHVwTG9jYWxlKCkKICovCmV4cG9ydCBhc3luYyBmdW5jdGlvbiByZWdpc3RlclNlcnZpY2VXb3JrZXIoKTogUHJvbWlzZTx2b2lkPiB7CiAgaWYgKCdzZXJ2aWNlV29ya2VyJyBpbiBuYXZpZ2F0b3IpIHsKICAgIHRyeSB7CiAgICAgIGNvbnN0IHJlZ2lzdHJhdGlvbiA9IGF3YWl0IG5hdmlnYXRvci5zZXJ2aWNlV29ya2VyLnJlZ2lzdGVyKCcvc3cuanMnLCB7CiAgICAgICAgc2NvcGU6ICcvJywKICAgICAgfSk7CgogICAgICBsb2dnZXIubG9nKCfinIUgU2VydmljZSBXb3JrZXIgcmVnaXN0cmFkbzonLCByZWdpc3RyYXRpb24uc2NvcGUpOwoKICAgICAgLy8gQ2hlY2FyIGF0dWFsaXphw6fDtWVzCiAgICAgIHJlZ2lzdHJhdGlvbi5hZGRFdmVudExpc3RlbmVyKCd1cGRhdGVmb3VuZCcsICgpID0+IHsKICAgICAgICBjb25zdCBuZXdXb3JrZXIgPSByZWdpc3RyYXRpb24uaW5zdGFsbGluZzsKICAgICAgICBpZiAobmV3V29ya2VyKSB7CiAgICAgICAgICBuZXdXb3JrZXIuYWRkRXZlbnRMaXN0ZW5lcignc3RhdGVjaGFuZ2UnLCAoKSA9PiB7CiAgICAgICAgICAgIGlmIChuZXdXb3JrZXIuc3RhdGUgPT09ICdpbnN0YWxsZWQnICYmIG5hdmlnYXRvci5zZXJ2aWNlV29ya2VyLmNvbnRyb2xsZXIpIHsKICAgICAgICAgICAgICBsb2dnZXIubG9nKCfwn5SEIE5vdmEgdmVyc8OjbyBkbyBTZXJ2aWNlIFdvcmtlciBkaXNwb27DrXZlbCcpOwogICAgICAgICAgICAgIC8vIFJlbG9hZCBhdXRvbcOhdGljbyByZW1vdmlkbyBwYXJhIGV2aXRhciBhdXRvLXJlZnJlc2ggaW50ZXJtaXRlbnRlLgogICAgICAgICAgICAgIC8vIE8gU1cgdjMuMi4wIHVzYSBOZXR3b3JrIEZpcnN0IHBhcmEgbmF2ZWdhw6fDo28sIGdhcmFudGluZG8gSFRNTAogICAgICAgICAgICAgIC8vIGF0dWFsaXphZG8gc2VtIHByZWNpc2FyIHJlY2FycmVnYXIgYSBhYmEgYXR1YWwuCiAgICAgICAgICAgIH0KICAgICAgICAgIH0pOwogICAgICAgIH0KICAgICAgfSk7CgogICAgICAvLyDilIDilIAgU1dfU1RBTEVfQ0hVTksgcmVjb3ZlcnkgbGlzdGVuZXIg4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSA4pSACiAgICAgIC8vIEVzY3V0YSBtZW5zYWdlbnMgZG8gU1cuIFF1YW5kbyB1bSBjaHVuayBoYXNoZWQgcmV0b3JuYSA0MDQgZG8gQ0ROCiAgICAgIC8vIChkZXBsb3kgbm92byBzdWJzdGl0dWl1IG9zIGhhc2hlcyBkb3MgY2h1bmtzKSwgbyBTVzoKICAgICAgLy8gICAxLiBJbnZhbGlkYSAvaW5kZXguaHRtbCBkbyBjYWNoZQogICAgICAvLyAgIDIuIEVudmlhIFNXX1NUQUxFX0NIVU5LIHBhcmEgdG9kb3Mgb3MgdGFicyBhYmVydG9zCiAgICAgIC8vIEFvIHJlY2ViZXIsIHJlY2FycmVnYW1vcyBhIHDDoWdpbmEgcGFyYSBvYnRlciBvIG5vdm8gSFRNTCBjb20gb3MKICAgICAgLy8gaGFzaGVzIGNvcnJldG9zLiBPIHJlbG9hZCDDqSB0aHJvdHRsZWQgKG5vIG3DoXhpbW8gMSB2ZXogcG9yIDEwcykKICAgICAgLy8gcGFyYSBldml0YXIgbG9vcHMgZGUgcmVmcmVzaCBlbSBjYXNvIGRlIHByb2JsZW1hcyBwZXJzaXN0ZW50ZXMuCiAgICAgIC8vCiAgICAgIC8vIERpZmVyZW7Dp2EgdnMuIGNvbnRyb2xsZXJjaGFuZ2U6IGVzdGUgcmVsb2FkIHPDsyBvY29ycmUgcXVhbmRvIG8KICAgICAgLy8gYXBwIGVzdMOhIFFVRUJSQURPIChjaHVuayA0MDQpLCBuw6NvIGVtIHRvZGEgYXR1YWxpemHDp8OjbyBkbyBTVy4KICAgICAgbmF2aWdhdG9yLnNlcnZpY2VXb3JrZXIuYWRkRXZlbnRMaXN0ZW5lcignbWVzc2FnZScsIChldmVudDogTWVzc2FnZUV2ZW50KSA9PiB7CiAgICAgICAgaWYgKGV2ZW50LmRhdGE/LnR5cGUgPT09ICdTV19TVEFMRV9DSFVOSycpIHsKICAgICAgICAgIC8vIEJVRy1DUi0yIEZJWDogcmVnaXN0cmEgVVJMIHN0YWxlIEFOVEVTIGRvIHJlbG9hZCBwYXJhIHF1ZQogICAgICAgICAgLy8gcHJvYmVBc3NldCgpIHB1bGUgbyBIRUFEIHJlcXVlc3Qg4oCUIGVsaW1pbmFuZG8gYXMgbWVuc2FnZW5zCiAgICAgICAgICAvLyAiRmFsaGEgYW8gY2FycmVnYXIgQnVzY2FyOiBIRUFEIiBubyBEZXZUb29scyBkbyBicm93c2VyLgogICAgICAgICAgLy8gUmFjZSB3aW5kb3c6IHNlIGxhenlXaXRoUmV0cnkuYXR0ZW1wdENodW5rUmVjb3ZlcnkoKSBkaXNwYXJhcgogICAgICAgICAgLy8gYW50ZXMgZG8gcmVsb2FkIGVtIDMwMG1zLCBlbmNvbnRyYXLDoSBhIFVSTCBubyBzZXQgZSBza2lwIG8gcHJvYmUuCiAgICAgICAgICBjb25zdCBzdGFsZVVybCA9IGV2ZW50LmRhdGE/LnVybCBhcyBzdHJpbmcgfCB1bmRlZmluZWQ7CiAgICAgICAgICBpZiAoc3RhbGVVcmwpIHsKICAgICAgICAgICAgc3dDb25maXJtZWRTdGFsZVVybHMuYWRkKHN0YWxlVXJsKTsKICAgICAgICAgICAgbG9nZ2VyLmxvZygnW1NXXSBjaHVuayBzdGFsZSBjb25maXJtYWRvIOKAlCBVUkwgcmVnaXN0cmFkYTonLCBzdGFsZVVybCk7CiAgICAgICAgICB9CiAgICAgICAgICBsb2dnZXIubG9nKAogICAgICAgICAgICAn8J+UhCBbU1ddIENodW5rIGRlc2F0dWFsaXphZG8gZGV0ZWN0YWRvIOKAlCByZWNhcnJlZ2FuZG8gcGFyYSBvYnRlciBjaHVua3MgYXR1YWxpemFkb3M6JywKICAgICAgICAgICAgZXZlbnQuZGF0YS51cmwsCiAgICAgICAgICApOwogICAgICAgICAgLy8gVGhyb3R0bGU6IGFwZW5hcyAxIHJlbG9hZCBwb3IgMTBzIHBhcmEgZXZpdGFyIGxvb3BzLgogICAgICAgICAgaWYgKCFfc3RhbGVDaHVua1JlbG9hZFNjaGVkdWxlZCkgewogICAgICAgICAgICBfc3RhbGVDaHVua1JlbG9hZFNjaGVkdWxlZCA9IHRydWU7CiAgICAgICAgICAgIC8vIEFndWFyZGEgMzAwbXMgcGFyYSBkZWl4YXIgbyBSZWFjdCByZWdpc3RyYXIgbyBlcnJvIChzZSBob3V2ZXIpCiAgICAgICAgICAgIC8vIGFudGVzIGRvIHJlbG9hZC4gSXNzbyBmYWNpbGl0YSBhIGRlcHVyYcOnw6NvIGVtIGxvZ3MgZGUgU2VudHJ5LgogICAgICAgICAgICBzZXRUaW1lb3V0KCgpID0+IHsKICAgICAgICAgICAgICB3aW5kb3cubG9jYXRpb24ucmVsb2FkKCk7CiAgICAgICAgICAgIH0sIDMwMCk7CiAgICAgICAgICAgIC8vIFJlc2V0IGRvIGd1YXJkIGFww7NzIDEwcyAoY2FzbyBvIHJlbG9hZCBmYWxoZSBwb3IgYWxndW1hIHJhesOjbykKICAgICAgICAgICAgc2V0VGltZW91dCgoKSA9PiB7CiAgICAgICAgICAgICAgX3N0YWxlQ2h1bmtSZWxvYWRTY2hlZHVsZWQgPSBmYWxzZTsKICAgICAgICAgICAgfSwgMTBfMDAwKTsKICAgICAgICAgIH0KICAgICAgICB9CiAgICAgIH0pOwoKICAgICAgbG9nZ2VyLmxvZygn4pyFIFNlcnZpY2UgV29ya2VyIGNvbmZpZ3VyYWRvOiBOZXR3b3JrIEZpcnN0ICsgc3RhbGUgY2h1bmsgcmVjb3ZlcnkgYXRpdm8nKTsKICAgIH0gY2F0Y2ggKGVycm9yKSB7CiAgICAgIGxvZ2dlci5lcnJvcign4p2MIEZhbGhhIGFvIHJlZ2lzdHJhciBTZXJ2aWNlIFdvcmtlcjonLCBlcnJvcik7CiAgICB9CiAgfSBlbHNlIHsKICAgIGxvZ2dlci53YXJuKCfimqDvuI8gU2VydmljZSBXb3JrZXJzIG7Do28gc3Vwb3J0YWRvcyBuZXN0ZSBuYXZlZ2Fkb3InKTsKICB9Cn0KCi8qKgogKiBEZXNyZWdpc3RyYSBTZXJ2aWNlIFdvcmtlciAow7p0aWwgcGFyYSBkZWJ1ZykKICovCmV4cG9ydCBhc3luYyBmdW5jdGlvbiB1bnJlZ2lzdGVyU2VydmljZVdvcmtlcigpOiBQcm9taXNlPHZvaWQ+IHsKICBpZiAoJ3NlcnZpY2VXb3JrZXInIGluIG5hdmlnYXRvcikgewogICAgY29uc3QgcmVnaXN0cmF0aW9ucyA9IGF3YWl0IG5hdmlnYXRvci5zZXJ2aWNlV29ya2VyLmdldFJlZ2lzdHJhdGlvbnMoKTsKICAgIGZvciAoY29uc3QgcmVnaXN0cmF0aW9uIG9mIHJlZ2lzdHJhdGlvbnMpIHsKICAgICAgYXdhaXQgcmVnaXN0cmF0aW9uLnVucmVnaXN0ZXIoKTsKICAgICAgbG9nZ2VyLmxvZygn8J+Xke+4jyBTZXJ2aWNlIFdvcmtlciBkZXNyZWdpc3RyYWRvJyk7CiAgICB9CiAgfQp9CgovKioKICogVmVyaWZpY2Egc2UgYXBwIGVzdMOhIGluc3RhbGFkbyBjb21vIFBXQS4KICoKICogQlVHLVNXLVJFRy0xIEZJWDogd2luZG93Lm5hdmlnYXRvci5zdGFuZGFsb25lIMOpIHVtYSBwcm9wcmllZGFkZSBuw6NvLXN0YW5kYXJkCiAqIGV4Y2x1c2l2YSBkbyBpT1MgU2FmYXJpIOKAlCBUeXBlU2NyaXB0IChUUzIzMzkpIGUgQ2hyb21lIERldlRvb2xzIGEgZmxhZ2FtIGNvbW8KICogaW5leGlzdGVudGUgbm8gdGlwbyBOYXZpZ2F0b3IuIEZpeDogYWNlc3NvIHZpYSB0eXBlIGFzc2VydGlvbiBzZWd1cm8uCiAqCiAqIENvYnJlIHRvZG9zIG9zIG1vZG9zIFBXQSByZWdpc3RyYWRvcyBubyBtYW5pZmVzdC5qc29uOgogKiAgLSBzdGFuZGFsb25lICsgbWluaW1hbC11aSAoQW5kcm9pZCBDaHJvbWUsIEVkZ2UsIFNhbXN1bmcgSW50ZXJuZXQpCiAqICAtIGZ1bGxzY3JlZW4gICAgICAgICAgKGFsZ3VtYXMgdmVyc8O1ZXMgZG8gQ2hyb21lKQogKiAgLSB3aW5kb3ctY29udHJvbHMtb3Zlcmxhd%K  (Q2hyb21lIGRlc2t0b3ApCiAqICAtIG5hdmlnYXRvci5zdGFuZGFsb25lICAgICAoaU9TIFNhZmFyaSDigJQgbsOjby1zdGFuZGFyZCwgYWNlc3NhZG8gY29tIGNhc3QpCiAqLwpleHBvcnQgZnVuY3Rpb24gaXNQV0EoKTogYm9vbGVhbiB7CiAgY29uc3Qgc3RhbmRhbG9uZVF1ZXJ5ID0KICAgIHdpbmRvdy5tYXRjaE1lZGlhKCcoZGlzcGxheS1tb2RlOiBzdGFuZGFsb25lKScpLm1hdGNoZXMgfHwKICAgIHdpbmRvdy5tYXRjaE1lZGlhKCcoZGlzcGxheS1tb2RlOiBtaW5pbWFsLXVpKScpLm1hdGNoZXMgfHwKICAgIHdpbmRvdy5tYXRjaE1lZGlhKCcoZGlzcGxheS1tb2RlOiBmdWxsc2NyZWVuKScpLm1hdGNoZXMgfHwKICAgIHdpbmRvdy5tYXRjaE1lZGlhKCcoZGlzcGxheS1tb2RlOiB3aW5kb3ctY29udHJvbHMtb3ZlcmxheSknKS5tYXRjaGVzOwoKICAvLyBpT1MgU2FmYXJpOiBuYXZpZ2F0b3Iuc3RhbmRhbG9uZSDDqSBib29sZWFuIHF1YW5kbyBpbnN0YWxhZG8gY29tbyBQV0EuCiAgLy8gQ2FzdCBuZWNlc3PDoXJpbzogcHJvcHJpZWRhZGUgbsOjby1zdGFuZGFyZCBhdXNlbnRlIGRvIHRpcG8gTmF2aWdhdG9yIFRTLgogIGNvbnN0IGlvc1N0YW5kYWxvbmUgPQogICAgQm9vbGVhbigod2luZG93Lm5hdmlnYXRvciBhcyB1bmtub3duIGFzIFJlY29yZDxzdHJpbmcsIHVua25vd24+KS5zdGFuZGFsb25lKTsKCiAgcmV0dXJuIHN0YW5kYWxvbmVRdWVyeSB8fCBpb3NTdGFuZGFsb25lOwp9CgovKioKICogU29saWNpdGEgcGVybWlzc8OjbyBwYXJhIG5vdGlmaWNhw6fDtWVzIChwYXJhIGZ1dHVyYSBpbXBsZW1lbnRhw6fDo28pCiAqLwpleHBvcnQgYXN5bmMgZnVuY3Rpb24gcmVxdWVzdE5vdGlmaWNhdGlvblBlcm1pc3Npb24oKTogUHJvbWlzZTxOb3RpZmljYXRpb25QZXJtaXNzaW9uPiB7CiAgaWYgKCEoJ05vdGlmaWNhdGlvbicgaW4gd2luZG93KSkgewogICAgbG9nZ2VyLndhcm4oJ+KaoO+4jyBOb3RpZmljYcOnw7VlcyBuw6NvIHN1cG9ydGFkYXMnKTsKICAgIHJldHVybiAnZGVuaWVkJzsKICB9CgogIGlmIChOb3RpZmljYXRpb24ucGVybWlzc2lvbiA9PT0gJ2dyYW50ZWQnKSB7CiAgICByZXR1cm4gJ2dyYW50ZWQnOwogIH0KCiAgaWYgKE5vdGlmaWNhdGlvbi5wZXJtaXNzaW9uICE9PSAnZGVuaWVkJykgewogICAgY29uc3QgcGVybWlzc2lvbiA9IGF3YWl0IE5vdGlmaWNhdGlvbi5yZXF1ZXN0UGVybWlzc2lvbigpOwogICAgcmV0dXJuIHBlcm1pc3Npb247CiAgfQoKICByZXR1cm4gTm90aWZpY2F0aW9uLnBlcm1pc3Npb247Cn0K
+// src/lib/sw-register.ts
+
+import { logger } from '@/lib/logger';
+import { swConfirmedStaleUrls } from '@/lib/chunk-recovery';
+
+// Guard: prevents concurrent reload loops if multiple SW_STALE_CHUNK messages arrive.
+let _staleChunkReloadScheduled = false;
+
+/**
+ * Registra Service Worker para PWA
+ *
+ * Deve ser chamado no main.tsx após setupLocale()
+ */
+export async function registerServiceWorker(): Promise<void> {
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+      });
+
+      logger.log('✅ Service Worker registrado:', registration.scope);
+
+      // Checar atualizações
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              logger.log('🔄 Nova versão do Service Worker disponível');
+              // Reload automático removido para evitar auto-refresh intermitente.
+              // O SW v3.2.0 usa Network First para navegação, garantindo HTML
+              // atualizado sem precisar recarregar a aba atual.
+            }
+          });
+        }
+      });
+
+      // ── SW_STALE_CHUNK recovery listener ──────────────────────────────────
+      // Escuta mensagens do SW. Quando um chunk hashed retorna 404 do CDN
+      // (deploy novo substituiu os hashes dos chunks), o SW:
+      //   1. Invalida /index.html do cache
+      //   2. Envia SW_STALE_CHUNK para todos os tabs abertos
+      // Ao receber, recarregamos a página para obter o novo HTML com os
+      // hashes corretos. O reload é throttled (no máximo 1 vez por 10s)
+      // para evitar loops de refresh em caso de problemas persistentes.
+      //
+      // Diferença vs. controllerchange: este reload só ocorre quando o
+      // app está QUEBRADO (chunk 404), não em toda atualização do SW.
+      navigator.serviceWorker.addEventListener('message', (event: MessageEvent) => {
+        if (event.data?.type === 'SW_STALE_CHUNK') {
+          // BUG-CR-2 FIX: registra URL stale ANTES do reload para que
+          // probeAsset() pule o HEAD request — eliminando as mensagens
+          // "Falha ao carregar Buscar: HEAD" no DevTools do browser.
+          // Race window: se lazyWithRetry.attemptChunkRecovery() disparar
+          // antes do reload em 300ms, encontrará a URL no set e skip o probe.
+          const staleUrl = event.data?.url as string | undefined;
+          if (staleUrl) {
+            swConfirmedStaleUrls.add(staleUrl);
+            logger.log('[SW] chunk stale confirmado — URL registrada:', staleUrl);
+          }
+          logger.log(
+            '🔄 [SW] Chunk desatualizado detectado — recarregando para obter chunks atualizados:',
+            event.data.url,
+          );
+          // Throttle: apenas 1 reload por 10s para evitar loops.
+          if (!_staleChunkReloadScheduled) {
+            _staleChunkReloadScheduled = true;
+            // Aguarda 300ms para deixar o React registrar o erro (se houver)
+            // antes do reload. Isso facilita a depuração em logs de Sentry.
+            setTimeout(() => {
+              window.location.reload();
+            }, 300);
+            // Reset do guard após 10s (caso o reload falhe por alguma razão)
+            setTimeout(() => {
+              _staleChunkReloadScheduled = false;
+            }, 10_000);
+          }
+        }
+      });
+
+      logger.log('✅ Service Worker configurado: Network First + stale chunk recovery ativo');
+    } catch (error) {
+      logger.error('❌ Falha ao registrar Service Worker:', error);
+    }
+  } else {
+    logger.warn('⚠️ Service Workers não suportados neste navegador');
+  }
+}
+
+/**
+ * Desregistra Service Worker (útil para debug)
+ */
+export async function unregisterServiceWorker(): Promise<void> {
+  if ('serviceWorker' in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const registration of registrations) {
+      await registration.unregister();
+      logger.log('🗑️ Service Worker desregistrado');
+    }
+  }
+}
+
+/**
+ * Verifica se app está instalado como PWA.
+ *
+ * BUG-SW-REG-1 FIX: window.navigator.standalone é uma propriedade não-standard
+ * exclusiva do iOS Safari — TypeScript (TS2339) e Chrome DevTools a flagam como
+ * inexistente no tipo Navigator. Fix: acesso via type assertion seguro.
+ *
+ * Cobre todos os modos PWA registrados no manifest.json:
+ *  - standalone + minimal-ui (Android Chrome, Edge, Samsung Internet)
+ *  - fullscreen          (algumas versões do Chrome)
+ *  - window-controls-overlat�6�&��RFW6�F������f�vF�"�7F�F���R���26f&�(	B�:6��7F�F&B�6W76F�6��67B����W��'BgV�7F����5t���&���V���6��7B7F�F���UVW'�Тv��F�r��F6��VF��r�F�7�����FS�7F�F���R�r���F6�W2���v��F�r��F6��VF��r�F�7�����FS�֖����V��r���F6�W2���v��F�r��F6��VF��r�F�7�����FS�gV��67&VV�r���F6�W2���v��F�r��F6��VF��r�F�7�����FS�v��F�r�6��G&��2��fW&���r���F6�W3�������26f&���f�vF�"�7F�F���R:�&���V�V�F���7F�F�6���t���67B�V6W7<:&��&�&�VFFR�:6��7F�F&BW6V�FRF�F���f�vF�"E2�6��7B��57F�F���RТ&���V₇v��F�r��f�vF�"2V���v�2&V6�&C�7G&��r�V���v���7F�F���R����&WGW&�7F�F���UVW'�����57F�F���S��Р�򢠢�6�Ɩ6�FW&֗7<:6�&��F�f�6:|;VW2�&gWGW&���V�V�F:|:6���W��'B7��2gV�7F���&WVW7D��F�f�6F���W&֗76��ₓ�&�֗6S���F�f�6F���W&֗76�������b��t��F�f�6F���r��v��F�r������vvW"�v&�~)������F�f�6:|;VW2�:6�7W�'FF2r���&WGW&�vFV�VBs��Р��b���F�f�6F����W&֗76������vw&�FVBr���&WGW&�vw&�FVBs��Р��b���F�f�6F����W&֗76�����vFV�VBr���6��7BW&֗76����v�B��F�f�6F����&WVW7EW&֗76��ₓ��&WGW&�W&֗76��㰢Р�&WGW&���F�f�6F����W&֗76��㰧�
