@@ -113,7 +113,11 @@ export function PreviewSidebar({
           <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Preview {active ? `— ${pageLabel(active)}` : ''}
           </span>
-          <div className="flex items-center gap-0.5">
+          <div
+            role="group"
+            aria-label="Controles de zoom do preview"
+            className="flex items-center gap-0.5"
+          >
             <Button
               variant="ghost"
               size="icon"
@@ -122,16 +126,23 @@ export function PreviewSidebar({
               disabled={!canZoomOut}
               aria-label="Diminuir zoom"
               aria-keyshortcuts="-"
+              aria-controls="magazine-preview-zoom-value"
               title="Diminuir zoom (−)"
             >
-              <ZoomOut className="h-3.5 w-3.5" />
+              <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
             <button
+              id="magazine-preview-zoom-value"
               type="button"
               onClick={resetZoom}
               className="min-w-[46px] rounded px-1 py-0.5 text-[10px] font-mono tabular-nums text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              aria-label="Ajustar à largura"
+              aria-label={`Zoom atual: ${Math.round(zoom * 100)} por cento. Clique para ajustar à largura`}
               aria-keyshortcuts="0"
+              role="spinbutton"
+              aria-valuemin={Math.round(ZOOM_LEVELS[0] * 100)}
+              aria-valuemax={Math.round(ZOOM_LEVELS[ZOOM_LEVELS.length - 1] * 100)}
+              aria-valuenow={Math.round(zoom * 100)}
+              aria-valuetext={zoom === 1 ? 'Ajustar à largura' : `${Math.round(zoom * 100)} por cento`}
               title="Ajustar à largura (0)"
             >
               {zoom === 1 ? 'Fit' : `${Math.round(zoom * 100)}%`}
@@ -144,10 +155,12 @@ export function PreviewSidebar({
               disabled={!canZoomIn}
               aria-label="Aumentar zoom"
               aria-keyshortcuts="+"
+              aria-controls="magazine-preview-zoom-value"
               title="Aumentar zoom (+)"
             >
-              <ZoomIn className="h-3.5 w-3.5" />
+              <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
+
 
             <Button
               variant="ghost"
