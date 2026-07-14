@@ -58,7 +58,6 @@ import { maskCnpj } from '@/utils/masks';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useSellerCartsPage } from '@/pages/products/seller-carts/useSellerCartsPage';
 import { CartSidebar } from '@/pages/products/seller-carts/CartSidebar';
-import { CartHeaderActions } from '@/pages/products/seller-carts/CartHeaderActions';
 import { purgeOrphanCartPrefs } from '@/pages/products/seller-carts/purgeOrphanCartPrefs';
 import {
   CART_VIEW_MODE_DEFAULT,
@@ -210,8 +209,7 @@ export function CartStatusSelect({
             itemCount: isEmpty ? 0 : 1,
           });
           if (!decision.allowed) {
-            const decisionText = decision.message;
-            toast.error(EMPTY_CART_BLOCK_TITLE, { description: decisionText });
+            toast.error(EMPTY_CART_BLOCK_TITLE, { description: decision.message });
             setLiveMessage(
               'Não é possível marcar o carrinho como pronto para orçamento: ele está vazio.',
             );
@@ -542,14 +540,6 @@ function SellerCartsContent() {
     notesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
-  const aggregateTotal = useMemo(
-    () =>
-      s.carts.reduce(
-        (sum, c) => sum + c.items.reduce((a, i) => a + i.product_price * i.quantity, 0),
-        0,
-      ),
-    [s.carts],
-  );
 
   // Stable rotating placeholder per cart — deps reduzida ao ID para evitar
   // recálculo quando outros campos do activeCart mudam (ex: notes, status).
