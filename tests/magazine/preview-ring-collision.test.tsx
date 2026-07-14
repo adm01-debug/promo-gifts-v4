@@ -96,16 +96,23 @@ describe('PreviewSidebar — regressão visual dos rings de destaque', () => {
   const magazine = buildMagazine(8);
   const pages = paginateMagazine(magazine);
 
-  // Escolhe um item que esteja na página 0 e outro fora dela.
-  const itemInPage0 = pages[0].items[0]!;
-  const itemOutsidePage0 =
-    magazine.items.find((it) => findPageIdxOfItem(pages, it.id) > 0) ?? magazine.items.at(-1)!;
+  // Escolhe uma página ATIVA que contenha itens (a capa costuma ser vazia),
+  // um item dessa página e outro fora dela.
+  const activePageIdx = pages.findIndex((p) => p.items.length > 0);
+  expect(activePageIdx).toBeGreaterThanOrEqual(0);
+  const itemInActive = pages[activePageIdx]!.items[0]!;
+  const itemOutsideActive =
+    magazine.items.find((it) => findPageIdxOfItem(pages, it.id) !== activePageIdx) ??
+    magazine.items.at(-1)!;
 
-  const activeIndices = [0, Math.floor(pages.length / 2), pages.length - 1];
+  const otherPageWithItems = pages.findIndex((p, i) => i !== activePageIdx && p.items.length > 0);
+  const activeIndices = Array.from(
+    new Set([activePageIdx, Math.max(0, otherPageWithItems), pages.length - 1]),
+  );
   const highlightCases: Array<{ label: string; id: string | null }> = [
     { label: 'sem highlight', id: null },
-    { label: 'highlight na página ativa', id: itemInPage0.id },
-    { label: 'highlight fora da página ativa', id: itemOutsidePage0.id },
+    { label: 'highlight na página ativa', id: itemInActive.id },
+    { label: 'highlight fora da página ativa', id: itemOutsideActive.id },
   ];
 
   for (const activeIdx of activeIndices) {
