@@ -116,27 +116,51 @@ Suíte executada por mutação:
 
 **Mutation score automatizado: 5/5 = 100%**.
 
-### 5.1 M5 (mudança responsiva) — gap conhecido documentado
+### 5.1 M5 (mudança responsiva) — gap FECHADO via Playwright pixel-perfect
 
 M5 originalmente proposta: adicionar variant responsiva
 (`md:ring-amber-500`) na classe base, o que colidiria visualmente com
 `ring-primary` em breakpoints ≥ md.
 
-**Motivo do gap:** jsdom não pinta CSS de media queries. O DOM emitido pelo
-Tailwind é IDÊNTICO em todos os breakpoints — apenas o navegador escolhe
-quais regras aplicar via CSS. Nossos helpers (`ringsOf` / `focusRingsOf`)
-propositalmente ignoram variants Tailwind não-`focus-visible` porque, no
-ambiente unit, eles não estão "pintados". Detectar M5 exigiria:
+**Por que jsdom não bastava:** jsdom não pinta CSS de media queries. O DOM
+emitido pelo Tailwind é IDÊNTICO em todos os breakpoints — apenas o
+navegador escolhe quais regras aplicar. Helpers (`ringsOf` / `focusRingsOf`)
+ignoram variants Tailwind não-`focus-visible` porque no ambiente unit eles
+não estão "pintados".
 
-1. Trocar o teste para Playwright + `toHaveScreenshot` por breakpoint
-   (fora do escopo desta auditoria — ver §7).
-2. OU introduzir um "responsive rings" detector que enumere todos os
-   variants `md:`, `sm:`, `xl:` no className. Isso capturaria a classe
-   emitida, mas não substitui o valor pintado — poderia gerar falsos
-   positivos em cenários legítimos.
+**Solução entregue:** spec Playwright `e2e/ui/magazine-ring-visual.spec.ts`
++ harness `src/pages/dev/MagazineRingHarness.tsx` (rota
+`/__test/magazine-ring`). Matriz **4 breakpoints × 3 estados = 12
+baselines PNG** rodadas em Chromium real:
 
-**Recomendação:** deixar M5 como cenário para a extensão futura de
-regressão visual pixel-perfect via Playwright (`toHaveScreenshot`).
+| Breakpoint | Estados validados |
+|---|---|
+| 375 (mobile) | default · active+highlighted · focus-visible (Tab real) |
+| 640 (sm) | default · active+highlighted · focus-visible (Tab real) |
+| 768 (md) | default · active+highlighted · focus-visible (Tab real) |
+| 1280 (xl) | default · active+highlighted · focus-visible (Tab real) |
+
+Pontos-chave da estratégia:
+
+- **Focus-visible autêntico**: o spec dispara `page.keyboard.press('Tab')`
+  até chegar ao thumb-alvo — `element.focus()` programático não ativa
+  `:focus-visible` no Chromium. O spec ainda assegura via
+  `el.matches(':focus-visible')` antes do snapshot.
+- **Determinismo**: harness sem `MagazinePageRenderer` (só o wrapper do
+  botão com o `cn()` idêntico ao `PreviewSidebar`), animações/transições
+  zeradas via `addStyleTag`, `caret-color: transparent`.
+- **Contrato duplicado com anotação**: comentário `=== MESMO cn() do
+  PreviewSidebar.tsx (mantido em sincronia manual) ===` sinaliza o único
+  ponto que exige update manual se o className de produção mudar. Uma
+  regressão M5-like (`md:ring-amber-500` na base) causa diff pixel
+  imediato nos snapshots ≥ md.
+- **CI**: workflow `.github/workflows/e2e-update-magazine-ring-snapshots.yml`
+  atualiza baselines quando spec/harness mudam. Scripts npm:
+  `e2e:magazine-ring` (assert) e `e2e:magazine-ring:update`.
+
+**Baselines**: geradas em CI Linux na primeira execução do workflow
+(dispatch manual ou push em spec/harness) — evita drift de font-hinting
+entre máquinas locais e CI.
 
 ---
 
