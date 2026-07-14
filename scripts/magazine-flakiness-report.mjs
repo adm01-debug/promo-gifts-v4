@@ -158,7 +158,7 @@ const suites = [...bySuite.values()].sort(
 // Persistência — JSON bruto.
 const jsonReport = {
   runs: RUNS,
-  pattern: PATTERN,
+  pattern: PATTERNS,
   generatedAt: new Date().toISOString(),
   runFailures,
   totals: {
