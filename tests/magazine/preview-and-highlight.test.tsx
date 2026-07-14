@@ -102,7 +102,7 @@ describe('PreviewSidebar — zoom/fit', () => {
 
   it('inicia em Fit (100% de largura, botão exibe "Fit")', () => {
     const { container } = renderSidebar();
-    expect(screen.getByRole('button', { name: /ajustar à largura/i })).toHaveTextContent('Fit');
+    expect(screen.getByRole('spinbutton', { name: /zoom do preview/i })).toHaveTextContent('Fit');
     expect(getWrapper(container).style.width).toBe('100%');
   });
 
@@ -116,7 +116,7 @@ describe('PreviewSidebar — zoom/fit', () => {
     expect(zoomOut).toBeDisabled();
     await user.click(zoomIn);
     expect(getWrapper(container).style.width).toBe('150%');
-    expect(screen.getByRole('button', { name: /ajustar à largura/i })).toHaveTextContent('150%');
+    expect(screen.getByRole('spinbutton', { name: /zoom do preview/i })).toHaveTextContent('150%');
     expect(zoomOut).not.toBeDisabled();
 
     await user.click(zoomIn);
@@ -136,9 +136,9 @@ describe('PreviewSidebar — zoom/fit', () => {
     await user.click(zoomIn);
     expect(getWrapper(container).style.width).toBe('200%');
 
-    await user.click(screen.getByRole('button', { name: /ajustar à largura/i }));
+    await user.click(screen.getByRole('spinbutton', { name: /zoom do preview/i }));
     expect(getWrapper(container).style.width).toBe('100%');
-    expect(screen.getByRole('button', { name: /ajustar à largura/i })).toHaveTextContent('Fit');
+    expect(screen.getByRole('spinbutton', { name: /zoom do preview/i })).toHaveTextContent('Fit');
   });
 
   it('marca a miniatura da página que contém o item destacado com ring âmbar', () => {

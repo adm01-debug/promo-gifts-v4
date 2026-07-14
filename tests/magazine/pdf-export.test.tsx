@@ -207,7 +207,7 @@ describe('MagazinePrintPage — export renderiza todas as páginas e ignora esta
     // Nenhum controle de zoom ou "Ver todas" na rota de impressão.
     expect(screen.queryByRole('button', { name: /aumentar zoom/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /diminuir zoom/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /ajustar à largura/i })).toBeNull();
+    expect(screen.queryByRole('spinbutton', { name: /zoom do preview/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /abrir todas as páginas em nova aba/i })).toBeNull();
     // Sem ring âmbar (feature de highlight só existe no preview do editor).
     expect(document.querySelector('[class*="ring-amber-500"]')).toBeNull();
