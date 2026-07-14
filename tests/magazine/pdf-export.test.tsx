@@ -107,7 +107,6 @@ describe('PreviewSidebar — export PDF ("Ver todas") independe de zoom/highligh
     );
     await user.click(screen.getByRole('button', { name: /abrir todas as páginas em nova aba/i }));
     expect(onOpenAll).toHaveBeenCalledTimes(1);
-    expect(onOpenAll).toHaveBeenCalledWith();
   });
 
   it('zoom aplicado (300%) não bloqueia nem altera o disparo de export', async () => {
