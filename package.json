@@ -115,6 +115,7 @@
     "check:security-definer-acl": "node scripts/check-security-definer-acl.mjs",
     "draft:dry-run": "node scripts/dry-run-migration-draft.mjs",
     "test:security-definer-acl": "vitest run tests/security/security-definer-acl.test.ts",
+    "test:restore-seller-cart-rpc": "vitest run tests/security/restore-seller-cart-rpc.test.ts",
     "check:client-structured-logging": "node scripts/check-client-structured-logging.mjs",
     "check:edge-cors": "node scripts/check-edge-cors-headers.mjs",
     "check:fab-a11y": "node scripts/check-fab-accessibility.mjs",

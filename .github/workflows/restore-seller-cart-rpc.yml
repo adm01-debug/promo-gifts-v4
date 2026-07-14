@@ -1,0 +1,90 @@
+name: E2E · restore_seller_cart RPC (multi-env)
+
+# Valida que a função public.restore_seller_cart(jsonb) está publicada
+# no schema cache do banco alvo em cada ambiente (staging + canônico).
+#
+# O teste NÃO depende de estar tudo verde — o objetivo é pegar o caso
+# "migração aplicada só no Lovable Cloud interno, canônico fora de sync"
+# ANTES do usuário reclamar do toast "Não foi possível restaurar o carrinho".
+#
+# Fonte da verdade: tests/security/restore-seller-cart-rpc.test.ts
+# Cron: diário 09:15 UTC (06:15 BRT). Manual via workflow_dispatch.
+
+on:
+  schedule:
+    - cron: "15 9 * * *"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Ambiente(s) a rodar"
+        type: choice
+        options: [all, staging, production]
+        default: all
+  push:
+    branches: [main, master]
+    paths:
+      - "supabase/migrations/**restore_seller_cart**"
+      - "tests/security/restore-seller-cart-rpc.test.ts"
+      - ".github/workflows/restore-seller-cart-rpc.yml"
+
+concurrency:
+  group: restore-seller-cart-rpc-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rpc-availability:
+    name: RPC availability · ${{ matrix.env_name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - env_name: staging
+            environment: staging
+          - env_name: production
+            environment: production
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.environment == 'all' ||
+      github.event.inputs.environment == matrix.env_name
+    environment: ${{ matrix.environment }}
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      # Opcional — habilita o bloco `describe.skipIf` de E2E real.
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Check credentials
+        id: creds
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || { [ -z "$SUPABASE_ANON_KEY" ] && [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; }; then
+            echo "has_creds=false" >> "$GITHUB_OUTPUT"
+            echo "⚠️  Secrets ausentes para ${{ matrix.env_name }} — pulando." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "has_creds=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.has_creds == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.creds.outputs.has_creds == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+        if: steps.creds.outputs.has_creds == 'true'
+
+      - name: Run restore_seller_cart RPC suite
+        if: steps.creds.outputs.has_creds == 'true'
+        run: npm run test:restore-seller-cart-rpc
+
+      - name: Job summary
+        if: always() && steps.creds.outputs.has_creds == 'true'
+        run: |
+          echo "## restore_seller_cart RPC — ${{ matrix.env_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL alvo: \`${VITE_SUPABASE_URL}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- E2E completo: ${SUPABASE_SERVICE_ROLE_KEY:+habilitado}${SUPABASE_SERVICE_ROLE_KEY:-desabilitado (sem service_role)}" >> "$GITHUB_STEP_SUMMARY"
