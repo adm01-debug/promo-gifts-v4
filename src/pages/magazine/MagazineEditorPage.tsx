@@ -379,6 +379,8 @@ export default function MagazineEditorPage() {
                 magazine={magazine}
                 onReorder={editor.reorderItems}
                 onRemove={editor.removeItem}
+                onItemHover={setHighlightedItemId}
+                highlightedItemId={highlightedItemId}
               />
             )}
 
