@@ -591,7 +591,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
       }
 
     },
-    [restoreCartWithItemsMutation],
+    [restoreCartWithItemsMutation, reloadCarts],
   );
 
   const ctxValue = useMemo(
