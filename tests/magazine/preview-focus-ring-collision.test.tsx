@@ -149,20 +149,18 @@ describe('PreviewSidebar — colisão sob :focus-visible (teclado)', () => {
       />,
     );
 
-    const highlightedIdx = pages.findIndex((p) =>
-      p.items.some((x) => x.id === targetItem!.id),
-    );
-    const btn = thumbsFrom(container)[highlightedIdx];
-
-    // sanity: no base, é âmbar
-    const base = ringsOf(btn);
-    expect(base.amber).toBe(true);
-    expect(base.primary).toBe(false);
-
-    // sob focus-visible: primary vence, âmbar nunca aparece
-    const fv = focusRingsOf(btn);
-    expect(fv.primary).toBe(true);
-    expect(fv.amber).toBe(false);
+    // pode haver múltiplos thumbs no mesmo índice (sidebar + drawer);
+    // basta que TODOS respeitem o invariante.
+    const ambers = thumbsFrom(container).filter((b) => ringsOf(b).amber);
+    expect(ambers.length).toBeGreaterThan(0);
+    for (const btn of ambers) {
+      const base = ringsOf(btn);
+      expect(base.amber).toBe(true);
+      expect(base.primary).toBe(false);
+      const fv = focusRingsOf(btn);
+      expect(fv.primary).toBe(true);
+      expect(fv.amber).toBe(false);
+    }
   });
 
   it('varredura cartesiana: nenhum estado produz focus-visible:ring-amber-500', () => {
