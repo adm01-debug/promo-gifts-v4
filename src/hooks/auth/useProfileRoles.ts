@@ -1,20 +1,23 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
-import { authService } from '@/services/authService';
 import { type AppRole, type Profile } from '@/contexts/AuthContext';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import type { PostgrestError } from '@supabase/supabase-js';
 
-// BUG-AUTH-STALL FIX (2026-06-28): limites de tempo para a hidratação de
-// perfil+roles. O timeout (5s) dispara ANTES do watchdog de 8s do AuthContext,
-// liberando a UI de forma graciosa (sem o toast de erro assustador). Quando a
-// rede normaliza, um retry em background repopula perfil/roles silenciosamente.
-const HYDRATION_TIMEOUT_MS = 5000;
+// AUTH-HYDRATION-FIX v2 (2026-07-14):
+//  1. Timeout elevado 5s → 7s (watchdog dispara em 8s, mantendo 1s de margem)
+//  2. Retry delay reduzido 800ms → 500ms para recuperação mais rápida
+//  3. RPC get_profile_and_roles: 1 round-trip em vez de 2 (profiles + user_roles)
+//  4. hydration_timeout rebaixado de log.error → log.warn (condição esperada)
+//  5. Promise órfã eliminada: verificação antes de criar a Promise de dedup
+//  6. getSupabaseClient() chamado ANTES do withTimeout (fora do budget do timer)
+const HYDRATION_TIMEOUT_MS = 7_000;
 const HYDRATION_MAX_RETRIES = 2;
-const HYDRATION_RETRY_DELAY_MS = 800;
+const HYDRATION_RETRY_DELAY_MS = 500;
 
 /**
- * Resolve com a Promise original, ou rejeita após `ms` ms. Limpa o próprio timer
- * ao assentar para não vazar timeouts nem disparar após a conclusão.
+ * Resolve com a Promise original, ou rejeita após `ms` ms.
+ * Limpa o timer ao assentar para não vazar.
  */
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -22,16 +25,16 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
       reject(new Error(`hydration_timeout:${label}:${ms}ms`));
     }, ms);
     promise.then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
-      },
-      (err) => {
-        clearTimeout(timer);
-        reject(err);
-      },
+      (value) => { clearTimeout(timer); resolve(value); },
+      (err)   => { clearTimeout(timer); reject(err); },
     );
   });
+}
+
+// Forma do JSON retornado pela RPC pública get_profile_and_roles
+interface RPCProfileAndRoles {
+  profile: Profile | null;
+  roles: string[] | null;
 }
 
 export function useProfileRoles() {
@@ -39,116 +42,111 @@ export function useProfileRoles() {
   const [userRoles, setUserRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [rolesLoaded, setRolesLoaded] = useState(false);
+
+  // fetchPromiseRef: Promise de dedup — nula quando nenhuma busca está em andamento.
   const fetchPromiseRef = useRef<Promise<void> | null>(null);
-  // Generation token: bumped on every fresh fetch and on clearProfileRoles, so a fetch
-  // aborted by sign-out — or a stale one racing a subsequent sign-in — neither repopulates
-  // nor clobbers the current login's state. Replaces a boolean cancel flag that left
-  // rolesLoaded stuck false on a quick sign-out → sign-in (admin pages stuck loading).
+  // fetchGenerationRef: contador de geração — invalida resultados de buscas antigas
+  // que ficaram em voo após signOut ou novo login concorrente.
   const fetchGenerationRef = useRef(0);
-  // BUG-AUTH-STALL FIX (2026-06-28): timer do retry em background, contador de
-  // tentativas e ref estável apontando para a própria fetchUserData (evita ciclo
-  // de dependência no useCallback ao reagendar a si mesma).
+  // retryTimerRef / fetchAttemptsRef: gerenciam retries em background após timeout.
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchAttemptsRef = useRef(0);
+  // fetchUserDataRef: ref estável para auto-invocação do retry sem ciclo de dep.
   const fetchUserDataRef = useRef<((userId: string) => Promise<void>) | null>(null);
 
   const fetchUserData = useCallback(async (userId: string) => {
-    // BUG-FIX: Previne race condition setando a Promise síncronamente
-    let resolvePromise: (value: PromiseLike<void> | void) => void = () => {};
-    const fetchPromise = new Promise<void>((resolve) => {
-      resolvePromise = resolve;
-    });
-
+    // BUG-FIX v2: verifica ANTES de criar a Promise para evitar Promise órfã.
+    // Na versão anterior, a Promise era criada antes do check; quando o caminho
+    // de dedup era tomado (return), resolvePromise() nunca era chamado e a
+    // Promise ficava pendente indefinidamente (memory leak sutil).
     if (fetchPromiseRef.current) {
       await fetchPromiseRef.current;
       return;
     }
 
-    fetchPromiseRef.current = fetchPromise;
+    // Cria a Promise de dedup SINCRONAMENTE antes de qualquer await.
+    // Isso garante que chamadas concorrentes que chegarem enquanto doFetch() roda
+    // encontrarão fetchPromiseRef.current !== null e tomarão o caminho de dedup.
+    let resolveDedup!: () => void;
+    const dedupPromise = new Promise<void>((resolve) => { resolveDedup = resolve; });
+    fetchPromiseRef.current = dedupPromise;
     const myGeneration = ++fetchGenerationRef.current;
 
     const log = createClientLogger('useProfileRoles.fetchUserData');
+
     const doFetch = async () => {
       log.info('start', { userId });
       let succeeded = false;
       try {
+        // BUG-FIX v2: inicializa o cliente ANTES do withTimeout para que a
+        // inicialização lazy do singleton não consuma o budget do timer.
+        // authService.queryRoles() chamava getSupabaseClient() DENTRO do timer,
+        // podendo desperdiçar até ~200ms do budget em cold starts.
         const supabase = await getSupabaseClient();
 
-        // Fetch profile and roles in parallel.
-        // BUG-AUTH-STALL FIX (2026-06-28): com timeout limitado (5s) para nunca
-        // travar a hidratação atrás de um round-trip lento. O timeout cai no catch
-        // abaixo, que (no finally) agenda um retry em background.
-        const [profileResult, rolesResult] = await withTimeout(
-          Promise.all([
-            supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle(),
-            authService.queryRoles(userId),
-          ]),
+        // FIX PRINCIPAL: RPC get_profile_and_roles combina o SELECT em profiles
+        // e o SELECT em user_roles em um único round-trip ao Supabase.
+        // Antes: Promise.all([profileFetch, rolesFetch]) = 2 round-trips paralelos
+        //        (cada um sujeito a latência de rede e overhead de RLS separado).
+        // Agora: 1 RPC = ~50% menos latência + execução inteiramente server-side.
+        const { data, error } = await withTimeout(
+          // Usamos cast porque os tipos gerados podem ainda não incluir a nova
+          // função; a migration já foi aplicada no Supabase.
+          (supabase.rpc as (
+            fn: string,
+            args: Record<string, unknown>,
+          ) => Promise<{ data: RPCProfileAndRoles | null; error: PostgrestError | null }>)(
+            'get_profile_and_roles',
+            { _user_id: userId },
+          ),
           HYDRATION_TIMEOUT_MS,
           'profile+roles',
         );
 
-        // Superseded while in flight (signOut → clearProfileRoles, or a newer fetch for a
-        // fresh login): do NOT repopulate the profile/roles. A newer generation owns the
-        // state from here on.
+        // Guard de geração: descarta resultado de busca supersedida
+        // (signOut → clearProfileRoles, ou novo login concorrente).
         if (fetchGenerationRef.current !== myGeneration) return;
 
-        if (profileResult.error) {
-          log.error('profile_error', { error: profileResult.error });
-          // BUG-FIX: Se houver erro de RLS (42501), exibe toast claro
-          if (profileResult.error.code === '42501') {
+        if (error) {
+          log.error('rpc_error', { error });
+          if (error.code === '42501') {
             const { toast } = await import('sonner');
             toast.error('Erro de permissão ao carregar perfil', {
-              description: 'O sistema não conseguiu ler seus dados básicos. Contate o suporte.',
+              description: 'Não foi possível ler seus dados. Contate o suporte.',
             });
           }
+          // Não seta succeeded → retry será agendado no finally
         } else {
-          setProfile(profileResult.data as Profile | null);
+          setProfile(data?.profile ?? null);
+          setUserRoles((data?.roles ?? []) as AppRole[]);
+          log.info('done', { userId, roleCount: data?.roles?.length ?? 0 });
+          succeeded = true;
+          fetchAttemptsRef.current = 0;
         }
-
-        if (rolesResult.error) {
-          log.error('roles_error', { error: rolesResult.error });
-          setUserRoles([]);
-          // BUG-FIX: Se houver erro de RLS (42501), exibe toast claro
-          if (rolesResult.error.code === '42501') {
-            const { toast } = await import('sonner');
-            toast.error('Erro de permissão ao carregar permissões', {
-              description: 'O sistema não conseguiu verificar seus acessos. Contate o suporte.',
-            });
-          }
-        } else {
-          const mapped = (rolesResult.data ?? []).map(
-            (row: { role: string }) => row.role,
-          ) as AppRole[];
-          setUserRoles(mapped);
-        }
-
-        log.info('done', {
-          userId,
-          roleCount: rolesResult.data?.length ?? 0,
-        });
-
-        // Round-trip concluído dentro do tempo: dados (ou erro de RLS) chegaram.
-        // Marca sucesso para NÃO reagendar retry — retry só faz sentido para
-        // timeout/falha de rede, não para 42501 (reexecutar não resolveria).
-        succeeded = true;
-        fetchAttemptsRef.current = 0;
       } catch (error) {
-        log.error('exception', { error });
+        // BUG-FIX v2: hydration_timeout é condição ESPERADA (rede lenta / cold
+        // start do Supabase), não um erro crítico. Rebaixa log.error → log.warn
+        // para não poluir o dashboard de erros com falsos positivos.
+        // Erros inesperados (não-timeout) continuam sendo logados como error.
+        const isTimeout =
+          error instanceof Error &&
+          error.message.startsWith('hydration_timeout:');
+        if (isTimeout) {
+          log.warn('hydration_timeout', { userId, error });
+        } else {
+          log.error('exception', { userId, error });
+        }
       } finally {
-        // Only the current generation owns the shared state/handle. A superseded fetch must
-        // not null the new fetch's promise handle nor flip loading flags — doing so is what
-        // left the white-screen / stuck-loading bug on a quick sign-out → sign-in. The
-        // current generation ALWAYS disables loading so a failed DB call can't hang the UI.
+        // A geração atual é a única que pode modificar o estado compartilhado.
+        // Buscas supersedidas não devem zerar o handle nem flipar flags de loading.
         if (fetchGenerationRef.current === myGeneration) {
           fetchPromiseRef.current = null;
           setIsLoading(false);
           setRolesLoaded(true);
 
-          // BUG-AUTH-STALL FIX (2026-06-28): se a hidratação falhou (timeout/rede)
-          // e ainda há tentativas, reagenda um retry em background. A UI já foi
-          // liberada acima (loading=false / rolesLoaded=true); o retry repopula
-          // perfil/roles silenciosamente quando a rede voltar. O generation guard
-          // descarta o resultado se um signOut/login concorrente ocorrer no meio.
+          // Agenda retry em background se a busca falhou (timeout / rede) e
+          // ainda há tentativas disponíveis. A UI já foi liberada acima;
+          // o retry repopula perfil/roles silenciosamente quando a rede voltar.
           if (!succeeded && fetchAttemptsRef.current < HYDRATION_MAX_RETRIES) {
             fetchAttemptsRef.current += 1;
             if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
@@ -160,22 +158,23 @@ export function useProfileRoles() {
             }, HYDRATION_RETRY_DELAY_MS);
           }
         }
-        resolvePromise();
+        // Sempre resolve a Promise de dedup (mesmo em buscas supersedidas)
+        // para desbloquear quem estiver aguardando no caminho de dedup.
+        resolveDedup();
       }
     };
 
     void doFetch();
-    await fetchPromise;
+    // Aguarda a Promise local (não fetchPromiseRef.current, que pode ser
+    // nulificada antes da resolução no finally do doFetch).
+    await dedupPromise;
   }, []);
 
   const clearProfileRoles = useCallback(() => {
-    // Invalidate any in-flight fetch and release the dedup handle so a later sign-in starts
-    // a fresh fetch instead of awaiting (and piggy-backing on) the aborted one.
+    // Invalida qualquer busca em voo e libera o handle de dedup para que um
+    // login posterior inicie uma busca fresca em vez de piggyback na abortada.
     fetchGenerationRef.current++;
     fetchPromiseRef.current = null;
-    // BUG-AUTH-STALL FIX (2026-06-28): cancela qualquer retry de hidratação
-    // pendente e zera o contador de tentativas (o bump de generation acima já
-    // invalida resultados em voo).
     if (retryTimerRef.current) {
       clearTimeout(retryTimerRef.current);
       retryTimerRef.current = null;
@@ -187,9 +186,8 @@ export function useProfileRoles() {
     setRolesLoaded(false);
   }, []);
 
-  // BUG-AUTH-STALL FIX (2026-06-28): mantém uma ref estável apontando para a
-  // fetchUserData mais recente, para o retry agendado poder se reinvocar sem
-  // criar um ciclo de dependência no useCallback.
+  // Mantém ref estável apontando para a fetchUserData mais recente
+  // para que o retry agendado possa se reinvocar sem ciclo de dependência.
   useEffect(() => {
     fetchUserDataRef.current = fetchUserData;
   }, [fetchUserData]);
@@ -212,7 +210,7 @@ export function useProfileRoles() {
     isLoading,
     setIsLoading,
     rolesLoaded,
-    setRolesLoaded, // BUG-WATCHDOG-ROLES FIX (2026-06-23): exposto para o watchdog do AuthContext poder forçar rolesLoaded=true em stall
+    setRolesLoaded,
     fetchUserData,
     clearProfileRoles,
     fetchPromiseRef,

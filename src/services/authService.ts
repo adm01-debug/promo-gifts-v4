@@ -1,6 +1,9 @@
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { logger } from '@/lib/logger';
+import type { PostgrestError } from '@supabase/supabase-js';
 
+// FIX (2026-07-14): queryRoles mantido por compatibilidade com outros callers,
+// mas useProfileRoles agora usa get_profile_and_roles RPC diretamente.
 export const authService = {
   async signIn(email: string, password: string) {
     const supabase = await getSupabaseClient();
@@ -40,9 +43,33 @@ export const authService = {
     };
   },
 
+  /**
+   * @deprecated Prefira get_profile_and_roles RPC diretamente.
+   * Mantido para callers legados fora do useProfileRoles.
+   */
   async queryRoles(userId: string) {
     const supabase = await getSupabaseClient();
     return supabase.from('user_roles').select('role').eq('user_id', userId);
+  },
+
+  /**
+   * RPC combinada: retorna profile + roles em um único round-trip.
+   * Equivalente ao que useProfileRoles agora usa internamente.
+   */
+  async getProfileAndRoles(
+    userId: string,
+  ): Promise<{
+    data: { profile: Record<string, unknown> | null; roles: string[] | null } | null;
+    error: PostgrestError | null;
+  }> {
+    const supabase = await getSupabaseClient();
+    return (supabase.rpc as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: { profile: Record<string, unknown> | null; roles: string[] | null } | null; error: PostgrestError | null }>)(
+      'get_profile_and_roles',
+      { _user_id: userId },
+    );
   },
 
   async fetchProfile(userId: string) {
