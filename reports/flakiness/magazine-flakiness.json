@@ -1,0 +1,115 @@
+{
+  "runs": 2,
+  "pattern": "tests/magazine/",
+  "generatedAt": "2026-07-14T18:10:33.266Z",
+  "runFailures": [],
+  "totals": {
+    "tests": 82,
+    "flaky": 0,
+    "failAll": 0,
+    "stable": 82
+  },
+  "suites": [
+    {
+      "file": "/dev-server/tests/magazine/helpers.test.ts",
+      "total": 20,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 20,
+      "passes": 40,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/layout-step-rings.test.tsx",
+      "total": 4,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 4,
+      "passes": 8,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/pdf-export.test.tsx",
+      "total": 7,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 7,
+      "passes": 14,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/preview-and-highlight.test.tsx",
+      "total": 6,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 6,
+      "passes": 12,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/preview-focus-ring-collision.test.tsx",
+      "total": 5,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 5,
+      "passes": 10,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/preview-ring-breakpoints.test.tsx",
+      "total": 4,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 4,
+      "passes": 8,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/preview-ring-collision.test.tsx",
+      "total": 12,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 12,
+      "passes": 24,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/preview-ring-edge-cases.test.tsx",
+      "total": 9,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 9,
+      "passes": 18,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/preview-ring-fuzz.test.tsx",
+      "total": 3,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 3,
+      "passes": 6,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/preview-zoom-a11y.test.tsx",
+      "total": 7,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 7,
+      "passes": 14,
+      "fails": 0
+    },
+    {
+      "file": "/dev-server/tests/magazine/preview-zoom-shortcuts.test.tsx",
+      "total": 5,
+      "flaky": 0,
+      "failAll": 0,
+      "stable": 5,
+      "passes": 10,
+      "fails": 0
+    }
+  ],
+  "flaky": [],
+  "failAll": []
+}
