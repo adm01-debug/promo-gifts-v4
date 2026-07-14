@@ -34,6 +34,7 @@ export interface MappedRestoreError {
     | 'string_too_long'
     | 'cart_limit'
     | 'unauthenticated'
+    | 'rpc_missing'
     | 'network'
     | 'timeout'
     | 'server'
