@@ -8,7 +8,7 @@
  *  - Botão "Ver todas em nova aba"
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Eye, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -60,11 +60,51 @@ export function PreviewSidebar({
   const canZoomIn = zoom < ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
   const canZoomOut = zoom > ZOOM_LEVELS[0];
 
-  const stepZoom = (dir: 1 | -1) => {
-    const idx = ZOOM_LEVELS.indexOf(zoom);
-    const next = ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length - 1, Math.max(0, idx + dir))];
-    setZoom(next);
-  };
+  const stepZoom = useCallback((dir: 1 | -1) => {
+    setZoom((cur) => {
+      const idx = ZOOM_LEVELS.indexOf(cur);
+      return ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length - 1, Math.max(0, idx + dir))];
+    });
+  }, []);
+
+  const resetZoom = useCallback(() => setZoom(1), []);
+
+  /**
+   * Atalhos globais de zoom (`+`/`=`, `-`, `0`).
+   *
+   * - Ignoramos quando o foco está em campo editável (input/textarea/select/
+   *   contentEditable) — assim não sequestramos digitação em outras partes do
+   *   editor (título, form fields, etc.).
+   * - Ignoramos com modificadores (Ctrl/Cmd/Alt) para não colidir com o zoom
+   *   nativo do navegador.
+   * - `preventDefault` só quando de fato tratamos a tecla, preservando Tab e
+   *   demais navegação por teclado do editor.
+   */
+  useEffect(() => {
+    const isEditable = (el: EventTarget | null): boolean => {
+      if (!(el instanceof HTMLElement)) return false;
+      if (el.isContentEditable) return true;
+      const tag = el.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (isEditable(e.target)) return;
+      if (e.key === '+' || e.key === '=') {
+        e.preventDefault();
+        stepZoom(1);
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        stepZoom(-1);
+      } else if (e.key === '0') {
+        e.preventDefault();
+        resetZoom();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [stepZoom, resetZoom]);
+
 
   return (
     <Card className={cn(variant === 'sidebar' && 'sticky top-4', variant === 'drawer' && 'border-0 shadow-none')}>
@@ -81,15 +121,18 @@ export function PreviewSidebar({
               onClick={() => stepZoom(-1)}
               disabled={!canZoomOut}
               aria-label="Diminuir zoom"
+              aria-keyshortcuts="-"
+              title="Diminuir zoom (−)"
             >
               <ZoomOut className="h-3.5 w-3.5" />
             </Button>
             <button
               type="button"
-              onClick={() => setZoom(1)}
+              onClick={resetZoom}
               className="min-w-[46px] rounded px-1 py-0.5 text-[10px] font-mono tabular-nums text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               aria-label="Ajustar à largura"
-              title="Ajustar à largura (Fit)"
+              aria-keyshortcuts="0"
+              title="Ajustar à largura (0)"
             >
               {zoom === 1 ? 'Fit' : `${Math.round(zoom * 100)}%`}
             </button>
@@ -100,9 +143,12 @@ export function PreviewSidebar({
               onClick={() => stepZoom(1)}
               disabled={!canZoomIn}
               aria-label="Aumentar zoom"
+              aria-keyshortcuts="+"
+              title="Aumentar zoom (+)"
             >
               <ZoomIn className="h-3.5 w-3.5" />
             </Button>
+
             <Button
               variant="ghost"
               size="sm"
@@ -149,7 +195,7 @@ export function PreviewSidebar({
               {zoom !== 1 && (
                 <button
                   type="button"
-                  onClick={() => setZoom(1)}
+                  onClick={resetZoom}
                   className="inline-flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted"
                 >
                   <Maximize2 className="h-3 w-3" /> Fit
