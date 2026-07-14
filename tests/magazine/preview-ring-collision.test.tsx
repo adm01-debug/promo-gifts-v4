@@ -74,25 +74,8 @@ function buildMagazine(count = 8): Magazine {
   };
 }
 
-/**
- * Retorna o conjunto de classes de ring aplicadas na base do elemento.
- * Ignora variantes prefixadas (`hover:`, `focus-visible:`, `active:`, etc.)
- * porque não estão pintadas simultaneamente ao estado observado.
- */
-function ringsOf(btn: HTMLElement): { primary: boolean; amber: boolean } {
-  const tokens = btn.className.split(/\s+/);
-  const base = tokens.filter((t) => !t.includes(':'));
-  return {
-    primary: base.includes('ring-primary'),
-    amber: base.includes('ring-amber-500'),
-  };
-}
 
-function thumbsFrom(container: HTMLElement): HTMLButtonElement[] {
-  return Array.from(
-    container.querySelectorAll<HTMLButtonElement>('button[aria-label^="Ir para página"]'),
-  );
-}
+
 
 function findPageIdxOfItem(pages: MagazinePage[], itemId: string): number {
   return pages.findIndex((p) => p.items.some((it) => it.id === itemId));
