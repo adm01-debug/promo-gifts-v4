@@ -62,6 +62,8 @@ export default function MagazineEditorPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState<StepId>('identity');
   const [previewIdx, setPreviewIdx] = useState(0);
+  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
+  const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
   const editor = useMagazineEditor(id);
 
   // `magazine` é null enquanto carrega e quando o id não existe.
