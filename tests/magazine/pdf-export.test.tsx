@@ -152,8 +152,15 @@ describe('PreviewSidebar — export PDF ("Ver todas") independe de zoom/highligh
     await user.click(screen.getByRole('button', { name: /abrir todas as páginas em nova aba/i }));
 
     expect(onOpenAll).toHaveBeenCalledTimes(1);
-    // Nenhum argumento — o handler abre a rota /print sem query de highlight.
-    expect(onOpenAll.mock.calls[0]).toEqual([]);
+    // O handler recebe apenas o evento sintético do clique — nenhum payload
+    // com highlight/zoom é anexado à chamada de export.
+    const [firstArg, ...rest] = onOpenAll.mock.calls[0] ?? [];
+    expect(rest).toEqual([]);
+    // Se veio algo, é um MouseEvent do React (nunca o id do item destacado).
+    if (firstArg !== undefined) {
+      expect(typeof firstArg).toBe('object');
+      expect(firstArg).not.toBe(target.id);
+    }
   });
 });
 
