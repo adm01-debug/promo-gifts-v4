@@ -121,7 +121,10 @@ describe('PreviewSidebar — colisão sob :focus-visible (teclado)', () => {
     const { container } = render(
       <Harness magazine={magazine} activeIdx={activeIdx} highlightedItemId={null} />,
     );
-    const active = thumbsFrom(container)[activeIdx];
+    const thumbs = thumbsFrom(container);
+    expect(activeIdx).toBeLessThan(thumbs.length);
+    const active = thumbs[activeIdx];
+    expect(active.getAttribute('aria-current')).toBe('true');
     expect(ringsOf(active).primary).toBe(true);
     const fv = focusRingsOf(active);
     expect(fv.primary).toBe(true);
