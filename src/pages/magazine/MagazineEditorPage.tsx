@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { useMagazineEditor } from './useMagazineEditor';
 import { paginateMagazine } from './pagination';
 import { PreviewSidebar } from './components/PreviewSidebar';
+import { EditorHero } from './components/EditorHero';
 import { IdentityStep } from './components/steps/IdentityStep';
 import { ProductsStep } from './components/steps/ProductsStep';
 import { ContentStep } from './components/steps/ContentStep';
