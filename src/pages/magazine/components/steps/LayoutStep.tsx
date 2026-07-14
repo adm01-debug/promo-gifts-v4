@@ -48,24 +48,31 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
     <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
       <Card>
         <CardContent className="space-y-3 p-4">
-          <div className="text-sm font-semibold">Ordenar produtos ({items.length})</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="text-sm font-semibold" id="layout-step-title">
+            Ordenar produtos ({items.length})
+          </div>
+          <p className="text-xs text-muted-foreground" id="layout-step-help">
             Arraste para reordenar. A paginação é recalculada automaticamente com base no template escolhido.
           </p>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
+              <ul
+                aria-labelledby="layout-step-title"
+                aria-describedby="layout-step-help"
+                className="space-y-2"
+              >
                 {items.map((it, idx) => (
                   <SortableRow
                     key={it.id}
                     item={it}
                     index={idx}
+                    total={items.length}
                     onRemove={onRemove}
                     onHover={onItemHover}
                     highlighted={highlightedItemId === it.id}
                   />
                 ))}
-              </div>
+              </ul>
             </SortableContext>
           </DndContext>
         </CardContent>
@@ -73,12 +80,20 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
 
       <Card>
         <CardContent className="space-y-2 p-4">
-          <div className="text-sm font-semibold">Sumário</div>
-          <div className="space-y-1 text-xs">
+          <div className="text-sm font-semibold" id="layout-summary-title">
+            Sumário
+          </div>
+          <ul
+            aria-labelledby="layout-summary-title"
+            className="space-y-1 text-xs"
+          >
             {pages.map((p) => (
-              <div key={p.index} className="flex items-center justify-between rounded border px-2 py-1">
-                <span className="font-mono">{String(p.index + 1).padStart(2, '0')}</span>
+              <li key={p.index} className="flex items-center justify-between rounded border px-2 py-1">
+                <span className="font-mono" aria-hidden>
+                  {String(p.index + 1).padStart(2, '0')}
+                </span>
                 <span className="flex-1 truncate px-2 text-muted-foreground">
+                  <span className="sr-only">Página {p.index + 1}: </span>
                   {p.kind === 'cover'
                     ? 'Capa'
                     : p.kind === 'back-cover'
@@ -87,9 +102,9 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
                         ? `Seção: ${p.sectionTitle}`
                         : `${p.items.length} produto(s)`}
                 </span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </CardContent>
       </Card>
     </div>
