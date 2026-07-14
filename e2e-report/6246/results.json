@@ -1,0 +1,470 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+        "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+      },
+      "gitCommit": {
+        "shortHash": "52cdd73",
+        "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+        "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+        "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784031612000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784031612000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-public",
+        "name": "firefox-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-public",
+        "name": "webkit-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "commitHash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29332106344"
+          },
+          "gitCommit": {
+            "shortHash": "52cdd73",
+            "hash": "52cdd73b7185e25d686c9b81076fe664e4bfa73f",
+            "subject": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)",
+            "body": "ci: adiciona Gate 5 — supabase-security-gate.yml (SUPABASE_ACCESS_TOKEN)\n\n4 checks de segurança em PRs que tocam supabase/migrations:\n1. supabase db lint (idempotencia, sintaxe)\n2. Auditoria SECURITY DEFINER (search_path obrigatorio)\n3. Smoke test RPC get_profile_and_roles (exists, SECDEF, statement_timeout)\n4. Verifica anon nao tem EXECUTE na RPC\n\nSecrets necessarios: SUPABASE_ACCESS_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY\n(configurar em Settings > Secrets > Actions)\"",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784031612000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'",
+      "stack": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-07-14T12:22:11.594Z",
+    "duration": 1545.5589999999997,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
