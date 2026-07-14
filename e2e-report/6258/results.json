@@ -1,0 +1,470 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+        "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+      },
+      "gitCommit": {
+        "shortHash": "a61a14d",
+        "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+        "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+        "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784042425000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784042425000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-public",
+        "name": "firefox-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-public",
+        "name": "webkit-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "commitHash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29344904576"
+          },
+          "gitCommit": {
+            "shortHash": "a61a14d",
+            "hash": "a61a14df7982ad97c71917fbe0c0586986ec200c",
+            "subject": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]",
+            "body": "fix(db): converte seller_cart_items_uniq_item em named constraint [BUG-AUDIT]\n\nBUG detectado na auditoria exaustiva pós-deploy:\nA RPC restore_seller_cart usa ON CONFLICT ON CONSTRAINT unique_cart_item_variant\nmas só existia um UNIQUE INDEX chamado seller_cart_items_uniq_item.\n\nON CONFLICT ON CONSTRAINT exige named constraint (pg_constraint), não index.\nEm runtime causaria: ERROR: constraint does not exist.\n\nFIX: DROP do unique index + ADD CONSTRAINT UNIQUE NULLS NOT DISTINCT com nome\ncorreto. Comportamento idêntico ao índice anterior.",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784042425000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'",
+      "stack": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-07-14T15:22:42.006Z",
+    "duration": 2535.3630000000003,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
