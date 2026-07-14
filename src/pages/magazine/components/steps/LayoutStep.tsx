@@ -16,6 +16,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type { Magazine, MagazineItem } from '@/types/magazine';
 import { paginateMagazine } from '../../pagination';
 import { formatPrice, itemPrice } from '../templates/shared';
