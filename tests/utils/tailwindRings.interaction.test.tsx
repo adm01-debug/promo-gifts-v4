@@ -50,6 +50,12 @@ import {
 //                          entre "closed"/"open" via botão, e o container
 //                          declara `data-[state=open]:ring-primary` +
 //                          `data-[state=closed]:ring-amber-500`.
+//   • outline-suppressed → padrão a11y comum: `outline-none` acompanhado de
+//                          `focus-visible:ring-primary` (substitui o outline
+//                          nativo). Deve preservar contrato focus-visible.
+//   • skip-tab           → `tabIndex={-1}` — não participa do fluxo Tab
+//                          mas ainda é focável programaticamente. Contrato
+//                          declarativo permanece.
 function Fixture() {
   const [open, setOpen] = useState(false);
   return (
@@ -90,6 +96,19 @@ function Fixture() {
           toggle
         </button>
       </div>
+      <button
+        data-testid="outline-suppressed"
+        className="outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        outline suprimido
+      </button>
+      <button
+        data-testid="skip-tab"
+        tabIndex={-1}
+        className="ring-0 focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        skip
+      </button>
     </div>
   );
 }
