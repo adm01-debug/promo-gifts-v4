@@ -1,5 +1,5 @@
 import type { TemplatePageProps } from '../TemplateRegistry';
-import { effectiveContent, resolveItemImage } from '../shared';
+import { effectiveContent, productImageAlt, resolveItemImage } from '../shared';
 import { PageNumberBadge, ScriptAccent } from '../chrome';
 
 /**
@@ -69,9 +69,9 @@ export function EditorialManifestoTemplate({ magazine, page }: TemplatePageProps
       <div className="flex h-[30%]">
         <div className="relative w-1/2 overflow-hidden">
           {secondary ? (
-            <img src={resolveItemImage(secondary)} alt="" className="h-full w-full object-cover" />
+            <img src={resolveItemImage(secondary)} alt={productImageAlt(secondary)} className="h-full w-full object-cover" />
           ) : hero ? (
-            <img src={resolveItemImage(hero)} alt="" className="h-full w-full object-cover"
+            <img src={resolveItemImage(hero)} alt={productImageAlt(hero)} className="h-full w-full object-cover"
               style={{ filter: 'saturate(0.7)' }} />
           ) : null}
           <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.35)' }} />

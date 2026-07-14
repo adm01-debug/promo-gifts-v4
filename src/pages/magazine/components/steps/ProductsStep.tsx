@@ -247,7 +247,7 @@ export function ProductsStep({ magazine, onAdd, onRemove, onUpdateItem }: Props)
                 <div key={item.id} className="flex items-center gap-3 rounded-lg border p-2">
                   <img
                     src={item.productSnapshot.image_url}
-                    alt=""
+                    alt={item.productSnapshot.name}
                     className="h-14 w-14 rounded object-cover"
                   />
                   <div className="flex-1 overflow-hidden">

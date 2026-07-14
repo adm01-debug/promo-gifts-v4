@@ -1,5 +1,5 @@
 import type { TemplatePageProps } from '../TemplateRegistry';
-import { effectiveContent, formatPrice, itemPrice, resolveItemImage } from '../shared';
+import { effectiveContent, formatPrice, itemPrice, productImageAlt, resolveItemImage } from '../shared';
 import { PriceTag, SkuChip, VerticalCategoryStripe } from '../chrome';
 
 /**
@@ -120,7 +120,7 @@ export function GiftSetShowcaseTemplate({ magazine, page }: TemplatePageProps) {
                   className="h-20 w-20 overflow-hidden"
                   style={{ background: 'var(--mag-brand-cream, #f1efe7)' }}
                 >
-                  <img src={resolveItemImage(v)} alt="" className="h-full w-full object-contain p-1" />
+                  <img src={resolveItemImage(v)} alt={productImageAlt(v)} className="h-full w-full object-contain p-1" />
                 </div>
                 <SkuChip sku={v.productSnapshot.sku} size="sm" />
               </div>

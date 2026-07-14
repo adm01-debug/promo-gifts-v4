@@ -142,7 +142,11 @@ function SortableRow({
       <span className="w-8 text-center font-mono text-xs text-muted-foreground">
         {String(index + 1).padStart(2, '0')}
       </span>
-      <img src={item.productSnapshot.image_url} alt="" className="h-10 w-10 rounded object-cover" />
+      <img
+        src={item.productSnapshot.image_url}
+        alt={item.productSnapshot.name}
+        className="h-10 w-10 rounded object-cover"
+      />
       <div className="flex-1 overflow-hidden">
         <div className="line-clamp-1 text-sm font-medium">{item.productSnapshot.name}</div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
