@@ -105,6 +105,11 @@ const ACTIVE_CART_STORAGE_KEY = 'seller:active-cart-id';
 
 export function SellerCartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const reloadCarts = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [SELLER_CARTS_QUERY_KEY] });
+    toast.info('Recarregando carrinhos…');
+  }, [queryClient]);
   const {
     carts,
     isLoading,
