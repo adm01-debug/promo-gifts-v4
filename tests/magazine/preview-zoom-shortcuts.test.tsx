@@ -147,7 +147,7 @@ describe('PreviewSidebar — atalhos de teclado do zoom', () => {
     renderSidebar();
     const zoomIn = screen.getByRole('button', { name: /aumentar zoom/i });
     const zoomOut = screen.getByRole('button', { name: /diminuir zoom/i });
-    const fit = screen.getByRole('button', { name: /ajustar à largura/i });
+    const fit = screen.getByRole('spinbutton', { name: /zoom do preview/i });
 
     expect(zoomIn.getAttribute('aria-keyshortcuts')).toBe('+');
     expect(zoomOut.getAttribute('aria-keyshortcuts')).toBe('-');
@@ -165,7 +165,7 @@ describe('PreviewSidebar — atalhos de teclado do zoom', () => {
     fireEvent.keyDown(window, { key: '+' });
 
     const zoomOut = screen.getByRole('button', { name: /diminuir zoom/i });
-    const fit = screen.getByRole('button', { name: /ajustar à largura/i });
+    const fit = screen.getByRole('spinbutton', { name: /zoom do preview/i });
     const zoomIn = screen.getByRole('button', { name: /aumentar zoom/i });
 
     for (const btn of [zoomOut, fit, zoomIn]) {
