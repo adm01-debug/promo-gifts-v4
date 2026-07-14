@@ -130,6 +130,15 @@ export default function MagazineEditorPage() {
     ],
   );
 
+  // Onda 1 — hover em produto no LayoutStep → salta preview p/ página que o contém.
+  useEffect(() => {
+    if (!highlightedItemId) return;
+    const idx = pages.findIndex((p) => p.items.some((it) => it.id === highlightedItemId));
+    if (idx >= 0) setPreviewIdx(idx);
+  }, [highlightedItemId, pages]);
+
+
+
   // ── A PARTIR DAQUI NENHUM HOOK PODE SER CHAMADO ────────────────────────
   if (!editor.loaded) {
     return (
