@@ -262,7 +262,11 @@ export function PreviewSidebar({
             </div>
           </div>
         ) : (
-          <div className="rounded-lg border p-8 text-center text-xs text-muted-foreground">
+          <div
+            role="status"
+            aria-live="polite"
+            className="rounded-lg border p-8 text-center text-xs text-muted-foreground"
+          >
             Adicione produtos para gerar o preview.
           </div>
         )}
