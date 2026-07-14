@@ -131,14 +131,38 @@ export function PreviewSidebar({
             >
               <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
-            <button
+            {/*
+              O indicador de zoom age como spinbutton (ARIA) — daí o uso de
+              `<div role="spinbutton">` em vez de `<button>` (axe recusa
+              `role=spinbutton` em <button>). Suporta:
+                - Click / Enter / Space  → reset para Fit
+                - ArrowUp / ArrowDown    → step de zoom (compatível c/ spinbutton)
+                - Home                   → reset para Fit
+              A leitura por AT é comandada por aria-valuetext (texto humano).
+            */}
+            <div
               id="magazine-preview-zoom-value"
-              type="button"
-              onClick={resetZoom}
-              className="min-w-[46px] rounded px-1 py-0.5 text-[10px] font-mono tabular-nums text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              aria-label={`Zoom atual: ${Math.round(zoom * 100)} por cento. Clique para ajustar à largura`}
-              aria-keyshortcuts="0"
               role="spinbutton"
+              tabIndex={0}
+              onClick={resetZoom}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  resetZoom();
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  stepZoom(1);
+                } else if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  stepZoom(-1);
+                } else if (e.key === 'Home') {
+                  e.preventDefault();
+                  resetZoom();
+                }
+              }}
+              className="min-w-[46px] cursor-pointer select-none rounded px-1 py-0.5 text-center text-[10px] font-mono tabular-nums text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label="Zoom do preview"
+              aria-keyshortcuts="0"
               aria-valuemin={Math.round(ZOOM_LEVELS[0] * 100)}
               aria-valuemax={Math.round(ZOOM_LEVELS[ZOOM_LEVELS.length - 1] * 100)}
               aria-valuenow={Math.round(zoom * 100)}
@@ -146,7 +170,7 @@ export function PreviewSidebar({
               title="Ajustar à largura (0)"
             >
               {zoom === 1 ? 'Fit' : `${Math.round(zoom * 100)}%`}
-            </button>
+            </div>
             <Button
               variant="ghost"
               size="icon"
