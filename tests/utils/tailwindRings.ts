@@ -92,3 +92,23 @@ export function focusRingsOf(el: Element): RingState {
 export function hoverRingsOf(el: Element): RingState {
   return ringsByVariant(el, 'hover');
 }
+
+/**
+ * Retorna os rings pintados sob `:focus-within` — usado quando o container
+ * ganha ring porque um descendente recebeu foco (padrão em popovers,
+ * dropdowns e cards com CTA interno).
+ */
+export function focusWithinRingsOf(el: Element): RingState {
+  return ringsByVariant(el, 'focus-within');
+}
+
+/**
+ * Retorna os rings pintados sob `data-[state=<value>]` — variant Tailwind
+ * arbitrário emitido por primitivas Radix (Popover, Dialog, Accordion,
+ * Collapsible) que expõem `data-state="open"|"closed"|"on"|"off"|…`.
+ *
+ * Uso: `dataStateRingsOf(el, 'open')` → lê `data-[state=open]:ring-*`.
+ */
+export function dataStateRingsOf(el: Element, state: string): RingState {
+  return ringsByVariant(el, `data-[state=${state}]`);
+}
