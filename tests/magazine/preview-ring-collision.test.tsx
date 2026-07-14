@@ -19,6 +19,7 @@ import { LayoutStep } from '@/pages/magazine/components/steps/LayoutStep';
 import { paginateMagazine } from '@/pages/magazine/pagination';
 import type { Magazine, MagazineItem, MagazinePage } from '@/types/magazine';
 import { DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+import { ringsOf, thumbsFrom } from './helpers';
 
 vi.mock('@/pages/magazine/components/MagazinePageRenderer', () => ({
   MagazinePageRenderer: ({ page }: { page: { index: number } }) => (
