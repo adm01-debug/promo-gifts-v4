@@ -366,6 +366,21 @@ export function PreviewSidebar({
         <div className="border-t pt-2 text-xs text-muted-foreground">
           {pages.length} página(s) · {magazine.items.length} produto(s)
         </div>
+
+        {/*
+          Live region único do preview: SR anuncia página ativa + zoom em PT-BR.
+          `polite` para não interromper leitura em andamento; texto é derivado
+          e só publica em mudança real. `sr-only` mantém visualmente oculto.
+        */}
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          data-testid="preview-live-region"
+          className="sr-only"
+        >
+          {announcement}
+        </div>
       </CardContent>
     </Card>
   );
