@@ -73,12 +73,17 @@ function buildMagazine(count = 8): Magazine {
   };
 }
 
-/** Retorna o conjunto de classes de ring aplicadas numa miniatura. */
+/**
+ * Retorna o conjunto de classes de ring aplicadas na base do elemento.
+ * Ignora variantes prefixadas (`hover:`, `focus-visible:`, `active:`, etc.)
+ * porque não estão pintadas simultaneamente ao estado observado.
+ */
 function ringsOf(btn: HTMLElement): { primary: boolean; amber: boolean } {
-  const cls = btn.className;
+  const tokens = btn.className.split(/\s+/);
+  const base = tokens.filter((t) => !t.includes(':'));
   return {
-    primary: /\bring-primary\b/.test(cls),
-    amber: /\bring-amber-500\b/.test(cls),
+    primary: base.includes('ring-primary'),
+    amber: base.includes('ring-amber-500'),
   };
 }
 
