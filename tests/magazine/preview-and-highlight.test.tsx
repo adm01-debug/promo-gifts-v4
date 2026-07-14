@@ -191,18 +191,20 @@ describe('Highlight bidirecional LayoutStep ↔ PreviewSidebar', () => {
   it('hover num item do LayoutStep destaca a página correspondente no preview e limpa ao sair', () => {
     const { container } = render(<Harness />);
 
-    const items = container.querySelectorAll<HTMLLIElement>('li[aria-label^="Produto"]');
+    const items = screen.getAllByRole('listitem').filter((el) =>
+      (el.getAttribute('aria-label') ?? '').startsWith('Produto '),
+    ) as HTMLLIElement[];
     expect(items.length).toBe(6);
 
-    // Item 6 (index 5) — provavelmente na última página (catalog-grid usa
-    // poucos produtos por página).
+    // Item 6 (index 5) — última posição do LayoutStep, provavelmente em página > 0.
     const target = items[items.length - 1];
+    const targetId = target.getAttribute('data-item-id')!;
     fireEvent.mouseEnter(target);
 
-    // Estado propaga: highlight visível como data-testid.
-    expect(screen.getByTestId('current-highlight').textContent).toBe(target.getAttribute('data-item-id') || 'item-5');
+    // Estado propaga: highlight visível no marcador de teste.
+    expect(screen.getByTestId('current-highlight').textContent).toBe(targetId);
 
-    // Ao menos uma miniatura ganha o ring âmbar.
+    // Ao menos uma miniatura do preview ganha o ring âmbar.
     const thumbs = container.querySelectorAll<HTMLButtonElement>(
       'button[aria-label^="Ir para página"]',
     );
@@ -212,7 +214,7 @@ describe('Highlight bidirecional LayoutStep ↔ PreviewSidebar', () => {
     // Item destacado também expõe aria-current="true".
     expect(target.getAttribute('aria-current')).toBe('true');
 
-    // Mouse leave → highlight limpo.
+    // Mouse leave → highlight limpo em ambos os lados.
     fireEvent.mouseLeave(target);
     const cleared = container.querySelectorAll<HTMLButtonElement>(
       'button[aria-label^="Ir para página"]',
@@ -224,7 +226,9 @@ describe('Highlight bidirecional LayoutStep ↔ PreviewSidebar', () => {
 
   it('foco por teclado num item do LayoutStep também dispara o highlight (focus/blur)', () => {
     const { container } = render(<Harness />);
-    const items = container.querySelectorAll<HTMLLIElement>('li[aria-label^="Produto"]');
+    const items = screen.getAllByRole('listitem').filter((el) =>
+      (el.getAttribute('aria-label') ?? '').startsWith('Produto '),
+    ) as HTMLLIElement[];
     const target = items[3];
 
     fireEvent.focus(target);
