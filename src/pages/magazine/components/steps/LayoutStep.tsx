@@ -1,6 +1,13 @@
 /**
  * Step 5 — Layout & Gerar: DnD para ordenar produtos + ações finais.
  * Usa @dnd-kit (já presente no projeto).
+ *
+ * Onda 3 — acessibilidade WCAG 2.1 AA:
+ *  - Estrutura semântica <ul>/<li> na ordenação e no sumário
+ *  - aria-labelledby + aria-describedby ligando lista à instrução de DnD
+ *  - aria-label dinâmico com nome do produto nos botões arrastar/remover
+ *  - aria-current="true" no item destacado (sincroniza com Preview)
+ *  - Imagens com alt = nome do produto
  */
 
 import { useMemo } from 'react';
@@ -48,24 +55,31 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
     <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
       <Card>
         <CardContent className="space-y-3 p-4">
-          <div className="text-sm font-semibold">Ordenar produtos ({items.length})</div>
-          <p className="text-xs text-muted-foreground">
+          <div className="text-sm font-semibold" id="layout-step-title">
+            Ordenar produtos ({items.length})
+          </div>
+          <p className="text-xs text-muted-foreground" id="layout-step-help">
             Arraste para reordenar. A paginação é recalculada automaticamente com base no template escolhido.
           </p>
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-              <div className="space-y-2">
+              <ul
+                aria-labelledby="layout-step-title"
+                aria-describedby="layout-step-help"
+                className="space-y-2 list-none p-0 m-0"
+              >
                 {items.map((it, idx) => (
                   <SortableRow
                     key={it.id}
                     item={it}
                     index={idx}
+                    total={items.length}
                     onRemove={onRemove}
                     onHover={onItemHover}
                     highlighted={highlightedItemId === it.id}
                   />
                 ))}
-              </div>
+              </ul>
             </SortableContext>
           </DndContext>
         </CardContent>
@@ -73,12 +87,17 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
 
       <Card>
         <CardContent className="space-y-2 p-4">
-          <div className="text-sm font-semibold">Sumário</div>
-          <div className="space-y-1 text-xs">
+          <div className="text-sm font-semibold" id="layout-summary-title">
+            Sumário
+          </div>
+          <ul aria-labelledby="layout-summary-title" className="space-y-1 text-xs list-none p-0 m-0">
             {pages.map((p) => (
-              <div key={p.index} className="flex items-center justify-between rounded border px-2 py-1">
-                <span className="font-mono">{String(p.index + 1).padStart(2, '0')}</span>
+              <li key={p.index} className="flex items-center justify-between rounded border px-2 py-1">
+                <span className="font-mono" aria-hidden>
+                  {String(p.index + 1).padStart(2, '0')}
+                </span>
                 <span className="flex-1 truncate px-2 text-muted-foreground">
+                  <span className="sr-only">Página {p.index + 1}: </span>
                   {p.kind === 'cover'
                     ? 'Capa'
                     : p.kind === 'back-cover'
@@ -87,9 +106,9 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
                         ? `Seção: ${p.sectionTitle}`
                         : `${p.items.length} produto(s)`}
                 </span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </CardContent>
       </Card>
     </div>
@@ -99,12 +118,14 @@ export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlig
 function SortableRow({
   item,
   index,
+  total,
   onRemove,
   onHover,
   highlighted,
 }: {
   item: MagazineItem;
   index: number;
+  total: number;
   onRemove: (id: string) => void;
   onHover?: (id: string | null) => void;
   highlighted?: boolean;
@@ -117,14 +138,19 @@ function SortableRow({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+  const productName = item.productSnapshot.name;
   return (
-    <div
+    <li
       ref={setNodeRef}
       style={style}
+      data-item-id={item.id}
       onMouseEnter={() => onHover?.(item.id)}
       onMouseLeave={() => onHover?.(null)}
       onFocus={() => onHover?.(item.id)}
       onBlur={() => onHover?.(null)}
+      tabIndex={-1}
+      aria-current={highlighted ? 'true' : undefined}
+      aria-label={`Produto ${index + 1} de ${total}: ${productName}`}
       className={cn(
         'flex items-center gap-3 rounded-lg border bg-background p-2 transition',
         highlighted && 'border-primary ring-2 ring-primary/40',
@@ -134,30 +160,35 @@ function SortableRow({
         type="button"
         {...attributes}
         {...listeners}
-        className="cursor-grab text-muted-foreground hover:text-foreground"
-        aria-label="Arrastar"
+        className="cursor-grab text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        aria-label={`Arrastar para reordenar ${productName}`}
       >
-        <GripVertical className="h-4 w-4" />
+        <GripVertical className="h-4 w-4" aria-hidden />
       </button>
-      <span className="w-8 text-center font-mono text-xs text-muted-foreground">
+      <span className="w-8 text-center font-mono text-xs text-muted-foreground" aria-hidden>
         {String(index + 1).padStart(2, '0')}
       </span>
       <img
         src={item.productSnapshot.image_url}
-        alt={item.productSnapshot.name}
+        alt={productName}
         className="h-10 w-10 rounded object-cover"
       />
       <div className="flex-1 overflow-hidden">
-        <div className="line-clamp-1 text-sm font-medium">{item.productSnapshot.name}</div>
+        <div className="line-clamp-1 text-sm font-medium">{productName}</div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Cód. {item.productSnapshot.sku}</span>
-          <span>·</span>
+          <span aria-hidden>·</span>
           <span>{formatPrice(itemPrice(item))}</span>
         </div>
       </div>
-      <Button variant="ghost" size="icon" onClick={() => onRemove(item.id)} aria-label="Remover">
-        <Trash2 className="h-4 w-4" />
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onRemove(item.id)}
+        aria-label={`Remover ${productName} da revista`}
+      >
+        <Trash2 className="h-4 w-4" aria-hidden />
       </Button>
-    </div>
+    </li>
   );
 }
