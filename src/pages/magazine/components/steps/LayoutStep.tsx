@@ -24,9 +24,12 @@ interface Props {
   magazine: Magazine;
   onReorder: (orderedIds: string[]) => void;
   onRemove: (itemId: string) => void;
+  /** Onda 1 — coordena highlight LayoutStep ↔ Preview. */
+  onItemHover?: (itemId: string | null) => void;
+  highlightedItemId?: string | null;
 }
 
-export function LayoutStep({ magazine, onReorder, onRemove }: Props) {
+export function LayoutStep({ magazine, onReorder, onRemove, onItemHover, highlightedItemId }: Props) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const items = useMemo(() => [...magazine.items].sort((a, b) => a.position - b.position), [magazine.items]);
   const pages = useMemo(() => paginateMagazine(magazine), [magazine]);
