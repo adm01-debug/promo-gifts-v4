@@ -1,22 +1,14 @@
 /**
- * E2E — Elementos não-tabuláveis (disabled / aria-disabled+tabIndex=-1 /
- * hidden / display:none / visibility:hidden / inert / fora-do-layout com
- * tabIndex=-1) NÃO entram no loop de Tab e NÃO alteram o token declarativo
- * `focus-visible:ring-*` dos vizinhos ao serem "pulados".
+ * E2E — Elementos não-tabuláveis não entram no loop de Tab.
  *
- * Cobre:
- *  A) Sequência de Tab visita EXATAMENTE os `data-focusable-ids` do harness,
- *     nessa ordem, sem parar em nenhum vizinho não-tabulável.
- *  B) Shift+Tab também pula os mesmos elementos (ordem reversa).
- *  C) O `className` dos vizinhos focáveis permanece idêntico ao snapshot
- *     inicial durante e após todo o percurso (zero drift).
- *  D) Os elementos "skip-*" nunca recebem foco nem `:focus-visible` durante
- *     o percurso.
- *
- * Harness: /__test/tab-skip (SSOT dev-only).
+ * Em caso de falha, o helper `createTabTrail` anexa `tab-trail.txt` e
+ * `tab-trail.json` ao relatório do Playwright com a sequência completa
+ * de `document.activeElement` (testid, tagName, `:focus-visible`, className,
+ * boxShadow) e o esperado por passo.
  */
 import { test, expect, type Page } from '@playwright/test';
 import { gotoAndSettle } from '../helpers/nav';
+import { createTabTrail } from '../helpers/tab-trail';
 
 const ROUTE = '/__test/tab-skip';
 
@@ -36,12 +28,6 @@ async function focusableIds(page: Page): Promise<string[]> {
   return raw!.split(',').filter(Boolean);
 }
 
-async function focusedTestId(page: Page): Promise<string | null> {
-  return page.evaluate(
-    () => (document.activeElement as HTMLElement | null)?.getAttribute('data-testid') ?? null,
-  );
-}
-
 async function classSnapshot(page: Page, ids: string[]): Promise<Record<string, string>> {
   return page.evaluate((list) => {
     const out: Record<string, string> = {};
@@ -54,101 +40,128 @@ async function classSnapshot(page: Page, ids: string[]): Promise<Record<string, 
 }
 
 test.describe('Tab-skip — disabled/aria-disabled/hidden/inert/offscreen ficam fora do loop', () => {
-  test('Tab visita apenas os focáveis, na ordem, sem drift de className', async ({ page }) => {
-    await gotoAndSettle(page, ROUTE);
-    await expect(page.getByTestId('tab-skip-ready')).toBeVisible();
+  test('Tab visita apenas os focáveis, na ordem, sem drift de className', async ({
+    page,
+  }, testInfo) => {
+    const trail = createTabTrail();
+    try {
+      await gotoAndSettle(page, ROUTE);
+      await expect(page.getByTestId('tab-skip-ready')).toBeVisible();
 
-    const ids = await focusableIds(page);
-    expect(ids.length).toBeGreaterThanOrEqual(4);
+      const ids = await focusableIds(page);
+      expect(ids.length).toBeGreaterThanOrEqual(4);
 
-    const before = await classSnapshot(page, ids);
-    const visited: string[] = [];
-    const skipSeen: string[] = [];
+      const before = await classSnapshot(page, ids);
 
-    // Passos suficientes para cobrir todos os focáveis + margem de wrap
-    // (Chromium pode passar por body na fronteira do documento).
-    const maxSteps = ids.length + SKIP_IDS.length + 4;
-    for (let i = 0; i < maxSteps && visited.length < ids.length; i++) {
-      await page.keyboard.press('Tab');
-      const id = await focusedTestId(page);
-      if (!id) continue;
-      if ((SKIP_IDS as readonly string[]).includes(id)) {
-        skipSeen.push(id);
-        continue;
+      await trail.init(page);
+      // Passos suficientes para cobrir todos os focáveis + margem de wrap.
+      const maxSteps = ids.length + SKIP_IDS.length + 4;
+      for (let i = 0; i < maxSteps; i++) {
+        const expectedId = i < ids.length ? ids[i] : null;
+        await trail.tab(page, { expected: expectedId });
+        if (
+          trail.visited().filter((v): v is string => v !== null).length >= ids.length
+        ) {
+          break;
+        }
       }
-      if (ids.includes(id) && visited[visited.length - 1] !== id) {
-        visited.push(id);
-      }
+
+      // Nenhum "skip-*" apareceu na trilha.
+      const visitedNonNull = trail.visited().filter((v): v is string => v !== null);
+      const skipHits = visitedNonNull.filter((id) =>
+        (SKIP_IDS as readonly string[]).includes(id),
+      );
+      expect(skipHits, `Tab parou em elementos não-tabuláveis: ${skipHits.join(',')}`).toEqual([]);
+
+      // Ordem exata dos focáveis.
+      trail.assertVisited(ids);
+
+      // Zero drift de className.
+      expect(await classSnapshot(page, ids)).toEqual(before);
+    } finally {
+      await trail.attach(testInfo);
     }
-
-    // Ordem exata dos focáveis, sem paradas em elementos "skip-*".
-    expect(visited).toEqual(ids);
-    expect(skipSeen, `Tab parou em elemento não-tabulável: ${skipSeen.join(',')}`).toEqual([]);
-
-    // Nenhum className mutou durante o percurso.
-    expect(await classSnapshot(page, ids)).toEqual(before);
   });
 
-  test('Shift+Tab também pula os mesmos elementos (ordem reversa)', async ({ page }) => {
-    await gotoAndSettle(page, ROUTE);
-    await expect(page.getByTestId('tab-skip-ready')).toBeVisible();
+  test('Shift+Tab também pula os mesmos elementos (ordem reversa)', async ({
+    page,
+  }, testInfo) => {
+    const trail = createTabTrail();
+    try {
+      await gotoAndSettle(page, ROUTE);
+      await expect(page.getByTestId('tab-skip-ready')).toBeVisible();
 
-    const ids = await focusableIds(page);
-    const before = await classSnapshot(page, ids);
+      const ids = await focusableIds(page);
+      const before = await classSnapshot(page, ids);
+      const reversed = [...ids].reverse();
 
-    // Foca o último focável primeiro (avança N Tabs).
-    for (let i = 0; i < ids.length; i++) {
-      await page.keyboard.press('Tab');
-    }
-    expect(await focusedTestId(page)).toBe(ids[ids.length - 1]);
-
-    const visitedReverse: string[] = [ids[ids.length - 1]];
-    const skipSeen: string[] = [];
-
-    const maxSteps = ids.length + SKIP_IDS.length + 4;
-    for (let i = 0; i < maxSteps && visitedReverse.length < ids.length; i++) {
-      await page.keyboard.press('Shift+Tab');
-      const id = await focusedTestId(page);
-      if (!id) continue;
-      if ((SKIP_IDS as readonly string[]).includes(id)) {
-        skipSeen.push(id);
-        continue;
+      // Avança até o último focável (Tab N vezes) — registra na trilha.
+      await trail.init(page);
+      for (let i = 0; i < ids.length; i++) {
+        await trail.tab(page, { expected: ids[i] });
       }
-      if (ids.includes(id) && visitedReverse[visitedReverse.length - 1] !== id) {
-        visitedReverse.push(id);
-      }
-    }
+      expect(trail.steps[trail.steps.length - 1]!.activeTestId).toBe(
+        ids[ids.length - 1],
+      );
 
-    expect(visitedReverse).toEqual([...ids].reverse());
-    expect(skipSeen, `Shift+Tab parou em não-tabulável: ${skipSeen.join(',')}`).toEqual([]);
-    expect(await classSnapshot(page, ids)).toEqual(before);
+      // Agora percorre reverso com Shift+Tab.
+      const maxSteps = ids.length + SKIP_IDS.length + 4;
+      for (let i = 1; i < maxSteps; i++) {
+        const expectedId = i < reversed.length ? reversed[i] : null;
+        await trail.shiftTab(page, { expected: expectedId });
+        if (
+          trail.visited().filter((v): v is string => v !== null).length >=
+          ids.length + reversed.length - 1
+        ) {
+          break;
+        }
+      }
+
+      // A trilha reversa (a partir do último focável) bate com `reversed`.
+      const visitedNonNull = trail.visited().filter((v): v is string => v !== null);
+      const reverseSlice = visitedNonNull.slice(ids.length - 1, ids.length * 2 - 1);
+      if (reverseSlice.join('|') !== reversed.join('|')) {
+        // Reaproveita o formatador do helper via assertVisited (falha rica).
+        trail.assertVisited([...ids, ...reversed.slice(1)]);
+      }
+
+      const skipHits = visitedNonNull.filter((id) =>
+        (SKIP_IDS as readonly string[]).includes(id),
+      );
+      expect(skipHits, `Shift+Tab parou em não-tabulável: ${skipHits.join(',')}`).toEqual([]);
+      expect(await classSnapshot(page, ids)).toEqual(before);
+    } finally {
+      await trail.attach(testInfo);
+    }
   });
 
-  test('elementos skip-* nunca casam :focus-visible durante o percurso', async ({ page }) => {
-    await gotoAndSettle(page, ROUTE);
-    await expect(page.getByTestId('tab-skip-ready')).toBeVisible();
+  test('elementos skip-* nunca casam :focus-visible durante o percurso', async ({
+    page,
+  }, testInfo) => {
+    const trail = createTabTrail();
+    try {
+      await gotoAndSettle(page, ROUTE);
+      await expect(page.getByTestId('tab-skip-ready')).toBeVisible();
 
-    const ids = await focusableIds(page);
+      const ids = await focusableIds(page);
 
-    for (let i = 0; i < ids.length + 2; i++) {
-      await page.keyboard.press('Tab');
+      await trail.init(page);
+      for (let i = 0; i < ids.length + 2; i++) {
+        await trail.tab(page, { expected: ids[i] ?? null });
+      }
+
+      // Nenhum SKIP_ID aparece com focusVisible=true em NENHUM passo.
+      const leaks = trail.steps.filter(
+        (s) => s.activeTestId && (SKIP_IDS as readonly string[]).includes(s.activeTestId) && s.focusVisible,
+      );
+      if (leaks.length > 0) {
+        throw new Error(
+          `elementos skip-* vazaram :focus-visible em ${leaks.length} passo(s): ` +
+            leaks.map((s) => `#${s.index}=${s.activeTestId}`).join(', '),
+        );
+      }
+    } finally {
+      await trail.attach(testInfo);
     }
-
-    // Nenhum elemento "skip-*" no DOM deve casar :focus-visible.
-    const skippedMatched = await page.evaluate((list) => {
-      return list
-        .map((id) => {
-          const el = document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
-          if (!el) return null;
-          try {
-            return el.matches(':focus-visible') ? id : null;
-          } catch {
-            return null;
-          }
-        })
-        .filter(Boolean);
-    }, SKIP_IDS as unknown as string[]);
-
-    expect(skippedMatched).toEqual([]);
   });
 });
