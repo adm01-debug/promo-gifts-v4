@@ -2,7 +2,7 @@
  * QuickViewThumb — Wrapper acessível que torna uma thumb clicável e abre o
  * ProductQuickView (paridade total com o catálogo).
  *
- * - role="button" + tabIndex=0 + onKeyDown (Enter/Space) — a11y
+ * - Usa <Clickable> (SSOT a11y) para role/tabIndex/keyboard (Enter/Space)
  * - stopPropagation no click/keydown — não dispara o onClick do card pai
  * - Lazy: busca o Product completo via useProduct apenas quando o usuário abre
  * - Funciona em qualquer módulo (Novidades, Reposição, Catálogo, Estoque…)
