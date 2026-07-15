@@ -39,19 +39,16 @@ const FAMILY_LABEL: Record<'editorial' | 'catalog' | 'corporate', string> = {
 export function EditorHero({ magazine, onChangeTemplate }: Props) {
   const [open, setOpen] = useState(false);
   const active = getTemplate(magazine.templateId);
-  const source = magazine.items.length > 0 ? magazine : undefined;
   const all = listTemplates();
 
   return (
     <section
+      data-testid="editor-hero"
       aria-label="Cabeçalho do editor"
       className="mb-4 overflow-hidden rounded-xl border bg-card shadow-sm"
     >
-      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-stretch sm:gap-5">
-        {/* Miniatura removida a pedido — preview principal fica na sidebar */}
-
-        {/* Metadados */}
-        <div className="min-w-0 flex-1">
+      <div className="p-4 sm:p-5">
+        <div className="min-w-0">
           <nav
             aria-label="Trilha"
             className="mb-1 flex items-center gap-2 text-xs text-muted-foreground"
