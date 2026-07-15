@@ -2,11 +2,17 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://promogifts/schemas/ssot-report.schema.json",
   "title": "SSOT Report",
-  "description": "Artefato agregador emitido por scripts/ssot-report.mjs. Schema estável — quebras exigem bump documentado.",
+  "description": "Artefato agregador emitido por scripts/ssot-report.mjs. Contrato evolutivo via schemaVersion (SemVer). Bumps executados por scripts/ssot-report-bump.mjs — nunca editar schemaVersion à mão.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["timestamp", "canonical", "forbidden", "overallOk", "gates", "details"],
+  "required": ["schemaVersion", "timestamp", "canonical", "forbidden", "overallOk", "gates", "details"],
   "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "2.0.0",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Versão SemVer do contrato. Consumidores DEVEM ler este campo antes de qualquer outro. Mismatch = falha dura."
+    },
     "timestamp": {
       "type": "string",
       "format": "date-time",

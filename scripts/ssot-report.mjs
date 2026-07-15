@@ -14,6 +14,10 @@
 import { spawnSync } from 'child_process';
 import { writeFileSync } from 'fs';
 
+// SSOT: manter em sincronia com schemas/ssot-report.schema.json ($.properties.schemaVersion.const).
+// Bumps SÓ via `node scripts/ssot-report-bump.mjs --kind=<major|minor|patch> --reason="..."`.
+export const SCHEMA_VERSION = '2.0.0';
+
 const CANONICAL = 'doufsxqlfjyuvxuezpln';
 const FORBIDDEN = 'pqpdolkaeqlyzpdpbizo';
 
@@ -44,6 +48,7 @@ const gates = [
 ];
 
 const summary = {
+  schemaVersion: SCHEMA_VERSION,
   timestamp: new Date().toISOString(),
   canonical: CANONICAL,
   forbidden: FORBIDDEN,
