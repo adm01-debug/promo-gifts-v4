@@ -43,6 +43,19 @@ jobs:
       - name: Gate 2 — supabase hosts nos .md
         run: npm run ssot:hosts
 
+      - name: Agregador — relatório unificado (JSON)
+        if: always()
+        run: node scripts/ssot-report.mjs --out=ssot-report.json --json > /dev/null
+
+      - name: Upload SSOT report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ssot-report
+          path: ssot-report.json
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Resumo
         if: always()
         run: |
@@ -50,3 +63,9 @@ jobs:
           echo "- Canônico: \`doufsxqlfjyuvxuezpln\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Legado (proibido operacional): \`pqpdolkaeqlyzpdpbizo\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f ssot-report.json ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`\`\`json" >> "$GITHUB_STEP_SUMMARY"
+            node -e "const j=require('./ssot-report.json'); console.log(JSON.stringify({overallOk:j.overallOk,gates:j.gates},null,2))" >> "$GITHUB_STEP_SUMMARY"
+            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          fi
