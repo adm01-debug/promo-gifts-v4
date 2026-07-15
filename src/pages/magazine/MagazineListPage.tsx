@@ -255,12 +255,10 @@ export default function MagazineListPage() {
                   className={cn(
                     'group overflow-hidden transition-shadow hover:shadow-md',
                   )}
-                  showFocusRing={false}
                   onClick={() => openCard(m)}
                   data-testid={`magazine-card-${m.id}`}
                 >
-                  <div className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-hidden="true" />
-                </Clickable>
+
 
                   <MagazineCardThumbnail magazine={m} />
                   <CardHeader className="pb-2">
