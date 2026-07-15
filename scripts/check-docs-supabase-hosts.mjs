@@ -18,12 +18,34 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const CANONICAL_REF = 'doufsxqlfjyuvxuezpln';
+
+// Refs adicionais LEGÍTIMAS (bancos externos conhecidos usados pela plataforma).
+// Não são o SSOT do app, mas são bancos operacionais válidos em outro contexto.
+const ALLOWED_REFS = new Set([
+  'pgxfvjmuubtbowutlide', // CRM externo (Gestão de Clientes)
+]);
+
 const PLACEHOLDER_REFS = new Set([
   '<project_ref>', '<project-ref>', '<projeto>', '<ref>',
   'your_project_ref', 'your-project-ref', 'your_project',
   'example', 'placeholder', 'xxxxxxxxxxxxx', 'projectref',
-  'seu-projeto', 'seuprojeto',
+  'seu-projeto', 'seuprojeto', 'x', 'xxx', 'foo', 'bar',
 ]);
+
+// Arquivos históricos: menções toleradas sem marcador explícito.
+const HISTORICAL_PATH_PATTERNS = [
+  /^docs\/redeploy\//,
+  /^docs\/audit\//,
+  /^docs\/incidents\//,
+  /^docs\/sessoes\//,
+  /^docs\/AUDITORIA[_-]/i,
+  /^docs\/HANDOFF/i,
+  /^docs\/issues-pendentes/i,
+  /^docs\/prompts\/history\//,
+  /^qa\/reports\//,
+  /^qa\/migrations-draft\//,
+  /^\.lovable\//,
+];
 
 const EXCLUDE_DIRS = new Set([
   'node_modules', '.git', 'dist', 'build', '.next', 'coverage',
