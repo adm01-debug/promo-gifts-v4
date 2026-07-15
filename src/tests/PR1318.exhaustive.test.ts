@@ -78,9 +78,11 @@ describe('A3 — fallback por stock (sem stockStatus)', () => {
   });
   it('stock=-Infinity → false', () => { expect(isProductInStock(p({ stock: -Infinity }))).toBe(false); });
   it('fallback alinhado: [null,undefined,NaN,Inf,-Inf,-1,0] todos false', () => {
-    [null, undefined, NaN, Infinity, -Infinity, -1, 0].forEach(stock => {
+    const stocks: (number | null | undefined)[] = [null, undefined, NaN, Infinity, -Infinity, -1, 0];
+    expect(stocks).not.toHaveLength(0);
+    for (const stock of stocks) {
       expect(isProductInStock(p({ stock: stock! }))).toBe(false);
-    });
+    }
   });
 });
 
@@ -205,11 +207,9 @@ describe('B3 — getCatalogStockStatus x isProductInStock: SSOT consistente', ()
     [5, 1], [5, 5], [4, 5], [0, undefined], [1, undefined],
     [999, 1000], [1000, 1000],
   ];
-  matrix.forEach(([stock, minQty]) => {
-    it(`stock=${stock} minQty=${minQty} consistente`, () => {
-      const status = getCatalogStockStatus(stock, CATALOG_LOW_STOCK_THRESHOLD, minQty);
-      expect(isProductInStock({ stock, stockStatus: status })).toBe(status !== 'out-of-stock');
-    });
+  it.each(matrix)('stock=%s minQty=%s consistente', (stock, minQty) => {
+    const status = getCatalogStockStatus(stock, CATALOG_LOW_STOCK_THRESHOLD, minQty);
+    expect(isProductInStock({ stock, stockStatus: status })).toBe(status !== 'out-of-stock');
   });
   it('50 pares deterministicos: zero divergencias', () => {
     let fail = 0;
