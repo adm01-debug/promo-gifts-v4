@@ -107,7 +107,7 @@ export function PreviewSidebar({
 
 
   return (
-    <Card className={cn(variant === 'sidebar' && 'sticky top-4', variant === 'drawer' && 'border-0 shadow-none')}>
+    <Card className={cn(variant === 'sidebar' && 'sticky top-2', variant === 'drawer' && 'border-0 shadow-none')}>
       <CardContent className={cn('space-y-3 p-3', variant === 'drawer' && 'p-0')}>
         <div className="flex items-center justify-between gap-2">
           <span className="min-w-0 truncate text-xs font-semibold uppercase tracking-widest text-muted-foreground">
