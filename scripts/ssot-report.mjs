@@ -71,6 +71,7 @@ if (JSON_ONLY) {
 } else {
   const stream = process.stderr;
   stream.write('\n=== SSOT Report ===\n');
+  stream.write(`Schema:    v${SCHEMA_VERSION}\n`);
   stream.write(`Canônico:  ${CANONICAL}\n`);
   stream.write(`Legado:    ${FORBIDDEN}\n`);
   stream.write(`Timestamp: ${summary.timestamp}\n\n`);
