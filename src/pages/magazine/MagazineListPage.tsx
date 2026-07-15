@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
+import { Clickable } from '@/components/shared/Clickable';
 import { getTemplate } from './components/templates/TemplateRegistry';
 import { MagazineCardThumbnail } from './components/MagazineCardThumbnail';
 // FIX C12 (auditoria BD, 2026-07-12): migração one-shot do localStorage
@@ -247,23 +248,18 @@ export default function MagazineListPage() {
             {filtered.map((m) => {
               const template = getTemplate(m.templateId);
               return (
-                <Card
+                <Clickable
                   key={m.id}
-                  role="button"
-                  tabIndex={0}
+                  as={Card}
                   aria-label={`Abrir revista ${m.title}`}
                   className={cn(
-                    'group cursor-pointer overflow-hidden transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    'group overflow-hidden transition-shadow hover:shadow-md',
                   )}
                   onClick={() => openCard(m)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      openCard(m);
-                    }
-                  }}
                   data-testid={`magazine-card-${m.id}`}
                 >
+
+
                   <MagazineCardThumbnail magazine={m} />
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
@@ -322,7 +318,7 @@ export default function MagazineListPage() {
                       </Button>
                     </div>
                   </CardContent>
-                </Card>
+                </Clickable>
               );
             })}
           </div>

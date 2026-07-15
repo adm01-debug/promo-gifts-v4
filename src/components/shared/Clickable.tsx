@@ -50,6 +50,8 @@ export interface ClickableProps {
   showFocusRing?: boolean;
   /** Estilo inline (evitar; preferir className). */
   style?: React.CSSProperties;
+  /** Atributos data-* extras (preserva hooks E2E/analytics). */
+  [dataAttr: `data-${string}`]: string | number | boolean | undefined;
 }
 
 /**
@@ -59,7 +61,10 @@ export interface ClickableProps {
  * 3. Enter e Space (com preventDefault para não rolar página).
  */
 export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clickable(
-  {
+  props,
+  ref,
+) {
+  const {
     onClick,
     children,
     as,
@@ -77,11 +82,14 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clicka
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
     'aria-describedby': ariaDescribedBy,
-    'data-testid': dataTestId,
-  },
-  ref,
-) {
+    ...rest
+  } = props;
   const Component = (as ?? 'div') as ElementType;
+  // Encaminha apenas data-* extras (data-testid, data-selected, etc.)
+  const dataRest: Record<string, unknown> = {};
+  for (const key of Object.keys(rest)) {
+    if (key.startsWith('data-')) dataRest[key] = (rest as Record<string, unknown>)[key];
+  }
 
   const handleClick = (e: MouseEvent) => {
     if (disabled) return;
@@ -109,10 +117,10 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clicka
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
       aria-describedby={ariaDescribedBy}
-      data-testid={dataTestId}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       style={style}
+      {...dataRest}
       className={cn(
         'cursor-pointer',
         disabled && 'cursor-not-allowed opacity-60 pointer-events-none',
