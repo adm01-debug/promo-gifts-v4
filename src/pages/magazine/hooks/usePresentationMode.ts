@@ -33,7 +33,9 @@ export function usePresentationMode({
   const pausedByHidden = useRef(false);
 
   const stopTimers = useCallback(() => {
+    // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
     if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
     if (timeoutRef.current != null) window.clearTimeout(timeoutRef.current);
     rafRef.current = null;
     timeoutRef.current = null;

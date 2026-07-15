@@ -207,6 +207,7 @@ export function notifyRouteChange(pathname: string): void {
   routeChangeStart = performance.now();
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
+      // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
       if (routeChangeStart == null) return;
       const duration = performance.now() - routeChangeStart;
       routeChangeStart = null;

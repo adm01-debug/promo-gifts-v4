@@ -28,6 +28,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
   const thumbIdx = scrubIdx ?? currentIndex;
   const thumbLeft = total > 1 ? (thumbIdx / Math.max(total - 1, 1)) * 100 : 0;
   const previewLeft =
+    // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
     hoverIdx != null && total > 1 ? (hoverIdx / Math.max(total - 1, 1)) * 100 : 0;
 
   const idxFromClientX = useCallback(
@@ -86,6 +87,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
     [bookmarks, total],
   );
 
+  // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
   const showPreview = !dragging && hoverIdx != null && renderPreview && total > 1;
 
   return (
@@ -210,6 +212,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
           />
         )}
 
+        // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
         {dragging && scrubIdx != null && (
           <div
             className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md bg-neutral-900 px-2 py-1 text-[11px] font-medium tabular-nums text-white shadow-lg"

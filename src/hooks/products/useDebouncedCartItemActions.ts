@@ -47,6 +47,7 @@ export const CART_ITEM_DEBOUNCE_MS_MAX = 2000;
  */
 export function getCartItemDebounceMs(): number {
   const tryParse = (raw: unknown): number | null => {
+    // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
     if (raw == null) return null;
     const n = Number(raw);
     if (!Number.isFinite(n)) return null;

@@ -53,6 +53,7 @@ describe('collapsedItemsStorage — fuzz/simulation suite', () => {
       const norm = normalizeQuoteId(v);
       expect(norm.length).toBeGreaterThan(0);
       expect(norm).not.toMatch(/^\s|\s$/);
+      // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
       if (v == null || (typeof v === 'string' && v.trim() === '')) {
         expect(norm).toBe(NEW_QUOTE_FALLBACK);
       }

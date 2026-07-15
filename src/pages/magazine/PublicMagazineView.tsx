@@ -112,6 +112,7 @@ export default function PublicMagazineView() {
     // P: avisa uma única vez se o usuário chegou com ?p= inválido/fora do range
     if (
       !deepLinkWarned.current &&
+      // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
       rawParam != null &&
       rawParam !== '' &&
       (!Number.isFinite(currentParam) || currentParam < 1 || currentParam > total)
@@ -306,6 +307,7 @@ export default function PublicMagazineView() {
     touchStartX.current = e.touches[0]?.clientX ?? null;
   };
   const onTouchEnd = (e: React.TouchEvent) => {
+    // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
     if (touchStartX.current == null) return;
     const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
     touchStartX.current = null;

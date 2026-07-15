@@ -195,6 +195,7 @@ function toSellerCart(row: SellerCartRawRow): SellerCart {
 function errorCode(input: unknown): string {
   if (!input || typeof input !== 'object') return '';
   const value = (input as ErrorWithPostgrestShape).code;
+  // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
   return value == null ? '' : String(value);
 }
 
@@ -202,6 +203,7 @@ function errorMessage(input: unknown): string {
   if (input instanceof Error) return input.message;
   if (!input || typeof input !== 'object') return String(input ?? '');
   const value = (input as ErrorWithPostgrestShape).message;
+  // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
   return value == null ? '' : String(value);
 }
 
@@ -242,8 +244,10 @@ function dedupeRestorePayloadItems(items: RestorePayloadItem[]): RestorePayloadI
       color_hex: current.color_hex ?? item.color_hex,
       notes: current.notes ?? item.notes,
       sort_order:
+        // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
         current.sort_order == null
           ? item.sort_order
+          // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
           : item.sort_order == null
             ? current.sort_order
             : Math.min(current.sort_order, item.sort_order),

@@ -42,6 +42,7 @@ function readErrField(
   try {
     if (typeof input !== 'object' || input === null) return '';
     const v = (input as Record<string, unknown>)[key];
+    // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
     return v == null ? '' : String(v);
   } catch {
     return '';

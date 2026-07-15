@@ -61,6 +61,7 @@ export const isDiscountExpired = (q: Quote): boolean =>
 /** True se o orçamento está em fluxo ativo de aprovação de desconto. */
 export const hasDiscountWorkflow = (q: Quote): boolean =>
   q.status === 'pending_approval' ||
+  // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
   (q.status === 'pending' && q.discount_approval_status != null);
 
 /**
@@ -314,6 +315,7 @@ export function QuotesStatusChips({ quotes, value, onChange, rightSlot }: Quotes
   // Telemetria: detecta orçamentos com synced_to_bitrix null/undefined (dados legados).
   useEffect(() => {
     if (reportedLegacySync || quotes.length === 0) return;
+    // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
     const legacy = quotes.filter((q) => q.synced_to_bitrix == null);
     if (legacy.length === 0) return;
     reportedLegacySync = true;

@@ -368,6 +368,7 @@ export function MyDiscountRequestsWidget() {
 }
 
 function NextSteps({ row, onOpenQuote }: { row: RequestRow; onOpenQuote: () => void }) {
+  // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
   const limit = row.max_allowed_percent != null ? Number(row.max_allowed_percent) : null;
 
   if (row.status === 'pending') {
@@ -423,6 +424,7 @@ function NextSteps({ row, onOpenQuote }: { row: RequestRow; onOpenQuote: () => v
         <ul className="list-disc space-y-1 pl-4 text-foreground">
           <li>
             Reduza o desconto para no máximo{' '}
+            // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
             <strong>{limit != null ? `${limit.toFixed(2)}%` : 'o seu limite atual'}</strong> e
             reenvie ao cliente sem nova aprovação.
           </li>
