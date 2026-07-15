@@ -52,6 +52,8 @@ export interface ClickableProps {
   style?: React.CSSProperties;
   /** Atributos data-* extras (preserva hooks E2E/analytics). */
   [dataAttr: `data-${string}`]: string | number | boolean | undefined;
+  /** Atributos aria-* extras (aria-haspopup, aria-controls, aria-current, etc.). */
+  [ariaAttr: `aria-${string}`]: string | number | boolean | undefined;
 }
 
 /**
@@ -85,10 +87,12 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clicka
     ...rest
   } = props;
   const Component = (as ?? 'div') as ElementType;
-  // Encaminha apenas data-* extras (data-testid, data-selected, etc.)
-  const dataRest: Record<string, unknown> = {};
+  // Encaminha data-* e aria-* extras (data-testid, data-selected, aria-haspopup, aria-controls, etc.)
+  const passthrough: Record<string, unknown> = {};
   for (const key of Object.keys(rest)) {
-    if (key.startsWith('data-')) dataRest[key] = (rest as Record<string, unknown>)[key];
+    if (key.startsWith('data-') || key.startsWith('aria-')) {
+      passthrough[key] = (rest as Record<string, unknown>)[key];
+    }
   }
 
   const handleClick = (e: MouseEvent) => {
