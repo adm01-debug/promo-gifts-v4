@@ -30,30 +30,32 @@ const baseMagazine: Magazine = {
   templateId: 'corporate-executive',
   status: 'draft',
   branding: {
-    primaryColor: '#0f172a',
-    secondaryColor: '#dc2626',
-    textColor: '#111',
-    fontHeading: 'Inter',
-    fontBody: 'Inter',
     clientName: 'ACME Brindes',
     clientLogoUrl: 'https://example.com/logo.png',
+    clientCrmId: null,
+    colors: { primary: '#0f172a', secondary: '#dc2626', text: '#111' },
+    category: 'general',
   },
   content: {
-    showPrices: true,
-    groupByCategory: false,
+    showPrice: true,
+    showCode: true,
+    showPersonalization: false,
+    showDescription: true,
     showDimensions: false,
-    showColors: false,
     showMaterials: false,
-    coverText: '',
-    manifesto: '',
+    showColors: true,
+    groupByCategory: false,
   },
   items: [],
+  pageOrder: null,
   publicToken: null,
+  pdfUrl: null,
+  publishedAt: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
 
-const emptyPage: MagazinePage = { kind: 'cover' };
+const emptyPage: MagazinePage = { index: 0, kind: 'cover', items: [] };
 
 // ---------- V-BUG: comentário `//` no JSX do MiniMap ----------
 
