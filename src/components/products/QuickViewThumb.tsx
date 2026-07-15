@@ -99,28 +99,19 @@ export const QuickViewThumb = forwardRef<QuickViewThumbHandle, QuickViewThumbPro
 
     return (
       <>
-        <div
-          role="button"
-          tabIndex={0}
+        <Clickable
           aria-label={`Visualização rápida de ${productName}`}
           data-testid={testId}
+          showFocusRing={false}
           className={cn('cursor-zoom-in', className)}
           onClick={(e) => {
             e.stopPropagation();
             overrideColorRef.current = undefined;
             setOpen(true);
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              e.stopPropagation();
-              overrideColorRef.current = undefined;
-              setOpen(true);
-            }
-          }}
         >
           {children}
-        </div>
+        </Clickable>
         <ProductQuickView
           key={overrideTick}
           product={product ?? null}
