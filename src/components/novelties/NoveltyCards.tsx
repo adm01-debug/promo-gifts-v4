@@ -29,6 +29,7 @@ import { getSupplierColors } from '@/lib/supplier-colors';
 import { QuickViewThumb } from '@/components/products/QuickViewThumb';
 import { StockBadge } from '@/components/inventory/StockBadge';
 import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
+import { Clickable } from '@/components/shared/Clickable';
 
 const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
