@@ -406,7 +406,7 @@ export default function MagazineEditorPage() {
         </div>
         </div>
 
-        <aside className="hidden xl:block">
+        <aside className="hidden xl:block xl:self-start" data-testid="magazine-preview-aside">
           <PreviewSidebar
             magazine={magazine}
             pages={pages}
