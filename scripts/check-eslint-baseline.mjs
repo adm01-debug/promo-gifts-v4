@@ -136,35 +136,143 @@ const baselineTotal = baseline.totalErrors ?? 0;
 const modeLabel = incrementalMode
   ? `incremental (include=${includeGlobs.length} exclude=${excludeGlobs.length})`
   : 'full';
+
+// ── Flags de saída ────────────────────────────────────────────────────────
+const jsonMode = process.argv.includes('--json');
+const verbose = process.argv.includes('--verbose') || process.argv.includes('-v');
+const listLimit = verbose ? Number.POSITIVE_INFINITY : MAX_LIST;
+
+// ── Diff detalhado por regra e por arquivo (regressões + melhorias) ──────
+function aggregate(entries, deltaFn) {
+  const byRule = new Map();
+  const byFile = new Map();
+  for (const e of entries) {
+    const d = deltaFn(e);
+    const r = byRule.get(e.rule) ?? { rule: e.rule, delta: 0, pairs: 0, files: new Set() };
+    r.delta += d;
+    r.pairs += 1;
+    r.files.add(e.file);
+    byRule.set(e.rule, r);
+    const f = byFile.get(e.file) ?? { file: e.file, delta: 0, pairs: 0, rules: new Set() };
+    f.delta += d;
+    f.pairs += 1;
+    f.rules.add(e.rule);
+    byFile.set(e.file, f);
+  }
+  return {
+    byRule: [...byRule.values()].sort((a, b) => b.delta - a.delta),
+    byFile: [...byFile.values()].sort((a, b) => b.delta - a.delta),
+  };
+}
+
+const regAgg = aggregate(regressions, (r) => r.delta);
+const impAgg = aggregate(improvements, (i) => i.baseline - i.current);
+
+// Saldo líquido por regra (regressão − melhoria) — mostra quais regras
+// pioraram ou melhoraram no total.
+const netByRule = new Map();
+for (const r of regAgg.byRule) netByRule.set(r.rule, (netByRule.get(r.rule) ?? 0) + r.delta);
+for (const r of impAgg.byRule) netByRule.set(r.rule, (netByRule.get(r.rule) ?? 0) - r.delta);
+const netRules = [...netByRule.entries()]
+  .map(([rule, net]) => ({ rule, net }))
+  .sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
+
+const totalRegDelta = regressions.reduce((s, r) => s + r.delta, 0);
+const totalImpDelta = improvements.reduce((s, i) => s + (i.baseline - i.current), 0);
+const netDelta = totalRegDelta - totalImpDelta;
+
+// ── Saída JSON estruturada (para CI / relatórios) ────────────────────────
+if (jsonMode) {
+  const payload = {
+    mode: incrementalMode ? 'incremental' : 'full',
+    scope: { include: includeGlobs, exclude: excludeGlobs },
+    totals: {
+      baselineErrors: baselineTotal,
+      currentErrors: totalErrors,
+      currentWarnings: totalWarnings,
+      regressionsDelta: totalRegDelta,
+      improvementsDelta: totalImpDelta,
+      netDelta,
+    },
+    regressions: regressions.map((r) => ({
+      ...r,
+      inScope: fileInScope(r.file),
+    })),
+    improvements,
+    byRule: {
+      regressions: regAgg.byRule.map((r) => ({ ...r, files: [...r.files] })),
+      improvements: impAgg.byRule.map((r) => ({ ...r, files: [...r.files] })),
+      net: netRules,
+    },
+    byFile: {
+      regressions: regAgg.byFile.map((f) => ({ ...f, rules: [...f.rules] })),
+      improvements: impAgg.byFile.map((f) => ({ ...f, rules: [...f.rules] })),
+    },
+  };
+  console.log(JSON.stringify(payload, null, 2));
+  const hasBlockingJson = incrementalMode
+    ? regressions.some((r) => fileInScope(r.file))
+    : regressions.length > 0;
+  process.exit(hasBlockingJson ? 1 : 0);
+}
+
+// ── Cabeçalho ────────────────────────────────────────────────────────────
 console.log(
   `ESLint baseline gate [${modeLabel}] — atual: ${totalErrors} erros, ${totalWarnings} warnings · baseline: ${baselineTotal} erros`,
 );
+console.log(
+  `Δ vs baseline: regressões +${totalRegDelta} · melhorias −${totalImpDelta} · líquido ${netDelta >= 0 ? '+' : ''}${netDelta}`,
+);
 
+// ── Breakdown por regra (net) ────────────────────────────────────────────
+if (netRules.length) {
+  console.log('\n📐 Diferença por regra (saldo líquido, top 15):');
+  for (const { rule, net } of netRules.slice(0, 15)) {
+    const sign = net > 0 ? `+${net}` : `${net}`;
+    const marker = net > 0 ? '↑' : net < 0 ? '↓' : '=';
+    console.log(`  ${marker} ${rule.padEnd(48)} ${sign}`);
+  }
+  if (netRules.length > 15 && !verbose) {
+    console.log(`  … e mais ${netRules.length - 15} regra(s). Use --verbose para ver tudo.`);
+  }
+}
+
+// ── Melhorias (drift positivo) ───────────────────────────────────────────
 if (improvements.length) {
-  const improved = improvements.reduce((s, i) => s + (i.baseline - i.current), 0);
   console.log(
-    `✨ Drift positivo: ${improved} erro(s) eliminado(s) em ${improvements.length} par(es) file:rule. Considere atualizar o baseline.`,
+    `\n✨ Drift positivo: ${totalImpDelta} erro(s) eliminado(s) em ${improvements.length} par(es) file:rule.`,
   );
+  if (impAgg.byRule.length) {
+    console.log('   Por regra (top 10):');
+    for (const r of impAgg.byRule.slice(0, 10)) {
+      console.log(`     − ${r.rule.padEnd(46)} −${r.delta} (${r.files.size} arquivo(s))`);
+    }
+  }
+  if (impAgg.byFile.length && verbose) {
+    console.log('   Por arquivo:');
+    for (const f of impAgg.byFile) {
+      console.log(`     − ${f.file} (−${f.delta}, ${f.rules.size} regra(s))`);
+    }
+  }
+  console.log('   → Rode `npm run lint:baseline:update` para consolidar.');
 }
 
 if (regressions.length === 0) {
-  console.log('✅ Nenhuma regressão de lint detectada.');
+  console.log('\n✅ Nenhuma regressão de lint detectada.');
   process.exit(0);
 }
 
 regressions.sort((a, b) => b.delta - a.delta);
 
-// Split por escopo quando em modo incremental.
+// ── Split por escopo quando em modo incremental ──────────────────────────
 const blocking = incrementalMode ? regressions.filter((r) => fileInScope(r.file)) : regressions;
-const informational = incrementalMode
-  ? regressions.filter((r) => !fileInScope(r.file))
-  : [];
+const informational = incrementalMode ? regressions.filter((r) => !fileInScope(r.file)) : [];
 const blockingDelta = blocking.reduce((s, r) => s + r.delta, 0);
 const infoDelta = informational.reduce((s, r) => s + r.delta, 0);
 
-// Coleta exemplos concretos (linha/coluna/msg) das regressões bloqueantes.
+// ── Exemplos concretos (linha/coluna/msg) das regressões ─────────────────
 const examplesByKey = new Map();
-for (const r of blocking.slice(0, MAX_LIST)) {
+for (const r of [...blocking, ...informational].slice(0, listLimit)) {
   examplesByKey.set(`${r.file}::${r.rule}`, []);
 }
 for (const file of report) {
@@ -180,17 +288,36 @@ for (const file of report) {
   }
 }
 
+// ── Breakdown de regressões por regra e por arquivo ──────────────────────
+console.log(`\n📊 Regressões por regra (top 10):`);
+for (const r of regAgg.byRule.slice(0, 10)) {
+  console.log(`  ↑ ${r.rule.padEnd(46)} +${r.delta} (${r.files.size} arquivo(s), ${r.pairs} par(es))`);
+}
+if (regAgg.byRule.length > 10 && !verbose) {
+  console.log(`  … e mais ${regAgg.byRule.length - 10} regra(s). Use --verbose para ver tudo.`);
+}
+
+console.log(`\n📁 Regressões por arquivo (top 10):`);
+for (const f of regAgg.byFile.slice(0, 10)) {
+  console.log(`  ↑ ${f.file}  +${f.delta}  [${[...f.rules].join(', ')}]`);
+}
+if (regAgg.byFile.length > 10 && !verbose) {
+  console.log(`  … e mais ${regAgg.byFile.length - 10} arquivo(s). Use --verbose para ver tudo.`);
+}
+
+// ── Regressões fora do escopo (informacionais) ───────────────────────────
 if (informational.length) {
   console.log(
     `\nℹ️  ${infoDelta} regressão(ões) FORA do escopo incremental em ${informational.length} par(es) file:rule — não bloqueia o gate:`,
   );
-  for (const r of informational.slice(0, 20)) {
+  const infoLimit = verbose ? informational.length : 20;
+  for (const r of informational.slice(0, infoLimit)) {
     console.log(
       `  · ${r.file} [${r.rule}] baseline=${r.baseline} → atual=${r.current} (+${r.delta})`,
     );
   }
-  if (informational.length > 20) {
-    console.log(`  … e mais ${informational.length - 20} par(es) fora de escopo omitido(s).`);
+  if (informational.length > infoLimit) {
+    console.log(`  … e mais ${informational.length - infoLimit} par(es) fora de escopo omitido(s).`);
   }
 }
 
@@ -199,23 +326,26 @@ if (blocking.length === 0) {
   process.exit(0);
 }
 
+// ── Detalhamento das regressões bloqueantes ──────────────────────────────
 console.error(
-  `\n❌ ${blockingDelta} problema(s) novo(s) de ESLint dentro do escopo em ${blocking.length} par(es) file:rule:`,
+  `\n❌ ${blockingDelta} problema(s) novo(s) de ESLint ${incrementalMode ? 'dentro do escopo ' : ''}em ${blocking.length} par(es) file:rule:`,
 );
 
-for (const r of blocking.slice(0, MAX_LIST)) {
+for (const r of blocking.slice(0, listLimit)) {
   console.error(
     `  • ${r.file} [${r.rule}] baseline=${r.baseline} → atual=${r.current} (+${r.delta})`,
   );
   const ex = examplesByKey.get(`${r.file}::${r.rule}`) ?? [];
   for (const e of ex) console.error(`      ${e}`);
 }
-if (blocking.length > MAX_LIST) {
-  console.error(`  … e mais ${blocking.length - MAX_LIST} par(es) omitido(s).`);
+if (blocking.length > listLimit) {
+  console.error(`  … e mais ${blocking.length - listLimit} par(es) omitido(s). Use --verbose para ver tudo.`);
 }
-console.error('\nPara atualizar o baseline (após corrigir os legados ou refactor intencional):');
-console.error('  node scripts/eslint-baseline-generate.mjs');
-console.error('Para expandir o escopo incremental após uma onda:');
-console.error("  node scripts/eslint-baseline-scope-add.mjs 'src/<area>/**'");
+console.error('\nDicas:');
+console.error('  · Ver saída completa:              node scripts/check-eslint-baseline.mjs --verbose');
+console.error('  · Ver JSON estruturado (CI):       node scripts/check-eslint-baseline.mjs --json');
+console.error('  · Consolidar baseline após fix:    npm run lint:baseline:update');
+console.error("  · Expandir escopo incremental:     node scripts/eslint-baseline-scope-add.mjs 'src/<area>/**'");
 process.exit(1);
+
 
