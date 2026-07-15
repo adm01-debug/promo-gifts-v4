@@ -1,10 +1,14 @@
 /**
- * Step 4 — Design: galeria dos 12 templates com miniaturas FIÉIS ao layout +
- * seletor obrigatório de categoria (14 tokens Abreez-inspired) que colore o
- * SidebarChrome/PageNumberBadge de todas as páginas.
+ * Step 4 — Design: galeria dos 12 templates (sem miniaturas) + seletor de
+ * categoria (14 tokens Abreez-inspired) que colore o SidebarChrome/PageNumberBadge.
+ *
+ * A miniatura FIEL (`TemplateThumbnail`) foi removida deste step a pedido do PO:
+ * o preview real vive só na `PreviewSidebar` à direita e as miniaturas geravam
+ * duplicidade + ruído visual. Cards agora exibem apenas metadados (nome,
+ * família, produtos/página, fontes).
  */
 
-import { Check } from 'lucide-react';
+import { Check, Layers } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -14,7 +18,6 @@ import type {
   MagazineTemplateId,
 } from '@/types/magazine';
 import { templatesByFamily } from '../templates/TemplateRegistry';
-import { TemplateThumbnail } from '../TemplateThumbnail';
 import { MAGAZINE_CATEGORY_META } from '../templates/chrome';
 
 interface Props {
@@ -54,7 +57,6 @@ const CATEGORY_LIST: MagazineCategory[] = [
 
 export function DesignStep({ magazine, onChange, onCategoryChange }: Props) {
   const grouped = templatesByFamily();
-  const source = magazine.items.length > 0 ? magazine : undefined;
   const currentCategory = magazine.branding.category ?? 'technology';
 
   return (
@@ -136,19 +138,29 @@ export function DesignStep({ magazine, onChange, onCategoryChange }: Props) {
                     }
                   }}
                   className={cn(
-                    'cursor-pointer overflow-hidden transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    'cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                     selected ? 'border-primary ring-2 ring-primary/40' : 'hover:border-primary/60',
                   )}
                   data-testid={`magazine-template-${t.id}`}
                 >
-                  <TemplateThumbnail templateId={t.id} sourceMagazine={source} />
-                  <CardContent className="space-y-1 p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">{t.name}</span>
-                      {selected && <Check className="h-4 w-4 text-primary" aria-label="Selecionado" />}
+                  <CardContent className="space-y-2 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Layers
+                          className={cn(
+                            'h-4 w-4 shrink-0',
+                            selected ? 'text-primary' : 'text-muted-foreground',
+                          )}
+                          aria-hidden
+                        />
+                        <span className="truncate text-sm font-semibold">{t.name}</span>
+                      </div>
+                      {selected && (
+                        <Check className="h-4 w-4 shrink-0 text-primary" aria-label="Selecionado" />
+                      )}
                     </div>
                     <p className="line-clamp-2 text-xs text-muted-foreground">{t.description}</p>
-                    <div className="flex items-center gap-1.5 pt-1">
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
                       <Badge variant="outline" className="text-[10px]">
                         {t.productsPerPage} / pág
                       </Badge>
@@ -163,12 +175,6 @@ export function DesignStep({ magazine, onChange, onCategoryChange }: Props) {
           </div>
         </section>
       ))}
-      {!source && (
-        <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-          Dica: adicione produtos na etapa anterior para ver o design com seus produtos reais.
-          Enquanto isso, as miniaturas usam produtos de amostra.
-        </p>
-      )}
     </div>
   );
 }
