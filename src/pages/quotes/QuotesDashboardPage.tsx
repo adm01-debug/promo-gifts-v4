@@ -395,7 +395,7 @@ export default function QuotesDashboardPage() {
                       {formatCurrency(quote.total || 0)}
                     </p>
                   </div>
-                </div>
+                </Clickable>
               ))}
               {s.quotes.filter((q) => q.client_response_at).length === 0 && (
                 <div className="py-8 text-center text-muted-foreground">
