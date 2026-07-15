@@ -46,5 +46,6 @@ export const publicRoutes = (
     <Route path="/__test/undo-toast" element={<UndoToastHarness />} />
     <Route path="/__test/cnpj-form" element={<CnpjFormHarness />} />
     <Route path="/__test/magazine-ring" element={<MagazineRingHarness />} />
+    <Route path="/__test/tab-skip" element={<TabSkipHarness />} />
   </>
 );
