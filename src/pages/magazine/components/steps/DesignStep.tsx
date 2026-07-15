@@ -57,7 +57,6 @@ const CATEGORY_LIST: MagazineCategory[] = [
 
 export function DesignStep({ magazine, onChange, onCategoryChange }: Props) {
   const grouped = templatesByFamily();
-  const source = magazine.items.length > 0 ? magazine : undefined;
   const currentCategory = magazine.branding.category ?? 'technology';
 
   return (
