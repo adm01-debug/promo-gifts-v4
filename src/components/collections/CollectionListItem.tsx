@@ -5,6 +5,7 @@
 import { m as motion } from 'framer-motion';
 import { MoreVertical, Pencil, Copy, Star, Trash2, Package, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Clickable } from '@/components/shared/Clickable';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import {
   DropdownMenu,
