@@ -63,21 +63,16 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
             </span>
           </nav>
 
-          <h1
-            data-testid="page-title-magazine-editor"
-            className="line-clamp-2 font-display text-2xl font-bold tracking-tight sm:text-3xl"
-          >
-            {magazine.title || 'Nova revista'}
-          </h1>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <h1
+              data-testid="page-title-magazine-editor"
+              className="line-clamp-2 font-display text-2xl font-bold tracking-tight sm:text-3xl"
+            >
+              {magazine.title || 'Nova revista'}
+            </h1>
 
-          {magazine.subtitle && (
-            <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
-              {magazine.subtitle}
-            </p>
-          )}
-
-          {/* Chip do template + swap inline */}
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {/* Chip do template + swap inline — alinhados ao título */}
+            <div className="flex flex-wrap items-center gap-2">
             <div
               className="flex items-center gap-2 rounded-full border bg-muted/40 py-1 pl-2 pr-3 text-xs"
               aria-label="Template ativo"
