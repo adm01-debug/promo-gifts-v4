@@ -80,6 +80,56 @@ Checklist mínimo:
 - [ ] Sem secrets hardcoded
 - [ ] Migrations SQL com backup das tabelas afetadas
 - [ ] Variáveis de ambiente documentadas se forem novas
+- [ ] `npm run ssot:all` verde (Gate 0 + guard canônico + hosts em docs)
+
+## 🔒 Checklist de SSOT (revisão de PR — obrigatório)
+
+> **Banco canônico:** `doufsxqlfjyuvxuezpln` — `https://doufsxqlfjyuvxuezpln.supabase.co`  
+> **Legado (informacional apenas):** `pqpdolkaeqlyzpdpbizo` — sem dados reais, NUNCA operacional.
+
+Todo revisor de PR (humano ou automático) DEVE marcar cada item abaixo antes do merge.
+Qualquer "não" bloqueia o merge.
+
+### 1. Código runtime
+- [ ] `src/integrations/supabase/client.ts` continua apontando para `doufsxqlfjyuvxuezpln`
+- [ ] `supabase/config.toml` continua com `project_id = "doufsxqlfjyuvxuezpln"`
+- [ ] Nenhum arquivo em `src/` ou `supabase/functions/` menciona o ID legado `pqpdolkaeqlyzpdpbizo` fora de comentário — projeto legado, NUNCA usar
+- [ ] Campos críticos do tipo `Product` intactos: `price`, `sale_price`, `shortDescription`, `category_id`, `category_name`
+
+### 2. Documentação (`.md`)
+- [ ] Nenhuma instrução operacional nova cita o ID legado `pqpdolkaeqlyzpdpbizo` — projeto legado, NUNCA operacional (deploy, migration, `supabase link`, `--project-ref`, connect)
+- [ ] Toda URL `https://<ref>.supabase.co` operacional aponta para o canônico
+- [ ] Menções históricas ao legado estão em pasta de arquivo (`docs/redeploy/`, `docs/audit/`, `docs/incidents/`, `docs/sessoes/`) OU trazem marcador na mesma linha / nas 3 anteriores: `[LEGACY_INFORMATIVO]`, `projeto legado`, `deprecated`, `⚠️`, `não use`, `NUNCA apontar`
+- [ ] Novos exemplos de `.env` usam placeholders (`<project_ref>`, `your_project`) e não IDs reais
+
+### 3. Migrations e schema
+- [ ] Toda migration SQL foi aplicada no canônico (`doufsxqlfjyuvxuezpln`), nunca no legado
+- [ ] `types.ts` regenerado contra o canônico após alterações de schema
+- [ ] Contagem de `export type` em `src/integrations/supabase/types.ts` não regrediu sem justificativa (Regra #4 do `CLAUDE.md`)
+
+### 4. Gates automáticos verdes
+Rodar antes do merge (ou aguardar CI):
+
+```bash
+npm run ssot:all
+```
+
+Isto executa em sequência:
+1. `scripts/validate-supabase-config.mjs` — Gate 0 (SSOT do client)
+2. `scripts/guard-canonical-project.mjs` — runtime + arquivos críticos + docs operacionais
+3. `scripts/check-docs-supabase-hosts.mjs` — verificação de hosts/links em `.md`
+
+Todos devem sair com exit 0. Falha em qualquer um bloqueia o merge.
+
+### 5. Se o PR precisa mencionar o legado
+Legítimo em três cenários:
+- **Log histórico** — colocar o arquivo sob `docs/redeploy/` ou `docs/audit/` (arquivos históricos por convenção).
+- **Aviso didático** — adicionar marcador de legado explícito na linha ou logo acima.
+- **Incidente/pós-mortem** — publicar em `docs/incidents/`.
+
+Se nenhum encaixa, o PR está introduzindo instrução operacional legado — **rejeitar**.
+
+
 
 ## 🎓 Convenções específicas
 
