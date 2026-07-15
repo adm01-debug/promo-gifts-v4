@@ -106,14 +106,14 @@ export const NoveltyGridCard = memo(
       : product.stock_status;
 
     return (
-      <article
+      <Clickable
+        as="article"
         data-testid="novelty-grid-card"
-        role="button"
-        tabIndex={0}
         aria-label={`Novidade: ${product.product_name ?? 'Produto'}`}
-        aria-pressed={isSelected}
+        isPressed={isSelected}
+        showFocusRing={false}
         className={cn(
-          'group relative flex cursor-pointer flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
+          'group relative flex flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
           'hover:border-primary/40 hover:shadow-md',
           // Altura flexível com piso — o virtualizer (measureElement) precisa medir a
           // altura REAL do card. Alturas fixas + overflow-hidden recortam conteúdo (nomes
@@ -123,12 +123,6 @@ export const NoveltyGridCard = memo(
           isSelected && 'border-primary ring-2 ring-primary/20',
         )}
         onClick={() => onSelect?.(product.product_id)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onSelect?.(product.product_id);
-          }
-        }}
       >
         {/* Selection indicator */}
         {selectionMode && (
