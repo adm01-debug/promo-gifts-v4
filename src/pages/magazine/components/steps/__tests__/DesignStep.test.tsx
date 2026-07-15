@@ -57,7 +57,7 @@ describe('DesignStep — sem miniaturas', () => {
     );
 
     // Sanity: cards de template presentes
-    expect(screen.getByTestId('magazine-template-vogue')).toBeInTheDocument();
+    expect(screen.getByTestId('magazine-template-editorial-vogue')).toBeInTheDocument();
 
     // Nenhum <img> renderizado (o TemplateThumbnail antigo usava SVG role="img")
     expect(screen.queryAllByRole('img')).toHaveLength(0);
