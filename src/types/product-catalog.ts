@@ -4,6 +4,8 @@
  * These are the runtime types used throughout the UI.
  * Distinct from src/types/product.ts which holds DB-oriented types.
  */
+import type { ColorSwatch } from './colorSwatch';
+
 
 /** Variação de cor de um produto com hex real, grupo cromático e imagem da variação. */
 export interface ProductColor {
@@ -149,7 +151,7 @@ export interface Product {
    * Consumido por useProductColorSwatch + ColorSwatchPicker quando a flag
    * useColorSwatchesV2 estiver habilitada. null = produto sem variações de cor.
    */
-  color_swatches?: import('./colorSwatch').ColorSwatch[] | null;
+  color_swatches?: ColorSwatch[] | null;
   has_colors?: boolean | null;
 
   /**
