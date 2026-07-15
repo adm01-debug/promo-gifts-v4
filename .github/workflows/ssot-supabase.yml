@@ -23,6 +23,9 @@ jobs:
     name: SSOT Gates (validate + guard + hosts)
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -51,14 +54,67 @@ jobs:
         if: always()
         run: node scripts/validate-ssot-report.mjs --file=ssot-report.json --schema=schemas/ssot-report.schema.json
 
+      - name: Renderizar relatório em Markdown
+        if: always()
+        run: node scripts/ssot-report-markdown.mjs --in=ssot-report.json --out=ssot-report.md || true
+
       - name: Upload SSOT report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ssot-report
-          path: ssot-report.json
+          path: |
+            ssot-report.json
+            ssot-report.md
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Comentar relatório no PR (sticky, idempotente)
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          REPORT_PATH: ssot-report.md
+          JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = process.env.REPORT_PATH;
+            const marker = '<!-- ssot-report-comment -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            let body;
+            if (fs.existsSync(path)) {
+              body = fs.readFileSync(path, 'utf8');
+            } else {
+              body = `## SSOT Supabase Guard\n\n⚠️ \`ssot-report.md\` não foi gerado neste run.`;
+            }
+            // GitHub PR comment body limit: 65_536 chars. Deixa folga p/ marker + footer.
+            const MAX = 60000;
+            if (body.length > MAX) {
+              body = body.slice(0, MAX) + '\n\n_(truncado — veja o artifact `ssot-report` para o relatório completo)_';
+            }
+            const finalBody = `${marker}\n${body}\n\n---\n<sub>🤖 SSOT Supabase Guard · status: **${process.env.JOB_STATUS}** · [run #${context.runId}](${runUrl})</sub>`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find(
+              (c) => c.user?.type === 'Bot' && typeof c.body === 'string' && c.body.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body: finalBody,
+              });
+              core.info(`Comentário SSOT atualizado (id=${existing.id}).`);
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number, body: finalBody,
+              });
+              core.info('Comentário SSOT criado.');
+            }
 
       - name: Resumo
         if: always()
@@ -73,3 +129,4 @@ jobs:
             node -e "const j=require('./ssot-report.json'); console.log(JSON.stringify({overallOk:j.overallOk,gates:j.gates},null,2))" >> "$GITHUB_STEP_SUMMARY"
             echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
           fi
+
