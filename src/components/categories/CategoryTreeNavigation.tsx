@@ -92,7 +92,7 @@ function TreeNode({
             {node.children.length}
           </Badge>
         )}
-      </div>
+      </Clickable>
 
       {/* Filhos */}
       {hasChildren && isExpanded && (
