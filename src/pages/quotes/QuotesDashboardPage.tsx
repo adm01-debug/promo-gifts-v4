@@ -364,20 +364,13 @@ export default function QuotesDashboardPage() {
           <CardContent>
             <div className="space-y-3">
               {recentClientResponses.map((quote) => (
-                <div
+                <Clickable
                   key={quote.id}
-                  className="flex cursor-pointer items-center justify-between rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/50"
-                  role="button"
-                  tabIndex={0}
+                  className="flex items-center justify-between rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/50"
                   onClick={() => navigate(`/orcamentos/${quote.id}`)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      navigate(`/orcamentos/${quote.id}`);
-                    }
-                  }}
                   aria-label={`Ver orçamento ${quote.quote_number}`}
                 >
+
                   <div className="flex items-center gap-3">
                     {quote.status === 'approved' ? (
                       <CheckCircle className="h-5 w-5 text-success" />
