@@ -72,6 +72,11 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: npm run check:secdef-anon
 
+      - name: 📚 Allowlist ↔ security-memory cross-check
+        run: npm run check:allowlist-memory
+
+
+
 
 
 
