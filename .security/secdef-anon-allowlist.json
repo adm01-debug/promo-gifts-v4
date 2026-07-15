@@ -1,0 +1,5 @@
+{
+  "description": "Allowlist do gate 'SECURITY DEFINER exec por anon' (espelho do lint 0029 focado em role anon). Uma função em public com SECURITY DEFINER + EXECUTE para anon executa com privilégios do dono BYPASSANDO auth — vetor crítico. Cada entrada precisa de reason (ex: 'endpoint público quote-view via token'). Snapshot inicial: 2026-07-15 (0 violações).",
+  "documented_in": "security-memory (padrão public_intent whitelist)",
+  "functions": []
+}
