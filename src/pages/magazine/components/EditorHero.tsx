@@ -49,15 +49,7 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
       className="mb-4 overflow-hidden rounded-xl border bg-card shadow-sm"
     >
       <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-stretch sm:gap-5">
-        {/* Miniatura real da capa */}
-        <div className="w-full max-w-[132px] shrink-0 sm:w-[132px]">
-          <div className="overflow-hidden rounded-lg ring-1 ring-border/60 shadow-sm">
-            <TemplateThumbnail
-              templateId={magazine.templateId}
-              sourceMagazine={source}
-            />
-          </div>
-        </div>
+        {/* Miniatura removida a pedido — preview principal fica na sidebar */}
 
         {/* Metadados */}
         <div className="min-w-0 flex-1">
