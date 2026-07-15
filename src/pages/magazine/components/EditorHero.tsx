@@ -2,13 +2,13 @@
  * EditorHero — bloco premium no topo do editor.
  *
  * Compõe:
- *  - Miniatura FIEL da capa (TemplateThumbnail com magazine real quando há itens)
  *  - Breadcrumb + título editável visualmente (h1 continua)
  *  - Chip do template ativo (nome + produtos/página + fonte)
- *  - Popover "Trocar template" com grid inline de miniaturas (todos os templates)
+ *  - Popover "Trocar template" com grid inline de cards (sem miniaturas)
  *
- * Não altera dados nem regras — apenas apresentação. `onChange` já
- * é `editor.setTemplate` no editor.
+ * Sem miniaturas: o preview real vive só na sidebar direita. A remoção
+ * das thumbs neste componente (hero + popover) foi solicitada pelo PO
+ * para reduzir ruído visual e evitar duplicidade com a `PreviewSidebar`.
  */
 
 import { useState } from 'react';
@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import type { Magazine, MagazineTemplateId } from '@/types/magazine';
-import { TemplateThumbnail } from './TemplateThumbnail';
 import { getTemplate, listTemplates } from './templates/TemplateRegistry';
 
 interface Props {
@@ -40,19 +39,16 @@ const FAMILY_LABEL: Record<'editorial' | 'catalog' | 'corporate', string> = {
 export function EditorHero({ magazine, onChangeTemplate }: Props) {
   const [open, setOpen] = useState(false);
   const active = getTemplate(magazine.templateId);
-  const source = magazine.items.length > 0 ? magazine : undefined;
   const all = listTemplates();
 
   return (
     <section
+      data-testid="editor-hero"
       aria-label="Cabeçalho do editor"
       className="mb-4 overflow-hidden rounded-xl border bg-card shadow-sm"
     >
-      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-stretch sm:gap-5">
-        {/* Miniatura removida a pedido — preview principal fica na sidebar */}
-
-        {/* Metadados */}
-        <div className="min-w-0 flex-1">
+      <div className="p-4 sm:p-5">
+        <div className="min-w-0">
           <nav
             aria-label="Trilha"
             className="mb-1 flex items-center gap-2 text-xs text-muted-foreground"
@@ -142,30 +138,24 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                           setOpen(false);
                         }}
                         className={cn(
-                          'group overflow-hidden rounded-md border bg-card text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                          'group relative flex items-start gap-2 rounded-md border bg-card p-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                           selected
                             ? 'border-primary ring-2 ring-primary/40'
                             : 'hover:border-primary/60',
                         )}
                       >
-                        <div className="relative">
-                          <TemplateThumbnail
-                            templateId={t.id}
-                            sourceMagazine={source}
-                          />
-                          {selected && (
-                            <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                              <Check className="h-3 w-3" aria-hidden />
-                            </span>
+                        <Layers
+                          className={cn(
+                            'mt-0.5 h-4 w-4 shrink-0',
+                            selected ? 'text-primary' : 'text-muted-foreground',
                           )}
-                        </div>
-                        <div className="space-y-1 p-2">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="truncate text-xs font-semibold">
-                              {t.name}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
+                          aria-hidden
+                        />
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <span className="block truncate text-xs font-semibold">
+                            {t.name}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1">
                             <Badge
                               variant="outline"
                               className="px-1.5 py-0 text-[10px]"
@@ -180,6 +170,11 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                             </Badge>
                           </div>
                         </div>
+                        {selected && (
+                          <span className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                            <Check className="h-2.5 w-2.5" aria-hidden />
+                          </span>
+                        )}
                       </button>
                     );
                   })}
