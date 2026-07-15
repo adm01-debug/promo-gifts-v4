@@ -54,6 +54,13 @@ jobs:
       - name: 🖼️ Iframe sandbox gate (allow-scripts + allow-same-origin)
         run: npm run check:iframe-sandbox
 
+      - name: 🛡️ Supabase lint 0029 drift gate (SECURITY DEFINER exec)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run check:lint-0029
+
+
 
 
 
