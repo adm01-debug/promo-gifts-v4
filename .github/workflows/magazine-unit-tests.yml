@@ -48,6 +48,12 @@ jobs:
       - name: 🚫 No TemplateThumbnail regression gate
         run: node scripts/check-no-template-thumbnail.mjs
 
+      # 🌐 Congela o padrão CORS SSOT: exige `x-request-id` em
+      # Access-Control-Allow-Headers + Expose-Headers em toda edge
+      # browser-callable. Fail-fast antes dos testes.
+      - name: 🌐 Edge CORS x-request-id gate
+        run: node scripts/check-edge-cors-headers.mjs
+
       - name: Run Vitest (magazine module)
         run: |
           npx vitest run \
