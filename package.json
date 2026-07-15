@@ -148,6 +148,7 @@
     "check:no-inline-cors": "node scripts/check-no-inline-cors.mjs",
     "check:iframe-sandbox": "node scripts/check-iframe-sandbox.mjs",
     "check:lint-0029": "node scripts/check-lint-0029-drift.mjs",
+    "check:lint-0011": "node scripts/check-lint-0011-drift.mjs",
     "check:no-followup-frontend": "node scripts/check-no-followup-frontend.mjs",
     "check:summary-color-tokens": "node scripts/check-summary-color-tokens.mjs",
     "check:no-template-thumbnail": "node scripts/check-no-template-thumbnail.mjs",
