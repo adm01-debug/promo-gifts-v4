@@ -52,3 +52,7 @@ Auditoria estática identificou **68 ocorrências** legadas — refatorar em ond
 
 - WCAG 2.1.1: https://www.w3.org/WAI/WCAG21/Understanding/keyboard.html
 - Rule ARIA button: https://www.w3.org/TR/wai-aria-practices/#button
+
+## Histórico de refatorações
+
+- **Onda 1 (2026-07-15)** — Baseline 30 → 26. Refatorados: `pages/magazine/MagazineListPage.tsx`, `pages/products/CartsListPage.tsx`, `pages/quotes/QuotesDashboardPage.tsx`, `pages/trends/TrendsCharts.tsx`. Extensão paralela em `Clickable` para encaminhar atributos `data-*` extras (preserva hooks E2E como `data-selected`).
