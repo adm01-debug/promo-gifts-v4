@@ -562,11 +562,19 @@ export const magazineService = {
     // continua NULL — garantindo que o fluxo de publicação sempre produza
     // um link compartilhável E que o token fique persistido no BD para que
     // republicações futuras reutilizem o mesmo link (idempotência).
+    //
+    // Invariantes (validados por src/services/__tests__/magazinePublish.fuzz.test.ts):
+    //   INV-1: nunca retorna Magazine com publicToken vazio se o BD aceitou
+    //          ao menos um UPDATE de status.
+    //   INV-2: token pré-existente NUNCA é sobrescrito (guarda `is null`).
+    //   INV-3: falha do UPDATE de status → resolve com null, sem token órfão.
+    //   INV-4: token final sempre 32 hex chars.
+    //   INV-5: falha do UPDATE de token não derruba o publish.
     const currentRow = await fetchMagazineRow(id);
     const existingToken = currentRow?.public_token ?? null;
-    const generatedToken = existingToken ?? generatePublicToken();
 
-    // 1) Update de status/published_at — sempre.
+    // 1) Update de status/published_at — sempre. Se falhar, aborta ANTES de
+    //    tentar gravar qualquer token (INV-3: sem token órfão no BD).
     const { error } = await untypedFrom<MagazineRow>('magazines')
       .update({
         status: 'published',
@@ -578,11 +586,12 @@ export const magazineService = {
       return null;
     }
 
-    // 2) Persistência do token: SÓ escreve quando `public_token IS NULL`
-    //    no BD. Isso protege contra corridas (dois publish simultâneos)
-    //    e garante que um token já existente NUNCA seja sobrescrito —
-    //    republicações reutilizam o mesmo link.
+    // 2) Se já havia token, pula o UPDATE de token (economia + INV-2).
+    //    A trigger, quando ativa, já preencheu no passo 1; o re-fetch abaixo
+    //    confirma. Se não havia, tenta gravar o token gerado com guarda
+    //    `.is('public_token', null)` — só escreve se o BD ainda estiver NULL.
     if (!existingToken) {
+      const generatedToken = generatePublicToken();
       const { error: tokenErr } = await untypedFrom<MagazineRow>('magazines')
         .update({ public_token: generatedToken })
         .eq('id', id)
@@ -593,11 +602,12 @@ export const magazineService = {
     }
 
     let hydrated = await hydrate(id);
-    // Defesa em profundidade: se ainda vier NULL (ex.: RLS silenciosa ou
-    // trigger que sobrescreveu para NULL), tenta persistir novamente com
-    // guarda `is null` — idempotente e seguro contra concorrência.
+    // Defesa em profundidade: se ainda vier NULL (ex.: RLS silenciosa que
+    // ocultou o UPDATE anterior), tenta persistir um NOVO token com guarda
+    // `is null`. Idempotente e seguro contra concorrência: um segundo
+    // publish() concorrente vai bater na guarda e ser rejeitado.
     if (hydrated && !hydrated.publicToken) {
-      const fallbackToken = generatedToken;
+      const fallbackToken = generatePublicToken();
       const { error: tokenErr } = await untypedFrom<MagazineRow>('magazines')
         .update({ public_token: fallbackToken })
         .eq('id', id)
