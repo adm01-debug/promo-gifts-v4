@@ -20,6 +20,7 @@ beforeAll(() => {
 
 function validReport() {
   return {
+    schemaVersion: '2.0.0',
     timestamp: '2026-07-15T12:00:00.000Z',
     canonical: 'doufsxqlfjyuvxuezpln',
     forbidden: 'pqpdolkaeqlyzpdpbizo',
