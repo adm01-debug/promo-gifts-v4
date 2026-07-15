@@ -2,13 +2,13 @@
  * EditorHero — bloco premium no topo do editor.
  *
  * Compõe:
- *  - Miniatura FIEL da capa (TemplateThumbnail com magazine real quando há itens)
  *  - Breadcrumb + título editável visualmente (h1 continua)
  *  - Chip do template ativo (nome + produtos/página + fonte)
- *  - Popover "Trocar template" com grid inline de miniaturas (todos os templates)
+ *  - Popover "Trocar template" com grid inline de cards (sem miniaturas)
  *
- * Não altera dados nem regras — apenas apresentação. `onChange` já
- * é `editor.setTemplate` no editor.
+ * Sem miniaturas: o preview real vive só na sidebar direita. A remoção
+ * das thumbs neste componente (hero + popover) foi solicitada pelo PO
+ * para reduzir ruído visual e evitar duplicidade com a `PreviewSidebar`.
  */
 
 import { useState } from 'react';
@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import type { Magazine, MagazineTemplateId } from '@/types/magazine';
-import { TemplateThumbnail } from './TemplateThumbnail';
 import { getTemplate, listTemplates } from './templates/TemplateRegistry';
 
 interface Props {
