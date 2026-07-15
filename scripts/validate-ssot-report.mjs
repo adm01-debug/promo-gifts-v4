@@ -1,17 +1,36 @@
 #!/usr/bin/env node
 /**
  * validate-ssot-report.mjs — Valida ssot-report.json contra
- * schemas/ssot-report.schema.json (JSON Schema draft-07).
+ * schemas/ssot-report.schema.json (JSON Schema draft-07), com suporte a
+ * VALIDAÇÃO RETROATIVA de artefatos de versões anteriores.
  *
  * Zero dependências: implementa apenas o subset necessário
  * (type, const, enum, required, additionalProperties, minItems/maxItems,
  * minimum, pattern, format:date-time).
  *
  * Uso:
- *   node scripts/validate-ssot-report.mjs [--file=<path>] [--schema=<path>] [--quiet]
+ *   node scripts/validate-ssot-report.mjs [flags]
+ *
+ * Flags de contrato:
+ *   --file=<path>              artefato a validar (default: ssot-report.json)
+ *   --schema=<path>            schema "corrente" (default: schemas/ssot-report.schema.json)
+ *   --expected-version=X.Y.Z   força um alvo exato (bypassa o const do schema)
+ *
+ * Flags de compatibilidade retroativa (aceitar versões anteriores):
+ *   --compat=<strict|major|any>
+ *       strict (default) — exige data.schemaVersion === const do schema
+ *       major            — aceita qualquer patch/minor do MESMO MAJOR corrente
+ *       any              — aceita qualquer versão dentro da janela min/max
+ *   --min-version=X.Y.Z        limite inferior inclusivo (usado com compat!=strict)
+ *   --max-version=X.Y.Z        limite superior inclusivo (usado com compat!=strict)
+ *   --historical-dir=<path>    diretório de snapshots imutáveis por versão
+ *                              (default tenta: schemas/, depois public/schemas/)
+ *
+ * Diagnóstico:
+ *   --quiet                    silencia o resumo em sucesso
  *
  * Exit codes:
- *   0 — válido
+ *   0 — válido (contra schema corrente ou contra snapshot histórico compatível)
  *   1 — inválido (imprime lista de erros)
  *   2 — erro de I/O (arquivo/schema ausente ou JSON inválido)
  */
@@ -27,7 +46,17 @@ const getArg = (name, dflt) => {
 const QUIET = argv.includes('--quiet');
 const FILE = resolve(getArg('file', 'ssot-report.json'));
 const SCHEMA = resolve(getArg('schema', 'schemas/ssot-report.schema.json'));
-const EXPECTED_VERSION = getArg('expected-version', null); // opcional; senão usa const do schema
+const EXPECTED_VERSION = getArg('expected-version', null);
+const COMPAT = (getArg('compat', 'strict') || 'strict').toLowerCase();
+const MIN_VERSION = getArg('min-version', null);
+const MAX_VERSION = getArg('max-version', null);
+const HISTORICAL_DIR = getArg('historical-dir', null);
+
+const COMPAT_MODES = new Set(['strict', 'major', 'any']);
+if (!COMPAT_MODES.has(COMPAT)) {
+  process.stderr.write(`[validate-ssot-report] --compat inválido: ${COMPAT} (use strict|major|any)\n`);
+  process.exit(2);
+}
 
 function die(code, msg) {
   process.stderr.write(`[validate-ssot-report] ${msg}\n`);
@@ -142,31 +171,104 @@ function validate(value, sch, path = '$') {
   return errs;
 }
 
-// --- Pré-checagem de versão (mensagem acionável para artefatos legados) ---
+// --- Pré-checagem de versão + resolução de compatibilidade retroativa ---
 const SEMVER_RE = /^\d+\.\d+\.\d+$/;
+const cmpSemver = (a, b) => {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i];
+  return 0;
+};
 const schemaExpected = schema?.properties?.schemaVersion?.const ?? null;
-const expectedVersion = EXPECTED_VERSION ?? schemaExpected;
+const targetVersion = EXPECTED_VERSION ?? schemaExpected;
 
-const versionErrors = [];
-if (!('schemaVersion' in (data ?? {}))) {
-  versionErrors.push(
-    `$.schemaVersion: campo ausente — artefato legado (< 2.0.0). Regere com "node scripts/ssot-report.mjs --out=<path>" na versão atual (${expectedVersion ?? 'desconhecida'}).`,
-  );
-} else if (typeof data.schemaVersion !== 'string' || !SEMVER_RE.test(data.schemaVersion)) {
-  versionErrors.push(`$.schemaVersion: valor ${JSON.stringify(data.schemaVersion)} não é SemVer válido (MAJOR.MINOR.PATCH).`);
-} else if (expectedVersion && data.schemaVersion !== expectedVersion) {
-  versionErrors.push(
-    `$.schemaVersion: esperado ${expectedVersion}, recebido ${data.schemaVersion}. Bump correto via "node scripts/ssot-report-bump.mjs --kind=<major|minor|patch> --reason=\"...\"".`,
-  );
+// Localiza um snapshot histórico de schema para a versão pedida.
+// Ordem de busca:
+//   1) --historical-dir=<path> (se fornecido)
+//   2) schemas/ssot-report.v<X.Y.Z>.schema.json (source of truth)
+//   3) public/schemas/ssot-report.v<X.Y.Z>.schema.json (mirror publicado)
+function locateHistoricalSchema(version) {
+  const candidates = [];
+  if (HISTORICAL_DIR) candidates.push(resolve(HISTORICAL_DIR, `ssot-report.v${version}.schema.json`));
+  candidates.push(resolve(`schemas/ssot-report.v${version}.schema.json`));
+  candidates.push(resolve(`public/schemas/ssot-report.v${version}.schema.json`));
+  return candidates.find((p) => existsSync(p)) ?? null;
 }
 
-const errors = [...versionErrors, ...validate(data, schema)];
+// Decide se `dataVersion` é aceitável dado o modo de compat + janela.
+function acceptsVersion(dataVersion) {
+  if (!targetVersion) return { ok: true, reason: 'sem alvo fixado' };
+  if (dataVersion === targetVersion) return { ok: true, reason: 'exato' };
+  if (COMPAT === 'strict') {
+    return {
+      ok: false,
+      reason: `compat=strict exige ${targetVersion}, recebido ${dataVersion}. Use --compat=major|any + --min-version/--max-version para aceitar retroativos.`,
+    };
+  }
+  if (MIN_VERSION && cmpSemver(dataVersion, MIN_VERSION) < 0) {
+    return { ok: false, reason: `versão ${dataVersion} abaixo de --min-version=${MIN_VERSION}` };
+  }
+  if (MAX_VERSION && cmpSemver(dataVersion, MAX_VERSION) > 0) {
+    return { ok: false, reason: `versão ${dataVersion} acima de --max-version=${MAX_VERSION}` };
+  }
+  if (COMPAT === 'major') {
+    const majT = targetVersion.split('.')[0];
+    const majD = dataVersion.split('.')[0];
+    if (majT !== majD) {
+      return { ok: false, reason: `compat=major exige MAJOR=${majT}, recebido ${dataVersion} (MAJOR=${majD})` };
+    }
+  }
+  return { ok: true, reason: `retroativo aceito sob compat=${COMPAT}` };
+}
+
+let activeSchema = schema;
+let activeSchemaPath = SCHEMA;
+const versionErrors = [];
+
+if (!('schemaVersion' in (data ?? {}))) {
+  versionErrors.push(
+    `$.schemaVersion: campo ausente — artefato legado (< 2.0.0). Regere com "node scripts/ssot-report.mjs --out=<path>" na versão atual (${targetVersion ?? 'desconhecida'}).`,
+  );
+} else if (typeof data.schemaVersion !== 'string' || !SEMVER_RE.test(data.schemaVersion)) {
+  versionErrors.push(
+    `$.schemaVersion: valor ${JSON.stringify(data.schemaVersion)} não é SemVer válido (MAJOR.MINOR.PATCH).`,
+  );
+} else {
+  const verdict = acceptsVersion(data.schemaVersion);
+  if (!verdict.ok) {
+    versionErrors.push(
+      `$.schemaVersion: ${verdict.reason}. Bump correto via "node scripts/ssot-report-bump.mjs --kind=<major|minor|patch> --reason=\"...\"" ou ajuste --compat/--min-version/--max-version.`,
+    );
+  } else if (data.schemaVersion !== schemaExpected) {
+    // Retroativo aceito: carrega snapshot histórico da versão exata do artefato.
+    const histPath = locateHistoricalSchema(data.schemaVersion);
+    if (!histPath) {
+      versionErrors.push(
+        `$.schemaVersion: retroatividade aceita para ${data.schemaVersion}, mas snapshot ausente. Esperado em schemas/ssot-report.v${data.schemaVersion}.schema.json ou public/schemas/ (rode "npm run ssot:schema:publish" na versão correspondente).`,
+      );
+    } else {
+      try {
+        activeSchema = JSON.parse(readFileSync(histPath, 'utf8'));
+        activeSchemaPath = histPath;
+      } catch (e) {
+        versionErrors.push(`Schema histórico inválido em ${histPath}: ${e.message}`);
+      }
+    }
+  }
+}
+
+const errors = [...versionErrors, ...(versionErrors.length ? [] : validate(data, activeSchema))];
 
 if (errors.length === 0) {
   if (!QUIET) {
-    process.stderr.write(`[validate-ssot-report] ✓ ${FILE} válido contra ${SCHEMA} (v${data.schemaVersion})\n`);
+    const retro = activeSchemaPath !== SCHEMA ? ' [retroativo]' : '';
+    process.stderr.write(
+      `[validate-ssot-report] ✓ ${FILE} válido contra ${activeSchemaPath} (v${data.schemaVersion})${retro}\n`,
+    );
     const summary = {
       schemaVersion: data.schemaVersion,
+      schemaUsed: activeSchemaPath,
+      compat: COMPAT,
       timestamp: data.timestamp,
       overallOk: data.overallOk,
       gates: data.gates?.map((g) => `${g.label}=${g.ok ? 'ok' : 'fail'}`),
