@@ -223,6 +223,7 @@ export function PreviewSidebar({
           <div
             data-testid="preview-empty-state"
             role="status"
+            aria-live="polite"
             className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/70 bg-muted/40 px-4 py-10 text-center"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
