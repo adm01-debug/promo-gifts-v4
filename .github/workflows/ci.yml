@@ -75,6 +75,11 @@ jobs:
       - name: 📚 Allowlist ↔ security-memory cross-check
         run: npm run check:allowlist-memory
 
+      - name: ♿ A11y Clickable drift gate
+        run: npm run check:clickable
+
+
+
 
 
 
