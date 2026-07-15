@@ -213,7 +213,7 @@ export default function MagazineEditorPage() {
           <div className="min-w-0 flex-1">
             <EditorHero magazine={magazine} onChangeTemplate={editor.setTemplate} />
           </div>
-          <div className="flex flex-wrap items-center gap-2 lg:justify-end lg:pt-1">
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end lg:pt-7">
             <span
               role="status"
               aria-live="polite"
