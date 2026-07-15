@@ -212,6 +212,8 @@ function runDocsPhase() {
   const violations = [];
 
   for (const file of files) {
+    const relFile = file.replace(/^\.\//, '');
+    const isHistorical = HISTORICAL_PATH_PATTERNS.some((r) => r.test(relFile));
     const content = fs.readFileSync(file, 'utf8');
     if (!content.includes(FORBIDDEN_ID)) continue;
     const lines = content.split('\n');
@@ -219,22 +221,27 @@ function runDocsPhase() {
       const line = lines[i];
       if (!line.includes(FORBIDDEN_ID)) continue;
 
-      // Contexto local: linha atual + 2 anteriores + próxima 1 (para pegar
-      // rótulos que estão em cabeçalho de bloco).
       const context = [lines[i - 2], lines[i - 1], line, lines[i + 1]]
         .filter(Boolean).join('\n');
 
-      if (hasLegacyMarker(context)) continue; // OK — informacional
-
       const operational = isOperational(line);
+      const hasMarker = hasLegacyMarker(context);
+
+      // Instruções operacionais SEMPRE precisam de marcador, mesmo em
+      // arquivos históricos, para evitar que futuros leitores executem.
+      if (hasMarker) continue;
+      if (isHistorical && !operational) continue;
+
       violations.push({
-        file: file.replace(/^\.\//, ''),
+        file: relFile,
         line: i + 1,
         text: line.trim().slice(0, 240),
         severity: operational ? 'operational' : 'unlabeled',
+        historical: isHistorical,
       });
     }
   }
+
 
   if (violations.length === 0) {
     console.log('\x1b[32m[OK]\x1b[0m Nenhuma menção operacional ao ID legado em docs.');
