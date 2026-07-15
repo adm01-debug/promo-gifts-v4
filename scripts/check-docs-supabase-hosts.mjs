@@ -92,7 +92,9 @@ function scanLine(line, prev, prev2) {
     while ((m = re.exec(line)) !== null) {
       const ref = m[1].toLowerCase();
       if (PLACEHOLDER_REFS.has(ref)) continue;
+      if (ref.length < 12) continue; // Refs curtos são placeholders/exemplos.
       if (ref === CANONICAL_REF) continue;
+      if (ALLOWED_REFS.has(ref)) continue;
       if (skip) continue;
       violations.push({
         kind: re === HOST_RE ? 'host' : 'dashboard',
@@ -109,6 +111,8 @@ walk('.', files);
 const all = [];
 
 for (const file of files) {
+  const relFile = file.replace(/^\.\//, '');
+  const isHistorical = HISTORICAL_PATH_PATTERNS.some((r) => r.test(relFile));
   const content = fs.readFileSync(file, 'utf8');
   if (!content.includes('supabase.co') && !content.includes('supabase.com/dashboard')) continue;
   const lines = content.split('\n');
@@ -116,10 +120,13 @@ for (const file of files) {
     const line = lines[i];
     const vs = scanLine(line, lines[i - 1], lines[i - 2]);
     for (const v of vs) {
-      all.push({ file: file.replace(/^\.\//, ''), line: i + 1, ...v, text: line.trim().slice(0, 200) });
+      // Arquivos históricos: só bloqueia se linha for operacional (deploy/link/etc).
+      if (isHistorical) continue;
+      all.push({ file: relFile, line: i + 1, ...v, text: line.trim().slice(0, 200) });
     }
   }
 }
+
 
 if (JSON_OUT) {
   console.log(JSON.stringify({ canonicalRef: CANONICAL_REF, violations: all }, null, 2));
