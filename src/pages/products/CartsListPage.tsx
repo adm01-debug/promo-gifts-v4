@@ -1005,6 +1005,6 @@ function CartRow({
           </div>
         </div>
       </TableCell>
-    </TableRow>
+    </Clickable>
   );
 }
