@@ -66,7 +66,8 @@ describe('EditorHero — sem mini preview', () => {
       screen.getByRole('heading', { level: 1, name: /Nova Revista/i }),
     ).toBeInTheDocument();
     expect(screen.getByText('Magazines')).toBeInTheDocument();
-    expect(screen.queryByTestId('template-thumbnail-marker')).toBeNull();
+    // A miniatura antiga usava um SVG `role="img"` fiel. Sem ela, nada de img.
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
 
   it('popover "Trocar template" abre sem miniaturas — apenas labels', async () => {
