@@ -547,7 +547,7 @@ describe('FRENTE-9: pipeline completo end-to-end', () => {
         expect(inStockByFunc).toBe(inStockByStatus);
       }
       // Com variações: pode diferir pois variação tem sua própria lógica
-    });
+    }
 
     // INVARIANTE 2: sort por compareStockStatus é estável (in-stock sempre antes de out-of-stock)
     const withStatus = products.map((prod) => ({
