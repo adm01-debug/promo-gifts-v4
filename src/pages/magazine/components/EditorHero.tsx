@@ -138,30 +138,24 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                           setOpen(false);
                         }}
                         className={cn(
-                          'group overflow-hidden rounded-md border bg-card text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                          'group relative flex items-start gap-2 rounded-md border bg-card p-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                           selected
                             ? 'border-primary ring-2 ring-primary/40'
                             : 'hover:border-primary/60',
                         )}
                       >
-                        <div className="relative">
-                          <TemplateThumbnail
-                            templateId={t.id}
-                            sourceMagazine={source}
-                          />
-                          {selected && (
-                            <span className="absolute right-1.5 top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                              <Check className="h-3 w-3" aria-hidden />
-                            </span>
+                        <Layers
+                          className={cn(
+                            'mt-0.5 h-4 w-4 shrink-0',
+                            selected ? 'text-primary' : 'text-muted-foreground',
                           )}
-                        </div>
-                        <div className="space-y-1 p-2">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="truncate text-xs font-semibold">
-                              {t.name}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
+                          aria-hidden
+                        />
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <span className="block truncate text-xs font-semibold">
+                            {t.name}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1">
                             <Badge
                               variant="outline"
                               className="px-1.5 py-0 text-[10px]"
@@ -176,6 +170,11 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                             </Badge>
                           </div>
                         </div>
+                        {selected && (
+                          <span className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                            <Check className="h-2.5 w-2.5" aria-hidden />
+                          </span>
+                        )}
                       </button>
                     );
                   })}
