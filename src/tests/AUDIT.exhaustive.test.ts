@@ -51,13 +51,14 @@ describe('FRENTE-1: divergência entre getCatalogStockStatus e getVariationStock
     const extremes: (number | null | undefined)[] = [
       Infinity, -Infinity, NaN, null, undefined,
     ];
-    extremes.forEach((s) => {
+    expect(extremes).not.toHaveLength(0);
+    for (const s of extremes) {
       const c = getCatalogStockStatus(s!);
       const v = getVariationStockStatus(s!, undefined);
       expect(c, `catalog divergiu para ${s}`).toBe('out-of-stock');
       expect(v, `variation divergiu para ${s}`).toBe('out-of-stock');
       expect(c).toBe(v);
-    });
+    }
   });
 
   it('getVariationStockStatus: 5000 cenarios aleatorios deterministicos — consistencia com getCatalogStockStatus', () => {
@@ -337,21 +338,23 @@ describe('FRENTE-6: compareStockStatus — propriedades de comparador', () => {
   const statuses = ['in-stock', 'low-stock', 'out-of-stock', null, undefined, 'critical', 'IN-STOCK', 'LOW-STOCK'] as const;
 
   it('reflexividade: compareStockStatus(a,a) = 0', () => {
-    statuses.forEach((s) => {
+    expect(statuses).not.toHaveLength(0);
+    for (const s of statuses) {
       expect(compareStockStatus(s as string, s as string)).toBe(0);
-    });
+    }
   });
 
   it('anti-simetria: sign(compare(a,b)) = -sign(compare(b,a))', () => {
-    statuses.forEach((a) => {
-      statuses.forEach((b) => {
+    expect(statuses).not.toHaveLength(0);
+    for (const a of statuses) {
+      for (const b of statuses) {
         const ab = compareStockStatus(a as string, b as string);
         const ba = compareStockStatus(b as string, a as string);
         // Fix: Math.sign(0) + Math.sign(0) = 0, sign(x) + sign(-x) = 0 para x!=0
         // toBe(-Math.sign(ba)) falha quando ambos=0 pois Object.is(0,-0)=false
         expect(Math.sign(ab) + Math.sign(ba)).toBe(0);
-      });
-    });
+      }
+    }
   });
 
   it('transitividade: a<b e b<c → a<c', () => {
@@ -402,27 +405,35 @@ describe('FRENTE-6: compareStockStatus — propriedades de comparador', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 describe('FRENTE-7: isCatalogStockStatus — type guard completude', () => {
   it('todos CATALOG_STOCK_STATUSES passam', () => {
-    CATALOG_STOCK_STATUSES.forEach((s) => {
+  it('todos CATALOG_STOCK_STATUSES passam', () => {
+    expect(CATALOG_STOCK_STATUSES).not.toHaveLength(0);
+    for (const s of CATALOG_STOCK_STATUSES) {
       expect(isCatalogStockStatus(s)).toBe(true);
-    });
+    }
   });
 
   it('versões maiúsculas NÃO passam (type guard é case-sensitive)', () => {
-    ['IN-STOCK', 'LOW-STOCK', 'OUT-OF-STOCK'].forEach((s) => {
+    const upper = ['IN-STOCK', 'LOW-STOCK', 'OUT-OF-STOCK'];
+    expect(upper).not.toHaveLength(0);
+    for (const s of upper) {
       expect(isCatalogStockStatus(s)).toBe(false);
-    });
+    }
   });
 
   it('underscore domain NÃO passa', () => {
-    ['in_stock', 'low_stock', 'out_of_stock', 'critical'].forEach((s) => {
+    const under = ['in_stock', 'low_stock', 'out_of_stock', 'critical'];
+    expect(under).not.toHaveLength(0);
+    for (const s of under) {
       expect(isCatalogStockStatus(s)).toBe(false);
-    });
+    }
   });
 
   it('tipos não-string NÃO passam', () => {
-    [null, undefined, 0, 1, true, false, [], {}, Symbol('in-stock')].forEach((v) => {
+    const nonStrings: unknown[] = [null, undefined, 0, 1, true, false, [], {}, Symbol('in-stock')];
+    expect(nonStrings).not.toHaveLength(0);
+    for (const v of nonStrings) {
       expect(isCatalogStockStatus(v)).toBe(false);
-    });
+    }
   });
 
   it('narrowing funciona: após isCatalogStockStatus, array.includes não precisaria cast', () => {
