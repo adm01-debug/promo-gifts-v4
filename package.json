@@ -79,6 +79,7 @@
     "ssot:all": "npm run ssot:validate && npm run ssot:guard && npm run ssot:hosts",
     "ssot:report": "node scripts/ssot-report.mjs",
     "ssot:report:json": "node scripts/ssot-report.mjs --json",
+    "ssot:report:validate": "node scripts/validate-ssot-report.mjs",
     "typecheck": "node scripts/check-tsc-baseline.mjs",
     "qa:lint": "npm run lint:config && eslint src --max-warnings=0",
     "qa:typecheck": "tsc -p tsconfig.app.json --noEmit",
