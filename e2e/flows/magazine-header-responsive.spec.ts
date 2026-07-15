@@ -45,6 +45,10 @@ async function openFirstEditor(page: Page): Promise<boolean> {
   await expect(page).toHaveURL(/\/magazine\/[^/]+$/);
   await page.addStyleTag({ content: FREEZE_CSS });
   await expect(page.getByTestId("editor-hero")).toBeVisible({ timeout: 15_000 });
+  // Estabilização de snapshot: aguarda fonts e rede quiescente para reduzir flake
+  // no FOUT do Outfit e assets async.
+  await page.evaluate(() => (document as unknown as { fonts: { ready: Promise<unknown> } }).fonts.ready);
+  await page.waitForLoadState("networkidle").catch(() => {});
   return true;
 }
 
