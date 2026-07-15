@@ -2,17 +2,20 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
-// fix_version: guard-scope-runtime+docs-operational-2026-07-15
+// fix_version: guard-scope-runtime+docs+configs-2026-07-15
 // Fases:
 //   1) Runtime code (src/, supabase/functions/) — bloqueia QUALQUER referência ao ID proibido
 //      (exceto linhas de comentário puro), reproduzindo o comportamento clássico.
 //   2) Arquivos críticos — exige presença do ID canônico em client.ts e config.toml.
 //   3) Docs .md — bloqueia menções OPERACIONAIS ao ID proibido; menções informacionais
 //      (com marcador de legado) são permitidas.
+//   4) Config files (.yml/.yaml/.toml/.env*/.json na raiz e .github/) — bloqueia
+//      QUALQUER menção ao ID proibido em linhas não-comentário sem marcador legado.
 //
 // Flags:
 //   --skip-docs    pula fase 3
 //   --docs-only    executa apenas fase 3
+//   --skip-configs pula fase 4
 //   --json         saída estruturada para CI
 
 const CANONICAL_ID = 'doufsxqlfjyuvxuezpln';
