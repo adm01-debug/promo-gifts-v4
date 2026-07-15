@@ -24,9 +24,11 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
+import { minimatch } from 'minimatch';
 
 const ROOT = process.cwd();
 const BASELINE_PATH = join(ROOT, '.eslint-baseline.json');
+const SCOPE_PATH = join(ROOT, '.eslint-baseline-scope.json');
 const MAX_LIST = 50;
 const ESLINT_BIN = join(ROOT, 'node_modules', 'eslint', 'bin', 'eslint.js');
 
@@ -39,6 +41,40 @@ if (!existsSync(BASELINE_PATH)) {
 
 const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
 const baselineCounts = baseline.counts ?? {};
+
+// ── Modo incremental (escopo) ─────────────────────────────────────────────
+// Lê `.eslint-baseline-scope.json` (opcional) e/ou flag `--incremental`.
+// Em modo incremental, regressões fora do `include` (menos `exclude`) viram
+// informacionais e NÃO bloqueiam o CI. Regressões dentro do escopo bloqueiam
+// normalmente. Assim novas ondas de correção não são atrapalhadas por drift
+// legado em áreas ainda não trabalhadas.
+const cliIncremental = process.argv.includes('--incremental');
+const cliFull = process.argv.includes('--full');
+let scopeConfig = { mode: 'full', include: [], exclude: [] };
+if (existsSync(SCOPE_PATH)) {
+  try {
+    const raw = JSON.parse(readFileSync(SCOPE_PATH, 'utf8'));
+    scopeConfig = {
+      mode: raw.mode === 'incremental' ? 'incremental' : 'full',
+      include: Array.isArray(raw.include) ? raw.include : [],
+      exclude: Array.isArray(raw.exclude) ? raw.exclude : [],
+    };
+  } catch (err) {
+    console.error(`⚠️  .eslint-baseline-scope.json inválido, ignorando: ${err.message}`);
+  }
+}
+const incrementalMode = cliFull ? false : cliIncremental || scopeConfig.mode === 'incremental';
+const includeGlobs = scopeConfig.include;
+const excludeGlobs = scopeConfig.exclude;
+
+function fileInScope(file) {
+  if (!incrementalMode) return true;
+  if (includeGlobs.length === 0) return false; // escopo vazio ⇒ nada bloqueia
+  const included = includeGlobs.some((g) => minimatch(file, g));
+  if (!included) return false;
+  const excluded = excludeGlobs.some((g) => minimatch(file, g));
+  return !excluded;
+}
 
 const dir = mkdtempSync(join(tmpdir(), 'eslint-gate-'));
 const out = join(dir, 'report.json');
