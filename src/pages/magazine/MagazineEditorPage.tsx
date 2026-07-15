@@ -209,7 +209,7 @@ export default function MagazineEditorPage() {
        <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] xl:items-start xl:gap-6">
         <div className="min-w-0" data-testid="magazine-editor-main-col">
         {/* Hero premium — miniatura real da capa + template ativo + swap inline */}
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start" data-testid="magazine-editor-hero-row">
           <div className="min-w-0 flex-1">
             <EditorHero magazine={magazine} onChangeTemplate={editor.setTemplate} />
           </div>
