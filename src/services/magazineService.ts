@@ -533,15 +533,46 @@ export const magazineService = {
   },
 
   async publish(id: string): Promise<Magazine | null> {
-    // O trigger fn_magazine_public_token gera o token quando status vira 'published'.
+    // Idealmente o trigger fn_magazine_public_token gera o token quando o
+    // status vira 'published'. Como esse trigger é um draft que ainda não
+    // foi aplicado no BD Gold, geramos o token client-side quando ele
+    // continua NULL após o UPDATE — garantindo que o fluxo de publicação
+    // sempre produza um link compartilhável.
+    const currentRow = await fetchMagazineRow(id);
+    const existingToken = currentRow?.public_token ?? null;
+    const generatedToken = existingToken ?? generatePublicToken();
+
+    const updatePayload: Partial<MagazineRow> = {
+      status: 'published',
+      published_at: new Date().toISOString(),
+    };
+    if (!existingToken) {
+      updatePayload.public_token = generatedToken;
+    }
+
     const { error } = await untypedFrom<MagazineRow>('magazines')
-      .update({ status: 'published', published_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq('id', id);
     if (error) {
       logger.warn('[magazineService.publish] error:', error.message);
       return null;
     }
-    return hydrate(id);
+
+    let hydrated = await hydrate(id);
+    // Defesa em profundidade: se o BD tiver trigger que ignore o token que
+    // enviamos ou se a coluna vier NULL por qualquer motivo, tentamos um
+    // UPDATE final apenas do token.
+    if (hydrated && !hydrated.publicToken) {
+      const { error: tokenErr } = await untypedFrom<MagazineRow>('magazines')
+        .update({ public_token: generatedToken })
+        .eq('id', id);
+      if (tokenErr) {
+        logger.warn('[magazineService.publish] token backfill error:', tokenErr.message);
+      } else {
+        hydrated = await hydrate(id);
+      }
+    }
+    return hydrated;
   },
 
   async unpublish(id: string): Promise<Magazine | null> {
