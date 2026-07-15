@@ -18,7 +18,7 @@ export function CorporateSplitTemplate({ magazine, page, totalPages }: TemplateP
           {magazine.branding.clientLogoUrl && (
             <img
               src={magazine.branding.clientLogoUrl}
-              alt="logo"
+              alt={`Logo ${magazine.branding.clientName ?? 'do cliente'}`}
               className="h-16 w-16 rounded-md object-contain"
             />
           )}
