@@ -58,6 +58,10 @@ jobs:
         if: always()
         run: node scripts/ssot-report-markdown.mjs --in=ssot-report.json --out=ssot-report.md || true
 
+      - name: Anotações no PR (Checks annotations por gate)
+        if: always()
+        run: node scripts/ssot-report-annotations.mjs --in=ssot-report.json
+
       - name: Upload SSOT report (combinado)
         if: always()
         uses: actions/upload-artifact@v4
