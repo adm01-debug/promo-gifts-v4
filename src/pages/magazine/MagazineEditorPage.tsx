@@ -271,7 +271,7 @@ export default function MagazineEditorPage() {
         {/* Stepper com barra de progresso */}
         <nav
           aria-label="Etapas do editor"
-          className="mb-6 overflow-hidden rounded-lg border bg-card"
+          className="mb-6 overflow-hidden rounded-lg border bg-card xl:mr-[444px]"
         >
           <div
             className="h-1 bg-primary transition-all"
