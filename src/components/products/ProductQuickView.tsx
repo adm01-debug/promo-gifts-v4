@@ -292,7 +292,7 @@ export const ProductQuickView = React.memo(
     // DAQUELA variação (campo `stock` em `ProductColor`); ao limpar, volta ao
     // total agregado do produto. Threshold: <=0 esgotado, <10 baixo, >=10 ok.
     const selectedColor =
-      selectedColorId != null
+      selectedColorId !== null && selectedColorId !== undefined
         ? (product.colors || []).find(
             (c) => (productColors.find((pc) => pc.id === selectedColorId)?.name ?? '').toLowerCase() ===
               (c.name ?? '').toLowerCase(),
