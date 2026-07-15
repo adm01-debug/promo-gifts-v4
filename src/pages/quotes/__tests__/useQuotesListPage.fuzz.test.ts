@@ -8,8 +8,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { ReactNode } from 'react';
-import React from 'react';
+import React, { type ReactNode } from 'react';
+
 import fc from 'fast-check';
 import { QUOTE_STATUSES } from '@/types/quote';
 
@@ -38,7 +38,6 @@ import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
 // não vaza query string entre runs da property.
 const wrapper = ({ children }: { children: ReactNode }) =>
   React.createElement(MemoryRouter, { initialEntries: ['/orcamentos'] }, children);
-
 
 const statusArb = fc.constantFrom(...QUOTE_STATUSES);
 
@@ -117,7 +116,6 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
       { numRuns: 60 },
     );
   });
-
 
   it('handleClearFilters reseta busca/status/sort', () => {
     fc.assert(

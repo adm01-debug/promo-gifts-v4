@@ -15,8 +15,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { ReactNode } from 'react';
-import React from 'react';
+import React, { type ReactNode } from 'react';
+
 import fc from 'fast-check';
 import { QUOTE_STATUSES } from '@/types/quote';
 
@@ -50,7 +50,6 @@ vi.mock('@/hooks/quotes', () => ({
 }));
 
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
-
 
 import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
 

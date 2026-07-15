@@ -9,15 +9,8 @@
  * não estão em src/integrations/supabase/types.ts (regeneração pendente).
  */
 
-import type {
-  Magazine,
-  MagazineClientBranding,
-  MagazineContentSettings,
-  MagazineItem,
-  MagazineProductSnapshot,
-  MagazineTemplateId,
-} from '@/types/magazine';
-import { DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+import { type Magazine, type MagazineClientBranding, type MagazineContentSettings, type MagazineItem, type MagazineProductSnapshot, type MagazineTemplateId, DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+
 import type { Product } from '@/types/product-catalog';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { supabase } from '@/integrations/supabase/client';

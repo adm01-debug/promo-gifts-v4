@@ -13,8 +13,8 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import type { ReactNode } from 'react';
-import React from 'react';
+import React, { type ReactNode } from 'react';
+
 import { useListUrlState } from '@/hooks/common/useListUrlState';
 
 // Config idêntica à usada em CartsListPage.

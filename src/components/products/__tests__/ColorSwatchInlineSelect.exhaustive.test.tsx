@@ -8,8 +8,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { ProductColorSwatches } from '../ProductColorSwatches';
-import type { ColorDotLike } from '../ProductColorSwatches';
+import { ProductColorSwatches, type ColorDotLike } from '../ProductColorSwatches';
+
 import { BaseProductGridCard } from '../BaseProductGridCard';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
