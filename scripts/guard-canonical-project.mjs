@@ -25,6 +25,7 @@ const argv = new Set(process.argv.slice(2));
 const SKIP_DOCS = argv.has('--skip-docs');
 const DOCS_ONLY = argv.has('--docs-only');
 const JSON_OUT = argv.has('--json');
+const SKIP_CONFIGS = argv.has('--skip-configs');
 
 // Marcadores que classificam a linha como INFORMACIONAL/LEGADA.
 // Se qualquer um casar na linha (ou nas 2 linhas anteriores), o hit não bloqueia.
