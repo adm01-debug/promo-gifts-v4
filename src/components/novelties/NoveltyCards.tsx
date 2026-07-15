@@ -340,7 +340,7 @@ export const NoveltyGridCard = memo(
             )}
           </div>
         </div>
-      </article>
+      </Clickable>
     );
   },
 );
