@@ -129,7 +129,6 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                 <div
                   role="radiogroup"
                   aria-label="Escolher template"
-                  aria-labelledby="magazine-template-swap-heading"
                   className="grid max-h-[60vh] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 md:grid-cols-4"
                 >
                   {all.map((t) => {
