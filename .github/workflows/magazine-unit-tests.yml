@@ -8,12 +8,16 @@ on:
       - 'src/hooks/auth/**'
       - 'src/contexts/AuthContext.tsx'
       - 'src/lib/supabase/**'
+      - 'scripts/check-no-template-thumbnail.mjs'
+      - '.github/workflows/magazine-unit-tests.yml'
   pull_request:
     paths:
       - 'src/pages/magazine/**'
       - 'src/hooks/auth/**'
       - 'src/contexts/AuthContext.tsx'
       - 'src/lib/supabase/**'
+      - 'scripts/check-no-template-thumbnail.mjs'
+      - '.github/workflows/magazine-unit-tests.yml'
 
 concurrency:
   group: magazine-unit-${{ github.ref }}
@@ -38,12 +42,20 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      # 🚫 Gate estático: bloqueia reintrodução do TemplateThumbnail
+      # (arquivo deletado + imports órfãos). Roda antes dos testes
+      # para falhar rápido sem esperar o Vitest.
+      - name: 🚫 No TemplateThumbnail regression gate
+        run: node scripts/check-no-template-thumbnail.mjs
+
       - name: Run Vitest (magazine module)
         run: |
           npx vitest run \
             --reporter=verbose \
             --coverage \
-            src/pages/magazine/__tests__/
+            src/pages/magazine/__tests__/ \
+            src/pages/magazine/components/__tests__/ \
+            src/pages/magazine/components/steps/__tests__/
         env:
           CI: true
           NODE_ENV: test
@@ -56,18 +68,44 @@ jobs:
           path: coverage/
           retention-days: 7
 
+  # SECURITY DEFINER ACL gate — o script já é defensivo (skip sem creds),
+  # então roda em qualquer PR mas só falha em drift real quando o
+  # ambiente tem as credenciais Supabase disponíveis.
+  security-definer-acl:
+    name: SECURITY DEFINER ACL Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: SECURITY DEFINER ACL gate
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node scripts/check-security-definer-acl.mjs
+
   # Summary check required by branch protection
   magazine-tests-ok:
     name: Magazine Tests OK
-    needs: [unit-tests]
+    needs: [unit-tests, security-definer-acl]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Check result
         run: |
-          if [ '${{ needs.unit-tests.result }}' = 'success' ]; then
-            echo '✅ All magazine unit tests passed'
+          if [ '${{ needs.unit-tests.result }}' = 'success' ] \
+              && [ '${{ needs.security-definer-acl.result }}' = 'success' ]; then
+            echo '✅ All magazine unit tests + gates passed'
           else
-            echo '❌ Magazine unit tests failed'
+            echo '❌ Magazine gates failed:'
+            echo "  unit-tests=${{ needs.unit-tests.result }}"
+            echo "  security-definer-acl=${{ needs.security-definer-acl.result }}"
             exit 1
           fi
