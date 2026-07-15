@@ -533,7 +533,8 @@ describe('FRENTE-9: pipeline completo end-to-end', () => {
     });
 
     // INVARIANTE 1: produto com status calculado via pipeline → isProductInStock consistente
-    products.forEach((prod) => {
+    expect(products).not.toHaveLength(0);
+    for (const prod of products) {
       const inStockByStatus = prod.productStatus !== 'out-of-stock';
       const inStockByFunc = isProductInStock({
         stock: prod.stock,
