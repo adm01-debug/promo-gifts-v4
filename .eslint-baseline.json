@@ -1,107 +1,799 @@
 {
-  "generatedAt": "2026-06-23T21:58:13.906Z",
-  "totalErrors": 74,
+  "generatedAt": "2026-07-15T14:30:56.503Z",
+  "totalErrors": 605,
   "counts": {
-    "src/components/inventory/StockDashboard.tsx": {
-      "no-duplicate-imports": 1
+    "src/components/admin/DiscountApprovalAuditTrail.tsx": {
+      "@typescript-eslint/sort-type-constituents": 2
     },
-    "src/components/inventory/supplier-reliability/ReliabilityBadge.tsx": {
+    "src/components/admin/DiscountApprovalFilterBar.tsx": {
       "@typescript-eslint/sort-type-constituents": 1
     },
-    "src/components/inventory/supplier-reliability/SupplierReliabilityTable.tsx": {
-      "@typescript-eslint/sort-type-constituents": 1,
-      "jsx-a11y/role-supports-aria-props": 1
+    "src/components/admin/__tests__/DiscountApprovalHeaderBadge.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 1,
+      "object-shorthand": 2
     },
-    "src/components/products/ProductCustomizationOptions.tsx": {
-      "no-void": 1
+    "src/components/admin/products/ProductVariantsSection.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
     },
-    "src/components/products/ProductQuickView.tsx": {
+    "src/components/admin/products/kit-components/ProductKitComponentsSection.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/telemetry/QuoteBuilderHandoffCard.tsx": {
       "@typescript-eslint/no-shadow": 1,
-      "eqeqeq": 1,
-      "no-eq-null": 1,
+      "no-shadow": 1,
+      "react-hooks/exhaustive-deps": 1
+    },
+    "src/components/audit/__tests__/AuditHistory.a11y.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 1,
+      "no-restricted-syntax": 1
+    },
+    "src/components/cart/CartHeaderButton.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "no-unneeded-ternary": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/cart/PopoverQtyInput.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/components/cart/__tests__/CartItemErrorAlert.test.tsx": {
+      "no-duplicate-imports": 1,
+      "react/jsx-boolean-value": 2
+    },
+    "src/components/cart/__tests__/CartLimitExhaustive.test.tsx": {
+      "no-sync": 4
+    },
+    "src/components/cart/__tests__/CartStatusChip.label.test.tsx": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1
+    },
+    "src/components/cart/__tests__/PopoverQtyInput.exhaustive.test.tsx": {
+      "prefer-template": 1
+    },
+    "src/components/cart/__tests__/PopoverQtyInput.fastcheck.test.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/cart/__tests__/SortableCartItemVariant.test.tsx": {
+      "no-restricted-syntax": 2
+    },
+    "src/components/common/BulkActionsBar.tsx": {
+      "@typescript-eslint/no-unused-vars": 1
+    },
+    "src/components/common/ConfirmDialog.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/components/common/__tests__/IntelligenceBadges.adversarial.test.tsx": {
+      "no-restricted-syntax": 6
+    },
+    "src/components/dashboard/MyDiscountRequestsWidget.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1,
+      "eqeqeq": 2,
+      "no-eq-null": 2
+    },
+    "src/components/inventory/__tests__/StockAlertsIndicator.width.test.ts": {
+      "@typescript-eslint/prefer-regexp-exec": 2
+    },
+    "src/components/pdf/__tests__/PropostaComercialTailwind.watermark.regression.test.tsx": {
+      "no-restricted-syntax": 2,
+      "react/jsx-boolean-value": 3
+    },
+    "src/components/pdf/__tests__/pdfHardcodedColors.test.ts": {
+      "prefer-template": 1
+    },
+    "src/components/pdf/proposal/__tests__/ProposalProductTable.adversarial.test.tsx": {
+      "@typescript-eslint/no-shadow": 1,
+      "@typescript-eslint/prefer-regexp-exec": 1,
       "no-shadow": 1
     },
-    "src/components/products/QuickViewThumb.tsx": {
-      "prefer-arrow-callback": 1
+    "src/components/pdf/proposal/__tests__/ProposalProductTable.visualContrast.test.tsx": {
+      "prefer-exponentiation-operator": 1
     },
-    "src/components/products/table-view/ProductTableRow.tsx": {
-      "@typescript-eslint/sort-type-constituents": 1
+    "src/components/pdf/proposal/__tests__/pdfContrastReport.test.ts": {
+      "prefer-exponentiation-operator": 1
+    },
+    "src/components/pdf/watermarkTokens.ts": {
+      "prefer-exponentiation-operator": 1
+    },
+    "src/components/products/ProductCard.tsx": {
+      "react/jsx-props-no-multi-spaces": 1
+    },
+    "src/components/products/ProductColorSwatches.tsx": {
+      "react/jsx-props-no-multi-spaces": 1
+    },
+    "src/components/products/__tests__/ColorSwatchInlineSelect.exhaustive.test.tsx": {
+      "no-duplicate-imports": 1,
+      "no-restricted-syntax": 5,
+      "react/jsx-boolean-value": 1,
+      "react/jsx-closing-bracket-location": 2,
+      "react/jsx-closing-tag-location": 4
+    },
+    "src/components/products/__tests__/ColorSwatchOverflowChip.test.tsx": {
+      "no-duplicate-imports": 1,
+      "prefer-template": 2
+    },
+    "src/components/products/__tests__/ColorSwatchTwoLineOverflow.test.tsx": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1,
+      "no-restricted-syntax": 2,
+      "prefer-template": 2
+    },
+    "src/components/products/__tests__/ColorSwatchUnboundedWrap.test.tsx": {
+      "prefer-template": 1
+    },
+    "src/components/products/__tests__/ProductCustomizationOptions.summary-color.fuzz.test.ts": {
+      "@typescript-eslint/prefer-includes": 3
+    },
+    "src/components/products/__tests__/swatchSizing.test.ts": {
+      "no-restricted-syntax": 2
+    },
+    "src/components/products/customization/ConfigurationPanelV6.tsx": {
+      "@typescript-eslint/no-meaningless-void-operator": 1
+    },
+    "src/components/products/customization/LocationPanel.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/products/customization/__tests__/ConfigurationPanelV6.collapse.test.tsx": {
+      "@typescript-eslint/prefer-includes": 2,
+      "import/first": 1
+    },
+    "src/components/products/customization/__tests__/ConfigurationPanelV6.confirmed-title.test.tsx": {
+      "@typescript-eslint/require-await": 3
+    },
+    "src/components/products/customization/__tests__/ConfigurationPanelV6.header-snapshot.test.tsx": {
+      "@typescript-eslint/require-await": 3
+    },
+    "src/components/products/customization/__tests__/ConfigurationPanelV6.size-line-layout.test.tsx": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1,
+      "@typescript-eslint/require-await": 3,
+      "logical-assignment-operators": 1
+    },
+    "src/components/quotes/PdfGenerationDialog.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1,
+      "react-hooks/exhaustive-deps": 1,
+      "react/jsx-closing-tag-location": 2
+    },
+    "src/components/quotes/PdfPrintHelpDialog.tsx": {
+      "@typescript-eslint/sort-type-constituents": 2,
+      "prefer-template": 1
+    },
+    "src/components/quotes/QuoteBuilderSummaryColumn.tsx": {
+      "react/jsx-closing-tag-location": 2,
+      "react/jsx-props-no-multi-spaces": 1
+    },
+    "src/components/quotes/QuoteItemDetailSheet.tsx": {
+      "@typescript-eslint/no-unnecessary-template-expression": 1,
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/quotes/QuoteItemsList.tsx": {
+      "@typescript-eslint/no-unused-vars": 4,
+      "jsx-a11y/aria-role": 1,
+      "unused-imports/no-unused-imports": 2
+    },
+    "src/components/quotes/QuoteItemsTable.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "react/jsx-props-no-multi-spaces": 1
+    },
+    "src/components/quotes/QuotesConfigurableList.tsx": {
+      "@typescript-eslint/no-unnecessary-template-expression": 1,
+      "@typescript-eslint/no-unused-vars": 2,
+      "react/jsx-closing-tag-location": 2
+    },
+    "src/components/quotes/QuotesStatusChips.tsx": {
+      "eqeqeq": 2,
+      "no-eq-null": 2
+    },
+    "src/components/quotes/__tests__/CompanyContactSelector.layout.test.tsx": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1
+    },
+    "src/components/quotes/__tests__/PdfGenerationDialog.a11y.test.tsx": {
+      "@typescript-eslint/require-await": 1
+    },
+    "src/components/quotes/__tests__/PdfGenerationDialog.exhaustive.test.tsx": {
+      "@typescript-eslint/no-loop-func": 1,
+      "@typescript-eslint/require-await": 2,
+      "@typescript-eslint/sort-type-constituents": 1,
+      "no-restricted-syntax": 3
+    },
+    "src/components/quotes/__tests__/PdfGenerationDialog.footerButton.test.tsx": {
+      "@typescript-eslint/require-await": 1,
+      "@typescript-eslint/return-await": 1
+    },
+    "src/components/quotes/__tests__/PdfGenerationDialog.headerWarning.test.tsx": {
+      "@typescript-eslint/require-await": 1,
+      "prefer-template": 1
+    },
+    "src/components/quotes/__tests__/PdfGenerationDialog.print.test.tsx": {
+      "@typescript-eslint/require-await": 4
+    },
+    "src/components/quotes/__tests__/QuoteBuilderActionButtons.fuzz.test.ts": {
+      "prefer-const": 2
+    },
+    "src/components/quotes/__tests__/QuoteBuilderStepper.test.tsx": {
+      "no-restricted-syntax": 2
+    },
+    "src/components/quotes/__tests__/QuoteBuilderSummaryAlignment.fuzz.test.ts": {
+      "@typescript-eslint/no-unused-vars": 1
+    },
+    "src/components/quotes/__tests__/QuoteBuilderSummaryCollapseAll.fuzz.test.ts": {
+      "@typescript-eslint/no-shadow": 7,
+      "@typescript-eslint/prefer-readonly": 1,
+      "no-self-compare": 1,
+      "no-shadow": 7
+    },
+    "src/components/quotes/__tests__/QuoteBuilderSummaryColumn.collapsedHeader.test.ts": {
+      "@typescript-eslint/prefer-regexp-exec": 3
+    },
+    "src/components/quotes/__tests__/QuoteBuilderSummaryColumn.saveDraft.test.tsx": {
+      "no-promise-executor-return": 1
+    },
+    "src/components/quotes/__tests__/QuoteStatusTimeline.states.test.tsx": {
+      "@typescript-eslint/require-await": 1
+    },
+    "src/components/quotes/__tests__/QuotesConfigurableList.selection.test.tsx": {
+      "block-spacing": 2,
+      "no-restricted-syntax": 1
     },
     "src/components/security/useSecurityData.ts": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/components/ui/ColorSwatchPicker.tsx": {
+    "src/components/shared/CompanyListAvatar.tsx": {
       "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/components/ui/__tests__/ConfirmDialog.keyboard.test.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/components/ui/__tests__/OptimizedImage.test.tsx": {
+      "@typescript-eslint/prefer-readonly": 1
+    },
+    "src/components/ui/__tests__/calendar.dimensions.test.tsx": {
+      "@typescript-eslint/prefer-includes": 1
+    },
+    "src/components/ui/__tests__/calendar.redesign.test.tsx": {
+      "@typescript-eslint/prefer-includes": 1
+    },
+    "src/components/ui/calendar.tsx": {
+      "@typescript-eslint/consistent-type-imports": 1,
+      "react/jsx-props-no-multi-spaces": 1
+    },
+    "src/components/ui/date-picker-field.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1,
+      "jsx-a11y/role-supports-aria-props": 1
+    },
+    "src/contexts/SellerCartContext.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1,
+      "prefer-template": 1
+    },
+    "src/contexts/__tests__/SellerCartContext.deleteRestoreTelemetry.test.tsx": {
+      "@typescript-eslint/require-await": 1
+    },
+    "src/contexts/__tests__/SellerCartContext.okNoMetrics.test.tsx": {
+      "@typescript-eslint/no-explicit-any": 1,
+      "@typescript-eslint/require-await": 1
+    },
+    "src/contexts/__tests__/SellerCartContext.restorePointer.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 1
+    },
+    "src/contexts/__tests__/SellerCartContext.restoreRpc.test.tsx": {
+      "@typescript-eslint/require-await": 1
+    },
+    "src/contexts/__tests__/SellerCartContext.restoreTelemetry.test.tsx": {
+      "@typescript-eslint/require-await": 2
+    },
+    "src/hooks/admin/useV4Callbacks.ts": {
+      "@typescript-eslint/no-explicit-any": 1,
+      "@typescript-eslint/sort-type-constituents": 3
+    },
+    "src/hooks/auth/__tests__/login-flow.test.ts": {
+      "@typescript-eslint/no-unused-vars": 2,
+      "@typescript-eslint/require-await": 1,
+      "no-promise-executor-return": 3
+    },
+    "src/hooks/auth/useProfileRoles.ts": {
+      "@typescript-eslint/prefer-promise-reject-errors": 1
     },
     "src/hooks/collections/useCollections.ts": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/hooks/inventory/useSupplierReliabilityServer.ts": {
+    "src/hooks/common/__tests__/useListUrlState.fuzz.test.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/hooks/common/__tests__/useListUrlState.test.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/hooks/common/usePrefetchOnHover.ts": {
+      "@typescript-eslint/no-invalid-void-type": 1,
       "@typescript-eslint/sort-type-constituents": 1
     },
-    "src/hooks/products/useProductsLightweight.ts": {
+    "src/hooks/customization/__tests__/useCustomizationCollapsePrefs.test.ts": {
+      "@typescript-eslint/require-await": 3
+    },
+    "src/hooks/products/__tests__/useDebouncedCartItemActions.test.tsx": {
+      "@typescript-eslint/no-invalid-void-type": 2,
       "@typescript-eslint/sort-type-constituents": 1
     },
-    "src/hooks/stock/stockFetcher.ts": {
-      "@typescript-eslint/sort-type-constituents": 3
+    "src/hooks/products/__tests__/useSellerCarts.emptyCartGuard.test.tsx": {
+      "import/first": 2
+    },
+    "src/hooks/products/__tests__/useSellerCarts.updateItemQuantity.rollback.test.tsx": {
+      "@typescript-eslint/no-shadow": 1,
+      "@typescript-eslint/require-await": 2,
+      "@typescript-eslint/sort-type-constituents": 1,
+      "no-shadow": 1
+    },
+    "src/hooks/products/useDebouncedCartItemActions.ts": {
+      "@typescript-eslint/no-unnecessary-type-arguments": 2,
+      "eqeqeq": 1,
+      "no-eq-null": 1
+    },
+    "src/hooks/products/useProductCustomizationOptions.ts": {
+      "@typescript-eslint/prefer-optional-chain": 1,
+      "@typescript-eslint/sort-type-constituents": 2
+    },
+    "src/hooks/products/useProductMatch.ts": {
+      "eqeqeq": 3,
+      "no-eq-null": 3
+    },
+    "src/hooks/products/useSellerCarts.ts": {
+      "eqeqeq": 4,
+      "no-eq-null": 4,
+      "no-promise-executor-return": 1
+    },
+    "src/hooks/quotes/__tests__/discountApprovalFlow.test.ts": {
+      "@typescript-eslint/require-await": 2
+    },
+    "src/hooks/quotes/quoteHelpers.ts": {
+      "@typescript-eslint/prefer-optional-chain": 1
+    },
+    "src/hooks/quotes/quoteTypes.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/hooks/quotes/useDiscountApproval.ts": {
+      "@typescript-eslint/no-shadow": 1,
+      "no-shadow": 1,
+      "no-void": 1
     },
     "src/hooks/ui/useWorkspaceNotifications.tsx": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/hooks/useProductColorSwatch.ts": {
-      "@typescript-eslint/no-unused-vars": 1,
-      "@typescript-eslint/non-nullable-type-assertion-style": 1
+    "src/lib/__tests__/quote-status-transitions.matrix.test.ts": {
+      "no-whitespace-before-property": 1
     },
-    "src/lib/feature-flags.ts": {
+    "src/lib/carts/shipping-deadline.ts": {
+      "@typescript-eslint/sort-type-constituents": 2
+    },
+    "src/lib/carts/status-transition-guard.ts": {
       "@typescript-eslint/sort-type-constituents": 1
     },
-    "src/lib/inventory/supplier-reliability/extract.ts": {
-      "@typescript-eslint/sort-type-constituents": 1,
-      "eqeqeq": 1,
-      "no-eq-null": 1
-    },
-    "src/lib/inventory/supplier-reliability/matching.ts": {
-      "eqeqeq": 1,
-      "no-duplicate-imports": 1,
-      "no-eq-null": 1
-    },
-    "src/lib/inventory/supplier-reliability/score.ts": {
-      "no-duplicate-imports": 1
-    },
-    "src/lib/inventory/supplier-reliability/types.ts": {
-      "@typescript-eslint/sort-type-constituents": 3
-    },
-    "src/lib/products/__tests__/stock-status.test.ts": {
-      "no-duplicate-imports": 1,
-      "no-restricted-syntax": 1
-    },
-    "src/lib/products/stock-status.ts": {
-      "@typescript-eslint/non-nullable-type-assertion-style": 1
-    },
-    "src/pages/auth/__tests__/auth-render.test.tsx": {
-      "@typescript-eslint/require-await": 3
-    },
-    "src/pages/products/FiltersPage.tsx": {
-      "react/jsx-props-no-multi-spaces": 1
-    },
-    "src/services/quoteService.ts": {
-      "@typescript-eslint/non-nullable-type-assertion-style": 1
-    },
-    "src/tests/AUDIT.exhaustive.test.ts": {
-      "@typescript-eslint/no-shadow": 2,
-      "@typescript-eslint/non-nullable-type-assertion-style": 12,
-      "no-restricted-syntax": 11,
-      "no-shadow": 2
-    },
-    "src/tests/PR1318.exhaustive.test.ts": {
-      "@typescript-eslint/no-shadow": 1,
-      "@typescript-eslint/non-nullable-type-assertion-style": 1,
-      "no-restricted-syntax": 4,
-      "no-shadow": 1,
+    "src/lib/product-bounds-detector.ts": {
+      "@typescript-eslint/naming-convention": 1,
       "prefer-template": 2
     },
-    "src/types/product-catalog.ts": {
+    "src/lib/quotes/__tests__/collapsedItemsStorage.fuzz.test.ts": {
+      "eqeqeq": 1,
+      "no-eq-null": 1
+    },
+    "src/lib/quotes/__tests__/collapsedItemsStorage.test.ts": {
+      "no-restricted-syntax": 1
+    },
+    "src/lib/quotes/__tests__/exportDiscountAuditPdf.test.ts": {
+      "no-restricted-syntax": 2
+    },
+    "src/lib/quotes/discount-validation-messages.ts": {
+      "@typescript-eslint/sort-type-constituents": 3
+    },
+    "src/lib/quotes/expiration.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/lib/quotes/exportDiscountAuditPdf.ts": {
+      "@typescript-eslint/sort-type-constituents": 2
+    },
+    "src/lib/quotes/personalizationSummary.ts": {
+      "@typescript-eslint/prefer-optional-chain": 1,
+      "logical-assignment-operators": 2
+    },
+    "src/lib/sentry.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/lib/supabase/rest-client.ts": {
+      "@typescript-eslint/dot-notation": 1,
+      "@typescript-eslint/no-explicit-any": 2,
+      "@typescript-eslint/no-unused-vars": 1,
+      "dot-notation": 1,
+      "no-console": 2
+    },
+    "src/lib/supabase/rls-validator.ts": {
+      "@typescript-eslint/no-unused-vars": 3,
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/lib/telemetry/__tests__/navigationMetrics.test.ts": {
+      "@typescript-eslint/return-await": 1
+    },
+    "src/lib/telemetry/navigationMetrics.ts": {
+      "@typescript-eslint/naming-convention": 1,
+      "@typescript-eslint/sort-type-constituents": 3,
+      "eqeqeq": 1,
+      "no-eq-null": 1
+    },
+    "src/lib/telemetry/quoteStatusTelemetry.ts": {
+      "@typescript-eslint/sort-type-constituents": 2
+    },
+    "src/pages/__visual/QuoteViewOrderHarness.tsx": {
+      "logical-assignment-operators": 1
+    },
+    "src/pages/admin/DiscountRequestDetailPage.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/auth/Auth.tsx": {
+      "no-promise-executor-return": 1
+    },
+    "src/pages/dev/ConfirmDialogHarness.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/magazine/MagazineEditorPage.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/pages/magazine/MagazineListPage.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/magazine/PublicMagazineView.tsx": {
+      "@typescript-eslint/no-shadow": 1,
+      "@typescript-eslint/prefer-optional-chain": 1,
+      "@typescript-eslint/sort-type-constituents": 1,
+      "eqeqeq": 2,
+      "no-eq-null": 2,
+      "no-shadow": 1,
+      "react-hooks/exhaustive-deps": 1
+    },
+    "src/pages/magazine/__tests__/pagination.property.test.ts": {
+      "no-duplicate-imports": 1
+    },
+    "src/pages/magazine/__tests__/pagination.test.ts": {
+      "no-duplicate-imports": 1
+    },
+    "src/pages/magazine/__tests__/publishAwait.regression.test.ts": {
+      "@typescript-eslint/require-await": 7,
+      "no-duplicate-imports": 1,
+      "no-promise-executor-return": 1
+    },
+    "src/pages/magazine/__tests__/stepValidation.matrix.test.ts": {
+      "no-duplicate-imports": 1
+    },
+    "src/pages/magazine/__tests__/stepValidation.test.ts": {
+      "no-duplicate-imports": 1
+    },
+    "src/pages/magazine/__tests__/useMagazineEditor.staleRef.test.ts": {
+      "@typescript-eslint/no-shadow": 2,
+      "@typescript-eslint/require-await": 23,
+      "no-duplicate-imports": 1,
+      "no-shadow": 2
+    },
+    "src/pages/magazine/components/EditorHero.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/magazine/components/KeyboardHelpOverlay.tsx": {
+      "prefer-arrow-callback": 1
+    },
+    "src/pages/magazine/components/MagazineCardThumbnail.tsx": {
+      "prefer-arrow-callback": 1
+    },
+    "src/pages/magazine/components/MagazineErrorBoundary.tsx": {
+      "react/state-in-constructor": 1
+    },
+    "src/pages/magazine/components/MagazineMiniMap.tsx": {
+      "eqeqeq": 3,
+      "no-eq-null": 3,
+      "prefer-arrow-callback": 1,
+      "prefer-template": 1
+    },
+    "src/pages/magazine/components/MagazinePageRenderer.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/magazine/components/PreviewSidebar.tsx": {
+      "@typescript-eslint/sort-type-constituents": 2
+    },
+    "src/pages/magazine/components/PublicMagazineToc.tsx": {
+      "jsx-a11y/no-redundant-roles": 1,
+      "prefer-arrow-callback": 1
+    },
+    "src/pages/magazine/components/__tests__/EditorHero.test.tsx": {
+      "@typescript-eslint/no-unused-vars": 1
+    },
+    "src/pages/magazine/components/steps/ContentStep.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/magazine/components/steps/DesignStep.tsx": {
+      "@typescript-eslint/sort-type-constituents": 2
+    },
+    "src/pages/magazine/components/steps/LayoutStep.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/pages/magazine/components/steps/ProductsStep.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/pages/magazine/components/templates/TemplateRegistry.ts": {
+      "@typescript-eslint/sort-type-constituents": 2
+    },
+    "src/pages/magazine/components/templates/catalog/ListTemplate.tsx": {
+      "react/jsx-closing-bracket-location": 1,
+      "react/jsx-first-prop-new-line": 1
+    },
+    "src/pages/magazine/components/templates/chrome.tsx": {
+      "@typescript-eslint/sort-type-constituents": 8
+    },
+    "src/pages/magazine/components/templates/editorial/EditorialManifestoTemplate.tsx": {
+      "react/jsx-closing-bracket-location": 1,
+      "react/jsx-first-prop-new-line": 1
+    },
+    "src/pages/magazine/components/templates/shared.ts": {
+      "prefer-template": 1
+    },
+    "src/pages/magazine/hooks/__tests__/useMagazineGoldImport.test.ts": {
+      "@typescript-eslint/require-await": 2,
+      "@typescript-eslint/sort-type-constituents": 1,
+      "no-promise-executor-return": 3
+    },
+    "src/pages/magazine/hooks/__tests__/useMagazineReaderState.test.ts": {
+      "@typescript-eslint/prefer-regexp-exec": 1,
+      "@typescript-eslint/require-array-sort-compare": 2,
+      "@typescript-eslint/require-await": 13,
+      "no-multi-assign": 1,
+      "no-promise-executor-return": 10
+    },
+    "src/pages/magazine/hooks/useMagazineGoldImport.ts": {
+      "@typescript-eslint/prefer-optional-chain": 1,
+      "@typescript-eslint/prefer-promise-reject-errors": 1
+    },
+    "src/pages/magazine/hooks/useMagazineReaderState.ts": {
+      "@typescript-eslint/prefer-promise-reject-errors": 1,
+      "@typescript-eslint/sort-type-constituents": 1,
+      "no-console": 3
+    },
+    "src/pages/magazine/hooks/usePageZoom.ts": {
+      "eqeqeq": 2,
+      "no-eq-null": 2
+    },
+    "src/pages/magazine/hooks/usePresentationMode.ts": {
+      "eqeqeq": 2,
+      "no-eq-null": 2
+    },
+    "src/pages/magazine/useMagazineEditor.ts": {
+      "@typescript-eslint/no-shadow": 1,
+      "no-shadow": 1,
+      "react-hooks/exhaustive-deps": 1
+    },
+    "src/pages/magazine/utils/contrast.ts": {
+      "@typescript-eslint/sort-type-constituents": 1,
+      "prefer-exponentiation-operator": 1
+    },
+    "src/pages/magazine/utils/stepValidation.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/products/CartsListPage.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/sort-type-constituents": 1,
+      "jsx-a11y/role-supports-aria-props": 1,
+      "no-unneeded-ternary": 1,
+      "react-hooks/exhaustive-deps": 1,
+      "react/jsx-props-no-multi-spaces": 1
+    },
+    "src/pages/products/SellerCartsPage.tsx": {
+      "@typescript-eslint/no-unused-vars": 2,
+      "unused-imports/no-unused-imports": 2
+    },
+    "src/pages/products/__tests__/CartHeaderEdgeCases.test.ts": {
+      "@typescript-eslint/sort-type-constituents": 1,
+      "prefer-template": 1
+    },
+    "src/pages/products/__tests__/CartHeaderExhaustiveFuzz.test.ts": {
+      "@typescript-eslint/prefer-regexp-exec": 2,
+      "@typescript-eslint/sort-type-constituents": 1,
+      "prefer-template": 3
+    },
+    "src/pages/products/__tests__/CartNotesInternalOnly.test.ts": {
+      "@typescript-eslint/prefer-regexp-exec": 1,
+      "prefer-template": 1
+    },
+    "src/pages/products/__tests__/CartNotesLeakGuards.test.tsx": {
+      "@typescript-eslint/prefer-includes": 1,
+      "prefer-template": 2
+    },
+    "src/pages/products/seller-carts/CartHeaderActions.tsx": {
+      "@typescript-eslint/no-unused-vars": 7
+    },
+    "src/pages/products/seller-carts/__tests__/CartHeader.contract-snapshot.test.ts": {
+      "@typescript-eslint/no-shadow": 2,
+      "no-shadow": 2
+    },
+    "src/pages/products/seller-carts/__tests__/CartHeader.invariants.fuzz.test.ts": {
+      "@typescript-eslint/no-shadow": 4,
+      "@typescript-eslint/no-unused-vars": 1,
+      "no-shadow": 4
+    },
+    "src/pages/products/seller-carts/__tests__/CartStatusSelect.contract.test.tsx": {
+      "import/first": 1
+    },
+    "src/pages/products/seller-carts/__tests__/CartStatusSelect.emptyCart.test.tsx": {
+      "@typescript-eslint/sort-type-constituents": 2,
+      "import/first": 1
+    },
+    "src/pages/products/seller-carts/__tests__/CartStatusSelect.fuzz.test.tsx": {
+      "import/first": 1
+    },
+    "src/pages/products/seller-carts/__tests__/CartStatusSelect.test.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1,
+      "import/first": 1
+    },
+    "src/pages/products/seller-carts/__tests__/CartStatusSelect.timeout.test.tsx": {
+      "import/first": 1
+    },
+    "src/pages/products/seller-carts/bulkRestoreSummary.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/products/seller-carts/cartViewModePrefs.ts": {
+      "@typescript-eslint/method-signature-style": 2,
+      "@typescript-eslint/sort-type-constituents": 2
+    },
+    "src/pages/products/seller-carts/mapRestoreCartError.ts": {
+      "@typescript-eslint/prefer-includes": 2,
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/quotes/QuoteBuilderPage.tsx": {
+      "@typescript-eslint/no-unused-vars": 5,
+      "react/jsx-closing-tag-location": 1,
+      "unused-imports/no-unused-imports": 5
+    },
+    "src/pages/quotes/QuoteViewPage.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/pages/quotes/QuotesListPage.tsx": {
+      "@typescript-eslint/no-unused-vars": 1
+    },
+    "src/pages/quotes/__tests__/QuoteConditions.delivery-freight-left-align.test.tsx": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1
+    },
+    "src/pages/quotes/__tests__/QuoteConditions.left-align.test.ts": {
+      "@typescript-eslint/prefer-regexp-exec": 3
+    },
+    "src/pages/quotes/__tests__/QuoteConditions.stable-testids.test.tsx": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1
+    },
+    "src/pages/quotes/__tests__/QuoteConditions.viewports.test.tsx": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 2
+    },
+    "src/pages/quotes/__tests__/QuoteViewPage.preview-breath.test.tsx": {
+      "no-restricted-syntax": 1
+    },
+    "src/pages/quotes/__tests__/QuotesListPage.deleteDisabled.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 2
+    },
+    "src/pages/quotes/__tests__/QuotesListPage.fab.focus.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 2,
+      "@typescript-eslint/no-useless-constructor": 1,
+      "no-useless-constructor": 1
+    },
+    "src/pages/quotes/__tests__/QuotesListPage.fab.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 2
+    },
+    "src/pages/quotes/__tests__/QuotesListPage.layout.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 2
+    },
+    "src/pages/quotes/__tests__/QuotesListPage.render.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 2
+    },
+    "src/pages/quotes/__tests__/conditions-collapse-persistence.test.ts": {
+      "no-restricted-syntax": 2
+    },
+    "src/pages/quotes/__tests__/quote-builder-freight-block-fuzz.test.tsx": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1,
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/quotes/__tests__/quote-builder-freight-block-hierarchy.rtl.test.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/quotes/__tests__/quote-builder-freight-block.rtl.test.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/quotes/__tests__/useQuotesListPage.bulkDelete.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 1,
+      "@typescript-eslint/require-await": 3
+    },
+    "src/pages/quotes/__tests__/useQuotesListPage.duplicateUndo.test.tsx": {
       "@typescript-eslint/consistent-type-imports": 1
+    },
+    "src/pages/quotes/__tests__/useQuotesListPage.expiring.test.ts": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1,
+      "@typescript-eslint/require-array-sort-compare": 1,
+      "@typescript-eslint/require-await": 6,
+      "no-duplicate-imports": 1
+    },
+    "src/pages/quotes/__tests__/useQuotesListPage.fuzz.test.ts": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1,
+      "@typescript-eslint/require-await": 3,
+      "no-duplicate-imports": 1
+    },
+    "src/pages/quotes/__tests__/useQuotesListPage.singleDelete.test.tsx": {
+      "@typescript-eslint/consistent-type-imports": 1
+    },
+    "src/pages/quotes/__tests__/useQuotesListPage.test.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/require-array-sort-compare": 7,
+      "@typescript-eslint/require-await": 3,
+      "no-duplicate-imports": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/pages/quotes/__tests__/useQuotesListPage.urlState.test.tsx": {
+      "no-duplicate-imports": 1
+    },
+    "src/pages/quotes/components/DeliveryModeToggle.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/pages/quotes/components/__tests__/DeliveryModeToggle.test.tsx": {
+      "@typescript-eslint/require-await": 1
+    },
+    "src/pages/quotes/quote-view/QuotePromoChampionsSync.ts": {
+      "@typescript-eslint/prefer-optional-chain": 2
+    },
+    "src/services/__tests__/magazineEdgeContract.test.ts": {
+      "@typescript-eslint/dot-notation": 2,
+      "@typescript-eslint/require-await": 1,
+      "dot-notation": 2
+    },
+    "src/services/__tests__/quoteNumberConcurrency.test.ts": {
+      "@typescript-eslint/naming-convention": 2,
+      "@typescript-eslint/prefer-readonly": 1,
+      "no-promise-executor-return": 1
+    },
+    "src/services/__tests__/quoteReorderAutosaveRace.test.ts": {
+      "@typescript-eslint/consistent-generic-constructors": 1,
+      "@typescript-eslint/no-shadow": 1,
+      "no-promise-executor-return": 1,
+      "no-restricted-syntax": 1,
+      "no-shadow": 1
+    },
+    "src/services/__tests__/quoteServiceVariantSkuHydration.test.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/services/magazineService.ts": {
+      "no-duplicate-imports": 1
+    },
+    "src/types/magazine.ts": {
+      "@typescript-eslint/sort-type-constituents": 5
+    },
+    "src/utils/__tests__/cnpj-errors.matrix.test.ts": {
+      "no-restricted-syntax": 2
+    },
+    "src/utils/__tests__/cnpj-fuzz-helpers.ts": {
+      "@typescript-eslint/sort-type-constituents": 1,
+      "prefer-template": 3
+    },
+    "src/utils/__tests__/quote-number.exhaustive.test.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/utils/__tests__/quote-number.null-cases.test.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/utils/__tests__/undoToast.stress.test.tsx": {
+      "no-lonely-if": 1
+    },
+    "src/utils/cnpj-errors.ts": {
+      "@typescript-eslint/prefer-includes": 1,
+      "@typescript-eslint/sort-type-constituents": 2,
+      "eqeqeq": 1,
+      "no-eq-null": 1
+    },
+    "src/utils/cnpj-schema.test.ts": {
+      "@typescript-eslint/non-nullable-type-assertion-style": 1
+    },
+    "src/utils/imageProxy.ts": {
+      "prefer-template": 1
+    },
+    "src/utils/undoToast.tsx": {
+      "@typescript-eslint/no-invalid-void-type": 2,
+      "@typescript-eslint/sort-type-constituents": 3
     }
   }
 }
