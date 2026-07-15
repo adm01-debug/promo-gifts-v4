@@ -83,7 +83,7 @@ describe('EditorHero — sem mini preview', () => {
       await screen.findByRole('radiogroup', { name: /Escolher template/i }),
     ).toBeInTheDocument();
 
-    // Nenhum TemplateThumbnail é renderizado dentro do popover
-    expect(screen.queryByTestId('template-thumbnail-marker')).toBeNull();
+    // Nenhuma miniatura renderizada dentro do popover
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
 });
