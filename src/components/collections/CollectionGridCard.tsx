@@ -338,6 +338,6 @@ export function CollectionGridCard({
           </div>
         </div>
       </div>
-    </motion.div>
+    </Clickable>
   );
 }
