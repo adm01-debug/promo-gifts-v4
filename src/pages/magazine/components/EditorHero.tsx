@@ -50,6 +50,7 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
       <div className="p-4 sm:p-5">
         <div className="min-w-0">
           <nav
+            data-testid="magazine-editor-breadcrumb"
             aria-label="Trilha"
             className="mb-1 flex items-center gap-2 text-xs text-muted-foreground"
           >
