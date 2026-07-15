@@ -47,6 +47,10 @@ jobs:
         if: always()
         run: node scripts/ssot-report.mjs --out=ssot-report.json --json > /dev/null
 
+      - name: Schema — validar ssot-report.json
+        if: always()
+        run: node scripts/validate-ssot-report.mjs --file=ssot-report.json --schema=schemas/ssot-report.schema.json
+
       - name: Upload SSOT report
         if: always()
         uses: actions/upload-artifact@v4
