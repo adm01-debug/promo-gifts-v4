@@ -1,0 +1,9 @@
+{
+  "$schema": "./docs/schemas/eslint-baseline-scope.schema.json",
+  "mode": "full",
+  "include": [],
+  "exclude": [],
+  "notes": [
+    "Gerido por scripts/eslint-baseline-scope-add.mjs. Ver docs no próprio arquivo inicial."
+  ]
+}

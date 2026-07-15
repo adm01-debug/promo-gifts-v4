@@ -24,9 +24,12 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
+import minimatchPkg from 'minimatch';
+const { minimatch } = minimatchPkg;
 
 const ROOT = process.cwd();
 const BASELINE_PATH = join(ROOT, '.eslint-baseline.json');
+const SCOPE_PATH = join(ROOT, '.eslint-baseline-scope.json');
 const MAX_LIST = 50;
 const ESLINT_BIN = join(ROOT, 'node_modules', 'eslint', 'bin', 'eslint.js');
 
@@ -39,6 +42,40 @@ if (!existsSync(BASELINE_PATH)) {
 
 const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
 const baselineCounts = baseline.counts ?? {};
+
+// ── Modo incremental (escopo) ─────────────────────────────────────────────
+// Lê `.eslint-baseline-scope.json` (opcional) e/ou flag `--incremental`.
+// Em modo incremental, regressões fora do `include` (menos `exclude`) viram
+// informacionais e NÃO bloqueiam o CI. Regressões dentro do escopo bloqueiam
+// normalmente. Assim novas ondas de correção não são atrapalhadas por drift
+// legado em áreas ainda não trabalhadas.
+const cliIncremental = process.argv.includes('--incremental');
+const cliFull = process.argv.includes('--full');
+let scopeConfig = { mode: 'full', include: [], exclude: [] };
+if (existsSync(SCOPE_PATH)) {
+  try {
+    const raw = JSON.parse(readFileSync(SCOPE_PATH, 'utf8'));
+    scopeConfig = {
+      mode: raw.mode === 'incremental' ? 'incremental' : 'full',
+      include: Array.isArray(raw.include) ? raw.include : [],
+      exclude: Array.isArray(raw.exclude) ? raw.exclude : [],
+    };
+  } catch (err) {
+    console.error(`⚠️  .eslint-baseline-scope.json inválido, ignorando: ${err.message}`);
+  }
+}
+const incrementalMode = cliFull ? false : cliIncremental || scopeConfig.mode === 'incremental';
+const includeGlobs = scopeConfig.include;
+const excludeGlobs = scopeConfig.exclude;
+
+function fileInScope(file) {
+  if (!incrementalMode) return true;
+  if (includeGlobs.length === 0) return false; // escopo vazio ⇒ nada bloqueia
+  const included = includeGlobs.some((g) => minimatch(file, g));
+  if (!included) return false;
+  const excluded = excludeGlobs.some((g) => minimatch(file, g));
+  return !excluded;
+}
 
 const dir = mkdtempSync(join(tmpdir(), 'eslint-gate-'));
 const out = join(dir, 'report.json');
@@ -96,8 +133,11 @@ for (const [file, rules] of Object.entries(baselineCounts)) {
 }
 
 const baselineTotal = baseline.totalErrors ?? 0;
+const modeLabel = incrementalMode
+  ? `incremental (include=${includeGlobs.length} exclude=${excludeGlobs.length})`
+  : 'full';
 console.log(
-  `ESLint baseline gate — atual: ${totalErrors} erros, ${totalWarnings} warnings · baseline: ${baselineTotal} erros`,
+  `ESLint baseline gate [${modeLabel}] — atual: ${totalErrors} erros, ${totalWarnings} warnings · baseline: ${baselineTotal} erros`,
 );
 
 if (improvements.length) {
@@ -113,11 +153,18 @@ if (regressions.length === 0) {
 }
 
 regressions.sort((a, b) => b.delta - a.delta);
-const totalDelta = regressions.reduce((s, r) => s + r.delta, 0);
 
-// Coleta exemplos concretos (linha/coluna/msg) das regressões.
+// Split por escopo quando em modo incremental.
+const blocking = incrementalMode ? regressions.filter((r) => fileInScope(r.file)) : regressions;
+const informational = incrementalMode
+  ? regressions.filter((r) => !fileInScope(r.file))
+  : [];
+const blockingDelta = blocking.reduce((s, r) => s + r.delta, 0);
+const infoDelta = informational.reduce((s, r) => s + r.delta, 0);
+
+// Coleta exemplos concretos (linha/coluna/msg) das regressões bloqueantes.
 const examplesByKey = new Map();
-for (const r of regressions.slice(0, MAX_LIST)) {
+for (const r of blocking.slice(0, MAX_LIST)) {
   examplesByKey.set(`${r.file}::${r.rule}`, []);
 }
 for (const file of report) {
@@ -133,20 +180,42 @@ for (const file of report) {
   }
 }
 
+if (informational.length) {
+  console.log(
+    `\nℹ️  ${infoDelta} regressão(ões) FORA do escopo incremental em ${informational.length} par(es) file:rule — não bloqueia o gate:`,
+  );
+  for (const r of informational.slice(0, 20)) {
+    console.log(
+      `  · ${r.file} [${r.rule}] baseline=${r.baseline} → atual=${r.current} (+${r.delta})`,
+    );
+  }
+  if (informational.length > 20) {
+    console.log(`  … e mais ${informational.length - 20} par(es) fora de escopo omitido(s).`);
+  }
+}
+
+if (blocking.length === 0) {
+  console.log('\n✅ Nenhuma regressão dentro do escopo incremental. Gate aprovado.');
+  process.exit(0);
+}
+
 console.error(
-  `\n❌ ${totalDelta} problema(s) novo(s) de ESLint (erros ou warnings) em ${regressions.length} par(es) file:rule:`,
+  `\n❌ ${blockingDelta} problema(s) novo(s) de ESLint dentro do escopo em ${blocking.length} par(es) file:rule:`,
 );
 
-for (const r of regressions.slice(0, MAX_LIST)) {
+for (const r of blocking.slice(0, MAX_LIST)) {
   console.error(
     `  • ${r.file} [${r.rule}] baseline=${r.baseline} → atual=${r.current} (+${r.delta})`,
   );
   const ex = examplesByKey.get(`${r.file}::${r.rule}`) ?? [];
   for (const e of ex) console.error(`      ${e}`);
 }
-if (regressions.length > MAX_LIST) {
-  console.error(`  … e mais ${regressions.length - MAX_LIST} par(es) omitido(s).`);
+if (blocking.length > MAX_LIST) {
+  console.error(`  … e mais ${blocking.length - MAX_LIST} par(es) omitido(s).`);
 }
 console.error('\nPara atualizar o baseline (após corrigir os legados ou refactor intencional):');
 console.error('  node scripts/eslint-baseline-generate.mjs');
+console.error('Para expandir o escopo incremental após uma onda:');
+console.error("  node scripts/eslint-baseline-scope-add.mjs 'src/<area>/**'");
 process.exit(1);
+
