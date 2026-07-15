@@ -63,19 +63,23 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
             </span>
           </nav>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div
+            data-testid="magazine-hero-title-row"
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 sm:gap-x-4"
+          >
             <h1
               data-testid="page-title-magazine-editor"
-              className="line-clamp-2 font-display text-2xl font-bold tracking-tight sm:text-3xl"
+              className="line-clamp-2 font-display text-2xl font-bold leading-tight tracking-tight sm:text-3xl"
             >
               {magazine.title || 'Nova revista'}
             </h1>
 
             {/* Chip do template + swap inline — alinhados ao título */}
-            <div className="flex flex-wrap items-center gap-2">
             <div
-              className="flex items-center gap-2 rounded-full border bg-muted/40 py-1 pl-2 pr-3 text-xs"
-              aria-label="Template ativo"
+              data-testid="magazine-template-chip"
+              className="inline-flex items-center gap-2 rounded-full border bg-muted/40 py-1 pl-2 pr-3 text-xs"
+              role="group"
+              aria-label={`Template ativo: ${active.name}, ${FAMILY_LABEL[active.family]}, ${active.productsPerPage} por página`}
             >
               <Layers className="h-3.5 w-3.5 text-primary" aria-hidden />
               <span className="font-semibold">{active.name}</span>
@@ -98,16 +102,28 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 gap-1.5 text-xs"
+                  data-testid="magazine-template-swap-trigger"
+                  className="h-8 gap-1.5 text-xs focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   aria-label="Trocar template da revista"
+                  aria-haspopup="dialog"
+                  aria-expanded={open}
+                  aria-controls="magazine-template-swap-popover"
                 >
                   Trocar template
-                  <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+                  <ChevronDown
+                    className={cn(
+                      'h-3.5 w-3.5 transition-transform',
+                      open && 'rotate-180',
+                    )}
+                    aria-hidden
+                  />
                 </Button>
               </PopoverTrigger>
               <PopoverContent
+                id="magazine-template-swap-popover"
                 align="start"
                 sideOffset={8}
+                aria-labelledby="magazine-template-swap-heading"
                 className="w-[min(680px,calc(100vw-2rem))] p-3"
               >
                 <div className="mb-2 flex items-baseline justify-between">
@@ -134,6 +150,7 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                         type="button"
                         role="radio"
                         aria-checked={selected}
+                        aria-label={`${t.name}, ${FAMILY_LABEL[t.family]}, ${t.productsPerPage} por página${selected ? ' (selecionado)' : ''}`}
                         onClick={() => {
                           onChangeTemplate(t.id);
                           setOpen(false);
@@ -172,7 +189,10 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                           </div>
                         </div>
                         {selected && (
-                          <span className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                          <span
+                            className="absolute right-1.5 top-1.5 inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
+                            aria-hidden
+                          >
                             <Check className="h-2.5 w-2.5" aria-hidden />
                           </span>
                         )}
@@ -183,10 +203,9 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
               </PopoverContent>
             </Popover>
           </div>
-          </div>
 
           {magazine.subtitle && (
-            <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+            <p className="mt-1.5 line-clamp-1 text-sm text-muted-foreground">
               {magazine.subtitle}
             </p>
           )}
