@@ -23,8 +23,8 @@ import type {
   ReliabilityConfig,
   ReplenishmentMatch,
   UnmatchedPromise,
+  DEFAULT_RELIABILITY_CONFIG,
 } from './types';
-import { DEFAULT_RELIABILITY_CONFIG } from './types';
 
 const MS_PER_DAY = 86_400_000;
 
