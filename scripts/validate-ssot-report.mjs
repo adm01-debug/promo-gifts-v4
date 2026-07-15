@@ -27,6 +27,7 @@ const getArg = (name, dflt) => {
 const QUIET = argv.includes('--quiet');
 const FILE = resolve(getArg('file', 'ssot-report.json'));
 const SCHEMA = resolve(getArg('schema', 'schemas/ssot-report.schema.json'));
+const EXPECTED_VERSION = getArg('expected-version', null); // opcional; senão usa const do schema
 
 function die(code, msg) {
   process.stderr.write(`[validate-ssot-report] ${msg}\n`);
@@ -141,12 +142,31 @@ function validate(value, sch, path = '$') {
   return errs;
 }
 
-const errors = validate(data, schema);
+// --- Pré-checagem de versão (mensagem acionável para artefatos legados) ---
+const SEMVER_RE = /^\d+\.\d+\.\d+$/;
+const schemaExpected = schema?.properties?.schemaVersion?.const ?? null;
+const expectedVersion = EXPECTED_VERSION ?? schemaExpected;
+
+const versionErrors = [];
+if (!('schemaVersion' in (data ?? {}))) {
+  versionErrors.push(
+    `$.schemaVersion: campo ausente — artefato legado (< 2.0.0). Regere com "node scripts/ssot-report.mjs --out=<path>" na versão atual (${expectedVersion ?? 'desconhecida'}).`,
+  );
+} else if (typeof data.schemaVersion !== 'string' || !SEMVER_RE.test(data.schemaVersion)) {
+  versionErrors.push(`$.schemaVersion: valor ${JSON.stringify(data.schemaVersion)} não é SemVer válido (MAJOR.MINOR.PATCH).`);
+} else if (expectedVersion && data.schemaVersion !== expectedVersion) {
+  versionErrors.push(
+    `$.schemaVersion: esperado ${expectedVersion}, recebido ${data.schemaVersion}. Bump correto via "node scripts/ssot-report-bump.mjs --kind=<major|minor|patch> --reason=\"...\"".`,
+  );
+}
+
+const errors = [...versionErrors, ...validate(data, schema)];
 
 if (errors.length === 0) {
   if (!QUIET) {
-    process.stderr.write(`[validate-ssot-report] ✓ ${FILE} válido contra ${SCHEMA}\n`);
+    process.stderr.write(`[validate-ssot-report] ✓ ${FILE} válido contra ${SCHEMA} (v${data.schemaVersion})\n`);
     const summary = {
+      schemaVersion: data.schemaVersion,
       timestamp: data.timestamp,
       overallOk: data.overallOk,
       gates: data.gates?.map((g) => `${g.label}=${g.ok ? 'ok' : 'fail'}`),
