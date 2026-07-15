@@ -18,6 +18,7 @@ import {
 } from '@/hooks/products';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { cn } from '@/lib/utils';
+import { Clickable } from '@/components/shared/Clickable';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDaysAgoFromCount } from '@/lib/novelty-dates';
