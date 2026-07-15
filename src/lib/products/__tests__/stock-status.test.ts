@@ -5,6 +5,8 @@ import {
   getVariationStockStatus,
   OUT_OF_STOCK,
   CATALOG_STOCK_STATUSES,
+  compareStockStatus,
+  stockStatusRank,
   type CatalogStockStatusValue,
 } from '../stock-status';
 
