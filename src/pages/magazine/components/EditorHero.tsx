@@ -45,9 +45,9 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
     <section
       data-testid="editor-hero"
       aria-label="Cabeçalho do editor"
-      className="mb-4 overflow-hidden rounded-xl border bg-card shadow-sm"
+      className="mb-4"
     >
-      <div className="p-4 sm:p-5">
+      <div className="py-2">
         <div className="min-w-0">
           <nav
             data-testid="magazine-editor-breadcrumb"
