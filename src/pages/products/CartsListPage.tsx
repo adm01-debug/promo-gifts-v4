@@ -68,6 +68,7 @@ import {
   type DeadlineFilter,
 } from '@/lib/carts/shipping-deadline';
 import { useListUrlState } from '@/hooks/common/useListUrlState';
+import { Clickable } from '@/components/shared/Clickable';
 
 
 type StatusFilter = CartStatus | 'all';
