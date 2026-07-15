@@ -138,19 +138,29 @@ export function DesignStep({ magazine, onChange, onCategoryChange }: Props) {
                     }
                   }}
                   className={cn(
-                    'cursor-pointer overflow-hidden transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                    'cursor-pointer transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                     selected ? 'border-primary ring-2 ring-primary/40' : 'hover:border-primary/60',
                   )}
                   data-testid={`magazine-template-${t.id}`}
                 >
-                  <TemplateThumbnail templateId={t.id} sourceMagazine={source} />
-                  <CardContent className="space-y-1 p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">{t.name}</span>
-                      {selected && <Check className="h-4 w-4 text-primary" aria-label="Selecionado" />}
+                  <CardContent className="space-y-2 p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Layers
+                          className={cn(
+                            'h-4 w-4 shrink-0',
+                            selected ? 'text-primary' : 'text-muted-foreground',
+                          )}
+                          aria-hidden
+                        />
+                        <span className="truncate text-sm font-semibold">{t.name}</span>
+                      </div>
+                      {selected && (
+                        <Check className="h-4 w-4 shrink-0 text-primary" aria-label="Selecionado" />
+                      )}
                     </div>
                     <p className="line-clamp-2 text-xs text-muted-foreground">{t.description}</p>
-                    <div className="flex items-center gap-1.5 pt-1">
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
                       <Badge variant="outline" className="text-[10px]">
                         {t.productsPerPage} / pág
                       </Badge>
@@ -165,12 +175,6 @@ export function DesignStep({ magazine, onChange, onCategoryChange }: Props) {
           </div>
         </section>
       ))}
-      {!source && (
-        <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-          Dica: adicione produtos na etapa anterior para ver o design com seus produtos reais.
-          Enquanto isso, as miniaturas usam produtos de amostra.
-        </p>
-      )}
     </div>
   );
 }
