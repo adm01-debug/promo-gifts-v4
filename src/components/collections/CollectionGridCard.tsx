@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { Clickable } from '@/components/shared/Clickable';
 import type { Collection } from '@/hooks/collections';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
@@ -185,26 +186,21 @@ export function CollectionGridCard({
   const productCount = collection.productIds.length;
 
   return (
-    <motion.div
+    <Clickable
+      as={motion.div}
+      strictTarget
+      isPressed={isSelected}
+      showFocusRing={false}
       layout
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.035, type: 'spring', stiffness: 380, damping: 28 }}
-      role="button"
-      tabIndex={0}
-      aria-pressed={isSelected}
       className={cn(
-        'group relative cursor-pointer overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+        'group relative overflow-hidden rounded-2xl bg-card shadow-sm transition-all duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
         'border-[1.5px] border-border/40 hover:border-primary/40',
         isSelected && 'border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/25',
       )}
       onClick={onNavigate}
-      onKeyDown={(e) => {
-        if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
-          e.preventDefault();
-          onNavigate();
-        }
-      }}
     >
       {/* ── Top controls ── */}
       <div className="absolute left-3 right-3 top-3 z-10 flex items-start justify-between">
@@ -342,6 +338,6 @@ export function CollectionGridCard({
           </div>
         </div>
       </div>
-    </motion.div>
+    </Clickable>
   );
 }

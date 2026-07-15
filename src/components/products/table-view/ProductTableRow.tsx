@@ -13,6 +13,7 @@
 import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Clickable } from '@/components/shared/Clickable';
 import { getCdnUrl } from '@/utils/image-utils';
 import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import {
@@ -240,23 +241,16 @@ export const ProductTableRow = memo(
 
         {/* Thumbnail — QuickView ao clicar */}
         <div className="w-12 px-2">
-          <div
-            role="button"
-            tabIndex={0}
+          <Clickable
             aria-label={`Visualização rápida de ${product.name}`}
             aria-haspopup="dialog"
-            aria-expanded={quickViewOpen}
+            isExpanded={quickViewOpen}
             data-testid="product-table-row-thumb"
             data-product-id={product.id}
             className="group/thumb h-10 w-10 cursor-zoom-in overflow-hidden rounded-md border border-border/30 bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            showFocusRing={false}
             style={{ touchAction: 'manipulation' }}
             onClick={handleOpenQV}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleOpenQV(e);
-              }
-            }}
           >
             <img
               src={thumbUrl}
@@ -264,7 +258,7 @@ export const ProductTableRow = memo(
               className="h-full w-full object-contain transition-transform duration-300 group-hover/thumb:scale-105"
               loading="lazy"
             />
-          </div>
+          </Clickable>
         </div>
 
         {/* Nome + badge cor */}

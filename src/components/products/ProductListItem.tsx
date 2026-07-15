@@ -25,6 +25,7 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getProxiedImageUrl } from '@/utils/imageProxy';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Clickable } from '@/components/shared/Clickable';
 import { isLightColor } from '@/hooks/products/useColorSystem';
 import {
   useExternalVariantStock,
@@ -130,7 +131,7 @@ export const ProductListItem = memo(
       | undefined
     >(undefined);
     const [quickViewOpen, setQuickViewOpen] = useState(false);
-    const quickViewTriggerRef = useRef<HTMLDivElement | null>(null);
+    const quickViewTriggerRef = useRef<HTMLElement | null>(null);
     const [shareDialogOpen, setShareDialogOpen] = useState(false);
     const [shareVariant, setShareVariant] = useState<{
       variantName?: string | null;
@@ -442,14 +443,13 @@ export const ProductListItem = memo(
           onClick={handleClick}
         >
           {/* Thumbnail — compact square */}
-          <div
+          <Clickable
             ref={quickViewTriggerRef}
             className="group/thumb relative h-14 w-14 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-border/30 bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-primary sm:h-[72px] sm:w-[72px]"
-            role="button"
-            tabIndex={0}
+            showFocusRing={false}
             aria-label={`Visualização rápida de ${product.name}`}
             aria-haspopup="dialog"
-            aria-expanded={quickViewOpen}
+            isExpanded={quickViewOpen}
             data-testid="product-list-item-thumb"
             data-product-id={product.id}
             style={{ touchAction: 'manipulation' }}
@@ -465,22 +465,6 @@ export const ProductListItem = memo(
                 return;
               }
               setQuickViewOpen(true);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                e.stopPropagation();
-                if (
-                  actionBusyRef.current ||
-                  variantPickerOpen ||
-                  collectionModalOpen ||
-                  shareDialogOpen ||
-                  quickViewOpen
-                ) {
-                  return;
-                }
-                setQuickViewOpen(true);
-              }
             }}
           >
             <div key={thumbUrl} className="h-full w-full duration-500 animate-in fade-in">
@@ -556,7 +540,7 @@ export const ProductListItem = memo(
                 ))}
               </div>
             )}
-          </div>
+          </Clickable>
 
           {/* Info — main content block */}
           <div className="min-w-0 flex-1 py-0.5 md:max-w-[34%] md:flex-[0_1_34%]">

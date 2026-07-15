@@ -56,3 +56,4 @@ Auditoria estática identificou **68 ocorrências** legadas — refatorar em ond
 ## Histórico de refatorações
 
 - **Onda 1 (2026-07-15)** — Baseline 30 → 26. Refatorados: `pages/magazine/MagazineListPage.tsx`, `pages/products/CartsListPage.tsx`, `pages/quotes/QuotesDashboardPage.tsx`, `pages/trends/TrendsCharts.tsx`. Extensão paralela em `Clickable` para encaminhar atributos `data-*` extras (preserva hooks E2E como `data-selected`).
+- **Onda 2 (2026-07-15)** — Baseline 26 → 22. Refatorados: `components/collections/CollectionGridCard.tsx` (motion.div + strictTarget + aria-pressed), `components/products/ProductCard.tsx` (thumbnail QuickView), `components/products/ProductListItem.tsx` (thumbnail QuickView), `components/products/table-view/ProductTableRow.tsx` (thumbnail QuickView). Extensão adicional em `Clickable` para encaminhar atributos `aria-*` arbitrários (preserva `aria-haspopup`).
