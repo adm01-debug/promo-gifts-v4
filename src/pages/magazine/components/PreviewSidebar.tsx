@@ -220,8 +220,21 @@ export function PreviewSidebar({
             </div>
           </div>
         ) : (
-          <div className="rounded-lg border p-8 text-center text-xs text-muted-foreground">
-            Adicione produtos para gerar o preview.
+          <div
+            data-testid="preview-empty-state"
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/20 px-4 py-10 text-center"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/60">
+              <ImageOff className="h-5 w-5 text-muted-foreground" aria-hidden />
+            </div>
+            <p className="text-sm font-medium text-foreground">
+              Sem capa para exibir
+            </p>
+            <p className="max-w-[220px] text-xs text-muted-foreground">
+              Adicione produtos ou escolha um template para gerar o preview da revista.
+            </p>
           </div>
         )}
 
