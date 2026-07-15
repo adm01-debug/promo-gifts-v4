@@ -42,6 +42,7 @@ vi.mock('@/integrations/supabase/client', () => ({
       }),
     }),
     auth: {
+      // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
       getUser: async () => ({ data: { user: { id: USER_ID } }, error: null }),
     },
   },

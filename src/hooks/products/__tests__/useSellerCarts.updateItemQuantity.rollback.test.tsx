@@ -126,6 +126,7 @@ function spyPatchFn(
     snapshotDuringFlight: undefined,
     args: [],
   };
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   const fn = vi.fn(async (args: { itemId: string; quantity: number }) => {
     // Snapshot do cache no MEIO da execução — depois de onMutate ter aplicado
     // o otimista e antes de onError/onSuccess correrem.
@@ -266,6 +267,7 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
 
   it('cache vazio (first-load) — mutação falha SEM crash', async () => {
     const qc = makeQueryClient();
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     const patchFn = vi.fn(async () => {
       throw new Error('nope');
     });

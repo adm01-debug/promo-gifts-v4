@@ -88,6 +88,7 @@ vi.mock('@/integrations/supabase/client', () => {
         delete: () => buildDeleteChain(),
       }),
       auth: {
+        // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
         getUser: async () => ({ data: { user: { id: TEST_USER_ID } }, error: null }),
       },
     },
@@ -1454,6 +1455,7 @@ describe('SellerCartContext — telemetria do restoreCart (Undo)', () => {
 
       let pSlow: Promise<unknown> | undefined;
       let pFast: Promise<unknown> | undefined;
+      // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
       await act(async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         pSlow = result.current.restoreCart(mkSnap('snap-slow', 'co-SLOW') as any);

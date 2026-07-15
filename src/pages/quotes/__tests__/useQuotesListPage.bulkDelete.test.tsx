@@ -122,6 +122,7 @@ describe('useQuotesListPage — handleBulkDelete', () => {
 
   it('falha parcial: limpa bulkDeleteIds + emite confirmed + toast.warning', async () => {
     // a: ok, b: falha
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     mockDeleteQuote.mockImplementation(async (id: string) => id === 'a');
     const events: Event[] = [];
     const listener = (e: Event) => events.push(e);
@@ -141,6 +142,7 @@ describe('useQuotesListPage — handleBulkDelete', () => {
     window.removeEventListener('quotes:bulk-delete-confirmed', listener);
   });
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   it('cancelBulkDelete fecha dialog SEM chamar deleteQuote', async () => {
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setBulkDeleteIds(['a']));
@@ -180,6 +182,7 @@ describe('useQuotesListPage — handleBulkDelete', () => {
 
   it('Desfazer chama createQuote para cada snapshot capturado', async () => {
     mockDeleteQuote.mockResolvedValue(true);
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     mockFetchQuote.mockImplementation(async (id: string) => ({
       id,
       quote_number: `ORC-${id}`,

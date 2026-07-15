@@ -60,6 +60,7 @@ function record(input: RequestInfo | URL, init?: RequestInit) {
   calls.push({ url, method: init?.method ?? 'GET', headers });
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   record(input, init);
   if (nextReply.throw) throw nextReply.throw;

@@ -60,7 +60,9 @@ let publishResolveDelayMs = 0;
 
 vi.mock('@/services/magazineService', () => ({
   magazineService: {
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     get: vi.fn(async () => ({ ...store })),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     update: vi.fn(async (_id: string, data: Magazine) => {
       store = { ...data };
       return store;
@@ -78,10 +80,15 @@ vi.mock('@/services/magazineService', () => ({
       store = updated;
       return updated;
     }),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     unpublish: vi.fn(async () => store),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     addProducts: vi.fn(async () => store),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     removeItem: vi.fn(async () => store),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     reorderItems: vi.fn(async () => store),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     updateItem: vi.fn(async () => store),
   },
 }));

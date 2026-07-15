@@ -13,8 +13,11 @@ import { MemoryRouter } from 'react-router-dom';
 import React, { type ReactNode } from 'react';
 
 // Mocks devem vir antes do import do SUT
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const updateQuoteStatus = vi.fn(async () => true);
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const duplicateQuote = vi.fn(async () => null);
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const deleteQuote = vi.fn(async () => true);
 
 let mockQuotes: Array<Record<string, unknown>> = [];

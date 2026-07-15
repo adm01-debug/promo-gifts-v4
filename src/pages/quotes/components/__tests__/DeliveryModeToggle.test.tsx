@@ -93,6 +93,7 @@ describe('<DeliveryModeToggle />', () => {
     expect(data).toHaveAttribute('aria-selected', 'false');
   });
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   it('não altera o layout inline-flex ao trocar de valor', async () => {
     const { rerender } = setup('prazo');
     const listBefore = screen.getByTestId('delivery-mode-toggle');

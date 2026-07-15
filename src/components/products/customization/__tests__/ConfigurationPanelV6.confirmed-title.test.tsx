@@ -22,9 +22,12 @@ vi.mock('@/hooks/simulation', () => ({
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     auth: { getUser: async () => ({ data: { user: null } }) },
     from: () => ({
+      // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
       select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
+      // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
       upsert: async () => ({ error: null }),
     }),
   },

@@ -24,6 +24,7 @@ import { PROPOSAL_FIXTURES } from '@/components/pdf/proposal/__tests__/fixtures'
 
 vi.mock('@/utils/proposalPdfReactGenerator', () => ({
   generateProposalPDFv2: vi.fn(
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     async () => new Blob(['%PDF-1.4'], { type: 'application/pdf' }),
   ),
   downloadPDF: vi.fn(),
@@ -70,6 +71,7 @@ async function openAndGenerate() {
   fireEvent.click(await screen.findByTestId('pdf-generate-confirm'));
   await screen.findByTestId('pdf-download-button', {}, { timeout: 3000 });
 }
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 async function clickImprimir() {
   fireEvent.click(screen.getByRole('button', { name: /imprimir/i }));
 }

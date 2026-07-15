@@ -121,6 +121,7 @@ describe('fluxo de alçada — useDiscountApproval', () => {
   it('cenário 3 (double-click): duas chamadas seguidas geram 1 linha quando 2ª já vê pending', async () => {
     // Simula: 1ª chamada insere; 2ª chamada (mesmo quote) encontra pending → dedup.
     let pending: { id: string } | null = null;
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     const insertSpy = vi.fn().mockImplementation(async () => {
       pending = { id: 'just-inserted' };
       return { error: null };
@@ -128,6 +129,7 @@ describe('fluxo de alçada — useDiscountApproval', () => {
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
       if (table === 'discount_approval_requests') {
+        // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
         const maybeSingle = vi.fn().mockImplementation(async () => ({ data: pending, error: null }));
         const innerEq = vi.fn().mockReturnValue({ maybeSingle });
         const outerEq = vi.fn().mockReturnValue({ eq: innerEq, maybeSingle });

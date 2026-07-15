@@ -184,6 +184,7 @@ describe('hydration_timeout — comportamento de timeout/retry', () => {
     expect(caughtError?.message).toMatch(/^hydration_timeout:/);
   });
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   it('7. retry deve ser agendado após timeout (lógica de controle)', async () => {
     let retryCount = 0;
     const HYDRATION_MAX_RETRIES = 2;
