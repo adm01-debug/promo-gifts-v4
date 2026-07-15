@@ -20,6 +20,11 @@
           "name": "Draft label guard (Salvar Alterações → Salvar Rascunho)",
           "workflow": ".github/workflows/draft-label-guard.yml",
           "rationale": "Bloqueia regressão do label canônico 'Salvar Rascunho' nos fluxos de rascunho (QuoteBuilderSummaryColumn, QuoteItemEditorSheet, specs relacionados). Reaparecimento de 'Salvar Alterações' quebra contrato de a11y (aria-label) e o testid quote-save-draft*."
+        },
+        {
+          "name": "SECURITY DEFINER ACL Gate",
+          "workflow": ".github/workflows/magazine-unit-tests.yml",
+          "rationale": "Bloqueia merges que reintroduzam funções SECURITY DEFINER em public executáveis por PUBLIC/anon/authenticated fora da whitelist `public_intent` (lints Supabase 0028/0029). RPC audit_security_definer_acl() precisa retornar 0 violações; script é defensivo (skip sem creds) e job existe em magazine-unit-tests.yml."
         }
       ]
     },
