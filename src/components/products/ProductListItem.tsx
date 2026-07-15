@@ -540,7 +540,7 @@ export const ProductListItem = memo(
                 ))}
               </div>
             )}
-          </div>
+          </Clickable>
 
           {/* Info — main content block */}
           <div className="min-w-0 flex-1 py-0.5 md:max-w-[34%] md:flex-[0_1_34%]">
