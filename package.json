@@ -81,6 +81,7 @@
     "ssot:report:json": "node scripts/ssot-report.mjs --json",
     "ssot:report:validate": "node scripts/validate-ssot-report.mjs",
     "ssot:report:bump": "node scripts/ssot-report-bump.mjs",
+    "ssot:report:markdown": "node scripts/ssot-report-markdown.mjs",
     "ssot:schema:publish": "node scripts/publish-ssot-schema.mjs",
     "ssot:schema:check": "node scripts/publish-ssot-schema.mjs --check",
     "typecheck": "node scripts/check-tsc-baseline.mjs",
