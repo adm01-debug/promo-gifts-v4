@@ -318,7 +318,7 @@ export default function MagazineListPage() {
                       </Button>
                     </div>
                   </CardContent>
-                </Card>
+                </Clickable>
               );
             })}
           </div>
