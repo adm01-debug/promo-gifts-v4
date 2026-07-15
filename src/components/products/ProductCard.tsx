@@ -638,27 +638,19 @@ export const ProductCard = memo(
           }}
         >
           {/* Image Section — clique na FOTO abre QuickView (não navega p/ PDP) */}
-          <div
+          <Clickable
             ref={quickViewTriggerRef}
-            role="button"
-            tabIndex={0}
             aria-label={`Visualização rápida de ${product.name}`}
             aria-haspopup="dialog"
-            aria-expanded={quickViewOpen}
+            isExpanded={quickViewOpen}
             data-testid="product-card-image-quickview"
             data-product-id={product.id}
             className="cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            showFocusRing={false}
             style={{ touchAction: 'manipulation' }}
             onClick={(e) => {
-              e.stopPropagation();
+              (e as React.MouseEvent | React.KeyboardEvent).stopPropagation();
               openQuickView();
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                e.stopPropagation();
-                openQuickView();
-              }
             }}
           >
             <ProductCardImage
@@ -685,7 +677,7 @@ export const ProductCard = memo(
               categoryName={leafCategory?.name}
               categoryPath={leafCategory?.path}
             />
-          </div>
+          </Clickable>
 
           {/* Word Magic Badge — visível quando AI está ativa */}
           <WordMagicBadge visible={isAIActive} />
