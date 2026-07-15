@@ -296,9 +296,6 @@ function collectConfigFiles() {
     }
   }
   function rel(p) { return p.replace(/^\.\//, ''); }
-      }
-    }
-  }
   walk('.');
   return out;
 }
