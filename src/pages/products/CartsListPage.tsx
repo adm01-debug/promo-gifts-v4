@@ -814,29 +814,21 @@ function CartRow({
     else onOpen();
   };
 
-  const handleKey = (e: React.KeyboardEvent<HTMLTableRowElement>) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleActivate();
-    }
-  };
-
   return (
-    <TableRow
-      role="button"
-      tabIndex={0}
+    <Clickable
+      as={TableRow}
+      showFocusRing={false}
       aria-label={
         selectionMode
           ? `${isSelected ? 'Desmarcar' : 'Selecionar'} carrinho de ${cart.company_name}`
           : `Abrir carrinho de ${cart.company_name}`
       }
-      aria-selected={selectionMode ? isSelected : undefined}
+      isSelected={selectionMode ? isSelected : undefined}
       onClick={handleActivate}
-      onKeyDown={handleKey}
       data-testid={`cart-row-${cart.id}`}
       data-selected={selectionMode && isSelected ? 'true' : undefined}
       className={cn(
-        'group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
+        'group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary',
         selectionMode && isSelected && 'bg-primary/5 hover:bg-primary/10',
       )}
     >
