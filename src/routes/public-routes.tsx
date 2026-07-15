@@ -19,6 +19,7 @@ const DialogHarness = lazy(() => import('@/pages/dev/DialogHarness'));
 const UndoToastHarness = lazy(() => import('@/pages/dev/UndoToastHarness'));
 const CnpjFormHarness = lazy(() => import('@/pages/dev/CnpjFormHarness'));
 const MagazineRingHarness = lazy(() => import('@/pages/dev/MagazineRingHarness'));
+const TabSkipHarness = lazy(() => import('@/pages/dev/TabSkipHarness'));
 
 /**
  * Public routes — accessible without authentication.
