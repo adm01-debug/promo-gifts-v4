@@ -346,77 +346,77 @@ export default function MagazineEditorPage() {
           </div>
         )}
 
-        <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-          <div>
-            {step === 'identity' && (
-              <IdentityStep
-                magazine={magazine}
-                onTitle={editor.setTitle}
-                onSubtitle={editor.setSubtitle}
-                onBranding={editor.setBranding}
-              />
-            )}
-            {step === 'products' && (
-              <ProductsStep
-                magazine={magazine}
-                onAdd={editor.addProducts}
-                onRemove={editor.removeItem}
-                onUpdateItem={editor.updateItem}
-              />
-            )}
-            {step === 'content' && <ContentStep magazine={magazine} onChange={editor.setContent} />}
-            {step === 'design' && (
-              <DesignStep
-                magazine={magazine}
-                onChange={editor.setTemplate}
-                onCategoryChange={(category) => editor.setBranding({ category })}
-              />
-            )}
-            {step === 'layout' && (
-              <LayoutStep
-                magazine={magazine}
-                onReorder={editor.reorderItems}
-                onRemove={editor.removeItem}
-                onItemHover={setHighlightedItemId}
-                highlightedItemId={highlightedItemId}
-              />
-            )}
-
-            <div className="mt-6 flex items-center justify-between">
-              <Button
-                variant="outline"
-                disabled={!canPrev}
-                onClick={() => goToStep(STEPS[Math.max(0, currentIdx - 1)].id)}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-              </Button>
-              {canNext ? (
-                <Button
-                  onClick={() =>
-                    goToStep(STEPS[Math.min(STEPS.length - 1, currentIdx + 1)].id)
-                  }
-                >
-                  Avançar <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button onClick={publish} disabled={!publishable}>
-                  <Share2 className="mr-2 h-4 w-4" /> Publicar revista
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <aside className="hidden xl:block">
-            <PreviewSidebar
+        <div>
+          {step === 'identity' && (
+            <IdentityStep
               magazine={magazine}
-              pages={pages}
-              activeIdx={safePreviewIdx}
-              onSelect={setPreviewIdx}
-              onOpenAll={openPrint}
+              onTitle={editor.setTitle}
+              onSubtitle={editor.setSubtitle}
+              onBranding={editor.setBranding}
+            />
+          )}
+          {step === 'products' && (
+            <ProductsStep
+              magazine={magazine}
+              onAdd={editor.addProducts}
+              onRemove={editor.removeItem}
+              onUpdateItem={editor.updateItem}
+            />
+          )}
+          {step === 'content' && <ContentStep magazine={magazine} onChange={editor.setContent} />}
+          {step === 'design' && (
+            <DesignStep
+              magazine={magazine}
+              onChange={editor.setTemplate}
+              onCategoryChange={(category) => editor.setBranding({ category })}
+            />
+          )}
+          {step === 'layout' && (
+            <LayoutStep
+              magazine={magazine}
+              onReorder={editor.reorderItems}
+              onRemove={editor.removeItem}
+              onItemHover={setHighlightedItemId}
               highlightedItemId={highlightedItemId}
             />
-          </aside>
+          )}
+
+          <div className="mt-6 flex items-center justify-between">
+            <Button
+              variant="outline"
+              disabled={!canPrev}
+              onClick={() => goToStep(STEPS[Math.max(0, currentIdx - 1)].id)}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+            </Button>
+            {canNext ? (
+              <Button
+                onClick={() =>
+                  goToStep(STEPS[Math.min(STEPS.length - 1, currentIdx + 1)].id)
+                }
+              >
+                Avançar <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button onClick={publish} disabled={!publishable}>
+                <Share2 className="mr-2 h-4 w-4" /> Publicar revista
+              </Button>
+            )}
+          </div>
         </div>
+        </div>
+
+        <aside className="hidden xl:block">
+          <PreviewSidebar
+            magazine={magazine}
+            pages={pages}
+            activeIdx={safePreviewIdx}
+            onSelect={setPreviewIdx}
+            onOpenAll={openPrint}
+            highlightedItemId={highlightedItemId}
+          />
+        </aside>
+       </div>
       </div>
     </>
   );
