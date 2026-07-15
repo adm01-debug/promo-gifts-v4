@@ -202,25 +202,19 @@ export function NoveltiesSection() {
               {novelties.map((item, index) => {
                 const fresh = item.days_as_novelty <= 2;
                 return (
-                  <Card
+                  <Clickable
+                    as={Card}
                     key={item.novelty_id}
-                    role="button"
-                    tabIndex={0}
                     aria-label={`Ver produto ${item.product_name}`}
+                    showFocusRing={false}
                     className={cn(
-                      'group cursor-pointer overflow-hidden transition-all duration-300',
+                      'group overflow-hidden transition-all duration-300',
                       'border-border/50 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg',
                       fresh && 'border-success/30 shadow-[0_0_12px_hsl(var(--success)/0.08)]',
                       'stagger-item',
                     )}
                     style={{ animationDelay: `${index * 50}ms` }}
                     onClick={() => handleProductClick(item.product_id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleProductClick(item.product_id);
-                      }
-                    }}
                   >
                     <CardContent className="p-0">
                       {/* Image */}
@@ -261,7 +255,7 @@ export function NoveltiesSection() {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
+                  </Clickable>
                 );
               })}
             </div>
