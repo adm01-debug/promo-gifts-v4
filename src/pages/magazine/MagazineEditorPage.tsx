@@ -206,6 +206,8 @@ export default function MagazineEditorPage() {
       />
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in px-4 pb-4 pt-2 sm:px-6 lg:px-8">
+       <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] xl:gap-6">
+        <div className="min-w-0">
         {/* Hero premium — miniatura real da capa + template ativo + swap inline */}
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
@@ -271,7 +273,7 @@ export default function MagazineEditorPage() {
         {/* Stepper com barra de progresso */}
         <nav
           aria-label="Etapas do editor"
-          className="mb-6 overflow-hidden rounded-lg border bg-card xl:mr-[444px]"
+          className="mb-6 overflow-hidden rounded-lg border bg-card"
         >
           <div
             className="h-1 bg-primary transition-all"
@@ -344,77 +346,77 @@ export default function MagazineEditorPage() {
           </div>
         )}
 
-        <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-          <div>
-            {step === 'identity' && (
-              <IdentityStep
-                magazine={magazine}
-                onTitle={editor.setTitle}
-                onSubtitle={editor.setSubtitle}
-                onBranding={editor.setBranding}
-              />
-            )}
-            {step === 'products' && (
-              <ProductsStep
-                magazine={magazine}
-                onAdd={editor.addProducts}
-                onRemove={editor.removeItem}
-                onUpdateItem={editor.updateItem}
-              />
-            )}
-            {step === 'content' && <ContentStep magazine={magazine} onChange={editor.setContent} />}
-            {step === 'design' && (
-              <DesignStep
-                magazine={magazine}
-                onChange={editor.setTemplate}
-                onCategoryChange={(category) => editor.setBranding({ category })}
-              />
-            )}
-            {step === 'layout' && (
-              <LayoutStep
-                magazine={magazine}
-                onReorder={editor.reorderItems}
-                onRemove={editor.removeItem}
-                onItemHover={setHighlightedItemId}
-                highlightedItemId={highlightedItemId}
-              />
-            )}
-
-            <div className="mt-6 flex items-center justify-between">
-              <Button
-                variant="outline"
-                disabled={!canPrev}
-                onClick={() => goToStep(STEPS[Math.max(0, currentIdx - 1)].id)}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-              </Button>
-              {canNext ? (
-                <Button
-                  onClick={() =>
-                    goToStep(STEPS[Math.min(STEPS.length - 1, currentIdx + 1)].id)
-                  }
-                >
-                  Avançar <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button onClick={publish} disabled={!publishable}>
-                  <Share2 className="mr-2 h-4 w-4" /> Publicar revista
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <aside className="hidden xl:block">
-            <PreviewSidebar
+        <div>
+          {step === 'identity' && (
+            <IdentityStep
               magazine={magazine}
-              pages={pages}
-              activeIdx={safePreviewIdx}
-              onSelect={setPreviewIdx}
-              onOpenAll={openPrint}
+              onTitle={editor.setTitle}
+              onSubtitle={editor.setSubtitle}
+              onBranding={editor.setBranding}
+            />
+          )}
+          {step === 'products' && (
+            <ProductsStep
+              magazine={magazine}
+              onAdd={editor.addProducts}
+              onRemove={editor.removeItem}
+              onUpdateItem={editor.updateItem}
+            />
+          )}
+          {step === 'content' && <ContentStep magazine={magazine} onChange={editor.setContent} />}
+          {step === 'design' && (
+            <DesignStep
+              magazine={magazine}
+              onChange={editor.setTemplate}
+              onCategoryChange={(category) => editor.setBranding({ category })}
+            />
+          )}
+          {step === 'layout' && (
+            <LayoutStep
+              magazine={magazine}
+              onReorder={editor.reorderItems}
+              onRemove={editor.removeItem}
+              onItemHover={setHighlightedItemId}
               highlightedItemId={highlightedItemId}
             />
-          </aside>
+          )}
+
+          <div className="mt-6 flex items-center justify-between">
+            <Button
+              variant="outline"
+              disabled={!canPrev}
+              onClick={() => goToStep(STEPS[Math.max(0, currentIdx - 1)].id)}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+            </Button>
+            {canNext ? (
+              <Button
+                onClick={() =>
+                  goToStep(STEPS[Math.min(STEPS.length - 1, currentIdx + 1)].id)
+                }
+              >
+                Avançar <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button onClick={publish} disabled={!publishable}>
+                <Share2 className="mr-2 h-4 w-4" /> Publicar revista
+              </Button>
+            )}
+          </div>
         </div>
+        </div>
+
+        <aside className="hidden xl:block">
+          <PreviewSidebar
+            magazine={magazine}
+            pages={pages}
+            activeIdx={safePreviewIdx}
+            onSelect={setPreviewIdx}
+            onOpenAll={openPrint}
+            highlightedItemId={highlightedItemId}
+          />
+        </aside>
+       </div>
       </div>
     </>
   );
