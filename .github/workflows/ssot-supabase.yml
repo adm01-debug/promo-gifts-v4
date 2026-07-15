@@ -58,7 +58,7 @@ jobs:
         if: always()
         run: node scripts/ssot-report-markdown.mjs --in=ssot-report.json --out=ssot-report.md || true
 
-      - name: Upload SSOT report
+      - name: Upload SSOT report (combinado)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -66,6 +66,24 @@ jobs:
           path: |
             ssot-report.json
             ssot-report.md
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload report.json (individual)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-json
+          path: ssot-report.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload report.md (individual)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-md
+          path: ssot-report.md
           if-no-files-found: warn
           retention-days: 30
 
