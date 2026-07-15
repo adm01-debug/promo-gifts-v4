@@ -556,20 +556,21 @@ describe('FRENTE-9: pipeline completo end-to-end', () => {
     withStatus.sort((a, b) => compareStockStatus(a.sortStatus, b.sortStatus));
     
     let seenOut = false;
-    withStatus.forEach((prod) => {
+    for (const prod of withStatus) {
       if (prod.sortStatus === 'out-of-stock') seenOut = true;
       if (seenOut && (prod.sortStatus === 'in-stock' || prod.sortStatus === 'low-stock')) {
         throw new Error(`Sort violado: in/low-stock após out-of-stock para produto ${prod.id}`);
       }
-    });
+    }
   });
 
   it('SSOT: todos os status retornados por getCatalogStockStatus passam em isCatalogStockStatus', () => {
     const stocks = [-5, 0, 1, 5, 9, 10, 50, 100, null, undefined, NaN, Infinity];
-    stocks.forEach((s) => {
+    expect(stocks).not.toHaveLength(0);
+    for (const s of stocks) {
       const status = getCatalogStockStatus(s!);
       expect(isCatalogStockStatus(status)).toBe(true);
-    });
+    }
   });
 
   it('SSOT: todos os status retornados por getVariationStockStatus passam em isCatalogStockStatus', () => {
