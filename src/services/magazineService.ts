@@ -113,6 +113,29 @@ export function productToSnapshot(product: Product): MagazineProductSnapshot {
   };
 }
 
+/**
+ * Gera um token público URL-safe (32 chars hex) para revistas quando o
+ * trigger do BD não está disponível. Usa crypto.getRandomValues quando
+ * possível, com fallback determinístico para ambientes sem Web Crypto.
+ */
+function generatePublicToken(): string {
+  try {
+    const g = (globalThis as { crypto?: Crypto }).crypto;
+    if (g?.getRandomValues) {
+      const bytes = new Uint8Array(16);
+      g.getRandomValues(bytes);
+      return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    }
+    if (g && typeof (g as Crypto).randomUUID === 'function') {
+      return (g as Crypto).randomUUID().replace(/-/g, '');
+    }
+  } catch {
+    /* fallback abaixo */
+  }
+  // Fallback (não-cripto): suficiente para desbloquear o fluxo de publicação.
+  return `${Date.now().toString(16)}${Math.random().toString(16).slice(2, 18)}`.padEnd(32, '0');
+}
+
 // ---------------------------------------------------------------------------
 // Low-level fetchers
 // ---------------------------------------------------------------------------
