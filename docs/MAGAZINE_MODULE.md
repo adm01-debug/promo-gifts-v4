@@ -1,8 +1,8 @@
 # Magazine Module — Architecture & Engineering Reference
 
-> **Status:** Production-ready (2026-07-12)  
-> **Owner:** Promo Brindes Engineering  
-> **Quality Gate:** 52+ unit tests, PhD-level audit completed
+> **Status:** Production-ready (última rodada QA: 2026-07-15)
+> **Owner:** Promo Brindes Engineering
+> **Quality Gate:** 291 testes verdes, score global 95/100. Ver `qa/reports/magazine-exhaustive-validation-2026-07-15.md`.
 
 ---
 
