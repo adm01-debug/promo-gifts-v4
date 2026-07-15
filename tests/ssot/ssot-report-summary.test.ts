@@ -59,7 +59,7 @@ describe('ssot-report-summary', () => {
     expect(r.stdout).toMatch(/FAIL/);
     expect(r.stdout).toMatch(/2 total · 1 ✅ · 1 ❌/);
     // 2 linhas úteis (npm warn é ruído filtrado)
-    expect(r.stdout).toMatch(/Linhas de erro.*: 2/);
+    expect(r.stdout).toMatch(/Linhas de erro[^\n]*\b2\b/);
     expect(r.stdout).toMatch(/Primeiras linhas de erro por gate/);
     expect(r.stdout).toMatch(/docs\/x\.md:1: erro/);
   });
