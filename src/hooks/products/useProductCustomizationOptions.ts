@@ -12,7 +12,7 @@ import { adaptCustomizationOptions } from '@/lib/personalization/adapters';
 import type { CustomizationOptionsResponse } from '@/types/customization';
 import { logger } from '@/lib/logger';
 
-export type TechniquesErrorKind = 'network' | 'rpc' | 'empty' | 'unknown';
+export type TechniquesErrorKind = 'empty' | 'network' | 'rpc' | 'unknown';
 
 export class TechniquesLoadError extends Error {
   readonly kind: TechniquesErrorKind;
@@ -71,7 +71,7 @@ interface UseProductCustomizationOptionsArgs {
 }
 
 export function useProductCustomizationOptions(
-  productIdOrArgs: string | null | UseProductCustomizationOptionsArgs,
+  productIdOrArgs: UseProductCustomizationOptionsArgs | string | null,
 ) {
   // Backward compatible: aceita string OU objeto com contexto
   const args: UseProductCustomizationOptionsArgs =
@@ -91,7 +91,7 @@ export function useProductCustomizationOptions(
           { p_product_id: productId },
         );
         const adapted = adaptCustomizationOptions(result);
-        if (!adapted || !adapted.locations?.length) {
+        if (!adapted?.locations?.length) {
           // Sem técnicas configuradas: NÃO lança — componente já trata locations.length===0.
           logger.info('[useProductCustomizationOptions] sem técnicas', {
             productId,

@@ -9,7 +9,7 @@
  * Configuração: 500 runs por propriedade × 8 propriedades = 4000 execuções
  * determinísticas (mesmo seed sempre; fast-check imprime o seed em falhas).
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import fc from 'fast-check';
 import { normalizeQty, MIN_QTY, MAX_QTY } from '../PopoverQtyInput';
 

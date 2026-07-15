@@ -39,7 +39,7 @@ export function ConfirmDialog({
   variant = 'default',
   loading = false,
 }: ConfirmDialogProps) {
-  const ssotVariant: 'default' | 'destructive' | 'warning' | 'info' =
+  const ssotVariant: 'default' | 'destructive' | 'info' | 'warning' =
     variant === 'success' ? 'info' : variant;
   return (
     <SsotConfirmDialog

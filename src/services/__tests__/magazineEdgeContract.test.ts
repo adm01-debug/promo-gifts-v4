@@ -60,6 +60,7 @@ function record(input: RequestInfo | URL, init?: RequestInit) {
   calls.push({ url, method: init?.method ?? 'GET', headers });
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   record(input, init);
   if (nextReply.throw) throw nextReply.throw;
@@ -155,7 +156,7 @@ describe('magazineService.getPublicByToken — happy path', () => {
 
   it('NUNCA envia Authorization header', async () => {
     await magazineService.getPublicByToken('tok');
-    expect(calls[0].headers['authorization']).toBeUndefined();
+    expect(calls[0].headers.authorization).toBeUndefined();
   });
 
   it('propaga X-Request-Id', async () => {
@@ -260,6 +261,6 @@ describe('magazineService.getPublicByToken — token fuzz (30 casos)', () => {
     const call = calls[calls.length - 1];
     expect(call.url).toContain(`token=${encodeURIComponent(tok)}`);
     // nunca vaza authorization
-    expect(call.headers['authorization']).toBeUndefined();
+    expect(call.headers.authorization).toBeUndefined();
   });
 });

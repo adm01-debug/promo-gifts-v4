@@ -69,6 +69,7 @@ export function normalizeText(text: string): string {
 
 /** Igualdade robusta de ids (tolera number vs string; null/undefined nunca são iguais). */
 export function eqId(a: unknown, b: unknown): boolean {
+  // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
   if (a == null || b == null) return false;
   return String(a) === String(b);
 }
@@ -254,6 +255,7 @@ export function getMatchType(params: {
   const { hasComplementary, nameSim, sharedTokens } = params;
   if (hasComplementary) return 'complementary';
   // Matches de um único token só são "idênticos" se o nome for (quase) exato.
+  // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
   if (sharedTokens != null && sharedTokens <= 1) {
     return nameSim >= SINGLE_TOKEN_IDENTICAL_SIMILARITY ? 'identical' : 'similar';
   }

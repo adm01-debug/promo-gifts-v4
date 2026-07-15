@@ -24,6 +24,7 @@ import { PROPOSAL_FIXTURES } from '@/components/pdf/proposal/__tests__/fixtures'
 
 vi.mock('@/utils/proposalPdfReactGenerator', () => ({
   generateProposalPDFv2: vi.fn(
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     async () => new Blob(['%PDF-1.4'], { type: 'application/pdf' }),
   ),
   downloadPDF: vi.fn(),
@@ -70,6 +71,7 @@ async function openAndGenerate() {
   fireEvent.click(await screen.findByTestId('pdf-generate-confirm'));
   await screen.findByTestId('pdf-download-button', {}, { timeout: 3000 });
 }
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 async function clickImprimir() {
   fireEvent.click(screen.getByRole('button', { name: /imprimir/i }));
 }
@@ -150,7 +152,7 @@ describe('Fuzz de UA (600 iterações, seed=42)', () => {
 });
 
 // ---------- 2) Matriz de comportamento ----------
-const UA_MATRIX: Record<string, { ua: string; expected: 'chrome' | 'firefox' | 'edge' | 'safari' }> = {
+const UA_MATRIX: Record<string, { ua: string; expected: 'chrome' | 'edge' | 'firefox' | 'safari' }> = {
   Chrome: {
     ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML) Chrome/120.0 Safari/537.36',
     expected: 'chrome',

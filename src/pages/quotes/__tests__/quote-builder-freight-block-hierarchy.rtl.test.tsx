@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-type Shipping = 'cif' | 'fob' | 'fob_pre' | 'prepaid';
+type Shipping = 'cif' | 'fob_pre' | 'fob' | 'prepaid';
 
 const STATES: Shipping[] = ['cif', 'fob', 'fob_pre', 'prepaid'];
 const WIDTHS = [320, 375, 414, 600, 768, 900, 1024, 1280];

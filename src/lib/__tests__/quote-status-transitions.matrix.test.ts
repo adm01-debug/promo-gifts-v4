@@ -42,7 +42,7 @@ describe('QUOTE_VALID_TRANSITIONS — matriz exaustiva 10×10', () => {
   });
 
   it('regressão: draft→converted continua bloqueado', () => {
-    expect(isValidQuoteTransition('draft', 'converted')) .toBe(false);
+    expect(isValidQuoteTransition('draft', 'converted')).toBe(false);
   });
 
   it('regressão: approved só transita para converted', () => {

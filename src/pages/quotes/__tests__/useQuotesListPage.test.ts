@@ -7,15 +7,17 @@
  * `MemoryRouter`. A busca (`q`) usa debounce de 250ms, então testes que
  * dependem do filtro por texto usam fake timers p/ avançar o relógio.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { ReactNode } from 'react';
-import React from 'react';
+import React, { type ReactNode } from 'react';
 
 // Mocks devem vir antes do import do SUT
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const updateQuoteStatus = vi.fn(async () => true);
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const duplicateQuote = vi.fn(async () => null);
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const deleteQuote = vi.fn(async () => true);
 
 let mockQuotes: Array<Record<string, unknown>> = [];
@@ -40,7 +42,6 @@ import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
 // Wrapper com MemoryRouter — obrigatório para hooks que usam useSearchParams.
 const wrapper = ({ children }: { children: ReactNode }) =>
   React.createElement(MemoryRouter, { initialEntries: ['/orcamentos'] }, children);
-
 
 function quote(
   overrides: Partial<{
@@ -132,7 +133,6 @@ describe('useQuotesListPage — filtro/sort', () => {
     });
   });
 
-
   it.each([
     ['highest', ['big', 'mid', 'low']],
     ['lowest', ['low', 'mid', 'big']],
@@ -219,7 +219,6 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
     expect(result.current.statusFilter).toBe('all');
     expect(result.current.filteredQuotes).toHaveLength(2);
   });
-
 
   it('sobreposição: pending sincronizado conta em "pending" E "created_synced" (soma > total)', () => {
     mockQuotes = [

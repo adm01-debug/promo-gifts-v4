@@ -16,7 +16,7 @@ vi.mock('@/lib/sentry', () => ({
 
 async function loadModule() {
   vi.resetModules();
-  return await import('../navigationMetrics');
+  return import('../navigationMetrics');
 }
 
 describe('navigationMetrics — kill switch e flag', () => {

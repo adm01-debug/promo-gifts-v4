@@ -62,7 +62,7 @@ vi.mock('sonner', () => ({
 
 // --- Mock logger — captura eventos para asserts de diagnóstico ---
 interface CapturedLog {
-  level: 'info' | 'warn' | 'error' | 'debug';
+  level: 'debug' | 'error' | 'info' | 'warn';
   event: string;
   fields?: Record<string, unknown>;
 }
@@ -87,8 +87,10 @@ vi.mock('@/lib/telemetry/structuredLogger', () => ({
 // --- Mock supabase lazy client (auth.getSession) ---
 let sessionToken: string | null = 'valid-access-token';
 vi.mock('@/integrations/supabase/lazy-client', () => ({
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   getSupabaseClient: async () => ({
     auth: {
+      // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
       getSession: async () => ({
         data: { session: sessionToken ? { access_token: sessionToken } : null },
       }),

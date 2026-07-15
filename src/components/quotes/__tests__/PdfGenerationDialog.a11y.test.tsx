@@ -17,6 +17,7 @@ import { PROPOSAL_FIXTURES } from '@/components/pdf/proposal/__tests__/fixtures'
 expect.extend(toHaveNoViolations);
 
 vi.mock('@/utils/proposalPdfReactGenerator', () => ({
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   generateProposalPDFv2: vi.fn(async () => new Blob(['%PDF-1.4'], { type: 'application/pdf' })),
   downloadPDF: vi.fn(),
 }));

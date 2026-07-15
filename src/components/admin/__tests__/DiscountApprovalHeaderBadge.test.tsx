@@ -16,8 +16,8 @@ vi.mock('@/integrations/supabase/client', () => ({
       select: () => ({ eq: () => Promise.resolve({ count: 0, error: null }) }),
     }),
     channel: () => ({
-      on: function () { return this; },
-      subscribe: function () { return this; },
+      on () { return this; },
+      subscribe () { return this; },
     }),
     removeChannel: vi.fn(),
   },

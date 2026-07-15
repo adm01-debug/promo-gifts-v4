@@ -58,8 +58,10 @@ export function ListTemplate({ magazine, page, totalPages: _totalPages }: Templa
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-12 gap-4 border-x border-b p-4"
-                style={{ borderColor: 'rgba(0,0,0,0.15)' }}>
+              <div
+className="grid grid-cols-12 gap-4 border-x border-b p-4"
+                style={{ borderColor: 'rgba(0,0,0,0.15)' }}
+              >
                 <div
                   className="col-span-3 overflow-hidden"
                   style={{ background: 'var(--mag-brand-cream, #f1efe7)', minHeight: 260 }}

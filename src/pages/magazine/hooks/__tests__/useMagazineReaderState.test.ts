@@ -133,6 +133,7 @@ describe('useMagazineReaderState — API pública (validação de input)', () =>
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     const invalidInputs = [-1, -100, NaN, Infinity, -Infinity];
     for (const bad of invalidInputs) {
+      // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
       await act(async () => {
         result.current.toggleBookmark(bad);
       });
@@ -144,6 +145,7 @@ describe('useMagazineReaderState — API pública (validação de input)', () =>
   it('setLastPage rejeita índices inválidos', async () => {
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     for (const bad of [-1, NaN, Infinity, -Infinity]) {
+      // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
       await act(async () => {
         result.current.setLastPage(bad);
       });
@@ -153,6 +155,7 @@ describe('useMagazineReaderState — API pública (validação de input)', () =>
 
   it('setLastPage aceita float, converte para floor', async () => {
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setLastPage(3.9);
     });
@@ -161,9 +164,11 @@ describe('useMagazineReaderState — API pública (validação de input)', () =>
 
   it('toggleBookmark é idempotente (toggle 2x = zero)', async () => {
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.toggleBookmark(5);
     });
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.toggleBookmark(5);
     });
@@ -172,6 +177,7 @@ describe('useMagazineReaderState — API pública (validação de input)', () =>
 
   it('respeita MAX_BOOKMARKS = 500', async () => {
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       for (let i = 0; i < 600; i++) result.current.toggleBookmark(i);
     });
@@ -184,6 +190,7 @@ describe('useMagazineReaderState — API pública (validação de input)', () =>
 describe('useMagazineReaderState — persistência local', () => {
   it('grava bookmarks em localStorage ordenados', async () => {
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.toggleBookmark(5);
       result.current.toggleBookmark(1);
@@ -194,6 +201,7 @@ describe('useMagazineReaderState — persistência local', () => {
 
   it('grava lastPageIndex em localStorage', async () => {
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setLastPage(7);
     });
@@ -203,6 +211,7 @@ describe('useMagazineReaderState — persistência local', () => {
   it('clearBookmarks zera o localStorage', async () => {
     localStorage.setItem(BK_KEY, JSON.stringify([1, 2, 3]));
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.clearBookmarks();
     });
@@ -228,7 +237,7 @@ describe('useMagazineReaderState — fallback quando edge falha', () => {
     renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     const expiredToast = toastCalls.find((t) =>
-      String(t.opts?.description ?? '').match(/expirou/i),
+      /expirou/i.exec(String(t.opts?.description ?? '')),
     );
     expect(expiredToast).toBeDefined();
     expect(localStorage.getItem('mag:remote-disabled')).toBe('1');
@@ -256,6 +265,7 @@ describe('useMagazineReaderState — fallback quando edge falha', () => {
     readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.toggleBookmark(2);
       result.current.setLastPage(4);
@@ -333,6 +343,7 @@ describe('useMagazineReaderState — fuzz de race conditions (100 sequências)',
         const roll = rand();
         if (roll < 0.5) {
           const idx = Math.floor(rand() * 50);
+          // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
           await act(async () => {
             result.current.toggleBookmark(idx);
           });
@@ -340,11 +351,13 @@ describe('useMagazineReaderState — fuzz de race conditions (100 sequências)',
           else if (expectedBk.size < 500) expectedBk.add(idx);
         } else if (roll < 0.9) {
           const p = Math.floor(rand() * 100);
+          // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
           await act(async () => {
             result.current.setLastPage(p);
           });
           expectedLast = p;
         } else {
+          // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
           await act(async () => {
             result.current.clearBookmarks();
           });

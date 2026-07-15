@@ -106,7 +106,7 @@ export function useMagazineGoldImport(userId: string | undefined): {
       const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
       const parsed = raw ? (JSON.parse(raw) as Magazine[]) : [];
       localMagazines = Array.isArray(parsed)
-        ? parsed.filter((m) => m && m.ownerId === userId)
+        ? parsed.filter((m) => m?.ownerId === userId)
         : [];
     } catch {
       localMagazines = [];

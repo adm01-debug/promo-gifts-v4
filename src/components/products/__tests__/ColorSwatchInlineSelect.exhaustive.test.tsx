@@ -8,8 +8,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { ProductColorSwatches } from '../ProductColorSwatches';
-import type { ColorDotLike } from '../ProductColorSwatches';
+import { ProductColorSwatches, type ColorDotLike } from '../ProductColorSwatches';
+
 import { BaseProductGridCard } from '../BaseProductGridCard';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
@@ -88,7 +88,7 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
   });
 
   it('S1-04: lista vazia hideWhenEmpty=true → sem botão radio', () => {
-    const { queryByRole } = wrap(<ProductColorSwatches colors={[]} hideWhenEmpty={true} />);
+    const { queryByRole } = wrap(<ProductColorSwatches colors={[]} hideWhenEmpty />);
     expect(queryByRole('radio')).toBeNull();
   });
 
@@ -127,7 +127,8 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
       <div onClick={containerClick}>
         <MemoryRouter><TooltipProvider>
           <ProductColorSwatches colors={COLORS} max={10} onSelect={onSelect} />
-        </TooltipProvider></MemoryRouter>
+                      </TooltipProvider>
+        </MemoryRouter>
       </div>
     );
     fireEvent.click(getByTestId('color-swatch-azul'));
@@ -165,7 +166,8 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
       <div onClick={containerClick}>
         <MemoryRouter><TooltipProvider>
           <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={onClear} />
-        </TooltipProvider></MemoryRouter>
+                      </TooltipProvider>
+        </MemoryRouter>
       </div>
     );
     fireEvent.click(document.querySelector('[data-testid="color-swatches-clear"]')!);
@@ -741,11 +743,13 @@ describe('Suite 4 — Fluxos completos integrados', () => {
     const { getByTestId: g1 } = wrap(<BaseProductGridCard
       productId="p1" productName="P1" productImage="img/p1.png" basePrice={10} stockQuantity={100}
       colors={[{ name: 'Azul', hex: '#00f', image: 'img/p1-azul.png', stockQty: 5 }]}
-      onClick={ok1} testId="c1" footerTestId="f1" thumbTestId="qv1" />);
+      onClick={ok1} testId="c1" footerTestId="f1" thumbTestId="qv1"
+                                     />);
     const { getByTestId: g2 } = wrap(<BaseProductGridCard
       productId="p2" productName="P2" productImage="img/p2.png" basePrice={20} stockQuantity={200}
       colors={[{ name: 'Verde', hex: '#0f0', image: 'img/p2-verde.png', stockQty: 50 }]}
-      onClick={ok2} testId="c2" footerTestId="f2" thumbTestId="qv2" />);
+      onClick={ok2} testId="c2" footerTestId="f2" thumbTestId="qv2"
+                                     />);
     fireEvent.click(g1('color-swatch-azul'));
     expect(within(g1('f1')).getByText(/5 un\./)).not.toBeNull();
     expect(within(g2('f2')).getByText(/200 un\./)).not.toBeNull(); // P2 não afetado

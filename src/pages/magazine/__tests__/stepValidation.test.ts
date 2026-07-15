@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import type { Magazine } from '@/types/magazine';
-import { DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+import { type Magazine, DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+
 import { validateStep, canPublish, getCompletionPercentage } from '../utils/stepValidation';
 
 // ============================================================================

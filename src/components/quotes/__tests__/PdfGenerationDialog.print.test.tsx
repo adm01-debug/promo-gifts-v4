@@ -18,6 +18,7 @@ import { PdfGenerationDialog, detectSafari } from '../PdfGenerationDialog';
 import { PROPOSAL_FIXTURES } from '@/components/pdf/proposal/__tests__/fixtures';
 
 vi.mock('@/utils/proposalPdfReactGenerator', () => ({
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   generateProposalPDFv2: vi.fn(async () => new Blob(['%PDF-1.4'], { type: 'application/pdf' })),
   downloadPDF: vi.fn(),
 }));
@@ -69,6 +70,7 @@ async function openAndGenerate() {
   await screen.findByTestId('pdf-download-button', {}, { timeout: 3000 });
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 async function clickImprimir() {
   fireEvent.click(screen.getByRole('button', { name: /imprimir/i }));
 }
@@ -111,6 +113,7 @@ describe('PdfGenerationDialog — fluxo de impressão', () => {
     vi.restoreAllMocks();
   });
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   it('cenário not-ready: sem PDF gerado, clica Imprimir → mostra help "not-ready"', async () => {
     // Renderiza mas NÃO gera PDF. Precisamos expor o botão Imprimir de alguma
     // forma — o teste força chamando handlePrint via re-render manipulado?
@@ -187,6 +190,7 @@ describe('PdfGenerationDialog — fluxo de impressão', () => {
       // @ts-expect-error onload aceita event ou nada em nosso uso
       iframe.onload(new Event('load'));
     }
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       vi.advanceTimersByTime(300);
     });

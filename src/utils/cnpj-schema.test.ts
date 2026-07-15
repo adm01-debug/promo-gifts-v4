@@ -53,7 +53,7 @@ describe('assertPersistableCnpj', () => {
   it('return value never contains non-digit characters', () => {
     const out = assertPersistableCnpj('02.931.668/0001-88');
     expect(out).not.toBeNull();
-    expect(/^\d+$/.test(out as string)).toBe(true);
+    expect(/^\d+$/.test(out!)).toBe(true);
   });
 });
 

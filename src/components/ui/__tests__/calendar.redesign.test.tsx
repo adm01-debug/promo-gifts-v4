@@ -58,7 +58,7 @@ describe('Calendar iOS redesign', () => {
     const today =
       document.querySelector('button[aria-current="date"]') ??
       Array.from(document.querySelectorAll<HTMLElement>('button')).find((b) =>
-        /bg-foreground/.test(b.getAttribute('class') ?? ''),
+        (b.getAttribute('class') ?? '').includes('bg-foreground'),
       );
     expect(today).toBeTruthy();
     const c = classes(today);

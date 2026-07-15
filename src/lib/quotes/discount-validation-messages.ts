@@ -18,14 +18,9 @@
  */
 
 export type DiscountValidationKind =
-  | 'idle'
-  | 'within_limit'
-  | 'markup_hint'
-  | 'exceeds_limit'
-  | 'invalid_negative'
-  | 'invalid_over_100';
+  'exceeds_limit' | 'idle' | 'invalid_negative' | 'invalid_over_100' | 'markup_hint' | 'within_limit';
 
-export type DiscountValidationSeverity = 'info' | 'success' | 'warning' | 'error';
+export type DiscountValidationSeverity = 'error' | 'info' | 'success' | 'warning';
 
 export interface DiscountValidationInput {
   /** Valor cru digitado no input (em %, mesmo se o tipo for R$ a UI converte antes). */
@@ -167,7 +162,7 @@ export interface ApprovalReadinessInput {
 }
 
 export interface ApprovalChecklistItem {
-  key: 'items' | 'client' | 'notes';
+  key: 'client' | 'items' | 'notes';
   ok: boolean;
   label: string;
 }

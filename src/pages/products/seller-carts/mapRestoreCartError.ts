@@ -26,19 +26,7 @@ export interface MappedRestoreError {
   title?: string;
   /** Código curto para logs/telemetria (não é exibido). */
   reason:
-    | 'rls_denied'
-    | 'duplicate_item'
-    | 'foreign_key'
-    | 'not_null'
-    | 'check_constraint'
-    | 'string_too_long'
-    | 'cart_limit'
-    | 'unauthenticated'
-    | 'rpc_missing'
-    | 'network'
-    | 'timeout'
-    | 'server'
-    | 'unknown';
+    'cart_limit' | 'check_constraint' | 'duplicate_item' | 'foreign_key' | 'network' | 'not_null' | 'rls_denied' | 'rpc_missing' | 'server' | 'string_too_long' | 'timeout' | 'unauthenticated' | 'unknown';
 }
 
 /**
@@ -122,8 +110,8 @@ export function mapRestoreCartError(input: unknown): MappedRestoreError {
   // 23505 = unique_violation
   if (code === '23505') {
     if (
-      /unique_cart_item_variant/.test(message) ||
-      /unique_cart_item_variant/.test(details)
+      message.includes('unique_cart_item_variant') ||
+      details.includes('unique_cart_item_variant')
     ) {
       return {
         reason: 'duplicate_item',

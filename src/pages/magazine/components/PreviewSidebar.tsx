@@ -26,7 +26,7 @@ interface Props {
   /** Onda 1 — item destacado no LayoutStep para realçar a página correspondente. */
   highlightedItemId?: string | null;
   /** 'sidebar' (default, sticky) ou 'drawer' (fluido, sem sticky). */
-  variant?: 'sidebar' | 'drawer';
+  variant?: 'drawer' | 'sidebar';
 }
 
 /** Níveis de zoom: 1 = fit-to-width (comportamento padrão do renderer). */
@@ -60,7 +60,7 @@ export function PreviewSidebar({
   const canZoomIn = zoom < ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
   const canZoomOut = zoom > ZOOM_LEVELS[0];
 
-  const stepZoom = useCallback((dir: 1 | -1) => {
+  const stepZoom = useCallback((dir: -1 | 1) => {
     setZoom((cur) => {
       const idx = ZOOM_LEVELS.indexOf(cur);
       return ZOOM_LEVELS[Math.min(ZOOM_LEVELS.length - 1, Math.max(0, idx + dir))];

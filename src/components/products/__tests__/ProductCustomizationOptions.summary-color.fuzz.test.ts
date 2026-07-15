@@ -47,7 +47,7 @@ describe('Gate summary-color-tokens — fuzz exaustivo', () => {
     expect(mutated, `regex não casou: ${label}`).not.toBe(baseSource);
     const errs = audit(mutated);
     expect(errs.length, `gate não detectou ${label}\n${errs.join('\n')}`).toBeGreaterThan(0);
-    expect(errs.some((e) => /proibido/.test(e))).toBe(true);
+    expect(errs.some((e) => e.includes('proibido'))).toBe(true);
   });
 
   it('detecta mutação "all-primary" (substituição em massa)', () => {
@@ -62,12 +62,12 @@ describe('Gate summary-color-tokens — fuzz exaustivo', () => {
 
   it('detecta título renomeado', () => {
     const errs = audit(baseSource.replace('Resumo das Configurações', 'Resumo XYZ'));
-    expect(errs.some((e) => /não encontrado/.test(e))).toBe(true);
+    expect(errs.some((e) => e.includes('não encontrado'))).toBe(true);
   });
 
   it('detecta arquivo inexistente', () => {
     const errs = (auditFile as (rel: string) => string[])('src/_nao_existe_.tsx');
-    expect(errs.some((e) => /ausente/.test(e))).toBe(true);
+    expect(errs.some((e) => e.includes('ausente'))).toBe(true);
   });
 
   // Mutações neutras — ZERO falsos-positivos

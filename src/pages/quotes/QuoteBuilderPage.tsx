@@ -7,11 +7,9 @@ import { useEffect, useState } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
@@ -27,7 +25,6 @@ import { DeliveryModeToggle } from '@/pages/quotes/components/DeliveryModeToggle
 
 import {
   FileText,
-  Plus,
   Package,
   
   AlertTriangle,
@@ -47,7 +44,6 @@ import { QuoteItemEditorSheet } from '@/components/quotes/QuoteItemEditorSheet';
 import { CompanyContactSelector } from '@/components/quotes/CompanyContactSelector';
 import { QuoteAutoSave } from '@/components/quotes/QuoteAutoSave';
 import { QuoteConcurrencyAlert } from '@/components/quotes/QuoteConcurrencyAlert';
-import { QuoteItemsList } from '@/components/quotes/QuoteItemsList';
 import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
 import { QuoteBuilderSkeleton } from '@/components/quotes/QuoteBuilderSkeleton';
@@ -461,7 +457,7 @@ export default function QuoteBuilderPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
+                  </div>
 
 
                 {/* Entrega */}

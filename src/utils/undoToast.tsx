@@ -10,7 +10,7 @@ interface UndoToastOptions {
    * Retorne `false` (ou lance) quando a operação de undo falhar — o toast
    * "Ação desfeita!" só aparece em sucesso. Retornos `void`/`true` = sucesso.
    */
-  onUndo: () => void | boolean | Promise<void | boolean>;
+  onUndo: () => Promise<boolean | void> | boolean | void;
   duration?: number;
 }
 
@@ -28,7 +28,7 @@ interface UndoToastContentProps {
    * Pode ser assíncrono. O botão fica desabilitado enquanto a promise resolve
    * para impedir cliques concorrentes que disparariam múltiplas restaurações.
    */
-  onUndo: () => void | Promise<void>;
+  onUndo: () => Promise<void> | void;
   onTimeout: () => void;
   /**
    * Se definido, congela o tempo restante no valor informado (ms) e desativa

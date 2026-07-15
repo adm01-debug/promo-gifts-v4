@@ -34,7 +34,7 @@ function classNameAfter(anchor: string): string {
   const idx = SRC.indexOf(anchor);
   if (idx < 0) throw new Error(`anchor não encontrado: ${anchor}`);
   const window = SRC.slice(idx, idx + 600);
-  const m = window.match(/className=(?:"([^"]+)"|`([^`]+)`|\{`([^`]+)`\})/);
+  const m = /className=(?:"([^"]+)"|`([^`]+)`|\{`([^`]+)`\})/.exec(window);
   if (!m) throw new Error(`className não encontrado após ${anchor}`);
   return (m[1] ?? m[2] ?? m[3])!.replace(/\s+/g, ' ').trim();
 }
@@ -47,7 +47,7 @@ const ACTIONS_CLS = classNameAfter(ACTIONS_TESTID);
 /*  Parser simplificado de utilitários responsivos do Tailwind         */
 /* ------------------------------------------------------------------ */
 
-type Breakpoint = 'base' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+type Breakpoint = '2xl' | 'base' | 'lg' | 'md' | 'sm' | 'xl';
 const BP_ORDER: Breakpoint[] = ['base', 'sm', 'md', 'lg', 'xl', '2xl'];
 const BP_MIN: Record<Breakpoint, number> = {
   base: 0,
@@ -79,7 +79,7 @@ function resolveToken(cls: string, prefix: string, vw: number): string | null {
 function hasAt(cls: string, utility: string, vw: number): boolean {
   const tokens = cls.split(' ');
   return tokens.some((t) => {
-    const m = t.match(/^(?:(sm|md|lg|xl|2xl):)?(.+)$/);
+    const m = /^(?:(sm|md|lg|xl|2xl):)?(.+)$/.exec(t);
     if (!m) return false;
     const bp = (m[1] as Breakpoint | undefined) ?? 'base';
     return vw >= BP_MIN[bp] && m[2] === utility;
@@ -201,8 +201,8 @@ describe('CartHeader — fuzz exaustivo (viewports × estados)', () => {
     if (failures.length) {
       // exibe só as 15 primeiras pra saída legível
       throw new Error(
-        `${failures.length} violações em ${runs} simulações:\n` +
-          failures.slice(0, 15).join('\n'),
+        `${failures.length} violações em ${runs} simulações:\n${ 
+          failures.slice(0, 15).join('\n')}`,
       );
     }
     expect(runs).toBeGreaterThanOrEqual(500);
@@ -252,7 +252,7 @@ describe('CartHeader — fuzz de mutação de fonte (300 iterações)', () => {
 
     if (failures.length) {
       throw new Error(
-        `${failures.length} falhas nas mutações:\n` + failures.slice(0, 10).join('\n'),
+        `${failures.length} falhas nas mutações:\n${failures.slice(0, 10).join('\n')}`,
       );
     }
     expect(failures).toHaveLength(0);
@@ -274,7 +274,7 @@ describe('CartHeader — ordem semântica e higiene de tokens', () => {
   });
 
   it('não usa cores hardcoded proibidas nas classes do header', () => {
-    const blob = HEADER_CLS + ' ' + BLOCK_CLS + ' ' + ACTIONS_CLS;
+    const blob = `${HEADER_CLS} ${BLOCK_CLS} ${ACTIONS_CLS}`;
     // proibido: text-white, bg-black, bg-blue-*, bg-gray-*, text-gray-* fora de tokens
     const banned = [
       /\btext-white\b/,

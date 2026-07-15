@@ -36,16 +36,7 @@ export function generateValidCnpj(seed: number): string {
 }
 
 export type MutationKind =
-  | 'inject-letter'
-  | 'break-dv'
-  | 'truncate'
-  | 'duplicate-digit'
-  | 'zero-width'
-  | 'nbsp'
-  | 'rtl'
-  | 'emoji'
-  | 'whitespace'
-  | 'noop';
+  'break-dv' | 'duplicate-digit' | 'emoji' | 'inject-letter' | 'nbsp' | 'noop' | 'rtl' | 'truncate' | 'whitespace' | 'zero-width';
 
 const ZWJ = '\u200D';
 const ZWSP = '\u200B';
@@ -57,7 +48,7 @@ export function mutate(cnpj: string, kind: MutationKind, rand: () => number): { 
   switch (kind) {
     case 'inject-letter': {
       const i = Math.floor(rand() * digits.length);
-      return { value: digits.slice(0, i) + 'X' + digits.slice(i), expectValid: true }; // letra é limpa pelo normalize
+      return { value: `${digits.slice(0, i)}X${digits.slice(i)}`, expectValid: true }; // letra é limpa pelo normalize
     }
     case 'break-dv': {
       const last = (parseInt(digits[13], 10) + 1) % 10;
@@ -74,9 +65,9 @@ export function mutate(cnpj: string, kind: MutationKind, rand: () => number): { 
     case 'rtl':
       return { value: RTL + digits, expectValid: true };
     case 'emoji':
-      return { value: digits.slice(0, 4) + '🎁' + digits.slice(4), expectValid: true };
+      return { value: `${digits.slice(0, 4)}🎁${digits.slice(4)}`, expectValid: true };
     case 'whitespace':
-      return { value: '  ' + digits.split('').join(' ') + '  ', expectValid: true };
+      return { value: `  ${digits.split('').join(' ')}  `, expectValid: true };
     case 'noop':
     default:
       return { value: digits, expectValid: true };

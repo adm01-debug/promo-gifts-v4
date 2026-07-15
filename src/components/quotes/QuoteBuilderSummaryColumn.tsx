@@ -925,7 +925,7 @@ export function QuoteBuilderSummaryColumn({
                                         </TooltipContent>
                                       </Tooltip>
                                     </TooltipProvider>
-                                  </div>
+                                    </div>
                                 </div>
                                 {!isCollapsed && (
                                   <div className="animate-fade-in motion-reduce:animate-none">
@@ -1058,7 +1058,7 @@ export function QuoteBuilderSummaryColumn({
                   </DragOverlay>
                 </DndContext>
               )}
-            </div>
+              </div>
             </div>
           </div>
 

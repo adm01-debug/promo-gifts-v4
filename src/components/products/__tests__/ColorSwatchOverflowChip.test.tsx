@@ -3,17 +3,17 @@
  * NUNCA cortar o texto. Isso exige min-width (não largura fixa) — caso contrário
  * "+12" vaza do círculo nos tamanhos pequenos (tabela/lista/grid denso).
  */
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ProductColorSwatches } from '@/components/products/ProductColorSwatches';
 
 afterEach(cleanup);
 
 const many = Array.from({ length: 17 }, (_, i) => ({
-  name: 'cor' + i,
-  hex: '#' + ((i * 0x0f0f0f) & 0xffffff).toString(16).padStart(6, '0'),
+  name: `cor${i}`,
+  hex: `#${((i * 0x0f0f0f) & 0xffffff).toString(16).padStart(6, '0')}`,
 }));
 
 describe('chip "+N" — escala em altura, sem cortar texto', () => {

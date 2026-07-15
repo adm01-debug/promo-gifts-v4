@@ -10,18 +10,7 @@
 import type { Product, ProductColor } from '@/types/product-catalog';
 
 export type MagazineTemplateId =
-  | 'editorial-vogue'
-  | 'editorial-magazine'
-  | 'editorial-hero-grid'
-  | 'editorial-mono'
-  | 'editorial-manifesto'
-  | 'catalog-grid-2x3'
-  | 'catalog-grid-3x3'
-  | 'catalog-list'
-  | 'catalog-giftset'
-  | 'corporate-hero'
-  | 'corporate-split'
-  | 'corporate-executive';
+  'catalog-giftset' | 'catalog-grid-2x3' | 'catalog-grid-3x3' | 'catalog-list' | 'corporate-executive' | 'corporate-hero' | 'corporate-split' | 'editorial-hero-grid' | 'editorial-magazine' | 'editorial-manifesto' | 'editorial-mono' | 'editorial-vogue';
 
 /**
  * Categoria semântica da revista — usada pelo SidebarChrome e PageNumberBadge
@@ -29,22 +18,9 @@ export type MagazineTemplateId =
  * no TOC do catálogo Abreez 2026.
  */
 export type MagazineCategory =
-  | 'technology'
-  | 'drinkwares'
-  | 'general'
-  | 'wearables'
-  | 'pins'
-  | 'awards'
-  | 'packaging'
-  | 'stationery'
-  | 'bags'
-  | 'clocks'
-  | 'signs'
-  | 'id'
-  | 'giftsets'
-  | 'customized';
+  'awards' | 'bags' | 'clocks' | 'customized' | 'drinkwares' | 'general' | 'giftsets' | 'id' | 'packaging' | 'pins' | 'signs' | 'stationery' | 'technology' | 'wearables';
 
-export type MagazineTemplateFamily = 'editorial' | 'catalog' | 'corporate';
+export type MagazineTemplateFamily = 'catalog' | 'corporate' | 'editorial';
 
 export interface MagazineTemplateMeta {
   id: MagazineTemplateId;
@@ -145,7 +121,7 @@ export interface Magazine {
    * Trate 'archived' como somente-leitura na UI (mesmo tratamento de 'draft'
    * para renderização, mas sem permitir novas edições sem reativar).
    */
-  status: 'draft' | 'published' | 'archived';
+  status: 'archived' | 'draft' | 'published';
   publicToken: string | null;
   pdfUrl: string | null;
   publishedAt: string | null;
@@ -156,7 +132,7 @@ export interface Magazine {
 /** Página derivada pela paginação — usada pelo renderer de template. */
 export interface MagazinePage {
   index: number;
-  kind: 'cover' | 'section' | 'products' | 'back-cover';
+  kind: 'back-cover' | 'cover' | 'products' | 'section';
   /** Título de seção (quando kind = 'section'). */
   sectionTitle?: string;
   items: MagazineItem[];

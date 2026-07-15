@@ -4,8 +4,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import type { Magazine, MagazineItem, MagazineTemplateId } from '@/types/magazine';
-import { DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+import { type Magazine, type MagazineItem, type MagazineTemplateId, DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+
 import { paginateMagazine } from '../pagination';
 
 const TEMPLATES: MagazineTemplateId[] = [

@@ -88,7 +88,7 @@ describe('Calendar shrink 50% — dimensions contract', () => {
 
     const rows = Array.from(container.querySelectorAll<HTMLElement>('[class*="w-full"]'))
       .map((el) => classes(el))
-      .filter((c) => /(^|\s)flex(\s|$)/.test(c) && /w-full/.test(c));
+      .filter((c) => /(^|\s)flex(\s|$)/.test(c) && c.includes('w-full'));
     const hasGap0Row = rows.some((c) => /(^|\s)gap-0(\s|$)/.test(c));
     const hasJustifyBetweenRow = rows.some((c) => /(^|\s)justify-between(\s|$)/.test(c));
     expect(hasGap0Row, 'ao menos uma row com gap-0').toBe(true);

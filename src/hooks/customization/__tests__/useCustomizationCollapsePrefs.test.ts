@@ -17,15 +17,18 @@ import {
   useCustomizationCollapsePrefs,
 } from '../useCustomizationCollapsePrefs';
 
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const upsertMock = vi.fn(async () => ({ error: null }));
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
+      // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
       getUser: async () => ({ data: { user: { id: 'user-1' } } }),
     },
     from: () => ({
       select: () => ({
+        // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
         eq: () => ({ maybeSingle: async () => ({ data: { filter_states: {} } }) }),
       }),
       upsert: (...args: unknown[]) => upsertMock(...args),

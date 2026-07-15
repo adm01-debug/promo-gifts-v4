@@ -27,7 +27,7 @@ vi.mock('sonner', () => ({
 // PointerEvent/ResizeObserver que não existem em jsdom.
 vi.mock('@/components/ui/select', () => {
   type OnChange = (v: string) => void;
-  const Ctx = { current: null as null | OnChange };
+  const Ctx = { current: null as OnChange | null };
 
   const Select = ({
     value,

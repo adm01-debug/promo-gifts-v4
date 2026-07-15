@@ -33,7 +33,7 @@ export async function headRequestWithFallback(
   };
   
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
   try {

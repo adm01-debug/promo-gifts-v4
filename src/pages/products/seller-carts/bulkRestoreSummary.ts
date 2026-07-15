@@ -5,7 +5,7 @@
  * "Desfazer" de exclusão em lote de carrinhos. Extraído de `CartsListPage.confirmBulkDelete`
  * para permitir cobertura de teste isolada (feliz + falha parcial + falha total).
  */
-export type BulkRestoreTone = 'success' | 'warning' | 'error';
+export type BulkRestoreTone = 'error' | 'success' | 'warning';
 
 export interface BulkRestoreSummary {
   tone: BulkRestoreTone;

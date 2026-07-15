@@ -47,6 +47,7 @@ const deleteMutateAsync = vi.fn();
 function stubMutation<TArg = unknown, TRet = unknown>(
   impl?: (arg: TArg) => Promise<TRet> | TRet,
 ) {
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   const fn = impl ?? ((async () => undefined) as (arg: TArg) => Promise<TRet>);
   return {
     mutate: vi.fn(),

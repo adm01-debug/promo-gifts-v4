@@ -26,6 +26,7 @@ export function usePageZoom(pageKey: number | string) {
     setState((s) => {
       if (s.scale === 2) return INITIAL;
       // centraliza no ponto clicado quando possível
+      // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
       if (clientX != null && clientY != null && rect) {
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;

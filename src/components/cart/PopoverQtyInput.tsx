@@ -34,7 +34,7 @@ export function normalizeQty(raw: string): number | null {
   return Math.min(MAX_QTY, parsed);
 }
 
-type FeedbackState = 'idle' | 'sanitized' | 'clamped' | 'invalid';
+type FeedbackState = 'clamped' | 'idle' | 'invalid' | 'sanitized';
 
 const FEEDBACK_TIMEOUT_MS = 700;
 

@@ -57,7 +57,7 @@ function makeData(
 describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
   it(`isDraft=true renderiza exatamente 1 "${WATERMARK_TEXT}" por página`, () => {
     const { container } = render(
-      <PropostaComercialTailwind data={makeData()} isDraft={true} />,
+      <PropostaComercialTailwind data={makeData()} isDraft />,
     );
     const pageCount = container.querySelectorAll('.proposal-page').length;
     expect(pageCount, 'documento sem páginas renderizadas').toBeGreaterThan(0);
@@ -82,7 +82,7 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
 
   it("marca d'água usa os tokens SSOT (cor derivada de watermarkTokens)", () => {
     const { container } = render(
-      <PropostaComercialTailwind data={makeData()} isDraft={true} />,
+      <PropostaComercialTailwind data={makeData()} isDraft />,
     );
     const watermark = Array.from(container.querySelectorAll('div')).find(
       (el) => el.textContent === WATERMARK_TEXT,
@@ -107,7 +107,7 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
     // 30 itens força paginação multi-página no template.
     const data = makeData(30);
     const { container } = render(
-      <PropostaComercialTailwind data={data} isDraft={true} />,
+      <PropostaComercialTailwind data={data} isDraft />,
     );
     const pages = container.querySelectorAll('.proposal-page');
     expect(pages.length, 'fixture não gerou multi-página').toBeGreaterThan(1);

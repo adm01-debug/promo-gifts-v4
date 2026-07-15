@@ -32,7 +32,7 @@ function hexToRgb(hex: string): [number, number, number] | null {
 function relativeLuminance([r, g, b]: [number, number, number]): number {
   const srgb = [r, g, b].map((v) => {
     const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055)**2.4;
   });
   return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
 }
@@ -49,7 +49,7 @@ export function contrastRatio(fg: string, bg: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-export type WcagLevel = 'AAA' | 'AA' | 'AA-large' | 'fail';
+export type WcagLevel = 'AA-large' | 'AA' | 'AAA' | 'fail';
 
 export function wcagLevel(fg: string, bg: string): WcagLevel {
   const r = contrastRatio(fg, bg);

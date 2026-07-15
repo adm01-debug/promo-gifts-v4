@@ -63,7 +63,7 @@ const seeded = (seed: number) => {
 
 // --- Mock mínimo de localStorage para os testes de persistência -----------
 class MemStorage implements Storage {
-  private m = new Map<string, string>();
+  private readonly m = new Map<string, string>();
   get length(): number {
     return this.m.size;
   }

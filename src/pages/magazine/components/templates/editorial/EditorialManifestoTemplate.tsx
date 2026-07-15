@@ -71,8 +71,10 @@ export function EditorialManifestoTemplate({ magazine, page }: TemplatePageProps
           {secondary ? (
             <img src={resolveItemImage(secondary)} alt={productImageAlt(secondary)} className="h-full w-full object-cover" />
           ) : hero ? (
-            <img src={resolveItemImage(hero)} alt={productImageAlt(hero)} className="h-full w-full object-cover"
-              style={{ filter: 'saturate(0.7)' }} />
+            <img
+src={resolveItemImage(hero)} alt={productImageAlt(hero)} className="h-full w-full object-cover"
+              style={{ filter: 'saturate(0.7)' }}
+            />
           ) : null}
           <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.35)' }} />
           <div className="absolute inset-0 flex flex-col justify-end p-12 text-white">

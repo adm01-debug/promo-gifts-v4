@@ -40,7 +40,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
-export type DatePickerFieldVariant = 'input' | 'compact';
+export type DatePickerFieldVariant = 'compact' | 'input';
 
 export interface DatePickerFieldProps {
   /** ISO `yyyy-MM-dd`. Vazio = `""`. */

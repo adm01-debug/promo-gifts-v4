@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-type Shipping = 'cif' | 'fob' | 'fob_pre';
+type Shipping = 'cif' | 'fob_pre' | 'fob';
 
 function FreightFixture({ initial = 'cif' as Shipping }) {
   const [shippingType, setShippingType] = useState<Shipping>(initial);

@@ -26,13 +26,13 @@ interface Props {
   onCategoryChange: (category: MagazineCategory) => void;
 }
 
-const FAMILY_LABELS: Record<'editorial' | 'catalog' | 'corporate', string> = {
+const FAMILY_LABELS: Record<'catalog' | 'corporate' | 'editorial', string> = {
   editorial: 'Editorial (luxo)',
   catalog: 'Catálogo comercial',
   corporate: 'Corporativo / B2B',
 };
 
-const FAMILY_HINT: Record<'editorial' | 'catalog' | 'corporate', string> = {
+const FAMILY_HINT: Record<'catalog' | 'corporate' | 'editorial', string> = {
   editorial: 'Fotografia dominante, 1–5 produtos por página. Ideal para lançamentos.',
   catalog: 'Densidade alta, foco em preço e código. Ideal para pedidos.',
   corporate: 'Marca do cliente em destaque, layouts B2B sóbrios.',

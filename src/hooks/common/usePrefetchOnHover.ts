@@ -35,7 +35,7 @@ export interface PrefetchHandlers {
 }
 
 export function usePrefetchOnHover(
-  fn: () => void | Promise<unknown>,
+  fn: () => Promise<unknown> | void,
   { debounceMs = 120, enabled = true }: { debounceMs?: number; enabled?: boolean } = {},
 ): PrefetchHandlers {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -41,6 +41,7 @@ describe('QuoteStatusTimeline — estados e responsividade', () => {
     expect(screen.getAllByText(/Rascunho|Pendente|Sincronizando|Enviado/)).toHaveLength(4);
   });
 
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   it('focus via teclado em label mantém visibilidade e ordem', async () => {
     render(<QuoteStatusTimeline status="sent" />);
     const pendente = screen.getByText('Pendente');

@@ -15,8 +15,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { ReactNode } from 'react';
-import React from 'react';
+import React, { type ReactNode } from 'react';
+
 import fc from 'fast-check';
 import { QUOTE_STATUSES } from '@/types/quote';
 
@@ -25,11 +25,17 @@ import { QUOTE_STATUSES } from '@/types/quote';
 const wrapper = ({ children }: { children: ReactNode }) =>
   React.createElement(MemoryRouter, { initialEntries: ['/orcamentos'] }, children);
 
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const updateQuoteStatus = vi.fn(async () => true);
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const duplicateQuote = vi.fn(async () => null);
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const deleteQuote = vi.fn(async () => true);
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const createQuote = vi.fn(async () => null);
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const fetchQuote = vi.fn(async () => null);
+// eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
 const fetchQuotes = vi.fn(async () => undefined);
 
 let mockQuotes: Array<Record<string, unknown>> = [];
@@ -50,7 +56,6 @@ vi.mock('@/hooks/quotes', () => ({
 }));
 
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
-
 
 import { useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
 
@@ -224,7 +229,7 @@ describe('useQuotesListPage — fuzz exaustivo (300 runs) do filtro expiring', (
           expect(item.status).not.toBe('expired');
           // I3 + I4
           expect(item.valid_until).toBeTruthy();
-          const t = new Date(item.valid_until as string).getTime();
+          const t = new Date(item.valid_until!).getTime();
           expect(Number.isFinite(t)).toBe(true);
           // I2
           expect(t).toBeGreaterThanOrEqual(NOW);

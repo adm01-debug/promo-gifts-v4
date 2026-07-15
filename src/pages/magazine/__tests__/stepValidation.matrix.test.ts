@@ -4,8 +4,8 @@
  * não pontua" não regride e que canPublish é monotônico.
  */
 import { describe, it, expect } from 'vitest';
-import type { Magazine, MagazineItem } from '@/types/magazine';
-import { DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+import { type Magazine, type MagazineItem, DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+
 import {
   canPublish,
   getCompletionPercentage,

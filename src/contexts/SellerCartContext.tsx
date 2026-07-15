@@ -517,7 +517,7 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
         //   partial        → RPC ok mas items_inserted < items_total (RLS parcial, ON CONFLICT).
         //   deduped        → itens duplicados no snapshot foram colapsados no INSERT.
         //   ok_no_metrics  → RPC/fallback sem `restore_metrics` (ex.: schema legado).
-        const restoreResult: 'success' | 'partial' | 'deduped' | 'ok_no_metrics' = metrics
+        const restoreResult: 'deduped' | 'ok_no_metrics' | 'partial' | 'success' = metrics
           ? metrics.items_inserted < metrics.items_total
             ? 'partial'
             : metrics.items_deduped > 0
@@ -581,10 +581,10 @@ export function SellerCartProvider({ children }: { children: ReactNode }) {
           const parts: string[] = [`snapshot ${snapshot?.id ?? '—'}`];
           if (metrics.items_deduped > 0 || metrics.items_inserted !== metrics.items_total) {
             parts.push(
-              `${metrics.items_inserted}/${metrics.items_total} itens inseridos` +
-                (metrics.items_deduped > 0
+              `${metrics.items_inserted}/${metrics.items_total} itens inseridos${ 
+                metrics.items_deduped > 0
                   ? ` · ${metrics.items_deduped} deduplicado(s)`
-                  : ''),
+                  : ''}`,
             );
           } else {
             parts.push(`${metrics.items_total} item(ns)`);

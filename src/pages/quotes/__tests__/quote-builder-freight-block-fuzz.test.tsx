@@ -35,7 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-type Shipping = 'cif' | 'fob' | 'fob_pre' | 'prepaid';
+type Shipping = 'cif' | 'fob_pre' | 'fob' | 'prepaid';
 
 const SHIPPINGS: Shipping[] = ['cif', 'fob', 'fob_pre', 'prepaid'];
 const WIDTHS = [320, 360, 375, 414, 600, 768, 900, 1024, 1280, 1440, 1920];
@@ -168,7 +168,7 @@ for (const shipping of SHIPPINGS) {
 }
 
 function validateInvariants(container: HTMLElement, sc: Scenario) {
-  const block = container.querySelector('[data-testid="freight-block"]') as HTMLElement;
+  const block = container.querySelector('[data-testid="freight-block"]')!;
   expect(block, 'freight-block presente').toBeTruthy();
 
   // (a) freight-block tem exatamente 1 filho direto: o grid.

@@ -250,7 +250,7 @@ function loadImageCors(url: string): Promise<HTMLImageElement> {
       // Evita CORS error no console. Canvas ficará tainted → DEFAULT_BOUNDS+aspectRatio.
       img.onload = () => resolve(img);
       img.onerror = () =>
-        reject(new Error('[ProductBoundsDetector] image load failed: ' + url.substring(0, 80)));
+        reject(new Error(`[ProductBoundsDetector] image load failed: ${url.substring(0, 80)}`));
       img.src = url;
       return;
     }
@@ -264,7 +264,7 @@ function loadImageCors(url: string): Promise<HTMLImageElement> {
       const img2 = new Image();
       img2.onload = () => resolve(img2);
       img2.onerror = () =>
-        reject(new Error('[ProductBoundsDetector] image load failed: ' + url.substring(0, 80)));
+        reject(new Error(`[ProductBoundsDetector] image load failed: ${url.substring(0, 80)}`));
       img2.src = url;
     };
     img.src = url;

@@ -29,7 +29,7 @@ describe('Cart status chip — rótulo "Separação"', () => {
         {cfg.label}
       </span>,
     );
-    const chip = container.querySelector('[data-testid="chip"]') as HTMLElement;
+    const chip = container.querySelector('[data-testid="chip"]')!;
     expect(chip).not.toBeNull();
     expect(chip.textContent).toBe('Separação');
     expect(chip.className).toMatch(/whitespace-nowrap/);

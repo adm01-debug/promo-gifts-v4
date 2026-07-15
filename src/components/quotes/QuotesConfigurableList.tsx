@@ -496,7 +496,7 @@ export function QuotesConfigurableList({
                   data-testid={`quotes-col-cell-${col.id}`}
                   data-col-id={col.id}
                   role="cell"
-                  aria-label={`${col.label}`}
+                  aria-label={col.label}
                   className={cn(
                     'min-w-0',
                     col.align === 'right' && 'text-right',
@@ -571,8 +571,8 @@ export function QuotesConfigurableList({
           />
         )}
         </div>
+          </div>
         </div>
-      </div>
       </div>
 
 

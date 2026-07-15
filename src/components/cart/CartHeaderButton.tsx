@@ -49,7 +49,6 @@ import {
   UNDO_TOAST_DESCRIPTION,
   deletedToastTitle,
 } from '@/pages/products/seller-carts/undoCopy';
-import { toast } from 'sonner';
 import { useState, useEffect, useRef } from 'react';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
@@ -976,7 +975,7 @@ export function CartHeaderButton() {
                       // Toast de sucesso (com métricas) + toast de erro
                       // (com mapping por SQLSTATE) já são emitidos por `restoreCart`.
                       const newId = await restoreCart(snapshot);
-                      return newId ? true : false;
+                      return !!newId;
                     },
                   });
                 } catch {

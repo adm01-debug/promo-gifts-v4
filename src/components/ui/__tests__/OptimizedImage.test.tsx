@@ -8,7 +8,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 // global em tests/setup.ts). Sem isso, o placeholder <img aria-hidden="true">
 // nunca renderiza e queries retornam undefined.
 class MockIntersectionObserver {
-  private cb: IntersectionObserverCallback;
+  private readonly cb: IntersectionObserverCallback;
   constructor(cb: IntersectionObserverCallback) {
     this.cb = cb;
   }

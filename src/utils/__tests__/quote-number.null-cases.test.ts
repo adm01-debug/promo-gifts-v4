@@ -9,7 +9,7 @@ describe('quote_number · null/undefined em modos Novo e Rascunho', () => {
   it.each([null, undefined, '', '   '])(
     'retorna null para valor ausente (%p) — UI deve mostrar fallback',
     (input) => {
-      expect(formatQuoteNumberLabel(input as null | undefined | string)).toBeNull();
+      expect(formatQuoteNumberLabel(input as string | null | undefined)).toBeNull();
     },
   );
 

@@ -9,6 +9,7 @@ import { PdfGenerationDialog } from '../PdfGenerationDialog';
 import { PROPOSAL_FIXTURES } from '@/components/pdf/proposal/__tests__/fixtures';
 
 vi.mock('@/utils/proposalPdfReactGenerator', () => ({
+  // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   generateProposalPDFv2: vi.fn(async () => new Blob(['%PDF-1.4'], { type: 'application/pdf' })),
   downloadPDF: vi.fn(),
 }));
@@ -53,7 +54,7 @@ describe('PdfGenerationDialog — aviso do header (preview stage)', () => {
   });
 
   it('não empurra a pílula quando o número do orçamento é enorme (100 chars)', async () => {
-    const huge = 'X'.repeat(100) + '/26';
+    const huge = `${'X'.repeat(100)}/26`;
     openDialog({ quoteNumber: huge });
     const title = await screen.findByRole('heading', { name: new RegExp(huge.slice(0, 20)) });
     // O container do título tem min-w-0 + truncate para não empurrar

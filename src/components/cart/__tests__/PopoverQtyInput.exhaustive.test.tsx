@@ -323,7 +323,7 @@ describe('Isolamento de estado entre múltiplos inputs (N=20)', () => {
       // o dígito extraído é sempre ≥ MIN_QTY, então o commit é aceito.
       else {
         const digit = i; // "x,y" + i → digits '' + i → parseInt(i)
-        scenarios.push({ raw: 'x,y' + i, expectFeedback: 'sanitized', expectValue: String(digit) });
+        scenarios.push({ raw: `x,y${i}`, expectFeedback: 'sanitized', expectValue: String(digit) });
       }
     }
 

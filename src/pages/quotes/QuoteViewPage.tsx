@@ -44,7 +44,7 @@ import { QuoteHistoryPanel } from '@/components/quotes/QuoteHistoryPanel';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
 import { showUndoToast } from '@/utils/undoToast';
-import { useQuotes, type QuoteItem } from '@/hooks/quotes';
+import { type DiscountApprovalRequest, type QuoteItem, useDiscountApproval, useQuotes } from '@/hooks/quotes';
 import { QuoteStatusTimeline } from '@/components/quotes/QuoteStatusTimeline';
 
 import { QuoteMobileActionBar } from '@/components/quotes/QuoteMobileActionBar';
@@ -59,7 +59,7 @@ import { SectionEyebrow } from '@/components/quotes/SectionEyebrow';
 import { PdfGenerationDialog } from '@/components/quotes/PdfGenerationDialog';
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 import { useQuoteViewData } from '@/pages/quotes/quote-view/useQuoteViewData';
-import { useDiscountApproval, type DiscountApprovalRequest } from '@/hooks/quotes';
+
 import { applyNegotiationMarkup } from '@/hooks/quotes/quoteMarkup';
 
 const statusConfig = Object.fromEntries(
@@ -193,7 +193,6 @@ export default function QuoteViewPage() {
             </div>
           </div>
 
-
           <div className="flex items-center gap-2">
             {quote.status !== 'pending_approval' && (
               <PdfGenerationDialog
@@ -278,7 +277,6 @@ export default function QuoteViewPage() {
                 </DropdownMenu>
               </div>
             )}
-
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -386,9 +384,6 @@ export default function QuoteViewPage() {
           </div>
         </div>
 
-
-
-
         {/* Discount Approval Banner */}
         {quote.status === 'pending_approval' && (
           <div className="flex items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/[0.06] px-4 py-3 print:hidden">
@@ -439,7 +434,6 @@ export default function QuoteViewPage() {
                 <Separator />
                 <section aria-labelledby="quote-terms-heading">
                   <SectionEyebrow id="quote-terms-heading">Condições Comerciais</SectionEyebrow>
-
 
                   <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${qvSpacing.termsGrid}`}>
                     {quote.payment_terms && (

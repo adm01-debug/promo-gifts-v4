@@ -32,7 +32,7 @@ vi.mock('sonner', () => ({
 // Preserva a propagação de `disabled` no SelectItem.
 vi.mock('@/components/ui/select', () => {
   type OnChange = (v: string) => void;
-  const Ctx = { current: null as null | OnChange };
+  const Ctx = { current: null as OnChange | null };
   const Select = ({
     value,
     onValueChange,
@@ -70,11 +70,11 @@ vi.mock('@/components/ui/select', () => {
     children,
     disabled,
     ...rest
-  }: {
+  }: Record<string, unknown> & {
     value: string;
     children: React.ReactNode;
     disabled?: boolean;
-  } & Record<string, unknown>) => (
+  }) => (
     <button
       type="button"
       data-mock-select-item

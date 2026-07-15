@@ -45,7 +45,7 @@ describe('CompanyContactSelector — layout 50/50', () => {
 
   it('contém exatamente 2 filhos diretos (Empresa + Contato)', () => {
     const { container } = renderCCS();
-    const wrapper = container.querySelector('div.grid') as HTMLElement;
+    const wrapper = container.querySelector('div.grid')!;
     expect(wrapper.children.length).toBe(2);
   });
 

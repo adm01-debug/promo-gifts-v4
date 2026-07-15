@@ -30,7 +30,7 @@ interface Props {
   onChangeTemplate: (id: MagazineTemplateId) => void;
 }
 
-const FAMILY_LABEL: Record<'editorial' | 'catalog' | 'corporate', string> = {
+const FAMILY_LABEL: Record<'catalog' | 'corporate' | 'editorial', string> = {
   editorial: 'Editorial',
   catalog: 'Catálogo',
   corporate: 'Corporativo',

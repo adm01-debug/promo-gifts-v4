@@ -63,6 +63,7 @@ vi.mock('@/integrations/supabase/client', () => {
         delete: () => buildDeleteChain(),
       }),
       auth: {
+        // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
         getUser: async () => ({ data: { user: { id: TEST_USER_ID } }, error: null }),
       },
     },

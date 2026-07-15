@@ -13,8 +13,8 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import type { Magazine } from '@/types/magazine';
-import { DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+import { type Magazine, DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+
 import { useMagazineEditor } from '../useMagazineEditor';
 
 // ============================================================================
@@ -72,11 +72,14 @@ let storedMagazine: Magazine | null = MOCK_MAGAZINE;
 
 vi.mock('@/services/magazineService', () => ({
   magazineService: {
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     get: vi.fn(async (id: string) => (id === 'mag_test' ? { ...storedMagazine } : null)),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     update: vi.fn(async (id: string, data: Magazine) => {
       if (id === 'mag_test') storedMagazine = { ...data };
       return storedMagazine;
     }),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     addProducts: vi.fn(async (id: string, products: unknown[]) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = {
@@ -86,12 +89,14 @@ vi.mock('@/services/magazineService', () => ({
       storedMagazine = updated;
       return updated;
     }),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     removeItem: vi.fn(async (id: string, itemId: string) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = { ...storedMagazine, items: storedMagazine.items.filter((i) => i.id !== itemId) };
       storedMagazine = updated;
       return updated;
     }),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     reorderItems: vi.fn(async (id: string, orderedIds: string[]) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const itemMap = new Map(storedMagazine.items.map((it) => [it.id, it]));
@@ -100,6 +105,7 @@ vi.mock('@/services/magazineService', () => ({
       storedMagazine = updated;
       return updated;
     }),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     updateItem: vi.fn(async (id: string, itemId: string, patch: Partial<typeof DUMMY_ITEM>) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = {
@@ -109,12 +115,14 @@ vi.mock('@/services/magazineService', () => ({
       storedMagazine = updated;
       return updated;
     }),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     publish: vi.fn(async (id: string) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = { ...storedMagazine, status: 'published' as const, publicToken: 'tok_abc' };
       storedMagazine = updated;
       return updated;
     }),
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     unpublish: vi.fn(async (id: string) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = { ...storedMagazine, status: 'draft' as const, publicToken: null };
@@ -161,6 +169,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   it('[A] setTitle → setBranding in same tick: BOTH mutations applied', async () => {
     const { result } = await renderLoadedEditor();
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       // Two mutations in the same synchronous tick
       result.current.setTitle('New Title');
@@ -175,6 +184,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
   it('[A2] setTitle → setSubtitle → setTitle: last write wins, no state loss', async () => {
     const { result } = await renderLoadedEditor();
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setTitle('Title A');
       result.current.setSubtitle('Subtitle B');
@@ -189,12 +199,14 @@ describe('useMagazineEditor — stale ref race condition', () => {
     const { result } = await renderLoadedEditor();
 
     // First: add a product
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.addProducts([{ id: 'prod_1', name: 'P1' } as unknown as never]);
     });
     expect(result.current.magazine?.items.length).toBe(1);
 
     // Then: change title in same tick
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setTitle('Title After Products');
     });
@@ -207,15 +219,18 @@ describe('useMagazineEditor — stale ref race condition', () => {
   it('[C] publish() idempotency: calling twice does not corrupt state', async () => {
     const { result } = await renderLoadedEditor();
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setTitle('Ready to Publish');
     });
 
     // Add a product so magazine is publishable
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.addProducts([{ id: 'prod_1' } as never]);
     });
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.publish();
       result.current.publish(); // idempotent call
@@ -238,11 +253,13 @@ describe('useMagazineEditor — stale ref race condition', () => {
 
     const { result } = await renderLoadedEditor();
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.removeItem('item_a');
     });
     expect(result.current.magazine?.items.length).toBe(2);
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.reorderItems(['item_c', 'item_b']);
     });
@@ -254,6 +271,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
     const { magazineService } = await import('@/services/magazineService');
     const { result } = await renderLoadedEditor();
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setTitle('Debounced Save');
     });
@@ -262,6 +280,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
     expect(magazineService.update).not.toHaveBeenCalled();
 
     // After 400ms
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       vi.advanceTimersByTime(450);
     });
@@ -273,6 +292,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
 
   it('[F] setTitle with empty string clears title', async () => {
     const { result } = await renderLoadedEditor();
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setTitle('');
     });
@@ -283,6 +303,7 @@ describe('useMagazineEditor — stale ref race condition', () => {
     const { result } = await renderLoadedEditor();
     const originalPrimary = result.current.magazine?.branding.primaryColor;
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setBranding({ clientLogoUrl: 'https://cdn.example.com/logo.png' });
     });
@@ -316,12 +337,14 @@ describe('useMagazineEditor — loading states', () => {
   it('saving=true during debounce, false after 400ms', async () => {
     const { result } = await renderLoadedEditor();
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setTitle('Test Saving State');
     });
 
     expect(result.current.saving).toBe(true);
 
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       vi.advanceTimersByTime(450);
     });

@@ -28,6 +28,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
   const thumbIdx = scrubIdx ?? currentIndex;
   const thumbLeft = total > 1 ? (thumbIdx / Math.max(total - 1, 1)) * 100 : 0;
   const previewLeft =
+    // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
     hoverIdx != null && total > 1 ? (hoverIdx / Math.max(total - 1, 1)) * 100 : 0;
 
   const idxFromClientX = useCallback(
@@ -86,6 +87,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
     [bookmarks, total],
   );
 
+  // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
   const showPreview = !dragging && hoverIdx != null && renderPreview && total > 1;
 
   return (
@@ -182,8 +184,8 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
                 onTouchStart={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
                 className={
-                  'absolute -translate-x-1/2 rounded-full shadow ring-2 ring-neutral-950 transition hover:scale-125 focus:outline-none focus-visible:ring-white ' +
-                  (isCurrent ? 'bg-amber-300 scale-125' : 'bg-amber-400')
+                  `absolute -translate-x-1/2 rounded-full shadow ring-2 ring-neutral-950 transition hover:scale-125 focus:outline-none focus-visible:ring-white ${ 
+                  isCurrent ? 'bg-amber-300 scale-125' : 'bg-amber-400'}`
                 }
                 style={{ left: `${left}%`, width: 10, height: 10 }}
                 aria-label={
@@ -210,6 +212,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
           />
         )}
 
+        // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
         {dragging && scrubIdx != null && (
           <div
             className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md bg-neutral-900 px-2 py-1 text-[11px] font-medium tabular-nums text-white shadow-lg"
@@ -251,13 +254,13 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
  * - useDeferredValue no idx (React prioriza o mousemove ao invés do re-render caro)
  * - React.memo garante que só re-renderiza quando idxDeferred efetivamente muda
  */
-const DeferredPreview = memo(function DeferredPreview({
+const DeferredPreview = memo(({
   idx,
   render,
 }: {
   idx: number;
   render: (index: number) => ReactNode;
-}) {
+}) => {
   const deferred = useDeferredValue(idx);
   return <>{render(deferred)}</>;
 });

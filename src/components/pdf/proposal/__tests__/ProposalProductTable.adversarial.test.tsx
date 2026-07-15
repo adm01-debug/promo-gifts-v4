@@ -51,7 +51,7 @@ describe('ProposalProductTable — invariantes das 5 mudanças', () => {
     const out = html([{ ...baseItem, sku: 'SKU-BLACK', colorHex: '#ff0000' }]);
     // A cor de fundo do SKU foi removida — não deve haver span com background:#ff0000
     // envolvendo o texto do SKU.
-    const skuMatch = out.match(/<span[^>]*>SKU-BLACK<\/span>/);
+    const skuMatch = /<span[^>]*>SKU-BLACK<\/span>/.exec(out);
     expect(skuMatch).toBeTruthy();
     expect(skuMatch![0]).not.toMatch(/background:\s*#ff0000/i);
     // Cor do texto deve ser #111 (preto)

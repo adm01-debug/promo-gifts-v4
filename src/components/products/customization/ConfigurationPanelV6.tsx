@@ -85,7 +85,7 @@ export function ConfigurationPanelV6({
   const setCollapsed = useCallback(
     (next: boolean | ((v: boolean) => boolean)) => {
       const value = typeof next === 'function' ? (next as (v: boolean) => boolean)(collapsed) : next;
-      void setCollapsedPref(technique.technique_id, value);
+      setCollapsedPref(technique.technique_id, value);
     },
     [collapsed, setCollapsedPref, technique.technique_id],
   );

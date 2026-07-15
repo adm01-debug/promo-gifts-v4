@@ -47,6 +47,7 @@ export const CART_ITEM_DEBOUNCE_MS_MAX = 2000;
  */
 export function getCartItemDebounceMs(): number {
   const tryParse = (raw: unknown): number | null => {
+    // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
     if (raw == null) return null;
     const n = Number(raw);
     if (!Number.isFinite(n)) return null;
@@ -78,10 +79,9 @@ const QUERY_KEY = 'seller-carts';
 type UpdateQtyMutation = UseMutationResult<
   void,
   Error,
-  { itemId: string; quantity: number },
-  unknown
+  { itemId: string; quantity: number }
 >;
-type RemoveItemMutation = UseMutationResult<void, Error, string, unknown>;
+type RemoveItemMutation = UseMutationResult<void, Error, string>;
 
 export interface DebouncedCartItemActions {
   /** Registra novo valor otimista + agenda o UPDATE. */

@@ -37,12 +37,12 @@ const isCartViewMode = (v: unknown): v is CartViewMode =>
 
 /** Interface mínima que consumimos — permite injetar mocks nos testes. */
 export interface SafeStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
 }
 
 /** Backend efetivo em uso (útil para telemetria e testes). */
-export type StorageBackend = 'localStorage' | 'sessionStorage' | 'memory';
+export type StorageBackend = 'localStorage' | 'memory' | 'sessionStorage';
 
 // Fallback em memória — dura enquanto a aba estiver aberta.
 const memoryStore = new Map<string, string>();
@@ -142,7 +142,13 @@ export function getLocalDateStamp(now: Date = new Date()): string {
 // -----------------------------------------------------------------------------
 
 export type CartViewModeEvent =
-  | {
+  {
+      type: 'change';
+      uid: string;
+      from: CartViewMode | null;
+      to: CartViewMode;
+      backend: StorageBackend;
+    } | {
       type: 'daily_reset';
       uid: string;
       previous: CartViewMode | null;
@@ -150,13 +156,6 @@ export type CartViewModeEvent =
       previousDate: string | null;
       /** Data local corrente que motivou o reset. */
       today: string;
-      backend: StorageBackend;
-    }
-  | {
-      type: 'change';
-      uid: string;
-      from: CartViewMode | null;
-      to: CartViewMode;
       backend: StorageBackend;
     };
 

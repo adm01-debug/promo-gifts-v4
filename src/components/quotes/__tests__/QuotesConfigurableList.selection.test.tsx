@@ -232,7 +232,7 @@ describe('QuotesConfigurableList — infinite scroll', () => {
       disconnect() {
         ioEntries = ioEntries.filter((e) => e.observer !== (this as unknown as IntersectionObserver));
       }
-      unobserve() {/* noop */}
+      unobserve() { /* noop */ }
       takeRecords() { return []; }
       root: Element | null = null;
       rootMargin = '';

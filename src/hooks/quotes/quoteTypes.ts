@@ -103,7 +103,7 @@ export interface Quote {
    * Coluna real em `quotes`, mantida pelo trigger `trg_sync_quote_dar` (DAR → quotes).
    * Domínio idêntico ao CHECK de `discount_approval_requests.status`.
    */
-  discount_approval_status?: 'pending' | 'approved' | 'rejected' | 'expired' | null;
+  discount_approval_status?: 'approved' | 'expired' | 'pending' | 'rejected' | null;
   /** ISO timestamp da última resposta de aprovação de desconto (espelho do DAR). */
   discount_approved_at?: string | null;
 }

@@ -71,7 +71,7 @@ import { useListUrlState } from '@/hooks/common/useListUrlState';
 
 
 type StatusFilter = CartStatus | 'all';
-type SortKey = 'items-desc' | 'recent' | 'value-desc' | 'deadline-asc' | 'deadline-desc';
+type SortKey = 'deadline-asc' | 'deadline-desc' | 'items-desc' | 'recent' | 'value-desc';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'recent', label: 'Mais recente' },
@@ -729,7 +729,7 @@ function CartsListContent() {
                 // e o toast de erro (com mapping por SQLSTATE) são emitidos
                 // dentro do próprio `restoreCart` — evita duplicidade aqui.
                 const newId = await restoreCart(snapshot);
-                return newId ? true : false;
+                return !!newId;
               },
             });
           } catch {

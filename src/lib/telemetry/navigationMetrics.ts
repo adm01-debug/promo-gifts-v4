@@ -27,18 +27,13 @@
 import { captureMessage } from '@/lib/sentry';
 
 type MetricName =
-  | 'ttfb'
-  | 'dom_interactive'
-  | 'dom_complete'
-  | 'cls'
-  | 'tti_approx'
-  | 'route_change';
+  'cls' | 'dom_complete' | 'dom_interactive' | 'route_change' | 'ttfb' | 'tti_approx';
 
 interface MetricEvent {
   metric: MetricName;
   value: number;
   route: string;
-  device: 'mobile' | 'desktop';
+  device: 'desktop' | 'mobile';
   rating?: 'good' | 'needs-improvement' | 'poor';
 }
 
@@ -76,7 +71,7 @@ export function normalizeRoute(pathname: string): string {
     .replace(/\/[A-Za-z0-9_-]{16,}/g, '/:id');
 }
 
-function currentDevice(): 'mobile' | 'desktop' {
+function currentDevice(): 'desktop' | 'mobile' {
   try {
     return window.matchMedia?.('(max-width: 768px)').matches ? 'mobile' : 'desktop';
   } catch {
@@ -212,6 +207,7 @@ export function notifyRouteChange(pathname: string): void {
   routeChangeStart = performance.now();
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
+      // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
       if (routeChangeStart == null) return;
       const duration = performance.now() - routeChangeStart;
       routeChangeStart = null;

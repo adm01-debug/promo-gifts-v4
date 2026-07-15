@@ -27,8 +27,7 @@ export const EMPTY_CART_BLOCK_MESSAGE =
 export const EMPTY_CART_BLOCK_TITLE = 'Carrinho vazio';
 
 export type TransitionDecision =
-  | { allowed: true }
-  | { allowed: false; reason: 'empty_cart_ready_blocked'; message: string };
+  { allowed: false; reason: 'empty_cart_ready_blocked'; message: string } | { allowed: true };
 
 export interface EvaluateCartStatusTransitionInput {
   nextStatus: CartStatus;
