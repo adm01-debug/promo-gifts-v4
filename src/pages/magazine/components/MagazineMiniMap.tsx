@@ -212,7 +212,7 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
           />
         )}
 
-        // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
+        {/* Tooltip de scrub durante drag — usa != null (null OU undefined) intencional. */}
         {dragging && scrubIdx != null && (
           <div
             className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md bg-neutral-900 px-2 py-1 text-[11px] font-medium tabular-nums text-white shadow-lg"
