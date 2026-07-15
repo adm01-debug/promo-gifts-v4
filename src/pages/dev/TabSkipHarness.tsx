@@ -6,6 +6,7 @@
  *
  * Rota: /__test/tab-skip (sem auth, sem side-effects).
  */
+import type { ReactElement } from 'react';
 import { cn } from '@/lib/utils';
 
 const RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary';
@@ -14,7 +15,7 @@ interface Node {
   id: string;
   label: string;
   focusable: boolean;
-  render: () => React.ReactElement;
+  render: () => ReactElement;
 }
 
 const NODES: Node[] = [
