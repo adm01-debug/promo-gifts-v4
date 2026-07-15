@@ -221,7 +221,7 @@ function runDocsPhase() {
       const line = lines[i];
       if (!line.includes(FORBIDDEN_ID)) continue;
 
-      const context = [lines[i - 2], lines[i - 1], line, lines[i + 1]]
+      const context = [lines[i - 3], lines[i - 2], lines[i - 1], line, lines[i + 1]]
         .filter(Boolean).join('\n');
 
       const operational = isOperational(line);
