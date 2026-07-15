@@ -58,6 +58,13 @@ describe('SSOT gates — fuzz de docs (guard --docs-only)', () => {
     (id: string) => `psql postgresql://postgres@db.${id}.supabase.co:5432/postgres`,
     (id: string) => `supabase link --project-ref ${id}`,
     (id: string) => `Apontar para ${id} na config de produção.`,
+    // Obfuscated / edge patterns descobertos no simulador onda 2
+    (id: string) => `Usar 'supabase secrets set --project-ref ${id}' agora.`,
+    (id: string) => `curl https://${id}.functions.supabase.co/... para invocar`,
+    (id: string) => `Rotate token no projeto ${id}`,
+    (id: string) => `Alter database em ${id} para adicionar coluna`,
+    (id: string) => `Configurar service_role_key do ${id} em produção`,
+    (id: string) => `\`${id}\` deve ser o project ref no CLI`,
   ];
 
   const legacyMarkers = [
