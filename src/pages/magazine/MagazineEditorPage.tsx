@@ -448,8 +448,12 @@ export default function MagazineEditorPage() {
                 Avançar <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
-              <Button onClick={publish} disabled={!publishable}>
-                <Share2 className="mr-2 h-4 w-4" /> Publicar revista
+              <Button onClick={publish} disabled={!publishable || publishing} aria-busy={publishing}>
+                {publishing ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publicando…</>
+                ) : (
+                  <><Share2 className="mr-2 h-4 w-4" /> Publicar revista</>
+                )}
               </Button>
             )}
           </div>
