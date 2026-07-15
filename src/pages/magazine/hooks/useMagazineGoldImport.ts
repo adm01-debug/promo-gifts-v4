@@ -151,14 +151,41 @@ export function useMagazineGoldImport(userId: string | undefined): {
 
         if (cancelled) return;
 
+        // Correlação com edge logs — a edge SSOT expõe X-Request-Id
+        // (ver memory Edge Request-Id Propagation Gate).
+        const requestId = res.headers.get('x-request-id') ?? null;
+
         if (!res.ok) {
-          log.warn('magazine_import_local_failed', { status: res.status });
+          // Tenta extrair {error, request_id} do body para diagnóstico rápido.
+          let bodyErrorCode: string | null = null;
+          let bodyRequestId: string | null = null;
+          try {
+            const errBody = (await res.clone().json()) as {
+              error?: string;
+              request_id?: string;
+            };
+            bodyErrorCode = errBody?.error ?? null;
+            bodyRequestId = errBody?.request_id ?? null;
+          } catch {
+            /* body não-JSON — segue com header apenas */
+          }
+
+          log.warn('magazine_import_local_failed', {
+            status: res.status,
+            request_id: requestId ?? bodyRequestId,
+            error_code: bodyErrorCode,
+          });
+
           // 401/403 = edge em projeto diferente (Lovable Cloud) não consegue
           // validar o token do BD Gold (SSOT). Marca migrado para não
           // reentrar em loop — os dados legados continuam preservados em
           // localStorage e podem ser recuperados manualmente se preciso.
           if (res.status === 401 || res.status === 403) {
             markMigrated();
+            log.info('magazine_import_local_skipped_auth', {
+              status: res.status,
+              request_id: requestId ?? bodyRequestId,
+            });
           }
           setImporting(false);
           return;
