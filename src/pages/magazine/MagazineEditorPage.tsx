@@ -206,8 +206,8 @@ export default function MagazineEditorPage() {
       />
 
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in px-4 pb-4 pt-2 sm:px-6 lg:px-8">
-       <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] xl:gap-6">
-        <div className="min-w-0">
+       <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_420px] xl:items-start xl:gap-6">
+        <div className="min-w-0" data-testid="magazine-editor-main-col">
         {/* Hero premium — miniatura real da capa + template ativo + swap inline */}
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
