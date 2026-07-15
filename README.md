@@ -412,6 +412,12 @@ supabase/
 
 ## 🗄 Banco de Dados
 
+> 🔒 **SSOT — Banco canônico:** `doufsxqlfjyuvxuezpln`
+> (`https://doufsxqlfjyuvxuezpln.supabase.co`). Todo schema, migration, edge
+> function e RLS vive **exclusivamente** neste projeto. Detalhes completos e
+> aviso sobre o projeto legado `pqpdolkaeqlyzpdpbizo` em
+> [`SUPABASE_CONNECTION.md`](SUPABASE_CONNECTION.md).
+
 ### Supabase (Interno)
 - **269 tabelas** em `public`, **100% com RLS ativo** (662 policies, ~2.5 por tabela)
 - **112 funções `SECURITY DEFINER`**, 100% com `search_path` setado (gate de CI bloqueia regressão)
