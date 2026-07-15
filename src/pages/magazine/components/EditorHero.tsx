@@ -77,7 +77,7 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
           )}
 
           {/* Chip do template + swap inline */}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <div
               className="flex items-center gap-2 rounded-full border bg-muted/40 py-1 pl-2 pr-3 text-xs"
               aria-label="Template ativo"
