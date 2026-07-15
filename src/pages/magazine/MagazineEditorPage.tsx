@@ -28,6 +28,7 @@ import {
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 import { useMagazineEditor } from './useMagazineEditor';
+import { useMagazinePublish } from './useMagazinePublish';
 import { paginateMagazine } from './pagination';
 import { PreviewSidebar } from './components/PreviewSidebar';
 import { EditorHero } from './components/EditorHero';
