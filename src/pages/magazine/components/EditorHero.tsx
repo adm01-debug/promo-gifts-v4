@@ -58,7 +58,9 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
               Magazines
             </Link>
             <span aria-hidden>/</span>
-            <span className="truncate">Editor</span>
+            <span className="truncate" aria-current="page">
+              Editor
+            </span>
           </nav>
 
           <h1
