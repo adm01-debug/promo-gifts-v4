@@ -124,7 +124,7 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clicka
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       style={style}
-      {...dataRest}
+      {...passthrough}
       className={cn(
         'cursor-pointer',
         disabled && 'cursor-not-allowed opacity-60 pointer-events-none',
