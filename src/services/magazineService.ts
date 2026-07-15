@@ -283,7 +283,7 @@ export const magazineService = {
     const insertRow = {
       owner_id: input.ownerId,
       organization_id: input.organizationId ?? null,
-      title: input.title ?? 'Nova Revista',
+      title: input.title?.trim() || 'Nova Revista',
       subtitle: '',
       template_id: input.templateId ?? 'editorial-vogue',
       branding: { ...DEFAULT_BRANDING },
