@@ -18,7 +18,7 @@ const magazine: Magazine = {
   organizationId: null,
   title: 'Nova Revista',
   subtitle: '',
-  templateId: 'vogue',
+  templateId: 'editorial-vogue',
   branding: {
     clientName: null,
     clientLogoUrl: null,
