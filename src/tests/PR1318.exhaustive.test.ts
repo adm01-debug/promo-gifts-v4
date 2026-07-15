@@ -508,10 +508,10 @@ describe('G — compareStockStatus: ordenacao por disponibilidade', () => {
     const sorted = [...statuses].sort(compareStockStatus);
     // Nenhum out-of-stock aparece antes de um in-stock ou low-stock
     let seenOutOfStock = false;
-    for (const s of sorted) {
-      if (s === 'out-of-stock') seenOutOfStock = true;
+    for (const status of sorted) {
+      if (status === 'out-of-stock') seenOutOfStock = true;
       if (seenOutOfStock) {
-        expect(s === 'in-stock' || s === 'low-stock').toBe(false);
+        expect(status === 'in-stock' || status === 'low-stock').toBe(false);
       }
     }
   });

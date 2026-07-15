@@ -539,17 +539,17 @@ describe('FRENTE-9: pipeline completo end-to-end', () => {
     });
 
     // INVARIANTE 2: sort por compareStockStatus é estável (in-stock sempre antes de out-of-stock)
-    const withStatus = products.map((p) => ({
-      ...p,
-      sortStatus: p.productStatus,
+    const withStatus = products.map((prod) => ({
+      ...prod,
+      sortStatus: prod.productStatus,
     }));
     withStatus.sort((a, b) => compareStockStatus(a.sortStatus, b.sortStatus));
     
     let seenOut = false;
-    withStatus.forEach((p) => {
-      if (p.sortStatus === 'out-of-stock') seenOut = true;
-      if (seenOut && (p.sortStatus === 'in-stock' || p.sortStatus === 'low-stock')) {
-        throw new Error(`Sort violado: in/low-stock após out-of-stock para produto ${p.id}`);
+    withStatus.forEach((prod) => {
+      if (prod.sortStatus === 'out-of-stock') seenOut = true;
+      if (seenOut && (prod.sortStatus === 'in-stock' || prod.sortStatus === 'low-stock')) {
+        throw new Error(`Sort violado: in/low-stock após out-of-stock para produto ${prod.id}`);
       }
     });
   });
