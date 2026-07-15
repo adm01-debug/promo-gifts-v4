@@ -1,7 +1,9 @@
 {
   "$schema": "./docs/schemas/eslint-baseline-scope.schema.json",
-  "mode": "full",
-  "include": [],
+  "mode": "incremental",
+  "include": [
+    "src/lib/inventory/**"
+  ],
   "exclude": [],
   "notes": [
     "Modo de escopo do gate `lint:baseline`.",
