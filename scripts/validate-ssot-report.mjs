@@ -1,17 +1,36 @@
 #!/usr/bin/env node
 /**
  * validate-ssot-report.mjs — Valida ssot-report.json contra
- * schemas/ssot-report.schema.json (JSON Schema draft-07).
+ * schemas/ssot-report.schema.json (JSON Schema draft-07), com suporte a
+ * VALIDAÇÃO RETROATIVA de artefatos de versões anteriores.
  *
  * Zero dependências: implementa apenas o subset necessário
  * (type, const, enum, required, additionalProperties, minItems/maxItems,
  * minimum, pattern, format:date-time).
  *
  * Uso:
- *   node scripts/validate-ssot-report.mjs [--file=<path>] [--schema=<path>] [--quiet]
+ *   node scripts/validate-ssot-report.mjs [flags]
+ *
+ * Flags de contrato:
+ *   --file=<path>              artefato a validar (default: ssot-report.json)
+ *   --schema=<path>            schema "corrente" (default: schemas/ssot-report.schema.json)
+ *   --expected-version=X.Y.Z   força um alvo exato (bypassa o const do schema)
+ *
+ * Flags de compatibilidade retroativa (aceitar versões anteriores):
+ *   --compat=<strict|major|any>
+ *       strict (default) — exige data.schemaVersion === const do schema
+ *       major            — aceita qualquer patch/minor do MESMO MAJOR corrente
+ *       any              — aceita qualquer versão dentro da janela min/max
+ *   --min-version=X.Y.Z        limite inferior inclusivo (usado com compat!=strict)
+ *   --max-version=X.Y.Z        limite superior inclusivo (usado com compat!=strict)
+ *   --historical-dir=<path>    diretório de snapshots imutáveis por versão
+ *                              (default tenta: schemas/, depois public/schemas/)
+ *
+ * Diagnóstico:
+ *   --quiet                    silencia o resumo em sucesso
  *
  * Exit codes:
- *   0 — válido
+ *   0 — válido (contra schema corrente ou contra snapshot histórico compatível)
  *   1 — inválido (imprime lista de erros)
  *   2 — erro de I/O (arquivo/schema ausente ou JSON inválido)
  */
@@ -27,7 +46,17 @@ const getArg = (name, dflt) => {
 const QUIET = argv.includes('--quiet');
 const FILE = resolve(getArg('file', 'ssot-report.json'));
 const SCHEMA = resolve(getArg('schema', 'schemas/ssot-report.schema.json'));
-const EXPECTED_VERSION = getArg('expected-version', null); // opcional; senão usa const do schema
+const EXPECTED_VERSION = getArg('expected-version', null);
+const COMPAT = (getArg('compat', 'strict') || 'strict').toLowerCase();
+const MIN_VERSION = getArg('min-version', null);
+const MAX_VERSION = getArg('max-version', null);
+const HISTORICAL_DIR = getArg('historical-dir', null);
+
+const COMPAT_MODES = new Set(['strict', 'major', 'any']);
+if (!COMPAT_MODES.has(COMPAT)) {
+  process.stderr.write(`[validate-ssot-report] --compat inválido: ${COMPAT} (use strict|major|any)\n`);
+  process.exit(2);
+}
 
 function die(code, msg) {
   process.stderr.write(`[validate-ssot-report] ${msg}\n`);
