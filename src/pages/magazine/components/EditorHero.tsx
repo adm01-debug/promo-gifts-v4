@@ -116,7 +116,10 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                 className="w-[min(680px,calc(100vw-2rem))] p-3"
               >
                 <div className="mb-2 flex items-baseline justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  <p
+                    id="magazine-template-swap-heading"
+                    className="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+                  >
                     Trocar template
                   </p>
                   <span className="text-[11px] text-muted-foreground">
@@ -126,6 +129,7 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                 <div
                   role="radiogroup"
                   aria-label="Escolher template"
+                  aria-labelledby="magazine-template-swap-heading"
                   className="grid max-h-[60vh] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 md:grid-cols-4"
                 >
                   {all.map((t) => {
