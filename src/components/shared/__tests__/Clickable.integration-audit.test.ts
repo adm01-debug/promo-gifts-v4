@@ -103,11 +103,11 @@ describe('Clickable — auditoria estrutural dos 12 call-sites', () => {
   });
 
   it('call-sites que passam ref usam tipo compatível com HTMLElement', () => {
-    // Especificamente ProductCard/ProductListItem/ProductTableRow declaram quickViewTriggerRef
+    // ProductCard/ProductListItem declaram quickViewTriggerRef que é passado ao Clickable.
+    // ProductTableRow usa forwardRef externo (ref do pai), sem useRef local no Clickable.
     const REFS = [
       'src/components/products/ProductCard.tsx',
       'src/components/products/ProductListItem.tsx',
-      'src/components/products/table-view/ProductTableRow.tsx',
     ];
     for (const f of REFS) {
       const src = read(f);
