@@ -2,6 +2,12 @@
 
 > Padrão de trabalho da Promo Brindes. Aplica-se a todo este repositório.
 
+> 🔒 **Banco canônico (SSOT):** `doufsxqlfjyuvxuezpln`
+> (`https://doufsxqlfjyuvxuezpln.supabase.co`). Toda alteração de schema,
+> migration ou edge function tem como alvo exclusivo este projeto. Detalhes
+> e aviso sobre o projeto legado em [`SUPABASE_CONNECTION.md`](SUPABASE_CONNECTION.md).
+
+
 ## 🎯 Princípio
 
 **Toda alteração em `main` passa por Pull Request.** Sem exceção. Mesmo configs.
