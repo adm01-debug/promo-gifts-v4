@@ -34,6 +34,9 @@ const LEGACY_MARKERS = [
   /\bobsolet[oa]\b/i,
   /N[ÃA]O\s+USE/i,
   /N[ÃA]O\s+USAR/i,
+  /N[ÃA]O\s+APONT/i,
+  /\bnunca\b/i,
+  /\bnever\b/i,
   /Do not use/i,
   /Don['’]t use/i,
   /\bhist[óo]ric[oa]\b/i,
@@ -44,11 +47,36 @@ const LEGACY_MARKERS = [
   /informational only/i,
   /SSOT[- ]?ALLOW/,
   /projeto legado/i,
+  /projeto antigo/i,
+  /Lovable Cloud interno/i,
+  /is_managed_by_lovable/i,
+  /sem dados reais/i,
   /reference only/i,
   /somente refer[êe]ncia/i,
   /⚠️/,
   /banco canônico/i,
   /canonical\s+(is|é)/i,
+  /substitua por/i,
+  /replace .* with/i,
+  /re[- ]?apont/i,
+  /diverg/i,
+  /re-verificado/i,
+  /não do canônico/i,
+  /execution\s+log/i,
+];
+
+// Diretórios/arquivos considerados ARQUIVOS HISTÓRICOS — menções sem
+// marcador explícito são toleradas (logs de execução, auditorias fechadas).
+// Novos documentos operacionais NÃO devem entrar aqui.
+const HISTORICAL_PATH_PATTERNS = [
+  /^docs\/redeploy\//,
+  /^docs\/audit\//,
+  /^docs\/AUDITORIA[_-]/i,
+  /^docs\/prompts\/history\//,
+  /^qa\/reports\//,
+  /^qa\/migrations-draft\//,
+  /^qa\/CANONICAL_PROJECT_REPORT\.md$/,
+  /^\.lovable\//,
 ];
 
 // Padrões que caracterizam INSTRUÇÃO OPERACIONAL (aumentam severidade se
