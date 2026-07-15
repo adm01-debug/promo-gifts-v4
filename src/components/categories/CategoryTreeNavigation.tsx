@@ -125,22 +125,14 @@ function SearchResult({
   onSelect: () => void;
 }) {
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-selected={isSelected}
+    <Clickable
+      isSelected={isSelected}
       className={cn(
-        'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+        'flex items-center gap-2 rounded-md px-3 py-2 transition-colors',
         'hover:bg-accent/50',
         isSelected && 'bg-primary/10 text-primary',
       )}
       onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
     >
       <Folder className="h-4 w-4 flex-shrink-0 text-warning" />
       <div className="min-w-0 flex-1">
@@ -152,7 +144,7 @@ function SearchResult({
       <Badge variant="outline" className="text-xs">
         Nível {category.level}
       </Badge>
-    </div>
+    </Clickable>
   );
 }
 
