@@ -405,7 +405,6 @@ describe('FRENTE-6: compareStockStatus — propriedades de comparador', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 describe('FRENTE-7: isCatalogStockStatus — type guard completude', () => {
   it('todos CATALOG_STOCK_STATUSES passam', () => {
-  it('todos CATALOG_STOCK_STATUSES passam', () => {
     expect(CATALOG_STOCK_STATUSES).not.toHaveLength(0);
     for (const s of CATALOG_STOCK_STATUSES) {
       expect(isCatalogStockStatus(s)).toBe(true);
