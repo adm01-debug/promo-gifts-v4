@@ -310,8 +310,12 @@ export default function MagazineEditorPage() {
             >
               <Download className="mr-2 h-4 w-4" /> PDF
             </Button>
-            <Button size="sm" onClick={publish} disabled={!publishable}>
-              <Share2 className="mr-2 h-4 w-4" /> Publicar
+            <Button size="sm" onClick={publish} disabled={!publishable || publishing} aria-busy={publishing}>
+              {publishing ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Publicando…</>
+              ) : (
+                <><Share2 className="mr-2 h-4 w-4" /> Publicar</>
+              )}
             </Button>
           </div>
         </div>
