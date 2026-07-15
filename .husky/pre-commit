@@ -7,6 +7,14 @@ node scripts/check-eslint-config-parses.mjs || exit 1
 # TODOS os steps seguintes viram `skipped`. Falha cedo, aqui, com o comando do fix.
 node scripts/check-lockfile-sync.mjs || exit 1
 
+# SSOT Supabase — só roda se arquivos operacionais/docs foram staged (fast-path)
+ssot_changed=$(git diff --cached --name-only | grep -E '(\.md$|src/integrations/supabase/|scripts/(validate-supabase-config|guard-canonical-project|check-docs-supabase-hosts)\.mjs$)' || true)
+if [ -n "$ssot_changed" ]; then
+  node scripts/validate-supabase-config.mjs || exit 1
+  node scripts/guard-canonical-project.mjs || exit 1
+  node scripts/check-docs-supabase-hosts.mjs || exit 1
+fi
+
 npx lint-staged
 
 # Regeneração seletiva de fixtures de PDF quando arquivos de layout mudam.
