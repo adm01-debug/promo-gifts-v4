@@ -188,10 +188,16 @@ export default function MagazineEditorPage() {
       return;
     }
     const updated = await editor.publish();
-    if (updated?.publicToken) {
+    if (!updated) {
+      toast.error('Não foi possível publicar a revista. Tente novamente.');
+      return;
+    }
+    if (updated.publicToken) {
       const url = `${window.location.origin}/revista-publica/${updated.publicToken}`;
       navigator.clipboard.writeText(url).catch(() => undefined);
       toast.success('Revista publicada. Link copiado para a área de transferência.');
+    } else {
+      toast.success('Revista publicada, mas o link público ainda não está disponível.');
     }
   };
 
