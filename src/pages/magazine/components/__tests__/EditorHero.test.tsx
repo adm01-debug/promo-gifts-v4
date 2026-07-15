@@ -173,6 +173,7 @@ describe('EditorHero — sem mini preview', () => {
 
     expect(onChangeTemplate).toHaveBeenCalledTimes(1);
     expect(screen.queryAllByRole('img')).toHaveLength(0);
+  });
 
   it('chip e botão "Trocar template" ficam na mesma linha flex do título', () => {
     renderHero();
