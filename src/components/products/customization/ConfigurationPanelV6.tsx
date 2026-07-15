@@ -68,8 +68,19 @@ export function ConfigurationPanelV6({
         : '',
   );
 
-  // Colors
-  const [numCores, setNumCores] = useState(initialColors || 1);
+  // Colors — usa ?? para preservar valor 0 legítimo vindo do backend
+  const [numCores, setNumCores] = useState<number>(initialColors ?? 1);
+
+  // Resync quando técnica ou valores iniciais mudarem (troca de técnica sem remount)
+  useEffect(() => {
+    setNumCores(initialColors ?? 1);
+  }, [technique.technique_id, initialColors]);
+  useEffect(() => {
+    if (initialWidth !== undefined) setLargura(String(initialWidth));
+  }, [technique.technique_id, initialWidth]);
+  useEffect(() => {
+    if (initialHeight !== undefined) setAltura(String(initialHeight));
+  }, [technique.technique_id, initialHeight]);
 
   // Edição local: quando confirmado, bloqueia inputs até clicar em "Editar"
   const [editing, setEditing] = useState(false);
