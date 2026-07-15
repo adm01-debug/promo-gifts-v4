@@ -1,23 +1,9 @@
 {
   "$schema": "./docs/schemas/eslint-baseline-scope.schema.json",
-  "mode": "incremental",
-  "include": [
-    "src/lib/inventory/**"
-  ],
+  "mode": "full",
+  "include": [],
   "exclude": [],
   "notes": [
-    "Modo de escopo do gate `lint:baseline`.",
-    "- mode: 'full'        → gate bloqueia regressão em qualquer arquivo (comportamento clássico).",
-    "- mode: 'incremental' → gate bloqueia SOMENTE regressões em arquivos que casam com `include` (menos `exclude`).",
-    "  Regressões fora do escopo viram informacionais (log, mas exit 0).",
-    "",
-    "Uso típico: ao concluir uma onda de correção (ex.: `src/lib/inventory/**`), adicione o glob ao `include`",
-    "para trancar o progresso e impedir novos erros nesses arquivos, sem bloquear drift alheio.",
-    "",
-    "Adicionar via CLI:  node scripts/eslint-baseline-scope-add.mjs 'src/lib/inventory/**'",
-    "Rodar em modo escopo: node scripts/check-eslint-baseline.mjs --incremental",
-    "Ou via npm:           npm run lint:baseline:incremental",
-    "",
-    "Globs suportam sintaxe minimatch (**, *, ?, {a,b}, !)."
+    "Gerido por scripts/eslint-baseline-scope-add.mjs. Ver docs no próprio arquivo inicial."
   ]
 }
