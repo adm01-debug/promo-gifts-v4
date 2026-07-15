@@ -586,11 +586,12 @@ describe('FRENTE-9: pipeline completo end-to-end', () => {
     // Os 3 status canônicos devem ter ranks específicos, não o rank "unknown" (2)
     const knownRanks = new Set([0, 1, 3]); // in-stock=0, low-stock=1, out-of-stock=3
     const stocks = [-5, 0, 1, 5, 9, 10, 50, 100];
-    stocks.forEach((s) => {
+    expect(stocks).not.toHaveLength(0);
+    for (const s of stocks) {
       const status = getCatalogStockStatus(s);
       const rank = stockStatusRank(status);
       expect(knownRanks.has(rank), `Status ${status} teve rank ${rank} (unknown)`).toBe(true);
-    });
+    }
   });
 });
 
