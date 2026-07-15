@@ -21,7 +21,7 @@
 
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import type { Magazine } from './types';
+import type { Magazine } from '@/types/magazine';
 
 export interface UseMagazinePublishArgs {
   publishable: boolean;
