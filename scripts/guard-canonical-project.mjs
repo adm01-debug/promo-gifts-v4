@@ -270,15 +270,76 @@ function runDocsPhase() {
   return { ok: false, violations };
 }
 
+// ── Fase 4: config files ──────────────────────────────────────────────────
+function collectConfigFiles() {
+  const out = [];
+  const CONFIG_EXT = /\.(ya?ml|toml|json|env(\..+)?|env)$/i;
+  const CONFIG_BASENAMES = /^(\.env(\..+)?|\.env)$/i;
+  function walk(dir, depth = 0) {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (DOC_EXCLUDE_DIRS.has(e.name)) continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        // Limita a raiz + .github/ + supabase/ + scripts/ para não vasculhar node_modules-like.
+        if (depth === 0 && !['.github', 'supabase', 'scripts', '.husky'].includes(e.name)) continue;
+        if (depth >= 4) continue;
+        walk(p, depth + 1);
+      } else if (e.isFile() && (CONFIG_EXT.test(e.name) || CONFIG_BASENAMES.test(e.name))) {
+        // Ignora lockfiles e artefatos de build/coverage.
+        if (/package-lock\.json$|bun\.lockb$|coverage\/|dist\//.test(p)) continue;
+        out.push(p);
+      }
+    }
+  }
+  walk('.');
+  return out;
+}
+
+function runConfigsPhase() {
+  console.log('[CI Guard] Fase 4/4 — Config files (.yml/.yaml/.toml/.env*/.json)…');
+  const files = collectConfigFiles();
+  const violations = [];
+  for (const file of files) {
+    const rel = file.replace(/^\.\//, '');
+    let content;
+    try { content = fs.readFileSync(file, 'utf8'); } catch { continue; }
+    if (!content.includes(FORBIDDEN_ID)) continue;
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.includes(FORBIDDEN_ID)) continue;
+      const context = [lines[i - 2], lines[i - 1], line].filter(Boolean).join('\n');
+      if (hasLegacyMarker(context)) continue;
+      if (isCommentLine(line)) continue;
+      violations.push({ file: rel, line: i + 1, text: line.trim().slice(0, 200) });
+    }
+  }
+  if (violations.length === 0) {
+    console.log('\x1b[32m[OK]\x1b[0m Nenhuma menção ao ID legado em configs.');
+    return { ok: true, violations: [] };
+  }
+  console.error('\x1b[31m[CONFIGS]\x1b[0m ' + violations.length + ' menção(ões) ao ID legado em configs:');
+  for (const v of violations.slice(0, 40)) {
+    console.error('  · ' + v.file + ':' + v.line + '  ' + v.text);
+  }
+  console.error('\nTroque pelo canônico ' + CANONICAL_ID + ' ou adicione marcador legado próximo.');
+  return { ok: false, violations };
+}
+
 // ── Runner ────────────────────────────────────────────────────────────────
 try {
-  const results = { runtime: null, docs: null };
+  const results = { runtime: null, docs: null, configs: null };
 
   if (!DOCS_ONLY) {
     results.runtime = runRuntimePhase();
   }
   if (!SKIP_DOCS) {
     results.docs = runDocsPhase();
+  }
+  if (!DOCS_ONLY && !SKIP_CONFIGS) {
+    results.configs = runConfigsPhase();
   }
 
   if (JSON_OUT) {
@@ -287,8 +348,9 @@ try {
 
   const runtimeOk = !results.runtime || results.runtime.ok;
   const docsOk = !results.docs || results.docs.ok;
+  const configsOk = !results.configs || results.configs.ok;
 
-  if (!runtimeOk || !docsOk) process.exit(1);
+  if (!runtimeOk || !docsOk || !configsOk) process.exit(1);
 
   console.log('\x1b[32m[OK]\x1b[0m Guard canônico aprovado.');
   process.exit(0);
