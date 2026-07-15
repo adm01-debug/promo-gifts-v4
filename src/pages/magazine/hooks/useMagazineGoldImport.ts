@@ -153,7 +153,13 @@ export function useMagazineGoldImport(userId: string | undefined): {
 
         if (!res.ok) {
           log.warn('magazine_import_local_failed', { status: res.status });
-          // Edge fora do ar, 401, etc. — NÃO marca migrado; tenta de novo depois.
+          // 401/403 = edge em projeto diferente (Lovable Cloud) não consegue
+          // validar o token do BD Gold (SSOT). Marca migrado para não
+          // reentrar em loop — os dados legados continuam preservados em
+          // localStorage e podem ser recuperados manualmente se preciso.
+          if (res.status === 401 || res.status === 403) {
+            markMigrated();
+          }
           setImporting(false);
           return;
         }
