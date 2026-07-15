@@ -1,25 +1,20 @@
 /**
  * EditorHero — testes de regressão.
  *
- * Garante que a mini-preview (TemplateThumbnail) foi removida do hero
- * (tanto do cabeçalho quanto do popover "Trocar template") e não regressa.
+ * Garante que a mini-preview (`TemplateThumbnail`, agora deletado do repo)
+ * não volta a ser importada/renderizada — nem no hero, nem no popover
+ * "Trocar template". Qualquer reintrodução quebraria a compilação (arquivo
+ * removido) e, na renderização, este teste verifica que nenhum elemento
+ * `role="img"` da miniatura antiga aparece na tela.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import { EditorHero } from '../EditorHero';
 import type { Magazine } from '@/types/magazine';
-
-// Mock explícito do TemplateThumbnail: se algum dia voltar a ser
-// importado/renderizado, os testes falham com marcador reconhecível.
-vi.mock('../TemplateThumbnail', () => ({
-  TemplateThumbnail: () => (
-    <div data-testid="template-thumbnail-marker" />
-  ),
-}));
 
 const magazine: Magazine = {
   id: 'mag-1',
@@ -71,7 +66,8 @@ describe('EditorHero — sem mini preview', () => {
       screen.getByRole('heading', { level: 1, name: /Nova Revista/i }),
     ).toBeInTheDocument();
     expect(screen.getByText('Magazines')).toBeInTheDocument();
-    expect(screen.queryByTestId('template-thumbnail-marker')).toBeNull();
+    // A miniatura antiga usava um SVG `role="img"` fiel. Sem ela, nada de img.
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
 
   it('popover "Trocar template" abre sem miniaturas — apenas labels', async () => {
@@ -87,7 +83,7 @@ describe('EditorHero — sem mini preview', () => {
       await screen.findByRole('radiogroup', { name: /Escolher template/i }),
     ).toBeInTheDocument();
 
-    // Nenhum TemplateThumbnail é renderizado dentro do popover
-    expect(screen.queryByTestId('template-thumbnail-marker')).toBeNull();
+    // Nenhuma miniatura renderizada dentro do popover
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
 });
