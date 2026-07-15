@@ -151,6 +151,7 @@
     "check:lint-0011": "node scripts/check-lint-0011-drift.mjs",
     "check:secdef-anon": "node scripts/check-secdef-anon-drift.mjs",
     "check:allowlist-memory": "node scripts/check-allowlist-memory-crosscheck.mjs",
+    "check:clickable": "node scripts/check-clickable-drift.mjs",
     "check:no-followup-frontend": "node scripts/check-no-followup-frontend.mjs",
     "check:summary-color-tokens": "node scripts/check-summary-color-tokens.mjs",
     "check:no-template-thumbnail": "node scripts/check-no-template-thumbnail.mjs",
