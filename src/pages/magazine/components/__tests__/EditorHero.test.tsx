@@ -173,5 +173,48 @@ describe('EditorHero — sem mini preview', () => {
 
     expect(onChangeTemplate).toHaveBeenCalledTimes(1);
     expect(screen.queryAllByRole('img')).toHaveLength(0);
+
+  it('chip e botão "Trocar template" ficam na mesma linha flex do título', () => {
+    renderHero();
+
+    const row = screen.getByTestId('magazine-hero-title-row');
+    const title = screen.getByTestId('page-title-magazine-editor');
+    const chip = screen.getByTestId('magazine-template-chip');
+    const trigger = screen.getByTestId('magazine-template-swap-trigger');
+
+    // Todos são filhos diretos do mesmo container flex
+    expect(row).toContainElement(title);
+    expect(row).toContainElement(chip);
+    expect(row).toContainElement(trigger);
+    expect(title.parentElement).toBe(row);
+    expect(chip.parentElement).toBe(row);
+    // Radix asChild pode envolver o Button; garantimos que o trigger está dentro da mesma row
+    expect(row.contains(trigger)).toBe(true);
+
+    // Container é flex-wrap com items-center (alinhamento vertical consistente)
+    expect(row.className).toMatch(/\bflex\b/);
+    expect(row.className).toMatch(/flex-wrap/);
+    expect(row.className).toMatch(/items-center/);
+  });
+
+  it('aria-expanded do botão "Trocar template" reflete o estado do popover', async () => {
+    const user = userEvent.setup();
+    renderHero();
+
+    const trigger = screen.getByTestId('magazine-template-swap-trigger');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(trigger).toHaveAttribute('aria-controls', 'magazine-template-swap-popover');
+
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('chip do template expõe aria-label descritivo (nome, família, produtos/página)', () => {
+    renderHero();
+    const chip = screen.getByTestId('magazine-template-chip');
+    expect(chip).toHaveAttribute('role', 'group');
+    expect(chip.getAttribute('aria-label')).toMatch(/Template ativo/i);
+    expect(chip.getAttribute('aria-label')).toMatch(/por página/i);
   });
 });
