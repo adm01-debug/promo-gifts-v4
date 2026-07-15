@@ -359,7 +359,7 @@ export const ProductQuickView = React.memo(
         return;
       }
 
-      const selectedColor = productColors.find((c) => c.id === selectedColorId);
+      const activeColor = productColors.find((c) => c.id === selectedColorId);
 
       addToActiveCart(
         {
@@ -369,8 +369,8 @@ export const ProductQuickView = React.memo(
           product_image_url: displayImages[currentImageIndex]?.url_cdn || product.images?.[0],
           product_price: product.price ?? 0,
           quantity,
-          color_name: selectedColor?.name || undefined,
-          color_hex: selectedColor?.hex || undefined,
+          color_name: activeColor?.name || undefined,
+          color_hex: activeColor?.hex || undefined,
         },
         cartId,
       );
