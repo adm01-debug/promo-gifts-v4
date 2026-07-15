@@ -160,6 +160,29 @@ export const TEMPLATE_REGISTRY: Record<MagazineTemplateId, TemplateEntry> = {
   },
 };
 
+/**
+ * Validação de invariantes do registry (T-N4).
+ * Executa uma vez no import; falha loud em dev, log-only em prod para não
+ * derrubar a página (fallback já protege via getTemplate).
+ */
+function validateRegistry(): void {
+  for (const [id, entry] of Object.entries(TEMPLATE_REGISTRY)) {
+    if (!Number.isInteger(entry.productsPerPage) || entry.productsPerPage <= 0) {
+      const msg =
+        `[TemplateRegistry] template "${id}" tem productsPerPage inválido ` +
+        `(${entry.productsPerPage}). Deve ser inteiro > 0. Corrija em TEMPLATE_REGISTRY.`;
+      if (import.meta.env?.DEV) throw new Error(msg);
+      // prod: log estruturado, mas não quebra
+      // eslint-disable-next-line no-console -- diagnóstico crítico único
+      console.error(msg);
+    }
+    if (!entry.Component) {
+      throw new Error(`[TemplateRegistry] template "${id}" sem Component.`);
+    }
+  }
+}
+validateRegistry();
+
 export function getTemplate(id: MagazineTemplateId): TemplateEntry {
   return TEMPLATE_REGISTRY[id] ?? TEMPLATE_REGISTRY['editorial-vogue'];
 }

@@ -32,7 +32,7 @@ export function CorporateExecutiveTemplate({ magazine, page, totalPages }: Templ
           {magazine.branding.clientLogoUrl && (
             <img
               src={magazine.branding.clientLogoUrl}
-              alt="logo"
+              alt={`Logo ${magazine.branding.clientName ?? 'do cliente'}`}
               className="h-20 w-20 object-contain"
             />
           )}
