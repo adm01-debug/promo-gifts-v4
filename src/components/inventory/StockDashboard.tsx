@@ -3,20 +3,21 @@ import { createPortal } from 'react-dom';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { useToast } from '@/hooks/ui';
 import {
-  Package,
-  TrendingDown,
-  RefreshCw,
-  Truck,
-  CheckCircle2,
-  XCircle,
-  Palette,
-  Loader2,
   AlertCircle,
-  X,
+  BarChart3,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Clock,
-  BarChart3,
+  Loader2,
+  Package,
+  Palette,
+  RefreshCw,
+  ShieldCheck,
+  TrendingDown,
+  Truck,
+  X,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -30,7 +31,6 @@ import { useRuptureAlerts } from '@/hooks/stock/useRuptureAlerts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useListUrlState } from '@/hooks/common/useListUrlState';
 import { isFeatureEnabled } from '@/lib/feature-flags';
-import { ShieldCheck } from 'lucide-react';
 
 const SupplierReliabilityTab = lazyWithRetry(() =>
   import('./supplier-reliability/SupplierReliabilityTab').then((m) => ({

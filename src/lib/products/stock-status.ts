@@ -60,7 +60,7 @@ export function isCatalogStockStatus(value: unknown): value is CatalogStockStatu
  * with getCatalogStockStatus (which also uses Number.isFinite internally).
  */
 function isPositiveFiniteStock(stock: number | null | undefined): boolean {
-  return Number.isFinite(stock) && (stock as number) > 0;
+  return Number.isFinite(stock) && (stock!) > 0;
 }
 
 /**

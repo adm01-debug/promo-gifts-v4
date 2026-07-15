@@ -28,15 +28,15 @@ export type FeatureFlag =
   | 'crm_bridge_enabled'
   | 'custom_kits_v2'
   | 'e2e_tests'
+  /**
+   * Módulo Magazine — criação de revistas/catálogos personalizados a partir
+   * do catálogo, com 10 templates de design, branding do cliente CRM,
+   * PDF (browser print) e link público via token. Rota /magazine.
+   */
+  | 'magazineModule'
   | 'magic_up'
   | 'mfa'
   | 'presentation_mode'
-  /**
-   * Onda 1 — Painel preditivo de ruptura por fornecedor (EMA α=0.3).
-   * Habilita RupturePanelEma e useRuptureAlerts na página /estoque.
-   * Banner StockHeroRiskBanner NÃO é controlado por esta flag.
-   */
-  | 'useEmaRupture'
   /**
    * Aba "Confiabilidade de Fornecedores" em /estoque. Lê
    * variant_supplier_sources (next_date_N) e stock_snapshots (chegadas reais)
@@ -59,13 +59,13 @@ export type FeatureFlag =
    * - Aplicado: 2026-06-22
    */
   | 'useColorSwatchesV2'
-  | 'voice_commands'
   /**
-   * Módulo Magazine — criação de revistas/catálogos personalizados a partir
-   * do catálogo, com 10 templates de design, branding do cliente CRM,
-   * PDF (browser print) e link público via token. Rota /magazine.
+   * Onda 1 — Painel preditivo de ruptura por fornecedor (EMA α=0.3).
+   * Habilita RupturePanelEma e useRuptureAlerts na página /estoque.
+   * Banner StockHeroRiskBanner NÃO é controlado por esta flag.
    */
-  | 'magazineModule';
+  | 'useEmaRupture'
+  | 'voice_commands';
 
 interface FlagConfig {
   /** Default enabled state */

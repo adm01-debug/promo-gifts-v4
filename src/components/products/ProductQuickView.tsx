@@ -292,7 +292,7 @@ export const ProductQuickView = React.memo(
     // DAQUELA variação (campo `stock` em `ProductColor`); ao limpar, volta ao
     // total agregado do produto. Threshold: <=0 esgotado, <10 baixo, >=10 ok.
     const selectedColor =
-      selectedColorId != null
+      selectedColorId !== null && selectedColorId !== undefined
         ? (product.colors || []).find(
             (c) => (productColors.find((pc) => pc.id === selectedColorId)?.name ?? '').toLowerCase() ===
               (c.name ?? '').toLowerCase(),
@@ -359,7 +359,7 @@ export const ProductQuickView = React.memo(
         return;
       }
 
-      const selectedColor = productColors.find((c) => c.id === selectedColorId);
+      const activeColor = productColors.find((c) => c.id === selectedColorId);
 
       addToActiveCart(
         {
@@ -369,8 +369,8 @@ export const ProductQuickView = React.memo(
           product_image_url: displayImages[currentImageIndex]?.url_cdn || product.images?.[0],
           product_price: product.price ?? 0,
           quantity,
-          color_name: selectedColor?.name || undefined,
-          color_hex: selectedColor?.hex || undefined,
+          color_name: activeColor?.name || undefined,
+          color_hex: activeColor?.hex || undefined,
         },
         cartId,
       );

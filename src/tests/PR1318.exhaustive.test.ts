@@ -8,7 +8,7 @@ function p(o: Partial<InStockProduct> = {}): InStockProduct {
   return { stock: null, stockStatus: null, variations: undefined, ...o };
 }
 function s(id: string, price: number | null | undefined): Product {
-  return { id, name: 'P-' + id, price } as unknown as Product;
+  return { id, name: `P-${id}`, price } as unknown as Product;
 }
 
 // ── A1. stockStatus canonicos ─────────────────────────────────────────────────
@@ -78,9 +78,11 @@ describe('A3 — fallback por stock (sem stockStatus)', () => {
   });
   it('stock=-Infinity → false', () => { expect(isProductInStock(p({ stock: -Infinity }))).toBe(false); });
   it('fallback alinhado: [null,undefined,NaN,Inf,-Inf,-1,0] todos false', () => {
-    [null, undefined, NaN, Infinity, -Infinity, -1, 0].forEach(stock => {
-      expect(isProductInStock(p({ stock: stock as number }))).toBe(false);
-    });
+    const stocks: (number | null | undefined)[] = [null, undefined, NaN, Infinity, -Infinity, -1, 0];
+    expect(stocks).not.toHaveLength(0);
+    for (const stock of stocks) {
+      expect(isProductInStock(p({ stock: stock! }))).toBe(false);
+    }
   });
 });
 
@@ -205,11 +207,9 @@ describe('B3 — getCatalogStockStatus x isProductInStock: SSOT consistente', ()
     [5, 1], [5, 5], [4, 5], [0, undefined], [1, undefined],
     [999, 1000], [1000, 1000],
   ];
-  matrix.forEach(([stock, minQty]) => {
-    it('stock=' + stock + ' minQty=' + minQty + ' consistente', () => {
-      const status = getCatalogStockStatus(stock, CATALOG_LOW_STOCK_THRESHOLD, minQty);
-      expect(isProductInStock({ stock, stockStatus: status })).toBe(status !== 'out-of-stock');
-    });
+  it.each(matrix)('stock=%s minQty=%s consistente', (stock, minQty) => {
+    const status = getCatalogStockStatus(stock, CATALOG_LOW_STOCK_THRESHOLD, minQty);
+    expect(isProductInStock({ stock, stockStatus: status })).toBe(status !== 'out-of-stock');
   });
   it('50 pares deterministicos: zero divergencias', () => {
     let fail = 0;
@@ -357,9 +357,10 @@ describe('D — Simulacao producao: 200 produtos', () => {
     expect(twice).toBe(once);
   });
   it('excluidos sao realmente out-of-stock', () => {
-    catalog.filter(x => !isProductInStock(x)).forEach(x => {
+    const excluded = catalog.filter((x) => !isProductInStock(x));
+    for (const x of excluded) {
       expect(isProductInStock(x)).toBe(false);
-    });
+    }
   });
   it('corrigida exclui >= produtos que a bugada (nunca mais permissiva)', () => {
     const bug = catalog.filter(x =>
@@ -508,10 +509,10 @@ describe('G — compareStockStatus: ordenacao por disponibilidade', () => {
     const sorted = [...statuses].sort(compareStockStatus);
     // Nenhum out-of-stock aparece antes de um in-stock ou low-stock
     let seenOutOfStock = false;
-    for (const s of sorted) {
-      if (s === 'out-of-stock') seenOutOfStock = true;
+    for (const status of sorted) {
+      if (status === 'out-of-stock') seenOutOfStock = true;
       if (seenOutOfStock) {
-        expect(s === 'in-stock' || s === 'low-stock').toBe(false);
+        expect(status === 'in-stock' || status === 'low-stock').toBe(false);
       }
     }
   });

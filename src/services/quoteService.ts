@@ -149,7 +149,7 @@ export const quoteService = {
         (it) =>
           it.product_id &&
           it.color_name &&
-          (!it.product_sku || !it.product_sku.includes('-')),
+          (!it.product_sku?.includes('-')),
       );
       if (candidates.length > 0) {
         const variantProductIds = Array.from(
@@ -422,7 +422,7 @@ export const quoteService = {
       sendTransactionalEmail({
         event_type: eventType,
         recipient_email: current.client_email as string,
-        recipient_name: (current.client_name as string) ?? undefined,
+        recipient_name: current.client_name ?? undefined,
         data: {
           quote_number: current.quote_number,
           total: current.total,

@@ -41,7 +41,7 @@ export interface SnapshotRow {
    * que era string, mas em runtime era number, causando TypeError em .localeCompare().
    * toStr() em matching.ts garante segurança nas comparações.
    */
-  id: string | number;
+  id: number | string;
   variant_supplier_source_id: string | null;
   supplier_id: string | null;
   variant_id: string | null;
@@ -81,7 +81,7 @@ export function extractPromisesFromSource(row: SourceRow): PromisedReplenishment
   ];
   const promises: PromisedReplenishment[] = [];
   for (const { slot, q, d } of slots) {
-    if (q == null || !Number.isFinite(q) || q <= 0) continue;
+    if (q === null || q === undefined || !Number.isFinite(q) || q <= 0) continue;
     if (!isValidDate(d)) continue;
     promises.push({
       id: `${row.id}:${slot}`,

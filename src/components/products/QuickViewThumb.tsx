@@ -51,7 +51,7 @@ interface QuickViewThumbProps {
 }
 
 export const QuickViewThumb = forwardRef<QuickViewThumbHandle, QuickViewThumbProps>(
-  function QuickViewThumb(
+  (
     {
       productId,
       productName,
@@ -65,7 +65,7 @@ export const QuickViewThumb = forwardRef<QuickViewThumbHandle, QuickViewThumbPro
       onNavigateToProduct,
     },
     ref,
-  ) {
+  ) => {
     const [open, setOpen] = useState(false);
     // Cor passada via handle imperativo sobrescreve a prop para a abertura atual.
     // Resetada para `undefined` ao fechar para evitar vazamento de estado entre aberturas.

@@ -35,10 +35,10 @@ vi.mock('@/hooks/ui/use-toast', () => ({
 }));
 
 vi.mock('@/integrations/supabase/lazy-client', () => ({
-  getSupabaseClient: vi.fn(async () => ({
-    functions: { invoke: vi.fn(async () => ({ data: null, error: null })) },
+  getSupabaseClient: vi.fn(() => Promise.resolve({
+    functions: { invoke: vi.fn(() => Promise.resolve({ data: null, error: null })) },
     auth: {
-      getSession: vi.fn(async () => ({ data: { session: null } })),
+      getSession: vi.fn(() => Promise.resolve({ data: { session: null } })),
       onAuthStateChange: vi.fn(() => ({
         data: { subscription: { unsubscribe: vi.fn() } },
       })),

@@ -122,7 +122,7 @@ export function mapLightweightToProduct(
     // Color Swatches V2 (2026-06-22) — JSONB pré-computado via fn_rebuild_color_swatches.
     // Hierarquia P1→P4, 7.153 produtos, 16.631 swatches, 97,4% CF CDN.
     // Habilita ColorSwatchPicker quando useColorSwatchesV2=true e o array não estiver vazio.
-    color_swatches: (p.color_swatches as ColorSwatch[] | undefined | null) ?? undefined,
+    color_swatches: (p.color_swatches as ColorSwatch[] | null | undefined) ?? undefined,
     has_colors: p.has_colors ?? null,
   };
 }

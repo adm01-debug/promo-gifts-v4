@@ -35,8 +35,8 @@ describe('FRENTE-1: divergência entre getCatalogStockStatus e getVariationStock
     for (const stock of stocks) {
       for (const minQty of minQtys) {
         for (const threshold of [5, 10, 20]) {
-          const fromCatalog = getCatalogStockStatus(stock, threshold, minQty as number);
-          const fromVariation = getVariationStockStatus(stock, minQty as number, threshold);
+          const fromCatalog = getCatalogStockStatus(stock, threshold, minQty!);
+          const fromVariation = getVariationStockStatus(stock, minQty!, threshold);
           if (fromCatalog !== fromVariation) {
             divergences++;
             diffs.push(`stock=${stock} minQty=${minQty} t=${threshold}: catalog=${fromCatalog} var=${fromVariation}`);
@@ -51,13 +51,14 @@ describe('FRENTE-1: divergência entre getCatalogStockStatus e getVariationStock
     const extremes: (number | null | undefined)[] = [
       Infinity, -Infinity, NaN, null, undefined,
     ];
-    extremes.forEach((s) => {
-      const c = getCatalogStockStatus(s as number);
-      const v = getVariationStockStatus(s as number, undefined);
+    expect(extremes).not.toHaveLength(0);
+    for (const s of extremes) {
+      const c = getCatalogStockStatus(s!);
+      const v = getVariationStockStatus(s!, undefined);
       expect(c, `catalog divergiu para ${s}`).toBe('out-of-stock');
       expect(v, `variation divergiu para ${s}`).toBe('out-of-stock');
       expect(c).toBe(v);
-    });
+    }
   });
 
   it('getVariationStockStatus: 5000 cenarios aleatorios deterministicos — consistencia com getCatalogStockStatus', () => {
@@ -291,7 +292,7 @@ describe('FRENTE-4: contrato de prioridade variação > produto.stockStatus', ()
 describe('FRENTE-5: minStock filter correctness via Number.isFinite', () => {
   // Simula o filtro diretamente para não depender do hook
   const applyMinStockFilter = (stock: number | null | undefined, threshold: number): boolean =>
-    Number.isFinite(stock) && (stock as number) >= threshold;
+    Number.isFinite(stock) && (stock!) >= threshold;
 
   it('Infinity nunca passa (BUG-MINSTOCK-INF)', () => {
     expect(applyMinStockFilter(Infinity, 1)).toBe(false);
@@ -337,21 +338,23 @@ describe('FRENTE-6: compareStockStatus — propriedades de comparador', () => {
   const statuses = ['in-stock', 'low-stock', 'out-of-stock', null, undefined, 'critical', 'IN-STOCK', 'LOW-STOCK'] as const;
 
   it('reflexividade: compareStockStatus(a,a) = 0', () => {
-    statuses.forEach((s) => {
+    expect(statuses).not.toHaveLength(0);
+    for (const s of statuses) {
       expect(compareStockStatus(s as string, s as string)).toBe(0);
-    });
+    }
   });
 
   it('anti-simetria: sign(compare(a,b)) = -sign(compare(b,a))', () => {
-    statuses.forEach((a) => {
-      statuses.forEach((b) => {
+    expect(statuses).not.toHaveLength(0);
+    for (const a of statuses) {
+      for (const b of statuses) {
         const ab = compareStockStatus(a as string, b as string);
         const ba = compareStockStatus(b as string, a as string);
         // Fix: Math.sign(0) + Math.sign(0) = 0, sign(x) + sign(-x) = 0 para x!=0
         // toBe(-Math.sign(ba)) falha quando ambos=0 pois Object.is(0,-0)=false
         expect(Math.sign(ab) + Math.sign(ba)).toBe(0);
-      });
-    });
+      }
+    }
   });
 
   it('transitividade: a<b e b<c → a<c', () => {
@@ -359,9 +362,9 @@ describe('FRENTE-6: compareStockStatus — propriedades de comparador', () => {
     for (let i = 0; i < ordered.length - 2; i++) {
       for (let j = i + 1; j < ordered.length - 1; j++) {
         for (let k = j + 1; k < ordered.length; k++) {
-          const ab = compareStockStatus(ordered[i] as string, ordered[j] as string);
-          const bc = compareStockStatus(ordered[j] as string, ordered[k] as string);
-          const ac = compareStockStatus(ordered[i] as string, ordered[k] as string);
+          const ab = compareStockStatus(ordered[i]!, ordered[j]!);
+          const bc = compareStockStatus(ordered[j]!, ordered[k]!);
+          const ac = compareStockStatus(ordered[i]!, ordered[k]!);
           expect(ab).toBeLessThanOrEqual(0);
           expect(bc).toBeLessThanOrEqual(0);
           expect(ac).toBeLessThanOrEqual(0);
@@ -402,27 +405,34 @@ describe('FRENTE-6: compareStockStatus — propriedades de comparador', () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 describe('FRENTE-7: isCatalogStockStatus — type guard completude', () => {
   it('todos CATALOG_STOCK_STATUSES passam', () => {
-    CATALOG_STOCK_STATUSES.forEach((s) => {
+    expect(CATALOG_STOCK_STATUSES).not.toHaveLength(0);
+    for (const s of CATALOG_STOCK_STATUSES) {
       expect(isCatalogStockStatus(s)).toBe(true);
-    });
+    }
   });
 
   it('versões maiúsculas NÃO passam (type guard é case-sensitive)', () => {
-    ['IN-STOCK', 'LOW-STOCK', 'OUT-OF-STOCK'].forEach((s) => {
+    const upper = ['IN-STOCK', 'LOW-STOCK', 'OUT-OF-STOCK'];
+    expect(upper).not.toHaveLength(0);
+    for (const s of upper) {
       expect(isCatalogStockStatus(s)).toBe(false);
-    });
+    }
   });
 
   it('underscore domain NÃO passa', () => {
-    ['in_stock', 'low_stock', 'out_of_stock', 'critical'].forEach((s) => {
+    const under = ['in_stock', 'low_stock', 'out_of_stock', 'critical'];
+    expect(under).not.toHaveLength(0);
+    for (const s of under) {
       expect(isCatalogStockStatus(s)).toBe(false);
-    });
+    }
   });
 
   it('tipos não-string NÃO passam', () => {
-    [null, undefined, 0, 1, true, false, [], {}, Symbol('in-stock')].forEach((v) => {
+    const nonStrings: unknown[] = [null, undefined, 0, 1, true, false, [], {}, Symbol('in-stock')];
+    expect(nonStrings).not.toHaveLength(0);
+    for (const v of nonStrings) {
       expect(isCatalogStockStatus(v)).toBe(false);
-    });
+    }
   });
 
   it('narrowing funciona: após isCatalogStockStatus, array.includes não precisaria cast', () => {
@@ -523,7 +533,8 @@ describe('FRENTE-9: pipeline completo end-to-end', () => {
     });
 
     // INVARIANTE 1: produto com status calculado via pipeline → isProductInStock consistente
-    products.forEach((prod) => {
+    expect(products).not.toHaveLength(0);
+    for (const prod of products) {
       const inStockByStatus = prod.productStatus !== 'out-of-stock';
       const inStockByFunc = isProductInStock({
         stock: prod.stock,
@@ -536,30 +547,31 @@ describe('FRENTE-9: pipeline completo end-to-end', () => {
         expect(inStockByFunc).toBe(inStockByStatus);
       }
       // Com variações: pode diferir pois variação tem sua própria lógica
-    });
+    }
 
     // INVARIANTE 2: sort por compareStockStatus é estável (in-stock sempre antes de out-of-stock)
-    const withStatus = products.map((p) => ({
-      ...p,
-      sortStatus: p.productStatus,
+    const withStatus = products.map((prod) => ({
+      ...prod,
+      sortStatus: prod.productStatus,
     }));
     withStatus.sort((a, b) => compareStockStatus(a.sortStatus, b.sortStatus));
     
     let seenOut = false;
-    withStatus.forEach((p) => {
-      if (p.sortStatus === 'out-of-stock') seenOut = true;
-      if (seenOut && (p.sortStatus === 'in-stock' || p.sortStatus === 'low-stock')) {
-        throw new Error(`Sort violado: in/low-stock após out-of-stock para produto ${p.id}`);
+    for (const prod of withStatus) {
+      if (prod.sortStatus === 'out-of-stock') seenOut = true;
+      if (seenOut && (prod.sortStatus === 'in-stock' || prod.sortStatus === 'low-stock')) {
+        throw new Error(`Sort violado: in/low-stock após out-of-stock para produto ${prod.id}`);
       }
-    });
+    }
   });
 
   it('SSOT: todos os status retornados por getCatalogStockStatus passam em isCatalogStockStatus', () => {
     const stocks = [-5, 0, 1, 5, 9, 10, 50, 100, null, undefined, NaN, Infinity];
-    stocks.forEach((s) => {
-      const status = getCatalogStockStatus(s as number);
+    expect(stocks).not.toHaveLength(0);
+    for (const s of stocks) {
+      const status = getCatalogStockStatus(s!);
       expect(isCatalogStockStatus(status)).toBe(true);
-    });
+    }
   });
 
   it('SSOT: todos os status retornados por getVariationStockStatus passam em isCatalogStockStatus', () => {
@@ -575,11 +587,12 @@ describe('FRENTE-9: pipeline completo end-to-end', () => {
     // Os 3 status canônicos devem ter ranks específicos, não o rank "unknown" (2)
     const knownRanks = new Set([0, 1, 3]); // in-stock=0, low-stock=1, out-of-stock=3
     const stocks = [-5, 0, 1, 5, 9, 10, 50, 100];
-    stocks.forEach((s) => {
+    expect(stocks).not.toHaveLength(0);
+    for (const s of stocks) {
       const status = getCatalogStockStatus(s);
       const rank = stockStatusRank(status);
       expect(knownRanks.has(rank), `Status ${status} teve rank ${rank} (unknown)`).toBe(true);
-    });
+    }
   });
 });
 

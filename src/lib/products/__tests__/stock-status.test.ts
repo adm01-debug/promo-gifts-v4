@@ -5,6 +5,8 @@ import {
   getVariationStockStatus,
   OUT_OF_STOCK,
   CATALOG_STOCK_STATUSES,
+  compareStockStatus,
+  stockStatusRank,
   type CatalogStockStatusValue,
 } from '../stock-status';
 
@@ -150,15 +152,15 @@ describe('CATALOG_STOCK_STATUSES', () => {
     expect(CATALOG_STOCK_STATUSES).toContain('out-of-stock');
   });
   it('todos são strings com hífen', () => {
-    CATALOG_STOCK_STATUSES.forEach(s => {
+    expect(CATALOG_STOCK_STATUSES).not.toHaveLength(0);
+    for (const s of CATALOG_STOCK_STATUSES) {
       expect(typeof s).toBe('string');
       expect(s).toMatch(/-/);
-    });
+    }
   });
 });
 
 // ── compareStockStatus + stockStatusRank ──────────────────────────────────────
-import { compareStockStatus, stockStatusRank } from '../stock-status';
 
 describe('stockStatusRank', () => {
   it('in-stock = 0 (mais disponível)', () => { expect(stockStatusRank('in-stock')).toBe(0); });

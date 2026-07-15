@@ -23,8 +23,8 @@ import type {
   ReliabilityConfig,
   ReplenishmentMatch,
   UnmatchedPromise,
+  DEFAULT_RELIABILITY_CONFIG,
 } from './types';
-import { DEFAULT_RELIABILITY_CONFIG } from './types';
 
 const MS_PER_DAY = 86_400_000;
 
@@ -44,7 +44,7 @@ function diffDays(aIso: string, bIso: string): number {
  * causando TypeError: d.id.localeCompare is not a function em runtime.
  */
 function toStr(v: unknown): string {
-  if (v == null) return '';
+  if (v === null || v === undefined) return '';
   return typeof v === 'string' ? v : String(v);
 }
 
