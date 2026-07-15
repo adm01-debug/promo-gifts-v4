@@ -89,6 +89,7 @@ export function SupplierReliabilityTable({
   const Header = ({ k, label, align = 'left' }: { k: SortKey; label: string; align?: 'left' | 'right' }) => (
     <th
       scope="col"
+      aria-sort={sortKey === k ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
       className={cn(
         'sticky top-0 z-10 bg-card px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground',
         align === 'right' && 'text-right',
@@ -98,7 +99,6 @@ export function SupplierReliabilityTable({
         type="button"
         className="inline-flex items-center gap-1 hover:text-foreground"
         onClick={() => toggleSort(k)}
-        aria-sort={sortKey === k ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
       >
         {label}
         <ArrowUpDown

@@ -503,7 +503,6 @@ export default function FiltersPage() {
                               ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
                               : 'hover:border-primary/50',
                           )}
-
                           onClick={toggleSelectionMode}
                           aria-label={
                             state.selectionMode

@@ -238,7 +238,7 @@ export function ProductCustomizationOptions({
         <p className="mt-1 text-[11px] text-muted-foreground">{msg}</p>
         <button
           type="button"
-          onClick={() => void refetch()}
+          onClick={() => { refetch(); }}
           className="mt-2 rounded-md bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
         >
           Tentar novamente

@@ -152,7 +152,8 @@ describe('CATALOG_STOCK_STATUSES', () => {
     expect(CATALOG_STOCK_STATUSES).toContain('out-of-stock');
   });
   it('todos são strings com hífen', () => {
-    CATALOG_STOCK_STATUSES.forEach(s => {
+    expect(CATALOG_STOCK_STATUSES).not.toHaveLength(0);
+    CATALOG_STOCK_STATUSES.forEach((s) => {
       expect(typeof s).toBe('string');
       expect(s).toMatch(/-/);
     });
@@ -160,7 +161,6 @@ describe('CATALOG_STOCK_STATUSES', () => {
 });
 
 // ── compareStockStatus + stockStatusRank ──────────────────────────────────────
-import { compareStockStatus, stockStatusRank } from '../stock-status';
 
 describe('stockStatusRank', () => {
   it('in-stock = 0 (mais disponível)', () => { expect(stockStatusRank('in-stock')).toBe(0); });

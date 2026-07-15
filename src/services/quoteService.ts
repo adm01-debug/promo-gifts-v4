@@ -422,7 +422,7 @@ export const quoteService = {
       sendTransactionalEmail({
         event_type: eventType,
         recipient_email: current.client_email as string,
-        recipient_name: (current.client_name!) ?? undefined,
+        recipient_name: current.client_name ?? undefined,
         data: {
           quote_number: current.quote_number,
           total: current.total,
