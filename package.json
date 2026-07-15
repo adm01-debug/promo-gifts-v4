@@ -70,6 +70,8 @@
     "lint": "node scripts/check-tsc-baseline.mjs",
     "lint:check": "npm run lint:config && eslint src --max-warnings=0",
     "lint:baseline": "npm run lint:config && node scripts/check-eslint-baseline.mjs",
+    "lint:baseline:incremental": "npm run lint:config && node scripts/check-eslint-baseline.mjs --incremental",
+    "lint:baseline:scope": "node scripts/eslint-baseline-scope-add.mjs",
     "lint:baseline:update": "node scripts/eslint-baseline-generate.mjs",
     "typecheck": "node scripts/check-tsc-baseline.mjs",
     "qa:lint": "npm run lint:config && eslint src --max-warnings=0",
