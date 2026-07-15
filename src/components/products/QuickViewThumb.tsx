@@ -26,6 +26,7 @@ import { ProductQuickView } from './ProductQuickView';
 import { useProduct } from '@/hooks/products/useProducts';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { Clickable } from '@/components/shared/Clickable';
 import { cn } from '@/lib/utils';
 import type { Product } from '@/hooks/products';
 
