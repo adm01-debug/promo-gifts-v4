@@ -123,6 +123,21 @@ writeFileSync(SCHEMA_PATH, newSchemaText);
 writeFileSync(EMITTER_PATH, newEmitterText);
 writeFileSync(CHANGELOG_PATH, newChangelogText);
 
+// Auto-publica os mirrors em public/schemas/ — mantém endpoint estável em dia
+// junto com o bump. Falhas aqui só emitem aviso: o gate `publish:check` no CI
+// bloqueia PRs com drift, então o commit continua consistente.
+try {
+  const { spawnSync } = await import('child_process');
+  const pub = spawnSync('node', ['scripts/publish-ssot-schema.mjs'], { encoding: 'utf8' });
+  if (pub.status !== 0) {
+    process.stderr.write(`[ssot-report-bump] ⚠ publish-ssot-schema falhou (exit ${pub.status}):\n${pub.stderr}\n`);
+  } else {
+    process.stderr.write(`[ssot-report-bump] ✓ mirrors public/schemas/ sincronizados\n`);
+  }
+} catch (e) {
+  process.stderr.write(`[ssot-report-bump] ⚠ não foi possível auto-publicar: ${e.message}\n`);
+}
+
 process.stdout.write(JSON.stringify({ ok: true, ...plan }, null, 2) + '\n');
 process.stderr.write(
   `[ssot-report-bump] ✓ ${currentSchemaVersion} → ${next} (${KIND}). Commit dedicado + rodar "npm run ssot:report && npm run ssot:report:validate" antes de push.\n`,
