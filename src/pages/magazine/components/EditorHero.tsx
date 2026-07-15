@@ -183,6 +183,13 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
               </PopoverContent>
             </Popover>
           </div>
+          </div>
+
+          {magazine.subtitle && (
+            <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+              {magazine.subtitle}
+            </p>
+          )}
         </div>
       </div>
     </section>
