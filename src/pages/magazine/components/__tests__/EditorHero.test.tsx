@@ -1,25 +1,20 @@
 /**
  * EditorHero — testes de regressão.
  *
- * Garante que a mini-preview (TemplateThumbnail) foi removida do hero
- * (tanto do cabeçalho quanto do popover "Trocar template") e não regressa.
+ * Garante que a mini-preview (`TemplateThumbnail`, agora deletado do repo)
+ * não volta a ser importada/renderizada — nem no hero, nem no popover
+ * "Trocar template". Qualquer reintrodução quebraria a compilação (arquivo
+ * removido) e, na renderização, este teste verifica que nenhum elemento
+ * `role="img"` da miniatura antiga aparece na tela.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 import { EditorHero } from '../EditorHero';
 import type { Magazine } from '@/types/magazine';
-
-// Mock explícito do TemplateThumbnail: se algum dia voltar a ser
-// importado/renderizado, os testes falham com marcador reconhecível.
-vi.mock('../TemplateThumbnail', () => ({
-  TemplateThumbnail: () => (
-    <div data-testid="template-thumbnail-marker" />
-  ),
-}));
 
 const magazine: Magazine = {
   id: 'mag-1',
