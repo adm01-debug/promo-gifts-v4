@@ -153,6 +153,6 @@ export function CollectionListItem({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </motion.div>
+    </Clickable>
   );
 }
