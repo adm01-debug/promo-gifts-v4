@@ -51,6 +51,9 @@ jobs:
       - name: 🚫 Sem follow-up no frontend (src/)
         run: npm run check:no-followup-frontend
 
+      - name: 🖼️ Iframe sandbox gate (allow-scripts + allow-same-origin)
+        run: npm run check:iframe-sandbox
+
 
 
 
