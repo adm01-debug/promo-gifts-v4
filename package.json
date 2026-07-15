@@ -77,6 +77,8 @@
     "ssot:guard": "node scripts/guard-canonical-project.mjs",
     "ssot:hosts": "node scripts/check-docs-supabase-hosts.mjs",
     "ssot:all": "npm run ssot:validate && npm run ssot:guard && npm run ssot:hosts",
+    "ssot:report": "node scripts/ssot-report.mjs",
+    "ssot:report:json": "node scripts/ssot-report.mjs --json",
     "typecheck": "node scripts/check-tsc-baseline.mjs",
     "qa:lint": "npm run lint:config && eslint src --max-warnings=0",
     "qa:typecheck": "tsc -p tsconfig.app.json --noEmit",
