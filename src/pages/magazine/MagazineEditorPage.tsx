@@ -28,6 +28,7 @@ import {
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 import { useMagazineEditor } from './useMagazineEditor';
+import { useMagazinePublish } from './useMagazinePublish';
 import { paginateMagazine } from './pagination';
 import { PreviewSidebar } from './components/PreviewSidebar';
 import { EditorHero } from './components/EditorHero';
@@ -182,64 +183,11 @@ export default function MagazineEditorPage() {
     setStep(target);
   };
 
-  const [publishing, setPublishing] = useState(false);
+  const { publishing, publish } = useMagazinePublish({
+    publishable,
+    publishFn: editor.publish,
+  });
 
-  const publish = async () => {
-    if (!publishable) {
-      toast.error('Não é possível publicar ainda.', {
-        description: 'Complete o título e adicione ao menos um produto antes de publicar.',
-      });
-      return;
-    }
-    if (publishing) return;
-    setPublishing(true);
-    try {
-      let updated: Awaited<ReturnType<typeof editor.publish>> = null;
-      try {
-        updated = await editor.publish();
-      } catch (err) {
-        toast.error('Falha ao publicar a revista.', {
-          description:
-            err instanceof Error && err.message
-              ? `Erro do servidor: ${err.message}`
-              : 'Não foi possível concluir o UPDATE no banco. Verifique sua conexão e tente novamente.',
-        });
-        return;
-      }
-
-      if (!updated) {
-        toast.error('Falha ao publicar a revista.', {
-          description:
-            'O UPDATE não retornou dados — a operação pode ter sido bloqueada por permissões (RLS) ou por indisponibilidade do banco. Tente novamente em alguns segundos.',
-        });
-        return;
-      }
-
-      if (!updated.publicToken) {
-        // Sucesso parcial: status publicado, mas token ausente.
-        toast.warning('Revista publicada, mas sem link público.', {
-          description:
-            'O status foi atualizado, porém o token público ficou vazio. Republique em instantes ou contate o suporte se o problema persistir.',
-        });
-        return;
-      }
-
-      const url = `${window.location.origin}/revista-publica/${updated.publicToken}`;
-      try {
-        await navigator.clipboard.writeText(url);
-        toast.success('Revista publicada com sucesso.', {
-          description: `Link copiado: ${url}`,
-        });
-      } catch {
-        // Copiar falhou (permissão negada / contexto não seguro) — mostrar link mesmo assim.
-        toast.success('Revista publicada com sucesso.', {
-          description: `Não foi possível copiar automaticamente. Link: ${url}`,
-        });
-      }
-    } finally {
-      setPublishing(false);
-    }
-  };
 
   const openPrint = () => window.open(`/magazine/${magazine.id}/print`, '_blank');
 
