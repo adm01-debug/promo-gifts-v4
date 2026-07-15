@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-15T14:43:26.368Z",
-  "totalErrors": 350,
+  "generatedAt": "2026-07-15T14:56:20.281Z",
+  "totalErrors": 196,
   "counts": {
     "src/components/admin/__tests__/DiscountApprovalHeaderBadge.test.tsx": {
       "@typescript-eslint/consistent-type-imports": 1
@@ -13,9 +13,6 @@
     "src/components/audit/__tests__/AuditHistory.a11y.test.tsx": {
       "@typescript-eslint/consistent-type-imports": 1,
       "no-restricted-syntax": 1
-    },
-    "src/components/cart/__tests__/CartItemErrorAlert.test.tsx": {
-      "no-duplicate-imports": 1
     },
     "src/components/cart/__tests__/CartLimitExhaustive.test.tsx": {
       "no-sync": 4
@@ -30,8 +27,9 @@
       "no-restricted-syntax": 6
     },
     "src/components/dashboard/MyDiscountRequestsWidget.tsx": {
-      "eqeqeq": 2,
-      "no-eq-null": 2
+      "eqeqeq": 1,
+      "no-eq-null": 1,
+      "react/jsx-no-comment-textnodes": 1
     },
     "src/components/pdf/__tests__/PropostaComercialTailwind.watermark.regression.test.tsx": {
       "no-restricted-syntax": 2
@@ -47,11 +45,7 @@
       "react/jsx-props-no-multi-spaces": 1
     },
     "src/components/products/__tests__/ColorSwatchInlineSelect.exhaustive.test.tsx": {
-      "no-duplicate-imports": 1,
       "no-restricted-syntax": 5
-    },
-    "src/components/products/__tests__/ColorSwatchOverflowChip.test.tsx": {
-      "no-duplicate-imports": 1
     },
     "src/components/products/__tests__/ColorSwatchTwoLineOverflow.test.tsx": {
       "no-restricted-syntax": 2
@@ -62,14 +56,7 @@
     "src/components/products/customization/__tests__/ConfigurationPanelV6.collapse.test.tsx": {
       "import/first": 1
     },
-    "src/components/products/customization/__tests__/ConfigurationPanelV6.confirmed-title.test.tsx": {
-      "@typescript-eslint/require-await": 3
-    },
-    "src/components/products/customization/__tests__/ConfigurationPanelV6.header-snapshot.test.tsx": {
-      "@typescript-eslint/require-await": 3
-    },
     "src/components/products/customization/__tests__/ConfigurationPanelV6.size-line-layout.test.tsx": {
-      "@typescript-eslint/require-await": 3,
       "logical-assignment-operators": 1
     },
     "src/components/quotes/PdfGenerationDialog.tsx": {
@@ -89,26 +76,9 @@
     "src/components/quotes/QuotesConfigurableList.tsx": {
       "@typescript-eslint/no-unused-vars": 2
     },
-    "src/components/quotes/QuotesStatusChips.tsx": {
-      "eqeqeq": 2,
-      "no-eq-null": 2
-    },
-    "src/components/quotes/__tests__/PdfGenerationDialog.a11y.test.tsx": {
-      "@typescript-eslint/require-await": 1
-    },
     "src/components/quotes/__tests__/PdfGenerationDialog.exhaustive.test.tsx": {
       "@typescript-eslint/no-loop-func": 1,
-      "@typescript-eslint/require-await": 2,
       "no-restricted-syntax": 3
-    },
-    "src/components/quotes/__tests__/PdfGenerationDialog.footerButton.test.tsx": {
-      "@typescript-eslint/require-await": 1
-    },
-    "src/components/quotes/__tests__/PdfGenerationDialog.headerWarning.test.tsx": {
-      "@typescript-eslint/require-await": 1
-    },
-    "src/components/quotes/__tests__/PdfGenerationDialog.print.test.tsx": {
-      "@typescript-eslint/require-await": 4
     },
     "src/components/quotes/__tests__/QuoteBuilderStepper.test.tsx": {
       "no-restricted-syntax": 2
@@ -124,9 +94,6 @@
     "src/components/quotes/__tests__/QuoteBuilderSummaryColumn.saveDraft.test.tsx": {
       "no-promise-executor-return": 1
     },
-    "src/components/quotes/__tests__/QuoteStatusTimeline.states.test.tsx": {
-      "@typescript-eslint/require-await": 1
-    },
     "src/components/quotes/__tests__/QuotesConfigurableList.selection.test.tsx": {
       "no-restricted-syntax": 1
     },
@@ -140,28 +107,17 @@
     "src/components/ui/date-picker-field.tsx": {
       "jsx-a11y/role-supports-aria-props": 1
     },
-    "src/contexts/__tests__/SellerCartContext.deleteRestoreTelemetry.test.tsx": {
-      "@typescript-eslint/require-await": 1
-    },
     "src/contexts/__tests__/SellerCartContext.okNoMetrics.test.tsx": {
-      "@typescript-eslint/no-explicit-any": 1,
-      "@typescript-eslint/require-await": 1
+      "@typescript-eslint/no-explicit-any": 1
     },
     "src/contexts/__tests__/SellerCartContext.restorePointer.test.tsx": {
       "@typescript-eslint/consistent-type-imports": 1
-    },
-    "src/contexts/__tests__/SellerCartContext.restoreRpc.test.tsx": {
-      "@typescript-eslint/require-await": 1
-    },
-    "src/contexts/__tests__/SellerCartContext.restoreTelemetry.test.tsx": {
-      "@typescript-eslint/require-await": 2
     },
     "src/hooks/admin/useV4Callbacks.ts": {
       "@typescript-eslint/no-explicit-any": 1
     },
     "src/hooks/auth/__tests__/login-flow.test.ts": {
       "@typescript-eslint/no-unused-vars": 2,
-      "@typescript-eslint/require-await": 1,
       "no-promise-executor-return": 3
     },
     "src/hooks/auth/useProfileRoles.ts": {
@@ -170,17 +126,8 @@
     "src/hooks/collections/useCollections.ts": {
       "react-hooks/exhaustive-deps": 1
     },
-    "src/hooks/common/__tests__/useListUrlState.fuzz.test.tsx": {
-      "no-duplicate-imports": 1
-    },
-    "src/hooks/common/__tests__/useListUrlState.test.tsx": {
-      "no-duplicate-imports": 1
-    },
     "src/hooks/common/usePrefetchOnHover.ts": {
       "@typescript-eslint/no-invalid-void-type": 1
-    },
-    "src/hooks/customization/__tests__/useCustomizationCollapsePrefs.test.ts": {
-      "@typescript-eslint/require-await": 3
     },
     "src/hooks/products/__tests__/useDebouncedCartItemActions.test.tsx": {
       "@typescript-eslint/no-invalid-void-type": 2
@@ -190,24 +137,10 @@
     },
     "src/hooks/products/__tests__/useSellerCarts.updateItemQuantity.rollback.test.tsx": {
       "@typescript-eslint/no-shadow": 1,
-      "@typescript-eslint/require-await": 2,
       "no-shadow": 1
     },
-    "src/hooks/products/useDebouncedCartItemActions.ts": {
-      "eqeqeq": 1,
-      "no-eq-null": 1
-    },
-    "src/hooks/products/useProductMatch.ts": {
-      "eqeqeq": 3,
-      "no-eq-null": 3
-    },
     "src/hooks/products/useSellerCarts.ts": {
-      "eqeqeq": 4,
-      "no-eq-null": 4,
       "no-promise-executor-return": 1
-    },
-    "src/hooks/quotes/__tests__/discountApprovalFlow.test.ts": {
-      "@typescript-eslint/require-await": 2
     },
     "src/hooks/quotes/useDiscountApproval.ts": {
       "@typescript-eslint/no-shadow": 1,
@@ -219,10 +152,6 @@
     },
     "src/lib/product-bounds-detector.ts": {
       "@typescript-eslint/naming-convention": 1
-    },
-    "src/lib/quotes/__tests__/collapsedItemsStorage.fuzz.test.ts": {
-      "eqeqeq": 1,
-      "no-eq-null": 1
     },
     "src/lib/quotes/__tests__/collapsedItemsStorage.test.ts": {
       "no-restricted-syntax": 1
@@ -239,9 +168,7 @@
       "@typescript-eslint/no-unused-vars": 3
     },
     "src/lib/telemetry/navigationMetrics.ts": {
-      "@typescript-eslint/naming-convention": 1,
-      "eqeqeq": 1,
-      "no-eq-null": 1
+      "@typescript-eslint/naming-convention": 1
     },
     "src/pages/__visual/QuoteViewOrderHarness.tsx": {
       "logical-assignment-operators": 1
@@ -251,40 +178,23 @@
     },
     "src/pages/magazine/PublicMagazineView.tsx": {
       "@typescript-eslint/no-shadow": 1,
-      "eqeqeq": 2,
-      "no-eq-null": 2,
       "no-shadow": 1,
       "react-hooks/exhaustive-deps": 1
     },
-    "src/pages/magazine/__tests__/pagination.property.test.ts": {
-      "no-duplicate-imports": 1
-    },
-    "src/pages/magazine/__tests__/pagination.test.ts": {
-      "no-duplicate-imports": 1
-    },
     "src/pages/magazine/__tests__/publishAwait.regression.test.ts": {
-      "@typescript-eslint/require-await": 7,
-      "no-duplicate-imports": 1,
       "no-promise-executor-return": 1
-    },
-    "src/pages/magazine/__tests__/stepValidation.matrix.test.ts": {
-      "no-duplicate-imports": 1
-    },
-    "src/pages/magazine/__tests__/stepValidation.test.ts": {
-      "no-duplicate-imports": 1
     },
     "src/pages/magazine/__tests__/useMagazineEditor.staleRef.test.ts": {
       "@typescript-eslint/no-shadow": 2,
-      "@typescript-eslint/require-await": 23,
-      "no-duplicate-imports": 1,
       "no-shadow": 2
     },
     "src/pages/magazine/components/MagazineErrorBoundary.tsx": {
       "react/state-in-constructor": 1
     },
     "src/pages/magazine/components/MagazineMiniMap.tsx": {
-      "eqeqeq": 3,
-      "no-eq-null": 3
+      "eqeqeq": 1,
+      "no-eq-null": 1,
+      "react/jsx-no-comment-textnodes": 1
     },
     "src/pages/magazine/components/PublicMagazineToc.tsx": {
       "jsx-a11y/no-redundant-roles": 1
@@ -292,16 +202,11 @@
     "src/pages/magazine/components/__tests__/EditorHero.test.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
-    "src/pages/magazine/components/steps/LayoutStep.tsx": {
-      "no-duplicate-imports": 1
-    },
     "src/pages/magazine/hooks/__tests__/useMagazineGoldImport.test.ts": {
-      "@typescript-eslint/require-await": 2,
       "no-promise-executor-return": 3
     },
     "src/pages/magazine/hooks/__tests__/useMagazineReaderState.test.ts": {
       "@typescript-eslint/require-array-sort-compare": 2,
-      "@typescript-eslint/require-await": 13,
       "no-multi-assign": 1,
       "no-promise-executor-return": 10
     },
@@ -311,14 +216,6 @@
     "src/pages/magazine/hooks/useMagazineReaderState.ts": {
       "@typescript-eslint/prefer-promise-reject-errors": 1,
       "no-console": 3
-    },
-    "src/pages/magazine/hooks/usePageZoom.ts": {
-      "eqeqeq": 2,
-      "no-eq-null": 2
-    },
-    "src/pages/magazine/hooks/usePresentationMode.ts": {
-      "eqeqeq": 2,
-      "no-eq-null": 2
     },
     "src/pages/magazine/useMagazineEditor.ts": {
       "@typescript-eslint/no-shadow": 1,
@@ -358,9 +255,6 @@
     "src/pages/products/seller-carts/__tests__/CartStatusSelect.timeout.test.tsx": {
       "import/first": 1
     },
-    "src/pages/quotes/QuoteViewPage.tsx": {
-      "no-duplicate-imports": 1
-    },
     "src/pages/quotes/QuotesListPage.tsx": {
       "@typescript-eslint/no-unused-vars": 1
     },
@@ -388,37 +282,19 @@
       "no-restricted-syntax": 2
     },
     "src/pages/quotes/__tests__/useQuotesListPage.bulkDelete.test.tsx": {
-      "@typescript-eslint/consistent-type-imports": 1,
-      "@typescript-eslint/require-await": 3
+      "@typescript-eslint/consistent-type-imports": 1
     },
     "src/pages/quotes/__tests__/useQuotesListPage.duplicateUndo.test.tsx": {
       "@typescript-eslint/consistent-type-imports": 1
     },
     "src/pages/quotes/__tests__/useQuotesListPage.expiring.test.ts": {
-      "@typescript-eslint/require-array-sort-compare": 1,
-      "@typescript-eslint/require-await": 6,
-      "no-duplicate-imports": 1
-    },
-    "src/pages/quotes/__tests__/useQuotesListPage.fuzz.test.ts": {
-      "@typescript-eslint/require-await": 3,
-      "no-duplicate-imports": 1
+      "@typescript-eslint/require-array-sort-compare": 1
     },
     "src/pages/quotes/__tests__/useQuotesListPage.singleDelete.test.tsx": {
       "@typescript-eslint/consistent-type-imports": 1
     },
     "src/pages/quotes/__tests__/useQuotesListPage.test.ts": {
-      "@typescript-eslint/require-array-sort-compare": 7,
-      "@typescript-eslint/require-await": 3,
-      "no-duplicate-imports": 1
-    },
-    "src/pages/quotes/__tests__/useQuotesListPage.urlState.test.tsx": {
-      "no-duplicate-imports": 1
-    },
-    "src/pages/quotes/components/__tests__/DeliveryModeToggle.test.tsx": {
-      "@typescript-eslint/require-await": 1
-    },
-    "src/services/__tests__/magazineEdgeContract.test.ts": {
-      "@typescript-eslint/require-await": 1
+      "@typescript-eslint/require-array-sort-compare": 7
     },
     "src/services/__tests__/quoteNumberConcurrency.test.ts": {
       "@typescript-eslint/naming-convention": 2,
@@ -430,18 +306,11 @@
       "no-restricted-syntax": 1,
       "no-shadow": 1
     },
-    "src/services/magazineService.ts": {
-      "no-duplicate-imports": 1
-    },
     "src/utils/__tests__/cnpj-errors.matrix.test.ts": {
       "no-restricted-syntax": 2
     },
     "src/utils/__tests__/undoToast.stress.test.tsx": {
       "no-lonely-if": 1
-    },
-    "src/utils/cnpj-errors.ts": {
-      "eqeqeq": 1,
-      "no-eq-null": 1
     },
     "src/utils/undoToast.tsx": {
       "@typescript-eslint/no-invalid-void-type": 2
