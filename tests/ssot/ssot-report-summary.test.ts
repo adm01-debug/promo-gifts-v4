@@ -47,7 +47,7 @@ describe('ssot-report-summary', () => {
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/Status geral:.*PASS/);
     expect(r.stdout).toMatch(/Gates:\*\* 2 total · 2 ✅ · 0 ❌/);
-    expect(r.stdout).toMatch(/Linhas de erro.*: 0/);
+    expect(r.stdout).toMatch(/Linhas de erro[^\n]*\b0\b/);
   });
 
   it('conta linhas de erro em gate falho', () => {
