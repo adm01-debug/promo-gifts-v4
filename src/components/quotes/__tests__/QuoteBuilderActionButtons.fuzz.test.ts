@@ -74,8 +74,8 @@ describe('Quote Summary action buttons — invariantes geométricas (fuzz 300x)'
       const baseW = 200;
       // Força UMA quebra aleatória.
       const kind = i % 4;
-      let c: Box = { x: 100, y: baseY, width: baseW, height: baseH };
-      let r: Box = { x: 320, y: baseY, width: baseW, height: baseH };
+      const c: Box = { x: 100, y: baseY, width: baseW, height: baseH };
+      const r: Box = { x: 320, y: baseY, width: baseW, height: baseH };
       if (kind === 0) r.y = baseY + 30;                  // tops desalinhados
       if (kind === 1) r.height = baseH + 20;             // alturas diferentes
       if (kind === 2) r.x = 50;                          // Criar não está à esquerda

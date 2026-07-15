@@ -59,7 +59,7 @@ const SUPABASE_FUNCTION_BASE = (() => {
       );
     }
     const cleanId = rawId.replace(/^https?:\/\//, '').replace(/\.supabase\.co.*$/, '');
-    if (cleanId) return 'https://' + cleanId + '.supabase.co';
+    if (cleanId) return `https://${cleanId}.supabase.co`;
   }
   return 'https://doufsxqlfjyuvxuezpln.supabase.co';
 })();

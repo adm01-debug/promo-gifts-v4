@@ -203,7 +203,7 @@ export function buildItemsInsertPayload(
   // Cor é obrigatória ao salvar/enviar orçamento. Bloqueia no front-end antes do
   // request, evitando POST inválido e mensagem genérica do backend.
   const semCor = validItems.filter(
-    (item) => !item.color_name || !item.color_name.trim(),
+    (item) => !item.color_name?.trim(),
   );
   if (semCor.length > 0) {
     const nomes = semCor.map((i) => i.product_name || i.product_sku || i.product_id).join(', ');

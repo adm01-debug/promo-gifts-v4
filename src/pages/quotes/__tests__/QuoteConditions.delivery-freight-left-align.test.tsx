@@ -50,7 +50,7 @@ describe('QuoteBuilder — Prazo|Entrega e Frete · alinhamento à esquerda', ()
   it('preserva classes de alinhamento à esquerda em ambos os triggers', () => {
     const { container } = render(<DeliveryAndFreightSection />);
     for (const id of IDS) {
-      const trigger = container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+      const trigger = container.querySelector(`[data-testid="${id}"]`)!;
       expect(trigger, `testid "${id}" deve existir`).toBeTruthy();
       const cls = trigger.className;
       expect(cls).toMatch(/\[&>span\]:flex-1/);

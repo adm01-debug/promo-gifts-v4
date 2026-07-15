@@ -18,7 +18,7 @@ const tokensSrc = readFileSync(TOKENS_PATH, 'utf8');
 
 describe('StockAlertsIndicator — largura do painel (SSOT)', () => {
   it('define o token --stock-alerts-panel-width como 391px', () => {
-    const match = tokensSrc.match(/--stock-alerts-panel-width:\s*([^;]+);/);
+    const match = /--stock-alerts-panel-width:\s*([^;]+);/.exec(tokensSrc);
     expect(match, 'token --stock-alerts-panel-width não encontrado').toBeTruthy();
     expect(match![1].trim()).toBe('391px');
   });
@@ -48,7 +48,7 @@ describe('StockAlertsIndicator — chips (presença e ordem)', () => {
 
   it('define os 4 chips na ordem canônica: Zerou → Baixo → Novidade → Chegou', () => {
     // Extrai a array TABS do source
-    const tabsMatch = componentSrc.match(/const TABS:\s*TabDef\[\]\s*=\s*\[([\s\S]*?)\];/);
+    const tabsMatch = /const TABS:\s*TabDef\[\]\s*=\s*\[([\s\S]*?)\];/.exec(componentSrc);
     expect(tabsMatch, 'array TABS não encontrada').toBeTruthy();
     const tabsBlock = tabsMatch![1];
 

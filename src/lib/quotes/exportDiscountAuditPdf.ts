@@ -9,8 +9,8 @@
  */
 
 export interface AuditRowForPdf {
-  event: 'requested' | 'approved' | 'rejected' | 'expired' | 'cancelled' | 'superseded';
-  actor_role: 'seller' | 'admin' | 'supervisor' | 'system';
+  event: 'approved' | 'cancelled' | 'expired' | 'rejected' | 'requested' | 'superseded';
+  actor_role: 'admin' | 'seller' | 'supervisor' | 'system';
   actor_name?: string | null;
   actor_email?: string | null;
   requested_discount_percent: number | null;

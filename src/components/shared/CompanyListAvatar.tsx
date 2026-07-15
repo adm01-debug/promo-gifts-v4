@@ -23,7 +23,7 @@ interface CompanyListAvatarProps {
    * Reservado para exceções: força um tamanho fixo em vez do responsivo.
    * Default `undefined` = lg no desktop, md no mobile.
    */
-  size?: 'md' | 'lg';
+  size?: 'lg' | 'md';
 }
 
 export function CompanyListAvatar({

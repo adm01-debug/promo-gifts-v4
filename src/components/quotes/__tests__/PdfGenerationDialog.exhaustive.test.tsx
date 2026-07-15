@@ -150,7 +150,7 @@ describe('Fuzz de UA (600 iterações, seed=42)', () => {
 });
 
 // ---------- 2) Matriz de comportamento ----------
-const UA_MATRIX: Record<string, { ua: string; expected: 'chrome' | 'firefox' | 'edge' | 'safari' }> = {
+const UA_MATRIX: Record<string, { ua: string; expected: 'chrome' | 'edge' | 'firefox' | 'safari' }> = {
   Chrome: {
     ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML) Chrome/120.0 Safari/537.36',
     expected: 'chrome',

@@ -57,7 +57,7 @@ describe('quote-number · normalização e validação exaustivas', () => {
     it.each([null, undefined, '', '   ', '\n\t'])(
       'retorna null para %j (UI deve usar fallback amigável)',
       (input) => {
-        expect(formatQuoteNumberLabel(input as null | undefined | string)).toBeNull();
+        expect(formatQuoteNumberLabel(input as string | null | undefined)).toBeNull();
       },
     );
   });

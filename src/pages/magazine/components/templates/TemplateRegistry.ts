@@ -168,9 +168,9 @@ export function listTemplates(): TemplateEntry[] {
   return Object.values(TEMPLATE_REGISTRY);
 }
 
-export function templatesByFamily(): Record<'editorial' | 'catalog' | 'corporate', TemplateEntry[]> {
+export function templatesByFamily(): Record<'catalog' | 'corporate' | 'editorial', TemplateEntry[]> {
   const out = { editorial: [], catalog: [], corporate: [] } as Record<
-    'editorial' | 'catalog' | 'corporate',
+    'catalog' | 'corporate' | 'editorial',
     TemplateEntry[]
   >;
   for (const t of listTemplates()) out[t.family].push(t);

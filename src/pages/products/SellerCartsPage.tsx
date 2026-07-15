@@ -26,7 +26,6 @@ import {
   getStatusCfg,
   STATUS_CONFIG,
   CartItemSkeleton,
-  CompareCartsDialog,
   MobileSummarySheet,
   formatCurrency,
 } from '@/components/cart/CartUtilComponents';
@@ -48,7 +47,7 @@ import { AnimatePresence } from 'framer-motion';
 import { DndContext, closestCenter } from '@dnd-kit/core';
 import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
-import { Building2, Trash2, MapPin, FileText, ChevronLeft, CalendarClock, Loader2 } from 'lucide-react';
+import { Building2, Trash2, FileText, ChevronLeft, CalendarClock, Loader2 } from 'lucide-react';
 import { DatePickerField } from '@/components/ui/date-picker-field';
 import { startOfDay } from 'date-fns';
 import { CartActionsMenu } from '@/pages/products/seller-carts/CartActionsMenu';

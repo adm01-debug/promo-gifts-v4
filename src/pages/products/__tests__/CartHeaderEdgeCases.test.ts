@@ -51,7 +51,7 @@ describe('shippingDeadlineSchema — inputs extremos', () => {
   });
 
   it('rejeita string muito longa (JSON injection tentativa)', () => {
-    const r = shippingDeadlineSchema.safeParse('2027-12-30' + 'x'.repeat(500));
+    const r = shippingDeadlineSchema.safeParse(`2027-12-30${'x'.repeat(500)}`);
     expect(r.success).toBe(false);
   });
 
@@ -126,7 +126,7 @@ describe('getShippingDeadlineStatus — fronteiras', () => {
 
 describe('getDeadlineLabel — pluralização e casos extremos', () => {
   const cases: Array<[
-    'overdue' | 'soon' | 'ok' | 'none',
+    'none' | 'ok' | 'overdue' | 'soon',
     number | null,
     RegExp,
   ]> = [

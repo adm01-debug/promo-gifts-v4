@@ -7,7 +7,7 @@
  * `MemoryRouter`. A busca (`q`) usa debounce de 250ms, então testes que
  * dependem do filtro por texto usam fake timers p/ avançar o relógio.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';

@@ -17,14 +17,14 @@ afterEach(cleanup);
 const makeColors = (n: number) =>
   Array.from({ length: n }, (_, i) => ({
     name: `cor-${i}`,
-    hex: '#' + ((i * 0x111111) & 0xffffff).toString(16).padStart(6, '0'),
+    hex: `#${((i * 0x111111) & 0xffffff).toString(16).padStart(6, '0')}`,
   }));
 
 const makeSwatches = (n: number): ColorSwatch[] =>
   Array.from({ length: n }, (_, i) => ({
     variant_id: `v-${i}`,
     color_name: `cor-${i}`,
-    color_hex: '#' + ((i * 0x111111) & 0xffffff).toString(16).padStart(6, '0'),
+    color_hex: `#${((i * 0x111111) & 0xffffff).toString(16).padStart(6, '0')}`,
     is_in_stock: true,
     stock_quantity: 10,
   })) as unknown as ColorSwatch[];
@@ -315,7 +315,7 @@ describe('A11y — teclado/foco em swatches', () => {
         onReset={() => {}}
       />,
     );
-    const first = container.querySelector('button[aria-pressed]') as HTMLButtonElement;
+    const first = container.querySelector('button[aria-pressed]')!;
     first.focus();
     expect(document.activeElement).toBe(first);
     fireEvent.click(first);

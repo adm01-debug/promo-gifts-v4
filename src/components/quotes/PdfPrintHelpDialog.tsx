@@ -29,16 +29,11 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export type PdfPrintFallbackReason =
-  | 'popup-blocked'
-  | 'safari'
-  | 'watchdog-timeout'
-  | 'print-exception'
-  | 'iframe-exception'
-  | 'not-ready';
+  'iframe-exception' | 'not-ready' | 'popup-blocked' | 'print-exception' | 'safari' | 'watchdog-timeout';
 
 interface CopySpec {
   icon: typeof Info;
-  iconTone: 'warn' | 'info' | 'error';
+  iconTone: 'error' | 'info' | 'warn';
   title: string;
   description: string;
   steps: string[];
@@ -79,7 +74,7 @@ const COPY: Record<PdfPrintFallbackReason, (sc: string) => CopySpec> = {
       'O Safari precisa abrir o PDF em nova aba para imprimir corretamente. Ou baixe direto — funciona em qualquer navegador.',
     steps: [
       'Clique em "Baixar PDF" (mais rápido).',
-      'Ou abra em nova aba e use ' + sc + ' para imprimir.',
+      `Ou abra em nova aba e use ${sc} para imprimir.`,
     ],
     showRetry: false,
     showOpenTab: true,

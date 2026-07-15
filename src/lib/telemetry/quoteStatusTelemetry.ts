@@ -12,11 +12,9 @@ import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 const log = createClientLogger('quote_status_transition');
 
 export type InvalidTransitionReason =
-  | 'not_allowed_by_config'
-  | 'out_of_enum'
-  | 'db_check_violation';
+  'db_check_violation' | 'not_allowed_by_config' | 'out_of_enum';
 
-export type InvalidTransitionSource = 'ui' | 'service' | 'db';
+export type InvalidTransitionSource = 'db' | 'service' | 'ui';
 
 export interface InvalidTransitionPayload {
   quoteId: string | null;

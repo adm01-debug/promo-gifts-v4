@@ -56,7 +56,7 @@ export function detectSafari(ua: string): boolean {
  * Classifica o navegador para telemetria. Pura e exportada para fuzz.
  * Precedência: Edge > Firefox > Chrome > Safari > other.
  */
-export function detectBrowserPure(ua: string): 'edge' | 'firefox' | 'chrome' | 'safari' | 'other' {
+export function detectBrowserPure(ua: string): 'chrome' | 'edge' | 'firefox' | 'other' | 'safari' {
   if (/edg/i.test(ua)) return 'edge';
   if (/firefox|fxios/i.test(ua)) return 'firefox';
   if (/chrome|crios/i.test(ua)) return 'chrome';
@@ -385,7 +385,8 @@ export function PdfGenerationDialog({
                     .pdf-warn-pill { animation: none; }
                     .pdf-warn-shimmer::before { animation: none; opacity: 0; }
                   }
-                `}</style>
+                `}
+                </style>
                 <div
                   role="status"
                   aria-live="polite"
@@ -402,7 +403,7 @@ export function PdfGenerationDialog({
               </>
             )}
           </div>
-        </DialogHeader>
+          </DialogHeader>
         )}
 
 

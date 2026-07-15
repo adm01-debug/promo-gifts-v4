@@ -66,7 +66,7 @@ function makeMockMutation<TVars>() {
       onError?: (err: Error, vars: TVars, ctx: unknown) => void;
       onSuccess?: (data: void, vars: TVars, ctx: unknown) => void;
       onSettled?: (
-        data: void | undefined,
+        data: undefined | void,
         err: Error | null,
         vars: TVars,
         ctx: unknown,

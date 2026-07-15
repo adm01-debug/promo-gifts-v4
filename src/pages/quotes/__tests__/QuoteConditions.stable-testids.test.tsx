@@ -83,7 +83,7 @@ describe('QuoteBuilder — Condições · data-testid estáveis em renders repet
   it('preserva classes de alinhamento à esquerda em todos os triggers', () => {
     const { container } = render(<ConditionsSection />);
     for (const id of IDS) {
-      const trigger = container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+      const trigger = container.querySelector(`[data-testid="${id}"]`)!;
       const cls = trigger.className;
       expect(cls).toMatch(/\[&>span\]:flex-1/);
       expect(cls).toMatch(/\[&>span\]:text-left/);

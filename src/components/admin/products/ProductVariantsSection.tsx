@@ -2,7 +2,7 @@
  * ProductVariantsSection — CRUD de variações de cor de um produto
  * Refactored: logic in useProductVariants, form in VariantForm.
  */
-import { Palette, Package, AlertCircle, Plus, Pencil, Trash2, Check, Loader2 } from 'lucide-react';
+import { Palette, Package, AlertCircle, Plus, Pencil, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';

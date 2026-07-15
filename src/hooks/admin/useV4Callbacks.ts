@@ -14,13 +14,9 @@ import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export type CallbackResult = 'applied' | 'error' | 'duplicate_ignored' | 'exhausted' | string;
+export type CallbackResult = string | 'applied' | 'duplicate_ignored' | 'error' | 'exhausted';
 export type EventType =
-  | 'approved'
-  | 'rejected'
-  | 'order_created'
-  | 'sent_to_client'
-  | 'expired';
+  'approved' | 'expired' | 'order_created' | 'rejected' | 'sent_to_client';
 
 export interface CallbackEventRow {
   id: string;
@@ -104,7 +100,7 @@ export interface TimeBucket {
 
 export function useCallbackBuckets(
   rows: CallbackEventRow[] | undefined,
-  granularity: 'hour' | 'day' = 'hour',
+  granularity: 'day' | 'hour' = 'hour',
 ): TimeBucket[] {
   return useMemo(() => {
     if (!rows?.length) return [];

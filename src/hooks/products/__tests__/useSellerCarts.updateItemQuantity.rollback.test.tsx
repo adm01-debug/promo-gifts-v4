@@ -119,7 +119,7 @@ function computeTotal(item: CartItem | undefined): number {
  */
 function spyPatchFn(
   qc: QueryClient,
-  mode: 'resolve' | 'reject',
+  mode: 'reject' | 'resolve',
   err: Error = new Error('PostgREST 400: check constraint violation'),
 ) {
   const seen: { snapshotDuringFlight: Cart[] | undefined; args: Array<{ itemId: string; quantity: number }> } = {

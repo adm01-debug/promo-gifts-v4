@@ -16,7 +16,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConfirmDialog } from '../ConfirmDialog';
 
-type Variant = 'default' | 'destructive' | 'warning' | 'info';
+type Variant = 'default' | 'destructive' | 'info' | 'warning';
 const VARIANTS: Variant[] = ['default', 'destructive', 'warning', 'info'];
 
 function mount(variant: Variant, overrides: Partial<React.ComponentProps<typeof ConfirmDialog>> = {}) {

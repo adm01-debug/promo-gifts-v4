@@ -15,9 +15,7 @@ const SOURCE = readFileSync(
 
 describe('QuoteBuilder — Condições · alinhamento à esquerda', () => {
   it('SelectTrigger de Validade | Proposta tem text-left no SelectValue', () => {
-    const match = SOURCE.match(
-      /Validade \| Proposta[\s\S]{0,1200}?<SelectTrigger[^>]*className=(?:"([^"]+)"|\{[^}]*"([^"]+)"[^}]*\})/,
-    );
+    const match = /Validade \| Proposta[\s\S]{0,1200}?<SelectTrigger[^>]*className=(?:"([^"]+)"|\{[^}]*"([^"]+)"[^}]*\})/.exec(SOURCE);
     expect(match, 'SelectTrigger de Validade não encontrado').toBeTruthy();
     const cls = (match?.[1] ?? match?.[2] ?? '') as string;
     expect(cls).toMatch(/\[&>span\]:flex-1/);
@@ -25,18 +23,14 @@ describe('QuoteBuilder — Condições · alinhamento à esquerda', () => {
   });
 
   it('SelectTrigger de Forma | Pagamento tem text-left no SelectValue', () => {
-    const match = SOURCE.match(
-      /Forma \| Pagamento[\s\S]{0,1600}?data-testid="payment-method-select"[\s\S]{0,400}?className=\{cn\(\s*'([^']+)'/,
-    );
+    const match = /Forma \| Pagamento[\s\S]{0,1600}?data-testid="payment-method-select"[\s\S]{0,400}?className=\{cn\(\s*'([^']+)'/.exec(SOURCE);
     expect(match, 'SelectTrigger de Forma não encontrado').toBeTruthy();
     expect(match![1]).toMatch(/\[&>span\]:flex-1/);
     expect(match![1]).toMatch(/\[&>span\]:text-left/);
   });
 
   it('SelectTrigger de Prazo | Pagamento tem text-left no SelectValue', () => {
-    const match = SOURCE.match(
-      /Prazo \| Pagamento[\s\S]{0,1600}?data-testid="payment-terms-select"[\s\S]{0,400}?className=\{cn\(\s*'([^']+)'/,
-    );
+    const match = /Prazo \| Pagamento[\s\S]{0,1600}?data-testid="payment-terms-select"[\s\S]{0,400}?className=\{cn\(\s*'([^']+)'/.exec(SOURCE);
     expect(match, 'SelectTrigger de Prazo não encontrado').toBeTruthy();
     expect(match![1]).toMatch(/\[&>span\]:flex-1/);
     expect(match![1]).toMatch(/\[&>span\]:text-left/);

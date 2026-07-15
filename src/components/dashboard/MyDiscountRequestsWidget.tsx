@@ -57,7 +57,7 @@ const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({ 
 
 type RequestRow = {
   id: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'approved' | 'pending' | 'rejected';
   requested_discount_percent: number;
   max_allowed_percent: number | null;
   quote_id: string;

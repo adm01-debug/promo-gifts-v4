@@ -49,7 +49,7 @@ import { MagazineCardThumbnail } from './components/MagazineCardThumbnail';
 // de idempotência e fallback gracioso.
 import { useMagazineGoldImport } from './hooks/useMagazineGoldImport';
 
-type SortMode = 'updated-desc' | 'updated-asc' | 'name-asc' | 'name-desc';
+type SortMode = 'name-asc' | 'name-desc' | 'updated-asc' | 'updated-desc';
 type StatusFilter = 'all' | 'draft' | 'published';
 
 export default function MagazineListPage() {

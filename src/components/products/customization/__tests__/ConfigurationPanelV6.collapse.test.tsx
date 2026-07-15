@@ -257,8 +257,8 @@ describe('ConfigurationPanelV6 — contrato de colapso', () => {
         const hasGap0 = /\bgap-0\b/.test(w.className);
         const hasGap4 = /\bgap-4\b/.test(w.className);
         expect(hasGap0 && hasGap4).toBe(false);
-        const hasRow0 = /grid-rows-\[0fr\]/.test(p.className);
-        const hasRow1 = /grid-rows-\[1fr\]/.test(p.className);
+        const hasRow0 = p.className.includes('grid-rows-[0fr]');
+        const hasRow1 = p.className.includes('grid-rows-[1fr]');
         expect(hasRow0 && hasRow1).toBe(false);
         // Coerência com estado
         expect(hasGap0).toBe(expectCollapsed);

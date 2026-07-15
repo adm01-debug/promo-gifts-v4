@@ -1,6 +1,5 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
   Info,
@@ -185,7 +184,7 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                   {item.product_sku}
                 </span>
               )}
-              <p className={`${qvType.productName}`}>{item.product_name}</p>
+              <p className={qvType.productName}>{item.product_name}</p>
 
               {!item.product_sku && item.color_name && (
                 <div className="mt-1 flex items-center gap-1.5">

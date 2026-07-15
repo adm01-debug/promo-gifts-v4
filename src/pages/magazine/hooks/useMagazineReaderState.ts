@@ -199,7 +199,7 @@ export interface MagazineReaderState {
   toggleBookmark: (index: number) => void;
   clearBookmarks: () => void;
   setLastPage: (index: number) => void;
-  syncStatus: 'local-only' | 'syncing' | 'synced';
+  syncStatus: 'local-only' | 'synced' | 'syncing';
 }
 
 // ---------- Hook ----------

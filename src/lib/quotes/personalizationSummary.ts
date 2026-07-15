@@ -84,8 +84,8 @@ export function formatPersonalizationSummary(p: PersonalizationSummaryInput): st
   if (!widthCm || !heightCm) {
     const fromNotes = extractDimensionsFromNotes(p.notes);
     if (fromNotes) {
-      widthCm = widthCm || fromNotes.width;
-      heightCm = heightCm || fromNotes.height;
+      widthCm ||= fromNotes.width;
+      heightCm ||= fromNotes.height;
     }
   }
   const area = formatArea(widthCm, heightCm);
@@ -94,7 +94,7 @@ export function formatPersonalizationSummary(p: PersonalizationSummaryInput): st
   // Sempre exibe cores (mesmo ausente ⇒ "1 cor") para consistência cliente↔builder.
   s += ` | ${formatColors(p.colors_count)}`;
 
-  if (p.material && p.material.trim()) s += ` | ${p.material.trim()}`;
+  if (p.material?.trim()) s += ` | ${p.material.trim()}`;
   return s;
 }
 

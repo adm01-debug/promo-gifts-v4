@@ -20,7 +20,7 @@ interface Props {
 }
 
 /** Escolhe branco ou charcoal contra `bgHex` maximizando WCAG. */
-function pickReadableInk(bgHex: string): '#ffffff' | '#1a1a1a' {
+function pickReadableInk(bgHex: string): '#1a1a1a' | '#ffffff' {
   const white = contrastRatio('#ffffff', bgHex);
   const dark = contrastRatio('#1a1a1a', bgHex);
   return dark > white ? '#1a1a1a' : '#ffffff';

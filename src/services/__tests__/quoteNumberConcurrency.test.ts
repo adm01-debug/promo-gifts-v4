@@ -34,7 +34,7 @@ class InMemoryQuotes {
     return row;
   }
 
-  private locks = new Map<string, Promise<void>>();
+  private readonly locks = new Map<string, Promise<void>>();
   async insertWithAdvisoryLock(year_yy: string): Promise<Row> {
     const key = `quote_number:${year_yy}`;
     const prev = this.locks.get(key) ?? Promise.resolve();

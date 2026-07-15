@@ -56,8 +56,8 @@ export async function syncQuoteToPromoChampions({
     },
   });
 
-  if (error || (data && data.ok === false)) {
-    const msg = (data && data.error) || error?.message || 'Erro desconhecido';
+  if (error || (data?.ok === false)) {
+    const msg = (data?.error) || error?.message || 'Erro desconhecido';
     await logQuoteHistory(
       quoteId,
       'sync_error',

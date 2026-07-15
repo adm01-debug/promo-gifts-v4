@@ -78,7 +78,7 @@ function scanForLeaks(dirs: string[]): string[] {
       if (!content) continue;
       for (const rx of LEAK_PATTERNS) {
         if (rx.test(content)) {
-          offenders.push(`${file.replace(ROOT + '/', '')} :: ${rx}`);
+          offenders.push(`${file.replace(`${ROOT}/`, '')} :: ${rx}`);
           break;
         }
       }
@@ -193,10 +193,10 @@ describe('Notas internas — guardas /orcamento-publico + PDF', () => {
       if (/orcamento[-_]?publico|quote[-_]?public/i.test(content)) {
         if (
           /\bseller_carts\b/.test(content) ||
-          /useSellerCarts/.test(content) ||
+          content.includes('useSellerCarts') ||
           /\bcart\.notes\b/.test(content)
         ) {
-          suspects.push(f.replace(ROOT + '/', ''));
+          suspects.push(f.replace(`${ROOT}/`, ''));
         }
       }
     }

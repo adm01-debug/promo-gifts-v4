@@ -18,7 +18,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { persistItemsOrder } from '@/services/quoteItemsReorder';
 
-const db: Map<string, number> = new Map();
+const db = new Map<string, number>();
 
 vi.mock('@/integrations/supabase/client', () => {
   return {

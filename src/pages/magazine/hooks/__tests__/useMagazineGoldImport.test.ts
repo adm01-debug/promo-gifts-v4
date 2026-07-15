@@ -62,7 +62,7 @@ vi.mock('sonner', () => ({
 
 // --- Mock logger — captura eventos para asserts de diagnóstico ---
 interface CapturedLog {
-  level: 'info' | 'warn' | 'error' | 'debug';
+  level: 'debug' | 'error' | 'info' | 'warn';
   event: string;
   fields?: Record<string, unknown>;
 }

@@ -182,8 +182,8 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
                 onTouchStart={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
                 className={
-                  'absolute -translate-x-1/2 rounded-full shadow ring-2 ring-neutral-950 transition hover:scale-125 focus:outline-none focus-visible:ring-white ' +
-                  (isCurrent ? 'bg-amber-300 scale-125' : 'bg-amber-400')
+                  `absolute -translate-x-1/2 rounded-full shadow ring-2 ring-neutral-950 transition hover:scale-125 focus:outline-none focus-visible:ring-white ${ 
+                  isCurrent ? 'bg-amber-300 scale-125' : 'bg-amber-400'}`
                 }
                 style={{ left: `${left}%`, width: 10, height: 10 }}
                 aria-label={
@@ -251,13 +251,13 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
  * - useDeferredValue no idx (React prioriza o mousemove ao invés do re-render caro)
  * - React.memo garante que só re-renderiza quando idxDeferred efetivamente muda
  */
-const DeferredPreview = memo(function DeferredPreview({
+const DeferredPreview = memo(({
   idx,
   render,
 }: {
   idx: number;
   render: (index: number) => ReactNode;
-}) {
+}) => {
   const deferred = useDeferredValue(idx);
   return <>{render(deferred)}</>;
 });

@@ -9,7 +9,7 @@
 
 import type { Magazine } from '@/types/magazine';
 
-export type StepId = 'identity' | 'products' | 'content' | 'design' | 'layout';
+export type StepId = 'content' | 'design' | 'identity' | 'layout' | 'products';
 
 export interface StepValidation {
   blocks: string[];

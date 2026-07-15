@@ -208,7 +208,7 @@ export function getSentryErrorBoundary(): typeof SentryNS.ErrorBoundary | null {
  */
 export function captureMessage(
   message: string,
-  level: 'info' | 'warning' | 'error' = 'info',
+  level: 'error' | 'info' | 'warning' = 'info',
   tagsAndExtras?: Record<string, unknown>,
 ): void {
   if (!shouldLoadSentry()) return;

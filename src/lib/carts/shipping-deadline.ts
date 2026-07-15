@@ -43,7 +43,7 @@ export const shippingDeadlineSchema = z
     { message: 'A data não pode estar no passado.' },
   );
 
-export type ShippingDeadlineStatus = 'overdue' | 'soon' | 'ok' | 'none';
+export type ShippingDeadlineStatus = 'none' | 'ok' | 'overdue' | 'soon';
 
 /** Diferença em dias inteiros (deadline − hoje). Negativo = vencido. */
 export function daysUntilDeadline(deadline: string | null | undefined): number | null {
@@ -97,7 +97,7 @@ export function getDeadlineLabel(status: ShippingDeadlineStatus, diffDays: numbe
 }
 
 /** Filtros predefinidos para a lista de carrinhos. */
-export type DeadlineFilter = 'all' | 'overdue' | 'soon' | 'week' | 'month' | 'none';
+export type DeadlineFilter = 'all' | 'month' | 'none' | 'overdue' | 'soon' | 'week';
 
 export function matchesDeadlineFilter(
   deadline: string | null | undefined,

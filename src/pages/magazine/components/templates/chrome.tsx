@@ -22,7 +22,7 @@ export function Folio({
 }: {
   index: number;
   total?: number;
-  tone?: 'dark' | 'light' | 'accent';
+  tone?: 'accent' | 'dark' | 'light';
 }) {
   const color = tone === 'light' ? 'rgba(255,255,255,0.9)' : tone === 'accent' ? 'var(--mag-secondary)' : 'var(--mag-text)';
   return (
@@ -72,8 +72,8 @@ export function PriceTag({
   variant = 'flat',
 }: {
   value: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  variant?: 'flat' | 'chip' | 'stack';
+  size?: 'lg' | 'md' | 'sm' | 'xl';
+  variant?: 'chip' | 'flat' | 'stack';
 }) {
   const [currency, ...rest] = value.split(' ');
   const amount = rest.join(' ') || value;
@@ -108,7 +108,7 @@ export function PriceTag({
   );
 }
 
-export function Rule({ tone = 'dark' }: { tone?: 'dark' | 'light' | 'accent' }) {
+export function Rule({ tone = 'dark' }: { tone?: 'accent' | 'dark' | 'light' }) {
   const color = tone === 'light' ? 'rgba(255,255,255,0.4)' : tone === 'accent' ? 'var(--mag-secondary)' : 'rgba(0,0,0,0.15)';
   return <span aria-hidden className="inline-block h-[1px] w-6" style={{ background: color }} />;
 }
@@ -121,7 +121,7 @@ export function Rule({ tone = 'dark' }: { tone?: 'dark' | 'light' | 'accent' }) 
  * SkuChip — pill preto com SKU em caps bold branco. Padrão dos "product cards"
  * de p.7-10 do catálogo Abreez.
  */
-export function SkuChip({ sku, size = 'md' }: { sku: string; size?: 'sm' | 'md' | 'lg' }) {
+export function SkuChip({ sku, size = 'md' }: { sku: string; size?: 'lg' | 'md' | 'sm' }) {
   const map = {
     sm: 'text-lg px-3 py-1',
     md: 'text-xl px-4 py-1.5',
@@ -166,7 +166,7 @@ export function PageNumberBadge({
   color,
 }: {
   index: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   color?: string;
 }) {
   const box = { sm: 'w-14 h-14', md: 'w-20 h-20', lg: 'w-28 h-28' }[size];
@@ -279,7 +279,7 @@ export function ScriptAccent({
 }: {
   children: ReactNode;
   orientation?: 'horizontal' | 'vertical';
-  size?: 'md' | 'lg' | 'xl' | '2xl';
+  size?: '2xl' | 'lg' | 'md' | 'xl';
   color?: string;
 }) {
   const sizeMap = {
@@ -308,7 +308,7 @@ export function CalloutCard({
   className = '',
 }: {
   children: ReactNode;
-  tone?: 'dark' | 'light' | 'brand';
+  tone?: 'brand' | 'dark' | 'light';
   className?: string;
 }) {
   const styles: Record<string, CSSProperties> = {

@@ -8,10 +8,7 @@
  */
 
 export type CnpjErrorCode =
-  | 'cnpj_length_invalid'
-  | 'cnpj_dv_invalid'
-  | 'cnpj_duplicated'
-  | 'cnpj_unknown';
+  'cnpj_duplicated' | 'cnpj_dv_invalid' | 'cnpj_length_invalid' | 'cnpj_unknown';
 
 export const CNPJ_ERROR_MESSAGES: Record<CnpjErrorCode, string> = {
   cnpj_length_invalid: 'CNPJ deve conter exatamente 14 dígitos (sem máscara).',
@@ -40,7 +37,7 @@ export const CNPJ_ERROR_MESSAGES: Record<CnpjErrorCode, string> = {
  */
 function readErrField(
   input: unknown,
-  key: 'message' | 'code' | 'details',
+  key: 'code' | 'details' | 'message',
 ): string {
   try {
     if (typeof input !== 'object' || input === null) return '';
@@ -75,7 +72,7 @@ export function mapCnpjError(input: unknown): {
   if (code === '23505' || /duplic|already exists|unique/i.test(hay)) {
     return { code: 'cnpj_duplicated', message: CNPJ_ERROR_MESSAGES.cnpj_duplicated };
   }
-  if (/14 d[ií]gitos|length|too short|too long/i.test(hay) || /cnpj_length/.test(hay)) {
+  if (/14 d[ií]gitos|length|too short|too long/i.test(hay) || hay.includes('cnpj_length')) {
     return {
       code: 'cnpj_length_invalid',
       message: CNPJ_ERROR_MESSAGES.cnpj_length_invalid,

@@ -11,7 +11,7 @@ interface RLSCheck {
   table: string;
   policy: string;
   isActive: boolean;
-  appliesTo: ('SELECT' | 'INSERT' | 'UPDATE' | 'DELETE')[];
+  appliesTo: ('DELETE' | 'INSERT' | 'SELECT' | 'UPDATE')[];
   timestamp: number;
 }
 

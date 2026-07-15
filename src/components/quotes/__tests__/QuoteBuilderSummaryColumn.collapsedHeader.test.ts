@@ -44,7 +44,7 @@ describe('QuoteBuilderSummaryColumn — header do item (visual/estrutural)', () 
     expect(slice).toMatch(/WebkitLineClamp:\s*2/);
     expect(slice).toMatch(/display:\s*['"]-webkit-box['"]/);
     expect(slice).toMatch(/WebkitBoxOrient:\s*['"]vertical['"]/);
-    const namePara = slice.match(/<p[\s\S]*?\{item\.product_name\}/);
+    const namePara = /<p[\s\S]*?\{item\.product_name\}/.exec(slice);
     expect(namePara?.[0] ?? '').not.toMatch(/\btruncate\b/);
     expect(namePara?.[0] ?? '').toMatch(/\bbreak-words\b/);
   });
@@ -186,7 +186,7 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
   const slice = headerSlice();
 
   it('nome tem pr-2 (respiro à direita) para não colar no bloco de preço/ações', () => {
-    const namePara = slice.match(/<p[\s\S]*?\{item\.product_name\}/);
+    const namePara = /<p[\s\S]*?\{item\.product_name\}/.exec(slice);
     expect(namePara?.[0] ?? '').toMatch(/\bpr-2\b/);
   });
 
@@ -195,7 +195,7 @@ describe('QuoteBuilderSummaryColumn — não sobreposição com nomes longos', (
   });
 
   it('nome mantém line-clamp=2 + overflow-hidden + leading-[1.125rem] (respiro entre linhas)', () => {
-    const namePara = slice.match(/<p[\s\S]*?\{item\.product_name\}/)?.[0] ?? '';
+    const namePara = (/<p[\s\S]*?\{item\.product_name\}/.exec(slice))?.[0] ?? '';
     expect(namePara).toMatch(/WebkitLineClamp:\s*2/);
     expect(namePara).toMatch(/overflow-hidden/);
     expect(namePara).toMatch(/leading-\[1\.125rem\]/); // ~18px: garante que 2 linhas não colam

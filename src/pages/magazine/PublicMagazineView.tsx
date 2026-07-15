@@ -74,7 +74,7 @@ export default function PublicMagazineView() {
   const [tocOpen, setTocOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [direction, setDirection] = useState<1 | -1>(1);
+  const [direction, setDirection] = useState<-1 | 1>(1);
   const rootRef = useRef<HTMLDivElement>(null);
   const touchStartX = useRef<number | null>(null);
   const { toggle: toggleBookmark, has: hasBookmark, bookmarks } = useMagazineBookmarks(token);
@@ -89,7 +89,7 @@ export default function PublicMagazineView() {
     (async () => {
       const found = await magazineService.getPublicByToken(token);
       if (cancelled) return;
-      setMagazine(found && found.status === 'published' ? found : null);
+      setMagazine(found?.status === 'published' ? found : null);
       setLoaded(true);
     })();
     return () => {

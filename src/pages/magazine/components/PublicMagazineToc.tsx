@@ -30,7 +30,7 @@ function pageLabel(p: MagazinePage): string {
   return `${p.items.length} produto${p.items.length === 1 ? '' : 's'}`;
 }
 
-export const PublicMagazineToc = memo(function PublicMagazineToc({
+export const PublicMagazineToc = memo(({
   open,
   onOpenChange,
   magazine,
@@ -38,7 +38,7 @@ export const PublicMagazineToc = memo(function PublicMagazineToc({
   currentIndex,
   onGo,
   bookmarks,
-}: Props) {
+}: Props) => {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-[420px] max-w-[92vw] overflow-y-auto bg-neutral-950 text-white">

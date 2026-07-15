@@ -80,7 +80,7 @@ describe('useQuotesListPage — fuzz/property-based (100 runs)', () => {
         const { result } = renderHook(() => useQuotesListPage(), { wrapper });
         const ids = new Set(quotes.map((q) => q.id));
         for (const q of result.current.filteredQuotes) {
-          expect(ids.has(q.id as string)).toBe(true);
+          expect(ids.has(q.id!)).toBe(true);
         }
       }),
       { numRuns: 100 },

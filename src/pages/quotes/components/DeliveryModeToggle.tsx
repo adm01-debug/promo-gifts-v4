@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-export type DeliveryMode = 'prazo' | 'data';
+export type DeliveryMode = 'data' | 'prazo';
 
 export interface DeliveryModeToggleProps {
   value: DeliveryMode;

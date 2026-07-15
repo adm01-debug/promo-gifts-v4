@@ -22,7 +22,7 @@ afterEach(cleanup);
 const makeColors = (n: number) =>
   Array.from({ length: n }, (_, i) => ({
     name: `cor-${i}`,
-    hex: '#' + ((i * 0x111111) & 0xffffff).toString(16).padStart(6, '0'),
+    hex: `#${((i * 0x111111) & 0xffffff).toString(16).padStart(6, '0')}`,
   }));
 
 const renderSwatches = (ui: React.ReactElement) =>

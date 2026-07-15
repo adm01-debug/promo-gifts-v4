@@ -78,10 +78,9 @@ const QUERY_KEY = 'seller-carts';
 type UpdateQtyMutation = UseMutationResult<
   void,
   Error,
-  { itemId: string; quantity: number },
-  unknown
+  { itemId: string; quantity: number }
 >;
-type RemoveItemMutation = UseMutationResult<void, Error, string, unknown>;
+type RemoveItemMutation = UseMutationResult<void, Error, string>;
 
 export interface DebouncedCartItemActions {
   /** Registra novo valor otimista + agenda o UPDATE. */

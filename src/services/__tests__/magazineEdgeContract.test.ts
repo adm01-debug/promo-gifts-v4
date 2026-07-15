@@ -155,7 +155,7 @@ describe('magazineService.getPublicByToken — happy path', () => {
 
   it('NUNCA envia Authorization header', async () => {
     await magazineService.getPublicByToken('tok');
-    expect(calls[0].headers['authorization']).toBeUndefined();
+    expect(calls[0].headers.authorization).toBeUndefined();
   });
 
   it('propaga X-Request-Id', async () => {
@@ -260,6 +260,6 @@ describe('magazineService.getPublicByToken — token fuzz (30 casos)', () => {
     const call = calls[calls.length - 1];
     expect(call.url).toContain(`token=${encodeURIComponent(tok)}`);
     // nunca vaza authorization
-    expect(call.headers['authorization']).toBeUndefined();
+    expect(call.headers.authorization).toBeUndefined();
   });
 });

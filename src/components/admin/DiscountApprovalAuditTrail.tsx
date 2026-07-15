@@ -27,8 +27,8 @@ import { exportDiscountAuditPdf } from '@/lib/quotes/exportDiscountAuditPdf';
 
 interface AuditRow {
   id: string;
-  event: 'requested' | 'approved' | 'rejected' | 'expired' | 'cancelled' | 'superseded';
-  actor_role: 'seller' | 'admin' | 'supervisor' | 'system';
+  event: 'approved' | 'cancelled' | 'expired' | 'rejected' | 'requested' | 'superseded';
+  actor_role: 'admin' | 'seller' | 'supervisor' | 'system';
   actor_id: string | null;
   requested_discount_percent: number | null;
   max_allowed_percent: number | null;

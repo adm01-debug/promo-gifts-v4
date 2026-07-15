@@ -59,7 +59,7 @@ function findSizeRow(container: HTMLElement): HTMLElement {
     (s) => s.textContent?.trim() === 'Tamanho da gravação',
   );
   if (!label) throw new Error('Linha "Tamanho da gravação" não encontrada');
-  return label.parentElement as HTMLElement;
+  return label.parentElement!;
 }
 
 function assertFitsOnOneLine(row: HTMLElement, containerWidth: number) {

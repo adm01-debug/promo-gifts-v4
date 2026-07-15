@@ -224,7 +224,7 @@ describe('useQuotesListPage — fuzz exaustivo (300 runs) do filtro expiring', (
           expect(item.status).not.toBe('expired');
           // I3 + I4
           expect(item.valid_until).toBeTruthy();
-          const t = new Date(item.valid_until as string).getTime();
+          const t = new Date(item.valid_until!).getTime();
           expect(Number.isFinite(t)).toBe(true);
           // I2
           expect(t).toBeGreaterThanOrEqual(NOW);

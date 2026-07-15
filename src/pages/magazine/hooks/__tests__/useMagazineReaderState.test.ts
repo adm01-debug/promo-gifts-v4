@@ -228,7 +228,7 @@ describe('useMagazineReaderState — fallback quando edge falha', () => {
     renderHook(() => useMagazineReaderState(TOKEN));
     await new Promise((r) => setTimeout(r, 20));
     const expiredToast = toastCalls.find((t) =>
-      String(t.opts?.description ?? '').match(/expirou/i),
+      /expirou/i.exec(String(t.opts?.description ?? '')),
     );
     expect(expiredToast).toBeDefined();
     expect(localStorage.getItem('mag:remote-disabled')).toBe('1');

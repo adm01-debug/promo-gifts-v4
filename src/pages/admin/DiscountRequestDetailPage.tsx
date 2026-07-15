@@ -29,7 +29,7 @@ interface RequestRow {
   max_allowed_percent: number;
   seller_notes: string | null;
   admin_notes: string | null;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'approved' | 'pending' | 'rejected';
   created_at: string;
   responded_at: string | null;
   quotes?: {

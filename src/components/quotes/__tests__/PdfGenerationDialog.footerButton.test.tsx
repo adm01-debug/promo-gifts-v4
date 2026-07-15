@@ -21,7 +21,7 @@ async function openAndGetGenerateBtn() {
   render(<PdfGenerationDialog proposalData={baseData} quoteNumber="00001/26" />);
   const trigger = screen.getByRole('button', { name: /gerar proposta/i });
   trigger.click();
-  return await screen.findByTestId('pdf-generate-confirm');
+  return screen.findByTestId('pdf-generate-confirm');
 }
 
 describe('PdfGenerationDialog — botão "Gerar PDF" (footer)', () => {

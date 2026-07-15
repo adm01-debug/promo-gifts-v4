@@ -58,7 +58,7 @@ describe('Notas da negociação — invariante de confidencialidade', () => {
     );
     expect(src).not.toEqual('');
     // Isola o payload passado em navigate('/orcamentos/novo', { state: { ... } }).
-    const match = src.match(/navigate\('\/orcamentos\/novo'[\s\S]*?\}\);/);
+    const match = /navigate\('\/orcamentos\/novo'[\s\S]*?\}\);/.exec(src);
     expect(match, 'bloco de handoff para /orcamentos/novo não encontrado').toBeTruthy();
     const handoff = match![0];
     // Aceita item.notes, cart.notes NUNCA. Regra estrita: nenhuma propriedade
@@ -96,7 +96,7 @@ describe('Notas da negociação — invariante de confidencialidade', () => {
       // Qualquer menção a `seller_carts` ou ao alias `cart.notes` nessas rotas
       // já é vazamento potencial — falha explícita com nome do arquivo.
       if (/\bseller_carts\b/.test(content) || /\bcart\.notes\b/.test(content)) {
-        offenders.push(f.replace(ROOT + '/', ''));
+        offenders.push(f.replace(`${ROOT}/`, ''));
       }
     }
     expect(

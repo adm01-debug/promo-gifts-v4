@@ -15,10 +15,7 @@
  */
 
 export type ExpirationTone =
-  | 'text-destructive'
-  | 'text-amber-500'
-  | 'text-amber-400'
-  | 'text-muted-foreground/80';
+  'text-amber-400' | 'text-amber-500' | 'text-destructive' | 'text-muted-foreground/80';
 
 export interface ExpirationInfo {
   /** Dias até `valid_until` no fuso local; negativo = passado; null se inválido. */

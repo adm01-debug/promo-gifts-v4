@@ -68,7 +68,7 @@ describe('PDF — gate de cores hardcoded', () => {
 
     if (process.env.UPDATE_PDF_COLOR_ALLOWLIST === '1') {
       const next = { ...allowlist, perFile };
-      writeFileSync(ALLOWLIST_PATH, JSON.stringify(next, null, 2) + '\n', 'utf8');
+      writeFileSync(ALLOWLIST_PATH, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
       // eslint-disable-next-line no-console
       console.info('[pdfHardcodedColors] baseline regenerada em', ALLOWLIST_PATH);
       return;

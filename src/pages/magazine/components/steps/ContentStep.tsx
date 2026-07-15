@@ -16,14 +16,7 @@ interface Props {
 
 /** Somente keys booleanas — introText/closingText são texto e têm UI própria. */
 type BooleanContentKey =
-  | 'showPrice'
-  | 'showCode'
-  | 'showPersonalization'
-  | 'showDescription'
-  | 'showDimensions'
-  | 'showMaterials'
-  | 'showColors'
-  | 'groupByCategory';
+  'groupByCategory' | 'showCode' | 'showColors' | 'showDescription' | 'showDimensions' | 'showMaterials' | 'showPersonalization' | 'showPrice';
 type Toggle = { key: BooleanContentKey; label: string; hint: string };
 
 const FIELD_TOGGLES: Toggle[] = [

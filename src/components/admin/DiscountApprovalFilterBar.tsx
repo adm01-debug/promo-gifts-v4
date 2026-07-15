@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { X } from 'lucide-react';
 
-export type DiscountApprovalStatus = 'all' | 'pending' | 'approved' | 'rejected';
+export type DiscountApprovalStatus = 'all' | 'approved' | 'pending' | 'rejected';
 
 export interface DiscountApprovalFilters {
   search: string;

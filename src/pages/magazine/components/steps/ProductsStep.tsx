@@ -11,7 +11,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useProducts } from '@/hooks/products/useProducts';
 import type { Product } from '@/types/product-catalog';
 import type { Magazine, MagazineItem } from '@/types/magazine';

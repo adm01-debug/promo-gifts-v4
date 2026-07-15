@@ -16,7 +16,7 @@ import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
-type Variant = 'default' | 'destructive' | 'warning' | 'info';
+type Variant = 'default' | 'destructive' | 'info' | 'warning';
 
 const VARIANT_COPY: Record<Variant, { title: string; description: string; confirm: string; confirmShort: string }> = {
   default: {

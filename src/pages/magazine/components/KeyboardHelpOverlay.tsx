@@ -28,7 +28,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-export const KeyboardHelpOverlay = memo(function KeyboardHelpOverlay({ open, onOpenChange }: Props) {
+export const KeyboardHelpOverlay = memo(({ open, onOpenChange }: Props) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">

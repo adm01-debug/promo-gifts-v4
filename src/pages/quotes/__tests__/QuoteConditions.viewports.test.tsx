@@ -107,7 +107,7 @@ describe('QuoteBuilder — Condições · alinhamento em 320/768/1280', () => {
       setViewport(vp.width);
       const { container } = render(<FullConditionsSection />);
       for (const id of ALL_IDS) {
-        const t = container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+        const t = container.querySelector(`[data-testid="${id}"]`)!;
         expect(t, `[${vp.name}] testid "${id}"`).toBeTruthy();
         const cls = t.className;
         expect(cls).toMatch(/\[&>span\]:flex-1/);
@@ -124,7 +124,7 @@ describe('QuoteBuilder — Condições · alinhamento em 320/768/1280', () => {
       setViewport(vp.width);
       const { container } = render(<FullConditionsSection />);
       for (const id of ['delivery-time-select', 'shipping-type-select']) {
-        const t = container.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+        const t = container.querySelector(`[data-testid="${id}"]`)!;
         const directChildren = Array.from(t.children) as HTMLElement[];
         // 1º filho = SelectValue (span), último = chevron (svg wrapper)
         expect(directChildren.length).toBeGreaterThanOrEqual(2);

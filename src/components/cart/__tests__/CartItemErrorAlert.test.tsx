@@ -7,10 +7,10 @@
  *  • Quando o pai remove o alerta (após sucesso), ele SOME do DOM.
  *  • focusRetry=true move o foco para o botão de retry (a11y).
  */
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach } from 'vitest';
+
 import { CartItemErrorAlert } from '../CartItemErrorAlert';
 
 afterEach(() => cleanup());
@@ -57,7 +57,7 @@ describe('CartItemErrorAlert', () => {
         <div data-testid="empty" />
       );
     }
-    const { rerender } = render(<Host show={true} />);
+    const { rerender } = render(<Host show />);
     expect(screen.getByTestId('cart-item-error-i-1')).toBeInTheDocument();
     rerender(<Host show={false} />);
     expect(screen.queryByTestId('cart-item-error-i-1')).not.toBeInTheDocument();
@@ -105,7 +105,7 @@ describe('CartItemErrorAlert', () => {
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByTestId('outside')).toBeInTheDocument();
 
-    rerender(<Host show={true} />);
+    rerender(<Host show />);
     // Depois: alerta anunciável + foco no retry.
     const alert = screen.getByRole('alert');
     expect(alert).toHaveAttribute('aria-live', 'polite');

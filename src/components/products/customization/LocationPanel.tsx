@@ -15,7 +15,6 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TechniqueCard } from './TechniqueCard';
 import { ConfigurationPanelV6 } from './ConfigurationPanelV6';

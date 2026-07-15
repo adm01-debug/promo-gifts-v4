@@ -4,7 +4,7 @@
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Package, Plus, Pencil, Trash2, Loader2, AlertCircle, Boxes } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, AlertCircle, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';

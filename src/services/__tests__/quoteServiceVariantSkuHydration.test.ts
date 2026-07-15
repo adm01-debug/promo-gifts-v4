@@ -22,7 +22,7 @@ type Row = Record<string, unknown>;
  *  4) from('products').select(...).in('id', ...)            [hidratação categorias]
  *  5) from('product_variants').select(...).in('product_id').eq('is_active') [SKU]
  */
-function installFromMock(tables: Record<string, { data: Row[] | Row | null; error?: unknown }>) {
+function installFromMock(tables: Record<string, { data: Row | Row[] | null; error?: unknown }>) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fromFn = supabase.from as unknown as ReturnType<typeof vi.fn>;
   fromFn.mockImplementation((table: string) => {

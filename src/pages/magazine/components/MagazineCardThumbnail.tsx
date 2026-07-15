@@ -9,11 +9,11 @@ import { memo, useMemo } from 'react';
 import type { Magazine } from '@/types/magazine';
 import { MagazinePageRenderer } from './MagazinePageRenderer';
 
-export const MagazineCardThumbnail = memo(function MagazineCardThumbnail({
+export const MagazineCardThumbnail = memo(({
   magazine,
 }: {
   magazine: Magazine;
-}) {
+}) => {
   const coverPage = useMemo(
     () => ({ index: 0, kind: 'cover' as const, items: [] }),
     [],
