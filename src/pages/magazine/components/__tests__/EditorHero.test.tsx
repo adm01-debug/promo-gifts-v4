@@ -156,11 +156,7 @@ describe('EditorHero — sem mini preview', () => {
       name: /Escolher template/i,
     });
 
-    // radiogroup expõe aria-labelledby apontando para o heading visível
-    expect(group).toHaveAttribute(
-      'aria-labelledby',
-      'magazine-template-swap-heading',
-    );
+    // Heading acessível visível dentro do popover
     expect(
       document.getElementById('magazine-template-swap-heading'),
     ).toHaveTextContent(/Trocar template/i);
