@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Eye, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Eye, ZoomIn, ZoomOut, Maximize2, ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
