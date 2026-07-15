@@ -135,6 +135,7 @@
     "check:no-inline-cors": "node scripts/check-no-inline-cors.mjs",
     "check:no-followup-frontend": "node scripts/check-no-followup-frontend.mjs",
     "check:summary-color-tokens": "node scripts/check-summary-color-tokens.mjs",
+    "check:no-template-thumbnail": "node scripts/check-no-template-thumbnail.mjs",
     "build:cors-snapshot": "node scripts/build-cors-snapshot.mjs",
     "test:e2e:critical": "npx playwright test --project=chromium-public e2e/catalog.spec.ts e2e/kit-builder.spec.ts e2e/login.spec.ts e2e/mockup-generate.spec.ts",
     "test:edge:integration": "npx supabase test db --file supabase/functions/tests/edge_integration.test.ts",

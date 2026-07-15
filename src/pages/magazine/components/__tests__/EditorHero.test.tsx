@@ -128,4 +128,50 @@ describe('EditorHero — sem mini preview', () => {
     // Pós-clique: sem miniaturas em lugar algum da árvore
     expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
+
+  it('breadcrumb tem aria-current="page" no item Editor', () => {
+    renderHero();
+    const editorCrumb = screen.getByText('Editor');
+    expect(editorCrumb).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('popover "Trocar template" é navegável por teclado (Enter aciona onChangeTemplate)', async () => {
+    const user = userEvent.setup();
+    const onChangeTemplate = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <EditorHero magazine={magazine} onChangeTemplate={onChangeTemplate} />
+      </MemoryRouter>,
+    );
+
+    // Abre popover via teclado (foca botão + Enter)
+    const trigger = screen.getByRole('button', {
+      name: /Trocar template da revista/i,
+    });
+    trigger.focus();
+    await user.keyboard('{Enter}');
+
+    const group = await screen.findByRole('radiogroup', {
+      name: /Escolher template/i,
+    });
+
+    // Heading acessível visível dentro do popover
+    expect(
+      document.getElementById('magazine-template-swap-heading'),
+    ).toHaveTextContent(/Trocar template/i);
+
+    // Escolhe primeiro radio não-selecionado via foco + Enter
+    const radios = screen.getAllByRole('radio');
+    const target = radios.find(
+      (r) => r.getAttribute('aria-checked') === 'false',
+    );
+    expect(target).toBeDefined();
+    target!.focus();
+    expect(target).toHaveFocus();
+    await user.keyboard('{Enter}');
+
+    expect(onChangeTemplate).toHaveBeenCalledTimes(1);
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
+  });
 });

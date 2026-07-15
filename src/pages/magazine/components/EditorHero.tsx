@@ -58,7 +58,9 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
               Magazines
             </Link>
             <span aria-hidden>/</span>
-            <span className="truncate">Editor</span>
+            <span className="truncate" aria-current="page">
+              Editor
+            </span>
           </nav>
 
           <h1
@@ -114,7 +116,10 @@ export function EditorHero({ magazine, onChangeTemplate }: Props) {
                 className="w-[min(680px,calc(100vw-2rem))] p-3"
               >
                 <div className="mb-2 flex items-baseline justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  <p
+                    id="magazine-template-swap-heading"
+                    className="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+                  >
                     Trocar template
                   </p>
                   <span className="text-[11px] text-muted-foreground">
