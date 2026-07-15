@@ -1,0 +1,5 @@
+{
+  "description": "Allowlist do lint Supabase 0011 (function_search_path_mutable). Funções em public sem `SET search_path` fixo abrem vetor de search-path injection. Cada entrada precisa de reason documentado. Snapshot inicial: 2026-07-15 (0 violações — travamento anti-regressão).",
+  "documented_in": "security-memory (padrão SET search_path = public em SECURITY DEFINER)",
+  "functions": []
+}
