@@ -138,17 +138,8 @@ jobs:
               core.info('Comentário SSOT criado.');
             }
 
-      - name: Resumo
+      - name: Resumo (log + Job Summary)
         if: always()
-        run: |
-          echo "### SSOT Supabase Gates" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Canônico: \`doufsxqlfjyuvxuezpln\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Legado (proibido operacional): \`pqpdolkaeqlyzpdpbizo\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
-          if [ -f ssot-report.json ]; then
-            echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "\`\`\`json" >> "$GITHUB_STEP_SUMMARY"
-            node -e "const j=require('./ssot-report.json'); console.log(JSON.stringify({overallOk:j.overallOk,gates:j.gates},null,2))" >> "$GITHUB_STEP_SUMMARY"
-            echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
-          fi
+        run: node scripts/ssot-report-summary.mjs --in=ssot-report.json
+
 
