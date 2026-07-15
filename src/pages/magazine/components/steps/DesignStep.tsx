@@ -1,10 +1,14 @@
 /**
- * Step 4 — Design: galeria dos 12 templates com miniaturas FIÉIS ao layout +
- * seletor obrigatório de categoria (14 tokens Abreez-inspired) que colore o
- * SidebarChrome/PageNumberBadge de todas as páginas.
+ * Step 4 — Design: galeria dos 12 templates (sem miniaturas) + seletor de
+ * categoria (14 tokens Abreez-inspired) que colore o SidebarChrome/PageNumberBadge.
+ *
+ * A miniatura FIEL (`TemplateThumbnail`) foi removida deste step a pedido do PO:
+ * o preview real vive só na `PreviewSidebar` à direita e as miniaturas geravam
+ * duplicidade + ruído visual. Cards agora exibem apenas metadados (nome,
+ * família, produtos/página, fontes).
  */
 
-import { Check } from 'lucide-react';
+import { Check, Layers } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -14,7 +18,6 @@ import type {
   MagazineTemplateId,
 } from '@/types/magazine';
 import { templatesByFamily } from '../templates/TemplateRegistry';
-import { TemplateThumbnail } from '../TemplateThumbnail';
 import { MAGAZINE_CATEGORY_META } from '../templates/chrome';
 
 interface Props {
