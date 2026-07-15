@@ -153,10 +153,10 @@ describe('CATALOG_STOCK_STATUSES', () => {
   });
   it('todos são strings com hífen', () => {
     expect(CATALOG_STOCK_STATUSES).not.toHaveLength(0);
-    CATALOG_STOCK_STATUSES.forEach((s) => {
+    for (const s of CATALOG_STOCK_STATUSES) {
       expect(typeof s).toBe('string');
       expect(s).toMatch(/-/);
-    });
+    }
   });
 });
 
