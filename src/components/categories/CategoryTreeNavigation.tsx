@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Clickable } from '@/components/shared/Clickable';
 
 interface CategoryTreeNavigationProps {
   onSelectCategory?: (category: CategoryTreeItem) => void;
@@ -38,24 +39,17 @@ function TreeNode({
 
   return (
     <div>
-      <div
-        role="button"
-        tabIndex={0}
-        aria-selected={isSelected}
-        aria-expanded={hasChildren ? isExpanded : undefined}
+      <Clickable
+        isSelected={isSelected}
+        isExpanded={hasChildren ? isExpanded : undefined}
+        showFocusRing
         className={cn(
-          'flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+          'flex items-center gap-1 rounded-md px-2 py-1.5 transition-colors',
           'hover:bg-accent/50',
           isSelected && 'bg-primary/10 font-medium text-primary',
         )}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={() => onSelect(node)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onSelect(node);
-          }
-        }}
       >
         {/* Botão de expandir/colapsar */}
         {hasChildren ? (
