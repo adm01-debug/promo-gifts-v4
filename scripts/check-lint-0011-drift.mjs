@@ -153,7 +153,7 @@ async function main() {
   if (problems.length) {
     process.stderr.write('\n' + problems.join('\n\n') + '\n\n');
     process.stderr.write(
-      'Correção padrão: adicione `SET search_path = public` (ou `= ''`) na função.\n' +
+      "Correção padrão: adicione `SET search_path = public` (ou `= ''`) na função.\n" +
         'Exemplo:\n' +
         '  CREATE OR REPLACE FUNCTION public.minha_fn(...) RETURNS ...\n' +
         '  LANGUAGE plpgsql\n' +
