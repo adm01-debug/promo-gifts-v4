@@ -93,11 +93,11 @@ Qualquer "não" bloqueia o merge.
 ### 1. Código runtime
 - [ ] `src/integrations/supabase/client.ts` continua apontando para `doufsxqlfjyuvxuezpln`
 - [ ] `supabase/config.toml` continua com `project_id = "doufsxqlfjyuvxuezpln"`
-- [ ] Nenhum arquivo em `src/` ou `supabase/functions/` menciona `pqpdolkaeqlyzpdpbizo` fora de comentário
+- [ ] Nenhum arquivo em `src/` ou `supabase/functions/` menciona o ID legado `pqpdolkaeqlyzpdpbizo` fora de comentário — projeto legado, NUNCA usar
 - [ ] Campos críticos do tipo `Product` intactos: `price`, `sale_price`, `shortDescription`, `category_id`, `category_name`
 
 ### 2. Documentação (`.md`)
-- [ ] Nenhuma instrução operacional nova cita `pqpdolkaeqlyzpdpbizo` (deploy, migration, `supabase link`, `--project-ref`, connect)
+- [ ] Nenhuma instrução operacional nova cita o ID legado `pqpdolkaeqlyzpdpbizo` — projeto legado, NUNCA operacional (deploy, migration, `supabase link`, `--project-ref`, connect)
 - [ ] Toda URL `https://<ref>.supabase.co` operacional aponta para o canônico
 - [ ] Menções históricas ao legado estão em pasta de arquivo (`docs/redeploy/`, `docs/audit/`, `docs/incidents/`, `docs/sessoes/`) OU trazem marcador na mesma linha / nas 3 anteriores: `[LEGACY_INFORMATIVO]`, `projeto legado`, `deprecated`, `⚠️`, `não use`, `NUNCA apontar`
 - [ ] Novos exemplos de `.env` usam placeholders (`<project_ref>`, `your_project`) e não IDs reais
