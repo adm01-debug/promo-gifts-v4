@@ -121,6 +121,40 @@ describe('ssot-report.json — schema', () => {
     expect(r.stderr).toMatch(/overallOk/);
   });
 
+  it('rejeita artefato legado sem schemaVersion (mensagem acionável)', () => {
+    const v = validReport() as Record<string, unknown>;
+    delete v.schemaVersion;
+    const r = run(write('legacy.json', v));
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/schemaVersion/);
+    expect(r.stderr).toMatch(/legado|regere|Regere/i);
+  });
+
+  it('rejeita schemaVersion fora do formato SemVer', () => {
+    const v = { ...validReport(), schemaVersion: 'v2' };
+    const r = run(write('bad-semver.json', v));
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/schemaVersion/);
+  });
+
+  it('rejeita schemaVersion divergente do const do schema', () => {
+    const v = { ...validReport(), schemaVersion: '1.0.0' };
+    const r = run(write('wrong-ver.json', v));
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/schemaVersion/);
+    expect(r.stderr).toMatch(/ssot-report-bump/);
+  });
+
+  it('aceita --expected-version explícito que casa', () => {
+    const p = write('ok-explicit.json', validReport());
+    const r = spawnSync(
+      'node',
+      [VALIDATOR, `--file=${p}`, `--schema=${SCHEMA}`, '--expected-version=2.0.0', '--quiet'],
+      { encoding: 'utf8' },
+    );
+    expect(r.status).toBe(0);
+  });
+
   it('gera artefato real e valida contra schema', () => {
     const out = join(TMP, 'live.json');
     const r = spawnSync('node', ['scripts/ssot-report.mjs', `--out=${out}`, '--json'], {
@@ -128,6 +162,8 @@ describe('ssot-report.json — schema', () => {
     });
     // execução pode falhar (exit 1) mas o arquivo deve ser válido
     expect([0, 1]).toContain(r.status);
+    const live = JSON.parse(readFileSync(out, 'utf8'));
+    expect(live.schemaVersion).toBe('2.0.0');
     const check = run(out);
     expect(check.status).toBe(0);
   });
