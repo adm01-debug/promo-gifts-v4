@@ -287,9 +287,15 @@ function collectConfigFiles() {
         if (depth >= 4) continue;
         walk(p, depth + 1);
       } else if (e.isFile() && (CONFIG_EXT.test(e.name) || CONFIG_BASENAMES.test(e.name))) {
-        // Ignora lockfiles e artefatos de build/coverage.
+        // Ignora lockfiles, artefatos, e `.env` root (auto-gerado pelo Lovable Cloud —
+        // o Gate 0 + runtime-validator já protegem contra URL não-canônica em runtime).
         if (/package-lock\.json$|bun\.lockb$|coverage\/|dist\//.test(p)) continue;
+        if (rel(p) === '.env') continue;
         out.push(p);
+      }
+    }
+  }
+  function rel(p) { return p.replace(/^\.\//, ''); }
       }
     }
   }
