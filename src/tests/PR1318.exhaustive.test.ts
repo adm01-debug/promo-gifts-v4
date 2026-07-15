@@ -357,9 +357,10 @@ describe('D — Simulacao producao: 200 produtos', () => {
     expect(twice).toBe(once);
   });
   it('excluidos sao realmente out-of-stock', () => {
-    catalog.filter(x => !isProductInStock(x)).forEach(x => {
+    const excluded = catalog.filter((x) => !isProductInStock(x));
+    for (const x of excluded) {
       expect(isProductInStock(x)).toBe(false);
-    });
+    }
   });
   it('corrigida exclui >= produtos que a bugada (nunca mais permissiva)', () => {
     const bug = catalog.filter(x =>
