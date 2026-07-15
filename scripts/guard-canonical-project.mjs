@@ -2,17 +2,20 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
-// fix_version: guard-scope-runtime+docs-operational-2026-07-15
+// fix_version: guard-scope-runtime+docs+configs-2026-07-15
 // Fases:
 //   1) Runtime code (src/, supabase/functions/) — bloqueia QUALQUER referência ao ID proibido
 //      (exceto linhas de comentário puro), reproduzindo o comportamento clássico.
 //   2) Arquivos críticos — exige presença do ID canônico em client.ts e config.toml.
 //   3) Docs .md — bloqueia menções OPERACIONAIS ao ID proibido; menções informacionais
 //      (com marcador de legado) são permitidas.
+//   4) Config files (.yml/.yaml/.toml/.env*/.json na raiz e .github/) — bloqueia
+//      QUALQUER menção ao ID proibido em linhas não-comentário sem marcador legado.
 //
 // Flags:
 //   --skip-docs    pula fase 3
 //   --docs-only    executa apenas fase 3
+//   --skip-configs pula fase 4
 //   --json         saída estruturada para CI
 
 const CANONICAL_ID = 'doufsxqlfjyuvxuezpln';
@@ -22,6 +25,7 @@ const argv = new Set(process.argv.slice(2));
 const SKIP_DOCS = argv.has('--skip-docs');
 const DOCS_ONLY = argv.has('--docs-only');
 const JSON_OUT = argv.has('--json');
+const SKIP_CONFIGS = argv.has('--skip-configs');
 
 // Marcadores que classificam a linha como INFORMACIONAL/LEGADA.
 // Se qualquer um casar na linha (ou nas 2 linhas anteriores), o hit não bloqueia.
@@ -266,15 +270,79 @@ function runDocsPhase() {
   return { ok: false, violations };
 }
 
+// ── Fase 4: config files ──────────────────────────────────────────────────
+function collectConfigFiles() {
+  const out = [];
+  const CONFIG_EXT = /\.(ya?ml|toml|json|env(\..+)?|env)$/i;
+  const CONFIG_BASENAMES = /^(\.env(\..+)?|\.env)$/i;
+  function walk(dir, depth = 0) {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (DOC_EXCLUDE_DIRS.has(e.name)) continue;
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) {
+        // Limita a raiz + .github/ + supabase/ + scripts/ para não vasculhar node_modules-like.
+        if (depth === 0 && !['.github', 'supabase', 'scripts', '.husky'].includes(e.name)) continue;
+        if (depth >= 4) continue;
+        walk(p, depth + 1);
+      } else if (e.isFile() && (CONFIG_EXT.test(e.name) || CONFIG_BASENAMES.test(e.name))) {
+        // Ignora lockfiles, artefatos, e `.env` root (auto-gerado pelo Lovable Cloud —
+        // o Gate 0 + runtime-validator já protegem contra URL não-canônica em runtime).
+        if (/package-lock\.json$|bun\.lockb$|coverage\/|dist\//.test(p)) continue;
+        if (rel(p) === '.env') continue;
+        out.push(p);
+      }
+    }
+  }
+  function rel(p) { return p.replace(/^\.\//, ''); }
+  walk('.');
+  return out;
+}
+
+function runConfigsPhase() {
+  console.log('[CI Guard] Fase 4/4 — Config files (.yml/.yaml/.toml/.env*/.json)…');
+  const files = collectConfigFiles();
+  const violations = [];
+  for (const file of files) {
+    const rel = file.replace(/^\.\//, '');
+    let content;
+    try { content = fs.readFileSync(file, 'utf8'); } catch { continue; }
+    if (!content.includes(FORBIDDEN_ID)) continue;
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.includes(FORBIDDEN_ID)) continue;
+      const context = [lines[i - 2], lines[i - 1], line].filter(Boolean).join('\n');
+      if (hasLegacyMarker(context)) continue;
+      if (isCommentLine(line)) continue;
+      violations.push({ file: rel, line: i + 1, text: line.trim().slice(0, 200) });
+    }
+  }
+  if (violations.length === 0) {
+    console.log('\x1b[32m[OK]\x1b[0m Nenhuma menção ao ID legado em configs.');
+    return { ok: true, violations: [] };
+  }
+  console.error('\x1b[31m[CONFIGS]\x1b[0m ' + violations.length + ' menção(ões) ao ID legado em configs:');
+  for (const v of violations.slice(0, 40)) {
+    console.error('  · ' + v.file + ':' + v.line + '  ' + v.text);
+  }
+  console.error('\nTroque pelo canônico ' + CANONICAL_ID + ' ou adicione marcador legado próximo.');
+  return { ok: false, violations };
+}
+
 // ── Runner ────────────────────────────────────────────────────────────────
 try {
-  const results = { runtime: null, docs: null };
+  const results = { runtime: null, docs: null, configs: null };
 
   if (!DOCS_ONLY) {
     results.runtime = runRuntimePhase();
   }
   if (!SKIP_DOCS) {
     results.docs = runDocsPhase();
+  }
+  if (!DOCS_ONLY && !SKIP_CONFIGS) {
+    results.configs = runConfigsPhase();
   }
 
   if (JSON_OUT) {
@@ -283,8 +351,9 @@ try {
 
   const runtimeOk = !results.runtime || results.runtime.ok;
   const docsOk = !results.docs || results.docs.ok;
+  const configsOk = !results.configs || results.configs.ok;
 
-  if (!runtimeOk || !docsOk) process.exit(1);
+  if (!runtimeOk || !docsOk || !configsOk) process.exit(1);
 
   console.log('\x1b[32m[OK]\x1b[0m Guard canônico aprovado.');
   process.exit(0);

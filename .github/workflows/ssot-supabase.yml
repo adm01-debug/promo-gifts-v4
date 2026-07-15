@@ -1,0 +1,52 @@
+name: SSOT Supabase Guard
+
+on:
+  pull_request:
+    paths:
+      - '**/*.md'
+      - '**/*.mdx'
+      - 'src/integrations/supabase/**'
+      - 'scripts/validate-supabase-config.mjs'
+      - 'scripts/guard-canonical-project.mjs'
+      - 'scripts/check-docs-supabase-hosts.mjs'
+      - '.github/workflows/ssot-supabase.yml'
+      - 'package.json'
+  push:
+    branches: [main]
+
+concurrency:
+  group: ssot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ssot-gates:
+    name: SSOT Gates (validate + guard + hosts)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install (minimal, ignore scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Gate 0 — validate-supabase-config
+        run: npm run ssot:validate
+
+      - name: Gate 1 — guard-canonical-project (runtime + critical + docs)
+        run: npm run ssot:guard
+
+      - name: Gate 2 — supabase hosts nos .md
+        run: npm run ssot:hosts
+
+      - name: Resumo
+        if: always()
+        run: |
+          echo "### SSOT Supabase Gates" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Canônico: \`doufsxqlfjyuvxuezpln\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Legado (proibido operacional): \`pqpdolkaeqlyzpdpbizo\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Status: ${{ job.status }}" >> "$GITHUB_STEP_SUMMARY"
