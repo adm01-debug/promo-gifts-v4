@@ -8,7 +8,7 @@ function p(o: Partial<InStockProduct> = {}): InStockProduct {
   return { stock: null, stockStatus: null, variations: undefined, ...o };
 }
 function s(id: string, price: number | null | undefined): Product {
-  return { id, name: 'P-' + id, price } as unknown as Product;
+  return { id, name: `P-${id}`, price } as unknown as Product;
 }
 
 // ── A1. stockStatus canonicos ─────────────────────────────────────────────────
@@ -79,7 +79,7 @@ describe('A3 — fallback por stock (sem stockStatus)', () => {
   it('stock=-Infinity → false', () => { expect(isProductInStock(p({ stock: -Infinity }))).toBe(false); });
   it('fallback alinhado: [null,undefined,NaN,Inf,-Inf,-1,0] todos false', () => {
     [null, undefined, NaN, Infinity, -Infinity, -1, 0].forEach(stock => {
-      expect(isProductInStock(p({ stock: stock as number }))).toBe(false);
+      expect(isProductInStock(p({ stock: stock! }))).toBe(false);
     });
   });
 });
@@ -206,7 +206,7 @@ describe('B3 — getCatalogStockStatus x isProductInStock: SSOT consistente', ()
     [999, 1000], [1000, 1000],
   ];
   matrix.forEach(([stock, minQty]) => {
-    it('stock=' + stock + ' minQty=' + minQty + ' consistente', () => {
+    it(`stock=${stock} minQty=${minQty} consistente`, () => {
       const status = getCatalogStockStatus(stock, CATALOG_LOW_STOCK_THRESHOLD, minQty);
       expect(isProductInStock({ stock, stockStatus: status })).toBe(status !== 'out-of-stock');
     });

@@ -37,7 +37,7 @@ export interface ActualArrival {
    * Template literals em JSX (ex.: key={`${promise.id}__${arrival.id}`}) convertem
    * automaticamente para string.
    */
-  id: string | number;
+  id: number | string;
   sourceId: string;
   supplierId: string;
   variantId: string;
@@ -61,7 +61,7 @@ export interface ReplenishmentMatch {
 export interface UnmatchedPromise {
   promise: PromisedReplenishment;
   /** 'pending' = ainda no futuro; 'expired' = passou a janela sem chegada. */
-  reason: 'pending' | 'expired';
+  reason: 'expired' | 'pending';
 }
 
 /** Chegada sem promessa associada (entrada não anunciada). */
@@ -75,7 +75,7 @@ export interface MatchingResult {
   orphanArrivals: OrphanArrival[];
 }
 
-export type ConfidenceBand = 'high' | 'medium' | 'low' | 'unknown';
+export type ConfidenceBand = 'high' | 'low' | 'medium' | 'unknown';
 
 export interface ReliabilityWindow {
   /** Score 0..100, ou null se sem dados na janela. */

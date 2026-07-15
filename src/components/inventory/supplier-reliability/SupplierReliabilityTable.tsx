@@ -13,7 +13,7 @@ interface SupplierReliabilityTableProps {
   selectedId?: string | null;
 }
 
-type SortKey = 'score' | 'name' | 'matches' | 'delay' | 'next';
+type SortKey = 'delay' | 'matches' | 'name' | 'next' | 'score';
 
 function formatPct(v: number | null): string {
   if (v === null) return '—';

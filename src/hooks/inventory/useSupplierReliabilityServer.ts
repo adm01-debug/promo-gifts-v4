@@ -174,7 +174,7 @@ export interface SupplierReliabilityEvent {
   slot: number;
   promisedDate: string;
   promisedQuantity: number;
-  resolution: 'fulfilled' | 'expired';
+  resolution: 'expired' | 'fulfilled';
   actualDate: string | null;
   actualQuantity: number | null;
   delayDays: number | null;

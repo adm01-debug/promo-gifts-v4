@@ -29,7 +29,7 @@ export function useProductColorSwatch(product: ProductWithSwatches) {
 
   const swatches: ColorSwatch[] = useMemo(() => {
     if (lazySwatches) return lazySwatches;
-    return (product.color_swatches as ColorSwatch[]) ?? [];
+    return (product.color_swatches!) ?? [];
   }, [product.color_swatches, lazySwatches]);
 
   const activeVariant = useMemo(

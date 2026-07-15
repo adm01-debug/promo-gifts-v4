@@ -41,7 +41,7 @@ export interface SnapshotRow {
    * que era string, mas em runtime era number, causando TypeError em .localeCompare().
    * toStr() em matching.ts garante segurança nas comparações.
    */
-  id: string | number;
+  id: number | string;
   variant_supplier_source_id: string | null;
   supplier_id: string | null;
   variant_id: string | null;

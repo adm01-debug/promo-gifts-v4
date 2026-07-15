@@ -143,7 +143,7 @@ export const ALLOWED_FILTER_KEYS: Readonly<Record<string, ReadonlySet<string>>> 
  * Ambos os tipos são aceitos. Callers com { id: string } satisfazem a constraint
  * porque string é subtipo de string | number (TypeScript structural typing).
  */
-export async function fetchPaginatedFromBridge<T extends { id: string | number }>(
+export async function fetchPaginatedFromBridge<T extends { id: number | string }>(
   table: string,
   select: string,
   pageSize = 1000,
@@ -165,10 +165,10 @@ export async function fetchPaginatedFromBridge<T extends { id: string | number }
   // Set<string | number>: aceita UUIDs (string, tabelas Ouro com UUID PK)
   // e bigint PKs (number, ex: stock_snapshots.id=int8 retornado como JS number).
   // SameValueZero garante deduplicação correta para ambos sem mistura de tipos.
-  const seen = new Set<string | number>();
+  const seen = new Set<number | string>();
   // string | number | null: PostgREST retorna bigint PKs como JS number (não string).
   // Cursor evolution: null → T.id (string|number) → gt() na próxima página.
-  let lastId: string | number | null = null;
+  let lastId: number | string | null = null;
   let totalCount: number | null = null;
 
   // Aliases centralizados: tabelas Ouro expostas via views públicas (Medallion).

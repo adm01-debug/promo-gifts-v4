@@ -35,8 +35,8 @@ describe('FRENTE-1: divergência entre getCatalogStockStatus e getVariationStock
     for (const stock of stocks) {
       for (const minQty of minQtys) {
         for (const threshold of [5, 10, 20]) {
-          const fromCatalog = getCatalogStockStatus(stock, threshold, minQty as number);
-          const fromVariation = getVariationStockStatus(stock, minQty as number, threshold);
+          const fromCatalog = getCatalogStockStatus(stock, threshold, minQty!);
+          const fromVariation = getVariationStockStatus(stock, minQty!, threshold);
           if (fromCatalog !== fromVariation) {
             divergences++;
             diffs.push(`stock=${stock} minQty=${minQty} t=${threshold}: catalog=${fromCatalog} var=${fromVariation}`);
@@ -52,8 +52,8 @@ describe('FRENTE-1: divergência entre getCatalogStockStatus e getVariationStock
       Infinity, -Infinity, NaN, null, undefined,
     ];
     extremes.forEach((s) => {
-      const c = getCatalogStockStatus(s as number);
-      const v = getVariationStockStatus(s as number, undefined);
+      const c = getCatalogStockStatus(s!);
+      const v = getVariationStockStatus(s!, undefined);
       expect(c, `catalog divergiu para ${s}`).toBe('out-of-stock');
       expect(v, `variation divergiu para ${s}`).toBe('out-of-stock');
       expect(c).toBe(v);
@@ -291,7 +291,7 @@ describe('FRENTE-4: contrato de prioridade variação > produto.stockStatus', ()
 describe('FRENTE-5: minStock filter correctness via Number.isFinite', () => {
   // Simula o filtro diretamente para não depender do hook
   const applyMinStockFilter = (stock: number | null | undefined, threshold: number): boolean =>
-    Number.isFinite(stock) && (stock as number) >= threshold;
+    Number.isFinite(stock) && (stock!) >= threshold;
 
   it('Infinity nunca passa (BUG-MINSTOCK-INF)', () => {
     expect(applyMinStockFilter(Infinity, 1)).toBe(false);
@@ -359,9 +359,9 @@ describe('FRENTE-6: compareStockStatus — propriedades de comparador', () => {
     for (let i = 0; i < ordered.length - 2; i++) {
       for (let j = i + 1; j < ordered.length - 1; j++) {
         for (let k = j + 1; k < ordered.length; k++) {
-          const ab = compareStockStatus(ordered[i] as string, ordered[j] as string);
-          const bc = compareStockStatus(ordered[j] as string, ordered[k] as string);
-          const ac = compareStockStatus(ordered[i] as string, ordered[k] as string);
+          const ab = compareStockStatus(ordered[i]!, ordered[j]!);
+          const bc = compareStockStatus(ordered[j]!, ordered[k]!);
+          const ac = compareStockStatus(ordered[i]!, ordered[k]!);
           expect(ab).toBeLessThanOrEqual(0);
           expect(bc).toBeLessThanOrEqual(0);
           expect(ac).toBeLessThanOrEqual(0);
@@ -557,7 +557,7 @@ describe('FRENTE-9: pipeline completo end-to-end', () => {
   it('SSOT: todos os status retornados por getCatalogStockStatus passam em isCatalogStockStatus', () => {
     const stocks = [-5, 0, 1, 5, 9, 10, 50, 100, null, undefined, NaN, Infinity];
     stocks.forEach((s) => {
-      const status = getCatalogStockStatus(s as number);
+      const status = getCatalogStockStatus(s!);
       expect(isCatalogStockStatus(status)).toBe(true);
     });
   });

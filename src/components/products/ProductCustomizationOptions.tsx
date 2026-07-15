@@ -437,7 +437,7 @@ export function ProductCustomizationOptions({
             className="scrollbar-none flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] font-medium text-muted-foreground md:gap-2 md:pb-0 md:text-[11px]"
           >
             {[
-              { n: 1, label: 'Local', onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }), active: !currentLocation || !pricesRef.current.get(currentLocation.location_code) ? true : false },
+              { n: 1, label: 'Local', onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }), active: !!(!currentLocation || !pricesRef.current.get(currentLocation.location_code)) },
               { n: 2, label: 'Técnica', onClick: () => scrollToStep(2), active: !!currentLocation && !pricesRef.current.get(currentLocation.location_code) },
               { n: 3, label: 'Tamanho', onClick: () => scrollToStep(3), active: !!currentLocation && !!pricesRef.current.get(currentLocation.location_code) },
             ].map((step, idx, arr) => (
