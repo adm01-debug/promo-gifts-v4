@@ -86,4 +86,46 @@ describe('EditorHero — sem mini preview', () => {
     // Nenhuma miniatura renderizada dentro do popover
     expect(screen.queryAllByRole('img')).toHaveLength(0);
   });
+
+  it('clicar em um card do popover dispara onChangeTemplate e não renderiza miniaturas', async () => {
+    const user = userEvent.setup();
+    const onChangeTemplate = vi.fn();
+
+    render(
+      <MemoryRouter>
+        <EditorHero magazine={magazine} onChangeTemplate={onChangeTemplate} />
+      </MemoryRouter>,
+    );
+
+    await user.click(
+      screen.getByRole('button', { name: /Trocar template da revista/i }),
+    );
+
+    const group = await screen.findByRole('radiogroup', {
+      name: /Escolher template/i,
+    });
+
+    // Sanity: nenhuma miniatura antes do clique
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
+
+    // Escolhe um radio diferente do template ativo (editorial-vogue)
+    const radios = screen.getAllByRole('radio');
+    const target = radios.find(
+      (r) => r.getAttribute('aria-checked') === 'false',
+    );
+    expect(target).toBeDefined();
+    expect(group).toContainElement(target!);
+
+    await user.click(target!);
+
+    // Callback disparado exatamente 1 vez com um id de template válido (string não vazia)
+    expect(onChangeTemplate).toHaveBeenCalledTimes(1);
+    const [calledId] = onChangeTemplate.mock.calls[0];
+    expect(typeof calledId).toBe('string');
+    expect(calledId).not.toBe('editorial-vogue');
+    expect((calledId as string).length).toBeGreaterThan(0);
+
+    // Pós-clique: sem miniaturas em lugar algum da árvore
+    expect(screen.queryAllByRole('img')).toHaveLength(0);
+  });
 });
