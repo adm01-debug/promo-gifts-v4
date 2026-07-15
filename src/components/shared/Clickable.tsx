@@ -87,13 +87,9 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clicka
     ...rest
   } = props;
   const Component = (as ?? 'div') as ElementType;
-  // Encaminha data-* e aria-* extras (data-testid, data-selected, aria-haspopup, aria-controls, etc.)
-  const passthrough: Record<string, unknown> = {};
-  for (const key of Object.keys(rest)) {
-    if (key.startsWith('data-') || key.startsWith('aria-')) {
-      passthrough[key] = (rest as Record<string, unknown>)[key];
-    }
-  }
+  // Encaminha todos os props extras (data-*, aria-*, motion props como layout/initial/animate/transition,
+  // e HTMLAttributes como title, onMouseEnter, etc.). Props internos já foram destruturados acima.
+  const passthrough = rest as Record<string, unknown>;
 
   const handleClick = (e: MouseEvent) => {
     if (disabled) return;

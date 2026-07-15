@@ -2,7 +2,7 @@
  * QuickViewThumb — Wrapper acessível que torna uma thumb clicável e abre o
  * ProductQuickView (paridade total com o catálogo).
  *
- * - role="button" + tabIndex=0 + onKeyDown (Enter/Space) — a11y
+ * - Usa <Clickable> (SSOT a11y) para role/tabIndex/keyboard (Enter/Space)
  * - stopPropagation no click/keydown — não dispara o onClick do card pai
  * - Lazy: busca o Product completo via useProduct apenas quando o usuário abre
  * - Funciona em qualquer módulo (Novidades, Reposição, Catálogo, Estoque…)
@@ -26,6 +26,7 @@ import { ProductQuickView } from './ProductQuickView';
 import { useProduct } from '@/hooks/products/useProducts';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
+import { Clickable } from '@/components/shared/Clickable';
 import { cn } from '@/lib/utils';
 import type { Product } from '@/hooks/products';
 
@@ -98,28 +99,19 @@ export const QuickViewThumb = forwardRef<QuickViewThumbHandle, QuickViewThumbPro
 
     return (
       <>
-        <div
-          role="button"
-          tabIndex={0}
+        <Clickable
           aria-label={`Visualização rápida de ${productName}`}
           data-testid={testId}
+          showFocusRing={false}
           className={cn('cursor-zoom-in', className)}
           onClick={(e) => {
             e.stopPropagation();
             overrideColorRef.current = undefined;
             setOpen(true);
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              e.stopPropagation();
-              overrideColorRef.current = undefined;
-              setOpen(true);
-            }
-          }}
         >
           {children}
-        </div>
+        </Clickable>
         <ProductQuickView
           key={overrideTick}
           product={product ?? null}

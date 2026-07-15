@@ -5,6 +5,7 @@
 import { m as motion } from 'framer-motion';
 import { MoreVertical, Pencil, Copy, Star, Trash2, Package, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Clickable } from '@/components/shared/Clickable';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import {
   DropdownMenu,
@@ -47,27 +48,22 @@ export function CollectionListItem({
   index,
 }: CollectionListItemProps) {
   return (
-    <motion.div
+    <Clickable
+      as={motion.div}
       layout
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
-      role="button"
-      tabIndex={0}
-      aria-pressed={isSelected}
+      strictTarget
+      isPressed={isSelected}
+      showFocusRing={false}
       className={cn(
-        'group flex cursor-pointer items-center gap-4 rounded-xl border bg-card p-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
+        'group flex items-center gap-4 rounded-xl border bg-card p-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
         isSelected
           ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
           : 'border-border/50 hover:border-primary/40 hover:shadow-md',
       )}
       onClick={onNavigate}
-      onKeyDown={(e) => {
-        if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
-          e.preventDefault();
-          onNavigate();
-        }
-      }}
     >
       <div onClick={(e) => e.stopPropagation()} className="shrink-0">
         <SelectionCheckbox checked={isSelected} onChange={onToggleSelect} size="md" />
@@ -157,6 +153,6 @@ export function CollectionListItem({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </motion.div>
+    </Clickable>
   );
 }
