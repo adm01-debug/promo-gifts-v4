@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    // Column is magazine_token_hash (SHA-256 of public_token), NOT magazine_token.
     const tokenHash = await sha256Hex(parsed.data.token);
 
     const { data, error } = await supabase
