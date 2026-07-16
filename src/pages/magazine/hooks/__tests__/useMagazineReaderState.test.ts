@@ -102,7 +102,7 @@ describe('useMagazineReaderState — hidratação inicial', () => {
     localStorage.setItem(LP_KEY, '3');
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
     expect(result.current.lastPageIndex).toBe(3);
-    expect(Array.from(result.current.bookmarks).sort()).toEqual([0, 2, 5]);
+    expect(Array.from(result.current.bookmarks).sort((a, b) => a - b)).toEqual([0, 2, 5]);
   });
 
   it('sobrevive a JSON corrompido em bookmarks', () => {
@@ -116,7 +116,7 @@ describe('useMagazineReaderState — hidratação inicial', () => {
   it('filtra valores não-finitos e negativos', () => {
     localStorage.setItem(BK_KEY, JSON.stringify([1, -1, 'a', null, Infinity, NaN, 4]));
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
-    expect(Array.from(result.current.bookmarks).sort()).toEqual([1, 4]);
+    expect(Array.from(result.current.bookmarks).sort((a, b) => a - b)).toEqual([1, 4]);
   });
 
   it('token undefined → estado neutro sem erro', () => {
@@ -224,7 +224,7 @@ describe('useMagazineReaderState — fallback quando edge falha', () => {
   it('503 dispara toast + persiste flag remote-disabled', async () => {
     readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(localStorage.getItem('mag:remote-disabled')).toBe('1');
     expect(toastCalls.length).toBeGreaterThanOrEqual(1);
     expect(toastCalls[0].title).toBe('Modo local ativado');
@@ -235,7 +235,7 @@ describe('useMagazineReaderState — fallback quando edge falha', () => {
     sessionStorage.clear();
     readReply = { kind: 'status', status: 401, body: { error: 'invalid_or_expired' } };
     renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     const expiredToast = toastCalls.find((t) =>
       /expirou/i.exec(String(t.opts?.description ?? '')),
     );
@@ -246,25 +246,25 @@ describe('useMagazineReaderState — fallback quando edge falha', () => {
   it('toast é one-shot: 2 mounts consecutivos → 1 toast', async () => {
     readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     const { unmount } = renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     unmount();
     toastCalls.length = 0;
     renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(toastCalls.length).toBe(0);
   });
 
   it('erro de rede (throw) NÃO persiste flag (transitório)', async () => {
     readReply = { kind: 'throw', error: new Error('network down') };
     renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(localStorage.getItem('mag:remote-disabled')).toBeNull();
   });
 
   it('sem remote-disabled, funciona 100% local (writes seguem no localStorage)', async () => {
     readReply = { kind: 'status', status: 503, body: { error: 'sync_disabled' } };
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.toggleBookmark(2);
@@ -297,7 +297,7 @@ describe('useMagazineReaderState — merge de estado remoto', () => {
     readReply = { kind: 'ok', body: { bookmarks: [10, 20], lastPageIndex: 0 } };
     localStorage.setItem(BK_KEY, JSON.stringify([1, 2]));
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(Array.from(result.current.bookmarks).sort((a, b) => a - b)).toEqual([1, 2, 10, 20]);
   });
 
@@ -305,7 +305,7 @@ describe('useMagazineReaderState — merge de estado remoto', () => {
     readReply = { kind: 'ok', body: { bookmarks: [], lastPageIndex: 15 } };
     localStorage.setItem(LP_KEY, '5');
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(result.current.lastPageIndex).toBe(15);
   });
 
@@ -313,14 +313,14 @@ describe('useMagazineReaderState — merge de estado remoto', () => {
     readReply = { kind: 'ok', body: { bookmarks: [], lastPageIndex: 2 } };
     localStorage.setItem(LP_KEY, '10');
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(result.current.lastPageIndex).toBe(10);
   });
 
   it('remoto com bookmarks null/lastPageIndex null não quebra', async () => {
     readReply = { kind: 'ok', body: { bookmarks: null, lastPageIndex: null } };
     const { result } = renderHook(() => useMagazineReaderState(TOKEN));
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(result.current.bookmarks.size).toBe(0);
     expect(result.current.lastPageIndex).toBe(0);
   });
@@ -375,7 +375,8 @@ describe('useMagazineReaderState — fuzz de race conditions (100 sequências)',
 // PRNG determinístico (Mulberry32) para reproduzibilidade dos fuzz seeds
 function mulberry32(a: number): () => number {
   return function () {
-    let t = (a += 0x6d2b79f5);
+    a += 0x6d2b79f5;
+    let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
