@@ -254,6 +254,23 @@
 </div>
 
 <!-- ═══════════════════════════════════════════ -->
+<div class="card" style="border-left:4px solid var(--ok);margin-bottom:2rem">
+  <h2 style="color:var(--ok);margin-top:0">Fixes Applied (2026-07-16)</h2>
+  <table>
+    <thead><tr><th>Fix</th><th>Issue</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>FIX 1</td><td><strong>CRITICAL:</strong> Remove <code>pdf_url</code> ghost column from code &mdash; column does not exist in DB</td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 2</td><td><strong>CRITICAL:</strong> Fix branding color validation (<code>primaryColor</code> &rarr; <code>colors.primary</code>)</td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 3</td><td>Sync <code>MagazineRow</code> with DB &mdash; add <code>view_count</code>, <code>archived_at</code></td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 4</td><td>Archive 4 stale draft migrations to <code>_archived/</code></td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 5</td><td>Add guard comments for <code>magazine_token_hash</code> column name in edge functions</td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 6</td><td>Regenerate Supabase types &mdash; magazine tables now in <code>types.ts</code></td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 7</td><td>Update this audit report with fixes applied</td><td style="color:var(--ok)">FIXED</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
 <h2>Resumo Executivo</h2>
 
 <div class="scorecard">
