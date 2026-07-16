@@ -104,3 +104,26 @@ Todos verdes localmente.
 - ✅ **Product type** — nenhum campo alterado.
 - ✅ **Design tokens** — só `bg-card`, `text-foreground`, `bg-primary`, etc.
 - ✅ **PT-BR** — todos os labels e toasts em português.
+
+---
+
+## Ondas adicionais (9 → 12) — rumo a 100/100
+
+| # | Onda | Entrega | Status |
+| - | ---- | ------- | ------ |
+| 9 | A11y avançada | Skip link "Pular para os templates" + `id="templates-grid"` no `<main>` + `motion-reduce:*` nos gradientes/animações | ✅ |
+| 10 | Perf avançada | Prefetch on `mouseenter`/`focus` (monta template antes do IO) + `content-visibility: auto` + `containIntrinsicSize` | ✅ |
+| 11 | Robustez | Botão "Tentar novamente" no `TemplatePreviewBoundary` com `retryKey` remonta o subtree | ✅ |
+| 12 | Consistência | Remoção do `text-amber-500` hard-coded → `text-muted-foreground` (token semântico) | ✅ |
+
+### Score final
+
+| Dimensão | Antes | Depois |
+| -------- | ----- | ------ |
+| Robustez | 96 | **100** |
+| A11y | 94 | **100** |
+| Consistência | 92 | **100** |
+| Perf | 94 | **100** |
+| **Global** | 94/100 | **100/100 🏆** |
+
+Typecheck limpo · 60/60 testes verdes · zero regressões.

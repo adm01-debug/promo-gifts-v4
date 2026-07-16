@@ -70,11 +70,18 @@ function TemplateCardImpl({
   const page = useMemo(() => buildMockPage(entry.id), [entry.id]);
   const Template = entry.Component;
 
+  const handlePrefetch = () => {
+    if (!visible) setVisible(true);
+  };
+
   return (
     <div
       ref={rootRef}
+      onMouseEnter={handlePrefetch}
+      onFocus={handlePrefetch}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: `${THUMB_HEIGHT}px` }}
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg',
+        'group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg motion-reduce:transition-none',
         isFavorite && 'ring-2 ring-primary/40',
       )}
       data-testid={`template-card-${entry.id}`}
@@ -149,7 +156,7 @@ function TemplateCardImpl({
           </div>
         )}
 
-        <div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-gradient-to-t from-foreground/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-gradient-to-t from-foreground/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none">
           <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-background/95 px-4 py-2 text-sm font-medium text-foreground shadow">
             <Eye className="h-4 w-4" aria-hidden />
             Ver em tamanho real
