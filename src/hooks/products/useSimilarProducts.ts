@@ -90,7 +90,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
       // Corrige o gap onde produtos só em related_product_id nunca apareciam.
       // Verifica AMBAS as direções: product_id = X  e  related_product_id = X.
       try {
-        const { data: rpcRows, error: rpcErr } = await supabase.rpc(
+        const { data: rpcRows, error: rpcErr } = await (supabase as unknown as { rpc: (n: string, a: any) => any }).rpc(
           'fn_get_similar_products',
           { p_product_id: productId, p_limit: 50 }
         );

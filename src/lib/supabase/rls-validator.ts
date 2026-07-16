@@ -73,8 +73,7 @@ export async function validateRLSPolicies(): Promise<RLSValidationResult> {
     for (const table of CRITICAL_TABLES) {
       try {
         // Attempt a HEAD-like query (count only)
-        // @ts-expect-error TS2589 deep type from regenerated Supabase types
-        const { count, error } = await supabase
+        const { count, error } = await (supabase as unknown as { from: (t: string) => any })
           .from(table)
           .select('*', { count: 'exact', head: true })
           .limit(1);
@@ -144,8 +143,7 @@ export async function canAccessTable(
     }
 
     // Test with a zero-row query
-    // @ts-expect-error TS2769 deep type from regenerated Supabase types
-    const { error } = await supabase
+    const { error } = await (supabase as unknown as { from: (t: string) => any })
       .from(table)
       .select('*', { head: true })
       .limit(0);

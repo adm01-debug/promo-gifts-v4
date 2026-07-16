@@ -54,8 +54,16 @@ export interface ClickableProps {
   [dataAttr: `data-${string}`]: string | number | boolean | undefined;
   /** Atributos aria-* extras (aria-haspopup, aria-controls, aria-current, etc.). */
   [ariaAttr: `aria-${string}`]: string | number | boolean | undefined;
-  /** Passthrough for polymorphic as component props (motion.div, etc.). */
-  [key: string]: unknown;
+  /** framer-motion: layout flag (only when as={motion.*}). */
+  layout?: boolean | 'position' | 'size' | 'preserve-aspect';
+  /** framer-motion: initial state. */
+  initial?: Record<string, unknown> | boolean;
+  /** framer-motion: animate target. */
+  animate?: Record<string, unknown>;
+  /** framer-motion: transition config. */
+  transition?: Record<string, unknown>;
+  /** framer-motion: exit animation. */
+  exit?: Record<string, unknown>;
 }
 
 /**

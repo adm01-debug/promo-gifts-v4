@@ -20,7 +20,7 @@ interface TableRowActionsProps {
   isInCompare: boolean;
   canAddToCompare: boolean;
   onToggleFavorite?: (id: string) => void;
-  onToggleCompare?: (id: string) => unknown;
+  onToggleCompare?: (id: string) => { added: boolean; isFull: boolean } | void;
   onOpenVariantPicker: (product: Product, mode: VariantActionMode) => void;
   onOpenQuickView: (product: Product) => void;
 }
@@ -170,7 +170,7 @@ export function TableRowActions({
                 onToggleCompare?.(product.id);
                 showUndoToast({
                   title: `"${product.name}" removido da comparação`,
-                  onUndo: () => onToggleCompare?.(product.id),
+                  onUndo: () => { onToggleCompare?.(product.id); },
                 });
               } else {
                 onOpenVariantPicker(product, 'compare');

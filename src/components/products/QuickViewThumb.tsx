@@ -104,7 +104,7 @@ export const QuickViewThumb = forwardRef<QuickViewThumbHandle, QuickViewThumbPro
           data-testid={testId}
           showFocusRing={false}
           className={cn('cursor-zoom-in', className)}
-          onClick={(e) => {
+          onClick={(e: React.MouseEvent | React.KeyboardEvent) => {
             e.stopPropagation();
             overrideColorRef.current = undefined;
             setOpen(true);
