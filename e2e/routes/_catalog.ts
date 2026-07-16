@@ -85,6 +85,7 @@ export const APP_ROUTES: RouteEntry[] = [
   { path: "/ferramentas/bi/comparar", area: "app", feature: "bi-compare", smoke: true, description: "BI — Comparador de clientes" },
   { path: "/match", area: "app", titleSlug: "match-produtos", feature: "match", smoke: true, description: "Match de produtos" },
   { path: "/dropbox", area: "app", titleSlug: "dropbox", feature: "dropbox", smoke: true, description: "Dropbox browser" },
+  { path: "/magazine/templates", area: "app", titleSlug: "magazine-templates", feature: "magazine-templates-gallery", smoke: true, description: "Galeria de Templates de Revista" },
 ];
 
 /* ============================================================
