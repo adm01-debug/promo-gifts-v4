@@ -1,0 +1,470 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+        "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+      },
+      "gitCommit": {
+        "shortHash": "c2e2c2d",
+        "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+        "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+        "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784203177000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1784203177000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-public",
+        "name": "firefox-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-public",
+        "name": "webkit-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "commitHash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29496459481"
+          },
+          "gitCommit": {
+            "shortHash": "c2e2c2d",
+            "hash": "c2e2c2d9227cef39f04bfca3cb6a89c93f7d8aa6",
+            "subject": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)",
+            "body": "fix(magazine): wire validateBranding into setBranding, fix 3 test fixtures (#1707)\n\n- GAP 1: validateBranding() was never called by setBranding() in\n  useMagazineEditor — branding data reached persistence unsanitized.\n  Now setBranding() validates/sanitizes colors via the guard before\n  persisting, closing the XSS vector through color fields.\n\n- GAP 2: partial colors objects (e.g. only primary provided) silently\n  dropped required keys. validateBranding() now defaults missing keys\n  to #000000 instead of producing an incomplete object.\n\n- GAP 3: 3 test fixtures (PreviewSidebar.empty, DesignStep, EditorHero)\n  were missing viewCount and archivedAt fields added by FIX 3.\n\n- Stale comment: magazineService.ts header said types regen was pending\n  but FIX 6 already regenerated them.\n\n\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784203177000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784203177000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'",
+      "stack": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-07-16T12:00:48.481Z",
+    "duration": 2363.726,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
