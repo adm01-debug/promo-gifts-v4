@@ -67,8 +67,16 @@ export function sanitizeUrl(
  */
 export function sanitizeText(text: string | null | undefined): string {
   if (!text) return '';
-  // Remove all HTML tags
-  return text.replace(/<[^>]*>/g, '').trim();
+  // Iteratively strip HTML tags until stable (prevents incomplete-multi-character-sanitization
+  // where e.g. "<scr<script>ipt>" survives a single-pass strip).
+  let current = text;
+  for (let i = 0; i < 20; i++) {
+    const next = current.replace(/<[^>]*>/g, '');
+    if (next === current) break;
+    current = next;
+  }
+  // Remove any remaining lone angle brackets that could not form a valid tag
+  return current.replace(/[<>]/g, '').trim();
 }
 
 /**

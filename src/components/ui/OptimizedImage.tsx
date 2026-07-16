@@ -50,34 +50,38 @@ export function OptimizedImage({
   const { localPlaceholder, detectionRule } = useMemo(() => {
     if (lqip || !src) return { localPlaceholder: null, detectionRule: 'none' };
 
-    if (src.includes('imagedelivery.net')) {
-      let baseUrl = src.split('?')[0];
-      if (baseUrl.endsWith('/')) {
-        baseUrl = baseUrl.slice(0, -1);
+    try {
+      // Use URL parsing (not substring) to prevent host-bypass attacks
+      const parsedSrc = new URL(src);
+      if (parsedSrc.hostname === 'imagedelivery.net') {
+        let baseUrl = src.split('?')[0];
+        if (baseUrl.endsWith('/')) {
+          baseUrl = baseUrl.slice(0, -1);
+        }
+        const thumbUrl = baseUrl.replace(/\/[^/]+$/, '/thumbnail');
+        if (debug || process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.info(
+            `[OptimizedImage] Cloudflare Image detected. Rule: CF_VARIANT_REPLACEMENT. Generated thumbnail: ${thumbUrl}`,
+          );
+        }
+        return { localPlaceholder: thumbUrl, detectionRule: 'cloudflare' };
       }
-      const thumbUrl = baseUrl.replace(/\/[^/]+$/, '/thumbnail');
-      if (debug || process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.info(
-          `[OptimizedImage] Cloudflare Image detected. Rule: CF_VARIANT_REPLACEMENT. Generated thumbnail: ${thumbUrl}`,
-        );
+      if (parsedSrc.hostname === 'images.unsplash.com' || parsedSrc.hostname.endsWith('.unsplash.com')) {
+        parsedSrc.searchParams.set('w', '50');
+        parsedSrc.searchParams.set('q', '10');
+        parsedSrc.searchParams.set('blur', '10');
+        const thumbUrl = parsedSrc.toString();
+        if (debug || process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.info(
+            `[OptimizedImage] Unsplash Image detected. Rule: UNSPLASH_PARAMS. Generated thumbnail: ${thumbUrl}`,
+          );
+        }
+        return { localPlaceholder: thumbUrl, detectionRule: 'unsplash' };
       }
-      return { localPlaceholder: thumbUrl, detectionRule: 'cloudflare' };
-    }
-
-    if (src.includes('unsplash.com')) {
-      const url = new URL(src);
-      url.searchParams.set('w', '50');
-      url.searchParams.set('q', '10');
-      url.searchParams.set('blur', '10');
-      const thumbUrl = url.toString();
-      if (debug || process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.info(
-          `[OptimizedImage] Unsplash Image detected. Rule: UNSPLASH_PARAMS. Generated thumbnail: ${thumbUrl}`,
-        );
-      }
-      return { localPlaceholder: thumbUrl, detectionRule: 'unsplash' };
+    } catch {
+      // Invalid URL — fall through to generic handling
     }
 
     if (src.includes('/storage/v1/object/public/')) {
