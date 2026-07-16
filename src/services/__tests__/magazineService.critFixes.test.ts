@@ -53,7 +53,7 @@ let simulateDeleteError = false;
 let simulateItemInsertError = false;
 let lastUnpublishPatch: Record<string, unknown> = {};
 let lastDeleteMagId: string | null = null;
-let lastRemoveItemCalled = false;
+let _lastRemoveItemCalled = false;
 let simulateRemoveItemError = false;
 
 vi.mock('@/integrations/supabase/client', () => {
@@ -116,7 +116,7 @@ vi.mock('@/integrations/supabase/client', () => {
           delete: vi.fn(() => ({
             eq: vi.fn((col: string, val: string) => {
               if (col === 'id') {
-                lastRemoveItemCalled = true;
+                _lastRemoveItemCalled = true;
                 return {
                   eq: vi.fn(() => Promise.resolve({
                     data: null,
@@ -164,7 +164,7 @@ beforeEach(() => {
   simulateRemoveItemError = false;
   lastUnpublishPatch = {};
   lastDeleteMagId = null;
-  lastRemoveItemCalled = false;
+  _lastRemoveItemCalled = false;
   mockItemsOverride = null;
   vi.resetModules();
 });

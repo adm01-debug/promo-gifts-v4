@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Magazine, MagazineClientBranding } from '@/types/magazine';
+import type { MagazineClientBranding } from '@/types/magazine';
 
 // ---------------------------------------------------------------------------
 // Supabase mock — intercepts typed queries
@@ -207,7 +207,7 @@ describe('magazineService.updateBranding — partial color patch regression', ()
     const { magazineService } = await import('../magazineService');
 
     const result = await magazineService.updateBranding('mag_brd_1', {
-      clientLogoUrl: 'javascript:alert(1)',
+      clientLogoUrl: 'javascript:alert(1)', // eslint-disable-line no-script-url
     });
 
     expect(result).toBeNull();

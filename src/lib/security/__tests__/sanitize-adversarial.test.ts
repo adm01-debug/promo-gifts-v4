@@ -63,7 +63,6 @@ describe('sanitizeUrl — G2 WHATWG octal IP normalisation', () => {
 
   it('blocks http://010.0.0.1 (octal 8.0.0.1 — non-private, sanity check should NOT block)', () => {
     // 010 = 8 in octal. 8.0.0.1 is a public IP — must NOT be blocked.
-    const result = sanitizeUrl('http://010.0.0.1');
     // If WHATWG normalises this to 8.0.0.1 it should pass through.
     // If the URL parser rejects it as malformed, null is acceptable too.
     // Either way, it must not be confused with 10.x (RFC1918).
@@ -178,10 +177,10 @@ describe('sanitizeUrl — G5 dangerous URI schemes', () => {
   });
 
   it('blocks javascript:alert(1) (original protocol)', () => {
-    expect(sanitizeUrl('javascript:alert(1)')).toBeNull();
+    expect(sanitizeUrl('javascript:alert(1)')).toBeNull(); // eslint-disable-line no-script-url
   });
 
   it('blocks JAVASCRIPT:alert(1) (case-insensitive)', () => {
-    expect(sanitizeUrl('JAVASCRIPT:alert(1)')).toBeNull();
+    expect(sanitizeUrl('JAVASCRIPT:alert(1)')).toBeNull(); // eslint-disable-line no-script-url
   });
 });

@@ -168,7 +168,7 @@ describe('validateBranding — G8 SSRF in clientLogoUrl', () => {
 describe('validateBranding — G9 XSS schemes in clientLogoUrl', () => {
   it('sanitizes javascript:alert(1) to null', () => {
     const result = validateBranding({
-      clientLogoUrl: 'javascript:alert(1)',
+      clientLogoUrl: 'javascript:alert(1)', // eslint-disable-line no-script-url
     });
     expect(result.sanitized?.clientLogoUrl).toBeNull();
     expect(result.isValid).toBe(false);

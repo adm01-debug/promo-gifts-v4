@@ -33,7 +33,7 @@ export function parseReturnTo(raw: string | null | undefined): ParsedReturn | nu
     trimmed.startsWith('\\') ||
     trimmed.includes('://') ||
     trimmed.includes('\\') ||
-    /[\u0000-\u001f\u007f]/.test(trimmed) ||
+    /[\u0000-\u001f\u007f]/.test(trimmed) || // eslint-disable-line no-control-regex
     /^[a-z][a-z0-9+.-]*:/i.test(trimmed) // scheme:...
   ) {
     return null;

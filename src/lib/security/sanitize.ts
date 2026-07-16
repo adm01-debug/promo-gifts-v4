@@ -28,7 +28,7 @@ const SSRF_BLOCKED_HOSTNAME = (hostname: string): boolean => {
   // (mixed notation ::ffff:127.0.0.1, full 0:0:0:0:0:ffff:7f00:1) to this compact form.
   // The last two 16-bit groups encode the IPv4 address: ::ffff:hi:lo → hi.lo IPv4.
   // Example: ::ffff:7f00:1 → 127.0.0.1, ::ffff:a9fe:a9fe → 169.254.169.254 (AWS metadata)
-  const ipv4Mapped = h.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  const ipv4Mapped = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(h);
   if (ipv4Mapped) {
     const hi = parseInt(ipv4Mapped[1], 16);
     const lo = parseInt(ipv4Mapped[2], 16);
@@ -40,9 +40,9 @@ const SSRF_BLOCKED_HOSTNAME = (hostname: string): boolean => {
     h === 'localhost' ||
     h === '0.0.0.0' ||
     h === '::1' ||
-    /^127\./.test(h) ||            // 127.0.0.0/8 loopback
-    /^10\./.test(h) ||             // 10.0.0.0/8 private
-    /^192\.168\./.test(h) ||       // 192.168.0.0/16 private
+    h.startsWith('127.') ||        // 127.0.0.0/8 loopback
+    h.startsWith('10.') ||         // 10.0.0.0/8 private
+    h.startsWith('192.168.') ||    // 192.168.0.0/16 private
     /^172\.(1[6-9]|2\d|3[01])\./.test(h) || // 172.16-31.x private
     /^169\.254\./.test(h) ||       // 169.254.0.0/16 link-local
     /^fe[89ab][0-9a-f]:/i.test(h) || // IPv6 link-local fe80::/10

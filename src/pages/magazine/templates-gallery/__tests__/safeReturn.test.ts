@@ -38,7 +38,7 @@ describe('parseReturnTo — inputs inválidos', () => {
     ['objeto', {}],
     ['string vazia', ''],
     ['espaço', '   '],
-    ['string gigante', '/magazine/' + 'a'.repeat(300)],
+    ['string gigante', `/magazine/${'a'.repeat(300)}`],
   ];
 
   for (const [name, value] of malicious) {
@@ -54,8 +54,8 @@ describe('parseReturnTo — open redirect / SSRF', () => {
     '//evil.com',
     'https://evil.com/magazine/abc123',
     'http://evil.com',
-    'javascript:alert(1)',
-    'JAVASCRIPT:alert(1)',
+    'javascript:alert(1)', // eslint-disable-line no-script-url
+    'JAVASCRIPT:alert(1)', // eslint-disable-line no-script-url
     'data:text/html,<script>alert(1)</script>',
     'vbscript:msgbox(1)',
     'file:///etc/passwd',
