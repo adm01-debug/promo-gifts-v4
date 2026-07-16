@@ -115,7 +115,7 @@ describe('EditorHero — sem mini preview', () => {
       (r) => r.getAttribute('aria-checked') === 'false',
     );
     expect(target).toBeDefined();
-    expect(group).toContainElement(target!);
+    expect(_group).toContainElement(target!);
 
     await user.click(target!);
 
