@@ -312,6 +312,96 @@ describe('useMagazineEditor — stale ref race condition', () => {
     expect(result.current.magazine?.branding.colors.primary).toBe(originalPrimary);
     expect(result.current.magazine?.branding.clientLogoUrl).toBe('https://cdn.example.com/logo.png');
   });
+
+  it('[H] setBranding with partial colors patch preserves non-patched color keys', async () => {
+    // REGRESSION: shallow merge { ...branding, ...patch } where patch.colors is
+    // a partial object silently drops secondary/text and validateBranding() fills
+    // defaults (#000000) — user loses their custom secondary/text colors.
+    storedMagazine = {
+      ...MOCK_MAGAZINE,
+      branding: {
+        clientLogoUrl: null,
+        colors: { primary: '#FF0000', secondary: '#CCCCCC', text: '#333333' },
+      },
+    };
+    const { result } = await renderLoadedEditor();
+
+    // Patch only primary — secondary and text must survive
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
+    await act(async () => {
+      result.current.setBranding({ colors: { primary: '#AA0000' } });
+    });
+
+    expect(result.current.magazine?.branding.colors.primary).toBe('#AA0000');
+    expect(result.current.magazine?.branding.colors.secondary).toBe('#CCCCCC'); // must NOT be #000000
+    expect(result.current.magazine?.branding.colors.text).toBe('#333333');    // must NOT be #000000
+  });
+
+  it('[I] setBranding with partial colors patch preserves text color only', async () => {
+    storedMagazine = {
+      ...MOCK_MAGAZINE,
+      branding: {
+        clientLogoUrl: null,
+        colors: { primary: '#AA0000', secondary: '#BBBBBB', text: '#444444' },
+      },
+    };
+    const { result } = await renderLoadedEditor();
+
+    // Patch only secondary — primary and text must survive
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
+    await act(async () => {
+      result.current.setBranding({ colors: { secondary: '#FF6600' } });
+    });
+
+    expect(result.current.magazine?.branding.colors.primary).toBe('#AA0000');    // preserved
+    expect(result.current.magazine?.branding.colors.secondary).toBe('#FF6600'); // patched
+    expect(result.current.magazine?.branding.colors.text).toBe('#444444');       // preserved
+  });
+
+  it('[J] setBranding with all colors + clientLogoUrl: all applied atomically', async () => {
+    storedMagazine = {
+      ...MOCK_MAGAZINE,
+      branding: {
+        clientLogoUrl: 'https://old.logo.com/logo.png',
+        colors: { primary: '#000000', secondary: '#000000', text: '#000000' },
+      },
+    };
+    const { result } = await renderLoadedEditor();
+
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
+    await act(async () => {
+      result.current.setBranding({
+        clientLogoUrl: 'https://new.cdn.com/logo.png',
+        colors: { primary: '#FF0000', secondary: '#00FF00', text: '#0000FF' },
+      });
+    });
+
+    expect(result.current.magazine?.branding.clientLogoUrl).toBe('https://new.cdn.com/logo.png');
+    expect(result.current.magazine?.branding.colors.primary).toBe('#FF0000');
+    expect(result.current.magazine?.branding.colors.secondary).toBe('#00FF00');
+    expect(result.current.magazine?.branding.colors.text).toBe('#0000FF');
+  });
+
+  it('[K] setBranding rejects invalid color hex and preserves previous valid colors', async () => {
+    storedMagazine = {
+      ...MOCK_MAGAZINE,
+      branding: {
+        clientLogoUrl: null,
+        colors: { primary: '#FF0000', secondary: '#CCCCCC', text: '#333333' },
+      },
+    };
+    const { result } = await renderLoadedEditor();
+
+    // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
+    await act(async () => {
+      // Invalid color: should be rejected entirely
+      result.current.setBranding({ colors: { primary: 'not-a-hex-color' } });
+    });
+
+    // Validation fails → setBranding returns early → state unchanged
+    expect(result.current.magazine?.branding.colors.primary).toBe('#FF0000'); // unchanged
+    expect(result.current.brandingErrors.length).toBeGreaterThan(0);
+  });
 });
 
 describe('useMagazineEditor — loading states', () => {
