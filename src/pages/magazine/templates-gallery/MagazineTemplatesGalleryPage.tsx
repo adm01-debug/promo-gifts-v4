@@ -16,12 +16,15 @@ import { Button } from '@/components/ui/button';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 import {
+  TEMPLATE_REGISTRY,
   listTemplates,
   type TemplateEntry,
 } from '../components/templates/TemplateRegistry';
 import type { MagazineTemplateFamily } from '@/types/magazine';
 import { TemplateCard } from './TemplateCard';
 import { TemplatePreviewDialog } from './TemplatePreviewDialog';
+import { parseReturnTo } from './safeReturn';
+import { useFavoriteTemplate } from './useFavoriteTemplate';
 
 type FamilyFilter = 'all' | MagazineTemplateFamily;
 
@@ -32,20 +35,29 @@ const FAMILY_TABS: Array<{ id: FamilyFilter; label: string }> = [
   { id: 'corporate', label: 'Corporativo' },
 ];
 
+function isValidTemplateId(id: string): id is TemplateEntry['id'] {
+  return Object.prototype.hasOwnProperty.call(TEMPLATE_REGISTRY, id);
+}
+
 export default function MagazineTemplatesGalleryPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const returnTo = params.get('returnTo');
-  const isFromEditor = returnTo && /^\/magazine\/[^/]+$/.test(returnTo);
+  const parsedReturn = useMemo(() => parseReturnTo(params.get('returnTo')), [params]);
+  const isFromEditor = parsedReturn !== null;
 
   const [family, setFamily] = useState<FamilyFilter>('all');
   const [previewId, setPreviewId] = useState<TemplateEntry['id'] | null>(null);
+  const { favoriteId, toggleFavorite } = useFavoriteTemplate();
 
   const templates = useMemo(() => {
     const all = listTemplates();
-    if (family === 'all') return all;
-    return all.filter((t) => t.family === family);
-  }, [family]);
+    const filtered = family === 'all' ? all : all.filter((t) => t.family === family);
+    if (!favoriteId) return filtered;
+    // favorito primeiro (se estiver no filtro atual), demais preservam ordem
+    const fav = filtered.find((t) => t.id === favoriteId);
+    if (!fav) return filtered;
+    return [fav, ...filtered.filter((t) => t.id !== favoriteId)];
+  }, [family, favoriteId]);
 
   const previewEntry = useMemo(
     () => (previewId ? listTemplates().find((t) => t.id === previewId) ?? null : null),
@@ -54,17 +66,26 @@ export default function MagazineTemplatesGalleryPage() {
 
   const useLabel = isFromEditor ? 'Usar este template' : 'Criar revista';
 
-  const handleUse = (id: TemplateEntry['id']) => {
-    if (isFromEditor && returnTo) {
-      const sep = returnTo.includes('?') ? '&' : '?';
-      navigate(`${returnTo}${sep}applyTemplate=${encodeURIComponent(id)}`);
-      return;
-    }
-    toast.message('Vamos criar sua revista', {
-      description: 'Abra o Magazine e crie uma nova revista — este template estará disponível na etapa "Design".',
-    });
-    navigate('/magazine');
-  };
+  const handleUse = useCallback(
+    (id: TemplateEntry['id']) => {
+      if (!isValidTemplateId(id)) {
+        toast.error('Template inválido. Escolha outro da galeria.');
+        return;
+      }
+      if (parsedReturn) {
+        navigate(`${parsedReturn.path}?applyTemplate=${encodeURIComponent(id)}`);
+        return;
+      }
+      toast.message('Vamos criar sua revista', {
+        description:
+          'Abra o Magazine e crie uma nova revista — este template estará disponível na etapa "Design".',
+      });
+      navigate('/magazine');
+    },
+    [navigate, parsedReturn],
+  );
+
+  const handlePreview = useCallback((id: TemplateEntry['id']) => setPreviewId(id), []);
 
   return (
     <>
