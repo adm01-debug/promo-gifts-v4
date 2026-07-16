@@ -43,6 +43,8 @@ import {
   type StepId,
   type StepValidation,
 } from './utils/stepValidation';
+import { TEMPLATE_REGISTRY } from './components/templates/TemplateRegistry';
+import type { MagazineTemplateId } from '@/types/magazine';
 import './magazine.css';
 
 const STEPS: Array<{ id: StepId; label: string }> = [
