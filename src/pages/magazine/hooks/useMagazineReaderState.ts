@@ -152,8 +152,8 @@ function disableRemote(storage: Storage | null, reason: string): void {
       /* noop */
     }
   }
-  if (typeof console !== 'undefined' && typeof console.info === 'function') {
-    console.info('[magazine-reader-state] remote sync disabled:', reason);
+  if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+    console.warn('[magazine-reader-state] remote sync disabled:', reason);
   }
   notifyRemoteDisabled(reason);
 }
@@ -194,7 +194,7 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
       },
       (e) => {
         clearTimeout(t);
-        reject(e);
+        reject(e instanceof Error ? e : new Error(String(e)));
       },
     );
   });
@@ -324,7 +324,7 @@ export function useMagazineReaderState(token: string | undefined): MagazineReade
         if (cancelled) return;
         safeSetSyncStatus('local-only');
         if (typeof console !== 'undefined') {
-          console.info('[magazine-reader-state] initial fetch failed, going local-only:', err);
+          console.warn('[magazine-reader-state] initial fetch failed, going local-only:', err);
         }
       }
     })();
