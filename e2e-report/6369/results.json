@@ -1,0 +1,470 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+        "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+      },
+      "gitCommit": {
+        "shortHash": "6df4f91",
+        "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+        "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+        "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784210208000
+        },
+        "committer": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784210208000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-public",
+        "name": "firefox-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-public",
+        "name": "webkit-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "commitHash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29504392273"
+          },
+          "gitCommit": {
+            "shortHash": "6df4f91",
+            "hash": "6df4f91ae5e509974db260db994df5df5c1b27ee",
+            "subject": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310",
+            "body": "fix(magazine): move useMagazinePublish hook ABOVE early returns — React #310\n\nROOT CAUSE:\n`useMagazinePublish` (which calls useState + useCallback internally)\nwas positioned AFTER the two early returns (`!editor.loaded` / `!magazine`).\n\nRender 1 (loaded=false) → early return → N hooks executed\nRender 2 (loaded=true) → passes early returns → N+1 hooks → React #310 crash\n\nFIX:\n- Move `publishable` computation before early returns, with null guard\n- Move `useMagazinePublish(...)` hook call before early returns\n- Move `goToStep` into a useCallback (was plain function after returns)\n- All hooks now run unconditionally at the top of the component\n- Early returns remain below ALL hooks\n\nThis is the same class of bug fixed previously for useMemo (documented\nin the long comment block), but the Lovable bot re-introduced it by\nadding useMagazinePublish after the guard zone.\n\nCrash confirmed in production: promogifts.com.br 2026-07-16T13:52:49Z",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "committer": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784210208000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'",
+      "stack": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-07-16T13:59:03.852Z",
+    "duration": 2516.2129999999997,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
