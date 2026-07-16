@@ -5,8 +5,8 @@
  * (tabelas `magazines`, `magazine_items`) + edge `magazine-public-view`
  * para leitura anônima. Toda a API passa a ser assíncrona.
  *
- * Migração 2026-07-16: convertido de untypedFrom<Row>() para supabase.from()
- * tipado (docs/plans/magazine-typed-queries-migration.md). Campos Json do BD
+ * Migração 2026-07-16: queries convertidas para supabase.from() tipado
+ * (docs/plans/magazine-typed-queries-migration.md). Campos Json do BD
  * (branding, content_settings, product_snapshot, overrides, page_order) são
  * mapeados via cast explícito nas funções de mapeamento.
  */
