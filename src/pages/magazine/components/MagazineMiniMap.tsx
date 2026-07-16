@@ -212,8 +212,8 @@ export function MagazineMiniMap({ total, currentIndex, bookmarks, onGo, renderPr
           />
         )}
 
-        {/* Tooltip de scrub durante drag — usa != null (null OU undefined) intencional. */}
-        {dragging && scrubIdx != null && (
+        {/* Tooltip de scrub durante drag — scrubIdx é number|null (nunca undefined). */}
+        {dragging && scrubIdx !== null && (
           <div
             className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md bg-neutral-900 px-2 py-1 text-[11px] font-medium tabular-nums text-white shadow-lg"
             style={{ left: `${thumbLeft}%` }}
