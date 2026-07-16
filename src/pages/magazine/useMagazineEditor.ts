@@ -71,7 +71,12 @@ export function useMagazineEditor(id: string | undefined) {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       setSaving(true);
       saveTimer.current = setTimeout(() => {
-        void magazineService.update(next.id, next).finally(() => setSaving(false));
+        // CRIT-7: exclude `items` from the debounced scalar patch.
+        // Items are mutated exclusively through addProducts/removeItem/reorderItems
+        // which write to DB synchronously. Passing items here would let a stale
+        // closure overwrite DB items committed by those methods in the 400ms window.
+        const { items: _items, ...scalarPatch } = next;
+        void magazineService.update(next.id, scalarPatch).finally(() => setSaving(false));
       }, 400);
     },
     [],

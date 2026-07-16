@@ -330,9 +330,17 @@ export const magazineService = {
       }
     }
 
-    // Se o patch inclui items, sincroniza (delete + insert).
-    if (patch.items) {
-      await supabase.from('magazine_items').delete().eq('magazine_id', id);
+    // CRIT-6: Array.isArray guard — `if (patch.items)` is truthy for [], which
+    // would delete all items and then insert nothing, silently wiping the list.
+    // CRIT-5: delete result is checked — insert failure after successful delete
+    // returned a Magazine with items=[] (data loss); now we return null so the
+    // caller knows the operation failed.
+    if (Array.isArray(patch.items)) {
+      const { error: delErr } = await supabase.from('magazine_items').delete().eq('magazine_id', id);
+      if (delErr) {
+        logger.warn('[magazineService.update] items delete error:', delErr.message);
+        return null;
+      }
       if (patch.items.length > 0) {
         const rows = patch.items.map((it, idx) => ({
           magazine_id: id,
@@ -346,6 +354,7 @@ export const magazineService = {
         const { error: insErr } = await supabase.from('magazine_items').insert(rows);
         if (insErr) {
           logger.warn('[magazineService.update] items insert error:', insErr.message);
+          return null;
         }
       }
     }
@@ -386,7 +395,11 @@ export const magazineService = {
     const existingIds = new Set(current.items.map((i) => i.productId));
     const additions = products.filter((p) => !existingIds.has(p.id));
     if (additions.length === 0) return current;
-    const basePos = current.items.length;
+    // CRIT-4: Use max(position) + 1 instead of items.length to avoid position
+    // collisions after any removeItem creates gaps in the position sequence.
+    const basePos = current.items.length === 0
+      ? 0
+      : Math.max(...current.items.map((i) => i.position ?? 0)) + 1;
     const rows = additions.map((p, offset) => ({
       magazine_id: id,
       product_id: p.id,
@@ -398,8 +411,10 @@ export const magazineService = {
     }));
     const { error } = await supabase.from('magazine_items').insert(rows);
     if (error) {
+      // MED-8: return null on insert failure — returning `current` falsely
+      // implied success while the products were never actually persisted.
       logger.warn('[magazineService.addProducts] error:', error.message);
-      return current;
+      return null;
     }
     // Bumpa updated_at do header
     await supabase
@@ -416,8 +431,10 @@ export const magazineService = {
       .eq('id', itemId)
       .eq('magazine_id', id);
     if (error) {
+      // MED-5: return null on delete failure — returning this.get(id) falsely
+      // implied the item was removed while it was still in the DB.
       logger.warn('[magazineService.removeItem] error:', error.message);
-      return this.get(id);
+      return null;
     }
     await supabase
       .from('magazines')
@@ -604,13 +621,16 @@ export const magazineService = {
 
     // 1) Update de status/published_at — sempre. Se falhar, aborta ANTES de
     //    tentar gravar qualquer token (INV-3: sem token órfão no BD).
+    // MED-10: guard deleted_at IS NULL so a soft-deleted magazine cannot be
+    // re-published without first restoring it (avoids phantom published rows).
     const { error } = await supabase
       .from('magazines')
       .update({
         status: 'published',
         published_at: new Date().toISOString(),
       })
-      .eq('id', id);
+      .eq('id', id)
+      .is('deleted_at', null);
     if (error) {
       logger.warn('[magazineService.publish] error:', error.message);
       return null;
@@ -654,9 +674,11 @@ export const magazineService = {
   },
 
   async unpublish(id: string): Promise<Magazine | null> {
+    // MED-14: also clear public_token so the shared link stops resolving —
+    // unpublishing without nulling the token left the magazine publicly readable.
     const { error } = await supabase
       .from('magazines')
-      .update({ status: 'draft' })
+      .update({ status: 'draft', public_token: null })
       .eq('id', id);
     if (error) {
       logger.warn('[magazineService.unpublish] error:', error.message);

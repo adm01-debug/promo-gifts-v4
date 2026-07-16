@@ -18,6 +18,25 @@ const DANGEROUS_PROTOCOLS = /^(javascript|data|vbscript|file|blob):/i;
  * @param options - Strictness options
  * @returns Safe URL string, or null if dangerous
  */
+// Private/loopback/link-local hostname patterns blocked to prevent SSRF.
+// Covers IPv4 private ranges, IPv6 loopback/link-local, and common internal TLDs.
+const SSRF_BLOCKED_HOSTNAME = (hostname: string): boolean => {
+  // Strip IPv6 brackets: [::1] → ::1
+  const h = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  return (
+    h === 'localhost' ||
+    h === '0.0.0.0' ||
+    h === '::1' ||
+    /^127\./.test(h) ||            // 127.0.0.0/8 loopback
+    /^10\./.test(h) ||             // 10.0.0.0/8 private
+    /^192\.168\./.test(h) ||       // 192.168.0.0/16 private
+    /^172\.(1[6-9]|2\d|3[01])\./.test(h) || // 172.16-31.x private
+    /^169\.254\./.test(h) ||       // 169.254.0.0/16 link-local
+    /^fe[89ab][0-9a-f]:/i.test(h) || // IPv6 link-local fe80::/10
+    /\.(local|internal|corp|intranet|lan)$/i.test(h) // common internal TLDs
+  );
+};
+
 export function sanitizeUrl(
   url: string | null | undefined,
   options: { httpsOnly?: boolean; allowEmpty?: boolean } = {},
@@ -25,6 +44,10 @@ export function sanitizeUrl(
   if (!url) {
     return options.allowEmpty ? '' : null;
   }
+
+  // CRIT-2: typeof guard before .trim() — truthy non-strings (numbers, objects)
+  // would throw TypeError inside the try-catch-less zone.
+  if (typeof url !== 'string') return null;
 
   const trimmed = url.trim();
   if (!trimmed) return null;
@@ -48,6 +71,21 @@ export function sanitizeUrl(
     // General mode: allow http and https only
     if (!SAFE_URL_PROTOCOLS.has(protocol)) {
       console.warn('[SecurityGuard] Blocked non-http(s) URL scheme:', protocol);
+      return null;
+    }
+
+    // CRIT-1: Block embedded credentials (user:pass@host) — potential credential exfil.
+    if (parsed.username || parsed.password) {
+      console.warn('[SecurityGuard] Blocked URL with embedded credentials');
+      return null;
+    }
+
+    // CRIT-1: Block private/loopback/link-local hosts — SSRF prevention.
+    // WHATWG URL parser normalises octal (0177.0.0.1), hex (0x7f000001) and
+    // decimal (2130706433) representations before we reach here, so hostname
+    // comparison is reliable against all encoding tricks.
+    if (SSRF_BLOCKED_HOSTNAME(parsed.hostname)) {
+      console.warn('[SecurityGuard] Blocked SSRF-risk hostname:', parsed.hostname);
       return null;
     }
 

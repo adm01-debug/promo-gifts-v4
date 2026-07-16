@@ -65,7 +65,11 @@ jobs:
             --coverage.thresholds.statements=0 \
             src/pages/magazine/__tests__/ \
             src/pages/magazine/components/__tests__/ \
-            src/pages/magazine/components/steps/__tests__/
+            src/pages/magazine/components/steps/__tests__/ \
+            src/lib/security/__tests__/sanitize-ssrf.test.ts \
+            src/lib/security/__tests__/magazine-guard-edge.test.ts \
+            src/services/__tests__/magazineService.critFixes.test.ts \
+            src/services/__tests__/magazineService.branding.test.ts
         env:
           CI: true
           NODE_ENV: test
