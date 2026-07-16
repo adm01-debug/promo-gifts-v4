@@ -42,7 +42,7 @@ function useResponsiveScale(open: boolean) {
   return scale;
 }
 
-export function TemplatePreviewDialog({ entry, onOpenChange, onUse, useLabel }: Props) {
+function TemplatePreviewDialogImpl({ entry, onOpenChange, onUse, useLabel }: Props) {
   const open = entry != null;
   const scale = useResponsiveScale(open);
 
@@ -98,20 +98,27 @@ export function TemplatePreviewDialog({ entry, onOpenChange, onUse, useLabel }: 
             style={{ width: scaledW, height: scaledH }}
             aria-label={`Preview do template ${entry.name}`}
           >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute left-0 top-0 origin-top-left"
-              style={{
-                width: PAGE_W,
-                height: PAGE_H,
-                transform: `scale(${scale})`,
-              }}
-            >
-              <Template magazine={magazine} page={page} totalPages={1} />
-            </div>
+            <TemplatePreviewBoundary templateName={entry.name}>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-0 top-0 origin-top-left"
+                style={{
+                  width: PAGE_W,
+                  height: PAGE_H,
+                  transform: `scale(${scale})`,
+                }}
+              >
+                <Template magazine={magazine} page={page} totalPages={1} />
+              </div>
+            </TemplatePreviewBoundary>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+export const TemplatePreviewDialog = memo(
+  TemplatePreviewDialogImpl,
+  (a, b) => a.entry?.id === b.entry?.id && a.useLabel === b.useLabel,
+);
