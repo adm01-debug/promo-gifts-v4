@@ -74,7 +74,7 @@ export async function headRequestWithFallback(
  */
 export function getSupabaseQueryConfig() {
   return {
-    queryFn: async ({ queryKey, signal }: any) => {
+    queryFn: async ({ queryKey, signal }: { queryKey: readonly unknown[]; signal?: AbortSignal }) => {
       const supabase = await getSupabaseClient();
       const [, table, filters] = queryKey;
       
@@ -94,7 +94,7 @@ export function getSupabaseQueryConfig() {
       if (error) throw error;
       return { data, count };
     },
-    retry: (failureCount: number, error: any) => {
+    retry: (failureCount: number, error: { status?: number } | null) => {
       // Retry on Supabase errors up to 3 times
       if (failureCount < 3) {
         // Don't retry on 404 or explicit forbidden errors
