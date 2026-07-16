@@ -221,7 +221,8 @@ function isCacheableImage(url) {
   const sameOrigin = url.origin === self.location.origin;
   const ownCdn =
     url.hostname === 'imagedelivery.net' ||
-    url.hostname.includes('cloudflarestream.com');
+    url.hostname === 'cloudflarestream.com' ||
+    url.hostname.endsWith('.cloudflarestream.com');
   const looksLikeImage = /\.(jpg|jpeg|png|gif|webp|avif|svg|ico)$/i.test(url.pathname);
   return ownCdn || (sameOrigin && looksLikeImage);
 }

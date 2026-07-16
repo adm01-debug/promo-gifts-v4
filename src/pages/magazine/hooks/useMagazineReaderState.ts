@@ -107,22 +107,31 @@ function writeLastPageLocal(storage: Storage | null, token: string, index: numbe
   }
 }
 
+function cryptoUUID(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  // Fallback: use getRandomValues (CSPRNG) instead of Math.random
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant
+  const hex = Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
+
 function getOrCreateFingerprint(storage: Storage | null): string {
   if (!storage) {
-    // fallback efêmero — sem persistência, mas coerente na sessão
-    return `session-${Math.random().toString(36).slice(2)}-${Date.now()}`;
+    return `session-${cryptoUUID()}`;
   }
   try {
     const existing = storage.getItem(FINGERPRINT_KEY);
     if (existing && existing.length >= 8) return existing;
-    const uuid =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+    const uuid = cryptoUUID();
     storage.setItem(FINGERPRINT_KEY, uuid);
     return uuid;
   } catch {
-    return `session-${Math.random().toString(36).slice(2)}`;
+    return `session-${cryptoUUID()}`;
   }
 }
 

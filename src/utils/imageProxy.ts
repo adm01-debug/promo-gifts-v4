@@ -110,7 +110,9 @@ const SPOT_ORIGIN_BASE = 'https://www.spotgifts.com.br/fotos/produtos/';
 export function deriveOriginalUrl(cfUrl: string | null | undefined): string | null {
   if (!cfUrl) return null;
   try {
-    if (!cfUrl.includes('imagedelivery.net')) return null;
+    // Use URL parsing (not substring check) to prevent host-bypass attacks
+    const parsed = new URL(cfUrl);
+    if (parsed.hostname !== 'imagedelivery.net') return null;
     const parts = cfUrl.split('/');
     if (parts.length < 5) return null;
     const cfId = parts[parts.length - 2];

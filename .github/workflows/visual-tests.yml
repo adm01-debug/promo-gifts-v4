@@ -26,8 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-node@v6
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version-file: '.nvmrc'
         cache: 'npm'
@@ -116,7 +116,7 @@ jobs:
 
     - name: Upload Test Report
       if: always()
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-report-${{ matrix.shardIndex }}
         path: playwright-report/
@@ -124,7 +124,7 @@ jobs:
 
     - name: Upload visual diffs (actual / expected / diff)
       if: always()
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-visual-diffs-${{ matrix.shardIndex }}
         path: |
@@ -136,7 +136,7 @@ jobs:
 
     - name: Upload generated baseline PNGs
       if: always()
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-baselines-${{ matrix.shardIndex }}
         path: |

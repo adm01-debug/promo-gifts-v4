@@ -47,8 +47,7 @@ export type SupabaseRPCCaller<TReturn = unknown> = (
  * Uso seguro com double-assertion: evita erros do compilador TS em strict mode.
  */
 export function asTypedRPC<TReturn>(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  rpcFn: any,
+  rpcFn: unknown,
 ): SupabaseRPCCaller<TReturn> {
   return rpcFn as unknown as SupabaseRPCCaller<TReturn>;
 }

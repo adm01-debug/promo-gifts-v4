@@ -34,7 +34,7 @@ jobs:
       functions: ${{ steps.detect.outputs.functions }}
       count: ${{ steps.detect.outputs.count }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Grep consumers
         id: detect
@@ -72,7 +72,7 @@ jobs:
       matrix:
         fn: ${{ fromJSON(needs.detect-consumers.outputs.functions) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2

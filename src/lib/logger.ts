@@ -22,9 +22,12 @@ function redactValue(value: unknown): unknown {
   if (value instanceof Error) return serializeError(value);
   if (Array.isArray(value)) return value.map((item) => redactValue(item));
   if (typeof value === 'object') {
-    const out: Record<string, unknown> = {};
+    // Object.create(null) prevents prototype pollution via keys like '__proto__'
+    const out = Object.create(null) as Record<string, unknown>;
     for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-      out[key] = SENSITIVE_KEY_RE.test(key) ? '[REDACTED]' : redactValue(nested);
+      if (Object.prototype.hasOwnProperty.call(value, key)) {
+        out[key] = SENSITIVE_KEY_RE.test(key) ? '[REDACTED]' : redactValue(nested);
+      }
     }
     return out;
   }
