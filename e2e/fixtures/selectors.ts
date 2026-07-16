@@ -61,6 +61,7 @@ export type PageSlug =
   | "detalhe-produto"
   | "admin-produto"
   | "cadastros"
+  | "magazine-templates"
   | "termos"
   | "privacidade"
   | "404";
