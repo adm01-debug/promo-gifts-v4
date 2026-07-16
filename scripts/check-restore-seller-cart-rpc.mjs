@@ -137,9 +137,41 @@ async function main() {
   }
 
   if (code === '42883') {
+    // 42883 via PostgREST significa que o schema cache ENCONTROU a função mas
+    // a chamada PostgreSQL falhou. Causa típica: nosso payload {} não tem o
+    // argumento obrigatório (_snapshot jsonb), então Postgres reporta que a
+    // variante sem argumentos não existe. Isso confirma que a função ESTÁ em
+    // pg_proc — o PostgREST teria retornado PGRST202 se ela fosse ausente.
+    // Usamos fn_rpc_exists para distinguir "args inválidos (função presente)"
+    // de "função dropada entre cache build e execução (raro, mas possível)".
+    log(`42883 undefined_function — verificando via fn_rpc_exists('${RPC_NAME}')...`);
+    let exists42883 = false;
+    try {
+      const existsRes42883 = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/fn_rpc_exists`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({ _fname: RPC_NAME }),
+      });
+      if (existsRes42883.ok) {
+        exists42883 = await existsRes42883.json();
+      }
+    } catch {
+      // rede inacessível — não podemos confirmar; não bloquear
+    }
+
+    if (exists42883 === true) {
+      log(`✅ RPC \`${RPC_NAME}\` existe em pg_proc (42883 por mismatch de args no payload de teste — esperado).`);
+      process.exit(0);
+    }
+
     fail(
-      `RPC \`${RPC_NAME}\` reportou undefined_function (42883). Assinatura ausente.\n` +
-        `  msg: ${message}`
+      `RPC \`${RPC_NAME}\` reportou 42883 e fn_rpc_exists retornou false — função ausente.\n` +
+        `  msg: ${message}\n\n` +
+        `  → Aplique a migração em supabase/migrations/ para criar a função.`
     );
   }
 
