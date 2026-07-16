@@ -1,0 +1,470 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+        "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+      },
+      "gitCommit": {
+        "shortHash": "f081f81",
+        "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+        "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+        "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784201610000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1784201610000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-public",
+        "name": "firefox-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-public",
+        "name": "webkit-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/f081f81f866e3891db3b22d74e151e09220d0efc",
+            "commitHash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29494864043"
+          },
+          "gitCommit": {
+            "shortHash": "f081f81",
+            "hash": "f081f81f866e3891db3b22d74e151e09220d0efc",
+            "subject": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)",
+            "body": "fix(magazine): DB audit — all 7 fixes applied (pdf_url, branding guard, schema sync, types regen) (#1705)\n\n* docs(audit): add Magazine module DB infrastructure audit report\n\nExhaustive comparison of inventory document vs live Supabase Gold DB\nvs application code. Key findings:\n- 3 CRITICAL issues (pdf_url column missing, branding type mismatch,\n  self-hosted MCP disconnected from Gold project)\n- Inventory undercounts: 13 table objects (vs 4 documented), 14 RLS\n  policies (vs 7), 9 PG functions (vs 2), 3 cron jobs (vs 0)\n- 2 draft migrations already applied, 1 stale, 1 incompatible\n- 5 edge functions all ACTIVE and verified\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): remove pdf_url ghost column — column does not exist in DB\n\nThe MagazineRow interface declared pdf_url and it was read/written in\nrowToMagazine(), update(), restore(), and publicPayloadToMagazine().\nHowever, the live DB (doufsxqlfjyuvxuezpln) has no pdf_url column on\nthe magazines table, so writes silently failed via PostgREST.\n\nRemoved from: MagazineRow, Magazine type, magazineService.ts (4 sites),\nand 26 test fixture files.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): fix branding color validation to use colors.primary instead of primaryColor\n\nvalidateBranding() in magazine-guard.ts was validating branding.primaryColor\nwhich doesn't exist on MagazineClientBranding — colors are nested under\nbranding.colors.{primary,secondary,text}. The guard was dead code.\n\nNow validates all three color fields (primary, secondary, text) against\nthe hex pattern. Also fixed test fixtures that used the wrong field name.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): sync MagazineRow with live DB — add view_count and archived_at\n\nMagazineRow was missing view_count (number) and archived_at (timestamp)\ncolumns that exist in the live DB. Added both to MagazineRow, mapped them\nin rowToMagazine() and publicPayloadToMagazine(), and added viewCount/\narchivedAt to the Magazine interface. Updated test fixtures accordingly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* chore(magazine): archive 4 stale draft migrations\n\nMoved to qa/migrations-draft/_archived/ with README explaining why:\n- 2026-07-12_magazines.sql: STALE (schema diverged from live DB)\n- 2026-07-12_magazine_reader_state.sql: INCOMPATIBLE (column name mismatch)\n- 2026-07-12_magazine_items_unique_product.sql: ALREADY APPLIED\n- 2026-07-15_magazine_public_token_trigger.sql: ALREADY APPLIED\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): add guard comments for magazine_token_hash column name\n\nThe draft migration used magazine_token (raw token) but the live DB\nuses magazine_token_hash (SHA-256). Added inline comments in both\nreader-state edge functions to prevent accidental column name changes.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* fix(magazine): add viewCount/archivedAt to remaining test fixtures\n\nAdds the new Magazine fields (viewCount: 0, archivedAt: null) to all\nremaining test fixtures in tests/magazine/, e2e/magazine/, and\nMagazineEditorPage.hooksOrder.test.tsx.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* feat(magazine): regenerate Supabase types — magazine tables now typed\n\nRegenerated src/integrations/supabase/types.ts from the Gold project\n(doufsxqlfjyuvxuezpln). Magazine tables (magazines, magazine_items,\nmagazine_reader_state, magazine_public_reactions, magazine_public_view_events)\nare now included in the generated types.\n\nREGRA #4 verification:\n- export type count: 7 (unchanged)\n- Critical tables verified present: personalization_techniques, products,\n  product_variants, suppliers, supplier_products_raw\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n* docs(magazine): update audit report with all 7 fixes applied\n\nAdded \"Fixes Applied\" section to the audit report showing all 7\nissues from the Magazine DB audit have been resolved.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016ho2ioGuJmyWEgHroi3qv8\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784201610000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784201610000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'",
+      "stack": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-07-16T11:34:46.326Z",
+    "duration": 1837.7549999999999,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
