@@ -39,7 +39,7 @@ Ele NÃO substitui `supabase/migrations/` — é uma antessala revisável.
 ## Rascunhos vigentes
 
 <!-- BEGIN:DRAFT-INDEX (gerado por scripts/list-migration-drafts.mjs) -->
-_Atualizado em 2026-07-01T11:02:38.982Z · 5 rascunho(s)._
+_Atualizado em 2026-07-16T18:28:04.277Z · 8 rascunho(s)._
 
 | Arquivo | Objetivo | Alvo | Risco | Validação |
 | --- | --- | --- | --- | --- |
@@ -48,6 +48,9 @@ _Atualizado em 2026-07-01T11:02:38.982Z · 5 rascunho(s)._
 | `2026-06-19_reposicao_variants_summary.sql` | Cria RPC `fn_get_reposicao_variants_summary(p_product_ids | canônico | — | 📎 `.VALIDATION.md` |
 | `2026-06-20_revoke_secdef_from_authenticated.sql` | SECURITY DEFINER ACL — Revogação de authenticated/anon/public | canônico | zero | — |
 | `2026-06-27_quotes_status_allow_cancelled.sql` | liberar `cancelled` no CHECK `valid_quote_status` de `public | canônico | — | — |
+| `2026-07-06_crm_callback_events.sql` | tabela de auditoria/idempotência para callbacks do CRM (Promo Champions V2) recebidos pela edge function `receive-crm-callback` | canônico | — | — |
+| `2026-07-13_secdef_revoke_webhook_locks.sql` | Draft (NÃO executar sem aprovação do PO — CLAUDE.md #Comportamento obrigatório) | ? | — | — |
+| `2026-07-13_secdef_revoke_webhook_locks_ROLLBACK.sql` | cria Antes | ? | — | — |
 <!-- END:DRAFT-INDEX -->
 
 ## Regras
