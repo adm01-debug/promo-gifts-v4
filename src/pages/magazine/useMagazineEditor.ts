@@ -3,7 +3,7 @@
  * via magazineService com autosave debounced.
  *
  * CRITICAL FIX: magazineRef stale-read race condition
- * ─────────────────────────────────────────────────────
+ * ──────────────────────────────────────────────────
  * Before: magazineRef.current was updated ONLY in a useEffect (deferred).
  * This meant two rapid mutations (e.g. setTitle → setBranding in same tick)
  * would both read the OLD ref, causing the second mutation to LOSE the
@@ -46,10 +46,12 @@ export function useMagazineEditor(id: string | undefined) {
     }
     let cancelled = false;
     (async () => {
-      const loaded = await magazineService.get(id);
+      // FIX(lint): renamed from `loaded` to `fetched` to avoid shadowing the
+      // `loaded` state variable declared in the outer scope (no-shadow).
+      const fetched = await magazineService.get(id);
       if (cancelled) return;
-      magazineRef.current = loaded;
-      setMagazine(loaded);
+      magazineRef.current = fetched;
+      setMagazine(fetched);
       setLoaded(true);
     })();
     return () => {
@@ -202,6 +204,10 @@ export function useMagazineEditor(id: string | undefined) {
 
   const isOwner = useMemo(
     () => (magazine && user ? magazine.ownerId === user.id : false),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Intentional: sub-field deps are more granular than full objects.
+    // `isOwner` only changes when ownerId or user.id changes, not on any
+    // magazine/user mutation. Using full objects would cause false re-computes.
     [magazine?.id, magazine?.ownerId, user?.id],
   );
 
