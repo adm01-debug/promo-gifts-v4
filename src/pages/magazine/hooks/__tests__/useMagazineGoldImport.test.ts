@@ -190,7 +190,7 @@ describe('useMagazineGoldImport — fallback 401/403', () => {
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     // Aguarda o hook estabilizar sem marcar migrated
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(localStorage.getItem(MIGRATED_KEY)).toBeNull();
   });
 
@@ -207,7 +207,7 @@ describe('useMagazineGoldImport — fallback 401/403', () => {
 
     renderHook(() => useMagazineGoldImport(USER_ID));
     // Como migrated=1, o hook deve retornar cedo sem tocar em fetch
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -224,7 +224,7 @@ describe('useMagazineGoldImport — fallback 401/403', () => {
 
     renderHook(() => useMagazineGoldImport(USER_ID));
 
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise<void>((r) => { setTimeout(r, 20); });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(localStorage.getItem(MIGRATED_KEY)).toBeNull();
   });
