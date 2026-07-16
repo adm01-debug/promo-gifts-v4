@@ -44,7 +44,7 @@ const SSRF_BLOCKED_HOSTNAME = (hostname: string): boolean => {
     h.startsWith('10.') ||         // 10.0.0.0/8 private
     h.startsWith('192.168.') ||    // 192.168.0.0/16 private
     /^172\.(1[6-9]|2\d|3[01])\./.test(h) || // 172.16-31.x private
-    /^169\.254\./.test(h) ||       // 169.254.0.0/16 link-local
+    h.startsWith('169.254.') ||    // 169.254.0.0/16 link-local
     /^fe[89ab][0-9a-f]:/i.test(h) || // IPv6 link-local fe80::/10
     /\.(local|internal|corp|intranet|lan)$/i.test(h) // common internal TLDs
   );
