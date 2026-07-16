@@ -118,7 +118,7 @@ function mvRowToSupplierReliability(row: MvSupplierReliabilityRow): SupplierReli
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function fetchMvReliability(): Promise<SupplierReliability[]> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as unknown as { from: (t: string) => any })
     .from('mv_supplier_reliability')
     .select('*')
     .order('overall_score', { ascending: false });
@@ -187,7 +187,7 @@ async function fetchReliabilityHistory(
   supplierId: string,
   limit = 200,
 ): Promise<SupplierReliabilityEvent[]> {
-  const { data, error } = await supabase.rpc('get_supplier_reliability_history', {
+  const { data, error } = await (supabase as unknown as { rpc: (n: string, a: any) => any }).rpc('get_supplier_reliability_history', {
     _supplier_id: supplierId,
     _limit: limit,
   });
@@ -198,7 +198,7 @@ async function fetchReliabilityHistory(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data as any[]).map((row) => ({
+  return ((data ?? []) as any[]).map((row) => ({
     id: row.id,
     sourceId: row.source_id,
     variantId: row.variant_id,

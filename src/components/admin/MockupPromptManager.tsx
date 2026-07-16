@@ -72,15 +72,15 @@ export function MockupPromptManager() {
     setIsLoading(true);
     try {
       const [cr, tr] = await Promise.all([
-        supabase.from('mockup_prompt_configs').select('*').order('config_key'),
-        supabase.from('personalization_techniques')
+        (supabase as unknown as { from: (t: string) => any }).from('mockup_prompt_configs').select('*').order('config_key'),
+        (supabase as unknown as { from: (t: string) => any }).from('personalization_techniques')
           .select('id, name, code')
           .eq('is_active', true),
       ]);
       if (cr.error) throw cr.error;
       if (tr.error) throw tr.error;
       setConfigs((cr.data || []) as PromptConfig[]);
-      setTechniques(tr.data || []);
+      setTechniques((tr.data || []) as Technique[]);
     } catch (err: unknown) {
       toast.error('Erro ao carregar configurações', {
         description: sanitizeError(err),

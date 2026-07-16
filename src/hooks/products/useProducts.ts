@@ -60,7 +60,7 @@ export function useProducts(
     retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
     throwOnError: (error: unknown): boolean => {
       if (isAbortError(error)) return false;
-      if (typeof consumerThrowOnError === 'function') return consumerThrowOnError(error, {} as never);
+      if (typeof consumerThrowOnError === 'function') return consumerThrowOnError(error as Error, {} as never);
       if (typeof consumerThrowOnError === 'boolean') return consumerThrowOnError;
       return true;
     },

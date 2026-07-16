@@ -136,7 +136,7 @@ export async function handleSyncBitrix(params: {
   let pdfStorageUrl: string | undefined;
   let filename: string | undefined;
   try {
-    const blob = await generateProposalPDFv2(proposalData, { isDraft: quote.status === 'draft' });
+    const blob = await generateProposalPDFv2(proposalData, { isDraft: (quote.status as string) === 'draft' });
     filename = `proposta-${(quote.quote_number || quoteId).replace(/\s+/g, '')}.pdf`;
     const storagePath = `quotes/${quoteId}/${filename}`;
     const { error: uploadError } = await supabase.storage

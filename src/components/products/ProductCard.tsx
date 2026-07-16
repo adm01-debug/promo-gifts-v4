@@ -113,7 +113,7 @@ export interface ProductCardProps {
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: boolean;
-  onToggleCompare?: (productId: string) => unknown;
+  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean } | void;
   canAddToCompare?: boolean;
   hideCategoryBadges?: boolean;
   isNovelty?: boolean;
@@ -474,7 +474,7 @@ export const ProductCard = memo(
             onToggleCompare(product.id);
             showUndoToast({
               title: `"${product.name}" removido da comparação`,
-              onUndo: () => onToggleCompare(product.id),
+              onUndo: () => { onToggleCompare(product.id); },
             });
           }
         } else {
@@ -648,8 +648,8 @@ export const ProductCard = memo(
             className="cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-primary"
             showFocusRing={false}
             style={{ touchAction: 'manipulation' }}
-            onClick={(e) => {
-              (e as React.MouseEvent | React.KeyboardEvent).stopPropagation();
+            onClick={(e: React.MouseEvent | React.KeyboardEvent) => {
+              e.stopPropagation();
               openQuickView();
             }}
           >

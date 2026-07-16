@@ -80,7 +80,7 @@ interface ProductListItemProps {
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: boolean;
-  onToggleCompare?: (productId: string) => unknown;
+  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean } | void;
   canAddToCompare?: boolean;
   highlightColors?: string[];
   activeColorFilter?: ActiveColorFilter | null;
@@ -346,7 +346,7 @@ export const ProductListItem = memo(
           onToggleCompare(product.id);
           showUndoToast({
             title: `"${product.name}" removido da comparação`,
-            onUndo: () => onToggleCompare(product.id),
+            onUndo: () => { onToggleCompare(product.id); },
           });
         }
       } else {
@@ -453,7 +453,7 @@ export const ProductListItem = memo(
             data-testid="product-list-item-thumb"
             data-product-id={product.id}
             style={{ touchAction: 'manipulation' }}
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent | React.KeyboardEvent) => {
               e.stopPropagation();
               if (
                 actionBusyRef.current ||

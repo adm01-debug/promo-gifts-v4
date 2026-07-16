@@ -80,7 +80,8 @@ export function getSupabaseQueryConfig() {
       
       if (!table) throw new Error('Missing table in query key');
 
-      const query = supabase.from(table).select('*', { count: 'exact', head: false });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const query: any = (supabase as any).from(table).select('*', { count: 'exact', head: false });
       
       // Apply filters if provided
       if (filters) {
