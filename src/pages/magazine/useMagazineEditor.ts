@@ -26,6 +26,7 @@ import type {
   MagazineTemplateId,
 } from '@/types/magazine';
 import type { Product } from '@/types/product-catalog';
+import { validateBranding } from '@/lib/security/magazine-guard';
 
 export function useMagazineEditor(id: string | undefined) {
   const { user } = useAuth();
@@ -110,7 +111,9 @@ export function useMagazineEditor(id: string | undefined) {
     (patch: Partial<MagazineClientBranding>) => {
       const current = magazineRef.current;
       if (!current) return;
-      persist({ ...current, branding: { ...current.branding, ...patch } });
+      const merged = { ...current.branding, ...patch };
+      const { sanitized } = validateBranding(merged);
+      persist({ ...current, branding: { ...merged, ...sanitized } });
     },
     [persist],
   );
