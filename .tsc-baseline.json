@@ -1,35 +1,5 @@
 {
-  "generatedAt": "2026-07-03T14:00:00.000Z",
-  "description": "Baseline de erros TypeScript no CI (node_modules cache pode divergir do local). Falha apenas em REGRESSÃO (nova combinação file:rule ou contagem maior). Atualizado em 2026-07-03 após PR #1613 (fix 3 TS regressões Lovable: calendar Day cast, Harness onAddWithColor+images).",
-  "totalErrors": 13,
-  "counts": {
-    "src/components/products/ProductTableView.tsx": {
-      "TS2322": 1
-    },
-    "src/hooks/inventory/useSupplierReliabilityServer.ts": {
-      "TS2589": 1,
-      "TS2769": 1,
-      "TS2345": 1,
-      "TS2352": 1
-    },
-    "src/hooks/products/useProducts.ts": {
-      "TS2345": 1,
-      "TS2554": 1
-    },
-    "src/hooks/products/useSimilarProducts.ts": {
-      "TS2345": 1,
-      "TS2339": 1
-    },
-    "src/hooks/quotes/useQuoteTemplates.ts": {
-      "TS2353": 2
-    },
-    "src/hooks/useProductColorSwatch.ts": {
-      "TS2345": 1,
-      "TS2339": 1,
-      "TS7053": 1
-    },
-    "src/pages/admin/AdminCloudflareImagesPage.tsx": {
-      "TS2339": 1
-    }
-  }
+  "generatedAt": "2026-07-16T15:30:31.563Z",
+  "totalErrors": 0,
+  "counts": {}
 }

@@ -26,7 +26,12 @@ const Body = z.object({
   seller_email: z.string().optional().nullable(),
 });
 
-export const handler = async (req: Request): Promise<Response> => {
+// handler é uma function declaration (hoisted) — Deno.serve pode referenciá-la antes da definição.
+// resolveCredential() fica DENTRO do handler (por-request), nunca em module scope.
+Deno.serve(handler);
+export { hmacSha256Hex, normalizeTs };
+
+export async function handler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
 
@@ -289,11 +294,7 @@ export const handler = async (req: Request): Promise<Response> => {
     },
     200,
   );
-};
-
-Deno.serve(handler);
-
-export { hmacSha256Hex, normalizeTs };
+}
 
 /**
  * Normaliza um timestamp arbitrário (ISO com/sem "Z", com/sem microssegundos,
