@@ -14,11 +14,11 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock TODOS os templates para não pagar o custo de renderizar 1920×2716 real
-vi.mock('../../components/templates/TemplateRegistry', async () => {
+vi.mock('../../components/templates/TemplateRegistry', () => {
   const StubComponent = () => null;
   const make = (
     id: string,
-    family: 'editorial' | 'catalog' | 'corporate',
+    family: 'catalog' | 'corporate' | 'editorial',
     productsPerPage: number,
   ) => ({
     id,
