@@ -19,7 +19,7 @@ import { test, expect } from '@playwright/test';
 import { Sel } from '../fixtures/selectors';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
-import { waitForTestId } from '../helpers/waits';
+import { waitForTestIdVisible } from '../helpers/waits';
 
 const GALLERY_PATH = '/magazine/templates';
 const SAMPLE_MAG_ID = 'e2e-mag-templates-target';
