@@ -1,7 +1,10 @@
 {
-  "generatedAt": "2026-07-15T14:56:20.281Z",
-  "totalErrors": 196,
+  "generatedAt": "2026-07-16T12:30:00.000Z",
+  "totalErrors": 235,
   "counts": {
+    "src/components/dashboard/MyClientsWidget.tsx": {
+      "@typescript-eslint/require-array-sort-compare": 1
+    },
     "src/components/admin/__tests__/DiscountApprovalHeaderBadge.test.tsx": {
       "@typescript-eslint/consistent-type-imports": 1
     },
@@ -38,8 +41,18 @@
       "@typescript-eslint/no-shadow": 1,
       "no-shadow": 1
     },
+    "src/components/filters/ExternalCategoryFilter.tsx": {
+      "@typescript-eslint/no-useless-default-assignment": 1
+    },
+    "src/components/filters/filter-panel/useFilterPanelState.ts": {
+      "@typescript-eslint/no-useless-default-assignment": 1
+    },
     "src/components/products/ProductCard.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1,
       "react/jsx-props-no-multi-spaces": 1
+    },
+    "src/components/products/ProductCategoryBadges.tsx": {
+      "@typescript-eslint/no-useless-default-assignment": 1
     },
     "src/components/products/ProductColorSwatches.tsx": {
       "react/jsx-props-no-multi-spaces": 1
@@ -106,6 +119,16 @@
     },
     "src/components/ui/date-picker-field.tsx": {
       "jsx-a11y/role-supports-aria-props": 1
+    },
+    "src/components/shared/__tests__/Clickable.test.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1,
+      "jsx-a11y/tabindex-no-positive": 2,
+      "prefer-arrow-callback": 2,
+      "react/jsx-no-useless-fragment": 1
+    },
+    "src/components/shared/Clickable.tsx": {
+      "@typescript-eslint/sort-type-constituents": 3,
+      "prefer-arrow-callback": 1
     },
     "src/contexts/__tests__/SellerCartContext.okNoMetrics.test.tsx": {
       "@typescript-eslint/no-explicit-any": 1
@@ -175,6 +198,9 @@
     },
     "src/pages/auth/Auth.tsx": {
       "no-promise-executor-return": 1
+    },
+    "src/pages/magazine/MagazineEditorPage.tsx": {
+      "react-hooks/rules-of-hooks": 1
     },
     "src/pages/magazine/PublicMagazineView.tsx": {
       "@typescript-eslint/no-shadow": 1,

@@ -1,3 +1,4 @@
+/* eslint-disable no-script-url */
 /**
  * magazine-guard.ts — cobertura de testes para validateBranding,
  * validateTitle e guardLogoUrl.
@@ -372,7 +373,7 @@ describe('validateTitle', () => {
 
   it('título longo com HTML: strip primeiro, depois verifica tamanho', () => {
     // HTML pode inflar o tamanho, depois de strip fica pequeno
-    const title = '<b>' + 'A'.repeat(50) + '</b>';
+    const title = `<b>${'A'.repeat(50)}</b>`;
     const result = validateTitle(title);
     expect(result.isValid).toBe(true);
     expect(result.sanitized.length).toBe(50);
