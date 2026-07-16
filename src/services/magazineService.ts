@@ -362,7 +362,16 @@ export const magazineService = {
   async updateBranding(id: string, patch: Partial<MagazineClientBranding>): Promise<Magazine | null> {
     const current = await this.get(id);
     if (!current) return null;
-    const merged = { ...current.branding, ...patch };
+    // Deep-merge colors so a partial patch ({ colors: { primary } }) or
+    // DB-deserialized branding with missing keys does not silently drop
+    // secondary/text (shallow spread would overwrite the whole colors object).
+    const merged = {
+      ...current.branding,
+      ...patch,
+      colors: patch.colors
+        ? { ...current.branding.colors, ...patch.colors }
+        : current.branding.colors,
+    };
     const { isValid, sanitized } = validateBranding(merged);
     if (!isValid) {
       logger.warn('[magazineService.updateBranding] rejected invalid branding');
@@ -476,9 +485,12 @@ export const magazineService = {
       title: `${current.title} (cópia)`,
       templateId: current.templateId,
     });
-    // Header extras (branding/content) + items
+    // Header extras (branding/content) + items.
+    // Validate branding before copying so that old corrupt payloads (pre-audit)
+    // are sanitized rather than silently propagated to the duplicate.
+    const { sanitized: safeBranding } = validateBranding(current.branding);
     await this.update(clone.id, {
-      branding: current.branding,
+      branding: safeBranding ?? current.branding,
       content: current.content,
       subtitle: current.subtitle,
     });
@@ -559,7 +571,13 @@ export const magazineService = {
       const { error: itemsErr } = await supabase.from('magazine_items').insert(itemRows);
       if (itemsErr) {
         logger.warn('[magazineService.restore] items reinsert error:', itemsErr.message);
-        return magazine;
+        // Compensating rollback: soft-delete the header we just inserted to
+        // avoid an orphan magazine (header in DB with zero items).
+        await supabase
+          .from('magazines')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', magazine.id);
+        return magazine; // stale object — caller can retry
       }
     }
     const hydrated = await hydrate(magazine.id);

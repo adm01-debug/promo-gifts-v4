@@ -83,6 +83,17 @@ export function useMagazineEditor(id: string | undefined) {
     magazineRef.current = magazine;
   }, [magazine]);
 
+  // Unmount cleanup: cancel pending debounced save to prevent setState on
+  // unmounted component (React warning) and spurious network requests.
+  useEffect(() => {
+    return () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+      }
+    };
+  }, []);
+
   const setTitle = useCallback(
     (title: string) => {
       const current = magazineRef.current;
@@ -114,7 +125,16 @@ export function useMagazineEditor(id: string | undefined) {
     (patch: Partial<MagazineClientBranding>) => {
       const current = magazineRef.current;
       if (!current) return;
-      const merged = { ...current.branding, ...patch };
+      // Deep-merge colors so a partial patch ({ colors: { primary } }) or
+      // DB-deserialized branding with missing keys does not silently drop
+      // secondary/text (shallow spread would overwrite the whole colors object).
+      const merged = {
+        ...current.branding,
+        ...patch,
+        colors: patch.colors
+          ? { ...current.branding.colors, ...patch.colors }
+          : current.branding.colors,
+      };
       const { isValid, errors, sanitized } = validateBranding(merged);
       if (!isValid) {
         setBrandingErrors(errors);
