@@ -8,7 +8,7 @@
  * de volta com `?applyTemplate=<id>` — o editor aplica o template automaticamente.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, LayoutTemplate } from 'lucide-react';
 import { toast } from 'sonner';
