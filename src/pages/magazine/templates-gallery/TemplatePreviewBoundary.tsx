@@ -16,34 +16,45 @@ interface Props {
 
 interface State {
   hasError: boolean;
+  retryKey: number;
 }
 
 export class TemplatePreviewBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+  state: State = { hasError: false, retryKey: 0 };
 
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): Partial<State> {
     return { hasError: true };
   }
 
   componentDidCatch(error: Error): void {
-    // Log leve — não integramos com Sentry aqui para não poluir
-    // com erros de mock. Em produção o boundary só protege UI.
     if (import.meta.env.DEV) {
-       
       console.warn('[TemplatePreviewBoundary]', this.props.templateName, error);
     }
   }
 
+  private handleRetry = (): void => {
+    this.setState((s) => ({ hasError: false, retryKey: s.retryKey + 1 }));
+  };
+
   render(): ReactNode {
-    if (!this.state.hasError) return this.props.children;
+    if (!this.state.hasError) {
+      return <div key={this.state.retryKey}>{this.props.children}</div>;
+    }
     return (
       <div
         role="status"
         aria-live="polite"
         className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted p-4 text-center text-xs text-muted-foreground"
       >
-        <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden />
+        <AlertTriangle className="h-5 w-5 text-muted-foreground" aria-hidden />
         <span>Preview indisponível</span>
+        <button
+          type="button"
+          onClick={this.handleRetry}
+          className="mt-1 rounded-md border border-border bg-background px-3 py-1 text-xs font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          Tentar novamente
+        </button>
       </div>
     );
   }
