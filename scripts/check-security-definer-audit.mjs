@@ -5,9 +5,10 @@
  * devem ter SET search_path explícito para evitar privilege escalation.
  *
  * Falha (exit 1) se qualquer funcao SECURITY DEFINER NAO tiver search_path.
+ *
+ * Usa fetch nativo (Node 18+) para chamar o endpoint REST do Supabase,
+ * evitando a dependência do cliente realtime que requer WebSocket (Node 22+).
  */
-
-const { createClient } = await import('@supabase/supabase-js');
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_KEY  = process.env.SUPABASE_SERVICE_KEY;
@@ -17,15 +18,26 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
   process.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
-  auth: { persistSession: false },
-});
-
-// Funcoes SECURITY DEFINER sem search_path sao vetor de privilege escalation
-const { data, error } = await supabase.rpc('audit_security_definer_acl');
-
-if (error) {
-  console.error('Erro ao executar audit_security_definer_acl:', error.message);
+const url = `${SUPABASE_URL}/rest/v1/rpc/audit_security_definer_acl`;
+let data;
+try {
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': SERVICE_KEY,
+      'Authorization': `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: '{}',
+  });
+  if (!resp.ok) {
+    const text = await resp.text();
+    console.error(`Erro HTTP ${resp.status} ao chamar audit_security_definer_acl: ${text}`);
+    process.exit(1);
+  }
+  data = await resp.json();
+} catch (err) {
+  console.error('Erro ao executar audit_security_definer_acl:', err.message);
   process.exit(1);
 }
 
