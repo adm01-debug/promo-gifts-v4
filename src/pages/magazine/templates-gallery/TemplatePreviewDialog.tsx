@@ -43,7 +43,7 @@ function useResponsiveScale(open: boolean) {
 }
 
 function TemplatePreviewDialogImpl({ entry, onOpenChange, onUse, useLabel }: Props) {
-  const open = entry != null;
+  const open = entry !== null; // entry: TemplateEntry|null, nunca undefined
   const scale = useResponsiveScale(open);
 
   const magazine = useMemo(() => (entry ? buildMockMagazine(entry.id) : null), [entry]);
