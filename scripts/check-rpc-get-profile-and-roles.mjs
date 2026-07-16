@@ -48,7 +48,11 @@ if (auditData) {
   }
 }
 
-// CHECK B: RPC deve existir e ser chamavel (smoke test com UUID inexistente)
+// CHECK B: RPC deve existir no pg_proc (smoke test)
+// A partir de migration 022, anon NAO tem EXECUTE em get_profile_and_roles
+// (REVOKE deliberado — grant era segurança falsa). PostgREST retorna 404
+// tanto quando a função não existe quanto quando anon não tem permissão.
+// Usamos fn_rpc_exists() para distinguir os dois casos.
 const smokeResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_profile_and_roles`, {
   method: 'POST',
   headers: {
@@ -66,6 +70,27 @@ if (!smokeResp) {
 }
 
 if (smokeResp.status === 404) {
+  // PostgREST retorna 404 tanto para "função inexistente" quanto para
+  // "anon sem EXECUTE". Chamar fn_rpc_exists() distingue o caso.
+  const existsResp = await fetch(`${SUPABASE_URL}/rest/v1/rpc/fn_rpc_exists`, {
+    method: 'POST',
+    headers: {
+      'apikey': SERVICE_KEY,
+      'Authorization': `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ _fname: 'get_profile_and_roles' }),
+  }).catch(() => null);
+
+  if (existsResp && existsResp.ok) {
+    const exists = await existsResp.json();
+    if (exists === true) {
+      // Função existe em pg_proc; anon corretamente negado (REVOKE intencional)
+      console.log('✅ RPC get_profile_and_roles existe em pg_proc (anon sem EXECUTE — intencional).');
+      process.exit(0);
+    }
+  }
+
   console.error('❌ RPC get_profile_and_roles NAO encontrada no schema public!');
   console.error('   Execute: supabase db push para aplicar as migrations pendentes.');
   process.exit(1);
