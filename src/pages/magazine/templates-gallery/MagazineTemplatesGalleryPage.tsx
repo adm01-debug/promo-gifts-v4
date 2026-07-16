@@ -160,6 +160,7 @@ export default function MagazineTemplatesGalleryPage() {
 
         {/* Grid de cards */}
         <main
+          id="templates-grid"
           className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
           aria-live="polite"
           aria-label={`${templates.length} templates disponíveis`}
