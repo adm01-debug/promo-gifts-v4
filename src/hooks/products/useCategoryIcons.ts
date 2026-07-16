@@ -26,7 +26,7 @@ export function useCategoryIcons() {
         .eq('is_active', true);
 
       if (error) throw new Error(`Failed to fetch category icons: ${error.message}`);
-      return data || [];
+      return (data || []) as CategoryIcon[];
     },
     staleTime: 30 * 60 * 1000,
   });

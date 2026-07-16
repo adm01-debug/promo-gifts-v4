@@ -20,7 +20,7 @@ import { useDebounce } from '@/hooks/common/useDebounce';
 
 export interface UseListUrlStateConfig<K extends string> {
   keys: Record<K, string>;
-  searchKey?: K;
+  searchKey?: NoInfer<K>;
   debounceMs?: number;
 }
 

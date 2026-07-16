@@ -54,7 +54,7 @@ export function useKitBuilderQuote() {
           kit_quantity: kitQuantity,
           kit_identity_tag: kitState.identity?.tag ?? null,
         },
-      } satisfies TablesInsert<'quotes'>;
+      } as unknown as TablesInsert<'quotes'>;
 
       // Create quote
       const { data: quote, error: quoteError } = await supabase

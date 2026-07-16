@@ -71,7 +71,7 @@ export interface ProductTableRowProps {
   measureRef: (el: Element | null) => void;
   dataIndex: number;
   selectionMode: boolean;
-  isSelected: boolean;
+  isSelected?: boolean;
   activeColorFilter: ActiveColorFilter | null;
   onProductClick?: (id: string) => void;
   onToggleSelect?: (id: string) => void;

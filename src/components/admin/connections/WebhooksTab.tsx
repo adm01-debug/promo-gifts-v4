@@ -65,7 +65,7 @@ export function WebhooksTab() {
         .order('created_at', { ascending: false }),
     ]);
     setOutbound((o ?? []) as OutboundHook[]);
-    setInbound(i ?? []);
+    setInbound((i ?? []) as InboundEp[]);
   };
   useEffect(() => {
     load();

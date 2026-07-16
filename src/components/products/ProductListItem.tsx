@@ -80,7 +80,7 @@ interface ProductListItemProps {
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: boolean;
-  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean };
+  onToggleCompare?: (productId: string) => unknown;
   canAddToCompare?: boolean;
   highlightColors?: string[];
   activeColorFilter?: ActiveColorFilter | null;

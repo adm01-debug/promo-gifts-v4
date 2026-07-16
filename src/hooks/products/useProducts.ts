@@ -52,7 +52,7 @@ export function useProducts(
     // mesmo que consumer passe { throwOnError: true, retry: 5 }
     retry: (failureCount: number, error: unknown): boolean => {
       if (isAbortError(error)) return false;
-      if (typeof consumerRetry === 'function') return consumerRetry(failureCount, error);
+      if (typeof consumerRetry === 'function') return consumerRetry(failureCount, error as Error);
       if (typeof consumerRetry === 'number') return failureCount < consumerRetry;
       if (consumerRetry === false) return false;
       return failureCount < 3;
@@ -60,7 +60,7 @@ export function useProducts(
     retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
     throwOnError: (error: unknown): boolean => {
       if (isAbortError(error)) return false;
-      if (typeof consumerThrowOnError === 'function') return consumerThrowOnError(error);
+      if (typeof consumerThrowOnError === 'function') return consumerThrowOnError(error, {} as never);
       if (typeof consumerThrowOnError === 'boolean') return consumerThrowOnError;
       return true;
     },

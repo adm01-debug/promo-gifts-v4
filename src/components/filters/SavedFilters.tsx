@@ -363,7 +363,7 @@ export function SavedFilters<T = Record<string, unknown>>({
         description="Esta ação não pode ser desfeita. O filtro será removido permanentemente."
         confirmLabel="Excluir"
         cancelLabel="Cancelar"
-        onConfirm={() => deleteConfirmId && handleDeleteFilter(deleteConfirmId)}
+        onConfirm={() => { if (deleteConfirmId) handleDeleteFilter(deleteConfirmId); }}
         testId="saved-filters-delete-dialog"
       />
     </>

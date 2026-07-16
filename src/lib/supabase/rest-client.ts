@@ -25,7 +25,7 @@ export async function headRequestWithFallback(
   options?: RequestInit
 ): Promise<Response> {
   const supabase = await getSupabaseClient();
-  const token = supabase.auth.session?.access_token;
+  const token = (await supabase.auth.getSession()).data.session?.access_token;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

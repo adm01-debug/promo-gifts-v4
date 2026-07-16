@@ -36,7 +36,7 @@ export async function handleDownloadPDF(
   quote: Quote | null,
 ): Promise<void> {
   if (!proposalData || !quote) return;
-  const blob = await generateProposalPDFv2(proposalData, { isDraft: quote.status === 'draft' });
+  const blob = await generateProposalPDFv2(proposalData, { isDraft: (quote.status as string) === 'draft' });
   downloadPDF(blob, `proposta-${(quote.quote_number || 'sem-numero').replace(/\s+/g, '')}.pdf`);
   toast.success('PDF gerado com sucesso!');
 }

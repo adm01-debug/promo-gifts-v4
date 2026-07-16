@@ -493,7 +493,7 @@ export default function KitLibraryPage() {
         description="Esta ação não pode ser desfeita."
         confirmLabel="Excluir"
         cancelLabel="Cancelar"
-        onConfirm={() => deleteId && deleteMutation.mutate(deleteId)}
+        onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId); }}
         testId="kit-library-delete-dialog"
       />
     </div>
