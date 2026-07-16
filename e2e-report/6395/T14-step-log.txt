@@ -1,0 +1,73 @@
+================================================================
+🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 13)
+================================================================
+Run:        #6395 (id 29521481737)
+SHA:        fd2c7c9fccc34692094d11227be0874fa6244e51
+Event:      push
+Outcome:    failure
+Conclusion: success
+Marker:     absent (smoke exit != 0)
+
+--- Environment ---
+  pwd: /home/runner/work/promo-gifts-v4/promo-gifts-v4
+  GH_TOKEN length: 377
+  GITHUB_TOKEN length: 377
+  which gh: /usr/bin/gh
+  which curl: /usr/bin/curl
+
+--- ls -la playwright-report/ ---
+total 32
+drwxr-xr-x  2 runner runner  4096 Jul 16 17:52 .
+drwxr-xr-x 26 runner runner  4096 Jul 16 17:52 ..
+-rw-r--r--  1 runner runner   568 Jul 16 17:52 T14-step-log.txt
+-rw-r--r--  1 runner runner 18718 Jul 16 17:52 results.json
+
+--- find playwright-report -type f ---
+playwright-report/T14-step-log.txt
+playwright-report/results.json
+
+--- head -100 smoke-summary.md ---
+================================================================
+
+=== PROBE A: curl direct heartbeat ===
+Heartbeat content (cat):
+# T14 heartbeat
+
+Run #6395 at 2026-07-16T17:52:32Z
+SHA: fd2c7c9fccc34692094d11227be0874fa6244e51
+---
+Base64 length: 132
+GET HTTP: 404
+GET response (first 200 chars): {
+  "message": "Not Found",
+  "documentation_url": "https://docs.github.com/rest/repos/contents#get-repository-content",
+  "status": "404"
+}
+Existing SHA: ''
+PUT body size: 193 bytes
+PUT HTTP: 409
+PUT response (first 500 chars): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+✗ Heartbeat FAILED (HTTP 409)
+
+=== PROBE B: Diagnostic file commits via curl ===
+  [playwright-report/results.json] exists, size=18718 bytes
+    existing SHA: '' (GET HTTP 404)
+    ✗ failed (HTTP 409): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+  [playwright-report/smoke-summary.md] does not exist locally — skipped
+  [playwright-report/smoke-summary.json] does not exist locally — skipped
+
+Done.
