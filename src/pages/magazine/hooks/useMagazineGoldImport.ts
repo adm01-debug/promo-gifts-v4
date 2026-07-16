@@ -63,7 +63,7 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
     const t = setTimeout(() => reject(new Error('import-timeout')), ms);
     p.then(
       (v) => { clearTimeout(t); resolve(v); },
-      (e) => { clearTimeout(t); reject(e); },
+      (e) => { clearTimeout(t); reject(e instanceof Error ? e : new Error(String(e))); },
     );
   });
 }
