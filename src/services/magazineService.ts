@@ -246,7 +246,7 @@ export const magazineService = {
       logger.warn('[magazineService.list] error:', error.message);
       return [];
     }
-    const rows = data ?? [];
+    const rows: MagazineRow[] = data ?? [];
     if (rows.length === 0) return [];
     // Busca items de todas as revistas em uma query só
     const ids = rows.map((r) => r.id);
