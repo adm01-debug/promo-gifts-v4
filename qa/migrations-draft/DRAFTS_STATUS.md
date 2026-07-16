@@ -28,6 +28,17 @@ Gerado por `scripts/map-drafts-to-migrations.mjs`. Não editar à mão.
 | `2026-06-20_revoke_secdef_from_authenticated.sql` | `revoke_secdef_from_authenticated`<br>`revoke` `secdef` `from` `authenticated` | `20260512222200_t28_pilot_revoke_admin_security_definer_from_anon_authenticated.sql` — **75%**<br>&nbsp;&nbsp;↳ bateu: `revoke` `from` `authenticated` · faltou: ~~`secdef`~~<br><br>`20260605014545_revoke_fn_process_raw_v2_execute_from_anon_authenticated.sql` — **75%**<br>&nbsp;&nbsp;↳ bateu: `revoke` `from` `authenticated` · faltou: ~~`secdef`~~ | ❔ ERROR:  permission denied for schema supabase_migrations |
 | `2026-06-27_quotes_status_allow_cancelled.sql` | `quotes_status_allow_cancelled`<br>`quotes` `status` `allow` `cancelled` | _(nenhum match)_ | 🟡 não promovido |
 
+## Archived (2026-07-16 — Magazine DB Audit)
+
+The following magazine-related drafts were moved to `_archived/` — see `_archived/README.md` for details:
+
+| Rascunho | Motivo |
+| --- | --- |
+| `2026-07-12_magazines.sql` | STALE — schema divergiu do BD live (`branding` JSONB, colunas faltando) |
+| `2026-07-12_magazine_reader_state.sql` | INCOMPATÍVEL — `magazine_token` vs `magazine_token_hash` |
+| `2026-07-12_magazine_items_unique_product.sql` | JÁ APLICADA — constraint existe no BD |
+| `2026-07-15_magazine_public_token_trigger.sql` | JÁ APLICADA — trigger existe no BD |
+
 ## Como agir
 
 - **🟡 não promovido** → revisar o rascunho e, quando aprovado, copiar para `supabase/migrations/<timestamp>_<slug>.sql` (ver `qa/migrations-draft/README.md`).
