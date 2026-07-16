@@ -110,15 +110,23 @@ BEGIN
       ADD CONSTRAINT archive_product_seo_pkey PRIMARY KEY (product_id);
   END IF;
 
-  -- ── Composite natural PK ─────────────────────────────────────────────────
+  -- ── schema_signature_drift_allowlist: surrogate PK ──────────────────────
+  -- column_name is nullable (table-level allowlist entries have column_name=NULL),
+  -- so composite (table_name, column_name) cannot be a PK. Add surrogate id instead.
 
   IF EXISTS(SELECT 1 FROM pg_tables WHERE schemaname='public' AND tablename='schema_signature_drift_allowlist')
      AND NOT EXISTS(SELECT 1 FROM pg_constraint c
                     JOIN pg_class cl ON c.conrelid = cl.oid
                     JOIN pg_namespace n ON cl.relnamespace = n.oid
                     WHERE n.nspname='public' AND cl.relname='schema_signature_drift_allowlist' AND c.contype='p') THEN
+    -- Add surrogate id only if it doesn't already exist
+    IF NOT EXISTS(SELECT 1 FROM information_schema.columns
+                  WHERE table_schema='public' AND table_name='schema_signature_drift_allowlist' AND column_name='id') THEN
+      ALTER TABLE public.schema_signature_drift_allowlist
+        ADD COLUMN id BIGSERIAL;
+    END IF;
     ALTER TABLE public.schema_signature_drift_allowlist
-      ADD CONSTRAINT schema_signature_drift_allowlist_pkey PRIMARY KEY (table_name, column_name);
+      ADD CONSTRAINT schema_signature_drift_allowlist_pkey PRIMARY KEY (id);
   END IF;
 
 END $$;
