@@ -90,7 +90,9 @@ export default function MagazineEditorPage() {
   useEffect(() => {
     const applyId = searchParams.get('applyTemplate');
     if (!applyId || !magazine) return;
-    if (Object.prototype.hasOwnProperty.call(TEMPLATE_REGISTRY, applyId)) {
+    // FIX(lint): prefer-object-has-own — Object.hasOwn é mais direto e
+    // seguro que Object.prototype.hasOwnProperty.call (prefer-object-has-own).
+    if (Object.hasOwn(TEMPLATE_REGISTRY, applyId)) {
       const typedId = applyId as MagazineTemplateId;
       if (magazine.templateId !== typedId) {
         editor.setTemplate(typedId);
