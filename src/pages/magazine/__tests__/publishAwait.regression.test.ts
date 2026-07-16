@@ -49,7 +49,9 @@ const BASE: Magazine = {
   pageOrder: null,
   status: 'draft',
   publicToken: null,
+  viewCount: 0,
   publishedAt: null,
+  archivedAt: null,
   createdAt: '2026-07-12T00:00:00Z',
   updatedAt: '2026-07-12T00:00:00Z',
 };
@@ -74,7 +76,9 @@ vi.mock('@/services/magazineService', () => ({
         ...store,
         status: 'published',
         publicToken: 'tok_xyz',
+        viewCount: 0,
         publishedAt: '2026-07-12T12:00:00Z',
+        archivedAt: null,
       };
       store = updated;
       return updated;
