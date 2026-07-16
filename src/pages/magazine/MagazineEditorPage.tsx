@@ -3,7 +3,7 @@
  * Wizard 5 etapas + preview multi-página + validação por step + a11y.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -60,6 +60,18 @@ const STEPS: Array<{ id: StepId; label: string }> = [
 const EMPTY_VALIDATION: StepValidation = { blocks: [], warnings: [] };
 
 export default function MagazineEditorPage() {
+  // ─────────────────────────────────────────────────────────────────
+  // ZONA DE HOOKS — TODOS os hooks DEVEM ficar aqui, ANTES de
+  // qualquer early return. React compara a contagem/ordem de hooks
+  // entre renders; se um hook roda no render 2 mas não no render 1
+  // (porque um early return pulou ele), crash #310.
+  //
+  // REGRA: NUNCA adicionar useState/useEffect/useMemo/useCallback
+  //        ou custom hooks (useMagazinePublish, etc.) ABAIXO da
+  //        linha "── NENHUM HOOK ABAIXO DESTE PONTO ──".
+  //
+  // Guard-rail: `react-hooks/rules-of-hooks` é 'error' no ESLint.
+  // ─────────────────────────────────────────────────────────────────
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [step, setStep] = useState<StepId>('identity');
@@ -70,27 +82,6 @@ export default function MagazineEditorPage() {
 
   // `magazine` é null enquanto carrega e quando o id não existe.
   const magazine = editor.magazine;
-
-  // ───────────────────────────────────────────────────────────────────────
-  // CORREÇÃO CRÍTICA — React error #310
-  // ("Rendered more hooks than during the previous render")
-  //
-  // Antes: os dois useMemo abaixo ficavam DEPOIS dos early returns
-  // (`if (!editor.loaded) return …` e `if (!editor.magazine) return …`).
-  //
-  //   Render 1 (loaded = false) → early return  → N hooks executados
-  //   Render 2 (loaded = true)  → segue o corpo → N + 2 hooks executados
-  //
-  // React compara a ordem/contagem de hooks entre renders → crash em 100%
-  // dos mounts da página, capturado por MagazineErrorBoundary/ProtectedRoute.
-  //
-  // Agora: TODOS os hooks rodam incondicionalmente, no topo. `paginateMagazine`
-  // já aceita null e `validateStep` recebe fallback neutro. Os early returns
-  // ficam ABAIXO de todos os hooks.
-  //
-  // Guard-rail permanente: `react-hooks/rules-of-hooks` já é 'error' no
-  // eslint.config.js — qualquer regressão desse tipo reprova no CI.
-  // ───────────────────────────────────────────────────────────────────────
 
   // Atalhos globais leves — Cmd/Ctrl+S salva imediato (autosave já roda)
   useEffect(() => {
@@ -106,8 +97,6 @@ export default function MagazineEditorPage() {
   }, []);
 
   // Deps enxutas: a referência de `items` já cobre mudança de contagem
-  // (magazineService sempre devolve array novo); templateId/title são escalares;
-  // content.groupByCategory cobre o agrupamento por categoria.
   const pages = useMemo(
     () => paginateMagazine(magazine),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -119,8 +108,7 @@ export default function MagazineEditorPage() {
     ],
   );
 
-  // Deps espelham os campos realmente lidos por validateStep:
-  // identity → title + branding.clientLogoUrl | products/design/layout → items.length
+  // Deps espelham os campos realmente lidos por validateStep
   const validation = useMemo(
     () => (magazine ? validateStep(step, magazine) : EMPTY_VALIDATION),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,9 +127,42 @@ export default function MagazineEditorPage() {
     if (idx >= 0) setPreviewIdx(idx);
   }, [highlightedItemId, pages]);
 
+  // ── CORREÇÃO React #310 (2026-07-16) ──────────────────────────────
+  // `publishable` e `useMagazinePublish` PRECISAM rodar incondicionalmente.
+  // `canPublish` aceita Magazine; quando magazine é null, usamos false.
+  // `useMagazinePublish` tem useState+useCallback internos — se ficar
+  // após early return, a contagem de hooks muda entre renders → crash.
+  // ──────────────────────────────────────────────────────────────────
+  const publishable = magazine ? canPublish(magazine) : false;
 
+  const { publishing, publish } = useMagazinePublish({
+    publishable,
+    publishFn: editor.publish,
+  });
 
-  // ── A PARTIR DAQUI NENHUM HOOK PODE SER CHAMADO ────────────────────────
+  // currentIdx derivado — sem hook, puro cálculo
+  const currentIdx = STEPS.findIndex((s) => s.id === step);
+
+  // goToStep como useCallback para estabilidade referencial
+  const goToStep = useCallback(
+    (target: StepId) => {
+      const targetIdx = STEPS.findIndex((s) => s.id === target);
+      if (targetIdx > currentIdx) {
+        const blocking = magazine ? validateStep(step, magazine).blocks : [];
+        if (blocking.length > 0) {
+          toast.warning(blocking[0]);
+        }
+      }
+      setStep(target);
+    },
+    [currentIdx, magazine, step],
+  );
+
+  // ── NENHUM HOOK ABAIXO DESTE PONTO ────────────────────────────────
+  // Todo useState/useEffect/useMemo/useCallback/custom hook DEVE ficar
+  // ACIMA desta linha. Abaixo: apenas early returns, cálculos puros e JSX.
+  // ──────────────────────────────────────────────────────────────────
+
   if (!editor.loaded) {
     return (
       <div className="flex h-[60vh] items-center justify-center text-muted-foreground" role="status">
@@ -164,30 +185,8 @@ export default function MagazineEditorPage() {
   }
 
   const safePreviewIdx = Math.min(previewIdx, Math.max(0, pages.length - 1));
-
-  const currentIdx = STEPS.findIndex((s) => s.id === step);
   const canPrev = currentIdx > 0;
   const canNext = currentIdx < STEPS.length - 1;
-
-  const publishable = canPublish(magazine);
-
-  const goToStep = (target: StepId) => {
-    // Se pular para Design/Layout sem produtos, avisa mas permite (soft-block)
-    const targetIdx = STEPS.findIndex((s) => s.id === target);
-    if (targetIdx > currentIdx) {
-      const blocking = validation.blocks;
-      if (blocking.length > 0) {
-        toast.warning(blocking[0]);
-      }
-    }
-    setStep(target);
-  };
-
-  const { publishing, publish } = useMagazinePublish({
-    publishable,
-    publishFn: editor.publish,
-  });
-
 
   const openPrint = () => window.open(`/magazine/${magazine.id}/print`, '_blank');
 
