@@ -10,6 +10,7 @@ import {
   MagazineEditorPage,
   MagazineListPage,
   MagazinePrintPage,
+  MagazineTemplatesGalleryPage,
   MagicUp,
   MeusKitsPage,
   MockupGenerator,
