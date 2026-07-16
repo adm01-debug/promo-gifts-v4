@@ -4,7 +4,6 @@
  */
 import { useMemo, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { logger } from '@/lib/logger';
@@ -74,9 +73,7 @@ export function MockupPromptManager() {
     try {
       const [cr, tr] = await Promise.all([
         supabase.from('mockup_prompt_configs').select('*').order('config_key'),
-        // personalization_techniques existe no banco mas ainda não está no
-        // types.ts gerado — padrão do repo para esses casos é untypedFrom.
-        untypedFrom<Technique>('personalization_techniques')
+        supabase.from('personalization_techniques')
           .select('id, name, code')
           .eq('is_active', true),
       ]);
