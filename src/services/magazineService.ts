@@ -5,8 +5,9 @@
  * (tabelas `magazines`, `magazine_items`) + edge `magazine-public-view`
  * para leitura anônima. Toda a API passa a ser assíncrona.
  *
- * A camada usa `untypedFrom<Row>()` porque as tabelas magazine_* ainda
- * não estão em src/integrations/supabase/types.ts (regeneração pendente).
+ * A camada usa `untypedFrom<Row>()` por conveniência. As tabelas magazine_*
+ * já estão em src/integrations/supabase/types.ts — migração para typed
+ * `.from()` é um follow-up planejado (docs/plans/magazine-typed-queries-migration.md).
  */
 
 import { type Magazine, type MagazineClientBranding, type MagazineContentSettings, type MagazineItem, type MagazineProductSnapshot, type MagazineTemplateId, DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';

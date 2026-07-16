@@ -43,11 +43,12 @@ export function validateBranding(
   // colors: each must be a valid CSS hex color
   if (branding.colors !== undefined) {
     const hexPattern = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-    const validatedColors = { ...branding.colors };
+    const defaults = { primary: '#000000', secondary: '#000000', text: '#000000' };
+    const validatedColors = { ...defaults, ...branding.colors };
 
     for (const key of ['primary', 'secondary', 'text'] as const) {
-      const value = branding.colors[key];
-      if (value && !hexPattern.test(value)) {
+      const value = validatedColors[key];
+      if (!value || !hexPattern.test(value)) {
         errors.push(`Cor '${key}' deve ser um hex válido (ex: #FF0000)`);
         validatedColors[key] = '#000000';
       }
