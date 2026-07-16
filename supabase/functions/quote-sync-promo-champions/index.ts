@@ -7,6 +7,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { createStructuredLogger } from "../_shared/structured-logger.ts";
+import { resolveCredential } from "../_shared/credentials.ts";
 
 const cors = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
 const baseLog = createStructuredLogger("quote-sync-promo-champions");
@@ -52,7 +53,7 @@ export const handler = async (req: Request): Promise<Response> => {
   }
   const q = parsed.data;
 
-  const secret = Deno.env.get("PROMO_CHAMPIONS_WEBHOOK_SECRET");
+  const { value: secret } = await resolveCredential("PROMO_CHAMPIONS_WEBHOOK_SECRET");
   if (!secret) {
     return json(
       {
