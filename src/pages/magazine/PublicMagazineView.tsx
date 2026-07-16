@@ -170,9 +170,9 @@ export default function PublicMagazineView() {
   const go = useCallback(
     (idx: number) => {
       const clamped = Math.min(Math.max(idx, 0), Math.max(total - 1, 0));
-      setPageIdx((current) => {
-        if (clamped > current) setDirection(1);
-        else if (clamped < current) setDirection(-1);
+      setPageIdx((prevIdx) => {
+        if (clamped > prevIdx) setDirection(1);
+        else if (clamped < prevIdx) setDirection(-1);
         return clamped;
       });
     },
@@ -285,6 +285,10 @@ export default function PublicMagazineView() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+  // Intentional: sub-field deps are more granular than the full objects.
+  // zoom/presentation return new object refs each render — adding them as objects
+  // would cause the listener to be removed/added on every render (loop).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     prev, next, go, toggleFullscreen, total, toggleBookmark, safeIdx,
     tocOpen, helpOpen,
