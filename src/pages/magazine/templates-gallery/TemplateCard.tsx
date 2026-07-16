@@ -70,11 +70,18 @@ function TemplateCardImpl({
   const page = useMemo(() => buildMockPage(entry.id), [entry.id]);
   const Template = entry.Component;
 
+  const handlePrefetch = () => {
+    if (!visible) setVisible(true);
+  };
+
   return (
     <div
       ref={rootRef}
+      onMouseEnter={handlePrefetch}
+      onFocus={handlePrefetch}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: `${THUMB_HEIGHT}px` }}
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg',
+        'group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg motion-reduce:transition-none',
         isFavorite && 'ring-2 ring-primary/40',
       )}
       data-testid={`template-card-${entry.id}`}
