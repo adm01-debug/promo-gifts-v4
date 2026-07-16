@@ -156,7 +156,7 @@ function TemplateCardImpl({
           </div>
         )}
 
-        <div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-gradient-to-t from-foreground/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-0 flex items-end justify-center bg-gradient-to-t from-foreground/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none">
           <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-background/95 px-4 py-2 text-sm font-medium text-foreground shadow">
             <Eye className="h-4 w-4" aria-hidden />
             Ver em tamanho real
