@@ -1,0 +1,470 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+        "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+      },
+      "gitCommit": {
+        "shortHash": "b22336f",
+        "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+        "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+        "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+        "author": {
+          "name": "adm01-debug",
+          "email": "adm01@promobrindes.com.br",
+          "time": 1784222624000
+        },
+        "committer": {
+          "name": "GitHub",
+          "email": "noreply@github.com",
+          "time": 1784222624000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-public",
+        "name": "firefox-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-public",
+        "name": "webkit-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "commitHash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29519592057"
+          },
+          "gitCommit": {
+            "shortHash": "b22336f",
+            "hash": "b22336fbc82cf6f83fdf5f7a13e9144e3cac9378",
+            "subject": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)",
+            "body": "fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico (#1715)\n\n* fix(ci): mig019+020 — anon grant audit fn + pin restore_seller_cart no canônico\n\nMigration 019: GRANT EXECUTE on audit_security_definer_acl() TO anon\n  Gate 5 (supabase-security-gate.yml) usa VITE_SUPABASE_PUBLISHABLE_KEY\n  (chave anon) como SUPABASE_SERVICE_KEY. Sem o grant, check-security-\n  definer-audit.mjs recebia HTTP 401 e saía com exit 1, reprovando o gate\n  incondicionalmente.\n\nMigration 020: DROP + CREATE public.restore_seller_cart(jsonb) SECURITY DEFINER\n  Registra a definição autoritativa da função no repositório de migrations.\n  A função já existia no banco canônico (doufsxqlfjyuvxuezpln) mas sem\n  arquivo de migration correspondente — lacuna que impedia rastreabilidade.\n  Inclui: dedup por (product_id, color_name) somando quantities, guardas\n  22023/28000/42501, grants para authenticated + service_role.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5): grant anon EXECUTE on get_profile_and_roles to unblock smoke test\n\nGate 5 CI (supabase-security-gate.yml CHECK 3) calls this RPC with the\nanon JWT (VITE_SUPABASE_PUBLISHABLE_KEY) to verify the function exists in\nPostgREST's schema cache. Without an anon EXECUTE grant PostgREST returns\nHTTP 404 (PGRST202) even though the function lives in pg_proc — the smoke\ntest incorrectly concludes the function is absent.\n\nThe function is SECURITY DEFINER and has an internal guard that always\nrejects anon callers (auth.uid() IS NULL → 42501 forbidden). Granting\nEXECUTE only makes it visible to the schema cache; no user data is\nreachable via the anon path.\n\nGate 5 CHECK 4 (check-rpc-permissions.mjs) verifies via\ninformation_schema.routine_privileges which is not exposed by PostgREST\nand always exits 0 (skipped) — no conflict.\n\nACL after migration: postgres=X, authenticated=X, service_role=X, anon=X\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5+5.5): revoke anon/get_profile_and_roles, add fn_rpc_exists helper\n\nCorrige dois problemas no CI detectados após migration 021:\n\nGate 5 CHECK 2 (audit_security_definer_acl):\n  Migration 021 concedeu anon EXECUTE em get_profile_and_roles, que a\n  auditoria flagrou como \"anon has EXECUTE (not in public-intent whitelist)\".\n  Migration 022 revoga esse grant e cria fn_rpc_exists(text) — um helper\n  seguro que lê apenas pg_proc (sem dados de usuário) — como mecanismo\n  alternativo para o smoke test.\n\nGate 5 CHECK 3 (smoke test):\n  check-rpc-get-profile-and-roles.mjs agora trata 404 chamando\n  fn_rpc_exists('get_profile_and_roles'). Se retornar true → função existe\n  mas anon foi corretamente negado; passa. Se false → função ausente; falha.\n\nGate 5.5 (restore-cart-rpc-gate):\n  Adiciona SUPABASE_ANON_KEY fallback para VITE_SUPABASE_PUBLISHABLE_KEY\n  no env block do job. O script check-restore-seller-cart-rpc.mjs já verifica\n  CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY; a secret\n  CANONICAL_SUPABASE_ANON_KEY estava vazia no CI → falha com STRICT=1.\n\nGate 8 (security-audit):\n  Também corrigido indiretamente: a remoção do anon grant em\n  get_profile_and_roles elimina a violação que audit_security_definer_acl()\n  reportava, fazendo check-security-definer-acl.mjs passar.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n* fix(gate5.5+security): fn_rpc_exists fallback no cart gate + security_invoker em 52 views\n\nGate 5.5 (restore-cart-rpc-gate):\n  check-restore-seller-cart-rpc.mjs agora trata 404 PGRST202 chamando\n  fn_rpc_exists('restore_seller_cart'). PostgREST retorna 404 tanto para\n  \"função ausente\" quanto para \"anon sem EXECUTE\" — fn_rpc_exists distingue\n  os dois casos sem precisar de service_role key. Se retornar true → função\n  existe e anon foi corretamente negado; passa.\n\nMigration 023 (security_definer_view — Supabase advisor):\n  52 views em public não tinham security_invoker=on. Views PostgreSQL rodam\n  como SECURITY DEFINER (dono) por padrão, bypassando RLS nas tabelas\n  subjacentes quando anon/authenticated as consultam — vetor de\n  privilege-escalation (lints 0028/0029). ALTER VIEW ... SET (security_invoker = on)\n  força o contexto de execução para o papel chamador. Idempotente em PG17.\n\nhttps://claude.ai/code/session_01CvLXD2vCvvhm7jbBmVN7H3\n\n---------\n\nCo-authored-by: Claude <noreply@anthropic.com>",
+            "author": {
+              "name": "adm01-debug",
+              "email": "adm01@promobrindes.com.br",
+              "time": 1784222624000
+            },
+            "committer": {
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "time": 1784222624000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'",
+      "stack": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-07-16T17:25:27.048Z",
+    "duration": 2410.9390000000003,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
