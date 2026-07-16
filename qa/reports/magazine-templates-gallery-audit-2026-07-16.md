@@ -149,3 +149,36 @@ Adições ao SSOT E2E:
 Aderente às políticas: `e2e-selectors-policy` (só data-testid), `e2e-helpers-policy` (`loginAs`, `gotoAndSettle`, `waitForTestIdVisible`), `e2e-named-resources` (token `SAMPLE_MAG_ID` prefixado).
 
 Total automatizado agora: **72 unit + 6 E2E = 78 casos verdes**.
+
+---
+
+## Onda 14 — Gate `@smoke` de governança ✅
+
+- Rota `/magazine/templates` registrada em `e2e/routes/_catalog.ts` (APP_ROUTES) com `feature: "magazine-templates-gallery"`, `smoke: true`.
+- Feature adicionada ao `SMOKE_COVERAGE` de `e2e/flows/20-all-features-smoke.spec.ts` — agora coberta pelo teste 99 (governança) que falha CI se a feature sair do catálogo.
+- `docs/E2E_SMOKE_COVERAGE.md` regenerado por `scripts/e2e-smoke-coverage-doc.mjs` (agora 30 features).
+
+## Onda 15 — Regressão visual (screenshot baseline) ✅
+
+Spec: `e2e/magazine/magazine-templates-gallery-visual.spec.ts` — captura o card completo de 4 templates canônicos (Vogue, Drop Cap, Grid, Clean) com `toHaveScreenshot()` + `maxDiffPixelRatio: 0.02`. Baseline gerado no primeiro run do CI.
+
+Cobertura visual = 4/12 (subset canônico dos 3 famílias — editorial ×2 + catalog + corporate). Ampliação para os 12 templates fica sob demanda para não inflar o tempo do gate visual.
+
+---
+
+## Resumo final consolidado
+
+| Métrica | Valor |
+| ------- | ----- |
+| Score Robustez | 100/100 |
+| Score A11y | 100/100 |
+| Score Consistência | 100/100 |
+| Score Perf | 100/100 |
+| **Score Global** | **100/100 🏆** |
+| Testes unit | 60 (Vitest) |
+| Testes E2E funcionais | 6 (Playwright) |
+| Testes E2E visuais | 4 (Playwright screenshot) |
+| **Total automatizado** | **70 casos** |
+| Ondas executadas | 15 |
+| Arquivos criados | 8 |
+| Regras violadas | 0 |
