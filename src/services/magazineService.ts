@@ -5,53 +5,26 @@
  * (tabelas `magazines`, `magazine_items`) + edge `magazine-public-view`
  * para leitura anônima. Toda a API passa a ser assíncrona.
  *
- * A camada usa `untypedFrom<Row>()` por conveniência. As tabelas magazine_*
- * já estão em src/integrations/supabase/types.ts — migração para typed
- * `.from()` é um follow-up planejado (docs/plans/magazine-typed-queries-migration.md).
+ * Migração 2026-07-16: convertido de untypedFrom<Row>() para supabase.from()
+ * tipado (docs/plans/magazine-typed-queries-migration.md). Campos Json do BD
+ * (branding, content_settings, product_snapshot, overrides, page_order) são
+ * mapeados via cast explícito nas funções de mapeamento.
  */
 
 import { type Magazine, type MagazineClientBranding, type MagazineContentSettings, type MagazineItem, type MagazineProductSnapshot, type MagazineTemplateId, DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
 
 import type { Product } from '@/types/product-catalog';
-import { untypedFrom } from '@/lib/supabase-untyped';
+import type { Database } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 
 // ---------------------------------------------------------------------------
-// Row shapes (mapeamento do BD Gold)
+// Row shapes derivadas do schema tipado do BD Gold
 // ---------------------------------------------------------------------------
 
-interface MagazineRow {
-  id: string;
-  owner_id: string;
-  organization_id: string | null;
-  title: string;
-  subtitle: string | null;
-  template_id: MagazineTemplateId;
-  branding: MagazineClientBranding;
-  content_settings: MagazineContentSettings;
-  page_order: number[] | null;
-  status: Magazine['status'];
-  public_token: string | null;
-  view_count: number;
-  published_at: string | null;
-  archived_at: string | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
-}
-
-interface MagazineItemRow {
-  id: string;
-  magazine_id: string;
-  product_id: string;
-  product_snapshot: MagazineProductSnapshot;
-  variant_color_name: string | null;
-  position: number;
-  page_number: number | null;
-  overrides: Partial<MagazineContentSettings>;
-}
+type MagazineRow = Database['public']['Tables']['magazines']['Row'];
+type MagazineItemRow = Database['public']['Tables']['magazine_items']['Row'];
 
 // ---------------------------------------------------------------------------
 // Mapping helpers
@@ -61,11 +34,11 @@ function rowToItem(row: MagazineItemRow): MagazineItem {
   return {
     id: row.id,
     productId: row.product_id,
-    productSnapshot: row.product_snapshot,
+    productSnapshot: row.product_snapshot as unknown as MagazineProductSnapshot,
     variantColorName: row.variant_color_name,
     position: row.position,
     pageNumber: row.page_number,
-    overrides: row.overrides ?? {},
+    overrides: (row.overrides ?? {}) as unknown as Partial<MagazineContentSettings>,
   };
 }
 
@@ -76,11 +49,11 @@ function rowToMagazine(row: MagazineRow, items: MagazineItemRow[]): Magazine {
     organizationId: row.organization_id,
     title: row.title,
     subtitle: row.subtitle ?? '',
-    templateId: row.template_id,
-    branding: { ...DEFAULT_BRANDING, ...(row.branding ?? {}) },
-    content: { ...DEFAULT_MAGAZINE_CONTENT, ...(row.content_settings ?? {}) },
+    templateId: row.template_id as MagazineTemplateId,
+    branding: { ...DEFAULT_BRANDING, ...(row.branding as unknown as MagazineClientBranding ?? {}) },
+    content: { ...DEFAULT_MAGAZINE_CONTENT, ...(row.content_settings as unknown as MagazineContentSettings ?? {}) },
     items: [...items].sort((a, b) => a.position - b.position).map(rowToItem),
-    pageOrder: row.page_order,
+    pageOrder: row.page_order as number[] | null,
     status: row.status,
     publicToken: row.public_token,
     viewCount: row.view_count ?? 0,
@@ -144,7 +117,8 @@ function generatePublicToken(): string {
 // ---------------------------------------------------------------------------
 
 async function fetchMagazineRow(id: string): Promise<MagazineRow | null> {
-  const { data, error } = await untypedFrom<MagazineRow>('magazines')
+  const { data, error } = await supabase
+    .from('magazines')
     .select('*')
     .eq('id', id)
     .is('deleted_at', null)
@@ -153,11 +127,12 @@ async function fetchMagazineRow(id: string): Promise<MagazineRow | null> {
     logger.warn('[magazineService] fetchMagazineRow error:', error.message);
     return null;
   }
-  return (data as MagazineRow | null) ?? null;
+  return data ?? null;
 }
 
 async function fetchItems(magazineId: string): Promise<MagazineItemRow[]> {
-  const { data, error } = await untypedFrom<MagazineItemRow>('magazine_items')
+  const { data, error } = await supabase
+    .from('magazine_items')
     .select('*')
     .eq('magazine_id', magazineId)
     .order('position', { ascending: true });
@@ -165,7 +140,7 @@ async function fetchItems(magazineId: string): Promise<MagazineItemRow[]> {
     logger.warn('[magazineService] fetchItems error:', error.message);
     return [];
   }
-  return ((data as MagazineItemRow[] | null) ?? []);
+  return data ?? [];
 }
 
 async function hydrate(id: string): Promise<Magazine | null> {
@@ -261,7 +236,8 @@ function publicPayloadToMagazine(token: string, p: PublicViewPayload): Magazine 
 
 export const magazineService = {
   async list(ownerId: string): Promise<Magazine[]> {
-    const { data, error } = await untypedFrom<MagazineRow>('magazines')
+    const { data, error } = await supabase
+      .from('magazines')
       .select('*')
       .eq('owner_id', ownerId)
       .is('deleted_at', null)
@@ -270,14 +246,15 @@ export const magazineService = {
       logger.warn('[magazineService.list] error:', error.message);
       return [];
     }
-    const rows = (data as MagazineRow[] | null) ?? [];
+    const rows = data ?? [];
     if (rows.length === 0) return [];
     // Busca items de todas as revistas em uma query só
     const ids = rows.map((r) => r.id);
-    const { data: itemsData } = await untypedFrom<MagazineItemRow>('magazine_items')
+    const { data: itemsData } = await supabase
+      .from('magazine_items')
       .select('*')
       .in('magazine_id', ids);
-    const items = (itemsData as MagazineItemRow[] | null) ?? [];
+    const items = itemsData ?? [];
     const byMag = new Map<string, MagazineItemRow[]>();
     for (const it of items) {
       const arr = byMag.get(it.magazine_id) ?? [];
@@ -317,30 +294,33 @@ export const magazineService = {
       content_settings: { ...DEFAULT_MAGAZINE_CONTENT },
       status: 'draft' as const,
     };
-    const { data, error } = await untypedFrom<MagazineRow>('magazines')
+    const { data, error } = await supabase
+      .from('magazines')
       .insert(insertRow)
       .select('*')
       .single();
     if (error || !data) {
       throw new Error(`[magazineService.create] ${error?.message ?? 'insert falhou'}`);
     }
-    return rowToMagazine(data as MagazineRow, []);
+    return rowToMagazine(data, []);
   },
 
   async update(id: string, patch: Partial<Magazine>): Promise<Magazine | null> {
-    const updateRow: Record<string, unknown> = {};
+    type MagazineUpdate = Database['public']['Tables']['magazines']['Update'];
+    const updateRow: MagazineUpdate = {};
     if ('title' in patch) updateRow.title = patch.title;
     if ('subtitle' in patch) updateRow.subtitle = patch.subtitle;
     if ('templateId' in patch) updateRow.template_id = patch.templateId;
-    if ('branding' in patch) updateRow.branding = patch.branding;
-    if ('content' in patch) updateRow.content_settings = patch.content;
-    if ('pageOrder' in patch) updateRow.page_order = patch.pageOrder;
+    if ('branding' in patch) updateRow.branding = patch.branding as unknown as MagazineUpdate['branding'];
+    if ('content' in patch) updateRow.content_settings = patch.content as unknown as MagazineUpdate['content_settings'];
+    if ('pageOrder' in patch) updateRow.page_order = patch.pageOrder as unknown as MagazineUpdate['page_order'];
     if ('status' in patch) updateRow.status = patch.status;
     if ('publicToken' in patch) updateRow.public_token = patch.publicToken;
     if ('publishedAt' in patch) updateRow.published_at = patch.publishedAt;
 
     if (Object.keys(updateRow).length > 0) {
-      const { error } = await untypedFrom<MagazineRow>('magazines')
+      const { error } = await supabase
+        .from('magazines')
         .update(updateRow)
         .eq('id', id);
       if (error) {
@@ -351,18 +331,18 @@ export const magazineService = {
 
     // Se o patch inclui items, sincroniza (delete + insert).
     if (patch.items) {
-      await untypedFrom<MagazineItemRow>('magazine_items').delete().eq('magazine_id', id);
+      await supabase.from('magazine_items').delete().eq('magazine_id', id);
       if (patch.items.length > 0) {
         const rows = patch.items.map((it, idx) => ({
           magazine_id: id,
           product_id: it.productId,
-          product_snapshot: it.productSnapshot,
+          product_snapshot: it.productSnapshot as unknown as Database['public']['Tables']['magazine_items']['Insert']['product_snapshot'],
           variant_color_name: it.variantColorName,
           position: idx,
           page_number: it.pageNumber,
-          overrides: it.overrides ?? {},
+          overrides: (it.overrides ?? {}) as unknown as Database['public']['Tables']['magazine_items']['Insert']['overrides'],
         }));
-        const { error: insErr } = await untypedFrom<MagazineItemRow>('magazine_items').insert(rows);
+        const { error: insErr } = await supabase.from('magazine_items').insert(rows);
         if (insErr) {
           logger.warn('[magazineService.update] items insert error:', insErr.message);
         }
@@ -394,26 +374,28 @@ export const magazineService = {
     const rows = additions.map((p, offset) => ({
       magazine_id: id,
       product_id: p.id,
-      product_snapshot: productToSnapshot(p),
+      product_snapshot: productToSnapshot(p) as unknown as Database['public']['Tables']['magazine_items']['Insert']['product_snapshot'],
       variant_color_name: p.colors?.[0]?.name ?? null,
       position: basePos + offset,
       page_number: null,
-      overrides: {},
+      overrides: {} as unknown as Database['public']['Tables']['magazine_items']['Insert']['overrides'],
     }));
-    const { error } = await untypedFrom<MagazineItemRow>('magazine_items').insert(rows);
+    const { error } = await supabase.from('magazine_items').insert(rows);
     if (error) {
       logger.warn('[magazineService.addProducts] error:', error.message);
       return current;
     }
     // Bumpa updated_at do header
-    await untypedFrom<MagazineRow>('magazines')
+    await supabase
+      .from('magazines')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', id);
     return hydrate(id);
   },
 
   async removeItem(id: string, itemId: string): Promise<Magazine | null> {
-    const { error } = await untypedFrom<MagazineItemRow>('magazine_items')
+    const { error } = await supabase
+      .from('magazine_items')
       .delete()
       .eq('id', itemId)
       .eq('magazine_id', id);
@@ -421,7 +403,8 @@ export const magazineService = {
       logger.warn('[magazineService.removeItem] error:', error.message);
       return this.get(id);
     }
-    await untypedFrom<MagazineRow>('magazines')
+    await supabase
+      .from('magazines')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', id);
     return hydrate(id);
@@ -431,27 +414,31 @@ export const magazineService = {
     // Atualiza posição em paralelo — cada item recebe seu novo índice.
     await Promise.all(
       orderedIds.map((itemId, idx) =>
-        untypedFrom<MagazineItemRow>('magazine_items')
+        supabase
+          .from('magazine_items')
           .update({ position: idx })
           .eq('id', itemId)
           .eq('magazine_id', id),
       ),
     );
-    await untypedFrom<MagazineRow>('magazines')
+    await supabase
+      .from('magazines')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', id);
     return hydrate(id);
   },
 
   async updateItem(id: string, itemId: string, patch: Partial<MagazineItem>): Promise<Magazine | null> {
-    const updateRow: Record<string, unknown> = {};
-    if ('productSnapshot' in patch) updateRow.product_snapshot = patch.productSnapshot;
+    type MagazineItemUpdate = Database['public']['Tables']['magazine_items']['Update'];
+    const updateRow: MagazineItemUpdate = {};
+    if ('productSnapshot' in patch) updateRow.product_snapshot = patch.productSnapshot as unknown as MagazineItemUpdate['product_snapshot'];
     if ('variantColorName' in patch) updateRow.variant_color_name = patch.variantColorName;
     if ('position' in patch) updateRow.position = patch.position;
     if ('pageNumber' in patch) updateRow.page_number = patch.pageNumber;
-    if ('overrides' in patch) updateRow.overrides = patch.overrides;
+    if ('overrides' in patch) updateRow.overrides = patch.overrides as unknown as MagazineItemUpdate['overrides'];
     if (Object.keys(updateRow).length > 0) {
-      const { error } = await untypedFrom<MagazineItemRow>('magazine_items')
+      const { error } = await supabase
+        .from('magazine_items')
         .update(updateRow)
         .eq('id', itemId)
         .eq('magazine_id', id);
@@ -459,7 +446,8 @@ export const magazineService = {
         logger.warn('[magazineService.updateItem] error:', error.message);
       }
     }
-    await untypedFrom<MagazineRow>('magazines')
+    await supabase
+      .from('magazines')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', id);
     return hydrate(id);
@@ -484,13 +472,13 @@ export const magazineService = {
       const rows = current.items.map((it, idx) => ({
         magazine_id: clone.id,
         product_id: it.productId,
-        product_snapshot: it.productSnapshot,
+        product_snapshot: it.productSnapshot as unknown as Database['public']['Tables']['magazine_items']['Insert']['product_snapshot'],
         variant_color_name: it.variantColorName,
         position: idx,
         page_number: it.pageNumber,
-        overrides: it.overrides ?? {},
+        overrides: (it.overrides ?? {}) as unknown as Database['public']['Tables']['magazine_items']['Insert']['overrides'],
       }));
-      const { error } = await untypedFrom<MagazineItemRow>('magazine_items').insert(rows);
+      const { error } = await supabase.from('magazine_items').insert(rows);
       if (error) logger.warn('[magazineService.duplicate] items error:', error.message);
     }
     return hydrate(clone.id);
@@ -498,7 +486,8 @@ export const magazineService = {
 
   async delete(id: string): Promise<void> {
     // Soft-delete: preserva registro para Undo do toast.
-    const { error } = await untypedFrom<MagazineRow>('magazines')
+    const { error } = await supabase
+      .from('magazines')
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
     if (error) logger.warn('[magazineService.delete] error:', error.message);
@@ -510,7 +499,8 @@ export const magazineService = {
    * reinsere header + items usando o objeto passado.
    */
   async restore(magazine: Magazine): Promise<Magazine> {
-    const { data, error } = await untypedFrom<MagazineRow>('magazines')
+    const { data, error } = await supabase
+      .from('magazines')
       .update({ deleted_at: null, updated_at: new Date().toISOString() })
       .eq('id', magazine.id)
       .select('*')
@@ -522,21 +512,22 @@ export const magazineService = {
     }
 
     // Hard-deleted: reinsere.
-    const insertRow = {
+    type MagazineInsert = Database['public']['Tables']['magazines']['Insert'];
+    const insertRow: MagazineInsert = {
       id: magazine.id,
       owner_id: magazine.ownerId,
       organization_id: magazine.organizationId,
       title: magazine.title,
       subtitle: magazine.subtitle,
       template_id: magazine.templateId,
-      branding: magazine.branding,
-      content_settings: magazine.content,
-      page_order: magazine.pageOrder,
+      branding: magazine.branding as unknown as MagazineInsert['branding'],
+      content_settings: magazine.content as unknown as MagazineInsert['content_settings'],
+      page_order: magazine.pageOrder as unknown as MagazineInsert['page_order'],
       status: magazine.status,
       public_token: magazine.publicToken,
       published_at: magazine.publishedAt,
     };
-    const { error: insErr } = await untypedFrom<MagazineRow>('magazines').insert(insertRow);
+    const { error: insErr } = await supabase.from('magazines').insert(insertRow);
     if (insErr) {
       logger.warn('[magazineService.restore] reinsert error:', insErr.message);
       return magazine;
@@ -545,13 +536,13 @@ export const magazineService = {
       const itemRows = magazine.items.map((it, idx) => ({
         magazine_id: magazine.id,
         product_id: it.productId,
-        product_snapshot: it.productSnapshot,
+        product_snapshot: it.productSnapshot as unknown as Database['public']['Tables']['magazine_items']['Insert']['product_snapshot'],
         variant_color_name: it.variantColorName,
         position: idx,
         page_number: it.pageNumber,
-        overrides: it.overrides ?? {},
+        overrides: (it.overrides ?? {}) as unknown as Database['public']['Tables']['magazine_items']['Insert']['overrides'],
       }));
-      await untypedFrom<MagazineItemRow>('magazine_items').insert(itemRows);
+      await supabase.from('magazine_items').insert(itemRows);
     }
     const hydrated = await hydrate(magazine.id);
     return hydrated ?? magazine;
@@ -577,7 +568,8 @@ export const magazineService = {
 
     // 1) Update de status/published_at — sempre. Se falhar, aborta ANTES de
     //    tentar gravar qualquer token (INV-3: sem token órfão no BD).
-    const { error } = await untypedFrom<MagazineRow>('magazines')
+    const { error } = await supabase
+      .from('magazines')
       .update({
         status: 'published',
         published_at: new Date().toISOString(),
@@ -594,7 +586,8 @@ export const magazineService = {
     //    `.is('public_token', null)` — só escreve se o BD ainda estiver NULL.
     if (!existingToken) {
       const generatedToken = generatePublicToken();
-      const { error: tokenErr } = await untypedFrom<MagazineRow>('magazines')
+      const { error: tokenErr } = await supabase
+        .from('magazines')
         .update({ public_token: generatedToken })
         .eq('id', id)
         .is('public_token', null);
@@ -610,7 +603,8 @@ export const magazineService = {
     // publish() concorrente vai bater na guarda e ser rejeitado.
     if (hydrated && !hydrated.publicToken) {
       const fallbackToken = generatePublicToken();
-      const { error: tokenErr } = await untypedFrom<MagazineRow>('magazines')
+      const { error: tokenErr } = await supabase
+        .from('magazines')
         .update({ public_token: fallbackToken })
         .eq('id', id)
         .is('public_token', null);
@@ -624,7 +618,8 @@ export const magazineService = {
   },
 
   async unpublish(id: string): Promise<Magazine | null> {
-    const { error } = await untypedFrom<MagazineRow>('magazines')
+    const { error } = await supabase
+      .from('magazines')
       .update({ status: 'draft' })
       .eq('id', id);
     if (error) {
@@ -635,7 +630,3 @@ export const magazineService = {
   },
 };
 
-// Marca o supabase client como usado (evita tree-shake do import) — o
-// untypedFrom() já depende dele, mas mantemos referência explícita para
-// documentação.
-void supabase;

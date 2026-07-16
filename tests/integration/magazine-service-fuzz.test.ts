@@ -1,5 +1,5 @@
 /**
- * magazineService — fuzz de lifecycle com mock in-memory de untypedFrom.
+ * magazineService — fuzz de lifecycle com mock in-memory de supabase.from().
  *
  * 100+ cenários combinatoriais (fast-check) sobre create/update/addProducts/
  * removeItem/reorderItems/duplicate/delete/restore/publish/unpublish e
@@ -177,13 +177,8 @@ function makeBuilder(s: QueryState) {
   return builder;
 }
 
-vi.mock('@/lib/supabase-untyped', () => ({
-  untypedFrom: (table: string) => makeBuilder(newState(table as keyof Store)),
-  untypedRpc: vi.fn(),
-}));
-
 vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {},
+  supabase: { from: (table: string) => makeBuilder(newState(table as keyof Store)) },
 }));
 
 // Import DEPOIS dos mocks

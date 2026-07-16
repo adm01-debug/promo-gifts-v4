@@ -150,9 +150,6 @@ const builder = vi.hoisted(() => {
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: { from: (t: string) => builder(t) },
 }));
-vi.mock('@/lib/supabase-untyped', () => ({
-  untypedFrom: (t: string) => builder(t),
-}));
 
 // Espia crypto para contar quantas vezes o fallback é usado
 beforeEach(() => {
