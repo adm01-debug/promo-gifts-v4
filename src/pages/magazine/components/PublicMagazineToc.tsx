@@ -2,8 +2,9 @@
  * PublicMagazineToc — drawer com miniaturas de todas as páginas para
  * navegação rápida no viewer público. Baseado no Sheet lateral (shadcn).
  *
- * A11y: role=list + role=listitem, cada thumb é um `<button>` com
- * aria-current="page" quando ativo.
+ * A11y: cada thumb é um `<button>` com aria-current="page" quando ativo.
+ * ul não precisa de role="list" explícito — o elemento já carrega o papel
+ * implícito (jsx-a11y/no-redundant-roles).
  */
 
 import { memo } from 'react';
@@ -49,7 +50,7 @@ export const PublicMagazineToc = memo(({
           </p>
         </SheetHeader>
 
-        <ul role="list" className="mt-4 grid grid-cols-2 gap-3 pb-8">
+        <ul className="mt-4 grid grid-cols-2 gap-3 pb-8">
           {pages.map((p) => {
             const active = p.index === currentIndex;
             const marked = bookmarks?.has(p.index) ?? false;

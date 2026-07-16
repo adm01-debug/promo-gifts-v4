@@ -16,10 +16,10 @@ import { describe, it, expect } from 'vitest';
 import { TEMPLATE_REGISTRY } from '../components/templates/TemplateRegistry';
 
 function isValidApplyId(id: string): boolean {
-  return Object.prototype.hasOwnProperty.call(TEMPLATE_REGISTRY, id);
+  return Object.hasOwn(TEMPLATE_REGISTRY, id);
 }
 
-describe('applyTemplate guard — Object.prototype.hasOwnProperty', () => {
+describe('applyTemplate guard — Object.hasOwn', () => {
   it('aceita ids reais do registry', () => {
     for (const id of Object.keys(TEMPLATE_REGISTRY)) {
       expect(isValidApplyId(id)).toBe(true);
