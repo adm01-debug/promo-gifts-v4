@@ -179,6 +179,7 @@ const SMOKE_COVERAGE = [
   "bi-compare",
   "match",
   "dropbox",
+  "magazine-templates-gallery",
 ] as const;
 
 /** Map feature → entry do catálogo (lookup determinístico). */
