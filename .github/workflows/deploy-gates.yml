@@ -159,6 +159,9 @@ jobs:
         env:
           CANONICAL_SUPABASE_URL: https://doufsxqlfjyuvxuezpln.supabase.co
           CANONICAL_SUPABASE_ANON_KEY: ${{ secrets.CANONICAL_SUPABASE_ANON_KEY }}
+          # Fallback: VITE_SUPABASE_PUBLISHABLE_KEY é a anon key do projeto canônico;
+          # o script já verifica CANONICAL_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           # STRICT=1 → falha o pipeline se a anon key não estiver configurada
           # como secret. Remova/comente esta linha para permitir skip silencioso.
           STRICT: '1'

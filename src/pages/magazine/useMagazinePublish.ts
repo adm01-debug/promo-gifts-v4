@@ -17,9 +17,17 @@
  *  U6 — publishFn resolve com token + clipboard OK → toast.success + link.
  *  U7 — publishFn resolve com token + clipboard falha → toast.success + link visível.
  *  U8 — publishing volta a false SEMPRE (finally) mesmo com exceção.
+ *
+ * PERF FIX (2026-07-16):
+ *  - Destructure args in signature so useCallback deps are stable primitives.
+ *  - Guard de reentrância migrado de `publishing` state para `publishingRef`
+ *    (useRef síncrono). Isso remove `publishing` das deps do useCallback,
+ *    evitando que a fn seja recriada a cada setPublishing(true/false).
+ *  - Resultado: `publish` ref é estável enquanto publishable e publishFn não
+ *    mudam — React.memo em botões funciona corretamente.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { Magazine } from '@/types/magazine';
 
@@ -55,10 +63,29 @@ const DEFAULT_CLIPBOARD = (text: string): Promise<void> => {
 const DEFAULT_ORIGIN = (): string =>
   typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
 
-export function useMagazinePublish(args: UseMagazinePublishArgs): UseMagazinePublishState {
-  const { publishable, publishFn } = args;
+export function useMagazinePublish({
+  publishable,
+  publishFn,
+  origin,
+  writeClipboard,
+}: UseMagazinePublishArgs): UseMagazinePublishState {
   const [publishing, setPublishing] = useState(false);
   const [lastPublicUrl, setLastPublicUrl] = useState<string | null>(null);
+
+  /**
+   * PERF FIX: useRef para guard de reentrância.
+   *
+   * Antes: `if (publishing)` lia o STATE dentro do callback, obrigando
+   * `publishing` a estar nas deps do useCallback. Isso recriava `publish`
+   * toda vez que setPublishing(true/false) era chamado — ou seja, 2x por
+   * publicação, além de qualquer render intermediário.
+   *
+   * Depois: publishingRef é síncrono. É atualizado ANTES do primeiro await,
+   * portanto qualquer chamada concorrente vê o flag imediatamente (mesmo
+   * sem re-render). O state `publishing` ainda é atualizado para a UI.
+   * Com isso, `publishing` sai das deps → hook estável.
+   */
+  const publishingRef = useRef(false);
 
   const publish = useCallback(async () => {
     if (!publishable) {
@@ -68,8 +95,10 @@ export function useMagazinePublish(args: UseMagazinePublishArgs): UseMagazinePub
       });
       return;
     }
-    if (publishing) return;
+    // Guard síncrono — não depende de re-render para ser efetivo
+    if (publishingRef.current) return;
 
+    publishingRef.current = true;
     setPublishing(true);
     try {
       let updated: Magazine | null = null;
@@ -101,11 +130,11 @@ export function useMagazinePublish(args: UseMagazinePublishArgs): UseMagazinePub
         return;
       }
 
-      const origin = args.origin ?? DEFAULT_ORIGIN();
-      const url = `${origin}/revista-publica/${updated.publicToken}`;
+      const base = origin ?? DEFAULT_ORIGIN();
+      const url = `${base}/revista-publica/${updated.publicToken}`;
       setLastPublicUrl(url);
 
-      const writer = args.writeClipboard ?? DEFAULT_CLIPBOARD;
+      const writer = writeClipboard ?? DEFAULT_CLIPBOARD;
       try {
         await writer(url);
         toast.success('Revista publicada com sucesso.', {
@@ -117,9 +146,13 @@ export function useMagazinePublish(args: UseMagazinePublishArgs): UseMagazinePub
         });
       }
     } finally {
+      publishingRef.current = false;
       setPublishing(false);
     }
-  }, [args, publishable, publishing, publishFn]);
+    // Deps estáveis: sem `args` objeto e sem `publishing` state.
+    // publishFn é estável graças ao useCallback em useMagazineEditor ([]).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publishable, publishFn, origin, writeClipboard]);
 
   return { publishing, lastPublicUrl, publish };
 }

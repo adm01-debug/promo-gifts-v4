@@ -43,11 +43,17 @@ jobs:
 
       # ─────────────────────────────────────────────
       # CHECK 1: lint das migrations (idempotência, style)
+      # Nota: --project-id foi removido do CLI; usamos supabase link + --linked.
       # ─────────────────────────────────────────────
+      - name: 🔗 Link Supabase project
+        run: supabase link --project-ref "${{ secrets.VITE_SUPABASE_PROJECT_ID }}"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
       - name: 🔍 Lint migrations
         run: |
           supabase db lint \
-            --project-id "${{ secrets.VITE_SUPABASE_PROJECT_ID }}" \
+            --linked \
             --schema public \
             --level warning
         env:

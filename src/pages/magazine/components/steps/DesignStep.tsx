@@ -8,9 +8,11 @@
  * família, produtos/página, fontes).
  */
 
-import { Check, Layers } from 'lucide-react';
+import { Check, Layers, LayoutTemplate } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type {
   Magazine,
@@ -61,6 +63,24 @@ export function DesignStep({ magazine, onChange, onCategoryChange }: Props) {
 
   return (
     <div className="space-y-8">
+      {/* CTA para galeria de templates com preview real */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
+        <div className="flex items-start gap-3">
+          <LayoutTemplate className="mt-0.5 h-5 w-5 text-primary" aria-hidden />
+          <div>
+            <p className="text-sm font-medium">Explore os 12 templates com preview real</p>
+            <p className="text-xs text-muted-foreground">
+              Veja cada layout ilustrado com produtos de exemplo antes de escolher.
+            </p>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link to={`/magazine/templates?returnTo=/magazine/${magazine.id}`}>
+            Ver galeria completa
+          </Link>
+        </Button>
+      </div>
+
       {/* Seletor de categoria semântica — obrigatório (Abreez SSOT) */}
       <section aria-labelledby="magazine-category-picker">
         <div className="mb-3 flex items-baseline justify-between">

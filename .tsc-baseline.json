@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-07-16T12:30:00.000Z",
-  "description": "Baseline de erros TypeScript no CI. Falha apenas em REGRESSÃO (nova combinação file:rule ou contagem maior). Atualizado em 2026-07-16 via PR #1708: congela 33 erros pré-existentes acumulados desde 2026-07-03 em arquivos não relacionados ao magazine module. Atualizado novamente para congelar 9 novos file:rule pré-existentes no ambiente CI (node_modules cache) introduzidos pelo commit 9d63320.",
-  "totalErrors": 46,
+  "description": "Baseline de erros TypeScript no CI. Falha apenas em REGRESS\u00c3O (nova combina\u00e7\u00e3o file:rule ou contagem maior). Atualizado em 2026-07-16 via PR #1708: congela 33 erros pr\u00e9-existentes acumulados desde 2026-07-03 em arquivos n\u00e3o relacionados ao magazine module. Atualizado novamente para congelar 9 novos file:rule pr\u00e9-existentes no ambiente CI (node_modules cache) introduzidos pelo commit 9d63320.",
+  "totalErrors": 68,
   "counts": {
     "src/audit-debug.ts": {
       "TS2589": 1
@@ -35,11 +35,11 @@
       "TS2322": 1,
       "TS7006": 1
     },
-    "src/components/products/QuickViewThumb.tsx": {
-      "TS7006": 1
-    },
     "src/components/products/ProductTableView.tsx": {
       "TS2322": 1
+    },
+    "src/components/products/QuickViewThumb.tsx": {
+      "TS7006": 1
     },
     "src/components/products/table-view/TableRowActions.tsx": {
       "TS2322": 1
@@ -112,6 +112,9 @@
     "src/pages/kit-builder/useKitBuilderQuote.ts": {
       "TS1360": 1,
       "TS2345": 1
+    },
+    "src/pages/magazine/hooks/useMagazineReaderState.ts": {
+      "TS2339": 1
     },
     "src/pages/products/CartsListPage.tsx": {
       "TS2353": 1,

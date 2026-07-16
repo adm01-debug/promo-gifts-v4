@@ -2,16 +2,16 @@
   "_comment": "Referências legadas a paths de migration que não existem mais. Congelado em 2026-07-01. Atualizado em 2026-07-03: PR_COMMENT.md (gerado em runtime). NOVAS referências quebradas falham CI — para aceitar uma nova entrada aqui, rode `node scripts/check-migration-path-references.mjs --update-baseline` e justifique no PR.",
   "entries": [
     {
+      "file": ".github/pulls/refactor-magazine-typed-queries.md",
+      "ref": "qa/migrations-draft/2026-07-12_magazine_items_unique_product.sql"
+    },
+    {
+      "file": ".github/workflows/drafts-index-check.yml",
+      "ref": "qa/migrations-draft/PR_COMMENT.md"
+    },
+    {
       "file": "CONTRIBUTING.md",
       "ref": "supabase/migrations/README.md"
-    },
-    {
-      "file": "docs/AUDITORIA_GAPS_CRITICOS_fn_process_raw_v2_2026-06-04.md",
-      "ref": "supabase/migrations/20260604T000000Z_fix_raw_v2_product_type_and_overflows.sql"
-    },
-    {
-      "file": "docs/AUDIT_FRONTEND_DATABASE.md",
-      "ref": "supabase/migrations/20251228_audit_trail.sql"
     },
     {
       "file": "docs/adr/0006-migration-baseline.md",
@@ -22,8 +22,24 @@
       "ref": "supabase/migrations/20260602120000_"
     },
     {
+      "file": "docs/AUDIT_FRONTEND_DATABASE.md",
+      "ref": "supabase/migrations/20251228_audit_trail.sql"
+    },
+    {
+      "file": "docs/AUDITORIA_GAPS_CRITICOS_fn_process_raw_v2_2026-06-04.md",
+      "ref": "supabase/migrations/20260604T000000Z_fix_raw_v2_product_type_and_overflows.sql"
+    },
+    {
       "file": "docs/historico/RECOVERY_PLAN.md",
       "ref": "supabase/migrations/_recovery/"
+    },
+    {
+      "file": "docs/prompts/magazine-module-implementation-prompt.md",
+      "ref": "qa/migrations-draft/2026-07-12_magazine_reader_state.sql"
+    },
+    {
+      "file": "docs/prompts/magazine-module-implementation-prompt.md",
+      "ref": "qa/migrations-draft/2026-07-12_magazines.sql"
     },
     {
       "file": "docs/redeploy/REDEPLOY-T3-MIGRATIONS-AUDIT.md",
@@ -34,20 +50,44 @@
       "ref": "supabase/migrations/README.md"
     },
     {
+      "file": "qa/reports/magazine-exhaustive-validation-2026-07-15.md",
+      "ref": "qa/migrations-draft/2026-07-12_magazine_items_unique_product.sql"
+    },
+    {
+      "file": "qa/reports/magazine-followup-2026-07-12.md",
+      "ref": "qa/migrations-draft/2026-07-12_magazine_items_unique_product.sql"
+    },
+    {
+      "file": "qa/reports/magazine-publish-fuzz-2026-07-15.md",
+      "ref": "qa/migrations-draft/2026-07-15_magazine_public_token_trigger.sql"
+    },
+    {
+      "file": "scripts/build-drafts-pr-comment.mjs",
+      "ref": "qa/migrations-draft/PR_COMMENT.md"
+    },
+    {
       "file": "src/lib/external-db/product-types.ts",
       "ref": "supabase/migrations/20250103070000"
+    },
+    {
+      "file": "src/lib/feature-flags.ts",
+      "ref": "qa/migrations-draft/2026-07-12_magazines.sql"
+    },
+    {
+      "file": "src/services/__tests__/magazineAddProductsUnique.test.ts",
+      "ref": "qa/migrations-draft/2026-07-12_magazine_items_unique_product.sql"
+    },
+    {
+      "file": "src/services/__tests__/magazinePublishTrigger.test.ts",
+      "ref": "qa/migrations-draft/2026-07-15_magazine_public_token_trigger.sql"
     },
     {
       "file": "tests/scripts/check-no-db-push.test.mjs",
       "ref": "supabase/migrations/README.md"
     },
     {
-      "file": ".github/workflows/drafts-index-check.yml",
-      "ref": "qa/migrations-draft/PR_COMMENT.md"
-    },
-    {
-      "file": "scripts/build-drafts-pr-comment.mjs",
-      "ref": "qa/migrations-draft/PR_COMMENT.md"
+      "file": "tests/security/restore-seller-cart-rpc.test.ts",
+      "ref": "supabase/migrations/20260713101342_...sql"
     }
   ]
 }

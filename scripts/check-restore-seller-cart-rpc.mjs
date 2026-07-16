@@ -99,13 +99,40 @@ async function main() {
   // 42883    = undefined_function (erro do próprio Postgres quando a assinatura
   //            some entre a resolução do cache e a execução).
   if (res.status === 404 && (code === 'PGRST202' || /schema cache/i.test(message))) {
+    // PostgREST retorna 404 PGRST202 tanto quando a função não existe quanto
+    // quando anon não tem EXECUTE (ambos são invisíveis no schema cache).
+    // Usamos fn_rpc_exists() para distinguir os dois casos sem precisar de
+    // service_role key nem de EXECUTE grant para anon.
+    log(`404 PGRST202 — verificando via fn_rpc_exists('${RPC_NAME}')...`);
+    let exists = false;
+    try {
+      const existsRes = await fetch(`${url.replace(/\/$/, '')}/rest/v1/rpc/fn_rpc_exists`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: anonKey,
+          Authorization: `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({ _fname: RPC_NAME }),
+      });
+      if (existsRes.ok) {
+        exists = await existsRes.json();
+      }
+    } catch {
+      // rede inacessível — não podemos confirmar; não bloquear
+    }
+
+    if (exists === true) {
+      log(`✅ RPC \`${RPC_NAME}\` existe em pg_proc (anon sem EXECUTE — intencional, função protegida).`);
+      process.exit(0);
+    }
+
     fail(
       `RPC \`${RPC_NAME}\` NÃO existe no banco canônico.\n` +
         `  status: ${res.status}\n` +
         `  code:   ${code}\n` +
         `  msg:    ${message}\n\n` +
-        `  → Aplique a migração em /mnt/documents/restore_seller_cart_canonical.sql\n` +
-        `    no projeto ${url}.`
+        `  → Aplique a migração em supabase/migrations/ para criar a função.`
     );
   }
 
