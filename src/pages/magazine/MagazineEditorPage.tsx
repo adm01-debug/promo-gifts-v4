@@ -92,7 +92,7 @@ export default function MagazineEditorPage() {
     if (!applyId || !magazine) return;
     // FIX(lint): prefer-object-has-own — Object.hasOwn é mais direto e
     // seguro que Object.prototype.hasOwnProperty.call (prefer-object-has-own).
-    if (Object.prototype.hasOwnProperty.call(TEMPLATE_REGISTRY, applyId)) {
+    if (Object.hasOwn(TEMPLATE_REGISTRY, applyId)) {
       const typedId = applyId as MagazineTemplateId;
       if (magazine.templateId !== typedId) {
         editor.setTemplate(typedId);
