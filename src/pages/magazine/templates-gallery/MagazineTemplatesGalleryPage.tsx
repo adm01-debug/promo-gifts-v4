@@ -117,7 +117,7 @@ export default function MagazineTemplatesGalleryPage() {
           </div>
 
           <Button variant="outline" asChild>
-            <Link to={isFromEditor && returnTo ? returnTo : '/magazine'}>
+            <Link to={parsedReturn ? parsedReturn.path : '/magazine'}>
               <ArrowLeft className="mr-2 h-4 w-4" aria-hidden />
               {isFromEditor ? 'Voltar ao editor' : 'Voltar para revistas'}
             </Link>
