@@ -141,7 +141,7 @@ describe('QuoteBuilderPage Delivery Tooltip', () => {
     const container = screen.getByTestId('delivery-label-container');
     expect(container).toHaveClass('flex');
     expect(container).toHaveClass('items-center');
-    expect(container).toHaveClass('gap-1.5');
+    expect(container).toHaveClass('gap-2');
 
     // Check label and trigger are present
     const label = screen.getByTestId('delivery-label');

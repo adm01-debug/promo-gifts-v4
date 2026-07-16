@@ -24,8 +24,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import minimatchPkg from 'minimatch';
-const { minimatch } = minimatchPkg;
+import { minimatch } from 'minimatch';
 
 const ROOT = process.cwd();
 const BASELINE_PATH = join(ROOT, '.eslint-baseline.json');

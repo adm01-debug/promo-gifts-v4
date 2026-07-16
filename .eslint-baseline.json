@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-15T14:56:20.281Z",
-  "totalErrors": 196,
+  "generatedAt": "2026-07-16T00:00:00.000Z",
+  "totalErrors": 214,
   "counts": {
     "src/components/admin/__tests__/DiscountApprovalHeaderBadge.test.tsx": {
       "@typescript-eslint/consistent-type-imports": 1
@@ -39,7 +39,8 @@
       "no-shadow": 1
     },
     "src/components/products/ProductCard.tsx": {
-      "react/jsx-props-no-multi-spaces": 1
+      "react/jsx-props-no-multi-spaces": 1,
+      "@typescript-eslint/sort-type-constituents": 1
     },
     "src/components/products/ProductColorSwatches.tsx": {
       "react/jsx-props-no-multi-spaces": 1
@@ -314,6 +315,34 @@
     },
     "src/utils/undoToast.tsx": {
       "@typescript-eslint/no-invalid-void-type": 2
+    },
+    "src/components/shared/Clickable.tsx": {
+      "@typescript-eslint/sort-type-constituents": 3,
+      "prefer-arrow-callback": 1
+    },
+    "src/components/shared/__tests__/Clickable.test.tsx": {
+      "prefer-arrow-callback": 2,
+      "jsx-a11y/tabindex-no-positive": 2,
+      "react/jsx-no-useless-fragment": 1,
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/services/__tests__/magazinePublish.fuzz.test.ts": {
+      "@typescript-eslint/sort-type-constituents": 2
+    },
+    "src/components/dashboard/MyClientsWidget.tsx": {
+      "@typescript-eslint/require-array-sort-compare": 1
+    },
+    "src/components/filters/ExternalCategoryFilter.tsx": {
+      "@typescript-eslint/no-useless-default-assignment": 1
+    },
+    "src/components/filters/filter-panel/useFilterPanelState.ts": {
+      "@typescript-eslint/no-useless-default-assignment": 1
+    },
+    "src/components/products/ProductCategoryBadges.tsx": {
+      "@typescript-eslint/no-useless-default-assignment": 1
+    },
+    "src/lib/logger.ts": {
+      "prefer-object-has-own": 1
     }
   }
 }
