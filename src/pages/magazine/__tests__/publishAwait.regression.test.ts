@@ -70,7 +70,7 @@ vi.mock('@/services/magazineService', () => ({
     }),
     publish: vi.fn(async () => {
       if (publishResolveDelayMs > 0) {
-        await new Promise((r) => setTimeout(r, publishResolveDelayMs));
+        await new Promise<void>((r) => { setTimeout(r, publishResolveDelayMs); });
       }
       const updated: Magazine = {
         ...store,
