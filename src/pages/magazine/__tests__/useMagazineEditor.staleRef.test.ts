@@ -99,7 +99,7 @@ vi.mock('@/services/magazineService', () => ({
     // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     reorderItems: vi.fn(async (id: string, orderedIds: string[]) => {
       if (id !== 'mag_test' || !storedMagazine) return null;
-      const itemMap = new Map(storedMagazine.items.map((it) => [it.id, it]));
+      const itemMap = new Map(storedMagazine.items.map((item) => [item.id, item]));
       const reordered = orderedIds.map((oid, i) => ({ ...itemMap.get(oid)!, position: i }));
       const updated = { ...storedMagazine, items: reordered };
       storedMagazine = updated;
@@ -110,7 +110,7 @@ vi.mock('@/services/magazineService', () => ({
       if (id !== 'mag_test' || !storedMagazine) return null;
       const updated = {
         ...storedMagazine,
-        items: storedMagazine.items.map((it) => it.id === itemId ? { ...it, ...patch } : it),
+        items: storedMagazine.items.map((item) => item.id === itemId ? { ...item, ...patch } : item),
       };
       storedMagazine = updated;
       return updated;
