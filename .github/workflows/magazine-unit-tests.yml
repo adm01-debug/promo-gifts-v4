@@ -8,6 +8,9 @@ on:
       - 'src/hooks/auth/**'
       - 'src/contexts/AuthContext.tsx'
       - 'src/lib/supabase/**'
+      - 'src/lib/security/**'
+      - 'src/services/magazineService.ts'
+      - 'src/services/__tests__/**'
       - 'scripts/check-no-template-thumbnail.mjs'
       - '.github/workflows/magazine-unit-tests.yml'
   pull_request:
@@ -16,6 +19,9 @@ on:
       - 'src/hooks/auth/**'
       - 'src/contexts/AuthContext.tsx'
       - 'src/lib/supabase/**'
+      - 'src/lib/security/**'
+      - 'src/services/magazineService.ts'
+      - 'src/services/__tests__/**'
       - 'scripts/check-no-template-thumbnail.mjs'
       - '.github/workflows/magazine-unit-tests.yml'
 
@@ -67,9 +73,12 @@ jobs:
             src/pages/magazine/components/__tests__/ \
             src/pages/magazine/components/steps/__tests__/ \
             src/lib/security/__tests__/sanitize-ssrf.test.ts \
+            src/lib/security/__tests__/sanitize-adversarial.test.ts \
             src/lib/security/__tests__/magazine-guard-edge.test.ts \
+            src/lib/security/__tests__/magazine-guard-adversarial.test.ts \
             src/services/__tests__/magazineService.critFixes.test.ts \
-            src/services/__tests__/magazineService.branding.test.ts
+            src/services/__tests__/magazineService.branding.test.ts \
+            src/services/__tests__/magazineService.publish.test.ts
         env:
           CI: true
           NODE_ENV: test

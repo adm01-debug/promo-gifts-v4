@@ -44,6 +44,8 @@ describe('validateBranding — MED-2 null colors', () => {
     const result = validateBranding({ colors: null });
     // No color errors; clientLogoUrl is absent so no logo error either.
     expect(result.errors.filter((e) => e.includes('hex'))).toHaveLength(0);
+    // G7 explicit assertion: null colors must not invalidate the branding object.
+    expect(result.isValid).toBe(true);
   });
 });
 

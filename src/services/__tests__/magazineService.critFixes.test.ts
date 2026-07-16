@@ -42,6 +42,10 @@ const gappedItems = [
   { id: 'item_2', magazine_id: 'mag_1', product_id: 'p2', position: 2, page_number: null, variant_color_name: null, overrides: {}, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z', product_snapshot: { id: 'p2', name: 'P2', sku: 'S2', price: 10, shortDescription: '', description: null, image_url: null, images: [], colors: [], category_name: null, category_id: null, materials: [], hasPersonalization: null } },
 ];
 
+// Allows individual tests to override the items returned by the mock SELECT.
+// Set to null to use the default gappedItems (positions [0, 2]).
+let mockItemsOverride: typeof gappedItems | null = null;
+
 // Track insert calls for position assertion
 const insertedPositions: number[] = [];
 let simulateInsertError = false;
@@ -102,11 +106,11 @@ vi.mock('@/integrations/supabase/client', () => {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
-                is: vi.fn(() => ({ order: vi.fn(() => Promise.resolve({ data: gappedItems, error: null })) })),
-                order: vi.fn(() => Promise.resolve({ data: gappedItems, error: null })),
+                is: vi.fn(() => ({ order: vi.fn(() => Promise.resolve({ data: mockItemsOverride ?? gappedItems, error: null })) })),
+                order: vi.fn(() => Promise.resolve({ data: mockItemsOverride ?? gappedItems, error: null })),
               })),
-              is: vi.fn(() => ({ order: vi.fn(() => Promise.resolve({ data: gappedItems, error: null })) })),
-              order: vi.fn(() => Promise.resolve({ data: gappedItems, error: null })),
+              is: vi.fn(() => ({ order: vi.fn(() => Promise.resolve({ data: mockItemsOverride ?? gappedItems, error: null })) })),
+              order: vi.fn(() => Promise.resolve({ data: mockItemsOverride ?? gappedItems, error: null })),
             })),
           })),
           delete: vi.fn(() => ({
@@ -161,6 +165,7 @@ beforeEach(() => {
   lastUnpublishPatch = {};
   lastDeleteMagId = null;
   lastRemoveItemCalled = false;
+  mockItemsOverride = null;
   vi.resetModules();
 });
 
@@ -288,5 +293,42 @@ describe('magazineService.unpublish — MED-14 clears public_token', () => {
     await magazineService.unpublish('mag_1');
 
     expect(lastUnpublishPatch).toMatchObject({ status: 'draft', public_token: null });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// CRIT-4-B: single high-position item — must not collide
+// CRIT-4-C: empty magazine — must start at position 0
+// ---------------------------------------------------------------------------
+
+describe('magazineService.addProducts — CRIT-4 edge cases (position boundaries)', () => {
+  it('CRIT-4-B: uses max(position)+1 when there is a single item at position 99', async () => {
+    // Override: one item at position 99 (not at index 0).
+    // BEFORE fix: basePos = items.length = 1 → collision with NO existing item but wrong for ordering
+    // AFTER fix:  basePos = max(99) + 1 = 100
+    mockItemsOverride = [
+      { id: 'item_99', magazine_id: 'mag_1', product_id: 'p99', position: 99, page_number: null, variant_color_name: null, overrides: {}, created_at: '2026-07-01T00:00:00Z', updated_at: '2026-07-01T00:00:00Z', product_snapshot: { id: 'p99', name: 'P99', sku: 'S99', price: 99, shortDescription: '', description: null, image_url: null, images: [], colors: [], category_name: null, category_id: null, materials: [], hasPersonalization: null } },
+    ];
+
+    const { magazineService } = await import('../magazineService');
+
+    const newProduct = { id: 'pNew', name: 'New', sku: 'SN', price: 5, shortDescription: '', description: null, image_url: null, images: [], colors: [], category_name: null, category_id: null, materials: [], hasPersonalization: null };
+    await magazineService.addProducts('mag_1', [newProduct as Parameters<typeof magazineService.addProducts>[1][0]]);
+
+    expect(insertedPositions).toContain(100);
+    expect(insertedPositions).not.toContain(1); // would be length-based (wrong)
+  });
+
+  it('CRIT-4-C: starts at position 0 when magazine has no items', async () => {
+    // Override: empty items array — no existing items.
+    // basePos should be 0 (not crash on Math.max of empty spread).
+    mockItemsOverride = [];
+
+    const { magazineService } = await import('../magazineService');
+
+    const newProduct = { id: 'pFirst', name: 'First', sku: 'SF', price: 1, shortDescription: '', description: null, image_url: null, images: [], colors: [], category_name: null, category_id: null, materials: [], hasPersonalization: null };
+    await magazineService.addProducts('mag_1', [newProduct as Parameters<typeof magazineService.addProducts>[1][0]]);
+
+    expect(insertedPositions).toContain(0);
   });
 });
