@@ -127,3 +127,25 @@ Todos verdes localmente.
 | **Global** | 94/100 | **100/100 🏆** |
 
 Typecheck limpo · 60/60 testes verdes · zero regressões.
+
+---
+
+## Onda 13 — E2E Playwright versionado ✅
+
+Spec: `e2e/magazine/magazine-templates-gallery.spec.ts` (6 casos determinísticos).
+
+Cobertura:
+1. Renderiza os 12 cards do `TEMPLATE_REGISTRY`.
+2. Filtro família reduz o conjunto (Todos → Editorial).
+3. Sem `returnTo` → "Criar revista" navega para `/magazine`.
+4. `returnTo` válido → "Usar" navega para `/magazine/<id>?applyTemplate=<id>`.
+5. **Segurança** — `returnTo=//evil.com/...` é rejeitado; usuário permanece no domínio.
+6. Favorito persiste em `localStorage` e reordena a galeria (primeiro card).
+
+Adições ao SSOT E2E:
+- `PageSlug`: novo slug `"magazine-templates"`.
+- `Sel.magazineTemplates.{familyTab,card,cards,preview,use,favorite}` — todos via `data-testid` já existentes na UI.
+
+Aderente às políticas: `e2e-selectors-policy` (só data-testid), `e2e-helpers-policy` (`loginAs`, `gotoAndSettle`, `waitForTestIdVisible`), `e2e-named-resources` (token `SAMPLE_MAG_ID` prefixado).
+
+Total automatizado agora: **72 unit + 6 E2E = 78 casos verdes**.
