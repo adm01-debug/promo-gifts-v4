@@ -60,8 +60,12 @@ vi.mock('../mockMagazine', () => ({
 
 vi.mock('@/components/seo/PageSEO', () => ({ PageSEO: () => null }));
 
-// Toasts
-const toastMock = { message: vi.fn(), success: vi.fn(), error: vi.fn() };
+// Toasts (hoisted-safe: usa vi.hoisted)
+const toastMock = vi.hoisted(() => ({
+  message: vi.fn(),
+  success: vi.fn(),
+  error: vi.fn(),
+}));
 vi.mock('sonner', () => ({
   toast: Object.assign((...args: unknown[]) => toastMock.message(...args), toastMock),
 }));
