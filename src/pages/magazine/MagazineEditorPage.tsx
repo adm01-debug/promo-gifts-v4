@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
@@ -43,6 +43,8 @@ import {
   type StepId,
   type StepValidation,
 } from './utils/stepValidation';
+import { TEMPLATE_REGISTRY } from './components/templates/TemplateRegistry';
+import type { MagazineTemplateId } from '@/types/magazine';
 import './magazine.css';
 
 const STEPS: Array<{ id: StepId; label: string }> = [
@@ -78,10 +80,31 @@ export default function MagazineEditorPage() {
   const [previewIdx, setPreviewIdx] = useState(0);
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
   const [previewSheetOpen, setPreviewSheetOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const editor = useMagazineEditor(id);
 
   // `magazine` é null enquanto carrega e quando o id não existe.
   const magazine = editor.magazine;
+
+  // Aplica template vindo da galeria (`?applyTemplate=<id>`) uma vez após hidratar.
+  useEffect(() => {
+    const applyId = searchParams.get('applyTemplate');
+    if (!applyId || !magazine) return;
+    if (applyId in TEMPLATE_REGISTRY) {
+      const typedId = applyId as MagazineTemplateId;
+      if (magazine.templateId !== typedId) {
+        editor.setTemplate(typedId);
+        toast.success(`Template "${TEMPLATE_REGISTRY[typedId].name}" aplicado.`);
+      }
+      setStep('design');
+    }
+    // limpa o param para não reaplicar em navegações futuras
+    const next = new URLSearchParams(searchParams);
+    next.delete('applyTemplate');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [magazine?.id]);
+
 
   // Atalhos globais leves — Cmd/Ctrl+S salva imediato (autosave já roda)
   useEffect(() => {

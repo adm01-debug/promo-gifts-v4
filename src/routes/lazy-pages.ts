@@ -187,6 +187,9 @@ export const MagazinePrintPage = lazyWithRetry(
 export const PublicMagazineView = lazyWithRetry(
   () => import('@/pages/magazine/PublicMagazineView'),
 );
+export const MagazineTemplatesGalleryPage = lazyWithRetry(
+  () => import('@/pages/magazine/templates-gallery/MagazineTemplatesGalleryPage'),
+);
 
 // ─────────────────────────────────────────────────────────────────
 // Clients (CRM)

@@ -4,10 +4,11 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
   Copy,
+  LayoutTemplate,
   Plus,
   Search,
   SortAsc,
@@ -170,10 +171,18 @@ export default function MagazineListPage() {
               </p>
             </div>
           </div>
-          <Button size="lg" onClick={handleCreate} data-testid="magazine-create-btn">
-            <Plus className="mr-2 h-5 w-5" aria-hidden />
-            Nova revista
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="lg" asChild data-testid="magazine-templates-gallery-btn">
+              <Link to="/magazine/templates">
+                <LayoutTemplate className="mr-2 h-5 w-5" aria-hidden />
+                Explorar templates
+              </Link>
+            </Button>
+            <Button size="lg" onClick={handleCreate} data-testid="magazine-create-btn">
+              <Plus className="mr-2 h-5 w-5" aria-hidden />
+              Nova revista
+            </Button>
+          </div>
         </header>
 
         {!empty && (
