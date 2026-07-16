@@ -61,6 +61,7 @@ export type PageSlug =
   | "detalhe-produto"
   | "admin-produto"
   | "cadastros"
+  | "magazine-templates"
   | "termos"
   | "privacidade"
   | "404";
@@ -107,6 +108,22 @@ export const Sel = {
     /** Qualquer item do dropdown (prefix match — útil para contagem). */
     sortItems: TID_PREFIX("catalog-sort-item-"),
   },
+
+  // ---------- Galeria de Templates de Revista ----------
+  magazineTemplates: {
+    /** Filtro por família: 'all' | 'editorial' | 'catalog' | 'corporate'. */
+    familyTab: (id: string) => TID(`template-family-${id}`),
+    /** Card do template pelo id do registry (prefix match para contar todos). */
+    card: (id: string) => TID(`template-card-${id}`),
+    cards: TID_PREFIX("template-card-"),
+    /** Botão da miniatura (abre dialog de preview). */
+    preview: (id: string) => TID(`template-preview-${id}`),
+    /** Botão principal "Usar este template" / "Criar revista". */
+    use: (id: string) => TID(`template-use-${id}`),
+    /** Botão estrela de favorito. */
+    favorite: (id: string) => TID(`template-favorite-${id}`),
+  },
+
 
   product: {
     card: TID("product-card"),
