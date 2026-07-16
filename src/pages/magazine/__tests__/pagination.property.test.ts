@@ -82,7 +82,6 @@ function mkMag(
     pageOrder: null,
     status: 'draft',
     publicToken: null,
-    pdfUrl: null,
     publishedAt: null,
     createdAt: '',
     updatedAt: '',

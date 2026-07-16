@@ -30,7 +30,6 @@ const baseMagazine: Magazine = {
   pageOrder: null,
   status: 'published',
   publicToken: 'abcdef0123456789abcdef0123456789',
-  pdfUrl: null,
   publishedAt: '2026-07-15T00:00:00Z',
   createdAt: '2026-07-01T00:00:00Z',
   updatedAt: '2026-07-15T00:00:00Z',

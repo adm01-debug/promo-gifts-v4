@@ -25,7 +25,7 @@ const builder = vi.hoisted(() => {
   const magRow = {
     id: 'mag_x', owner_id: 'u1', organization_id: null, title: 'T', subtitle: null,
     template_id: 'editorial-vogue', branding: {}, content_settings: {}, page_order: null,
-    status: 'draft', public_token: null, pdf_url: null, published_at: null,
+    status: 'draft', public_token: null, published_at: null,
     created_at: '', updated_at: '', deleted_at: null,
   };
   return (table: string) => {

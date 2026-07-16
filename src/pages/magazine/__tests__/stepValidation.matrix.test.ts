@@ -66,7 +66,6 @@ function mkFromFlags(f: Flags): Magazine {
     pageOrder: null,
     status: 'draft',
     publicToken: null,
-    pdfUrl: null,
     publishedAt: null,
     createdAt: '',
     updatedAt: '',

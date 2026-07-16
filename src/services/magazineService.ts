@@ -33,7 +33,6 @@ interface MagazineRow {
   page_order: number[] | null;
   status: Magazine['status'];
   public_token: string | null;
-  pdf_url: string | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -81,7 +80,6 @@ function rowToMagazine(row: MagazineRow, items: MagazineItemRow[]): Magazine {
     pageOrder: row.page_order,
     status: row.status,
     publicToken: row.public_token,
-    pdfUrl: row.pdf_url,
     publishedAt: row.published_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -244,7 +242,6 @@ function publicPayloadToMagazine(token: string, p: PublicViewPayload): Magazine 
     pageOrder: p.pageOrder,
     status: p.status,
     publicToken: token,
-    pdfUrl: null,
     publishedAt: null,
     createdAt: '',
     updatedAt: '',
@@ -333,7 +330,6 @@ export const magazineService = {
     if ('pageOrder' in patch) updateRow.page_order = patch.pageOrder;
     if ('status' in patch) updateRow.status = patch.status;
     if ('publicToken' in patch) updateRow.public_token = patch.publicToken;
-    if ('pdfUrl' in patch) updateRow.pdf_url = patch.pdfUrl;
     if ('publishedAt' in patch) updateRow.published_at = patch.publishedAt;
 
     if (Object.keys(updateRow).length > 0) {
@@ -531,7 +527,6 @@ export const magazineService = {
       page_order: magazine.pageOrder,
       status: magazine.status,
       public_token: magazine.publicToken,
-      pdf_url: magazine.pdfUrl,
       published_at: magazine.publishedAt,
     };
     const { error: insErr } = await untypedFrom<MagazineRow>('magazines').insert(insertRow);

@@ -38,7 +38,6 @@ const MOCK_MAGAZINE: Magazine = {
   pageOrder: null,
   status: 'draft',
   publicToken: null,
-  pdfUrl: null,
   publishedAt: null,
   createdAt: '2026-07-12T00:00:00Z',
   updatedAt: '2026-07-12T00:00:00Z',

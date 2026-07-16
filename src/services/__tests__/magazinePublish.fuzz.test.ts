@@ -56,7 +56,6 @@ interface MagRow {
   page_order: number[] | null;
   status: string;
   public_token: string | null;
-  pdf_url: string | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -185,7 +184,6 @@ function makeRow(initialToken: string | null, initialStatus: MagRow['status']): 
     page_order: null,
     status: initialStatus,
     public_token: initialToken,
-    pdf_url: null,
     published_at: initialStatus === 'published' ? '2026-07-15T00:00:00Z' : null,
     created_at: '2026-07-15T00:00:00Z',
     updated_at: '2026-07-15T00:00:00Z',

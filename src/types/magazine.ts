@@ -123,7 +123,6 @@ export interface Magazine {
    */
   status: 'archived' | 'draft' | 'published';
   publicToken: string | null;
-  pdfUrl: string | null;
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;

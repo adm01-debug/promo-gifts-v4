@@ -43,7 +43,6 @@ interface MagRow {
   page_order: number[] | null;
   status: string;
   public_token: string | null;
-  pdf_url: string | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -63,7 +62,6 @@ const state = vi.hoisted(() => {
     page_order: null,
     status: 'draft',
     public_token: null,
-    pdf_url: null,
     published_at: null,
     created_at: '2026-07-15T00:00:00Z',
     updated_at: '2026-07-15T00:00:00Z',

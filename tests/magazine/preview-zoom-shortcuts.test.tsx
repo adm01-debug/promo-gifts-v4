@@ -65,7 +65,6 @@ function buildMagazine(count: number): Magazine {
     pageOrder: null,
     status: 'draft',
     publicToken: null,
-    pdfUrl: null,
     publishedAt: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
