@@ -95,7 +95,13 @@ export default function MagazineTemplatesGalleryPage() {
         path="/magazine/templates"
       />
 
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in px-4 py-6 motion-reduce:animate-none sm:px-6 lg:px-8">
+        <a
+          href="#templates-grid"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
+        >
+          Pular para os templates
+        </a>
         {/* Header */}
         <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
