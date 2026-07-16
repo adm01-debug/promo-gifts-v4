@@ -490,7 +490,7 @@ export const magazineService = {
     // are sanitized rather than silently propagated to the duplicate.
     const { sanitized: safeBranding } = validateBranding(current.branding);
     await this.update(clone.id, {
-      branding: safeBranding ?? current.branding,
+      branding: (safeBranding ?? current.branding) as MagazineClientBranding,
       content: current.content,
       subtitle: current.subtitle,
     });

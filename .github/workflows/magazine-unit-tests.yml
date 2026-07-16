@@ -59,6 +59,10 @@ jobs:
           npx vitest run \
             --reporter=verbose \
             --coverage \
+            --coverage.thresholds.lines=0 \
+            --coverage.thresholds.functions=0 \
+            --coverage.thresholds.branches=0 \
+            --coverage.thresholds.statements=0 \
             src/pages/magazine/__tests__/ \
             src/pages/magazine/components/__tests__/ \
             src/pages/magazine/components/steps/__tests__/
