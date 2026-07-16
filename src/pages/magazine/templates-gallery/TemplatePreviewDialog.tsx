@@ -5,16 +5,15 @@
  * para caber na viewport, mantendo proporção A4.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { TemplateEntry } from '../components/templates/TemplateRegistry';
 import { buildMockMagazine, buildMockPage } from './mockMagazine';
-
-const PAGE_W = 1920;
-const PAGE_H = 2716;
+import { PAGE_H, PAGE_W } from './constants';
+import { TemplatePreviewBoundary } from './TemplatePreviewBoundary';
 
 interface Props {
   entry: TemplateEntry | null;
@@ -43,7 +42,7 @@ function useResponsiveScale(open: boolean) {
   return scale;
 }
 
-export function TemplatePreviewDialog({ entry, onOpenChange, onUse, useLabel }: Props) {
+function TemplatePreviewDialogImpl({ entry, onOpenChange, onUse, useLabel }: Props) {
   const open = entry != null;
   const scale = useResponsiveScale(open);
 
@@ -99,20 +98,27 @@ export function TemplatePreviewDialog({ entry, onOpenChange, onUse, useLabel }: 
             style={{ width: scaledW, height: scaledH }}
             aria-label={`Preview do template ${entry.name}`}
           >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute left-0 top-0 origin-top-left"
-              style={{
-                width: PAGE_W,
-                height: PAGE_H,
-                transform: `scale(${scale})`,
-              }}
-            >
-              <Template magazine={magazine} page={page} totalPages={1} />
-            </div>
+            <TemplatePreviewBoundary templateName={entry.name}>
+              <div
+                aria-hidden
+                className="pointer-events-none absolute left-0 top-0 origin-top-left"
+                style={{
+                  width: PAGE_W,
+                  height: PAGE_H,
+                  transform: `scale(${scale})`,
+                }}
+              >
+                <Template magazine={magazine} page={page} totalPages={1} />
+              </div>
+            </TemplatePreviewBoundary>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+export const TemplatePreviewDialog = memo(
+  TemplatePreviewDialogImpl,
+  (a, b) => a.entry?.id === b.entry?.id && a.useLabel === b.useLabel,
+);

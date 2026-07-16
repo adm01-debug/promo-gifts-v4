@@ -7,23 +7,23 @@
  */
 
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Eye, Sparkles } from 'lucide-react';
+import { Eye, Sparkles, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { TemplateEntry } from '../components/templates/TemplateRegistry';
 import { buildMockMagazine, buildMockPage } from './mockMagazine';
+import { PAGE_H, PAGE_W, THUMB_HEIGHT, THUMB_SCALE, THUMB_WIDTH } from './constants';
+import { TemplatePreviewBoundary } from './TemplatePreviewBoundary';
 
 interface Props {
   entry: TemplateEntry;
   onPreview: (id: TemplateEntry['id']) => void;
   onUse: (id: TemplateEntry['id']) => void;
   useLabel: string;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: TemplateEntry['id']) => void;
 }
-
-const THUMB_WIDTH = 400;
-const THUMB_HEIGHT = 566; // ≈ proporção A4 (1920×2716 → 0.2083)
-const SCALE = THUMB_WIDTH / 1920;
 
 const FAMILY_LABEL: Record<TemplateEntry['family'], string> = {
   editorial: 'Editorial',
@@ -31,13 +31,25 @@ const FAMILY_LABEL: Record<TemplateEntry['family'], string> = {
   corporate: 'Corporativo',
 };
 
-function TemplateCardImpl({ entry, onPreview, onUse, useLabel }: Props) {
+function TemplateCardImpl({
+  entry,
+  onPreview,
+  onUse,
+  useLabel,
+  isFavorite = false,
+  onToggleFavorite,
+}: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const el = rootRef.current;
     if (!el || visible) return;
+    // SSR / jsdom fallback: se IntersectionObserver não existir, monta imediato
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -61,9 +73,44 @@ function TemplateCardImpl({ entry, onPreview, onUse, useLabel }: Props) {
   return (
     <div
       ref={rootRef}
-      className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg"
+      className={cn(
+        'group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-lg',
+        isFavorite && 'ring-2 ring-primary/40',
+      )}
       data-testid={`template-card-${entry.id}`}
     >
+      {isFavorite && (
+        <Badge
+          role="status"
+          className="absolute left-3 top-3 z-10 gap-1 bg-primary text-primary-foreground"
+        >
+          <Star className="h-3 w-3 fill-current" aria-hidden />
+          Seu favorito
+        </Badge>
+      )}
+
+      {onToggleFavorite && (
+        <button
+          type="button"
+          aria-label={isFavorite ? 'Remover dos favoritos' : 'Marcar como favorito'}
+          aria-pressed={isFavorite}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(entry.id);
+          }}
+          className="absolute right-3 top-3 z-10 rounded-full bg-background/95 p-2 shadow-sm transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          data-testid={`template-favorite-${entry.id}`}
+        >
+          <Star
+            className={cn(
+              'h-4 w-4 transition-colors',
+              isFavorite ? 'fill-primary text-primary' : 'text-muted-foreground',
+            )}
+            aria-hidden
+          />
+        </button>
+      )}
+
       {/* Miniatura */}
       <button
         type="button"
@@ -71,22 +118,34 @@ function TemplateCardImpl({ entry, onPreview, onUse, useLabel }: Props) {
         onClick={() => onPreview(entry.id)}
         className="relative block overflow-hidden bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         style={{ width: '100%', aspectRatio: `${THUMB_WIDTH} / ${THUMB_HEIGHT}` }}
+        data-testid={`template-preview-${entry.id}`}
       >
         {visible ? (
+          <TemplatePreviewBoundary templateName={entry.name}>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-0 top-0 origin-top-left"
+              style={{
+                width: PAGE_W,
+                height: PAGE_H,
+                transform: `scale(${THUMB_SCALE})`,
+              }}
+            >
+              <Template magazine={magazine} page={page} totalPages={1} />
+            </div>
+          </TemplatePreviewBoundary>
+        ) : (
           <div
             aria-hidden
-            className="pointer-events-none absolute left-0 top-0 origin-top-left"
-            style={{
-              width: 1920,
-              height: 2716,
-              transform: `scale(${SCALE})`,
-            }}
+            className="flex h-full w-full animate-pulse flex-col gap-2 bg-muted p-4"
           >
-            <Template magazine={magazine} page={page} totalPages={1} />
-          </div>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-            Carregando preview…
+            <div className="h-6 w-3/5 rounded bg-muted-foreground/20" />
+            <div className="mt-auto flex-1 rounded bg-muted-foreground/10" />
+            <div className="grid grid-cols-3 gap-2">
+              <div className="h-10 rounded bg-muted-foreground/15" />
+              <div className="h-10 rounded bg-muted-foreground/15" />
+              <div className="h-10 rounded bg-muted-foreground/15" />
+            </div>
           </div>
         )}
 
@@ -142,7 +201,6 @@ function TemplateCardImpl({ entry, onPreview, onUse, useLabel }: Props) {
             size="sm"
             className="flex-1"
             onClick={() => onPreview(entry.id)}
-            data-testid={`template-preview-${entry.id}`}
           >
             <Eye className="mr-1.5 h-4 w-4" aria-hidden />
             Preview
