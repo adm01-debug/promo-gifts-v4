@@ -23,7 +23,7 @@ export function sanitizeUrl(
   options: { httpsOnly?: boolean; allowEmpty?: boolean } = {},
 ): string | null {
   if (!url) {
-    return options.allowEmpty ? null : null;
+    return options.allowEmpty ? '' : null;
   }
 
   const trimmed = url.trim();

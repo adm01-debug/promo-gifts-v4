@@ -12,6 +12,7 @@
  */
 
 import { type Magazine, type MagazineClientBranding, type MagazineContentSettings, type MagazineItem, type MagazineProductSnapshot, type MagazineTemplateId, DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+import { validateBranding } from '@/lib/security/magazine-guard';
 
 import type { Product } from '@/types/product-catalog';
 import type { Database } from '@/integrations/supabase/types';
@@ -361,7 +362,13 @@ export const magazineService = {
   async updateBranding(id: string, patch: Partial<MagazineClientBranding>): Promise<Magazine | null> {
     const current = await this.get(id);
     if (!current) return null;
-    return this.update(id, { branding: { ...current.branding, ...patch } });
+    const merged = { ...current.branding, ...patch };
+    const { isValid, sanitized } = validateBranding(merged);
+    if (!isValid) {
+      logger.warn('[magazineService.updateBranding] rejected invalid branding');
+      return null;
+    }
+    return this.update(id, { branding: { ...merged, ...sanitized } });
   },
 
   async addProducts(id: string, products: Product[]): Promise<Magazine | null> {
@@ -412,7 +419,7 @@ export const magazineService = {
 
   async reorderItems(id: string, orderedIds: string[]): Promise<Magazine | null> {
     // Atualiza posição em paralelo — cada item recebe seu novo índice.
-    await Promise.all(
+    const results = await Promise.all(
       orderedIds.map((itemId, idx) =>
         supabase
           .from('magazine_items')
@@ -421,6 +428,12 @@ export const magazineService = {
           .eq('magazine_id', id),
       ),
     );
+    const anyFailed = results.some((r) => r.error !== null);
+    if (anyFailed) {
+      const firstError = results.find((r) => r.error)?.error;
+      logger.warn('[magazineService.reorderItems] partial failure:', firstError?.message);
+      return null;
+    }
     await supabase
       .from('magazines')
       .update({ updated_at: new Date().toISOString() })
@@ -444,6 +457,7 @@ export const magazineService = {
         .eq('magazine_id', id);
       if (error) {
         logger.warn('[magazineService.updateItem] error:', error.message);
+        return null;
       }
     }
     await supabase
@@ -542,7 +556,11 @@ export const magazineService = {
         page_number: it.pageNumber,
         overrides: (it.overrides ?? {}) as unknown as Database['public']['Tables']['magazine_items']['Insert']['overrides'],
       }));
-      await supabase.from('magazine_items').insert(itemRows);
+      const { error: itemsErr } = await supabase.from('magazine_items').insert(itemRows);
+      if (itemsErr) {
+        logger.warn('[magazineService.restore] items reinsert error:', itemsErr.message);
+        return magazine;
+      }
     }
     const hydrated = await hydrate(magazine.id);
     return hydrated ?? magazine;

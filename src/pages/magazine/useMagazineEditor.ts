@@ -33,6 +33,7 @@ export function useMagazineEditor(id: string | undefined) {
   const [magazine, setMagazine] = useState<Magazine | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [brandingErrors, setBrandingErrors] = useState<string[]>([]);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // CRITICAL FIX: Declare ref BEFORE persist so persist can update it immediately.
@@ -112,7 +113,12 @@ export function useMagazineEditor(id: string | undefined) {
       const current = magazineRef.current;
       if (!current) return;
       const merged = { ...current.branding, ...patch };
-      const { sanitized } = validateBranding(merged);
+      const { isValid, errors, sanitized } = validateBranding(merged);
+      if (!isValid) {
+        setBrandingErrors(errors);
+        return;
+      }
+      setBrandingErrors([]);
       persist({ ...current, branding: { ...merged, ...sanitized } });
     },
     [persist],
@@ -214,6 +220,7 @@ export function useMagazineEditor(id: string | undefined) {
     setSubtitle,
     setTemplate,
     setBranding,
+    brandingErrors,
     setContent,
     addProducts,
     removeItem,

@@ -24,8 +24,12 @@ export interface ValidationResult {
  * Returns sanitized values for safe persistence.
  */
 export function validateBranding(
-  branding: Partial<MagazineClientBranding>,
+  branding: Partial<MagazineClientBranding> | null | undefined,
 ): ValidationResult {
+  if (!branding || typeof branding !== 'object') {
+    return { isValid: false, errors: ['Configuração de branding inválida'], sanitized: {} };
+  }
+
   const errors: string[] = [];
   const sanitized: Partial<MagazineClientBranding> = {};
 
@@ -54,7 +58,12 @@ export function validateBranding(
       }
     }
 
-    sanitized.colors = validatedColors;
+    // Only emit known keys — prevents prototype pollution via extra color fields.
+    sanitized.colors = {
+      primary: validatedColors.primary,
+      secondary: validatedColors.secondary,
+      text: validatedColors.text,
+    };
   }
 
   return {
