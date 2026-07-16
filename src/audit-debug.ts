@@ -38,7 +38,6 @@ async function performTechnicalAudit() {
   const tables = ['profiles', 'user_roles', 'products', 'categories', 'suppliers'];
   for (const table of tables) {
     try {
-            // @ts-expect-error TS2589 deep type from regenerated Supabase types
 const { error } = await supabase
         .from(table as AuditTable)
         .select('count', { count: 'exact', head: true });

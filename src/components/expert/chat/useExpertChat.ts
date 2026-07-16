@@ -354,8 +354,7 @@ export function useExpertChat({
         const { data: quote, error } = await supabase
           // rls-allow: RLS aplica seller_id automaticamente
           .from('quotes')
-                    // @ts-expect-error insert payload after types.ts regen
-.insert({
+          .insert({
             seller_id: user.id,
             status: 'draft',
             quote_number: '',
