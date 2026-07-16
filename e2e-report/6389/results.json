@@ -1,0 +1,470 @@
+{
+  "config": {
+    "configFile": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/playwright.config.ts",
+    "rootDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+    "forbidOnly": true,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 1,
+    "metadata": {
+      "ci": {
+        "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+        "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+        "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+      },
+      "gitCommit": {
+        "shortHash": "769a357",
+        "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+        "subject": "Update plan",
+        "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+        "author": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1784221588000
+        },
+        "committer": {
+          "name": "gpt-engineer-app[bot]",
+          "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+          "time": 1784221588000
+        },
+        "branch": "main"
+      }
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "setup",
+        "name": "setup",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-public",
+        "name": "chromium-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-public",
+        "name": "firefox-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-public",
+        "name": "webkit-public",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-authed",
+        "name": "chromium-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "firefox-authed",
+        "name": "firefox-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "webkit-authed",
+        "name": "webkit-authed",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 5,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [
+          "/auth\\.setup\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 120000
+      },
+      {
+        "outputDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "ci": {
+            "commitHref": "https://github.com/adm01-debug/promo-gifts-v4/commit/769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "commitHash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "buildHref": "https://github.com/adm01-debug/promo-gifts-v4/actions/runs/29518420458"
+          },
+          "gitCommit": {
+            "shortHash": "769a357",
+            "hash": "769a3579a4206cddbd2580a6d7cd9363ebed01df",
+            "subject": "Update plan",
+            "body": "Update plan\n\nPlan file updated during planning mode\n\nX-Lovable-Edit-ID: edt-870c70f6-63c2-4bde-8148-17eea0db1174\nCo-authored-by: adm01-debug <231131902+adm01-debug@users.noreply.github.com>\n",
+            "author": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "committer": {
+              "name": "gpt-engineer-app[bot]",
+              "email": "159125892+gpt-engineer-app[bot]@users.noreply.github.com",
+              "time": 1784221588000
+            },
+            "branch": "main"
+          }
+        },
+        "id": "chromium-smoke",
+        "name": "chromium-smoke",
+        "testDir": "/home/runner/work/promo-gifts-v4/promo-gifts-v4/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "/smoke\\.spec\\.ts/"
+        ],
+        "timeout": 120000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "github"
+      ],
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.59.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8080",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'",
+      "stack": "SyntaxError: The requested module '../helpers/waits' does not provide an export named 'waitForTestId'"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-07-16T17:08:09.334Z",
+    "duration": 5597.174,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
