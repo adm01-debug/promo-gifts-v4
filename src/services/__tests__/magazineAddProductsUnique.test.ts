@@ -57,9 +57,6 @@ const builder = vi.hoisted(() => {
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: { from: (t: string) => builder(t) },
 }));
-vi.mock('@/lib/supabase-untyped', () => ({
-  untypedFrom: (t: string) => builder(t),
-}));
 
 // import DEPOIS dos mocks
 import { magazineService } from '@/services/magazineService';

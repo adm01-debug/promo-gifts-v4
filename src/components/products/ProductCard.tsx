@@ -113,7 +113,7 @@ export interface ProductCardProps {
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: boolean;
-  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean };
+  onToggleCompare?: (productId: string) => unknown;
   canAddToCompare?: boolean;
   hideCategoryBadges?: boolean;
   isNovelty?: boolean;

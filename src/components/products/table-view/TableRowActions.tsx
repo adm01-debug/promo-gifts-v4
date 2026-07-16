@@ -20,7 +20,7 @@ interface TableRowActionsProps {
   isInCompare: boolean;
   canAddToCompare: boolean;
   onToggleFavorite?: (id: string) => void;
-  onToggleCompare?: (id: string) => { added: boolean; isFull: boolean };
+  onToggleCompare?: (id: string) => unknown;
   onOpenVariantPicker: (product: Product, mode: VariantActionMode) => void;
   onOpenQuickView: (product: Product) => void;
 }

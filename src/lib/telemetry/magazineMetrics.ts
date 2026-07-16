@@ -46,7 +46,7 @@ export function trackMagazineRender(metrics: MagazineRenderMetrics): void {
     category: 'magazine.render',
     message: `Rendered ${metrics.pageCount} pages for ${metrics.magazineId}`,
     level: 'info',
-    data: metrics,
+    data: metrics as unknown as Record<string, unknown>,
   });
 
   // Performance threshold alert
@@ -63,10 +63,10 @@ export function trackMagazineRender(metrics: MagazineRenderMetrics): void {
         module: 'magazine',
         templateId: metrics.templateId,
       },
-      extra: metrics,
+      extra: metrics as unknown as Record<string, unknown>,
     });
   } else {
-    log.info('magazine_render_ok', metrics);
+    log.info('magazine_render_ok', metrics as unknown as Record<string, unknown>);
   }
 }
 
@@ -75,20 +75,20 @@ export function trackMagazineRender(metrics: MagazineRenderMetrics): void {
  */
 export function trackPublish(metrics: PublishMetrics): void {
   if (metrics.success) {
-    log.info('magazine_published', metrics);
+    log.info('magazine_published', metrics as unknown as Record<string, unknown>);
     Sentry.addBreadcrumb({
       category: 'magazine.publish',
       message: `Magazine ${metrics.magazineId} published with ${metrics.itemCount} items`,
       level: 'info',
-      data: metrics,
+      data: metrics as unknown as Record<string, unknown>,
     });
   } else {
-    log.error('magazine_publish_failed', metrics);
+    log.error('magazine_publish_failed', metrics as unknown as Record<string, unknown>);
     Sentry.captureEvent({
       level: 'error',
       message: 'Magazine publish failed',
       tags: { module: 'magazine', errorCode: metrics.errorCode ?? 'unknown' },
-      extra: metrics,
+      extra: metrics as unknown as Record<string, unknown>,
     });
   }
 }
@@ -98,7 +98,7 @@ export function trackPublish(metrics: PublishMetrics): void {
  * Triggered by the 8s watchdog in AuthContext.
  */
 export function trackAuthStall(metrics: AuthStallMetrics): void {
-  log.warn('auth_stall_detected', metrics);
+  log.warn('auth_stall_detected', metrics as unknown as Record<string, unknown>);
   Sentry.captureEvent({
     level: 'warning',
     message: `Auth stall ${metrics.durationMs}ms in ${metrics.triggeredByModule}`,
@@ -106,7 +106,7 @@ export function trackAuthStall(metrics: AuthStallMetrics): void {
       module: metrics.triggeredByModule,
       rolesLoadedAfterStall: String(metrics.rolesLoadedAfterStall),
     },
-    extra: metrics,
+    extra: metrics as unknown as Record<string, unknown>,
   });
 }
 

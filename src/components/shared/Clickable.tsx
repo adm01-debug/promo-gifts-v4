@@ -54,6 +54,8 @@ export interface ClickableProps {
   [dataAttr: `data-${string}`]: string | number | boolean | undefined;
   /** Atributos aria-* extras (aria-haspopup, aria-controls, aria-current, etc.). */
   [ariaAttr: `aria-${string}`]: string | number | boolean | undefined;
+  /** Passthrough for polymorphic as component props (motion.div, etc.). */
+  [key: string]: unknown;
 }
 
 /**

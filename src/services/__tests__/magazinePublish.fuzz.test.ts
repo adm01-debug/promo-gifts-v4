@@ -31,7 +31,7 @@ interface Scenario {
   id: string;
   // Estado inicial da linha
   initialToken: string | null;
-  initialStatus: 'draft' | 'published' | 'archived';
+  initialStatus: 'archived' | 'draft' | 'published';
   // Comportamento da "trigger BEFORE UPDATE OF status"
   triggerFillsToken: boolean;
   // Falhas simuladas
@@ -150,9 +150,6 @@ const builder = vi.hoisted(() => {
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: { from: (t: string) => builder(t) },
 }));
-vi.mock('@/lib/supabase-untyped', () => ({
-  untypedFrom: (t: string) => builder(t),
-}));
 
 // Espia crypto para contar quantas vezes o fallback é usado
 beforeEach(() => {
@@ -199,7 +196,7 @@ function generateScenarios(): Scenario[] {
   const scenarios: Scenario[] = [];
   let i = 0;
   const tokens: Array<string | null> = [null, 'a1b2c3d4e5f60718293a4b5c6d7e8f90']; // NULL + já-emitido
-  const statuses: Array<'draft' | 'published' | 'archived'> = ['draft', 'published'];
+  const statuses: Array<'archived' | 'draft' | 'published'> = ['draft', 'published'];
   const triggerStates = [true, false];
   const statusFailStates = [true, false];
   const tokenFailStates = [true, false];

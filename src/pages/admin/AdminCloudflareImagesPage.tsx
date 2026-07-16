@@ -48,6 +48,7 @@ interface CfImage {
   alt_text?: string | null;
   is_primary?: boolean | null;
   display_order?: number | null;
+  url_original?: string | null;
 }
 
 interface CfStats {

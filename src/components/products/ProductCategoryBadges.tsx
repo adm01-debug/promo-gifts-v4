@@ -4,8 +4,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Badge } from '@/components/ui/badge';
 import { Package, Palette, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getCategoryIcon, useCategoryIcons } from '@/hooks/products/useCategoryIcons';
-import { CategoryIcon } from '@/components/ui/CategoryIcon';
+import { getCategoryIcon, useCategoryIcons, type CategoryIcon } from '@/hooks/products/useCategoryIcons';
+import { CategoryIcon as CategoryIconComponent } from '@/components/ui/CategoryIcon';
 
 /**
  * Categoria/grupo exibido como badge. Aceita id string (UUID) ou numérico,
@@ -44,7 +44,7 @@ interface ProductCategoryBadgesProps {
  * Inclui links opcionais para Personalização, Mockup e Kit Builder.
  *
  * ## Resolução do ícone
- * getCategoryIcon() → string (nome Lucide ou emoji) → <CategoryIcon /> → SVG ou emoji
+ * getCategoryIcon() → string (nome Lucide ou emoji) → <CategoryIconComponent /> → SVG ou emoji
  */
 export const ProductCategoryBadges = memo(
   ({
@@ -140,7 +140,7 @@ export const ProductCategoryBadges = memo(
                   )}
                 >
                   {/* Ícone: SVG Lucide para nomes conhecidos, emoji/texto para legados */}
-                  <CategoryIcon
+                  <CategoryIconComponent
                     value={getIconValue(cat)}
                     size={14}
                     className="mr-1.5"

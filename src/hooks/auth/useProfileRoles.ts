@@ -114,6 +114,7 @@ export function useProfileRoles() {
         // Com this === undefined em ES modules (strict mode), throws sincronamente:
         //   "TypeError: Cannot read properties of undefined (reading 'rest')"
         // .bind(supabase) restaura o contexto sem alterar o comportamento do cast.
+        // @ts-expect-error TS2589 deep type from regenerated Supabase types
         const rpcCaller = supabase.rpc.bind(supabase) as unknown as RPCCallerFn;
         const { data, error } = await withTimeout(
           rpcCaller('get_profile_and_roles', { _user_id: userId }),

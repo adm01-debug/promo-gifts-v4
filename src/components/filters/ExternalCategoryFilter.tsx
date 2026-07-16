@@ -34,7 +34,8 @@ export function ExternalCategoryFilter({
   const [search, setSearch] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  const { data: categoryIcons = [] as CategoryIcon[] } = useCategoryIcons();
+  const { data: rawCategoryIcons } = useCategoryIcons();
+  const categoryIcons = (rawCategoryIcons ?? []) as CategoryIcon[];
   const { data: categories = [], isLoading, refetch, isFetching } = useExternalCategoriesQuery();
 
   // Construir árvore hierárquica

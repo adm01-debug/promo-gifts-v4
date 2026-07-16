@@ -59,7 +59,7 @@ export function useProductColorSwatch(product: ProductWithSwatches) {
       const { data, error } = await supabase
         .rpc('fn_get_color_swatches_batch', { p_product_ids: [product.id] });
       if (!error && data && data.length > 0) {
-        setLazySwatches(data[0].color_swatches as ColorSwatch[]);
+        setLazySwatches(data[0].color_swatches as unknown as ColorSwatch[]);
       }
     } catch {
       // Silent fail — product displays without swatches

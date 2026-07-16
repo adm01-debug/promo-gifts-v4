@@ -8,6 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 
 import { DesignStep } from '../DesignStep';
 import type { Magazine } from '@/types/magazine';
@@ -50,11 +51,13 @@ const magazine: Magazine = {
 describe('DesignStep — sem miniaturas', () => {
   it('renderiza cards de template sem <img> nem role="img"', () => {
     render(
-      <DesignStep
-        magazine={magazine}
-        onChange={() => {}}
-        onCategoryChange={() => {}}
-      />,
+      <MemoryRouter>
+        <DesignStep
+          magazine={magazine}
+          onChange={() => {}}
+          onCategoryChange={() => {}}
+        />
+      </MemoryRouter>,
     );
 
     // Sanity: cards de template presentes
@@ -67,11 +70,13 @@ describe('DesignStep — sem miniaturas', () => {
 
   it('não renderiza o rodapé antigo "as miniaturas usam produtos de amostra"', () => {
     render(
-      <DesignStep
-        magazine={magazine}
-        onChange={() => {}}
-        onCategoryChange={() => {}}
-      />,
+      <MemoryRouter>
+        <DesignStep
+          magazine={magazine}
+          onChange={() => {}}
+          onCategoryChange={() => {}}
+        />
+      </MemoryRouter>,
     );
 
     expect(

@@ -11,6 +11,8 @@ on:
       - "scripts/**"
       - ".github/workflows/freight-quality-gates.yml"
       - "package.json"
+      - ".tsc-baseline.json"
+      - ".eslint-baseline.json"
   pull_request:
     branches: [main, master]
 
