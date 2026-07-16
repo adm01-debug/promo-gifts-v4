@@ -75,8 +75,9 @@ function buildSeedScript(): string {
     pageOrder: null,
     status: 'published',
     publicToken: MAGAZINE_TOKEN,
-    pdfUrl: null,
+    viewCount: 0,
     publishedAt: new Date().toISOString(),
+    archivedAt: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

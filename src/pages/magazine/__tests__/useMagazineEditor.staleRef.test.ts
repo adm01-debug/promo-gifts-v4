@@ -31,15 +31,15 @@ const MOCK_MAGAZINE: Magazine = {
   branding: {
     ...DEFAULT_BRANDING,
     clientLogoUrl: null,
-    primaryColor: '#000000',
   },
   content: { ...DEFAULT_MAGAZINE_CONTENT },
   items: [],
   pageOrder: null,
   status: 'draft',
   publicToken: null,
-  pdfUrl: null,
+  viewCount: 0,
   publishedAt: null,
+  archivedAt: null,
   createdAt: '2026-07-12T00:00:00Z',
   updatedAt: '2026-07-12T00:00:00Z',
 };
@@ -173,12 +173,12 @@ describe('useMagazineEditor — stale ref race condition', () => {
     await act(async () => {
       // Two mutations in the same synchronous tick
       result.current.setTitle('New Title');
-      result.current.setBranding({ primaryColor: '#FF0000' });
+      result.current.setBranding({ colors: { primary: '#FF0000', secondary: '#e86f2e', text: '#1a1a1a' } });
     });
 
     // CRITICAL: Both must be applied
     expect(result.current.magazine?.title).toBe('New Title');
-    expect(result.current.magazine?.branding.primaryColor).toBe('#FF0000');
+    expect(result.current.magazine?.branding.colors.primary).toBe('#FF0000');
   });
 
   it('[A2] setTitle → setSubtitle → setTitle: last write wins, no state loss', async () => {
@@ -301,15 +301,15 @@ describe('useMagazineEditor — stale ref race condition', () => {
 
   it('[G] setBranding with partial patch does not lose existing branding fields', async () => {
     const { result } = await renderLoadedEditor();
-    const originalPrimary = result.current.magazine?.branding.primaryColor;
+    const originalPrimary = result.current.magazine?.branding.colors.primary;
 
     // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
     await act(async () => {
       result.current.setBranding({ clientLogoUrl: 'https://cdn.example.com/logo.png' });
     });
 
-    // primaryColor must still be there
-    expect(result.current.magazine?.branding.primaryColor).toBe(originalPrimary);
+    // colors.primary must still be there
+    expect(result.current.magazine?.branding.colors.primary).toBe(originalPrimary);
     expect(result.current.magazine?.branding.clientLogoUrl).toBe('https://cdn.example.com/logo.png');
   });
 });

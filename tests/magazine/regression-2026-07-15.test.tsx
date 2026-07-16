@@ -49,8 +49,9 @@ const baseMagazine: Magazine = {
   items: [],
   pageOrder: null,
   publicToken: null,
-  pdfUrl: null,
+  viewCount: 0,
   publishedAt: null,
+  archivedAt: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };

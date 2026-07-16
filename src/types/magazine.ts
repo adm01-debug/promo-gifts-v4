@@ -123,8 +123,10 @@ export interface Magazine {
    */
   status: 'archived' | 'draft' | 'published';
   publicToken: string | null;
-  pdfUrl: string | null;
+  /** Read-only — managed by DB triggers/cron, not writable from the client. */
+  viewCount: number;
   publishedAt: string | null;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

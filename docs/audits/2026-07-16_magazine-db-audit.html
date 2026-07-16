@@ -1,0 +1,611 @@
+<title>Magazine Module — Database Audit Report</title>
+<style>
+  /* ── Tokens ── */
+  :root {
+    --bg: #fafaf8;
+    --bg-surface: #ffffff;
+    --bg-surface-alt: #f3f2ef;
+    --text: #1c1c1a;
+    --text-muted: #6b6a65;
+    --border: #e0dfda;
+    --accent: #2e6b4f;
+    --accent-light: #e8f2ec;
+    --critical: #c0392b;
+    --critical-bg: #fceae8;
+    --warn: #b87a1e;
+    --warn-bg: #fef6e6;
+    --ok: #27815a;
+    --ok-bg: #e6f5ee;
+    --info: #3572a5;
+    --info-bg: #e9f0f8;
+    --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --body: 'Charter', 'Georgia', 'Palatino Linotype', serif;
+    --display: 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614;
+      --bg-surface: #1e1e1c;
+      --bg-surface-alt: #262624;
+      --text: #e4e3de;
+      --text-muted: #9a9990;
+      --border: #3a3a36;
+      --accent: #5cb88a;
+      --accent-light: #1e2e26;
+      --critical-bg: #2e1a18;
+      --warn-bg: #2a2214;
+      --ok-bg: #162b20;
+      --info-bg: #17222e;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161614;
+    --bg-surface: #1e1e1c;
+    --bg-surface-alt: #262624;
+    --text: #e4e3de;
+    --text-muted: #9a9990;
+    --border: #3a3a36;
+    --accent: #5cb88a;
+    --accent-light: #1e2e26;
+    --critical-bg: #2e1a18;
+    --warn-bg: #2a2214;
+    --ok-bg: #162b20;
+    --info-bg: #17222e;
+  }
+  :root[data-theme="light"] {
+    --bg: #fafaf8;
+    --bg-surface: #ffffff;
+    --bg-surface-alt: #f3f2ef;
+    --text: #1c1c1a;
+    --text-muted: #6b6a65;
+    --border: #e0dfda;
+    --accent: #2e6b4f;
+    --accent-light: #e8f2ec;
+    --critical-bg: #fceae8;
+    --warn-bg: #fef6e6;
+    --ok-bg: #e6f5ee;
+    --info-bg: #e9f0f8;
+  }
+
+  /* ── Reset / Base ── */
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    font-family: var(--body);
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.65;
+    max-width: 54rem;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--display);
+    font-weight: 600;
+    text-wrap: balance;
+    line-height: 1.25;
+    margin: 0;
+  }
+  h1 { font-size: 1.75rem; letter-spacing: -0.02em; }
+  h2 { font-size: 1.25rem; letter-spacing: -0.01em; margin-top: 2.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--accent); }
+  h3 { font-size: 1.05rem; margin-top: 1.5rem; color: var(--accent); }
+  p { margin: 0.6rem 0; max-width: 65ch; }
+  a { color: var(--accent); }
+  code, .mono {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--bg-surface-alt);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+  }
+  pre { background: var(--bg-surface-alt); padding: 1rem; border-radius: 6px; overflow-x: auto; font-family: var(--mono); font-size: 0.82rem; line-height: 1.5; margin: 0.8rem 0; }
+
+  /* ── Header ── */
+  .header { margin-bottom: 2rem; }
+  .header .eyebrow {
+    font-family: var(--display);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+  .header .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-top: 0.3rem; }
+  .meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    font-family: var(--display);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 1rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+  .meta-bar dt { display: inline; font-weight: 600; }
+  .meta-bar dd { display: inline; margin: 0; }
+
+  /* ── Severity badges ── */
+  .badge {
+    display: inline-block;
+    font-family: var(--display);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.15em 0.55em;
+    border-radius: 3px;
+    vertical-align: middle;
+  }
+  .badge-critical { background: var(--critical-bg); color: var(--critical); }
+  .badge-warn { background: var(--warn-bg); color: var(--warn); }
+  .badge-ok { background: var(--ok-bg); color: var(--ok); }
+  .badge-info { background: var(--info-bg); color: var(--info); }
+
+  /* ── Scorecard ── */
+  .scorecard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.75rem;
+    margin: 1.2rem 0;
+  }
+  .score-cell {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.8rem 1rem;
+    text-align: center;
+  }
+  .score-cell .val {
+    font-family: var(--display);
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .score-cell .lbl {
+    font-family: var(--display);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+  }
+
+  /* ── Tables ── */
+  .tbl-wrap { overflow-x: auto; margin: 0.8rem 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── Finding cards ── */
+  .finding {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    margin: 0.8rem 0;
+  }
+  .finding-title {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .finding p { font-size: 0.9rem; }
+  .finding .file-ref { font-family: var(--mono); font-size: 0.82rem; color: var(--text-muted); }
+
+  .border-l-critical { border-left: 3px solid var(--critical); }
+  .border-l-warn { border-left: 3px solid var(--warn); }
+  .border-l-info { border-left: 3px solid var(--info); }
+
+  /* ── Comparison highlight ── */
+  .cmp-row-miss td { background: var(--critical-bg); }
+  .cmp-row-extra td { background: var(--warn-bg); }
+  .cmp-row-ok td { background: var(--ok-bg); }
+
+  /* ── Utility ── */
+  .mt-0 { margin-top: 0; }
+  .gap-sm { gap: 0.4rem; }
+  .flex-col { display: flex; flex-direction: column; }
+  details summary {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.3rem 0;
+    color: var(--accent);
+  }
+  details summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="header">
+  <div class="eyebrow">Promo Brindes &middot; Supabase Gold &middot; doufsxqlfjyuvxuezpln</div>
+  <h1>Magazine Module &mdash; Database Audit</h1>
+  <p class="subtitle">Compara&ccedil;&atilde;o exaustiva: Invent&aacute;rio documentado vs. banco de dados em produ&ccedil;&atilde;o vs. c&oacute;digo-fonte</p>
+  <div class="meta-bar">
+    <div><dt>Data:</dt> <dd>2026-07-16</dd></div>
+    <div><dt>Projeto:</dt> <dd><code>doufsxqlfjyuvxuezpln</code> (Gold)</dd></div>
+    <div><dt>Ferramenta:</dt> <dd>MCP Supabase Cloud API</dd></div>
+    <div><dt>Branch:</dt> <dd><code>claude/magazine-db-audit-b9qqu2</code></dd></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<div class="card" style="border-left:4px solid var(--ok);margin-bottom:2rem">
+  <h2 style="color:var(--ok);margin-top:0">Fixes Applied (2026-07-16)</h2>
+  <table>
+    <thead><tr><th>Fix</th><th>Issue</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>FIX 1</td><td><strong>CRITICAL:</strong> Remove <code>pdf_url</code> ghost column from code &mdash; column does not exist in DB</td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 2</td><td><strong>CRITICAL:</strong> Fix branding color validation (<code>primaryColor</code> &rarr; <code>colors.primary</code>)</td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 3</td><td>Sync <code>MagazineRow</code> with DB &mdash; add <code>view_count</code>, <code>archived_at</code></td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 4</td><td>Archive 4 stale draft migrations to <code>_archived/</code></td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 5</td><td>Add guard comments for <code>magazine_token_hash</code> column name in edge functions</td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 6</td><td>Regenerate Supabase types &mdash; magazine tables now in <code>types.ts</code></td><td style="color:var(--ok)">FIXED</td></tr>
+      <tr><td>FIX 7</td><td>Update this audit report with fixes applied</td><td style="color:var(--ok)">FIXED</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>Resumo Executivo</h2>
+
+<div class="scorecard">
+  <div class="score-cell"><div class="val" style="color:var(--critical)">3</div><div class="lbl">Cr&iacute;ticos</div></div>
+  <div class="score-cell"><div class="val" style="color:var(--warn)">4</div><div class="lbl">Alertas</div></div>
+  <div class="score-cell"><div class="val" style="color:var(--info)">5</div><div class="lbl">Informativos</div></div>
+  <div class="score-cell"><div class="val" style="color:var(--ok)">13</div><div class="lbl">Tabelas no DB</div></div>
+  <div class="score-cell"><div class="val">4</div><div class="lbl">Doc. invent&aacute;rio</div></div>
+</div>
+
+<p>O invent&aacute;rio fornecido documenta <strong>4 tabelas</strong>, mas o banco de dados real cont&eacute;m <strong>13 objetos de n&iacute;vel tabela</strong> (8 tabelas regulares + 1 particionada + 4 parti&ccedil;&otilde;es). Al&eacute;m disso, 3 cron jobs, 9 fun&ccedil;&otilde;es PG e 14 pol&iacute;ticas RLS est&atilde;o presentes &mdash; todos sub-documentados ou ausentes do invent&aacute;rio.</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>1. Achados Cr&iacute;ticos</h2>
+
+<div class="finding border-l-critical">
+  <div class="finding-title"><span class="badge badge-critical">Cr&iacute;tico</span> Coluna <code>pdf_url</code> referenciada no c&oacute;digo, inexistente no DB</div>
+  <p>O service layer <code>magazineService.ts</code> define <code>MagazineRow.pdf_url</code> e a l&ecirc;/escreve em 4 locais (linhas 36, 84, 336, 534). Essa coluna <strong>n&atilde;o existe</strong> na tabela <code>magazines</code>.</p>
+  <p><strong>Impacto:</strong> Qualquer opera&ccedil;&atilde;o de update que inclua <code>pdfUrl</code> no patch lan&ccedil;a erro 400 do PostgREST em runtime. Leituras retornam <code>null</code> silenciosamente (PostgREST ignora colunas extras no SELECT).</p>
+  <p class="file-ref">src/services/magazineService.ts:36,84,336,534</p>
+  <p class="file-ref">src/services/__tests__/magazinePublish.fuzz.test.ts:59</p>
+</div>
+
+<div class="finding border-l-critical">
+  <div class="finding-title"><span class="badge badge-critical">Cr&iacute;tico</span> Conector MCP Self-Hosted aponta para DB errado</div>
+  <p>O conector <code>mcp__SUPABASE_SELF_HOSTED_-_MCP</code> retorna 0 linhas para todas as tabelas <code>magazine_*</code> e erro &ldquo;relation does not exist&rdquo; no <code>describe_table</code>. Ele <strong>n&atilde;o est&aacute; conectado</strong> ao projeto Gold <code>doufsxqlfjyuvxuezpln</code>.</p>
+  <p><strong>Impacto:</strong> Qualquer automa&ccedil;&atilde;o ou auditoria via MCP self-hosted opera sobre um banco diferente, gerando falsos negativos.</p>
+</div>
+
+<div class="finding border-l-critical">
+  <div class="finding-title"><span class="badge badge-critical">Cr&iacute;tico</span> Tipo <code>branding.primaryColor</code> vs <code>colors.primary</code></div>
+  <p>O guard <code>magazine-guard.ts</code> (linhas 43-50) valida <code>branding.primaryColor</code>, mas o default da coluna <code>magazines.branding</code> no DB usa a estrutura <code>colors.primary</code>:</p>
+  <pre>jsonb_build_object('colors', jsonb_build_object('primary', '#2e4a3a', ...))</pre>
+  <p>O tipo <code>MagazineClientBranding</code> em <code>src/types/magazine.ts</code> tamb&eacute;m usa <code>colors.primary</code>. O guard nunca encontra <code>primaryColor</code> e pula a valida&ccedil;&atilde;o.</p>
+  <p class="file-ref">src/lib/security/magazine-guard.ts:43-50</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>2. Tabelas &mdash; Invent&aacute;rio vs DB</h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead>
+    <tr><th>Tabela no DB</th><th>Tipo</th><th>Linhas</th><th>No Invent&aacute;rio?</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr class="cmp-row-ok"><td><code>magazines</code></td><td>regular</td><td>5</td><td>Sim</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr class="cmp-row-ok"><td><code>magazine_items</code></td><td>regular</td><td>13</td><td>Sim</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr class="cmp-row-ok"><td><code>magazine_reader_state</code></td><td>regular</td><td>0</td><td>Sim</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr class="cmp-row-ok"><td><code>magazine_public_view_events</code></td><td>partitioned</td><td>0</td><td>Sim</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr class="cmp-row-extra"><td><code>magazine_public_reactions</code></td><td>regular</td><td>0</td><td>N&atilde;o</td><td><span class="badge badge-warn">N&atilde;o documentada</span></td></tr>
+    <tr class="cmp-row-extra"><td><code>magazine_templates</code></td><td>regular</td><td>0</td><td>N&atilde;o</td><td><span class="badge badge-warn">N&atilde;o documentada</span></td></tr>
+    <tr class="cmp-row-extra"><td><code>magazine_templates_catalog</code></td><td>regular</td><td>12</td><td>N&atilde;o</td><td><span class="badge badge-warn">N&atilde;o documentada</span></td></tr>
+    <tr class="cmp-row-extra"><td><code>magazine_view_rollup_watermark</code></td><td>singleton</td><td>1</td><td>N&atilde;o</td><td><span class="badge badge-warn">N&atilde;o documentada</span></td></tr>
+    <tr class="cmp-row-extra"><td><code>magazine_public_view_events_2026_07</code></td><td>partition</td><td>0</td><td>N&atilde;o</td><td><span class="badge badge-info">Parti&ccedil;&atilde;o</span></td></tr>
+    <tr class="cmp-row-extra"><td><code>magazine_public_view_events_2026_08</code></td><td>partition</td><td>0</td><td>N&atilde;o</td><td><span class="badge badge-info">Parti&ccedil;&atilde;o</span></td></tr>
+    <tr class="cmp-row-extra"><td><code>magazine_public_view_events_2026_09</code></td><td>partition</td><td>0</td><td>N&atilde;o</td><td><span class="badge badge-info">Parti&ccedil;&atilde;o</span></td></tr>
+    <tr class="cmp-row-extra"><td><code>magazine_public_view_events_2026_10</code></td><td>partition</td><td>0</td><td>N&atilde;o</td><td><span class="badge badge-info">Parti&ccedil;&atilde;o</span></td></tr>
+    <tr class="cmp-row-extra"><td><code>magazine_public_view_events_default</code></td><td>partition</td><td>0</td><td>N&atilde;o</td><td><span class="badge badge-info">Parti&ccedil;&atilde;o</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>3. Colunas &mdash; <code>magazines</code> (tabela principal)</h2>
+<p>O invent&aacute;rio n&atilde;o detalha colunas. Abaixo, todas as colunas reais com destaque para as n&atilde;o mencionadas no c&oacute;digo.</p>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Coluna</th><th>Tipo</th><th>Nullable</th><th>Default</th><th>Notas</th></tr></thead>
+  <tbody>
+    <tr><td><code>id</code></td><td>uuid</td><td>NO</td><td>gen_random_uuid()</td><td></td></tr>
+    <tr><td><code>owner_id</code></td><td>uuid</td><td>NO</td><td>&mdash;</td><td>FK &rarr; auth.users</td></tr>
+    <tr><td><code>organization_id</code></td><td>uuid</td><td>YES</td><td>&mdash;</td><td>FK &rarr; organizations</td></tr>
+    <tr><td><code>title</code></td><td>text</td><td>NO</td><td>'Nova Revista'</td><td>CHECK len</td></tr>
+    <tr><td><code>subtitle</code></td><td>text</td><td>NO</td><td>''</td><td>CHECK len</td></tr>
+    <tr><td><code>template_id</code></td><td>text</td><td>NO</td><td>'editorial-vogue'</td><td>FK &rarr; catalog</td></tr>
+    <tr><td><code>branding</code></td><td>jsonb</td><td>NO</td><td>nested obj</td><td>colors.primary, etc</td></tr>
+    <tr><td><code>content_settings</code></td><td>jsonb</td><td>NO</td><td>nested obj</td><td></td></tr>
+    <tr><td><code>page_order</code></td><td>jsonb</td><td>YES</td><td>&mdash;</td><td></td></tr>
+    <tr><td><code>status</code></td><td>magazine_status</td><td>NO</td><td>'draft'</td><td>enum</td></tr>
+    <tr><td><code>public_token</code></td><td>text</td><td>YES</td><td>&mdash;</td><td>UNIQUE</td></tr>
+    <tr><td><code>view_count</code></td><td>int4</td><td>NO</td><td>0</td><td><span class="badge badge-info">N&atilde;o no draft</span></td></tr>
+    <tr><td><code>published_at</code></td><td>timestamptz</td><td>YES</td><td>&mdash;</td><td></td></tr>
+    <tr><td><code>archived_at</code></td><td>timestamptz</td><td>YES</td><td>&mdash;</td><td><span class="badge badge-info">N&atilde;o no draft</span></td></tr>
+    <tr><td><code>deleted_at</code></td><td>timestamptz</td><td>YES</td><td>&mdash;</td><td><span class="badge badge-info">N&atilde;o no draft</span></td></tr>
+    <tr><td><code>created_at</code></td><td>timestamptz</td><td>NO</td><td>now()</td><td></td></tr>
+    <tr><td><code>updated_at</code></td><td>timestamptz</td><td>NO</td><td>now()</td><td></td></tr>
+    <tr style="background:var(--critical-bg)"><td><code>pdf_url</code></td><td colspan="4"><strong>N&Atilde;O EXISTE</strong> &mdash; referenciada em <code>magazineService.ts</code> mas ausente do schema</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>4. &Iacute;ndices &mdash; Invent&aacute;rio (7) vs DB (42)</h2>
+
+<p>O invent&aacute;rio documenta 7 &iacute;ndices. O banco possui <strong>42</strong> (incluindo PKs e &iacute;ndices de parti&ccedil;&otilde;es). Abaixo os &iacute;ndices l&oacute;gicos (sem contar replica&ccedil;&otilde;es em parti&ccedil;&otilde;es).</p>
+
+<details>
+<summary>Ver todos os &iacute;ndices l&oacute;gicos (18 &uacute;nicos)</summary>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Tabela</th><th>&Iacute;ndice</th><th>Tipo</th><th>No Inv?</th></tr></thead>
+  <tbody>
+    <tr><td>magazines</td><td>magazines_pkey</td><td>PK</td><td>Sim</td></tr>
+    <tr><td>magazines</td><td>magazines_public_token_key</td><td>UNIQUE</td><td>Sim</td></tr>
+    <tr><td>magazines</td><td>idx_magazines_not_deleted</td><td>btree partial</td><td>N&atilde;o</td></tr>
+    <tr><td>magazines</td><td>idx_magazines_org</td><td>btree partial</td><td>N&atilde;o</td></tr>
+    <tr><td>magazines</td><td>idx_magazines_published</td><td>btree partial</td><td>N&atilde;o</td></tr>
+    <tr><td>magazines</td><td>idx_magazines_token_lookup</td><td>btree partial</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_items</td><td>magazine_items_pkey</td><td>PK</td><td>Sim</td></tr>
+    <tr><td>magazine_items</td><td>idx_magazine_items_product</td><td>btree</td><td>Sim</td></tr>
+    <tr><td>magazine_items</td><td>magazine_items_position_unique</td><td>UNIQUE</td><td>Sim</td></tr>
+    <tr><td>magazine_items</td><td>magazine_items_unique_product</td><td>UNIQUE</td><td>Sim</td></tr>
+    <tr><td>magazine_reader_state</td><td>magazine_reader_state_pkey</td><td>PK</td><td>Sim</td></tr>
+    <tr><td>magazine_reader_state</td><td>..._token_hash_viewer_key</td><td>UNIQUE</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_reader_state</td><td>idx_reader_state_token_hash</td><td>btree</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_reader_state</td><td>idx_reader_state_updated</td><td>btree</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_reader_state</td><td>idx_reader_state_user</td><td>btree partial</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_public_reactions</td><td>magazine_public_reactions_pkey</td><td>PK</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_public_reactions</td><td>reactions_unique_toggle</td><td>UNIQUE</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_public_reactions</td><td>idx_mag_reactions_mag</td><td>btree</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_public_reactions</td><td>idx_mag_reactions_page</td><td>btree partial</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_public_reactions</td><td>idx_mag_reactions_item</td><td>btree partial</td><td>N&atilde;o</td></tr>
+    <tr><td>view_events (parent)</td><td>magazine_public_view_events_pkey</td><td>PK</td><td>N&atilde;o</td></tr>
+    <tr><td>view_events (parent)</td><td>idx_mag_view_events_mag_time</td><td>btree</td><td>N&atilde;o</td></tr>
+    <tr><td>view_events (parent)</td><td>idx_mag_view_events_token_hash</td><td>btree</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_templates</td><td>magazine_templates_pkey</td><td>PK</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_templates</td><td>idx_magazine_templates_owner</td><td>btree</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_templates</td><td>idx_magazine_templates_org</td><td>btree partial</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_templates_catalog</td><td>magazine_templates_catalog_pkey</td><td>PK</td><td>N&atilde;o</td></tr>
+    <tr><td>magazine_view_rollup_watermark</td><td>..._watermark_pkey</td><td>PK</td><td>N&atilde;o</td></tr>
+  </tbody>
+</table>
+</div>
+</details>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>5. Pol&iacute;ticas RLS &mdash; Invent&aacute;rio (7) vs DB (14)</h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Tabela</th><th>Policy</th><th>Cmd</th><th>Roles</th><th>No Inv?</th></tr></thead>
+  <tbody>
+    <tr><td>magazines</td><td>magazines_owner_all</td><td>ALL</td><td>authenticated</td><td>Sim</td></tr>
+    <tr><td>magazines</td><td>magazines_org_read</td><td>SELECT</td><td>authenticated</td><td>Sim</td></tr>
+    <tr><td>magazines</td><td>magazines_admin_all</td><td>ALL</td><td>authenticated</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td>magazine_items</td><td>magazine_items_via_owner_or_org</td><td>ALL</td><td>authenticated</td><td>Sim</td></tr>
+    <tr><td>magazine_reader_state</td><td>reader_state_owner_read</td><td>SELECT</td><td>authenticated</td><td>Sim</td></tr>
+    <tr><td>magazine_reader_state</td><td>reader_state_service_all</td><td>ALL</td><td>service_role</td><td>Sim</td></tr>
+    <tr><td>magazine_public_view_events</td><td>view_events_read_owner</td><td>SELECT</td><td>authenticated</td><td>Sim</td></tr>
+    <tr><td>magazine_public_view_events</td><td>view_events_service_all</td><td>ALL</td><td>service_role</td><td>Sim</td></tr>
+    <tr><td>magazine_public_view_events</td><td>view_events_read_admin</td><td>SELECT</td><td>authenticated</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td>magazine_public_reactions</td><td>reactions_read_owner</td><td>SELECT</td><td>authenticated</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td>magazine_public_reactions</td><td>reactions_service_all</td><td>ALL</td><td>service_role</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td>magazine_templates</td><td>templates_owner_all</td><td>ALL</td><td>authenticated</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td>magazine_templates</td><td>templates_org_read</td><td>SELECT</td><td>authenticated</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td>magazine_templates_catalog</td><td>templates_catalog_read</td><td>SELECT</td><td>authenticated</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>6. Triggers &mdash; Invent&aacute;rio (3+1) vs DB (6)</h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Tabela</th><th>Trigger</th><th>Timing</th><th>Event</th><th>Fun&ccedil;&atilde;o</th><th>No Inv?</th></tr></thead>
+  <tbody>
+    <tr><td>magazines</td><td>trg_magazines_on_publish</td><td>BEFORE</td><td>INSERT/UPDATE</td><td>tg_magazines_on_publish()</td><td>Sim</td></tr>
+    <tr><td>magazines</td><td>trg_magazines_updated_at</td><td>BEFORE</td><td>UPDATE</td><td>update_updated_at_column()</td><td>Sim</td></tr>
+    <tr><td>magazine_items</td><td>trg_magazine_items_updated_at</td><td>BEFORE</td><td>UPDATE</td><td>update_updated_at_column()</td><td>Sim</td></tr>
+    <tr><td>magazine_reader_state</td><td>trg_reader_state_validate</td><td>BEFORE</td><td>INSERT/UPDATE</td><td>tg_reader_state_validate()</td><td>Sim</td></tr>
+    <tr><td>magazine_reader_state</td><td>trg_reader_state_updated_at</td><td>BEFORE</td><td>UPDATE</td><td>update_updated_at_column()</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td>magazine_templates</td><td>trg_magazine_templates_updated_at</td><td>BEFORE</td><td>UPDATE</td><td>update_updated_at_column()</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>7. Fun&ccedil;&otilde;es PG &mdash; Invent&aacute;rio (2) vs DB (9)</h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Fun&ccedil;&atilde;o</th><th>Argumentos</th><th>Retorno</th><th>Security</th><th>No Inv?</th></tr></thead>
+  <tbody>
+    <tr><td><code>tg_magazines_on_publish</code></td><td>&mdash;</td><td>trigger</td><td>DEFINER</td><td>Sim</td></tr>
+    <tr><td><code>tg_reader_state_validate</code></td><td>&mdash;</td><td>trigger</td><td>DEFINER</td><td>Sim</td></tr>
+    <tr><td><code>record_public_token_failure</code></td><td>6x text</td><td>void</td><td>DEFINER</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td><code>magazine_rollup_view_counts</code></td><td>&mdash;</td><td>integer</td><td>DEFINER</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td><code>magazine_cleanup_all</code></td><td>&mdash;</td><td>TABLE(step,rows)</td><td>DEFINER</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td><code>magazine_cleanup_view_events</code></td><td>_ttl_days=180</td><td>integer</td><td>DEFINER</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td><code>magazine_cleanup_orphan_state</code></td><td>_ttl_days=180</td><td>integer</td><td>DEFINER</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td><code>magazine_auto_archive_stale_drafts</code></td><td>_ttl_days=365</td><td>integer</td><td>DEFINER</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+    <tr><td><code>magazine_ensure_view_event_partitions</code></td><td>_months_ahead=3</td><td>integer</td><td>DEFINER</td><td><span class="badge badge-warn">N&atilde;o</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>8. Cron Jobs &mdash; Invent&aacute;rio (0) vs DB (3)</h2>
+
+<div class="finding border-l-warn">
+  <div class="finding-title"><span class="badge badge-warn">Alerta</span> 3 cron jobs ativos n&atilde;o documentados</div>
+</div>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Job</th><th>Schedule</th><th>Comando</th><th>Ativo</th></tr></thead>
+  <tbody>
+    <tr><td><code>magazine-view-rollup-hourly</code></td><td>5 * * * *</td><td>magazine_rollup_view_counts()</td><td>Sim</td></tr>
+    <tr><td><code>magazine-cleanup-nightly</code></td><td>15 3 * * *</td><td>magazine_cleanup_all()</td><td>Sim</td></tr>
+    <tr><td><code>magazine-partition-maintenance</code></td><td>0 4 * * *</td><td>magazine_ensure_view_event_partitions(3)</td><td>Sim</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>9. Edge Functions &mdash; Invent&aacute;rio (5) vs Deploy (5)</h2>
+
+<p>Este &eacute; o &uacute;nico item que bate perfeitamente. Todas as 5 edge functions documentadas est&atilde;o <code>ACTIVE</code> no deploy.</p>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Slug</th><th>verify_jwt</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td><code>magazine-import-local</code></td><td>true</td><td><span class="badge badge-ok">Active</span></td></tr>
+    <tr><td><code>magazine-public-react</code></td><td>false</td><td><span class="badge badge-ok">Active</span></td></tr>
+    <tr><td><code>magazine-public-view</code></td><td>false</td><td><span class="badge badge-ok">Active</span></td></tr>
+    <tr><td><code>magazine-reader-state-read</code></td><td>false</td><td><span class="badge badge-ok">Active</span></td></tr>
+    <tr><td><code>magazine-reader-state-write</code></td><td>false</td><td><span class="badge badge-ok">Active</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>10. Enums</h2>
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Enum</th><th>Valores</th></tr></thead>
+  <tbody>
+    <tr><td><code>magazine_status</code></td><td>draft, published, archived</td></tr>
+    <tr><td><code>magazine_reaction_kind</code></td><td>like, love, fire, idea</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>11. Draft Migrations &mdash; Status</h2>
+
+<div class="finding border-l-warn">
+  <div class="finding-title"><span class="badge badge-warn">Alerta</span> Migrations draft est&atilde;o obsoletas</div>
+</div>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Arquivo</th><th>Prop&oacute;sito</th><th>Status real</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><code>2026-07-12_magazines.sql</code></td>
+      <td>Tabelas core</td>
+      <td><span class="badge badge-warn">Stale</span> &mdash; usa colunas <code>branding_*</code> separadas em vez de JSONB; falta <code>deleted_at</code>, <code>view_count</code>, <code>archived_at</code></td>
+    </tr>
+    <tr>
+      <td><code>2026-07-12_magazine_reader_state.sql</code></td>
+      <td>Reader state</td>
+      <td><span class="badge badge-critical">Incompat&iacute;vel</span> &mdash; usa <code>magazine_token</code> mas DB/edge functions usam <code>magazine_token_hash</code></td>
+    </tr>
+    <tr>
+      <td><code>2026-07-12_magazine_items_unique_product.sql</code></td>
+      <td>UNIQUE constraint</td>
+      <td><span class="badge badge-ok">J&aacute; aplicada</span> &mdash; &iacute;ndice <code>magazine_items_unique_product</code> existe</td>
+    </tr>
+    <tr>
+      <td><code>2026-07-15_magazine_public_token_trigger.sql</code></td>
+      <td>Publish trigger</td>
+      <td><span class="badge badge-ok">J&aacute; aplicada</span> &mdash; trigger <code>trg_magazines_on_publish</code> existe</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>12. Recomenda&ccedil;&otilde;es</h2>
+
+<div class="flex-col gap-sm">
+
+<div class="finding border-l-critical">
+  <div class="finding-title"><span class="badge badge-critical">P1</span> Remover refer&ecirc;ncias a <code>pdf_url</code></div>
+  <p>Remover <code>pdf_url</code> de <code>MagazineRow</code> e todos os mapeamentos em <code>magazineService.ts</code>. Se a feature de PDF for necess&aacute;ria, adicionar a coluna ao DB antes.</p>
+</div>
+
+<div class="finding border-l-critical">
+  <div class="finding-title"><span class="badge badge-critical">P1</span> Corrigir <code>magazine-guard.ts</code></div>
+  <p>Alterar <code>branding.primaryColor</code> para <code>branding.colors?.primary</code> para alinhar com o schema real do DB.</p>
+</div>
+
+<div class="finding border-l-critical">
+  <div class="finding-title"><span class="badge badge-critical">P1</span> Reconfigurar MCP Self-Hosted</div>
+  <p>Apontar o conector <code>SUPABASE_SELF_HOSTED_-_MCP</code> para o projeto Gold <code>doufsxqlfjyuvxuezpln</code>, ou documentar que ele aponta para outro banco.</p>
+</div>
+
+<div class="finding border-l-warn">
+  <div class="finding-title"><span class="badge badge-warn">P2</span> Atualizar invent&aacute;rio</div>
+  <p>O documento de invent&aacute;rio documenta apenas 4 de 8 tabelas, 7 de 42 &iacute;ndices, 7 de 14 policies, 0 de 3 crons, 2 de 9 fun&ccedil;&otilde;es. Regenerar a partir do DB real.</p>
+</div>
+
+<div class="finding border-l-warn">
+  <div class="finding-title"><span class="badge badge-warn">P2</span> Limpar draft migrations</div>
+  <p>Arquivar os 2 drafts j&aacute; aplicados e marcar os 2 restantes como STALE/INCOMPAT&Iacute;VEL.</p>
+</div>
+
+<div class="finding border-l-info">
+  <div class="finding-title"><span class="badge badge-info">P3</span> Adicionar tabelas magazine ao <code>types.ts</code></div>
+  <p>Atualmente o c&oacute;digo usa <code>untypedFrom&lt;T&gt;()</code> para todas as tabelas magazine. Regenerar types ou adicionar manualmente para ter type-safety.</p>
+</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<h2>Ap&ecirc;ndice &mdash; Contagem Final</h2>
+
+<div class="tbl-wrap">
+<table>
+  <thead><tr><th>Categoria</th><th>Invent&aacute;rio</th><th>DB Real</th><th>Delta</th></tr></thead>
+  <tbody>
+    <tr><td>Tabelas (sem parti&ccedil;&otilde;es)</td><td>4</td><td>8</td><td style="color:var(--critical)">+4</td></tr>
+    <tr><td>Parti&ccedil;&otilde;es</td><td>0</td><td>5</td><td style="color:var(--warn)">+5</td></tr>
+    <tr><td>&Iacute;ndices (l&oacute;gicos)</td><td>7</td><td>28</td><td style="color:var(--warn)">+21</td></tr>
+    <tr><td>RLS Policies</td><td>7</td><td>14</td><td style="color:var(--warn)">+7</td></tr>
+    <tr><td>Triggers</td><td>4</td><td>6</td><td>+2</td></tr>
+    <tr><td>Fun&ccedil;&otilde;es PG</td><td>2</td><td>9</td><td style="color:var(--warn)">+7</td></tr>
+    <tr><td>Cron Jobs</td><td>0</td><td>3</td><td style="color:var(--warn)">+3</td></tr>
+    <tr><td>Edge Functions</td><td>5</td><td>5</td><td style="color:var(--ok)">0</td></tr>
+    <tr><td>Enums</td><td>2</td><td>2</td><td style="color:var(--ok)">0</td></tr>
+  </tbody>
+</table>
+</div>
