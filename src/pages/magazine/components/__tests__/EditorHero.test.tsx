@@ -102,7 +102,7 @@ describe('EditorHero — sem mini preview', () => {
       screen.getByRole('button', { name: /Trocar template da revista/i }),
     );
 
-    const group = await screen.findByRole('radiogroup', {
+    const _group = await screen.findByRole('radiogroup', {
       name: /Escolher template/i,
     });
 
@@ -153,7 +153,7 @@ describe('EditorHero — sem mini preview', () => {
     trigger.focus();
     await user.keyboard('{Enter}');
 
-    const group = await screen.findByRole('radiogroup', {
+    const _group = await screen.findByRole('radiogroup', {
       name: /Escolher template/i,
     });
 
