@@ -37,7 +37,10 @@ interface State {
 }
 
 export class MagazineErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false, error: null, isHooksViolation: false };
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, error: null, isHooksViolation: false };
+  }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     const isHooksViolation =
