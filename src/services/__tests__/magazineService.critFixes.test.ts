@@ -260,6 +260,24 @@ describe('magazineService.removeItem — MED-5 error returns null', () => {
 });
 
 // ---------------------------------------------------------------------------
+// MED-8 — addProducts insert error returns null
+// ---------------------------------------------------------------------------
+
+describe('magazineService.addProducts — MED-8 insert error returns null', () => {
+  it('returns null on DB insert error (not current magazine implying false success)', async () => {
+    simulateItemInsertError = true;
+    const { magazineService } = await import('../magazineService');
+
+    const newProduct = { id: 'p99', name: 'P99', sku: 'S99', price: 5, shortDescription: '', description: null, image_url: null, images: [], colors: [], category_name: null, category_id: null, materials: [], hasPersonalization: null };
+    const result = await magazineService.addProducts('mag_1', [newProduct as Parameters<typeof magazineService.addProducts>[1][0]]);
+
+    // BEFORE fix: returned `current` (the fetched magazine) — misleadingly implies success
+    // AFTER fix:  returns null on insert error
+    expect(result).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // MED-14 — unpublish clears public_token
 // ---------------------------------------------------------------------------
 

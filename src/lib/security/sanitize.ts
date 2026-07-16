@@ -19,10 +19,23 @@ const DANGEROUS_PROTOCOLS = /^(javascript|data|vbscript|file|blob):/i;
  * @returns Safe URL string, or null if dangerous
  */
 // Private/loopback/link-local hostname patterns blocked to prevent SSRF.
-// Covers IPv4 private ranges, IPv6 loopback/link-local, and common internal TLDs.
+// Covers IPv4 private ranges, IPv6 loopback/link-local, IPv4-mapped IPv6, and internal TLDs.
 const SSRF_BLOCKED_HOSTNAME = (hostname: string): boolean => {
   // Strip IPv6 brackets: [::1] → ::1
   const h = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+
+  // IPv4-mapped IPv6: ::ffff:xxxx:xxxx — WHATWG URL parser normalises all forms
+  // (mixed notation ::ffff:127.0.0.1, full 0:0:0:0:0:ffff:7f00:1) to this compact form.
+  // The last two 16-bit groups encode the IPv4 address: ::ffff:hi:lo → hi.lo IPv4.
+  // Example: ::ffff:7f00:1 → 127.0.0.1, ::ffff:a9fe:a9fe → 169.254.169.254 (AWS metadata)
+  const ipv4Mapped = h.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (ipv4Mapped) {
+    const hi = parseInt(ipv4Mapped[1], 16);
+    const lo = parseInt(ipv4Mapped[2], 16);
+    const derivedIpv4 = `${hi >> 8}.${hi & 0xff}.${lo >> 8}.${lo & 0xff}`;
+    if (SSRF_BLOCKED_HOSTNAME(derivedIpv4)) return true;
+  }
+
   return (
     h === 'localhost' ||
     h === '0.0.0.0' ||
