@@ -20,9 +20,7 @@ interface WebhookPayload {
   metadata?: Record<string, unknown>;
 }
 
-const corsHeaders = { 'Access-Control-Allow-Origin': '*' };
-
-// SEC-WHS (2026-06-18): verificação OPT-IN de assinatura HMAC-SHA256.
+// SEC-WHS (2026-06-18): verificação OBRIGATÓRIA de assinatura HMAC-SHA256.
 // Threat model: este endpoint é público (verify_jwt=false) e recebe webhooks de
 // bitrix24/n8n/evolution-api/zapier/make. Sem assinatura, qualquer um que alcance
 // a URL pode injetar eventos forjados em `webhook_events`.
@@ -121,9 +119,17 @@ Deno.serve(async (req) => {
     );
   }
 
-  // SEC-WHS: enforce de assinatura SOMENTE quando o segredo está configurado (opt-in).
-  const signingSecret = Deno.env.get('WEBHOOK_INBOUND_SIGNING_SECRET') || '';
-  if (signingSecret && !(isInternal && isServiceRole)) {
+  // SEC-WHS: HMAC fail-closed — rejeita qualquer chamada não-service-role
+  // quando WEBHOOK_INBOUND_SIGNING_SECRET não está configurado no ambiente.
+  // Isso garante que o endpoint nunca aceita payloads não-verificados em produção.
+  const signingSecret = Deno.env.get('WEBHOOK_INBOUND_SIGNING_SECRET') ?? '';
+  if (!(isInternal && isServiceRole)) {
+    if (!signingSecret) {
+      return new Response(
+        JSON.stringify({ error: 'webhook_not_configured', message: 'WEBHOOK_INBOUND_SIGNING_SECRET must be set' }),
+        { status: 503, headers: { ...cors, 'Content-Type': 'application/json' } },
+      );
+    }
     const provided = req.headers.get('X-Webhook-Signature')
       || req.headers.get('x-webhook-signature')
       || '';

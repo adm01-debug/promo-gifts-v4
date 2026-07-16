@@ -31,14 +31,19 @@ const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf8'));
 const baselineCounts = baseline.counts ?? {};
 
 function countAnyInSrc() {
-  const patterns = ['as any', ': any'];
+  // Word-boundary patterns prevent false-positives like `: anyErr` or `anyVariable`.
+  // Use grep -P (Perl-compatible) for \b support; fall back to -E with lookahead.
+  const patterns = [
+    String.raw`\bas\s+any\b`,
+    String.raw`:\s*any\b`,
+  ];
   const counts = {};
 
   for (const pattern of patterns) {
     let output = '';
     try {
       output = execSync(
-        `grep -rn "${pattern}" src/ --include="*.ts" --include="*.tsx"`,
+        `grep -rn -P "${pattern}" src/ --include="*.ts" --include="*.tsx"`,
         { encoding: 'utf8', cwd: ROOT },
       );
     } catch (e) {
