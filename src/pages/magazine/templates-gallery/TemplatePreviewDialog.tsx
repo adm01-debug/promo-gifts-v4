@@ -44,7 +44,7 @@ function useResponsiveScale(open: boolean) {
 }
 
 export function TemplatePreviewDialog({ entry, onOpenChange, onUse, useLabel }: Props) {
-  const open = entry != null;
+  const open = entry !== null;
   const scale = useResponsiveScale(open);
 
   const magazine = useMemo(() => (entry ? buildMockMagazine(entry.id) : null), [entry]);
@@ -82,11 +82,7 @@ export function TemplatePreviewDialog({ entry, onOpenChange, onUse, useLabel }: 
                 <span className="text-xs text-muted-foreground">{entry.description}</span>
               </div>
             </div>
-            <Button
-              size="sm"
-              onClick={() => onUse(entry.id)}
-              data-testid="template-preview-use"
-            >
+            <Button size="sm" onClick={() => onUse(entry.id)} data-testid="template-preview-use">
               <Sparkles className="mr-1.5 h-4 w-4" aria-hidden />
               {useLabel}
             </Button>

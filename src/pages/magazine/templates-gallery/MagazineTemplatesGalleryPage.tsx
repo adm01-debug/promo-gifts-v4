@@ -15,15 +15,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
-import {
-  listTemplates,
-  type TemplateEntry,
-} from '../components/templates/TemplateRegistry';
+import { listTemplates, type TemplateEntry } from '../components/templates/TemplateRegistry';
 import type { MagazineTemplateFamily } from '@/types/magazine';
 import { TemplateCard } from './TemplateCard';
 import { TemplatePreviewDialog } from './TemplatePreviewDialog';
 
-type FamilyFilter = 'all' | MagazineTemplateFamily;
+type FamilyFilter = MagazineTemplateFamily | 'all';
 
 const FAMILY_TABS: Array<{ id: FamilyFilter; label: string }> = [
   { id: 'all', label: 'Todos' },
@@ -48,7 +45,7 @@ export default function MagazineTemplatesGalleryPage() {
   }, [family]);
 
   const previewEntry = useMemo(
-    () => (previewId ? listTemplates().find((t) => t.id === previewId) ?? null : null),
+    () => (previewId ? (listTemplates().find((t) => t.id === previewId) ?? null) : null),
     [previewId],
   );
 
@@ -61,7 +58,8 @@ export default function MagazineTemplatesGalleryPage() {
       return;
     }
     toast.message('Vamos criar sua revista', {
-      description: 'Abra o Magazine e crie uma nova revista — este template estará disponível na etapa "Design".',
+      description:
+        'Abra o Magazine e crie uma nova revista — este template estará disponível na etapa "Design".',
     });
     navigate('/magazine');
   };
@@ -89,8 +87,8 @@ export default function MagazineTemplatesGalleryPage() {
                 Templates de Revista
               </h1>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                Explore os 12 designs disponíveis com preview real. Escolha o que
-                melhor conta a história da sua marca.
+                Explore os 12 designs disponíveis com preview real. Escolha o que melhor conta a
+                história da sua marca.
               </p>
             </div>
           </div>
