@@ -2907,6 +2907,523 @@ export type Database = {
         }
         Relationships: []
       }
+      magazine_items: {
+        Row: {
+          created_at: string
+          id: string
+          magazine_id: string
+          overrides: Json
+          page_number: number | null
+          position: number
+          product_id: string
+          product_snapshot: Json
+          updated_at: string
+          variant_color_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          magazine_id: string
+          overrides?: Json
+          page_number?: number | null
+          position?: number
+          product_id: string
+          product_snapshot: Json
+          updated_at?: string
+          variant_color_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          magazine_id?: string
+          overrides?: Json
+          page_number?: number | null
+          position?: number
+          product_id?: string
+          product_snapshot?: Json
+          updated_at?: string
+          variant_color_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_items_magazine_id_fkey"
+            columns: ["magazine_id"]
+            isOneToOne: false
+            referencedRelation: "magazines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      magazine_public_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string
+          item_id: string | null
+          kind: Database["public"]["Enums"]["magazine_reaction_kind"]
+          magazine_id: string
+          page_index: number | null
+          viewer_fingerprint: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash: string
+          item_id?: string | null
+          kind: Database["public"]["Enums"]["magazine_reaction_kind"]
+          magazine_id: string
+          page_index?: number | null
+          viewer_fingerprint: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          item_id?: string | null
+          kind?: Database["public"]["Enums"]["magazine_reaction_kind"]
+          magazine_id?: string
+          page_index?: number | null
+          viewer_fingerprint?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_public_reactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "magazine_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "magazine_public_reactions_magazine_id_fkey"
+            columns: ["magazine_id"]
+            isOneToOne: false
+            referencedRelation: "magazines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      magazine_public_view_events: {
+        Row: {
+          id: number
+          ip_hash: string
+          magazine_id: string
+          page_index: number | null
+          referer_host: string | null
+          session_id: string | null
+          token_hash: string
+          user_agent_hash: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: number
+          ip_hash: string
+          magazine_id: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: number
+          ip_hash?: string
+          magazine_id?: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash?: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_public_view_events_magazine_id_fkey"
+            columns: ["magazine_id"]
+            isOneToOne: false
+            referencedRelation: "magazines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      magazine_public_view_events_2026_07: {
+        Row: {
+          id: number
+          ip_hash: string
+          magazine_id: string
+          page_index: number | null
+          referer_host: string | null
+          session_id: string | null
+          token_hash: string
+          user_agent_hash: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: number
+          ip_hash: string
+          magazine_id: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: number
+          ip_hash?: string
+          magazine_id?: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash?: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Relationships: []
+      }
+      magazine_public_view_events_2026_08: {
+        Row: {
+          id: number
+          ip_hash: string
+          magazine_id: string
+          page_index: number | null
+          referer_host: string | null
+          session_id: string | null
+          token_hash: string
+          user_agent_hash: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: number
+          ip_hash: string
+          magazine_id: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: number
+          ip_hash?: string
+          magazine_id?: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash?: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Relationships: []
+      }
+      magazine_public_view_events_2026_09: {
+        Row: {
+          id: number
+          ip_hash: string
+          magazine_id: string
+          page_index: number | null
+          referer_host: string | null
+          session_id: string | null
+          token_hash: string
+          user_agent_hash: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: number
+          ip_hash: string
+          magazine_id: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: number
+          ip_hash?: string
+          magazine_id?: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash?: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Relationships: []
+      }
+      magazine_public_view_events_2026_10: {
+        Row: {
+          id: number
+          ip_hash: string
+          magazine_id: string
+          page_index: number | null
+          referer_host: string | null
+          session_id: string | null
+          token_hash: string
+          user_agent_hash: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: number
+          ip_hash: string
+          magazine_id: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: number
+          ip_hash?: string
+          magazine_id?: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash?: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Relationships: []
+      }
+      magazine_public_view_events_default: {
+        Row: {
+          id: number
+          ip_hash: string
+          magazine_id: string
+          page_index: number | null
+          referer_host: string | null
+          session_id: string | null
+          token_hash: string
+          user_agent_hash: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: number
+          ip_hash: string
+          magazine_id: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: number
+          ip_hash?: string
+          magazine_id?: string
+          page_index?: number | null
+          referer_host?: string | null
+          session_id?: string | null
+          token_hash?: string
+          user_agent_hash?: string | null
+          viewed_at?: string
+        }
+        Relationships: []
+      }
+      magazine_reader_state: {
+        Row: {
+          bookmarks: number[]
+          created_at: string
+          id: string
+          last_page_index: number
+          magazine_token_hash: string
+          updated_at: string
+          user_id: string | null
+          viewer_fingerprint: string
+        }
+        Insert: {
+          bookmarks?: number[]
+          created_at?: string
+          id?: string
+          last_page_index?: number
+          magazine_token_hash: string
+          updated_at?: string
+          user_id?: string | null
+          viewer_fingerprint: string
+        }
+        Update: {
+          bookmarks?: number[]
+          created_at?: string
+          id?: string
+          last_page_index?: number
+          magazine_token_hash?: string
+          updated_at?: string
+          user_id?: string | null
+          viewer_fingerprint?: string
+        }
+        Relationships: []
+      }
+      magazine_templates: {
+        Row: {
+          branding: Json
+          content_settings: Json
+          created_at: string
+          id: string
+          name: string
+          organization_id: string | null
+          owner_id: string
+          shared_in_org: boolean
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          branding?: Json
+          content_settings?: Json
+          created_at?: string
+          id?: string
+          name: string
+          organization_id?: string | null
+          owner_id: string
+          shared_in_org?: boolean
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          branding?: Json
+          content_settings?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string | null
+          owner_id?: string
+          shared_in_org?: boolean
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_templates_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "magazine_templates_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "magazine_templates_catalog"
+            referencedColumns: ["template_id"]
+          },
+        ]
+      }
+      magazine_templates_catalog: {
+        Row: {
+          family: string
+          is_active: boolean
+          products_per_page: number
+          template_id: string
+        }
+        Insert: {
+          family: string
+          is_active?: boolean
+          products_per_page: number
+          template_id: string
+        }
+        Update: {
+          family?: string
+          is_active?: boolean
+          products_per_page?: number
+          template_id?: string
+        }
+        Relationships: []
+      }
+      magazine_view_rollup_watermark: {
+        Row: {
+          id: boolean
+          last_rolled_at: string
+        }
+        Insert: {
+          id?: boolean
+          last_rolled_at?: string
+        }
+        Update: {
+          id?: boolean
+          last_rolled_at?: string
+        }
+        Relationships: []
+      }
+      magazines: {
+        Row: {
+          archived_at: string | null
+          branding: Json
+          content_settings: Json
+          created_at: string
+          deleted_at: string | null
+          id: string
+          organization_id: string | null
+          owner_id: string
+          page_order: Json | null
+          public_token: string | null
+          published_at: string | null
+          status: Database["public"]["Enums"]["magazine_status"]
+          subtitle: string
+          template_id: string
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          archived_at?: string | null
+          branding?: Json
+          content_settings?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          organization_id?: string | null
+          owner_id: string
+          page_order?: Json | null
+          public_token?: string | null
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["magazine_status"]
+          subtitle?: string
+          template_id?: string
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          archived_at?: string | null
+          branding?: Json
+          content_settings?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          organization_id?: string | null
+          owner_id?: string
+          page_order?: Json | null
+          public_token?: string | null
+          published_at?: string | null
+          status?: Database["public"]["Enums"]["magazine_status"]
+          subtitle?: string
+          template_id?: string
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazines_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "magazines_template_id_fk"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "magazine_templates_catalog"
+            referencedColumns: ["template_id"]
+          },
+        ]
+      }
       magic_up_brand_kits: {
         Row: {
           client_id: string | null
@@ -8025,6 +8542,8 @@ export type Database = {
         | "system"
         | "tool_call"
         | "tool_result"
+      magazine_reaction_kind: "like" | "love" | "fire" | "idea"
+      magazine_status: "draft" | "published" | "archived"
       org_role: "owner" | "admin" | "member"
       role_migration_item_status:
         | "pending"
@@ -8192,6 +8711,8 @@ export const Constants = {
         "tool_call",
         "tool_result",
       ],
+      magazine_reaction_kind: ["like", "love", "fire", "idea"],
+      magazine_status: ["draft", "published", "archived"],
       org_role: ["owner", "admin", "member"],
       role_migration_item_status: [
         "pending",
