@@ -26,7 +26,7 @@ import { TemplatePreviewDialog } from './TemplatePreviewDialog';
 import { parseReturnTo } from './safeReturn';
 import { useFavoriteTemplate } from './useFavoriteTemplate';
 
-type FamilyFilter = 'all' | MagazineTemplateFamily;
+type FamilyFilter = MagazineTemplateFamily | 'all';
 
 const FAMILY_TABS: Array<{ id: FamilyFilter; label: string }> = [
   { id: 'all', label: 'Todos' },
@@ -36,7 +36,7 @@ const FAMILY_TABS: Array<{ id: FamilyFilter; label: string }> = [
 ];
 
 function isValidTemplateId(id: string): id is TemplateEntry['id'] {
-  return Object.prototype.hasOwnProperty.call(TEMPLATE_REGISTRY, id);
+  return Object.hasOwn(TEMPLATE_REGISTRY, id);
 }
 
 export default function MagazineTemplatesGalleryPage() {
