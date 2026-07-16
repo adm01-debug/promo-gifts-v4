@@ -153,23 +153,28 @@ export default function MagazineTemplatesGalleryPage() {
         </div>
 
         {/* Grid de cards */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <main
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          aria-live="polite"
+          aria-label={`${templates.length} templates disponíveis`}
+        >
           {templates.map((entry) => (
             <TemplateCard
               key={entry.id}
               entry={entry}
-              onPreview={(id) => setPreviewId(id)}
+              onPreview={handlePreview}
               onUse={handleUse}
               useLabel={useLabel}
+              isFavorite={entry.id === favoriteId}
+              onToggleFavorite={toggleFavorite}
             />
           ))}
-        </div>
-
-        {templates.length === 0 && (
-          <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
-            Nenhum template nesta categoria.
-          </div>
-        )}
+          {templates.length === 0 && (
+            <div className="col-span-full rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
+              Nenhum template nesta categoria.
+            </div>
+          )}
+        </main>
       </div>
 
       <TemplatePreviewDialog
