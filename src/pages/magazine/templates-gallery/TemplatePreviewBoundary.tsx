@@ -20,7 +20,10 @@ interface State {
 }
 
 export class TemplatePreviewBoundary extends Component<Props, State> {
-  state: State = { hasError: false, retryKey: 0 };
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false, retryKey: 0 };
+  }
 
   static getDerivedStateFromError(): Partial<State> {
     return { hasError: true };
@@ -32,7 +35,7 @@ export class TemplatePreviewBoundary extends Component<Props, State> {
     }
   }
 
-  private handleRetry = (): void => {
+  private readonly handleRetry = (): void => {
     this.setState((s) => ({ hasError: false, retryKey: s.retryKey + 1 }));
   };
 
