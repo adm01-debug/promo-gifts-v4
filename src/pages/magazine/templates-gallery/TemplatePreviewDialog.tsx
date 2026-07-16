@@ -5,16 +5,15 @@
  * para caber na viewport, mantendo proporção A4.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { TemplateEntry } from '../components/templates/TemplateRegistry';
 import { buildMockMagazine, buildMockPage } from './mockMagazine';
-
-const PAGE_W = 1920;
-const PAGE_H = 2716;
+import { PAGE_H, PAGE_W } from './constants';
+import { TemplatePreviewBoundary } from './TemplatePreviewBoundary';
 
 interface Props {
   entry: TemplateEntry | null;
