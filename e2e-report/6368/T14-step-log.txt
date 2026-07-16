@@ -1,0 +1,71 @@
+================================================================
+🔍 SMOKE GATE DIAGNOSTIC (T14 UPDATE 13)
+================================================================
+Run:        #6368 (id 29503852869)
+SHA:        8095271a89c70b97a2b9d1ffe137b7331d6f2278
+Event:      push
+Outcome:    failure
+Conclusion: success
+Marker:     absent (smoke exit != 0)
+
+--- Environment ---
+  pwd: /home/runner/work/promo-gifts-v4/promo-gifts-v4
+  GH_TOKEN length: 377
+  GITHUB_TOKEN length: 377
+  which gh: /usr/bin/gh
+  which curl: /usr/bin/curl
+
+--- ls -la playwright-report/ ---
+total 152
+drwxr-xr-x  2 runner runner   4096 Jul 16 13:50 .
+drwxr-xr-x 26 runner runner   4096 Jul 16 13:50 ..
+-rw-r--r--  1 runner runner    568 Jul 16 13:50 T14-step-log.txt
+-rw-r--r--  1 runner runner 141082 Jul 16 13:50 results.json
+
+--- find playwright-report -type f ---
+playwright-report/T14-step-log.txt
+playwright-report/results.json
+
+--- head -100 smoke-summary.md ---
+================================================================
+
+=== PROBE A: curl direct heartbeat ===
+Heartbeat content (cat):
+# T14 heartbeat
+
+Run #6368 at 2026-07-16T13:50:55Z
+SHA: 8095271a89c70b97a2b9d1ffe137b7331d6f2278
+---
+Base64 length: 132
+GET HTTP: 404
+GET response (first 200 chars): {
+  "message": "Not Found",
+  "documentation_url": "https://docs.github.com/rest/repos/contents#get-repository-content",
+  "status": "404"
+}
+Existing SHA: ''
+PUT body size: 193 bytes
+PUT HTTP: 409
+PUT response (first 500 chars): {
+  "message": "Repository rule violations found\n\nChanges must be made through a pull request.\n\n",
+  "metadata": {
+
+  },
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "409"
+}
+✗ Heartbeat FAILED (HTTP 409)
+
+=== PROBE B: Diagnostic file commits via curl ===
+  [playwright-report/results.json] exists, size=141082 bytes
+    existing SHA: '' (GET HTTP 404)
+/home/runner/work/_temp/e2a72feb-ae65-43a3-984d-dcde94404bd3.sh: line 125: /usr/bin/python3: Argument list too long
+    ✗ failed (HTTP 400): {
+  "message": "Body should be a JSON object",
+  "documentation_url": "https://docs.github.com/rest/repos/contents#create-or-update-file-contents",
+  "status": "400"
+}
+  [playwright-report/smoke-summary.md] does not exist locally — skipped
+  [playwright-report/smoke-summary.json] does not exist locally — skipped
+
+Done.
