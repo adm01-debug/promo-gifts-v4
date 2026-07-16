@@ -40,15 +40,20 @@ export function validateBranding(
     }
   }
 
-  // primaryColor: must be valid CSS hex color
-  if (branding.primaryColor !== undefined) {
+  // colors: each must be a valid CSS hex color
+  if (branding.colors !== undefined) {
     const hexPattern = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-    if (branding.primaryColor && !hexPattern.test(branding.primaryColor)) {
-      errors.push('Cor principal deve ser um hex válido (ex: #FF0000)');
-      sanitized.primaryColor = '#000000'; // safe fallback
-    } else {
-      sanitized.primaryColor = branding.primaryColor;
+    const validatedColors = { ...branding.colors };
+
+    for (const key of ['primary', 'secondary', 'text'] as const) {
+      const value = branding.colors[key];
+      if (value && !hexPattern.test(value)) {
+        errors.push(`Cor '${key}' deve ser um hex válido (ex: #FF0000)`);
+        validatedColors[key] = '#000000';
+      }
     }
+
+    sanitized.colors = validatedColors;
   }
 
   return {

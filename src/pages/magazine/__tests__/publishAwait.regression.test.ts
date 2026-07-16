@@ -19,7 +19,7 @@ const BASE: Magazine = {
   title: 'Revista Pronta',
   subtitle: '',
   templateId: 'editorial-vogue',
-  branding: { ...DEFAULT_BRANDING, clientLogoUrl: null, primaryColor: '#000' },
+  branding: { ...DEFAULT_BRANDING, clientLogoUrl: null },
   content: { ...DEFAULT_MAGAZINE_CONTENT },
   items: [
     {
