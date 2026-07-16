@@ -33,6 +33,7 @@ export function parseReturnTo(raw: string | null | undefined): ParsedReturn | nu
     trimmed.startsWith('\\') ||
     trimmed.includes('://') ||
     trimmed.includes('\\') ||
+    // eslint-disable-next-line no-control-regex -- control chars são exatamente o que queremos detectar
     /[\u0000-\u001f\u007f]/.test(trimmed) ||
     /^[a-z][a-z0-9+.-]*:/i.test(trimmed) // scheme:...
   ) {
