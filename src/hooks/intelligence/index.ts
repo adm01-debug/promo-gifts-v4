@@ -27,3 +27,5 @@ export * from '@/hooks/intelligence/useVoiceAgent';
 export * from '@/hooks/intelligence/useVoiceCommandHistory';
 export * from '@/hooks/intelligence/useExpertConversations';
 export * from '@/hooks/intelligence/useSparklineSales';
+
+export * from '@/hooks/intelligence/useStockVelocityPrefetch';

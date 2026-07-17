@@ -10,6 +10,7 @@ import { InlineFilterBar } from '@/components/filters/StickyFilterBar';
 import type { Product } from '@/hooks/products';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
+import { useStockVelocityPrefetch } from '@/hooks/intelligence';
 
 interface VirtualizedProductGridProps {
   products: Product[];
@@ -103,6 +104,11 @@ function VirtualizedProductGridInner({
     [products],
   );
   const { data: colorsByProduct } = useProductsColorsBatch(idsNeedingColors);
+
+  // ANTI N+1: prefetch batch de mv_stock_velocity para todos os produtos visíveis.
+  // Popula React Query cache via setQueryData; hooks individuais nos cards usam o cache.
+  const _allProductIds = useMemo(() => products.map((p) => p.id), [products]);
+  useStockVelocityPrefetch(_allProductIds);
   const hydratedProducts = useMemo(() => {
     if (colorsByProduct.size === 0) return products;
     return products.map((p) => {
