@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
+import { useStockVelocityPrefetch } from '@/hooks/intelligence';
 
 import { logger } from '@/lib/logger';
 export interface ProductGridProps {
@@ -231,6 +232,11 @@ export const ProductGrid = memo(function ProductGrid({
     () => (hasActiveColorFilter ? products.map((p) => p.id) : []),
     [products, hasActiveColorFilter],
   );
+  // ANTI N+1: um único batch query para mv_stock_velocity em vez de 1 por card.
+  // Popula o React Query cache individual via setQueryData.
+  const _velocityPrefetch = useMemo(() => products.map((p) => p.id), [products]);
+  useStockVelocityPrefetch(_velocityPrefetch);
+
   const productMinQuantities = useMemo(
     () => new Map(products.map((p) => [p.id, p.minQuantity])),
     [products],
