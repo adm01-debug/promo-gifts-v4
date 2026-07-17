@@ -10,7 +10,7 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { useCloudStatus } from '@/hooks/ui/useCloudStatus';
+import { useCloudStatusContext } from '@/contexts/CloudStatusContext';
 import { useDevGate } from '@/hooks/admin/useDevGate';
 import { DevOnly } from '@/components/dev/DevOnly';
 import { cn } from '@/lib/utils';
@@ -49,7 +49,7 @@ const STATUS_CONFIG: Partial<Record<'degraded' | 'down' | 'warming', BannerVaria
 };
 
 const CloudStatusBannerInner = memo(() => {
-  const { status, snapshot, retry, isChecking } = useCloudStatus();
+  const { status, snapshot, retry, isChecking } = useCloudStatusContext();
   const { isAllowed } = useDevGate();
   const [showDebug, setShowDebug] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);

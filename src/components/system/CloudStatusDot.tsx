@@ -4,13 +4,13 @@
  * Pequeno ponto flutuante no canto inferior direito com tooltip.
  */
 import { memo } from 'react';
-import { useCloudStatus } from '@/hooks/ui/useCloudStatus';
+import { useCloudStatusContext } from '@/contexts/CloudStatusContext';
 import { DevOnly } from '@/components/dev/DevOnly';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const CloudStatusDotInner = memo(() => {
-  const { status } = useCloudStatus();
+  const { status } = useCloudStatusContext();
 
   // Mostra apenas em estados saudáveis — banner já cobre os demais.
   if (status !== 'healthy' && status !== 'unknown') return null;
