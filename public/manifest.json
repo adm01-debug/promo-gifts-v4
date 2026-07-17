@@ -55,13 +55,6 @@
       "type": "image/png",
       "form_factor": "wide",
       "label": "Catálogo de produtos e orçamentos — Promo Gifts"
-    },
-    {
-      "src": "/og-image.png",
-      "sizes": "1200x630",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Promo Gifts — Brindes corporativos com IA"
     }
   ],
   "shortcuts": [

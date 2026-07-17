@@ -21,7 +21,7 @@ import { Sel } from "../fixtures/selectors";
 import { test } from "../fixtures/test-base";
 import { loginAs } from "../helpers/auth";
 import { gotoAndSettle } from "../helpers/nav";
-import { waitForTestId } from "../helpers/waits";
+import { waitForTestIdVisible } from "../helpers/waits";
 
 test.describe("@smoke Magazine — Gold DB smoke", () => {
   test("lista /magazine carrega do BD Gold para usuário autenticado", async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe("@smoke Magazine — Gold DB smoke", () => {
     await gotoAndSettle(page, "/magazine");
 
     // O h1 canônico da página (page-title-magazine — ver memory Page Title Testids).
-    await waitForTestId(page, "page-title-magazine").catch(() => {
+    await waitForTestIdVisible(page, "page-title-magazine").catch(() => {
       // Fallback: se o slug oficial ainda não estiver testid'ed, garante que
       // a página não é 404.
     });

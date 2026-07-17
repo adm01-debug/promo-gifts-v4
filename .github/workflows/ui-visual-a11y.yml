@@ -27,7 +27,7 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
       - name: Vitest — ConfirmDialog (responsive + a11y + keyboard + layout)
-        run: bunx vitest run "src/components/ui/__tests__/ConfirmDialog.*.test.tsx"
+        run: bunx vitest run src/components/ui/__tests__/ConfirmDialog.*.test.tsx
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         id: playwright-cache
