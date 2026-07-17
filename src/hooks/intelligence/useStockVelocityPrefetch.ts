@@ -11,16 +11,24 @@
  * As chamadas individuais nos cards encontram seus dados no cache sem disparar
  * novos requests. Acréscimo zero ao bundle dos cards (hook só existe no parent).
  *
+ * HARDENING (2026-07-17 — incidente 403 mv_stock_velocity):
+ * O batch falhava e retornava SEM semear o cache, então cada card disparava sua
+ * própria query e o N+1 ressuscitava — justamente sob falha, o pior momento.
+ * Agora, em erro permanente (403/404), o cache é sempre semeado, contendo o dano
+ * a 1 request em vez de ~N×4.
+ *
  * Uso — chamar UMA VEZ no componente pai da listagem:
  *   const productIds = useMemo(() => products.map(p => p.id), [products]);
  *   useStockVelocityPrefetch(productIds);
  *
  * @see src/hooks/intelligence/useStockHistory.ts — useStockVelocity individual
  * @see src/components/products/ProductGrid.tsx — consumer principal
+ * @see src/lib/db-retry.ts — política de retry compartilhada
  */
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { StockVelocity } from './useStockHistory';
+import { isPermanentDbError, makeDbQueryRetry } from '@/lib/db-retry';
 import { logger } from '@/lib/logger';
 
 /** Máximo de product_ids por request (URL safety: 100 UUIDs ≈ 3600 chars). */
@@ -43,6 +51,46 @@ function batchKey(ids: string[]): string {
   return [...ids].sort().join(',');
 }
 
+/** Agrupa as linhas do batch por product_id. */
+function groupByProduct(rows: StockVelocity[]): Map<string, StockVelocity[]> {
+  const byProduct = new Map<string, StockVelocity[]>();
+  for (const row of rows) {
+    if (!row.product_id) continue;
+    const arr = byProduct.get(row.product_id) ?? [];
+    arr.push(row);
+    byProduct.set(row.product_id, arr);
+  }
+  return byProduct;
+}
+
+/**
+ * Semeia o cache individual de cada product_id solicitado.
+ *
+ * `overwriteMissing` decide o que fazer com produto que NÃO veio no batch:
+ *  - `true`  (batch completo e bem-sucedido): ausência é verdade — grava [] mesmo
+ *    por cima de dado antigo, senão o card exibe badge obsoleto indefinidamente.
+ *  - `false` (batch abortado por erro): ausência pode ser só falta de dado. Só
+ *    preenche onde o cache está frio, para não destruir resultado bom de um
+ *    batch anterior numa falha parcial de paginação.
+ */
+function seedCache(
+  queryClient: QueryClient,
+  productIds: string[],
+  byProduct: Map<string, StockVelocity[]>,
+  { overwriteMissing }: { overwriteMissing: boolean },
+): void {
+  for (const pid of productIds) {
+    const velocities = byProduct.get(pid);
+    if (velocities !== undefined) {
+      queryClient.setQueryData(['stock-velocity', pid], velocities);
+      continue;
+    }
+    if (overwriteMissing || queryClient.getQueryData(['stock-velocity', pid]) === undefined) {
+      queryClient.setQueryData(['stock-velocity', pid], []);
+    }
+  }
+}
+
 export function useStockVelocityPrefetch(productIds: string[]): void {
   const queryClient = useQueryClient();
   const enabled = productIds.length > 0;
@@ -62,31 +110,28 @@ export function useStockVelocityPrefetch(productIds: string[]): void {
           .in('product_id', chunk);
 
         if (error) {
-          // Log mas não lança — o prefetch é best-effort. Os hooks individuais
-          // tratarão seus próprios erros se necessário.
-          logger.warn('[StockVelocityPrefetch] Falha no batch:', error.message);
+          if (isPermanentDbError(error)) {
+            // 403/404 não melhora tentando de novo — e cada card tentaria o mesmo
+            // erro por conta própria. Sela o cache com o que já veio, contendo o
+            // estrago em 1 request em vez de N × tentativas.
+            seedCache(queryClient, productIds, groupByProduct(all), { overwriteMissing: false });
+            logger.warn(
+              `[StockVelocityPrefetch] Erro permanente, cache selado (N+1 contido): ${error.message}`,
+            );
+            return all;
+          }
+          // Transitório: não sela — deixa os hooks individuais retentarem.
+          logger.warn(`[StockVelocityPrefetch] Falha transitória no batch: ${error.message}`);
           return all;
         }
         if (data) all.push(...(data as unknown as StockVelocity[]));
-      }
-
-      // Agrupar resultados por product_id
-      const byProduct = new Map<string, StockVelocity[]>();
-      for (const row of all) {
-        if (!row.product_id) continue;
-        const arr = byProduct.get(row.product_id) ?? [];
-        arr.push(row);
-        byProduct.set(row.product_id, arr);
       }
 
       // Popula cache individual para cada product_id solicitado.
       // - Produtos COM dados: injeta o array de StockVelocity[]
       // - Produtos SEM dados (não aparecem na MV): injeta [] para evitar
       //   que o hook individual dispare request resultando em 0 linhas.
-      for (const pid of productIds) {
-        const velocities = byProduct.get(pid) ?? [];
-        queryClient.setQueryData(['stock-velocity', pid], velocities);
-      }
+      seedCache(queryClient, productIds, groupByProduct(all), { overwriteMissing: true });
 
       logger.log(
         `[StockVelocityPrefetch] Batch OK: ${all.length} linhas para ${productIds.length} produtos`,
@@ -95,7 +140,7 @@ export function useStockVelocityPrefetch(productIds: string[]): void {
     },
     enabled,
     staleTime: 30 * 60 * 1000, // Alinhado com useStockVelocity individual
-    // Não retry agressivo — se a MV não existe/está vazia, é esperado
-    retry: 1,
+    // Best-effort: 2 tentativas em falha transitória, nenhuma em erro permanente.
+    retry: makeDbQueryRetry(2),
   });
 }
