@@ -14,16 +14,16 @@
  *   - Executa apenas em `chromium` (viewport determinístico) para não
  *     explodir a matriz de snapshots.
  */
-import { test, expect, requireAuth } from './fixtures/test-base';
-import { gotoAndSettle } from './helpers/nav';
-import { waitForTestIdVisible } from './helpers/waits';
-import { Sel } from './fixtures/selectors';
+import { test, expect, requireAuth } from '../fixtures/test-base';
+import { gotoAndSettle } from '../helpers/nav';
+import { waitForTestIdVisible } from '../helpers/waits';
+import { Sel } from '../fixtures/selectors';
 
 const KNOWN_IDS = [
   'editorial-vogue',
-  'editorial-drop-cap',
-  'catalog-grid',
-  'corporate-clean',
+  'editorial-magazine',
+  'catalog-grid-2x3',
+  'corporate-hero',
 ] as const;
 
 test.describe('Magazine Templates Gallery — Visual @visual', () => {
