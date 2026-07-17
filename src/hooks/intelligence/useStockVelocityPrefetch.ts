@@ -66,14 +66,18 @@ function groupByProduct(rows: StockVelocity[]): Map<string, StockVelocity[]> {
 /**
  * Semeia o cache individual de cada product_id solicitado.
  *
- * Produtos sem linha no batch recebem [] apenas se o cache estiver frio — nunca
- * sobrescreve dado bom vindo de um batch anterior (ex.: falha parcial no meio da
- * paginação).
+ * `overwriteMissing` decide o que fazer com produto que NÃO veio no batch:
+ *  - `true`  (batch completo e bem-sucedido): ausência é verdade — grava [] mesmo
+ *    por cima de dado antigo, senão o card exibe badge obsoleto indefinidamente.
+ *  - `false` (batch abortado por erro): ausência pode ser só falta de dado. Só
+ *    preenche onde o cache está frio, para não destruir resultado bom de um
+ *    batch anterior numa falha parcial de paginação.
  */
 function seedCache(
   queryClient: QueryClient,
   productIds: string[],
   byProduct: Map<string, StockVelocity[]>,
+  { overwriteMissing }: { overwriteMissing: boolean },
 ): void {
   for (const pid of productIds) {
     const velocities = byProduct.get(pid);
@@ -81,7 +85,7 @@ function seedCache(
       queryClient.setQueryData(['stock-velocity', pid], velocities);
       continue;
     }
-    if (queryClient.getQueryData(['stock-velocity', pid]) === undefined) {
+    if (overwriteMissing || queryClient.getQueryData(['stock-velocity', pid]) === undefined) {
       queryClient.setQueryData(['stock-velocity', pid], []);
     }
   }
@@ -110,7 +114,7 @@ export function useStockVelocityPrefetch(productIds: string[]): void {
             // 403/404 não melhora tentando de novo — e cada card tentaria o mesmo
             // erro por conta própria. Sela o cache com o que já veio, contendo o
             // estrago em 1 request em vez de N × tentativas.
-            seedCache(queryClient, productIds, groupByProduct(all));
+            seedCache(queryClient, productIds, groupByProduct(all), { overwriteMissing: false });
             logger.warn(
               `[StockVelocityPrefetch] Erro permanente, cache selado (N+1 contido): ${error.message}`,
             );
@@ -127,7 +131,7 @@ export function useStockVelocityPrefetch(productIds: string[]): void {
       // - Produtos COM dados: injeta o array de StockVelocity[]
       // - Produtos SEM dados (não aparecem na MV): injeta [] para evitar
       //   que o hook individual dispare request resultando em 0 linhas.
-      seedCache(queryClient, productIds, groupByProduct(all));
+      seedCache(queryClient, productIds, groupByProduct(all), { overwriteMissing: true });
 
       logger.log(
         `[StockVelocityPrefetch] Batch OK: ${all.length} linhas para ${productIds.length} produtos`,
