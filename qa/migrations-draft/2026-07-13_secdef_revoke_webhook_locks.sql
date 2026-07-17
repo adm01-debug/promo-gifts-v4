@@ -1,5 +1,6 @@
 -- ============================================================================
 -- Draft (NÃO executar sem aprovação do PO — CLAUDE.md #Comportamento obrigatório)
+-- Alvo: doufsxqlfjyuvxuezpln
 -- ----------------------------------------------------------------------------
 -- Contexto
 --   supabase--linter (2026-07-13) apontou 57 findings 0028/0029 (SECURITY

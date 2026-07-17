@@ -84,9 +84,9 @@ function mvRowToSupplierReliability(row: MvSupplierReliabilityRow): SupplierReli
       }
     : null;
 
-  const band = (['high', 'medium', 'low', 'unknown'].includes(row.band)
-    ? row.band
-    : 'unknown') as ConfidenceBand;
+  const band = (
+    ['high', 'medium', 'low', 'unknown'].includes(row.band) ? row.band : 'unknown'
+  ) as ConfidenceBand;
 
   return {
     supplierId: row.supplier_id,
@@ -183,22 +183,42 @@ export interface SupplierReliabilityEvent {
   createdAt: string;
 }
 
+/** Raw row returned by get_supplier_reliability_history RPC */
+interface ReliabilityHistoryRow {
+  id: string;
+  source_id: string;
+  variant_id: string;
+  slot: number;
+  promised_date: string;
+  promised_quantity: number;
+  resolution: 'expired' | 'fulfilled';
+  actual_date: string | null;
+  actual_quantity: number | null;
+  delay_days: number | null;
+  fulfillment_ratio: string | null;
+  resolved_at: string | null;
+  created_at: string;
+}
+
 async function fetchReliabilityHistory(
   supplierId: string,
   limit = 200,
 ): Promise<SupplierReliabilityEvent[]> {
-  const { data, error } = await (supabase as unknown as { rpc: (n: string, a: any) => any }).rpc('get_supplier_reliability_history', {
+  const { data, error } = await (
+    supabase as unknown as {
+      rpc: (n: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+    }
+  ).rpc('get_supplier_reliability_history', {
     _supplier_id: supplierId,
     _limit: limit,
   });
 
   if (error) {
     logger.warn('[ReliabilityServer] get_supplier_reliability_history failed', error);
-    throw error;
+    throw error instanceof Error ? error : new Error(String(error));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ((data ?? []) as any[]).map((row) => ({
+  return ((data ?? []) as ReliabilityHistoryRow[]).map((row) => ({
     id: row.id,
     sourceId: row.source_id,
     variantId: row.variant_id,
@@ -215,10 +235,7 @@ async function fetchReliabilityHistory(
   }));
 }
 
-export function useSupplierReliabilityHistory(
-  supplierId: string | null | undefined,
-  limit = 200,
-) {
+export function useSupplierReliabilityHistory(supplierId: string | null | undefined, limit = 200) {
   return useQuery({
     queryKey: ['supplier-reliability-history', supplierId, limit],
     queryFn: () => fetchReliabilityHistory(supplierId!, limit),

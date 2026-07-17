@@ -2,6 +2,7 @@
 -- ROLLBACK — reverte 2026-07-13_secdef_revoke_webhook_locks.sql
 -- ----------------------------------------------------------------------------
 -- Draft (NÃO executar sem aprovação do PO — CLAUDE.md §Comportamento obrigatório)
+-- Alvo: doufsxqlfjyuvxuezpln
 --
 -- Contexto
 --   A migração original revogou EXECUTE de PUBLIC/anon/authenticated em três

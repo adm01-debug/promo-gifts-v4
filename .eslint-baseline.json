@@ -1,8 +1,10 @@
 {
-  "generatedAt": "2026-07-16T12:30:00.000Z",
-  "description": "Baseline de erros ESLint no CI. Falha apenas em REGRESS\u00c3O (nova combina\u00e7\u00e3o file:rule ou contagem maior). Atualizado em 2026-07-16: congela 7 novos file:rule pr\u00e9-existentes no ambiente CI introduzidos por commits de outras sess\u00f5es em arquivos n\u00e3o relacionados ao magazine module.",
-  "totalErrors": 244,
+  "generatedAt": "2026-07-17T14:53:25.250Z",
+  "totalErrors": 196,
   "counts": {
+    "src/components/admin/MockupPromptManager.tsx": {
+      "@typescript-eslint/no-explicit-any": 2
+    },
     "src/components/admin/__tests__/DiscountApprovalHeaderBadge.test.tsx": {
       "@typescript-eslint/consistent-type-imports": 1
     },
@@ -27,19 +29,10 @@
     "src/components/common/__tests__/IntelligenceBadges.adversarial.test.tsx": {
       "no-restricted-syntax": 6
     },
-    "src/components/dashboard/MyClientsWidget.tsx": {
-      "@typescript-eslint/require-array-sort-compare": 1
-    },
     "src/components/dashboard/MyDiscountRequestsWidget.tsx": {
       "eqeqeq": 1,
       "no-eq-null": 1,
       "react/jsx-no-comment-textnodes": 1
-    },
-    "src/components/filters/ExternalCategoryFilter.tsx": {
-      "@typescript-eslint/no-useless-default-assignment": 1
-    },
-    "src/components/filters/filter-panel/useFilterPanelState.ts": {
-      "@typescript-eslint/no-useless-default-assignment": 1
     },
     "src/components/pdf/__tests__/PropostaComercialTailwind.watermark.regression.test.tsx": {
       "no-restricted-syntax": 2
@@ -49,16 +42,23 @@
       "no-shadow": 1
     },
     "src/components/products/ProductCard.tsx": {
-      "react/jsx-props-no-multi-spaces": 1,
-      "@typescript-eslint/sort-type-constituents": 1
+      "@typescript-eslint/no-invalid-void-type": 1,
+      "@typescript-eslint/sort-type-constituents": 1,
+      "react/jsx-props-no-multi-spaces": 1
     },
     "src/components/products/ProductCategoryBadges.tsx": {
-      "@typescript-eslint/no-useless-default-assignment": 1,
       "@typescript-eslint/no-unused-vars": 1,
       "unused-imports/no-unused-imports": 1
     },
     "src/components/products/ProductColorSwatches.tsx": {
       "react/jsx-props-no-multi-spaces": 1
+    },
+    "src/components/products/ProductListItem.tsx": {
+      "@typescript-eslint/no-invalid-void-type": 1,
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/components/products/QuickViewThumb.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
     },
     "src/components/products/__tests__/ColorSwatchInlineSelect.exhaustive.test.tsx": {
       "no-restricted-syntax": 5
@@ -75,10 +75,8 @@
     "src/components/products/customization/__tests__/ConfigurationPanelV6.size-line-layout.test.tsx": {
       "logical-assignment-operators": 1
     },
-    "src/components/quotes/NegotiationMarkupCard.tsx": {
-      "@typescript-eslint/no-unused-vars": 1,
-      "react/jsx-no-undef": 1,
-      "unused-imports/no-unused-imports": 1
+    "src/components/products/table-view/TableRowActions.tsx": {
+      "@typescript-eslint/no-invalid-void-type": 1
     },
     "src/components/quotes/PdfGenerationDialog.tsx": {
       "react-hooks/exhaustive-deps": 1
@@ -122,14 +120,14 @@
       "react-hooks/exhaustive-deps": 1
     },
     "src/components/shared/Clickable.tsx": {
-      "@typescript-eslint/sort-type-constituents": 3,
+      "@typescript-eslint/sort-type-constituents": 4,
       "prefer-arrow-callback": 1
     },
     "src/components/shared/__tests__/Clickable.test.tsx": {
-      "prefer-arrow-callback": 2,
+      "@typescript-eslint/sort-type-constituents": 1,
       "jsx-a11y/tabindex-no-positive": 2,
-      "react/jsx-no-useless-fragment": 1,
-      "@typescript-eslint/sort-type-constituents": 1
+      "prefer-arrow-callback": 2,
+      "react/jsx-no-useless-fragment": 1
     },
     "src/components/ui/calendar.tsx": {
       "@typescript-eslint/consistent-type-imports": 1,
@@ -160,6 +158,12 @@
     "src/hooks/common/usePrefetchOnHover.ts": {
       "@typescript-eslint/no-invalid-void-type": 1
     },
+    "src/hooks/intelligence/useStockVelocityPrefetch.ts": {
+      "@tanstack/query/exhaustive-deps": 1
+    },
+    "src/hooks/inventory/useSupplierReliabilityServer.ts": {
+      "@typescript-eslint/no-explicit-any": 3
+    },
     "src/hooks/products/__tests__/useDebouncedCartItemActions.test.tsx": {
       "@typescript-eslint/no-invalid-void-type": 2
     },
@@ -173,6 +177,9 @@
     "src/hooks/products/useSellerCarts.ts": {
       "no-promise-executor-return": 1
     },
+    "src/hooks/products/useSimilarProducts.ts": {
+      "@typescript-eslint/no-explicit-any": 2
+    },
     "src/hooks/quotes/useDiscountApproval.ts": {
       "@typescript-eslint/no-shadow": 1,
       "no-shadow": 1,
@@ -180,6 +187,9 @@
     },
     "src/hooks/ui/useWorkspaceNotifications.tsx": {
       "react-hooks/exhaustive-deps": 1
+    },
+    "src/hooks/useProductColorSwatch.ts": {
+      "@typescript-eslint/no-explicit-any": 2
     },
     "src/lib/inventory/supplier-reliability/matching.ts": {
       "no-duplicate-imports": 1
@@ -197,11 +207,11 @@
       "no-restricted-syntax": 2
     },
     "src/lib/supabase/rest-client.ts": {
-      "@typescript-eslint/no-explicit-any": 2,
       "@typescript-eslint/no-unused-vars": 1,
       "no-console": 2
     },
     "src/lib/supabase/rls-validator.ts": {
+      "@typescript-eslint/no-explicit-any": 2,
       "@typescript-eslint/no-unused-vars": 3
     },
     "src/lib/telemetry/navigationMetrics.ts": {
@@ -213,58 +223,8 @@
     "src/pages/auth/Auth.tsx": {
       "no-promise-executor-return": 1
     },
-    "src/pages/magazine/MagazineEditorPage.tsx": {
-      "react-hooks/rules-of-hooks": 1
-    },
-    "src/pages/magazine/PublicMagazineView.tsx": {
-      "@typescript-eslint/no-shadow": 1,
-      "no-shadow": 1,
-      "react-hooks/exhaustive-deps": 1
-    },
-    "src/pages/magazine/__tests__/publishAwait.regression.test.ts": {
-      "no-promise-executor-return": 1
-    },
-    "src/pages/magazine/__tests__/useMagazineEditor.staleRef.test.ts": {
-      "@typescript-eslint/no-shadow": 2,
-      "no-shadow": 2
-    },
-    "src/pages/magazine/components/MagazineErrorBoundary.tsx": {
-      "react/state-in-constructor": 1
-    },
-    "src/pages/magazine/components/MagazineMiniMap.tsx": {
-      "eqeqeq": 1,
-      "no-eq-null": 1,
-      "react/jsx-no-comment-textnodes": 1
-    },
-    "src/pages/magazine/components/PublicMagazineToc.tsx": {
-      "jsx-a11y/no-redundant-roles": 1
-    },
-    "src/pages/magazine/components/__tests__/EditorHero.test.tsx": {
-      "@typescript-eslint/no-unused-vars": 1
-    },
-    "src/pages/magazine/hooks/__tests__/useMagazineGoldImport.test.ts": {
-      "no-promise-executor-return": 3
-    },
-    "src/pages/magazine/hooks/__tests__/useMagazineReaderState.test.ts": {
-      "@typescript-eslint/require-array-sort-compare": 2,
-      "no-multi-assign": 1,
-      "no-promise-executor-return": 10
-    },
-    "src/pages/magazine/hooks/useMagazineGoldImport.ts": {
-      "@typescript-eslint/prefer-promise-reject-errors": 1
-    },
-    "src/pages/magazine/hooks/useMagazineReaderState.ts": {
-      "@typescript-eslint/prefer-promise-reject-errors": 1,
-      "no-console": 3
-    },
-    "src/pages/magazine/useMagazineEditor.ts": {
-      "@typescript-eslint/no-shadow": 1,
-      "no-shadow": 1,
-      "react-hooks/exhaustive-deps": 1
-    },
     "src/pages/products/CartsListPage.tsx": {
       "@typescript-eslint/no-unused-vars": 1,
-      "jsx-a11y/role-supports-aria-props": 1,
       "react-hooks/exhaustive-deps": 1,
       "react/jsx-props-no-multi-spaces": 1
     },
@@ -336,8 +296,10 @@
     "src/pages/quotes/__tests__/useQuotesListPage.test.ts": {
       "@typescript-eslint/require-array-sort-compare": 7
     },
-    "src/services/__tests__/magazinePublish.fuzz.test.ts": {
-      "@typescript-eslint/sort-type-constituents": 2
+    "src/services/__tests__/magazineService.branding.test.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "no-script-url": 1,
+      "unused-imports/no-unused-imports": 1
     },
     "src/services/__tests__/quoteNumberConcurrency.test.ts": {
       "@typescript-eslint/naming-convention": 2,

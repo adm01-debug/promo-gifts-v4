@@ -22,16 +22,16 @@ const HEAD_RETRY_CONFIG = {
  */
 export async function headRequestWithFallback(
   url: string,
-  options?: RequestInit
+  options?: RequestInit,
 ): Promise<Response> {
   const supabase = await getSupabaseClient();
   const token = (await supabase.auth.getSession()).data.session?.access_token;
-  
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...((options?.headers as Record<string, string>) || {}),
   };
-  
+
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -50,10 +50,9 @@ export async function headRequestWithFallback(
 
     // If HEAD fails with 401/403, log but don't throw — graceful degradation
     if (HEAD_RETRY_CONFIG.statusesToRetry.includes(response.status)) {
-      console.debug(
-        `[Supabase] HEAD request returned ${response.status}, falling back to GET`,
-        { url }
-      );
+      console.debug(`[Supabase] HEAD request returned ${response.status}, falling back to GET`, {
+        url,
+      });
       // Silently fail — query layer will retry with normal query
       return response;
     }
@@ -69,20 +68,37 @@ export async function headRequestWithFallback(
   }
 }
 
+/** Minimal interface for dynamic-table queries — avoids `any` in this generic utility */
+type DynQueryBuilder = PromiseLike<{
+  data: unknown[] | null;
+  error: { message: string; code?: string } | null;
+  count: number | null;
+}> & {
+  select: (columns: string, opts?: { count?: string; head?: boolean }) => DynQueryBuilder;
+  eq: (column: string, value: unknown) => DynQueryBuilder;
+};
+
 /**
  * Normalize React Query config for Supabase REST to handle HEAD failures gracefully.
  */
 export function getSupabaseQueryConfig() {
   return {
-    queryFn: async ({ queryKey, signal }: { queryKey: readonly unknown[]; signal?: AbortSignal }) => {
+    queryFn: async ({
+      queryKey,
+      signal,
+    }: {
+      queryKey: readonly unknown[];
+      signal?: AbortSignal;
+    }) => {
       const supabase = await getSupabaseClient();
       const [, table, filters] = queryKey;
-      
+
       if (!table) throw new Error('Missing table in query key');
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const query: any = (supabase as any).from(table).select('*', { count: 'exact', head: false });
-      
+      const query = (supabase as unknown as { from: (t: string) => DynQueryBuilder })
+        .from(table as string)
+        .select('*', { count: 'exact', head: false });
+
       // Apply filters if provided
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
@@ -91,8 +107,8 @@ export function getSupabaseQueryConfig() {
       }
 
       const { data, error, count } = await query;
-      
-      if (error) throw error;
+
+      if (error) throw new Error(error.message);
       return { data, count };
     },
     retry: (failureCount: number, error: { status?: number } | null) => {

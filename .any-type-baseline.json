@@ -1,9 +1,8 @@
 {
-  "generatedAt": "2026-06-23T21:22:28.919Z",
+  "generatedAt": "2026-07-17T15:47:01.690Z",
   "description": "Baseline de `as any` / `: any` em código de produção (excluindo testes e comentários JSDoc). Falha apenas em REGRESSÃO (contagem cresce).",
-  "productionAnyCount": 2,
+  "productionAnyCount": 1,
   "counts": {
-    "src/hooks/inventory/useSupplierReliabilityServer.ts": 1,
     "src/hooks/products/useSellerCarts.ts": 1
   }
 }

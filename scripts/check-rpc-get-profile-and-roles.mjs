@@ -79,7 +79,7 @@ if (smokeResp.status === 404) {
       'Authorization': `Bearer ${SERVICE_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ _fname: 'get_profile_and_roles' }),
+    body: JSON.stringify({ fname: 'get_profile_and_roles' }),
   }).catch(() => null);
 
   if (existsResp && existsResp.ok) {
