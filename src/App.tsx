@@ -18,6 +18,7 @@ import { useAppBootstrap } from '@/hooks/common/useAppBootstrap';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { RoutePrefetcher } from '@/routes/RoutePrefetcher';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
+import { CloudStatusProvider } from '@/contexts/CloudStatusContext';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import './App.css';
 
@@ -98,8 +99,10 @@ const App = () => {
                           <EnhancedErrorBoundary>
                             <RootInteractivityGuard />
                             <Sonner />
-                            <OptionalCloudStatusBanner />
-                            <OptionalCloudStatusDot />
+                            <CloudStatusProvider>
+                              <OptionalCloudStatusBanner />
+                              <OptionalCloudStatusDot />
+                            </CloudStatusProvider>
                             <OptionalGlobalOfflineAlert />
                             <RouteScrollReset />
                             <RoutePrefetcher />
