@@ -81,9 +81,10 @@ Deno.serve(async (req) => {
 
     if (!supabaseUrl || !serviceRoleKey) {
       log.error("missing_env_vars", { url: !!supabaseUrl, key: !!serviceRoleKey });
+      // Fire-and-forget audit: never break the caller with a 500.
       return new Response(
-        JSON.stringify({ error: "Internal configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, fallback: true, reason: "missing_env" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -100,10 +101,16 @@ Deno.serve(async (req) => {
     });
 
     if (error) {
-      log.error("db_insert_failed", { error: error.message, code: error.code });
+      log.error("db_insert_failed", {
+        error: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+      // Graceful degradation: audit-log failure must not blank-screen the app.
       return new Response(
-        JSON.stringify({ error: "Failed to log attempt" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, fallback: true, reason: "db_insert_failed" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -113,10 +120,10 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     ));
   } catch (err) {
-    log.error("internal_error", { err });
+    log.error("internal_error", { err: err instanceof Error ? err.message : String(err) });
     return new Response(
-      JSON.stringify({ error: "Internal error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ ok: false, fallback: true, reason: "internal_error" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
