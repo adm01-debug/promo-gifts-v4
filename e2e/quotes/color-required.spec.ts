@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { loginAs } from '../helpers/auth';
 import { gotoAndSettle } from '../helpers/nav';
-import { waitForTestId, expectVisibleByTestId } from '../helpers/waits';
+import { waitForTestIdVisible, expectVisibleByTestId } from '../helpers/waits';
 
 /**
  * Fluxo "Adicionar Produto" ao orçamento:
@@ -16,7 +16,7 @@ test.describe('Orçamento — seleção de cor obrigatória', () => {
     await gotoAndSettle(page, '/orcamentos/novo');
 
     await page.getByTestId('quote-add-product-button').first().click();
-    await waitForTestId(page, 'quote-add-product-modal');
+    await waitForTestIdVisible(page, 'quote-add-product-modal');
 
     await page.getByTestId('product-search-input').fill('');
     await page.getByTestId(/^product-search-result-/).first().click();

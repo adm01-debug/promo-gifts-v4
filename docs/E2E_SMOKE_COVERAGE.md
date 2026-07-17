@@ -1,6 +1,6 @@
 # Auditoria de cobertura — Smoke E2E
 
-> **Gerado automaticamente** por `scripts/e2e-smoke-coverage-doc.mjs` em 2026-07-16.
+> **Gerado automaticamente** por `scripts/e2e-smoke-coverage-doc.mjs` em 2026-07-17.
 > **Não edite à mão** — a fonte de verdade é `e2e/routes/_catalog.ts` + `SMOKE_COVERAGE` em `e2e/flows/20-all-features-smoke.spec.ts`.
 
 ## Resumo
@@ -9,7 +9,7 @@
 |---|---|
 | Rotas no catálogo | **58** |
 | Rotas `smoke: true` | **30** |
-| Features autenticadas cobertas | **30** |
+| Features autenticadas cobertas | **31** |
 | Smoke público (sem auth) | **0** |
 
 Suíte: [`e2e/flows/20-all-features-smoke.spec.ts`](../e2e/flows/20-all-features-smoke.spec.ts) · Project Playwright: `chromium-smoke` (workers=1, retries=0).
@@ -50,6 +50,7 @@ Ordem do array `SMOKE_COVERAGE`. Numeração bate com os títulos `NN · Nome` n
 | `28` | `bi-compare` | BI — Comparador de clientes | `/ferramentas/bi/comparar` | — |
 | `29` | `match` | Match de produtos | `/match` | — |
 | `30` | `dropbox` | Dropbox browser | `/dropbox` | — |
+| `31` | `magazine-templates-gallery` | Galeria de Templates de Revista | `/magazine/templates` | — |
 
 ## Smoke público (sem auth)
 
@@ -59,9 +60,7 @@ Ordem do array `SMOKE_COVERAGE`. Numeração bate com os títulos `NN · Nome` n
 
 ## Governança
 
-### ⚠ Features marcadas `smoke: true` no catálogo MAS ausentes em `SMOKE_COVERAGE`
-
-- `magazine-templates-gallery` → `/magazine/templates` (`APP_ROUTES`)
+✅ Nenhuma rota `smoke: true` órfã (todas listadas em `SMOKE_COVERAGE`).
 
 ### ⚠ Features em `SMOKE_COVERAGE` MAS ausentes (ou `smoke:false`) no catálogo
 
