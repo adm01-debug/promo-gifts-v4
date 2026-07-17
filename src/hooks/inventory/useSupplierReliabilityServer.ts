@@ -118,17 +118,24 @@ function mvRowToSupplierReliability(row: MvSupplierReliabilityRow): SupplierReli
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function fetchMvReliability(): Promise<SupplierReliability[]> {
-  const { data, error } = await (supabase as unknown as { from: (t: string) => any })
+  type MvQueryBuilder = PromiseLike<{
+    data: MvSupplierReliabilityRow[] | null;
+    error: { message: string } | null;
+  }> & {
+    select: (cols: string) => MvQueryBuilder;
+    order: (col: string, opts?: { ascending: boolean }) => MvQueryBuilder;
+  };
+  const { data, error } = await (supabase as unknown as { from: (t: string) => MvQueryBuilder })
     .from('mv_supplier_reliability')
     .select('*')
     .order('overall_score', { ascending: false });
 
   if (error) {
     logger.warn('[ReliabilityServer] mv_supplier_reliability fetch failed', error);
-    throw error;
+    throw new Error(error.message);
   }
 
-  return (data as MvSupplierReliabilityRow[]).map(mvRowToSupplierReliability);
+  return (data || []).map(mvRowToSupplierReliability);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

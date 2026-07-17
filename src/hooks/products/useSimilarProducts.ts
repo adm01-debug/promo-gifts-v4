@@ -95,7 +95,7 @@ export function useSimilarProducts(product: Product | null | undefined) {
             rpc: (
               n: string,
               a: Record<string, unknown>,
-            ) => Promise<{ data: unknown; error: unknown }>;
+            ) => Promise<{ data: unknown[] | null; error: unknown }>;
           }
         ).rpc('fn_get_similar_products', { p_product_id: productId, p_limit: 50 });
 

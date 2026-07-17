@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-17T14:53:25.250Z",
-  "totalErrors": 196,
+  "generatedAt": "2026-07-17T19:36:59.443Z",
+  "totalErrors": 190,
   "counts": {
     "src/components/admin/MockupPromptManager.tsx": {
       "@typescript-eslint/no-explicit-any": 2
@@ -28,6 +28,9 @@
     },
     "src/components/common/__tests__/IntelligenceBadges.adversarial.test.tsx": {
       "no-restricted-syntax": 6
+    },
+    "src/components/dashboard/MyClientsWidget.tsx": {
+      "@typescript-eslint/require-array-sort-compare": 1
     },
     "src/components/dashboard/MyDiscountRequestsWidget.tsx": {
       "eqeqeq": 1,
@@ -161,9 +164,6 @@
     "src/hooks/intelligence/useStockVelocityPrefetch.ts": {
       "@tanstack/query/exhaustive-deps": 1
     },
-    "src/hooks/inventory/useSupplierReliabilityServer.ts": {
-      "@typescript-eslint/no-explicit-any": 3
-    },
     "src/hooks/products/__tests__/useDebouncedCartItemActions.test.tsx": {
       "@typescript-eslint/no-invalid-void-type": 2
     },
@@ -177,9 +177,6 @@
     "src/hooks/products/useSellerCarts.ts": {
       "no-promise-executor-return": 1
     },
-    "src/hooks/products/useSimilarProducts.ts": {
-      "@typescript-eslint/no-explicit-any": 2
-    },
     "src/hooks/quotes/useDiscountApproval.ts": {
       "@typescript-eslint/no-shadow": 1,
       "no-shadow": 1,
@@ -187,9 +184,6 @@
     },
     "src/hooks/ui/useWorkspaceNotifications.tsx": {
       "react-hooks/exhaustive-deps": 1
-    },
-    "src/hooks/useProductColorSwatch.ts": {
-      "@typescript-eslint/no-explicit-any": 2
     },
     "src/lib/inventory/supplier-reliability/matching.ts": {
       "no-duplicate-imports": 1
