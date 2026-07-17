@@ -90,12 +90,16 @@ export function useSimilarProducts(product: Product | null | undefined) {
       // Corrige o gap onde produtos só em related_product_id nunca apareciam.
       // Verifica AMBAS as direções: product_id = X  e  related_product_id = X.
       try {
-        const { data: rpcRows, error: rpcErr } = await (supabase as unknown as { rpc: (n: string, a: any) => any }).rpc(
-          'fn_get_similar_products',
-          { p_product_id: productId, p_limit: 50 }
-        );
+        const { data: rpcRows, error: rpcErr } = await (
+          supabase as unknown as {
+            rpc: (
+              n: string,
+              a: Record<string, unknown>,
+            ) => Promise<{ data: unknown; error: unknown }>;
+          }
+        ).rpc('fn_get_similar_products', { p_product_id: productId, p_limit: 50 });
 
-        if (rpcErr) throw rpcErr;
+        if (rpcErr) throw rpcErr instanceof Error ? rpcErr : new Error(String(rpcErr));
 
         if (rpcRows && rpcRows.length > 0) {
           const relatedIds = (rpcRows as Array<{ similar_product_id: string; direction: string }>)
@@ -107,7 +111,10 @@ export function useSimilarProducts(product: Product | null | undefined) {
         }
       } catch (err) {
         // Fallback para query direta (compatibilidade retroativa)
-        logger.warn('[useSimilarProducts] RPC fn_get_similar_products failed, trying direct query:', err);
+        logger.warn(
+          '[useSimilarProducts] RPC fn_get_similar_products failed, trying direct query:',
+          err,
+        );
         try {
           const { records: relationships } = await dbInvoke<{
             related_product_id: string;

@@ -34,7 +34,7 @@ export function useProductColorSwatch(product: ProductWithSwatches) {
 
   const activeVariant = useMemo(
     () => swatches.find((s) => s.variant_id === activeVariantId) ?? null,
-    [swatches, activeVariantId]
+    [swatches, activeVariantId],
   );
 
   const displayImage = activeVariant?.image_url ?? product.primary_image_url ?? null;
@@ -56,8 +56,14 @@ export function useProductColorSwatch(product: ProductWithSwatches) {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const { data, error } = await (supabase as unknown as { rpc: (n: string, a: any) => any })
-        .rpc('fn_get_color_swatches_batch', { p_product_ids: [product.id] });
+      const { data, error } = await (
+        supabase as unknown as {
+          rpc: (
+            n: string,
+            a: Record<string, unknown>,
+          ) => Promise<{ data: unknown; error: unknown }>;
+        }
+      ).rpc('fn_get_color_swatches_batch', { p_product_ids: [product.id] });
       if (!error && data && data.length > 0) {
         setLazySwatches(data[0].color_swatches as unknown as ColorSwatch[]);
       }
