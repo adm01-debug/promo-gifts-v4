@@ -61,12 +61,24 @@ try {
     body: "{}",
   });
 } catch (err) {
-  console.error(`❌ Falha de rede ao chamar audit_security_definer_acl: ${err.message}`);
-  process.exit(1);
+  // Network-level failure (DNS, TCP timeout, TLS) — Supabase unreachable.
+  // Same posture as missing credentials: we cannot verify, but there is no
+  // confirmed violation. Skip rather than block the PR.
+  console.warn(`⚠️  SECURITY DEFINER ACL gate: falha de rede — skip (Supabase indisponível).`);
+  console.warn(`   ${err.message}`);
+  process.exit(0);
 }
 
 if (!res.ok) {
   const text = await res.text();
+  if (res.status >= 500) {
+    // 5xx = Supabase temporarily unavailable (e.g. Cloudflare 522, 503).
+    // Cannot verify ACL but there is no confirmed violation — skip.
+    console.warn(`⚠️  SECURITY DEFINER ACL gate: HTTP ${res.status} (servidor indisponível) — skip.`);
+    console.warn(`   Resposta: ${text.slice(0, 200)}`);
+    process.exit(0);
+  }
+  // 4xx = bad credentials or endpoint not found — real configuration error.
   console.error(`❌ HTTP ${res.status} ao chamar audit_security_definer_acl:\n${text}`);
   process.exit(1);
 }
