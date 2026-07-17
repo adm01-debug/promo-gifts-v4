@@ -31,18 +31,20 @@ const HYDRATION_RETRY_DELAY_MS = 500;
  * Aceita PromiseLike para compatibilidade com PostgrestFilterBuilder do Supabase.
  * BUG-FIX v2.1: assinatura alterada de Promise<T> → PromiseLike<T>.
  */
-function withTimeout<T>(
-  promise: PromiseLike<T>,
-  ms: number,
-  label: string,
-): Promise<T> {
+function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error(`hydration_timeout:${label}:${ms}ms`));
     }, ms);
     promise.then(
-      (value) => { clearTimeout(timer); resolve(value); },
-      (err)   => { clearTimeout(timer); reject(err); },
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
     );
   });
 }
@@ -87,7 +89,9 @@ export function useProfileRoles() {
     // Chamadas concorrentes que chegarem enquanto doFetch() corre encontrarão
     // fetchPromiseRef.current !== null e tomarão o caminho de dedup acima.
     let resolveDedup!: () => void;
-    const dedupPromise = new Promise<void>((resolve) => { resolveDedup = resolve; });
+    const dedupPromise = new Promise<void>((resolve) => {
+      resolveDedup = resolve;
+    });
     fetchPromiseRef.current = dedupPromise;
     const myGeneration = ++fetchGenerationRef.current;
 
@@ -114,7 +118,9 @@ export function useProfileRoles() {
         // Com this === undefined em ES modules (strict mode), throws sincronamente:
         //   "TypeError: Cannot read properties of undefined (reading 'rest')"
         // .bind(supabase) restaura o contexto sem alterar o comportamento do cast.
-        const rpcCaller = supabase.rpc.bind(supabase) as unknown as RPCCallerFn;
+        // TS2589 guard: access .rpc through unknown cast before .bind() to avoid
+        // excessive type instantiation from the 585-table SupabaseClient union.
+        const rpcCaller = (supabase as unknown as { rpc: RPCCallerFn }).rpc.bind(supabase);
         const { data, error } = await withTimeout(
           rpcCaller('get_profile_and_roles', { _user_id: userId }),
           HYDRATION_TIMEOUT_MS,
@@ -145,9 +151,7 @@ export function useProfileRoles() {
         // BUG-FIX v2: hydration_timeout é condição ESPERADA (rede lenta /
         // cold start Supabase), não erro crítico.
         // v2.1: log.error → log.warn para timeout; erros reais continuam error.
-        const isTimeout =
-          error instanceof Error &&
-          error.message.startsWith('hydration_timeout:');
+        const isTimeout = error instanceof Error && error.message.startsWith('hydration_timeout:');
         if (isTimeout) {
           log.warn('hydration_timeout', { userId, error });
         } else {

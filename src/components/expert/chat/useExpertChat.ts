@@ -351,7 +351,20 @@ export function useExpertChat({
           toast.error('Faça login para salvar orçamentos');
           return;
         }
-        const { data: quote, error } = await supabase
+        // Typed bypass: quotes.insert() uses RejectExcessProperties which rejects
+        // extra fields via deep union — cast avoids TS2345 without losing safety.
+        type QuoteInsertResult = PromiseLike<{
+          data: { id: string; quote_number: string } | null;
+          error: { message: string; code?: string } | null;
+        }>;
+        type QuoteFrom = {
+          from: (t: string) => {
+            insert: (row: Record<string, unknown>) => {
+              select: (cols: string) => { single: () => QuoteInsertResult };
+            };
+          };
+        };
+        const { data: quote, error } = await (supabase as unknown as QuoteFrom)
           // rls-allow: RLS aplica seller_id automaticamente
           .from('quotes')
           .insert({
@@ -364,7 +377,9 @@ export function useExpertChat({
           })
           .select('id, quote_number')
           .single();
-        if (error) throw error;
+        if (error)
+          throw new Error((error as { message?: string }).message ?? 'Erro ao criar rascunho');
+        if (!quote) throw new Error('Quote criado mas dados não retornados');
         toast.success(`Rascunho ${quote.quote_number} criado!`, {
           description: 'Redirecionando para o editor…',
           duration: 2000,
@@ -648,7 +663,10 @@ export function useExpertChat({
           .eq('user_id', user.id)
           .maybeSingle();
         if (profileFetchErr) {
-          logger.warn('[expert-chat] Could not fetch profile prefs — TTS pref not persisted:', profileFetchErr);
+          logger.warn(
+            '[expert-chat] Could not fetch profile prefs — TTS pref not persisted:',
+            profileFetchErr,
+          );
           return;
         }
         const currentPrefs = (profile?.preferences as Record<string, unknown>) || {};
@@ -657,7 +675,8 @@ export function useExpertChat({
           .from('profiles')
           .update({ preferences: { ...currentPrefs, flow_autoplay_tts: next } })
           .eq('user_id', user.id);
-        if (prefErr) logger.warn('[expert-chat] TTS preference update failed (non-fatal):', prefErr);
+        if (prefErr)
+          logger.warn('[expert-chat] TTS preference update failed (non-fatal):', prefErr);
       }
     } catch {
       /* empty */

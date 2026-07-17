@@ -6,8 +6,13 @@ export async function runAuthAudit() {
     const supabase = await getSupabaseClient();
     // A RPC check_auth_config_status ainda NÃO existe em public (re-verificado
     // 2026-06-11 via pg_proc no SSOT doufsxqlfjyuvxuezpln). A chamada degrada
-    // graciosamente (error tratado abaixo).
-    const { data, error } = await supabase.rpc('check_auth_config_status');
+    // graciosamente (error tratado abaixo). Cast via unknown necessário pois
+    // a função não consta no schema gerado (esperado — ausência intencional).
+    const { data, error } = await (
+      supabase as unknown as {
+        rpc: (n: string) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+      }
+    ).rpc('check_auth_config_status');
 
     if (error) {
       logger.error('[AuthAudit] Falha ao executar auditoria:', error.message);
