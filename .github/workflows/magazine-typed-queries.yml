@@ -50,7 +50,7 @@ concurrency:
 # Contagens esperadas do padrão de substituição (SSOT do gate).
 # Alterar aqui se o magazineService.ts mudar de forma legítima.
 env:
-  EXPECTED_FROM_MAGAZINES: '15'
+  EXPECTED_FROM_MAGAZINES: '16'
   EXPECTED_FROM_MAGAZINE_ITEMS: '10'
   EXPECTED_UNTYPEDFROM_AFTER: '0'
 

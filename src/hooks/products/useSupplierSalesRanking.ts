@@ -47,7 +47,10 @@ export function useSupplierSalesRanking() {
         // FIX BUG-A: usar RPC que retorna todas as 7 243+ linhas sem limite.
         // supabase.rpc() não é afetado por db-max-rows do PostgREST.
         // fn_get_product_intelligence_all é SECURITY DEFINER e não está nos tipos gerados pelo Lovable.
-        type AnyRpc = (fn: string) => ReturnType<typeof supabase.rpc>;
+        // Explicit return type avoids TS2589 from ReturnType<typeof supabase.rpc> deep instantiation.
+        type AnyRpc = (
+          fn: string,
+        ) => PromiseLike<{ data: unknown; error: { message?: string } | null }>;
         const { data, error } = await (supabase.rpc as unknown as AnyRpc)(
           'fn_get_product_intelligence_all',
         );
@@ -62,7 +65,7 @@ export function useSupplierSalesRanking() {
             logger.warn('[SupplierSalesRanking] MV not populated yet, returning empty map');
             return new Map();
           }
-          throw error;
+          throw new Error((error as { message?: string }).message ?? 'RPC error');
         }
 
         const rows = (data ?? []) as unknown as ProductIntelligenceRanking[];

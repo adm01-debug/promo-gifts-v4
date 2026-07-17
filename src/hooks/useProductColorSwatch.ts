@@ -61,7 +61,7 @@ export function useProductColorSwatch(product: ProductWithSwatches) {
           rpc: (
             n: string,
             a: Record<string, unknown>,
-          ) => Promise<{ data: unknown; error: unknown }>;
+          ) => Promise<{ data: Array<{ color_swatches: ColorSwatch[] }> | null; error: unknown }>;
         }
       ).rpc('fn_get_color_swatches_batch', { p_product_ids: [product.id] });
       if (!error && data && data.length > 0) {

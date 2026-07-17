@@ -346,7 +346,9 @@ export const ProductListItem = memo(
           onToggleCompare(product.id);
           showUndoToast({
             title: `"${product.name}" removido da comparação`,
-            onUndo: () => { onToggleCompare(product.id); },
+            onUndo: () => {
+              onToggleCompare(product.id);
+            },
           });
         }
       } else {
@@ -465,6 +467,22 @@ export const ProductListItem = memo(
                 return;
               }
               setQuickViewOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (
+                  actionBusyRef.current ||
+                  variantPickerOpen ||
+                  collectionModalOpen ||
+                  shareDialogOpen ||
+                  quickViewOpen
+                ) {
+                  return;
+                }
+                setQuickViewOpen(true);
+              }
             }}
           >
             <div key={thumbUrl} className="h-full w-full duration-500 animate-in fade-in">
