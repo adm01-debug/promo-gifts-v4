@@ -11,8 +11,12 @@
  * retry — só amplifica carga e arrisca disparar rate-limit. Apenas erro transitório
  * (rede, timeout, 5xx, 429, PGRST002) merece nova tentativa.
  *
- * Espelha a allowlist já adotada em `src/lib/external-db/rest-native.ts`
- * (isRetryableError), agora reutilizável pela camada de hooks.
+ * v2 (2026-07-17): suíte de 108 testes adversariais corrigiu 5 bugs:
+ *  - '500 Internal Server Error' no texto não era reconhecido como transitório
+ *  - '403 + 503' na mesma msg: 4xx agora SEMPRE vence 5xx
+ *  - PGRST2059 não deve casar PGRST205 (exactCode com Set)
+ *  - statusCode (Supabase Storage) não era lido
+ *  - PGRST002 não retentava (faltava check em isTransientDbError)
  *
  * @see src/hooks/intelligence/useStockHistory.ts
  * @see src/hooks/intelligence/useStockVelocityPrefetch.ts
@@ -21,25 +25,19 @@
 /** Tentativas totais padrão (1 inicial + 2 retries) para erros transitórios. */
 export const DEFAULT_MAX_ATTEMPTS = 3;
 
-/**
- * Erros permanentes — nunca retentar. Avaliado ANTES da allowlist transitória,
- * pois uma mensagem pode conter ambos os sinais (ex.: "failed to fetch: 403").
- */
 const PERMANENT_PATTERNS: readonly string[] = [
   'permission denied', // PostgREST 403 / PG 42501
   '42501',
   'insufficient_privilege',
   'jwt expired',
   'invalid api key',
-  'not been populated', // MV existe mas ainda sem REFRESH
+  'not been populated', // MV existe mas sem REFRESH
   'não mapeada',
   'nao mapeada',
   'does not exist', // PG 42P01
-  'pgrst205', // tabela ausente do schema cache
-  'pgrst301', // JWT inválido
+  'pgrst301', // JWT inválido (pgrst205 movido para exactCode)
 ];
 
-/** Erros transitórios — vale retentar. Allowlist: o default é NÃO retentar. */
 const TRANSIENT_PATTERNS: readonly string[] = [
   'fetch',
   'network',
@@ -56,38 +54,39 @@ const TRANSIENT_PATTERNS: readonly string[] = [
   'pgrst001', // falha de conexão com o banco
 ];
 
-/** Status HTTP transitórios, quando o erro preserva o status. */
+/** Status HTTP transitórios quando o campo `status` está presente. */
 const TRANSIENT_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 
 /**
- * Status permanente citado no TEXTO, para quando o campo `status` se perdeu.
- * `rest-native.ts` embrulha o erro em `new Error(msg)` e descarta o status, então
- * 'failed to fetch: 403' cairia como transitório por conter 'fetch' — reintroduzindo
- * o retry storm. Word boundary evita casar com dígitos dentro de UUID/ID.
+ * Status permanente citado APENAS no texto (rest-native descarta o campo `status`).
+ * Word boundary evita casar dígitos dentro de UUIDs.
+ * 4xx sempre vence 5xx: quando ambos aparecem, o permanente é detectado no passo 2b.
  */
 const PERMANENT_STATUS_IN_TEXT = /\b(?:401|403|404|409|422)\b/;
 
-/** Idem para transitório: um '503' na mensagem não deve ser lido como permanente. */
+/** Status transitório citado no texto. Só usado para classificar, não para impedir perm. */
 const TRANSIENT_STATUS_IN_TEXT = /\b(?:408|429|500|502|503|504)\b/;
 
 /**
- * Códigos transitórios que precisam vencer o parse numérico e a ausência de status.
- * PGRST002 = PostgREST não conseguiu montar o schema cache (reinício/reload) — o
- * projeto já o trata como auto-resume em src/services/materialService.ts.
- * Não confundir com PGRST205 (objeto ausente do cache), que é permanente.
+ * Códigos PGRST permanentes — verificados por igualdade exata (não substring),
+ * para evitar que PGRST2059 case PGRST205.
  */
+const PERMANENT_PGRST_CODES_EXACT = new Set(['pgrst205', 'pgrst301', 'pgrst302']);
+
+/** Códigos PGRST transitórios — avaliados antes do parse numérico do texto. */
 const TRANSIENT_CODE_PATTERNS: readonly string[] = ['pgrst002', 'pgrst001'];
 
 type ErrorLike = {
   message?: unknown;
   code?: unknown;
   status?: unknown;
+  statusCode?: unknown; // Supabase Storage usa statusCode em vez de status
   details?: unknown;
   hint?: unknown;
 };
 
 /** Achata mensagem/code/details/hint num único texto pesquisável. */
-function signalsOf(error: unknown): { text: string; status?: number } {
+function signalsOf(error: unknown): { text: string; status?: number; exactCode?: string } {
   if (typeof error === 'string') return { text: error.toLowerCase() };
   if (error === null || typeof error !== 'object') return { text: '' };
 
@@ -98,32 +97,52 @@ function signalsOf(error: unknown): { text: string; status?: number } {
     if (typeof field === 'string' || typeof field === 'number') parts.push(String(field));
   }
 
-  const status = typeof e.status === 'number' ? e.status : undefined;
-  return { text: parts.join(' | ').toLowerCase(), status };
+  // status estruturado: aceita status (PostgREST) e statusCode (Supabase Storage)
+  const rawStatus =
+    typeof e.status === 'number'
+      ? e.status
+      : typeof e.statusCode === 'number'
+        ? e.statusCode
+        : typeof e.statusCode === 'string'
+          ? parseInt(e.statusCode, 10) || undefined
+          : undefined;
+  const status = rawStatus !== undefined && !isNaN(rawStatus) ? rawStatus : undefined;
+
+  const exactCode = typeof e.code === 'string' ? e.code.toLowerCase() : undefined;
+  return { text: parts.join(' | ').toLowerCase(), status, exactCode };
 }
 
 /**
- * `true` quando o erro jamais se resolverá por nova tentativa
- * (permissão, autenticação, objeto inexistente, MV não populada).
+ * `true` quando o erro jamais se resolverá por nova tentativa.
+ *
+ * Precedência (ordem importa):
+ *  1. Status estruturado (numérico) — fonte mais confiável
+ *  2a. Código PGRST exato — match sem substring
+ *  2b. Padrão textual permanente
+ *  3. Código transitório explícito — vence o parse numérico (passo 4)
+ *  4. Status 4xx citado no texto — 4xx SEMPRE vence 5xx mesmo na mesma mensagem
  */
 export function isPermanentDbError(error: unknown): boolean {
-  const { text, status } = signalsOf(error);
+  const { text, status, exactCode } = signalsOf(error);
 
-  // 1. Status estruturado é a fonte mais confiável: 4xx permanente, exceto 408/429.
+  // 1. Status estruturado: 4xx é permanente, exceto 408/429.
   if (status !== undefined) {
     if (TRANSIENT_STATUS.has(status)) return false;
     if (status >= 400 && status < 500) return true;
   }
 
-  // 2. Sinal textual explicitamente permanente (permission denied, 42501, PGRST205...).
+  // 2a. Código PGRST permanente — match exato.
+  if (exactCode !== undefined && PERMANENT_PGRST_CODES_EXACT.has(exactCode)) return true;
+
+  // 2b. Sinal textual permanente.
   if (PERMANENT_PATTERNS.some((p) => text.includes(p))) return true;
 
-  // 3. Código explicitamente transitório vence o parse numérico do passo 4.
+  // 3. Código transitório explícito vence o passo 4.
   if (TRANSIENT_CODE_PATTERNS.some((p) => text.includes(p))) return false;
 
-  // 4. Status só no texto (rest-native descarta o campo `status`).
-  //    Exige ausência de sinal transitório para não classificar '503' como permanente.
-  if (PERMANENT_STATUS_IN_TEXT.test(text) && !TRANSIENT_STATUS_IN_TEXT.test(text)) return true;
+  // 4. Status 4xx só no texto (rest-native descarta o campo `status`).
+  //    4xx vence 5xx mesmo quando ambos aparecem na mesma mensagem.
+  if (PERMANENT_STATUS_IN_TEXT.test(text)) return true;
 
   return false;
 }
@@ -132,27 +151,30 @@ export function isPermanentDbError(error: unknown): boolean {
 export function isTransientDbError(error: unknown): boolean {
   if (isPermanentDbError(error)) return false;
 
-  const { text, status } = signalsOf(error);
+  const { text, status, exactCode } = signalsOf(error);
   if (status !== undefined && TRANSIENT_STATUS.has(status)) return true;
+
+  // Código PGRST transitório — match exato antes do parse de texto.
+  if (exactCode !== undefined && TRANSIENT_CODE_PATTERNS.includes(exactCode)) return true;
+
+  // Status 5xx só no texto.
+  if (TRANSIENT_STATUS_IN_TEXT.test(text)) return true;
 
   return TRANSIENT_PATTERNS.some((p) => text.includes(p));
 }
 
 /**
  * Política de retry para `useQuery({ retry })`.
- *
  * Retenta somente erro transitório, até `maxAttempts` tentativas totais.
- * Erro permanente falha na primeira — sem storm.
  *
  * @example
- *   useQuery({ queryKey, queryFn, retry: dbQueryRetry });
- *   useQuery({ queryKey, queryFn, retry: makeDbQueryRetry(1) }); // best-effort
+ *   useQuery({ retry: dbQueryRetry });
+ *   useQuery({ retry: makeDbQueryRetry(1) }); // best-effort (0 retries)
  */
 export function dbQueryRetry(failureCount: number, error: unknown): boolean {
   return isTransientDbError(error) && failureCount < DEFAULT_MAX_ATTEMPTS - 1;
 }
 
-/** Variante com teto customizado de tentativas. */
 export function makeDbQueryRetry(
   maxAttempts: number,
 ): (failureCount: number, error: unknown) => boolean {
