@@ -1,25 +1,27 @@
 -- APLICADO: 2026-07-18 (via MCP)
 -- GAP #1 (P1): fechar a torneira — default privilege do role postgres em public.
 --
--- PROBLEMA: toda tabela/function/sequence nova criada por postgres em public nascia
--- com INSERT/UPDATE/DELETE/EXECUTE para anon. As 231 tabelas com write para anon eram
--- SINTOMA: cada migration de revogação era enxugar o chão com a torneira aberta.
+-- PROBLEMA: toda tabela nova criada por postgres nascia com INSERT/UPDATE/DELETE
+-- para anon. As 231 tabelas com write para anon são SINTOMA desta causa raiz.
 --
--- LIMITAÇÃO: Supabase Cloud não permite ALTER DEFAULT PRIVILEGES FOR ROLE
--- supabase_admin. Tabelas criadas pelo Dashboard mantêm o default antigo.
--- A fix completa requer ação manual no Dashboard (Settings > Database).
+-- O QUE FUNCIONA:
+-- - Tabelas: anon perde INSERT/UPDATE/DELETE em tabelas futuras ✅ (testado)
+-- - Sequences: anon perde USAGE em sequences futuras ✅
 --
--- IMPACTO REAL: mitigado pela RLS (387/387 tabelas com RLS, nenhuma policy
--- irrestrita). Mas gera alertas no advisor e neutraliza migrations de revogação.
+-- O QUE NÃO FUNCIONA (limitação do PostgreSQL):
+-- - Functions: ALTER DEFAULT PRIVILEGES ... REVOKE EXECUTE FROM PUBLIC NÃO remove
+--   o default global de EXECUTE do pg_catalog. Toda function nova recebe =X (PUBLIC).
+--   Para fechar functions seria necessário um EVENT TRIGGER em CREATE FUNCTION.
+--   As 530 SECURITY DEFINER existentes já estão 520/530 sem anon (auditado).
 --
--- REGRESSÃO TESTADA: 6 RPCs públicas do catálogo continuam funcionando para anon
--- (grants existentes não são afetados, só objetos FUTUROS).
+-- LIMITAÇÃO DE PLATAFORMA:
+-- - supabase_admin: não é alterável via SQL. Tabelas criadas pelo Dashboard mantêm
+--   o default antigo. Fix requer Settings → Database no painel Supabase.
+--
+-- REGRESSÃO TESTADA: 6/6 RPCs públicas do catálogo continuam funcionando para anon.
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE INSERT, UPDATE, DELETE ON TABLES FROM anon;
-
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  REVOKE EXECUTE ON FUNCTIONS FROM anon;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE USAGE ON SEQUENCES FROM anon;
