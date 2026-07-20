@@ -132,7 +132,7 @@ export function useSecurityData(
     } finally {
       if (mountedRef.current) setIsLoading(false);
     }
-  }, [effectiveUserId, rolesLoaded, is2FAEnabled, allowedIPs]);  // BUG-HEAD-GUARD
+  }, [effectiveUserId, rolesLoaded, is2FAEnabled, allowedIPs]); // BUG-HEAD-GUARD
 
   useEffect(() => {
     mountedRef.current = true;
@@ -140,7 +140,7 @@ export function useSecurityData(
     return () => {
       mountedRef.current = false;
     };
-  }, [effectiveUserId, loadSecurityData]);
+  }, [effectiveUserId, loadSecurityData, rolesLoaded]);
 
   return {
     metrics,

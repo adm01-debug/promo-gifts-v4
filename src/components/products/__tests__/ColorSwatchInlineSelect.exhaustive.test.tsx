@@ -15,8 +15,12 @@ import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-vi.mock('@/components/products/ProductQuickActionsFAB', () => ({ ProductQuickActionsFAB: () => null }));
-vi.mock('@/components/products/ProductCategoryBadges', () => ({ ProductCategoryBadges: () => null }));
+vi.mock('@/components/products/ProductQuickActionsFAB', () => ({
+  ProductQuickActionsFAB: () => null,
+}));
+vi.mock('@/components/products/ProductCategoryBadges', () => ({
+  ProductCategoryBadges: () => null,
+}));
 vi.mock('@/components/products/QuickViewThumb', () => ({
   QuickViewThumb: ({ children, testId }: { children?: ReactNode; testId?: string }) => (
     <div
@@ -40,27 +44,41 @@ vi.mock('@/components/products/HoverSetImage', () => ({
 }));
 
 const COLORS: ColorDotLike[] = [
-  { name: 'Azul',     hex: '#00f', image: 'img/azul.png',     stockQty: 3   },
-  { name: 'Verde',    hex: '#0f0', image: 'img/verde.png',    stockQty: 0   },
-  { name: 'Preto',    hex: '#000', image: 'img/preto.png',    stockQty: 500 },
-  { name: 'Limiar',   hex: '#888', image: 'img/limiar.png',   stockQty: 10  },
-  { name: 'Negativa', hex: '#111', image: 'img/neg.png',      stockQty: -5  },
-  { name: 'Sem Img',  hex: '#222', image: null,               stockQty: 20  },
-  { name: 'Sem Qty',  hex: '#333', image: 'img/sem-qty.png'                 },
+  { name: 'Azul', hex: '#00f', image: 'img/azul.png', stockQty: 3 },
+  { name: 'Verde', hex: '#0f0', image: 'img/verde.png', stockQty: 0 },
+  { name: 'Preto', hex: '#000', image: 'img/preto.png', stockQty: 500 },
+  { name: 'Limiar', hex: '#888', image: 'img/limiar.png', stockQty: 10 },
+  { name: 'Negativa', hex: '#111', image: 'img/neg.png', stockQty: -5 },
+  { name: 'Sem Img', hex: '#222', image: null, stockQty: 20 },
+  { name: 'Sem Qty', hex: '#333', image: 'img/sem-qty.png' },
 ];
 
 function wrap(node: ReactNode) {
-  return render(<MemoryRouter><TooltipProvider>{node}</TooltipProvider></MemoryRouter>);
+  return render(
+    <MemoryRouter>
+      <TooltipProvider>{node}</TooltipProvider>
+    </MemoryRouter>,
+  );
 }
 
-function renderCard(ovr: { colors?: ColorDotLike[]; stockQuantity?: number; onClick?: () => void } = {}) {
+function renderCard(
+  ovr: { colors?: ColorDotLike[]; stockQuantity?: number; onClick?: () => void } = {},
+) {
   const onClick = ovr.onClick ?? vi.fn();
   const utils = wrap(
     <BaseProductGridCard
-      productId="p1" productName="Produto" productImage="img/default.png"
-      basePrice={99} minQuantity={1} stockQuantity={ovr.stockQuantity ?? 200}
-      stockStatus={null} colors={ovr.colors ?? COLORS} onClick={onClick}
-      testId="card" footerTestId="footer" thumbTestId="qv-thumb"
+      productId="p1"
+      productName="Produto"
+      productImage="img/default.png"
+      basePrice={99}
+      minQuantity={1}
+      stockQuantity={ovr.stockQuantity ?? 200}
+      stockStatus={null}
+      colors={ovr.colors ?? COLORS}
+      onClick={onClick}
+      testId="card"
+      footerTestId="footer"
+      thumbTestId="qv-thumb"
     />,
   );
   return { ...utils, onClick };
@@ -72,18 +90,22 @@ function renderCard(ovr: { colors?: ColorDotLike[]; stockQuantity?: number; onCl
 describe('Suite 1 — ProductColorSwatches engine', () => {
   it('S1-01: renderiza todas as cores', () => {
     wrap(<ProductColorSwatches colors={COLORS} max={10} hideWhenEmpty={false} />);
-    ['azul','verde','preto','limiar','negativa'].forEach(n =>
-      expect(document.querySelector(`[data-testid="color-swatch-${n}"]`)).not.toBeNull()
-    );
+    for (const n of ['azul', 'verde', 'preto', 'limiar', 'negativa']) {
+      expect(document.querySelector(`[data-testid="color-swatch-${n}"]`)).not.toBeNull();
+    }
   });
 
   it('S1-02: sem seleção → aria-checked=false em todos', () => {
     const { getAllByRole } = wrap(<ProductColorSwatches colors={COLORS} max={10} />);
-    getAllByRole('radio').forEach(r => expect(r.getAttribute('aria-checked')).toBe('false'));
+    for (const r of getAllByRole('radio')) {
+      expect(r.getAttribute('aria-checked')).toBe('false');
+    }
   });
 
   it('S1-03: sem seleção → sem botão Todos', () => {
-    const { queryByTestId } = wrap(<ProductColorSwatches colors={COLORS} max={10} onClear={vi.fn()} />);
+    const { queryByTestId } = wrap(
+      <ProductColorSwatches colors={COLORS} max={10} onClear={vi.fn()} />,
+    );
     expect(queryByTestId('color-swatches-clear')).toBeNull();
   });
 
@@ -103,19 +125,25 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
   });
 
   it('S1-07: selectedName="Azul" → aria-checked=true em Azul', () => {
-    const { getByTestId } = wrap(<ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" />);
+    const { getByTestId } = wrap(
+      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" />,
+    );
     expect(getByTestId('color-swatch-azul').getAttribute('aria-checked')).toBe('true');
     expect(getByTestId('color-swatch-verde').getAttribute('aria-checked')).toBe('false');
   });
 
   it('S1-08: selectedName case-insensitive "azul" ≡ "Azul"', () => {
-    const { getByTestId } = wrap(<ProductColorSwatches colors={COLORS} max={10} selectedName="azul" />);
+    const { getByTestId } = wrap(
+      <ProductColorSwatches colors={COLORS} max={10} selectedName="azul" />,
+    );
     expect(getByTestId('color-swatch-azul').getAttribute('aria-checked')).toBe('true');
   });
 
   it('S1-09: onSelect chamado com cor e índice corretos', () => {
     const onSelect = vi.fn();
-    const { getByTestId } = wrap(<ProductColorSwatches colors={COLORS} max={10} onSelect={onSelect} />);
+    const { getByTestId } = wrap(
+      <ProductColorSwatches colors={COLORS} max={10} onSelect={onSelect} />,
+    );
     fireEvent.click(getByTestId('color-swatch-preto'));
     expect(onSelect).toHaveBeenCalledWith(COLORS[2], 2);
   });
@@ -125,11 +153,12 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
     const onSelect = vi.fn();
     const { getByTestId } = render(
       <div onClick={containerClick}>
-        <MemoryRouter><TooltipProvider>
-          <ProductColorSwatches colors={COLORS} max={10} onSelect={onSelect} />
-                      </TooltipProvider>
+        <MemoryRouter>
+          <TooltipProvider>
+            <ProductColorSwatches colors={COLORS} max={10} onSelect={onSelect} />
+          </TooltipProvider>
         </MemoryRouter>
-      </div>
+      </div>,
     );
     fireEvent.click(getByTestId('color-swatch-azul'));
     expect(onSelect).toHaveBeenCalled();
@@ -138,14 +167,14 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
 
   it('S1-11: selectedName + onClear → botão Todos visível', () => {
     const { getByTestId } = wrap(
-      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={vi.fn()} />
+      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={vi.fn()} />,
     );
     expect(getByTestId('color-swatches-clear')).not.toBeNull();
   });
 
   it('S1-12: selectedName sem onClear → sem botão Todos', () => {
     const { queryByTestId } = wrap(
-      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" />
+      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" />,
     );
     expect(queryByTestId('color-swatches-clear')).toBeNull();
   });
@@ -153,7 +182,7 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
   it('S1-13: onClear chamado ao clicar em Todos', () => {
     const onClear = vi.fn();
     const { getByTestId } = wrap(
-      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={onClear} />
+      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={onClear} />,
     );
     fireEvent.click(getByTestId('color-swatches-clear'));
     expect(onClear).toHaveBeenCalledTimes(1);
@@ -164,11 +193,12 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
     const onClear = vi.fn();
     render(
       <div onClick={containerClick}>
-        <MemoryRouter><TooltipProvider>
-          <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={onClear} />
-                      </TooltipProvider>
+        <MemoryRouter>
+          <TooltipProvider>
+            <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={onClear} />
+          </TooltipProvider>
         </MemoryRouter>
-      </div>
+      </div>,
     );
     fireEvent.click(document.querySelector('[data-testid="color-swatches-clear"]')!);
     expect(onClear).toHaveBeenCalled();
@@ -178,7 +208,7 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
   it('S1-15: Todos via teclado Enter', () => {
     const onClear = vi.fn();
     const { getByTestId } = wrap(
-      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={onClear} />
+      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={onClear} />,
     );
     fireEvent.keyDown(getByTestId('color-swatches-clear'), { key: 'Enter' });
     expect(onClear).toHaveBeenCalledTimes(1);
@@ -187,7 +217,7 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
   it('S1-16: Todos via teclado Space', () => {
     const onClear = vi.fn();
     const { getByTestId } = wrap(
-      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={onClear} />
+      <ProductColorSwatches colors={COLORS} max={10} selectedName="Azul" onClear={onClear} />,
     );
     fireEvent.keyDown(getByTestId('color-swatches-clear'), { key: ' ' });
     expect(onClear).toHaveBeenCalledTimes(1);
@@ -205,14 +235,18 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
 
   it('S1-19: onSelect via teclado Enter', () => {
     const onSelect = vi.fn();
-    const { getByTestId } = wrap(<ProductColorSwatches colors={COLORS} max={10} onSelect={onSelect} />);
+    const { getByTestId } = wrap(
+      <ProductColorSwatches colors={COLORS} max={10} onSelect={onSelect} />,
+    );
     fireEvent.keyDown(getByTestId('color-swatch-verde'), { key: 'Enter' });
     expect(onSelect).toHaveBeenCalledWith(COLORS[1], 1);
   });
 
   it('S1-20: onSelect via teclado Space', () => {
     const onSelect = vi.fn();
-    const { getByTestId } = wrap(<ProductColorSwatches colors={COLORS} max={10} onSelect={onSelect} />);
+    const { getByTestId } = wrap(
+      <ProductColorSwatches colors={COLORS} max={10} onSelect={onSelect} />,
+    );
     fireEvent.keyDown(getByTestId('color-swatch-preto'), { key: ' ' });
     expect(onSelect).toHaveBeenCalledWith(COLORS[2], 2);
   });
@@ -228,13 +262,17 @@ describe('Suite 1 — ProductColorSwatches engine', () => {
   });
 
   it('S1-23: cor esgotada sem restock → data-stock-state=out', () => {
-    const c: ColorDotLike[] = [{ name: 'Coral', hex: '#f00', stockQty: 0, hasUpcomingRestock: false }];
+    const c: ColorDotLike[] = [
+      { name: 'Coral', hex: '#f00', stockQty: 0, hasUpcomingRestock: false },
+    ];
     const { getByTestId } = wrap(<ProductColorSwatches colors={c} max={5} />);
     expect(getByTestId('color-swatch-coral').getAttribute('data-stock-state')).toBe('out');
   });
 
   it('S1-24: cor upcoming → data-stock-state=upcoming + dot badge', () => {
-    const c: ColorDotLike[] = [{ name: 'Menta', hex: '#9f9', stockQty: 0, hasUpcomingRestock: true }];
+    const c: ColorDotLike[] = [
+      { name: 'Menta', hex: '#9f9', stockQty: 0, hasUpcomingRestock: true },
+    ];
     const { getByTestId } = wrap(<ProductColorSwatches colors={c} max={5} />);
     expect(getByTestId('color-swatch-menta').getAttribute('data-stock-state')).toBe('upcoming');
     expect(getByTestId('swatch-upcoming-dot')).not.toBeNull();
@@ -271,7 +309,9 @@ describe('Suite 2 — BaseProductGridCard inline color selection', () => {
 
   it('S2-02: estado inicial → nenhum swatch com aria-checked=true', () => {
     const { getAllByRole } = renderCard();
-    getAllByRole('radio').forEach(r => expect(r.getAttribute('aria-checked')).toBe('false'));
+    for (const r of getAllByRole('radio')) {
+      expect(r.getAttribute('aria-checked')).toBe('false');
+    }
   });
 
   // R1 — Clicar bolinha NÃO dispara onClick do card
@@ -347,11 +387,18 @@ describe('Suite 2 — BaseProductGridCard inline color selection', () => {
     // com fixture de apenas 1 cor sem imagem.
     const { getByTestId } = wrap(
       <BaseProductGridCard
-        productId="sem-img-test" productName="Sem Img" productImage="img/fallback.png"
-        basePrice={1} stockQuantity={100} stockStatus={null}
+        productId="sem-img-test"
+        productName="Sem Img"
+        productImage="img/fallback.png"
+        basePrice={1}
+        stockQuantity={100}
+        stockStatus={null}
         colors={[{ name: 'NullImg', hex: '#999', image: null, stockQty: 5 }]}
-        onClick={vi.fn()} testId="card-si" footerTestId="footer-si" thumbTestId="qv-si"
-      />
+        onClick={vi.fn()}
+        testId="card-si"
+        footerTestId="footer-si"
+        thumbTestId="qv-si"
+      />,
     );
     fireEvent.click(getByTestId('color-swatch-nullimg'));
     // Sem imagem na cor → fallback para productImage
@@ -402,11 +449,18 @@ describe('Suite 2 — BaseProductGridCard inline color selection', () => {
     // NOTA: "Sem Qty" está no chip "+N" (idx 6, max=5). Testamos com fixture dedicado.
     const { getByTestId } = wrap(
       <BaseProductGridCard
-        productId="no-qty-test" productName="No Qty" productImage="img/default.png"
-        basePrice={1} stockQuantity={333} stockStatus={null}
+        productId="no-qty-test"
+        productName="No Qty"
+        productImage="img/default.png"
+        basePrice={1}
+        stockQuantity={333}
+        stockStatus={null}
         colors={[{ name: 'SemQtyFixture', hex: '#777', image: 'img/sqf.png' }]}
-        onClick={vi.fn()} testId="card-nq" footerTestId="footer-nq" thumbTestId="qv-nq"
-      />
+        onClick={vi.fn()}
+        testId="card-nq"
+        footerTestId="footer-nq"
+        thumbTestId="qv-nq"
+      />,
     );
     fireEvent.click(getByTestId('color-swatch-semqtyfixture'));
     // Cor sem stockQty → fallback para stockQuantity do card (333)
@@ -443,7 +497,9 @@ describe('Suite 2 — BaseProductGridCard inline color selection', () => {
     const { getByTestId, queryByTestId, getAllByRole } = renderCard();
     fireEvent.click(getByTestId('color-swatch-azul'));
     fireEvent.click(getByTestId('color-swatches-clear'));
-    getAllByRole('radio').forEach(r => expect(r.getAttribute('aria-checked')).toBe('false'));
+    for (const r of getAllByRole('radio')) {
+      expect(r.getAttribute('aria-checked')).toBe('false');
+    }
     expect(queryByTestId('color-swatches-clear')).toBeNull();
   });
 
@@ -493,7 +549,9 @@ describe('Suite 2 — BaseProductGridCard inline color selection', () => {
   it('S2-32: 50 trocas rápidas → sem crash', () => {
     const { getByTestId } = renderCard();
     const s = ['azul', 'verde', 'preto'];
-    expect(() => { for (let i = 0; i < 50; i++) fireEvent.click(getByTestId(`color-swatch-${s[i % 3]}`)); }).not.toThrow();
+    expect(() => {
+      for (let i = 0; i < 50; i++) fireEvent.click(getByTestId(`color-swatch-${s[i % 3]}`));
+    }).not.toThrow();
   });
 
   it('S2-33: onClick após seleção ainda funciona', () => {
@@ -511,10 +569,10 @@ describe('Suite 3 — Auditoria estática de código (os 4 componentes)', () => 
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
   const BASE = resolve(__dirname, '..');
-  const PC   = `${BASE}/ProductCard.tsx`;
-  const PLI  = `${BASE}/ProductListItem.tsx`;
-  const PTR  = `${BASE}/table-view/ProductTableRow.tsx`;
-  const BPC  = `${BASE}/BaseProductGridCard.tsx`;
+  const PC = `${BASE}/ProductCard.tsx`;
+  const PLI = `${BASE}/ProductListItem.tsx`;
+  const PTR = `${BASE}/table-view/ProductTableRow.tsx`;
+  const BPC = `${BASE}/BaseProductGridCard.tsx`;
 
   // ── Fix aplicado ─────────────────────────────────────────────────────────
   it('S3-01: ProductCard tem FIX-SWATCH-INLINE-V1 e V2', () => {
@@ -569,12 +627,18 @@ describe('Suite 3 — Auditoria estática de código (os 4 componentes)', () => 
     // O guard "if (variantPickerOpen || collectionModalOpen || shareDialogOpen || quickViewOpen) return;"
     // antes de onOpenQuickView foi removido junto com o onOpenQuickView
     // Verificar que não existe onOpenQuickView(product, null) após selectColorWithUrl
-    expect(c.indexOf('selectColorWithUrl(product.id, c.name);\n              if (variantPickerOpen')).toBe(-1);
+    expect(
+      c.indexOf('selectColorWithUrl(product.id, c.name);\n              if (variantPickerOpen'),
+    ).toBe(-1);
   });
 
   it('S3-10: ProductTableRow — guard obsoleto removido de onSelect V2', () => {
     const c = readFileSync(PTR, 'utf8');
-    expect(c.indexOf('selectColorWithUrl(product.id, sw.color_name);\n              if (variantPickerOpen')).toBe(-1);
+    expect(
+      c.indexOf(
+        'selectColorWithUrl(product.id, sw.color_name);\n              if (variantPickerOpen',
+      ),
+    ).toBe(-1);
   });
 
   // ── Mecanismo de imagem por cor ainda presente ───────────────────────────
@@ -639,7 +703,7 @@ describe('Suite 3 — Auditoria estática de código (os 4 componentes)', () => 
   it('S3-21: ProductTableRow — onClear (V1) e onReset (V2) presentes', () => {
     const c = readFileSync(PTR, 'utf8');
     expect(c).toContain('onClear={() => clearSelectedColor(product.id)');
-    expect(c).toContain('onReset={() => {');  // V2: ColorSwatchPicker
+    expect(c).toContain('onReset={() => {'); // V2: ColorSwatchPicker
   });
 
   it('S3-22: BaseProductGridCard — onClear presente', () => {
@@ -726,8 +790,10 @@ describe('Suite 4 — Fluxos completos integrados', () => {
 
   it('S4-03: 50 trocas consecutivas sem crash', () => {
     const { getByTestId } = renderCard();
-    const s = ['azul','verde','preto'];
-    expect(() => { for (let i = 0; i < 50; i++) fireEvent.click(getByTestId(`color-swatch-${s[i%3]}`)); }).not.toThrow();
+    const s = ['azul', 'verde', 'preto'];
+    expect(() => {
+      for (let i = 0; i < 50; i++) fireEvent.click(getByTestId(`color-swatch-${s[i % 3]}`));
+    }).not.toThrow();
     expect(getByTestId('footer')).not.toBeNull();
   });
 
@@ -739,17 +805,36 @@ describe('Suite 4 — Fluxos completos integrados', () => {
   });
 
   it('S4-05: 2 cards independentes não interferem', () => {
-    const ok1 = vi.fn(); const ok2 = vi.fn();
-    const { getByTestId: g1 } = wrap(<BaseProductGridCard
-      productId="p1" productName="P1" productImage="img/p1.png" basePrice={10} stockQuantity={100}
-      colors={[{ name: 'Azul', hex: '#00f', image: 'img/p1-azul.png', stockQty: 5 }]}
-      onClick={ok1} testId="c1" footerTestId="f1" thumbTestId="qv1"
-                                     />);
-    const { getByTestId: g2 } = wrap(<BaseProductGridCard
-      productId="p2" productName="P2" productImage="img/p2.png" basePrice={20} stockQuantity={200}
-      colors={[{ name: 'Verde', hex: '#0f0', image: 'img/p2-verde.png', stockQty: 50 }]}
-      onClick={ok2} testId="c2" footerTestId="f2" thumbTestId="qv2"
-                                     />);
+    const ok1 = vi.fn();
+    const ok2 = vi.fn();
+    const { getByTestId: g1 } = wrap(
+      <BaseProductGridCard
+        productId="p1"
+        productName="P1"
+        productImage="img/p1.png"
+        basePrice={10}
+        stockQuantity={100}
+        colors={[{ name: 'Azul', hex: '#00f', image: 'img/p1-azul.png', stockQty: 5 }]}
+        onClick={ok1}
+        testId="c1"
+        footerTestId="f1"
+        thumbTestId="qv1"
+      />,
+    );
+    const { getByTestId: g2 } = wrap(
+      <BaseProductGridCard
+        productId="p2"
+        productName="P2"
+        productImage="img/p2.png"
+        basePrice={20}
+        stockQuantity={200}
+        colors={[{ name: 'Verde', hex: '#0f0', image: 'img/p2-verde.png', stockQty: 50 }]}
+        onClick={ok2}
+        testId="c2"
+        footerTestId="f2"
+        thumbTestId="qv2"
+      />,
+    );
     fireEvent.click(g1('color-swatch-azul'));
     expect(within(g1('f1')).getByText(/5 un\./)).not.toBeNull();
     expect(within(g2('f2')).getByText(/200 un\./)).not.toBeNull(); // P2 não afetado
@@ -779,11 +864,18 @@ describe('Suite 4 — Fluxos completos integrados', () => {
     // Usar fixture dedicado com 1 cor sem stockQty
     const { getByTestId } = wrap(
       <BaseProductGridCard
-        productId="qty-777" productName="Qty777" productImage="img/x.png"
-        basePrice={1} stockQuantity={777} stockStatus={null}
+        productId="qty-777"
+        productName="Qty777"
+        productImage="img/x.png"
+        basePrice={1}
+        stockQuantity={777}
+        stockStatus={null}
         colors={[{ name: 'SemQtyV2', hex: '#555', image: 'img/sqv2.png' }]}
-        onClick={vi.fn()} testId="card-777" footerTestId="footer-777" thumbTestId="qv-777"
-      />
+        onClick={vi.fn()}
+        testId="card-777"
+        footerTestId="footer-777"
+        thumbTestId="qv-777"
+      />,
     );
     fireEvent.click(getByTestId('color-swatch-semqtyv2'));
     expect(within(getByTestId('footer-777')).getByText(/777 un\./)).not.toBeNull();
@@ -793,11 +885,11 @@ describe('Suite 4 — Fluxos completos integrados', () => {
     // max=5 → apenas as 5 primeiras cores são renderizadas como botões clickáveis.
     // "Sem Img" (idx 5) e "Sem Qty" (idx 6) ficam no chip "+2" — não têm testId individual.
     const { getByTestId } = renderCard();
-    const cores = ['azul','verde','preto','limiar','negativa']; // primeiras 5
-    cores.forEach(c => {
+    const cores = ['azul', 'verde', 'preto', 'limiar', 'negativa']; // primeiras 5
+    for (const c of cores) {
       fireEvent.click(getByTestId(`color-swatch-${c}`));
       expect(getByTestId('qv-thumb').getAttribute('data-qv-opened')).toBe('false');
-    });
+    }
     // Verifica chip +2 existe (Sem Img + Sem Qty no overflow)
     expect(getByTestId('color-swatches-overflow')).not.toBeNull();
   });

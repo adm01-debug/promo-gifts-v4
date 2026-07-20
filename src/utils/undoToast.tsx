@@ -10,7 +10,7 @@ interface UndoToastOptions {
    * Retorne `false` (ou lance) quando a operação de undo falhar — o toast
    * "Ação desfeita!" só aparece em sucesso. Retornos `void`/`true` = sucesso.
    */
-  onUndo: () => Promise<boolean | void> | boolean | void;
+  onUndo: () => Promise<boolean | undefined> | boolean | undefined;
   duration?: number;
 }
 
@@ -184,8 +184,9 @@ export function UndoToastContent({
           'shadow-[0_2px_10px_-2px_hsl(var(--primary)/0.35)]',
           !reduced && 'transition-all duration-200 ease-out',
           !disabled && 'hover:border-primary/50 hover:bg-primary/15',
-          !reduced && !disabled &&
-            'hover:shadow-[0_4px_16px_-2px_hsl(var(--primary)/0.5)] hover:-translate-y-px active:translate-y-0 active:scale-[0.98]',
+          !reduced &&
+            !disabled &&
+            'hover:-translate-y-px hover:shadow-[0_4px_16px_-2px_hsl(var(--primary)/0.5)] active:translate-y-0 active:scale-[0.98]',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           disabled && 'cursor-not-allowed opacity-60',
         )}
@@ -227,7 +228,7 @@ export function UndoToastContent({
           data-remaining-sec={remainingSec}
           aria-live="polite"
           aria-atomic="true"
-          className="tabular-nums text-primary/70 font-normal"
+          className="font-normal tabular-nums text-primary/70"
         >
           {remainingSec}s
         </span>
@@ -294,8 +295,7 @@ export function showUndoToast({ title, description, onUndo, duration = 5000 }: U
 // Expõe um helper global apenas em DEV para specs Playwright dispararem o toast
 // sem depender de seed de dados. Não é incluído em produção.
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  (window as unknown as { __showUndoToast?: typeof showUndoToast }).__showUndoToast =
-    showUndoToast;
+  (window as unknown as { __showUndoToast?: typeof showUndoToast }).__showUndoToast = showUndoToast;
 }
 
 /**

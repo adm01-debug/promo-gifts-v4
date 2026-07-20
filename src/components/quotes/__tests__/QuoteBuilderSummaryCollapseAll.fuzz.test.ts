@@ -17,15 +17,9 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import {
-  saveCollapsedItems,
-  loadCollapsedItems,
-} from '@/lib/quotes/collapsedItemsStorage';
+import { saveCollapsedItems, loadCollapsedItems } from '@/lib/quotes/collapsedItemsStorage';
 
-const SRC = readFileSync(
-  resolve(__dirname, '../QuoteBuilderSummaryColumn.tsx'),
-  'utf8',
-);
+const SRC = readFileSync(resolve(__dirname, '../QuoteBuilderSummaryColumn.tsx'), 'utf8');
 
 // --- Helpers de simulação (espelham a lógica do componente) ---------------
 function computeAllCollapsed(itemKeys: string[], collapsed: Set<string>): boolean {
@@ -39,18 +33,12 @@ function computeTooltip(openCount: number, allCollapsed: boolean): string {
   if (openCount === 1) return '1 produto aberto — clique para recolher todos';
   return `${openCount} produtos abertos — clique para recolher todos`;
 }
-function computeAriaLabel(
-  total: number,
-  openCount: number,
-  allCollapsed: boolean,
-): string {
+function computeAriaLabel(total: number, openCount: number, allCollapsed: boolean): string {
   if (allCollapsed) return `Expandir todos os ${total} itens do resumo`;
   return `Recolher ${openCount} ${openCount === 1 ? 'item aberto' : 'itens abertos'} do resumo`;
 }
 function toggleAll(itemKeys: string[], collapsed: Set<string>): Set<string> {
-  return computeAllCollapsed(itemKeys, collapsed)
-    ? new Set<string>()
-    : new Set<string>(itemKeys);
+  return computeAllCollapsed(itemKeys, collapsed) ? new Set<string>() : new Set<string>(itemKeys);
 }
 
 const seeded = (seed: number) => {
@@ -118,13 +106,11 @@ describe('CollapseAll · sanity de tokens no source (SSOT)', () => {
 // =========================================================================
 describe('CollapseAll · 1000+ simulações de estado', () => {
   it('Recolher tudo: openCount sempre converge para 0', () => {
-    const rng = seeded(0xA11C);
-    for (let it = 0; it < 250; it++) {
+    const rng = seeded(0xa11c);
+    for (let idx = 0; idx < 250; idx++) {
       const n = Math.floor(rng() * 50) + 1;
       const keys = Array.from({ length: n }, (_, i) => `id-${i}`);
-      const initial = new Set<string>(
-        keys.filter(() => rng() < rng()),
-      );
+      const initial = new Set<string>(keys.filter(() => rng() < 0.5));
       const next = toggleAll(keys, initial);
       // Caso 1: já estava tudo recolhido → expande (openCount=N).
       // Caso 2: parcial/vazio → recolhe (openCount=0).
@@ -135,8 +121,8 @@ describe('CollapseAll · 1000+ simulações de estado', () => {
   });
 
   it('Idempotência: toggle 2x volta ao estado lógico equivalente', () => {
-    const rng = seeded(0xB0BB1E);
-    for (let it = 0; it < 250; it++) {
+    const rng = seeded(0xb0bb1e);
+    for (let idx = 0; idx < 250; idx++) {
       const n = Math.floor(rng() * 50) + 1;
       const keys = Array.from({ length: n }, (_, i) => `id-${i}`);
       const initial = new Set<string>(keys.filter(() => rng() < 0.5));
@@ -150,8 +136,8 @@ describe('CollapseAll · 1000+ simulações de estado', () => {
   });
 
   it('aria-pressed/aria-expanded são SEMPRE booleanos opostos coerentes', () => {
-    const rng = seeded(0xC0FFEE);
-    for (let it = 0; it < 250; it++) {
+    const rng = seeded(0xc0ffee);
+    for (let idx = 0; idx < 250; idx++) {
       const n = Math.floor(rng() * 50) + 1;
       const keys = Array.from({ length: n }, (_, i) => `id-${i}`);
       const collapsed = new Set<string>(keys.filter(() => rng() < 0.5));
@@ -163,8 +149,8 @@ describe('CollapseAll · 1000+ simulações de estado', () => {
   });
 
   it('Tooltip: gramática PT-BR singular/plural/all-collapsed sem exceções', () => {
-    const rng = seeded(0xDEADBEEF);
-    for (let it = 0; it < 300; it++) {
+    const rng = seeded(0xdeadbeef);
+    for (let idx = 0; idx < 300; idx++) {
       const n = Math.floor(rng() * 50) + 1;
       const keys = Array.from({ length: n }, (_, i) => `id-${i}`);
       const collapsed = new Set<string>(keys.filter(() => rng() < 0.4));
@@ -185,7 +171,7 @@ describe('CollapseAll · 1000+ simulações de estado', () => {
 
   it('aria-label: nunca menciona contagem zerada quando ainda há item aberto', () => {
     const rng = seeded(0x1234);
-    for (let it = 0; it < 250; it++) {
+    for (let idx = 0; idx < 250; idx++) {
       const n = Math.floor(rng() * 50) + 1;
       const keys = Array.from({ length: n }, (_, i) => `id-${i}`);
       const collapsed = new Set<string>(keys.filter(() => rng() < 0.5));
@@ -204,18 +190,14 @@ describe('CollapseAll · 1000+ simulações de estado', () => {
   });
 
   it('Coexistência com Agrupar: reordenar/agrupar não altera openCount nem allCollapsed', () => {
-    const rng = seeded(0xACAB);
-    for (let it = 0; it < 200; it++) {
+    const rng = seeded(0xacab);
+    for (let idx = 0; idx < 200; idx++) {
       const n = Math.floor(rng() * 50) + 1;
       const keys = Array.from({ length: n }, (_, i) => `id-${i}`);
       const collapsed = new Set<string>(keys.filter(() => rng() < 0.5));
       const reordered = [...keys].sort(() => rng() - 0.5);
-      expect(computeOpenCount(reordered, collapsed)).toBe(
-        computeOpenCount(keys, collapsed),
-      );
-      expect(computeAllCollapsed(reordered, collapsed)).toBe(
-        computeAllCollapsed(keys, collapsed),
-      );
+      expect(computeOpenCount(reordered, collapsed)).toBe(computeOpenCount(keys, collapsed));
+      expect(computeAllCollapsed(reordered, collapsed)).toBe(computeAllCollapsed(keys, collapsed));
     }
   });
 });
@@ -224,12 +206,12 @@ describe('CollapseAll · 1000+ simulações de estado', () => {
 describe('CollapseAll · persistência via SSOT collapsedItemsStorage', () => {
   it('300 simulações: Set salvo === Set carregado, isolado por quoteId', () => {
     const storage = installStorage();
-    const rng = seeded(0xF00D);
-    for (let it = 0; it < 300; it++) {
+    const rng = seeded(0xf00d);
+    for (let idx = 0; idx < 300; idx++) {
       storage.clear();
       const n = Math.floor(rng() * 30) + 1;
       const keys = Array.from({ length: n }, (_, i) => `id-${i}`);
-      const quoteId = `q-${it}`;
+      const quoteId = `q-${idx}`;
       // Cenário aleatório: ora "Recolher tudo", ora "Expandir tudo".
       const recolher = rng() < 0.5;
       const next = recolher ? new Set(keys) : new Set<string>();

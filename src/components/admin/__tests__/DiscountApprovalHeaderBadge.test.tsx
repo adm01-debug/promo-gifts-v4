@@ -16,8 +16,12 @@ vi.mock('@/integrations/supabase/client', () => ({
       select: () => ({ eq: () => Promise.resolve({ count: 0, error: null }) }),
     }),
     channel: () => ({
-      on () { return this; },
-      subscribe () { return this; },
+      on() {
+        return this;
+      },
+      subscribe() {
+        return this;
+      },
     }),
     removeChannel: vi.fn(),
   },
@@ -25,7 +29,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 
 const mockCount = vi.hoisted(() => ({ value: 3 }));
 vi.mock('@tanstack/react-query', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+  const actual = await importOriginal();
   return {
     ...actual,
     useQuery: () => ({ data: mockCount.value }),
@@ -90,9 +94,7 @@ describe('DiscountApprovalHeaderBadge', () => {
     renderBadge();
     await user.tab();
     await waitFor(() => {
-      expect(
-        screen.getAllByText(/aguardando aprovação/i).length,
-      ).toBeGreaterThan(0);
+      expect(screen.getAllByText(/aguardando aprovação/i).length).toBeGreaterThan(0);
     });
   });
 });

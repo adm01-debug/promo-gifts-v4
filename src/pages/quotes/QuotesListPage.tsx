@@ -42,7 +42,6 @@ import { FadeInView, AnimatedCounter } from '@/components/common/MicroInteractio
 import { QuotesConfigurableList } from '@/components/quotes/QuotesConfigurableList';
 import { QuotesStatusChips } from '@/components/quotes/QuotesStatusChips';
 
-
 import { useQuotesListPage, sortOptions, type SortOption } from '@/pages/quotes/useQuotesListPage';
 import type { QuoteStatus } from '@/types/quote';
 
@@ -73,7 +72,7 @@ export default function QuotesListPage() {
     handleDelete,
     handleBulkDelete,
     handleClearFilters,
-    handleMarkApproved,
+    handleMarkApproved: _handleMarkApproved,
     handleDuplicateWithUndo,
     updateQuoteStatus,
   } = useQuotesListPage();
@@ -93,7 +92,6 @@ export default function QuotesListPage() {
     return () => window.removeEventListener('quotes:refresh-request', handler);
   }, [fetchQuotes]);
 
-
   // Espelha modo de seleção + contagem emitidos por QuotesConfigurableList
   // para alternar o label/feedback visual do botão "Selecionar".
   const [selectedCount, setSelectedCount] = useState(0);
@@ -108,7 +106,6 @@ export default function QuotesListPage() {
     return () => window.removeEventListener('quotes:selection-changed', handler);
   }, []);
   const hasSelection = selectionMode;
-
 
   if (isLoading) {
     return <QuotesSkeleton />;
@@ -128,7 +125,7 @@ export default function QuotesListPage() {
           {/* Header: título + filtros + ação no mesmo eixo */}
           <div className="flex flex-wrap items-center gap-3">
             <FadeInView>
-              <div className="flex-shrink-0 min-w-0">
+              <div className="min-w-0 flex-shrink-0">
                 <h1
                   data-testid="page-title-orcamentos"
                   className="flex items-center gap-2 whitespace-nowrap font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl"
@@ -161,7 +158,11 @@ export default function QuotesListPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {sortOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} data-testid={`quotes-sort-item-${opt.value}`}>
+                    <SelectItem
+                      key={opt.value}
+                      value={opt.value}
+                      data-testid={`quotes-sort-item-${opt.value}`}
+                    >
                       {opt.label}
                     </SelectItem>
                   ))}
@@ -178,16 +179,13 @@ export default function QuotesListPage() {
                   >
                     <span
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]"
+                      className="pointer-events-none absolute inset-0 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite] rounded-full bg-primary/40"
                     />
                     <Plus className="relative h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="left">
-                  Criar novo orçamento em segundos
-                </TooltipContent>
+                <TooltipContent side="left">Criar novo orçamento em segundos</TooltipContent>
               </Tooltip>
-
             </div>
           </div>
 
@@ -217,7 +215,6 @@ export default function QuotesListPage() {
               </div>
             </div>
           )}
-
 
           {/* Status chips */}
           <QuotesStatusChips
@@ -250,9 +247,7 @@ export default function QuotesListPage() {
                   data-selected={hasSelection ? 'true' : 'false'}
                   aria-pressed={hasSelection}
                   className="h-7 gap-1.5 rounded-full px-3 text-xs"
-                  onClick={() =>
-                    window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'))
-                  }
+                  onClick={() => window.dispatchEvent(new CustomEvent('quotes:toggle-select-all'))}
                   aria-label={
                     hasSelection
                       ? `Cancelar seleção (${selectedCount} ${selectedCount === 1 ? 'orçamento' : 'orçamentos'})`
@@ -268,16 +263,10 @@ export default function QuotesListPage() {
                 </Button>
               </div>
             }
-
           />
-
-
-
-
 
           {/* Quotes List */}
           <div className="flex min-h-0 flex-1 flex-col">
-
             {filteredQuotes.length === 0 ? (
               <EmptyState
                 variant="quotes"
@@ -285,25 +274,24 @@ export default function QuotesListPage() {
                   sortBy === 'expiring'
                     ? 'Nenhum orçamento próximo do vencimento'
                     : hasActiveFilters
-                    ? 'Nenhum resultado para esses filtros'
-                    : 'Nenhum orçamento encontrado'
+                      ? 'Nenhum resultado para esses filtros'
+                      : 'Nenhum orçamento encontrado'
                 }
                 description={
                   sortBy === 'expiring'
                     ? 'Orçamentos já expirados ou sem data de validade não aparecem neste filtro. Troque o ordenamento para ver todos.'
                     : hasActiveFilters
-                    ? 'Ajuste a busca ou os chips de status, ou limpe todos os filtros.'
-                    : 'Crie seu primeiro orçamento e comece a vender.'
+                      ? 'Ajuste a busca ou os chips de status, ou limpe todos os filtros.'
+                      : 'Crie seu primeiro orçamento e comece a vender.'
                 }
                 action={
                   sortBy === 'expiring'
                     ? { label: 'Ver todos (mais recentes)', onClick: () => setSortBy('newest') }
                     : hasActiveFilters
-                    ? { label: 'Limpar filtros', onClick: handleClearFilters }
-                    : { label: 'Criar Orçamento', onClick: () => navigate('/orcamentos/novo') }
+                      ? { label: 'Limpar filtros', onClick: handleClearFilters }
+                      : { label: 'Criar Orçamento', onClick: () => navigate('/orcamentos/novo') }
                 }
               />
-
             ) : (
               <QuotesConfigurableList
                 quotes={filteredQuotes}
@@ -391,15 +379,21 @@ export default function QuotesListPage() {
           }}
         >
           <AlertDialogContent
-            className="!max-w-[345px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl"
+            className="w-[92vw] !max-w-[345px] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl"
             data-testid="quotes-bulk-delete-dialog"
           >
-            <div aria-hidden="true" className="h-[3px] w-full bg-gradient-to-r from-transparent via-destructive to-transparent" />
+            <div
+              aria-hidden="true"
+              className="h-[3px] w-full bg-gradient-to-r from-transparent via-destructive to-transparent"
+            />
             <div className="px-4 pb-1.5 pt-4">
               <AlertDialogHeader>
                 <div className="flex items-start gap-3">
                   <div className="relative flex-shrink-0">
-                    <span aria-hidden="true" className="absolute inset-0 -z-10 rounded-xl blur-lg opacity-60 bg-destructive/30" />
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 -z-10 rounded-xl bg-destructive/30 opacity-60 blur-lg"
+                    />
                     <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive/10 ring-1 ring-inset ring-destructive/20">
                       <Trash2 className="h-[18px] w-[18px] text-destructive" strokeWidth={2.2} />
                     </div>
@@ -428,7 +422,10 @@ export default function QuotesListPage() {
                                 style={{
                                   width: `${
                                     bulkDeleteProgress.total > 0
-                                      ? Math.round((bulkDeleteProgress.done / bulkDeleteProgress.total) * 100)
+                                      ? Math.round(
+                                          (bulkDeleteProgress.done / bulkDeleteProgress.total) *
+                                            100,
+                                        )
                                       : 0
                                   }%`,
                                 }}
@@ -455,7 +452,9 @@ export default function QuotesListPage() {
                                   data-testid="quotes-bulk-delete-preview"
                                   className="rounded-md border border-border bg-muted/40 px-3 py-2 text-[11px]"
                                 >
-                                  <p className="mb-1 font-medium text-foreground">Identificadores:</p>
+                                  <p className="mb-1 font-medium text-foreground">
+                                    Identificadores:
+                                  </p>
                                   <p className="text-muted-foreground">
                                     {shown.join(', ')}
                                     {extra > 0 ? ` e mais ${extra}` : ''}
@@ -497,7 +496,6 @@ export default function QuotesListPage() {
             </div>
           </AlertDialogContent>
         </AlertDialog>
-
       </TooltipProvider>
     </>
   );

@@ -30,7 +30,7 @@ const CRITICAL_TABLES = [
   'organizations',
 ] as const;
 
-const EXPECTED_POLICIES: Record<string, Set<string>> = {
+const _EXPECTED_POLICIES: Record<string, Set<string>> = {
   discount_approval_requests: new Set([
     'enable_read_for_requesting_user',
     'enable_insert_for_requesting_user',
@@ -73,7 +73,9 @@ export async function validateRLSPolicies(): Promise<RLSValidationResult> {
     for (const table of CRITICAL_TABLES) {
       try {
         // Attempt a HEAD-like query (count only)
-        const { count, error } = await (supabase as unknown as { from: (t: string) => any })
+        const { count: _count, error } = await (
+          supabase as unknown as { from: (t: string) => unknown }
+        )
           .from(table)
           .select('*', { count: 'exact', head: true })
           .limit(1);
@@ -132,7 +134,7 @@ export async function validateRLSPolicies(): Promise<RLSValidationResult> {
  * Fail-safe: assumes access if check fails (better UX than blocking on network error).
  */
 export async function canAccessTable(
-  table: string
+  table: string,
 ): Promise<{ canAccess: boolean; reason?: string }> {
   try {
     const supabase = await getSupabaseClient();
@@ -143,7 +145,7 @@ export async function canAccessTable(
     }
 
     // Test with a zero-row query
-    const { error } = await (supabase as unknown as { from: (t: string) => any })
+    const { error } = await (supabase as unknown as { from: (t: string) => unknown })
       .from(table)
       .select('*', { head: true })
       .limit(0);
@@ -157,7 +159,7 @@ export async function canAccessTable(
     }
 
     return { canAccess: true };
-  } catch (err) {
+  } catch {
     // Network error; assume access (optimistic)
     return { canAccess: true, reason: 'Check failed; allowing' };
   }

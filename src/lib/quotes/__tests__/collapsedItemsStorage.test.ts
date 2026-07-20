@@ -140,9 +140,9 @@ describe('Isolamento entre quoteIds', () => {
   it('UUIDs reais não colidem (100 amostras)', () => {
     const ids = Array.from({ length: 100 }, () => crypto.randomUUID());
     ids.forEach((id, i) => saveCollapsedItems(id, new Set([`it-${i}`])));
-    ids.forEach((id, i) => {
+    for (const [i, id] of ids.entries()) {
       expect([...loadCollapsedItems(id)]).toEqual([`it-${i}`]);
-    });
+    }
   });
 });
 

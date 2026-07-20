@@ -259,7 +259,9 @@ export default function Auth() {
         honeypot_len: honeypotRef.current.value.length,
       });
       const fakeDelayMs = 1500 + Math.random() * 800;
-      await new Promise((r) => setTimeout(r, fakeDelayMs));
+      await new Promise<void>((r) => {
+        setTimeout(r, fakeDelayMs);
+      });
       toast({
         variant: 'destructive',
         title: 'Não foi possível entrar',
@@ -598,7 +600,9 @@ export default function Auth() {
                     >
                       Entre com suas credenciais para Brilhar, Você nasceu para isso!
                     </div>
-                    <p className="text-[13px] text-white/50">Continue sua jornada rumo ao sucesso.</p>
+                    <p className="text-[13px] text-white/50">
+                      Continue sua jornada rumo ao sucesso.
+                    </p>
                   </div>
                 </CardHeader>
 

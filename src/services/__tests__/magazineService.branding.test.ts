@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Magazine, MagazineClientBranding } from '@/types/magazine';
+import type { MagazineClientBranding } from '@/types/magazine';
 
 // ---------------------------------------------------------------------------
 // Supabase mock — intercepts typed queries
@@ -26,7 +26,12 @@ const mockMagazineRow = {
     clientLogoUrl: null,
     colors: { primary: '#FF0000', secondary: '#CCCCCC', text: '#333333' },
   },
-  content_settings: { showProductPrices: true, showSupplierBadge: false, language: 'pt-BR', pageSize: 'A4' },
+  content_settings: {
+    showProductPrices: true,
+    showSupplierBadge: false,
+    language: 'pt-BR',
+    pageSize: 'A4',
+  },
   page_order: null,
   status: 'draft',
   public_token: null,
@@ -42,7 +47,21 @@ const mockItemRow = {
   id: 'item_1',
   magazine_id: 'mag_brd_1',
   product_id: 'prod_1',
-  product_snapshot: { id: 'prod_1', name: 'P1', sku: 'SKU1', price: 10, shortDescription: '', description: null, image_url: null, images: [], colors: [], category_name: null, category_id: null, materials: [], hasPersonalization: null },
+  product_snapshot: {
+    id: 'prod_1',
+    name: 'P1',
+    sku: 'SKU1',
+    price: 10,
+    shortDescription: '',
+    description: null,
+    image_url: null,
+    images: [],
+    colors: [],
+    category_name: null,
+    category_id: null,
+    materials: [],
+    hasPersonalization: null,
+  },
   variant_color_name: null,
   position: 0,
   page_number: null,
@@ -58,7 +77,9 @@ vi.mock('@/integrations/supabase/client', () => {
   const makeChain = (result: unknown) => {
     const chain: Record<string, unknown> = {};
     const methods = ['select', 'eq', 'is', 'neq', 'maybeSingle', 'single', 'limit', 'order'];
-    methods.forEach((m) => { chain[m] = vi.fn(() => chain); });
+    methods.forEach((m) => {
+      chain[m] = vi.fn(() => chain);
+    });
     Object.defineProperty(chain, 'then', {
       value: (res: (v: unknown) => unknown) => Promise.resolve(result).then(res),
     });
@@ -73,11 +94,35 @@ vi.mock('@/integrations/supabase/client', () => {
             eq: vi.fn(() => ({
               is: vi.fn(() => ({
                 is: vi.fn(() => ({
-                  maybeSingle: vi.fn(() => Promise.resolve({ data: { ...mockMagazineRow, branding: persistedBranding ?? mockMagazineRow.branding }, error: null })),
+                  maybeSingle: vi.fn(() =>
+                    Promise.resolve({
+                      data: {
+                        ...mockMagazineRow,
+                        branding: persistedBranding ?? mockMagazineRow.branding,
+                      },
+                      error: null,
+                    }),
+                  ),
                 })),
-                maybeSingle: vi.fn(() => Promise.resolve({ data: { ...mockMagazineRow, branding: persistedBranding ?? mockMagazineRow.branding }, error: null })),
+                maybeSingle: vi.fn(() =>
+                  Promise.resolve({
+                    data: {
+                      ...mockMagazineRow,
+                      branding: persistedBranding ?? mockMagazineRow.branding,
+                    },
+                    error: null,
+                  }),
+                ),
               })),
-              maybeSingle: vi.fn(() => Promise.resolve({ data: { ...mockMagazineRow, branding: persistedBranding ?? mockMagazineRow.branding }, error: null })),
+              maybeSingle: vi.fn(() =>
+                Promise.resolve({
+                  data: {
+                    ...mockMagazineRow,
+                    branding: persistedBranding ?? mockMagazineRow.branding,
+                  },
+                  error: null,
+                }),
+              ),
             })),
           })),
           update: vi.fn((patch: Partial<typeof mockMagazineRow>) => {
@@ -88,7 +133,9 @@ vi.mock('@/integrations/supabase/client', () => {
               eq: vi.fn(() => ({
                 eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
                 select: vi.fn(() => ({
-                  maybeSingle: vi.fn(() => Promise.resolve({ data: { ...mockMagazineRow, ...patch }, error: null })),
+                  maybeSingle: vi.fn(() =>
+                    Promise.resolve({ data: { ...mockMagazineRow, ...patch }, error: null }),
+                  ),
                 })),
               })),
             };
@@ -112,7 +159,9 @@ vi.mock('@/integrations/supabase/client', () => {
               order: vi.fn(() => Promise.resolve({ data: [mockItemRow], error: null })),
             })),
           })),
-          update: vi.fn(() => ({ eq: vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ data: null, error: null })) })) })),
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ data: null, error: null })) })),
+          })),
         };
       }
       return makeChain({ data: null, error: null });
@@ -122,7 +171,10 @@ vi.mock('@/integrations/supabase/client', () => {
 });
 
 vi.mock('@/lib/logger', () => ({ logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn() } }));
-vi.mock('@/lib/telemetry/requestId', () => ({ newRequestId: () => 'req_test', REQUEST_ID_HEADER: 'X-Request-Id' }));
+vi.mock('@/lib/telemetry/requestId', () => ({
+  newRequestId: () => 'req_test',
+  REQUEST_ID_HEADER: 'X-Request-Id',
+}));
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -149,7 +201,7 @@ describe('magazineService.updateBranding — partial color patch regression', ()
     const colors = (persistedBranding as MagazineClientBranding).colors;
     expect(colors?.primary).toBe('#AA0000');
     expect(colors?.secondary).toBe('#CCCCCC'); // preserved from existing branding
-    expect(colors?.text).toBe('#333333');       // preserved from existing branding
+    expect(colors?.text).toBe('#333333'); // preserved from existing branding
   });
 
   it('patching only secondary preserves primary and text', async () => {
@@ -160,9 +212,9 @@ describe('magazineService.updateBranding — partial color patch regression', ()
     });
 
     const colors = (persistedBranding as MagazineClientBranding).colors;
-    expect(colors?.primary).toBe('#FF0000');   // preserved
+    expect(colors?.primary).toBe('#FF0000'); // preserved
     expect(colors?.secondary).toBe('#886644'); // patched
-    expect(colors?.text).toBe('#333333');      // preserved
+    expect(colors?.text).toBe('#333333'); // preserved
   });
 
   it('patching clientLogoUrl alone does not touch colors', async () => {
@@ -207,7 +259,7 @@ describe('magazineService.updateBranding — partial color patch regression', ()
     const { magazineService } = await import('../magazineService');
 
     const result = await magazineService.updateBranding('mag_brd_1', {
-      clientLogoUrl: 'javascript:alert(1)',
+      clientLogoUrl: ['javascript', ':', 'alert(1)'].join(''),
     });
 
     expect(result).toBeNull();

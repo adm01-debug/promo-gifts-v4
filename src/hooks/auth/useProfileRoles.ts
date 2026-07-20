@@ -43,7 +43,7 @@ function withTimeout<T>(promise: PromiseLike<T>, ms: number, label: string): Pro
       },
       (err) => {
         clearTimeout(timer);
-        reject(err);
+        reject(err instanceof Error ? err : new Error(String(err)));
       },
     );
   });

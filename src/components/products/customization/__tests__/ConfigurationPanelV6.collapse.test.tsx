@@ -49,7 +49,6 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-// eslint-disable-next-line import/first
 import { ConfigurationPanelV6 } from '../ConfigurationPanelV6';
 
 const technique = {
@@ -130,11 +129,7 @@ describe('ConfigurationPanelV6 — contrato de colapso', () => {
       expect(getPanel().hasAttribute('hidden')).toBe(false);
       collapsedState = true;
       rerender(
-        <ConfigurationPanelV6
-          technique={technique}
-          quantity={100}
-          onPriceCalculated={() => {}}
-        />,
+        <ConfigurationPanelV6 technique={technique} quantity={100} onPriceCalculated={() => {}} />,
       );
       expect(getPanel().hasAttribute('hidden')).toBe(false);
     });

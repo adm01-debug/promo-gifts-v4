@@ -21,12 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Save } from 'lucide-react';
 
 function SaveDraftHarness({
@@ -66,9 +61,9 @@ function SaveDraftHarness({
           <DialogHeader>
             <DialogTitle>Salvar rascunho do orçamento?</DialogTitle>
             <DialogDescription>
-              Todas as alterações feitas neste orçamento (itens, quantidades, descontos,
-              markup e notas) serão gravadas no banco. O orçamento não será enviado para
-              aprovação nem para o cliente.
+              Todas as alterações feitas neste orçamento (itens, quantidades, descontos, markup e
+              notas) serão gravadas no banco. O orçamento não será enviado para aprovação nem para o
+              cliente.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -161,7 +156,9 @@ describe('QuoteBuilderSummaryColumn — fluxo Salvar Rascunho', () => {
       code: 'Escape',
     });
     // Radix pode desmontar assíncrono; consultamos com queryBy
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise<void>((r) => {
+      setTimeout(r, 50);
+    });
     expect(screen.queryByTestId('quote-save-draft-confirm-dialog')).not.toBeInTheDocument();
     expect(onSave).not.toHaveBeenCalled();
   });

@@ -62,10 +62,10 @@ describe('buildDiscountAuditPdfPlan', () => {
   });
 
   it('inclui percentual solicitado e maxAllowedPercent em cada evento', () => {
-    plan.events.forEach((e) => {
+    for (const e of plan.events) {
       expect(e.metrics).toMatch(/Solicitado:\s*18,00%/);
       expect(e.metrics).toMatch(/Limite:\s*10,00%/);
-    });
+    }
   });
 
   it('inclui seller_notes quando presente', () => {
@@ -76,10 +76,10 @@ describe('buildDiscountAuditPdfPlan', () => {
     expect(plan.events).toHaveLength(2);
     expect(plan.events[0].title).toBe('Solicitado pelo vendedor');
     expect(plan.events[1].title).toBe('Aprovado');
-    plan.events.forEach((e) => {
+    for (const e of plan.events) {
       // timestamp em pt-BR (dd/mm/yyyy ...)
       expect(e.timestamp).toMatch(/\d{2}\/\d{2}\/\d{4}/);
-    });
+    }
   });
 
   it('nomeia o arquivo com o número do orçamento', () => {
@@ -122,18 +122,54 @@ describe('buildDiscountAuditPdfPlan — cenários adicionais', () => {
       clientName: 'Cli',
       sellerName: 'Sel',
       rows: [
-        { event: 'requested', actor_role: 'seller', actor_name: 'S', actor_email: null,
-          requested_discount_percent: 15, max_allowed_percent: 10, real_discount_percent: 15,
-          seller_notes: 'Pedido 1', admin_notes: null, created_at: ts(10) },
-        { event: 'rejected', actor_role: 'admin', actor_name: 'G', actor_email: null,
-          requested_discount_percent: 15, max_allowed_percent: 10, real_discount_percent: 15,
-          seller_notes: null, admin_notes: 'Acima do teto', created_at: ts(11) },
-        { event: 'requested', actor_role: 'seller', actor_name: 'S', actor_email: null,
-          requested_discount_percent: 12, max_allowed_percent: 10, real_discount_percent: 12,
-          seller_notes: 'Reduzido', admin_notes: null, created_at: ts(12) },
-        { event: 'approved', actor_role: 'admin', actor_name: 'G', actor_email: null,
-          requested_discount_percent: 12, max_allowed_percent: 10, real_discount_percent: 12,
-          seller_notes: null, admin_notes: 'OK', created_at: ts(13) },
+        {
+          event: 'requested',
+          actor_role: 'seller',
+          actor_name: 'S',
+          actor_email: null,
+          requested_discount_percent: 15,
+          max_allowed_percent: 10,
+          real_discount_percent: 15,
+          seller_notes: 'Pedido 1',
+          admin_notes: null,
+          created_at: ts(10),
+        },
+        {
+          event: 'rejected',
+          actor_role: 'admin',
+          actor_name: 'G',
+          actor_email: null,
+          requested_discount_percent: 15,
+          max_allowed_percent: 10,
+          real_discount_percent: 15,
+          seller_notes: null,
+          admin_notes: 'Acima do teto',
+          created_at: ts(11),
+        },
+        {
+          event: 'requested',
+          actor_role: 'seller',
+          actor_name: 'S',
+          actor_email: null,
+          requested_discount_percent: 12,
+          max_allowed_percent: 10,
+          real_discount_percent: 12,
+          seller_notes: 'Reduzido',
+          admin_notes: null,
+          created_at: ts(12),
+        },
+        {
+          event: 'approved',
+          actor_role: 'admin',
+          actor_name: 'G',
+          actor_email: null,
+          requested_discount_percent: 12,
+          max_allowed_percent: 10,
+          real_discount_percent: 12,
+          seller_notes: null,
+          admin_notes: 'OK',
+          created_at: ts(13),
+        },
       ],
     });
     expect(plan.events.map((e) => e.title)).toEqual([

@@ -44,9 +44,7 @@ const deleteMutateAsync = vi.fn();
 
 // Helper: fabrica um "mutation-like" stub para satisfazer o destructuring do
 // provider (`mutateAsync`, `mutate`, `isPending`, `reset`, `data`, etc.).
-function stubMutation<TArg = unknown, TRet = unknown>(
-  impl?: (arg: TArg) => Promise<TRet> | TRet,
-) {
+function stubMutation<TArg = unknown, TRet = unknown>(impl?: (arg: TArg) => Promise<TRet> | TRet) {
   // eslint-disable-next-line @typescript-eslint/require-await -- assinatura assíncrona intencional (mock/interface Promise)
   const fn = impl ?? ((async () => undefined) as (arg: TArg) => Promise<TRet>);
   return {
@@ -113,10 +111,7 @@ vi.mock('@/hooks/products/useDebouncedCartItemActions', () => ({
   getCartItemDebounceMs: () => 0,
 }));
 
-import {
-  resetStructuredLoggerMock,
-  findLoggerEvent,
-} from '@/test/mockStructuredLogger';
+import { resetStructuredLoggerMock, findLoggerEvent } from '@/test/mockStructuredLogger';
 import { SellerCartProvider, useSellerCartContext } from '../SellerCartContext';
 
 function Wrap({ children }: { children: ReactNode }) {
@@ -180,8 +175,7 @@ const SNAPSHOT_BASE = {
   items: ITEMS,
 };
 
-const findRestore = (event: string) =>
-  findLoggerEvent('seller_cart.restore', event);
+const findRestore = (event: string) => findLoggerEvent('seller_cart.restore', event);
 
 describe('SellerCartContext — restore_result: ok_no_metrics', () => {
   beforeEach(() => {
@@ -215,11 +209,10 @@ describe('SellerCartContext — restore_result: ok_no_metrics', () => {
 
     const PRESET_CID = 'cid-nometrics-fixed';
     await act(async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const returned = await result.current.restoreCart({
         ...SNAPSHOT_BASE,
         _correlation_id: PRESET_CID,
-      } as any);
+      } as Parameters<typeof result.current.restoreCart>[0]);
       expect(returned).toBe(NEW_CART_ID);
     });
 
@@ -280,7 +273,9 @@ describe('SellerCartContext — restore_result: ok_no_metrics', () => {
 
     await act(async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await result.current.restoreCart(SNAPSHOT_BASE as any);
+      await result.current.restoreCart(
+        SNAPSHOT_BASE as Parameters<typeof result.current.restoreCart>[0],
+      );
     });
 
     const ok = findRestore('restore_ok');

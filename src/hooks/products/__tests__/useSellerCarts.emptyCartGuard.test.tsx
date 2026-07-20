@@ -97,8 +97,7 @@ vi.mock('@/integrations/supabase/client', () => ({
           select: () => ({
             eq: () => ({
               order: () => ({
-                order: () =>
-                  Promise.resolve({ data: CARTS_RAW, error: null }),
+                order: () => Promise.resolve({ data: CARTS_RAW, error: null }),
               }),
             }),
           }),
@@ -121,9 +120,7 @@ vi.mock('@/integrations/supabase/client', () => ({
 }));
 
 // Importa o hook DEPOIS dos mocks.
-// eslint-disable-next-line import/first
 import { useSellerCarts } from '@/hooks/products/useSellerCarts';
-// eslint-disable-next-line import/first
 import { EMPTY_CART_BLOCK_MESSAGE } from '@/lib/carts/status-transition-guard';
 
 function wrapper() {

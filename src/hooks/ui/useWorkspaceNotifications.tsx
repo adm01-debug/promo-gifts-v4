@@ -317,7 +317,7 @@ export function useWorkspaceNotifications() {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [user], // FIX BUG-08: removido notifications.length — usa notificationsLengthRef
-            // FIX BUG-NOTIF-403: rolesLoaded acessado via rolesLoadedRef — não nas deps
+    // FIX BUG-NOTIF-403: rolesLoaded acessado via rolesLoadedRef — não nas deps
   );
 
   // Fetch notifications when filters or page changes
@@ -332,7 +332,17 @@ export function useWorkspaceNotifications() {
     const source: FetchSource = didInitialFetchRef.current ? 'filter-change' : 'initial';
     didInitialFetchRef.current = true;
     fetchNotifications({ source });
-  }, [user, rolesLoaded, page, search, category, unreadOnly, dateRange.from, dateRange.to, fetchNotifications]);
+  }, [
+    user,
+    rolesLoaded,
+    page,
+    search,
+    category,
+    unreadOnly,
+    dateRange.from,
+    dateRange.to,
+    fetchNotifications,
+  ]);
 
   // Polling every 60s - estavel: fetchNotifications nao recria com notifications.length.
   // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
@@ -390,7 +400,10 @@ export function useWorkspaceNotifications() {
       )
       .subscribe((status, err) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          logger.warn('[useWorkspaceNotifications] realtime channel error — polling interval maintains freshness', { status, err });
+          logger.warn(
+            '[useWorkspaceNotifications] realtime channel error — polling interval maintains freshness',
+            { status, err },
+          );
           fetchNotifications({ silent: true, source: 'mutation' });
         }
       });
@@ -412,8 +425,9 @@ export function useWorkspaceNotifications() {
   // headGenerationRef++ descarta o resultado da HEAD em voo caso ela complete
   // após o unmount, sem throw e sem log de erro no console.
   useEffect(() => {
+    const genRef = headGenerationRef;
     return () => {
-      headGenerationRef.current++;
+      genRef.current++;
       notificationsMetrics.logBadgeBudgetSummary('hook-unmount');
     };
   }, []);

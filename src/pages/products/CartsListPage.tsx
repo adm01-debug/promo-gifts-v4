@@ -6,7 +6,20 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ShoppingCart, ArrowUpDown, Search, X, CheckSquare, Trash2, MoreVertical, Edit, Copy, FileText, AlertTriangle } from 'lucide-react';
+import {
+  Plus,
+  ShoppingCart,
+  ArrowUpDown,
+  Search,
+  X,
+  CheckSquare,
+  Trash2,
+  MoreVertical,
+  Edit,
+  Copy,
+  FileText,
+  AlertTriangle,
+} from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -69,7 +82,6 @@ import {
 } from '@/lib/carts/shipping-deadline';
 import { useListUrlState } from '@/hooks/common/useListUrlState';
 import { Clickable } from '@/components/shared/Clickable';
-
 
 type StatusFilter = CartStatus | 'all';
 type SortKey = 'deadline-asc' | 'deadline-desc' | 'items-desc' | 'recent' | 'value-desc';
@@ -164,35 +176,32 @@ function CartsListContent() {
 
   // Persistência de filtros/ordenação na URL — SSOT: `useListUrlState`.
   // Deep-links sobrevivem a reload; defaults ficam fora da query string.
-  const { values, setValue, searchInput: queryInput, setSearchInput: setQueryInput, clearAll } =
-    useListUrlState({
-      keys: { status: 'all', deadline: 'all', sort: 'recent', q: '' } as const,
-      searchKey: 'q',
-      debounceMs: 250,
-    });
+  const {
+    values,
+    setValue,
+    searchInput: queryInput,
+    setSearchInput: setQueryInput,
+    clearAll,
+  } = useListUrlState({
+    keys: { status: 'all', deadline: 'all', sort: 'recent', q: '' } as const,
+    searchKey: 'q',
+    debounceMs: 250,
+  });
 
   const statusFilter = values.status as StatusFilter;
   const deadlineFilter = values.deadline as DeadlineFilter;
   const sort = values.sort as SortKey;
   const debouncedQuery = values.q;
 
-  const setStatusFilter = useCallback(
-    (v: StatusFilter) => setValue('status', v),
-    [setValue],
-  );
-  const setDeadlineFilter = useCallback(
-    (v: DeadlineFilter) => setValue('deadline', v),
-    [setValue],
-  );
+  const setStatusFilter = useCallback((v: StatusFilter) => setValue('status', v), [setValue]);
+  const setDeadlineFilter = useCallback((v: DeadlineFilter) => setValue('deadline', v), [setValue]);
   const setSort = useCallback((v: SortKey) => setValue('sort', v), [setValue]);
-
 
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   // deleteCart já vem do context acima
-
 
   const statusCounts = useMemo(() => {
     const counts: Record<StatusFilter, number> = {
@@ -250,11 +259,9 @@ function CartsListContent() {
   const hasActiveFilters =
     queryInput.trim() !== '' || statusFilter !== 'all' || deadlineFilter !== 'all';
 
-
   const visibleIds = useMemo(() => filteredCarts.map((c) => c.id), [filteredCarts]);
   const selectedCount = selectedIds.size;
-  const allVisibleSelected =
-    visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
 
   const clearSelection = useCallback(() => {
     setSelectionMode(false);
@@ -306,7 +313,6 @@ function CartsListContent() {
     const deletedCount = results.filter((r) => r.status === 'fulfilled').length;
     if (deletedCount === 0) return; // toda a exclusão falhou; mutation já mostrou erro.
 
-    const isSingular = deletedCount === 1;
     showUndoToast({
       title: deletedToastTitle(deletedCount),
       description: UNDO_TOAST_DESCRIPTION,
@@ -322,9 +328,7 @@ function CartsListContent() {
           .filter((r): r is PromiseFulfilledResult<SellerCart> => r.status === 'fulfilled')
           .map((r) => r.value);
 
-        const restoreResults = await Promise.allSettled(
-          toRestore.map((snap) => restoreCart(snap)),
-        );
+        const restoreResults = await Promise.allSettled(toRestore.map((snap) => restoreCart(snap)));
         const restoredCount = restoreResults.filter(
           (r) => r.status === 'fulfilled' && r.value !== undefined,
         ).length;
@@ -336,7 +340,7 @@ function CartsListContent() {
         else toast.error(summaryText);
       },
     });
-  }, [selectedIds, deleteCart, clearSelection, carts, restoreCart]);
+  }, [selectedIds, deleteCart, clearSelection, restoreCart]);
 
   /**
    * Atalho: Esc sai do modo de seleção e limpa marcações.
@@ -352,11 +356,7 @@ function CartsListContent() {
       if (bulkDeleteOpen) return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
-      if (
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        (target?.isContentEditable ?? false)
-      ) {
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (target?.isContentEditable ?? false)) {
         return;
       }
       e.preventDefault();
@@ -372,7 +372,7 @@ function CartsListContent() {
         {/* Header: título + filtros + ação no mesmo eixo (padrão Orçamentos) */}
         <div className="flex flex-wrap items-center gap-3">
           <FadeInView>
-            <div className="flex-shrink-0 min-w-0">
+            <div className="min-w-0 flex-shrink-0">
               <h1
                 data-testid="page-title-carrinhos"
                 className="flex items-center gap-2 whitespace-nowrap font-display text-xl font-bold text-foreground sm:text-2xl lg:text-3xl"
@@ -415,7 +415,10 @@ function CartsListContent() {
               )}
             </div>
 
-            <Select value={deadlineFilter} onValueChange={(v) => setDeadlineFilter(v as DeadlineFilter)}>
+            <Select
+              value={deadlineFilter}
+              onValueChange={(v) => setDeadlineFilter(v as DeadlineFilter)}
+            >
               <SelectTrigger
                 className="w-full sm:w-[190px]"
                 data-testid="carts-list-deadline-filter"
@@ -425,7 +428,11 @@ function CartsListContent() {
               </SelectTrigger>
               <SelectContent>
                 {DEADLINE_FILTER_OPTIONS.map((o) => (
-                  <SelectItem key={o.value} value={o.value} data-testid={`carts-deadline-opt-${o.value}`}>
+                  <SelectItem
+                    key={o.value}
+                    value={o.value}
+                    data-testid={`carts-deadline-opt-${o.value}`}
+                  >
                     {o.label}
                   </SelectItem>
                 ))}
@@ -461,7 +468,7 @@ function CartsListContent() {
                 >
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 rounded-full bg-primary/40 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]"
+                    className="pointer-events-none absolute inset-0 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite] rounded-full bg-primary/40"
                   />
                   <Plus className="relative h-5 w-5 transition-transform duration-300 group-hover:rotate-90" />
                 </Button>
@@ -471,7 +478,6 @@ function CartsListContent() {
           </div>
         </div>
       </TooltipProvider>
-
 
       {/* Toolbar: chips de status + ações de seleção */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -533,9 +539,7 @@ function CartsListContent() {
           )}
         </div>
 
-
         <div className="flex flex-wrap items-center gap-2">
-
           <div
             role="group"
             aria-label="Ações de seleção de carrinhos"
@@ -626,7 +630,6 @@ function CartsListContent() {
               data-testid="carts-list-clear-filters"
               variant="outline"
               onClick={() => clearAll()}
-
               disabled={!hasActiveFilters}
               className="gap-2"
             >
@@ -855,10 +858,7 @@ function CartRow({
       </TableCell>
       <TableCell className="max-w-0 px-4 align-middle">
         <div className="flex min-w-0 items-center gap-3">
-          <CompanyListAvatar
-            name={cart.company_name}
-            logoUrl={cart.company_logo_url}
-          />
+          <CompanyListAvatar name={cart.company_name} logoUrl={cart.company_logo_url} />
           <div className="min-w-0 flex-1">
             <div
               className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold"
@@ -894,16 +894,23 @@ function CartRow({
           {itemCount}
         </span>
       </TableCell>
-      <TableCell className="px-4 text-right align-middle font-display text-sm font-semibold tracking-tight tabular-nums">
+      <TableCell className="px-4 text-right align-middle font-display text-sm font-semibold tabular-nums tracking-tight">
         {formatCurrency(subtotal)}
       </TableCell>
-      <TableCell className="px-4 align-middle text-xs" data-testid={`cart-row-shipping-deadline-${cart.id}`}>
+      <TableCell
+        className="px-4 align-middle text-xs"
+        data-testid={`cart-row-shipping-deadline-${cart.id}`}
+      >
         {(() => {
           if (!cart.shipping_deadline) return <span className="opacity-60">—</span>;
           const status = getShippingDeadlineStatus(cart.shipping_deadline);
           const diff = daysUntilDeadline(cart.shipping_deadline);
           const showBadge = status === 'overdue' || status === 'soon';
-          const formattedDate = format(new Date(`${cart.shipping_deadline}T00:00:00`), 'dd/MM/yyyy', { locale: ptBR });
+          const formattedDate = format(
+            new Date(`${cart.shipping_deadline}T00:00:00`),
+            'dd/MM/yyyy',
+            { locale: ptBR },
+          );
           const badgeLabel = getDeadlineLabel(status, diff);
           return (
             <div
@@ -970,7 +977,7 @@ function CartRow({
                 align="end"
                 onClick={(e) => e.stopPropagation()}
                 data-testid={`cart-row-menu-${cart.id}`}
-                className="!min-w-0 w-[6.8rem] max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5"
+                className="w-[6.8rem] !min-w-0 max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5"
               >
                 <DropdownMenuItem
                   data-testid={`cart-row-menu-generate-quote-${cart.id}`}
@@ -980,10 +987,7 @@ function CartRow({
                   <FileText className="mr-2 h-4 w-4" /> Orçamento
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  data-testid={`cart-row-menu-edit-${cart.id}`}
-                  onClick={onEdit}
-                >
+                <DropdownMenuItem data-testid={`cart-row-menu-edit-${cart.id}`} onClick={onEdit}>
                   <Edit className="mr-2 h-4 w-4" /> Editar
                 </DropdownMenuItem>
                 <DropdownMenuItem

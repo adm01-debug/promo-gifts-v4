@@ -28,16 +28,16 @@ describe('resolveSwatchSizeToken — mapa por modo/densidade', () => {
   it('Lista → xs (menor que o Grid padrão)', () => {
     expect(resolveSwatchSizeToken('list')).toBe('xs');
     // independe da densidade
-    ([3, 4, 5, 6, 8] as ColumnCount[]).forEach((c) =>
-      expect(resolveSwatchSizeToken('list', c)).toBe('xs'),
-    );
+    for (const c of [3, 4, 5, 6, 8] as ColumnCount[]) {
+      expect(resolveSwatchSizeToken('list', c)).toBe('xs');
+    }
   });
 
   it('Tabela → xxs (a menor de todas)', () => {
     expect(resolveSwatchSizeToken('table')).toBe('xxs');
-    ([3, 4, 5, 6, 8] as ColumnCount[]).forEach((c) =>
-      expect(resolveSwatchSizeToken('table', c)).toBe('xxs'),
-    );
+    for (const c of [3, 4, 5, 6, 8] as ColumnCount[]) {
+      expect(resolveSwatchSizeToken('table', c)).toBe('xxs');
+    }
   });
 
   it('Grid sem densidade conhecida → sm (default seguro)', () => {
@@ -48,7 +48,9 @@ describe('resolveSwatchSizeToken — mapa por modo/densidade', () => {
 
 describe('ordem proporcional (monotonicidade)', () => {
   it('Grid 3 > 4 > 5 > 6 > 8 em px', () => {
-    const seq = ([3, 4, 5, 6, 8] as ColumnCount[]).map((c) => PX[resolveSwatchSizeToken('grid', c)]);
+    const seq = ([3, 4, 5, 6, 8] as ColumnCount[]).map(
+      (c) => PX[resolveSwatchSizeToken('grid', c)],
+    );
     for (let i = 1; i < seq.length; i++) expect(seq[i]).toBeLessThan(seq[i - 1]);
   });
 

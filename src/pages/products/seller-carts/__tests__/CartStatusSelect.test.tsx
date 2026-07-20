@@ -45,10 +45,7 @@ vi.mock('@/components/ui/select', () => {
       </div>
     );
   };
-  const SelectTrigger = ({
-    children,
-    ...rest
-  }: React.HTMLAttributes<HTMLButtonElement>) => (
+  const SelectTrigger = ({ children, ...rest }: React.HTMLAttributes<HTMLButtonElement>) => (
     <button type="button" {...rest}>
       {children}
     </button>
@@ -57,13 +54,7 @@ vi.mock('@/components/ui/select', () => {
   const SelectContent = ({ children }: { children: React.ReactNode }) => (
     <div data-mock-select-content>{children}</div>
   );
-  const SelectItem = ({
-    value,
-    children,
-  }: {
-    value: string;
-    children: React.ReactNode;
-  }) => (
+  const SelectItem = ({ value, children }: { value: string; children: React.ReactNode }) => (
     <button
       type="button"
       data-mock-select-item
@@ -87,7 +78,6 @@ vi.mock('@/components/ui/tooltip', () => {
 });
 
 // Importado depois dos mocks.
-// eslint-disable-next-line import/first
 import { CartStatusSelect } from '../../SellerCartsPage';
 
 describe('CartStatusSelect', () => {
@@ -145,7 +135,9 @@ describe('CartStatusSelect', () => {
   it('quando currentStatus confirma o pending, dispara toast.success e limpa loading', () => {
     const { rerender } = setup('em_separacao');
     fireEvent.click(
-      document.querySelector<HTMLElement>('[data-mock-select-item][data-value="pronto_orcamento"]')!,
+      document.querySelector<HTMLElement>(
+        '[data-mock-select-item][data-value="pronto_orcamento"]',
+      )!,
     );
     expect(screen.getByTestId('cart-status-select')).toHaveAttribute('aria-busy', 'true');
 
@@ -178,7 +170,9 @@ describe('CartStatusSelect', () => {
   it('se a mutação não confirmar antes do timeout, exibe toast.error e reseta o loading', () => {
     setup('em_separacao');
     fireEvent.click(
-      document.querySelector<HTMLElement>('[data-mock-select-item][data-value="pronto_orcamento"]')!,
+      document.querySelector<HTMLElement>(
+        '[data-mock-select-item][data-value="pronto_orcamento"]',
+      )!,
     );
     expect(screen.getByTestId('cart-status-select')).toHaveAttribute('aria-busy', 'true');
 

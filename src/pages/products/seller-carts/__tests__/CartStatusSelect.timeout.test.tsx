@@ -45,13 +45,7 @@ vi.mock('@/components/ui/select', () => {
     <button type="button" {...p} />
   );
   const Pass = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
-  const SelectItem = ({
-    value,
-    children,
-  }: {
-    value: string;
-    children: React.ReactNode;
-  }) => (
+  const SelectItem = ({ value, children }: { value: string; children: React.ReactNode }) => (
     <button
       type="button"
       data-mock-select-item
@@ -74,13 +68,10 @@ vi.mock('@/components/ui/tooltip', () => {
   return { Tooltip: P, TooltipTrigger: P, TooltipContent: P };
 });
 
-// eslint-disable-next-line import/first
 import { CartStatusSelect } from '../../SellerCartsPage';
 
 function click(v: CartStatus) {
-  const el = document.querySelector<HTMLElement>(
-    `[data-mock-select-item][data-value="${v}"]`,
-  );
+  const el = document.querySelector<HTMLElement>(`[data-mock-select-item][data-value="${v}"]`);
   if (el) fireEvent.click(el);
 }
 function trigger() {
@@ -101,11 +92,7 @@ describe('CartStatusSelect · timeout extremes', () => {
   it('A · não emite toast.error quando currentStatus confirma antes do timeout', () => {
     const onChange = vi.fn();
     const { rerender } = render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={onChange}
-        confirmTimeoutMs={2000}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={onChange} confirmTimeoutMs={2000} />,
     );
     click('pronto_orcamento');
     expect(trigger().getAttribute('aria-busy')).toBe('true');
@@ -146,11 +133,7 @@ describe('CartStatusSelect · timeout extremes', () => {
     expect(toastError).not.toHaveBeenCalled();
     // Mudança de prop mid-pending: o timer anterior é cancelado e um novo, curto, é armado.
     rerender(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={onChange}
-        confirmTimeoutMs={500}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={onChange} confirmTimeoutMs={500} />,
     );
     act(() => {
       vi.advanceTimersByTime(499);
@@ -170,11 +153,7 @@ describe('CartStatusSelect · timeout extremes', () => {
   it('B2 · trocar confirmTimeoutMs de pequeno → grande durante pending reinicia o timer', () => {
     const onChange = vi.fn();
     const { rerender } = render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={onChange}
-        confirmTimeoutMs={1000}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={onChange} confirmTimeoutMs={1000} />,
     );
     click('pronto_orcamento');
     act(() => {
@@ -203,11 +182,7 @@ describe('CartStatusSelect · timeout extremes', () => {
   it('C1 · confirmTimeoutMs=0 dispara toast.error na próxima tick', () => {
     const onChange = vi.fn();
     render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={onChange}
-        confirmTimeoutMs={0}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={onChange} confirmTimeoutMs={0} />,
     );
     click('pronto_orcamento');
     act(() => {
@@ -243,11 +218,7 @@ describe('CartStatusSelect · timeout extremes', () => {
     const HUGE = 2_000_000_000; // ~23.1 dias
     const onChange = vi.fn();
     render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={onChange}
-        confirmTimeoutMs={HUGE}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={onChange} confirmTimeoutMs={HUGE} />,
     );
     click('pronto_orcamento');
     act(() => {
@@ -287,11 +258,7 @@ describe('CartStatusSelect · timeout extremes', () => {
     click('pronto_orcamento');
     for (const t of [4_000, 3_000, 2_000, 1_000, 500]) {
       rerender(
-        <CartStatusSelect
-          currentStatus="em_separacao"
-          onChange={onChange}
-          confirmTimeoutMs={t}
-        />,
+        <CartStatusSelect currentStatus="em_separacao" onChange={onChange} confirmTimeoutMs={t} />,
       );
       act(() => {
         vi.advanceTimersByTime(100);

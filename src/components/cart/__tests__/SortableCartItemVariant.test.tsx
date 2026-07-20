@@ -24,22 +24,40 @@ vi.mock('framer-motion', async () => {
       <img {...p} />
     ),
   };
-  return { ...actual, motion: motionStub, m: motionStub,
+  return {
+    ...actual,
+    motion: motionStub,
+    m: motionStub,
     LazyMotion: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</> };
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  };
 });
 vi.mock('@dnd-kit/sortable', () => ({
-  useSortable: () => ({ attributes: {}, listeners: {}, setNodeRef: vi.fn(),
-    transform: null, transition: null, isDragging: false }),
+  useSortable: () => ({
+    attributes: {},
+    listeners: {},
+    setNodeRef: vi.fn(),
+    transform: null,
+    transition: null,
+    isDragging: false,
+  }),
 }));
 
 const makeItem = (i: number): SellerCartItem => ({
-  id: `it-${i}`, cart_id: 'c1', product_id: `p-${i}`,
-  product_name: `Produto ${i}`, product_sku: `SKU-${i}`,
-  product_price: 100 + i, quantity: (i % 5) + 1,
+  id: `it-${i}`,
+  cart_id: 'c1',
+  product_id: `p-${i}`,
+  product_name: `Produto ${i}`,
+  product_sku: `SKU-${i}`,
+  product_price: 100 + i,
+  quantity: (i % 5) + 1,
   product_image_url: `https://cdn.test/${i}.jpg`,
-  created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-  sort_order: i, color_name: null, color_hex: null, notes: null,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  sort_order: i,
+  color_name: null,
+  color_hex: null,
+  notes: null,
 });
 
 const renderOne = (variant: 'card' | 'row' | undefined, item = makeItem(0)) =>
@@ -63,8 +81,7 @@ const renderOne = (variant: 'card' | 'row' | undefined, item = makeItem(0)) =>
 
 afterEach(() => cleanup());
 
-const findCard = (root: HTMLElement) =>
-  root.querySelector<HTMLElement>('[data-variant]')!;
+const findCard = (root: HTMLElement) => root.querySelector<HTMLElement>('[data-variant]')!;
 const findImgContainer = (root: HTMLElement) =>
   root.querySelector<HTMLElement>('.group\\/img-container')!;
 const findProductImg = (root: HTMLElement) =>
@@ -76,14 +93,14 @@ describe("SortableCartItem · variant 'card' (grid)", () => {
     expect(findCard(container).dataset.variant).toBe('card');
   });
 
-  it("NÃO aplica flex-row no Card", () => {
+  it('NÃO aplica flex-row no Card', () => {
     const { container } = renderOne('card');
     const card = findCard(container);
     expect(card.className).not.toMatch(/\bflex-row\b/);
     expect(card.className).not.toMatch(/sm:flex-row/);
   });
 
-  it("mantém aspect-square na imagem", () => {
+  it('mantém aspect-square na imagem', () => {
     const { container } = renderOne('card');
     const img = findImgContainer(container);
     expect(img.className).toMatch(/\baspect-square\b/);
@@ -91,7 +108,7 @@ describe("SortableCartItem · variant 'card' (grid)", () => {
     expect(img.className).not.toMatch(/w-40|w-48|w-56/);
   });
 
-  it("padding pesado (p-6) na <img> — sem override p-3", () => {
+  it('padding pesado (p-6) na <img> — sem override p-3', () => {
     const { container } = renderOne('card');
     const img = findProductImg(container);
     expect(img.className).toMatch(/\bp-6\b/);
@@ -105,7 +122,7 @@ describe("SortableCartItem · variant 'row' (lista)", () => {
     expect(findCard(container).dataset.variant).toBe('row');
   });
 
-  it("Card usa flex + sm:flex-row (empilha em mobile, linha em ≥sm)", () => {
+  it('Card usa flex + sm:flex-row (empilha em mobile, linha em ≥sm)', () => {
     const { container } = renderOne('row');
     const cls = findCard(container).className;
     expect(cls).toMatch(/\bflex\b/);
@@ -114,24 +131,24 @@ describe("SortableCartItem · variant 'row' (lista)", () => {
     expect(cls).toMatch(/sm:items-stretch/);
   });
 
-  it("imagem: aspect-auto + largura fixa responsiva + shrink-0", () => {
+  it('imagem: aspect-auto + largura fixa responsiva + shrink-0', () => {
     const { container } = renderOne('row');
     const img = findImgContainer(container);
     expect(img.className).toMatch(/\baspect-auto\b/);
-    expect(img.className).toMatch(/\bh-40\b/);      // altura fixa no mobile
-    expect(img.className).toMatch(/\bshrink-0\b/);  // não deixa espremer
-    expect(img.className).toMatch(/sm:w-40/);       // largura fixa em ≥sm
+    expect(img.className).toMatch(/\bh-40\b/); // altura fixa no mobile
+    expect(img.className).toMatch(/\bshrink-0\b/); // não deixa espremer
+    expect(img.className).toMatch(/sm:w-40/); // largura fixa em ≥sm
     expect(img.className).toMatch(/md:w-48/);
     expect(img.className).toMatch(/lg:w-56/);
   });
 
-  it("aplica p-3 (padding leve) na <img>", () => {
+  it('aplica p-3 (padding leve) na <img>', () => {
     const { container } = renderOne('row');
     const img = findProductImg(container);
     expect(img.className).toMatch(/\bp-3\b/);
   });
 
-  it("corpo com flex-1 + min-w-0 (não vaza texto longo)", () => {
+  it('corpo com flex-1 + min-w-0 (não vaza texto longo)', () => {
     const { container } = renderOne('row');
     // container do corpo é o div irmão da imagem, com "space-y-2.5 p-3.5"
     const body = container.querySelector<HTMLElement>('.space-y-2\\.5.p-3\\.5')!;
@@ -140,7 +157,7 @@ describe("SortableCartItem · variant 'row' (lista)", () => {
     expect(body.className).toMatch(/\bmin-w-0\b/);
   });
 
-  it("preserva os handles funcionais (quantidade, nome, foto)", () => {
+  it('preserva os handles funcionais (quantidade, nome, foto)', () => {
     const { container } = renderOne('row');
     expect(container.querySelector('[data-testid="cart-item-name"]')).toBeTruthy();
     expect(container.querySelector('[data-testid="cart-item-image"]')).toBeTruthy();
@@ -175,15 +192,15 @@ describe('SortableCartItem · stress (múltiplas linhas)', () => {
     );
     const cards = container.querySelectorAll<HTMLElement>('[data-variant="row"]');
     expect(cards.length).toBe(CASES);
-    cards.forEach((c) => {
+    for (const c of Array.from(cards)) {
       expect(c.className).toMatch(/sm:flex-row/);
-    });
+    }
     const imgs = container.querySelectorAll<HTMLElement>('.group\\/img-container');
     expect(imgs.length).toBe(CASES);
-    imgs.forEach((el) => {
+    for (const el of Array.from(imgs)) {
       expect(el.className).toMatch(/\baspect-auto\b/);
       expect(el.className).toMatch(/\bshrink-0\b/);
-    });
+    }
   });
 
   it("alterna 50× entre 'card' e 'row' sem vazar classes stale", () => {

@@ -71,14 +71,19 @@ export function MockupPromptManager() {
   const fetchAll = async () => {
     setIsLoading(true);
     try {
+      type QB = {
+        select: (c: string) => QB;
+        order: (c: string) => QB;
+        eq: (c: string, v: unknown) => QB;
+        then: Promise<{ data: unknown[] | null; error: unknown }>['then'];
+      };
+      const db = supabase as unknown as { from: (t: string) => QB };
       const [cr, tr] = await Promise.all([
-        (supabase as unknown as { from: (t: string) => any }).from('mockup_prompt_configs').select('*').order('config_key'),
-        (supabase as unknown as { from: (t: string) => any }).from('personalization_techniques')
-          .select('id, name, code')
-          .eq('is_active', true),
+        db.from('mockup_prompt_configs').select('*').order('config_key'),
+        db.from('personalization_techniques').select('id, name, code').eq('is_active', true),
       ]);
-      if (cr.error) throw cr.error;
-      if (tr.error) throw tr.error;
+      if (cr.error) throw new Error(String((cr.error as { message?: string }).message ?? cr.error));
+      if (tr.error) throw new Error(String((tr.error as { message?: string }).message ?? tr.error));
       setConfigs((cr.data || []) as PromptConfig[]);
       setTechniques((tr.data || []) as Technique[]);
     } catch (err: unknown) {

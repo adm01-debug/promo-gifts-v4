@@ -16,15 +16,8 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { PropostaComercialTailwind } from '../PropostaComercialTailwind';
-import type {
-  ProposalTemplateData,
-  ProposalItem,
-} from '../ProposalHtmlTemplate';
-import {
-  WATERMARK_TEXT,
-  WATERMARK_RGB,
-  WATERMARK_ALPHA,
-} from '../watermarkTokens';
+import type { ProposalTemplateData, ProposalItem } from '../ProposalHtmlTemplate';
+import { WATERMARK_TEXT, WATERMARK_RGB, WATERMARK_ALPHA } from '../watermarkTokens';
 
 function makeItem(overrides: Partial<ProposalItem> = {}): ProposalItem {
   return {
@@ -45,9 +38,7 @@ function makeData(
     validUntil: '15 dias',
     client: { name: 'Empresa Teste LTDA', company: 'Empresa Teste' },
     seller: { name: 'Vendedor', email: 'v@promobrindes.com.br' },
-    items: Array.from({ length: itemCount }, (_, i) =>
-      makeItem({ name: `Produto ${i + 1}` }),
-    ),
+    items: Array.from({ length: itemCount }, (_, i) => makeItem({ name: `Produto ${i + 1}` })),
     subtotal: itemCount * 350,
     total: itemCount * 350,
     ...overrides,
@@ -56,9 +47,7 @@ function makeData(
 
 describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
   it(`isDraft=true renderiza exatamente 1 "${WATERMARK_TEXT}" por página`, () => {
-    const { container } = render(
-      <PropostaComercialTailwind data={makeData()} isDraft />,
-    );
+    const { container } = render(<PropostaComercialTailwind data={makeData()} isDraft />);
     const pageCount = container.querySelectorAll('.proposal-page').length;
     expect(pageCount, 'documento sem páginas renderizadas').toBeGreaterThan(0);
 
@@ -69,9 +58,7 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
   });
 
   it('isDraft=false NÃO renderiza a palavra "RASCUNHO" no documento (evita falso positivo)', () => {
-    const { container } = render(
-      <PropostaComercialTailwind data={makeData()} isDraft={false} />,
-    );
+    const { container } = render(<PropostaComercialTailwind data={makeData()} isDraft={false} />);
     expect(container.textContent).not.toContain('RASCUNHO');
   });
 
@@ -81,9 +68,7 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
   });
 
   it("marca d'água usa os tokens SSOT (cor derivada de watermarkTokens)", () => {
-    const { container } = render(
-      <PropostaComercialTailwind data={makeData()} isDraft />,
-    );
+    const { container } = render(<PropostaComercialTailwind data={makeData()} isDraft />);
     const watermark = Array.from(container.querySelectorAll('div')).find(
       (el) => el.textContent === WATERMARK_TEXT,
     );
@@ -106,32 +91,26 @@ describe('PropostaComercialTailwind · watermark RASCUNHO (regression)', () => {
   it('multi-página: RASCUNHO aparece em TODAS as páginas quando isDraft=true', () => {
     // 30 itens força paginação multi-página no template.
     const data = makeData(30);
-    const { container } = render(
-      <PropostaComercialTailwind data={data} isDraft />,
-    );
+    const { container } = render(<PropostaComercialTailwind data={data} isDraft />);
     const pages = container.querySelectorAll('.proposal-page');
     expect(pages.length, 'fixture não gerou multi-página').toBeGreaterThan(1);
 
     // Cada page precisa ter exatamente um filho direto com textContent === "RASCUNHO".
-    pages.forEach((page, idx) => {
+    for (const [idx, page] of Array.from(pages).entries()) {
       const wm = Array.from(page.querySelectorAll('div')).filter(
         (el) => el.textContent === 'RASCUNHO',
       );
       expect(wm.length, `página ${idx + 1} sem watermark`).toBe(1);
-    });
+    }
   });
-
-
 
   it('multi-página + isDraft=false: nenhuma página exibe RASCUNHO', () => {
     const data = makeData(30);
-    const { container } = render(
-      <PropostaComercialTailwind data={data} isDraft={false} />,
-    );
+    const { container } = render(<PropostaComercialTailwind data={data} isDraft={false} />);
     const pages = container.querySelectorAll('.proposal-page');
     expect(pages.length).toBeGreaterThan(1);
-    pages.forEach((page) => {
+    for (const page of Array.from(pages)) {
       expect(page.textContent).not.toContain('RASCUNHO');
-    });
+    }
   });
 });

@@ -2,13 +2,12 @@
  * Testes de renderização da QuotesListPage.
  * Regressão chave: garantir que nenhum vestígio do bloco KPI/Funil voltou.
  */
+import type { useQuotesListPage as _useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-type HookReturn = ReturnType<
-  typeof import('@/pages/quotes/useQuotesListPage').useQuotesListPage
->;
+type HookReturn = ReturnType<typeof _useQuotesListPage>;
 
 const baseHook: HookReturn = {
   navigate: vi.fn(),
@@ -39,9 +38,7 @@ const baseHook: HookReturn = {
 let hookValue: HookReturn = baseHook;
 
 vi.mock('@/pages/quotes/useQuotesListPage', async () => {
-  const actual = await vi.importActual<
-    typeof import('@/pages/quotes/useQuotesListPage')
-  >('@/pages/quotes/useQuotesListPage');
+  const actual = await vi.importActual('@/pages/quotes/useQuotesListPage');
   return {
     ...actual,
     useQuotesListPage: () => hookValue,
@@ -127,7 +124,11 @@ describe('QuotesListPage — header e botão Novo Orçamento', () => {
   it('mostra contagem de orçamentos no header', () => {
     hookValue = {
       ...baseHook,
-      filteredQuotes: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] as unknown as HookReturn['filteredQuotes'],
+      filteredQuotes: [
+        { id: 'a' },
+        { id: 'b' },
+        { id: 'c' },
+      ] as unknown as HookReturn['filteredQuotes'],
     };
     renderPage();
     expect(screen.getByText(/orçamento\(s\) encontrado\(s\)/i)).toBeInTheDocument();

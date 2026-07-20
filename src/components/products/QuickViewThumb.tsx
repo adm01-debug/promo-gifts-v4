@@ -15,13 +15,7 @@
  *    posicionado naquela cor específica. Sobrescreve `initialColorName` para a
  *    abertura corrente.
  */
-import {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-  type ReactNode,
-} from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
 import { ProductQuickView } from './ProductQuickView';
 import { useProduct } from '@/hooks/products/useProducts';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
@@ -104,7 +98,7 @@ export const QuickViewThumb = forwardRef<QuickViewThumbHandle, QuickViewThumbPro
           data-testid={testId}
           showFocusRing={false}
           className={cn('cursor-zoom-in', className)}
-          onClick={(e: React.MouseEvent | React.KeyboardEvent) => {
+          onClick={(e: React.KeyboardEvent | React.MouseEvent) => {
             e.stopPropagation();
             overrideColorRef.current = undefined;
             setOpen(true);

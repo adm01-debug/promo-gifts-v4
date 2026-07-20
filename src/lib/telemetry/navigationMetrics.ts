@@ -27,7 +27,12 @@
 import { captureMessage } from '@/lib/sentry';
 
 type MetricName =
-  'cls' | 'dom_complete' | 'dom_interactive' | 'route_change' | 'ttfb' | 'tti_approx';
+  | 'cls'
+  | 'dom_complete'
+  | 'dom_interactive'
+  | 'route_change'
+  | 'ttfb'
+  | 'tti_approx';
 
 interface MetricEvent {
   metric: MetricName;
@@ -81,7 +86,8 @@ function currentDevice(): 'desktop' | 'mobile' {
 
 function rateWebVital(metric: MetricName, value: number): MetricEvent['rating'] {
   // Thresholds oficiais (docs/PERFORMANCE.md).
-  if (metric === 'ttfb') return value <= 800 ? 'good' : value <= 1800 ? 'needs-improvement' : 'poor';
+  if (metric === 'ttfb')
+    return value <= 800 ? 'good' : value <= 1800 ? 'needs-improvement' : 'poor';
   if (metric === 'cls') return value <= 0.1 ? 'good' : value <= 0.25 ? 'needs-improvement' : 'poor';
   if (metric === 'tti_approx' || metric === 'dom_interactive')
     return value <= 2500 ? 'good' : value <= 4000 ? 'needs-improvement' : 'poor';
@@ -153,9 +159,13 @@ function observeCLS(): void {
       }
     };
     document.addEventListener('visibilitychange', flush, { once: false });
-    window.addEventListener('pagehide', () => {
-      if (clsValue > 0) record('cls', clsValue);
-    }, { once: true });
+    window.addEventListener(
+      'pagehide',
+      () => {
+        if (clsValue > 0) record('cls', clsValue);
+      },
+      { once: true },
+    );
   } catch {
     /* Some UAs sem suporte à API — ignore. */
   }
@@ -172,7 +182,9 @@ function observeTTI(): void {
     ttiTimer = setTimeout(() => {
       if (ttiReported) return;
       ttiReported = true;
-      const nav = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined);
+      const nav = performance.getEntriesByType('navigation')[0] as
+        | PerformanceNavigationTiming
+        | undefined;
       const base = nav?.domInteractive ?? 0;
       const tti = Math.max(lastLongtaskAt - (nav?.startTime ?? 0), base);
       record('tti_approx', tti);
@@ -236,7 +248,7 @@ export function initNavigationMetrics(): void {
 }
 
 // Test-only reset helper (não importar em runtime).
-export function __resetForTests(): void {
+export function resetForTests(): void {
   BUFFER.length = 0;
   started = false;
   clsValue = 0;

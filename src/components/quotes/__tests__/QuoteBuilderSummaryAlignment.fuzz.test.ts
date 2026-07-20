@@ -14,14 +14,11 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const SRC = readFileSync(
-  resolve(__dirname, '../QuoteBuilderSummaryColumn.tsx'),
-  'utf8',
-);
+const SRC = readFileSync(resolve(__dirname, '../QuoteBuilderSummaryColumn.tsx'), 'utf8');
 
 // --- Extração dos tokens reais do source (SSOT) ---------------------------
 const REM_PX = 16; // base Tailwind
-const TEXT_SM_PX = 14; // text-sm
+const _TEXT_SM_PX = 14; // text-sm
 const LEADING_REM = 1.125; // leading-[1.125rem]
 const LEADING_PX = LEADING_REM * REM_PX; // 18
 const BTN_PX = 12; // h-3 / w-3
@@ -79,7 +76,7 @@ describe('QuoteBuilderSummaryColumn — fuzz de alinhamento (centenas de simula�
   });
 
   it('500 simulações: centro vertical do botão === centro da 1ª linha do nome', () => {
-    const rng = seeded(0xC0FFEE);
+    const rng = seeded(0xc0ffee);
     let runs = 0;
     for (const vp of VIEWPORTS) {
       for (const dpr of DPRS) {
@@ -95,7 +92,7 @@ describe('QuoteBuilderSummaryColumn — fuzz de alinhamento (centenas de simula�
   });
 
   it('640 simulações: alvo de toque ≥ 32px (WCAG 2.5.5 AAA) sempre', () => {
-    const rng = seeded(0xBADA55);
+    const rng = seeded(0xbada55);
     for (const vp of VIEWPORTS) {
       for (const dpr of DPRS) {
         for (let i = 0; i < 20; i++) {
@@ -108,7 +105,7 @@ describe('QuoteBuilderSummaryColumn — fuzz de alinhamento (centenas de simula�
   });
 
   it('640 simulações: pr-1 garante respiro ≥ 4px entre nome truncado e botões', () => {
-    const rng = seeded(0xDEADBEEF);
+    const rng = seeded(0xdeadbeef);
     for (const vp of VIEWPORTS) {
       for (const dpr of DPRS) {
         for (let i = 0; i < 20; i++) {

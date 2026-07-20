@@ -18,9 +18,7 @@ import type { CartStatus } from '@/hooks/products';
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('@/components/ui/select', () => {
   const Pass = ({ children }: { children: React.ReactNode }) => <>{children}</>;
-  const Trigger = (p: React.HTMLAttributes<HTMLButtonElement>) => (
-    <button type="button" {...p} />
-  );
+  const Trigger = (p: React.HTMLAttributes<HTMLButtonElement>) => <button type="button" {...p} />;
   return {
     Select: Pass,
     SelectTrigger: Trigger,
@@ -34,7 +32,6 @@ vi.mock('@/components/ui/tooltip', () => {
   return { Tooltip: P, TooltipTrigger: P, TooltipContent: P };
 });
 
-// eslint-disable-next-line import/first
 import { CartStatusSelect } from '../../SellerCartsPage';
 
 const SUPPORTED_STATUSES: CartStatus[] = ['em_separacao', 'pronto_orcamento'];
@@ -88,32 +85,23 @@ describe('CartStatusSelect · contrato STATUS_CONFIG × getStatusCfg', () => {
     }
   });
 
-  it.each(SUPPORTED_STATUSES)(
-    'renderiza sem crash para currentStatus=%s',
-    (status) => {
-      expect(() =>
-        render(
-          <CartStatusSelect currentStatus={status} onChange={() => {}} />,
-        ),
-      ).not.toThrow();
-      const trigger = screen.getByTestId('cart-status-select');
-      expect(trigger.getAttribute('data-status')).toBe(status);
-      expect(trigger.getAttribute('aria-label')).toContain(STATUS_CONFIG[status].label);
-    },
-  );
+  it.each(SUPPORTED_STATUSES)('renderiza sem crash para currentStatus=%s', (status) => {
+    expect(() =>
+      render(<CartStatusSelect currentStatus={status} onChange={() => {}} />),
+    ).not.toThrow();
+    const trigger = screen.getByTestId('cart-status-select');
+    expect(trigger.getAttribute('data-status')).toBe(status);
+    expect(trigger.getAttribute('aria-label')).toContain(STATUS_CONFIG[status].label);
+  });
 
   it('não crasha e usa fallback quando currentStatus é um valor fora do domínio', () => {
     // Simulamos um payload corrompido vindo do BD (situação real em migrações).
     const bogus = 'legacy_unknown' as unknown as CartStatus;
     expect(() =>
-      render(
-        <CartStatusSelect currentStatus={bogus} onChange={() => {}} />,
-      ),
+      render(<CartStatusSelect currentStatus={bogus} onChange={() => {}} />),
     ).not.toThrow();
     const trigger = screen.getByTestId('cart-status-select');
     // aria-label deve refletir o label do fallback (Separação) sem quebrar
-    expect(trigger.getAttribute('aria-label')).toContain(
-      STATUS_CONFIG.em_separacao.label,
-    );
+    expect(trigger.getAttribute('aria-label')).toContain(STATUS_CONFIG.em_separacao.label);
   });
 });

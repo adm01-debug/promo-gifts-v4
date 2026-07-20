@@ -247,8 +247,8 @@ function dedupeRestorePayloadItems(items: RestorePayloadItem[]): RestorePayloadI
         // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
         current.sort_order == null
           ? item.sort_order
-          // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
-          : item.sort_order == null
+          : // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
+            item.sort_order == null
             ? current.sort_order
             : Math.min(current.sort_order, item.sort_order),
     });
@@ -454,7 +454,13 @@ export function useSellerCarts() {
         }
         throw error;
       }
-      return { ...data, notes: null, status: 'em_separacao' as CartStatus, shipping_deadline: null, items: [] } as SellerCart;
+      return {
+        ...data,
+        notes: null,
+        status: 'em_separacao' as CartStatus,
+        shipping_deadline: null,
+        items: [],
+      } as SellerCart;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
@@ -520,8 +526,9 @@ export function useSellerCarts() {
       return snapshot;
     },
     onSuccess: (deletedSnapshot) => {
-      queryClient.setQueryData<SellerCart[]>([QUERY_KEY, userId], (previous) =>
-        previous?.filter((cart) => cart.id !== deletedSnapshot.id) ?? previous,
+      queryClient.setQueryData<SellerCart[]>(
+        [QUERY_KEY, userId],
+        (previous) => previous?.filter((cart) => cart.id !== deletedSnapshot.id) ?? previous,
       );
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
       // Toast de sucesso é emitido pelo chamador (showUndoToast em CartsListPage/
@@ -531,7 +538,8 @@ export function useSellerCarts() {
     onError: (err: Error) => {
       if (err instanceof CartDeleteZeroRowsError) {
         toast.error('Carrinho não foi removido', {
-          description: 'O servidor respondeu, mas nenhuma linha foi afetada. Atualize a lista e tente novamente.',
+          description:
+            'O servidor respondeu, mas nenhuma linha foi afetada. Atualize a lista e tente novamente.',
         });
         return;
       }
@@ -657,9 +665,7 @@ export function useSellerCarts() {
           [QUERY_KEY, userId],
           previous.map((cart) => ({
             ...cart,
-            items: cart.items.map((it) =>
-              it.id === itemId ? { ...it, quantity: safeQty } : it,
-            ),
+            items: cart.items.map((it) => (it.id === itemId ? { ...it, quantity: safeQty } : it)),
           })),
         );
       }
@@ -701,10 +707,9 @@ export function useSellerCarts() {
     mutationFn: async (items: { id: string; sort_order: number }[]) => {
       if (items.length === 0) return;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.rpc as any)(
-        'fn_batch_update_cart_item_sort_order',
-        { p_updates: items },
-      );
+      const { error } = await (supabase.rpc as any)('fn_batch_update_cart_item_sort_order', {
+        p_updates: items,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -741,9 +746,7 @@ export function useSellerCarts() {
       // só é possível marcar "pronto p/ orçamento" se o carrinho tiver ao
       // menos 1 item. Defesa em profundidade — a UI já bloqueia, mas aqui
       // também para evitar chamadas via atalhos, testes ou race conditions.
-      const { evaluateCartStatusTransition } = await import(
-        '@/lib/carts/status-transition-guard'
-      );
+      const { evaluateCartStatusTransition } = await import('@/lib/carts/status-transition-guard');
       const cart = (cartsQuery.data || []).find((c) => c.id === cartId);
       const decision = evaluateCartStatusTransition({
         nextStatus: status,
@@ -765,10 +768,15 @@ export function useSellerCarts() {
     },
   });
 
-
   // Update cart shipping deadline (prazo p/ envio)
   const updateCartShippingDeadline = useMutation({
-    mutationFn: async ({ cartId, shippingDeadline }: { cartId: string; shippingDeadline: string | null }) => {
+    mutationFn: async ({
+      cartId,
+      shippingDeadline,
+    }: {
+      cartId: string;
+      shippingDeadline: string | null;
+    }) => {
       // Validação Zod (formato ISO, data válida, não no passado).
       const { shippingDeadlineSchema } = await import('@/lib/carts/shipping-deadline');
       const parsed = shippingDeadlineSchema.safeParse(shippingDeadline);
@@ -799,7 +807,9 @@ export function useSellerCarts() {
       }
       const sourceCart = (cartsQuery.data || []).find((c) => c.id === sourceCartId);
       if (!sourceCart) {
-        const err = new Error('Carrinho de origem não encontrado. Atualize a lista e tente novamente.');
+        const err = new Error(
+          'Carrinho de origem não encontrado. Atualize a lista e tente novamente.',
+        );
         (err as Error & { code?: string }).code = 'NOT_FOUND';
         throw err;
       }
@@ -894,7 +904,9 @@ export function useSellerCarts() {
         const fresh = queryClient.getQueryData<SellerCart[]>([QUERY_KEY, userId]);
         if (fresh?.some((c) => c.id === newCart.id)) break;
         if (attempt < maxAttempts - 1) {
-          await new Promise((r) => setTimeout(r, 400));
+          await new Promise<void>((r) => {
+            setTimeout(r, 400);
+          });
         }
       }
 
@@ -923,7 +935,8 @@ export function useSellerCarts() {
         description = err.message;
       } else if (code === 'RLS' || supaCode === '42501' || status === 401 || status === 403) {
         title = 'Permissão negada';
-        description = 'Você não tem permissão para duplicar este carrinho. Recarregue e tente novamente.';
+        description =
+          'Você não tem permissão para duplicar este carrinho. Recarregue e tente novamente.';
       } else if (code === 'AUTH') {
         title = 'Sessão expirada';
         description = err.message;
@@ -1147,11 +1160,7 @@ export function useSellerCarts() {
   //   • Deduplica itens com mesmo (product_id, color_name) somando quantidades.
   //   • ON CONFLICT DO NOTHING contra `unique_cart_item_variant`.
   // Nunca vaza `id`, `seller_id`, `created_at`, `updated_at` do snapshot.
-  const restoreCartWithItems = useMutation<
-    RestoredSellerCart | undefined,
-    Error,
-    SellerCart
-  >({
+  const restoreCartWithItems = useMutation<RestoredSellerCart | undefined, Error, SellerCart>({
     mutationFn: async (snapshot) => {
       if (!userId) throw new Error('Não autenticado');
 

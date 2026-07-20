@@ -12,38 +12,46 @@ import { Clickable } from '../Clickable';
 // Fake motion.div — evita depender do runtime do framer-motion dentro do jsdom.
 // Um forwardRef que renderiza `<div>` e captura todos os props extras (motion
 // props caem no passthrough e viram atributos no DOM sob `data-motion-*`).
-const FakeMotionDiv = forwardRef<HTMLDivElement, Record<string, unknown> & { children?: ReactNode }>(
-  function FakeMotionDiv(props, ref) {
-    const { children, layout, initial, animate, transition, whileHover, variants, exit, layoutId, ...rest } =
-      props as Record<string, unknown> & { children?: ReactNode };
-    const motionAttrs: Record<string, string> = {};
-    if (layout !== undefined) motionAttrs['data-motion-layout'] = String(layout);
-    if (initial !== undefined) motionAttrs['data-motion-initial'] = 'set';
-    if (animate !== undefined) motionAttrs['data-motion-animate'] = 'set';
-    if (transition !== undefined) motionAttrs['data-motion-transition'] = 'set';
-    if (whileHover !== undefined) motionAttrs['data-motion-whilehover'] = 'set';
-    if (variants !== undefined) motionAttrs['data-motion-variants'] = 'set';
-    if (exit !== undefined) motionAttrs['data-motion-exit'] = 'set';
-    if (layoutId !== undefined) motionAttrs['data-motion-layoutid'] = String(layoutId);
-    return (
-      <div ref={ref} {...(rest as React.HTMLAttributes<HTMLDivElement>)} {...motionAttrs}>
-        {children as ReactNode}
-      </div>
-    );
-  },
-);
-
-// Fake shadcn Card — forwardRef, aceita className.
-const FakeCard = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(function FakeCard(
-  { className, children, ...rest },
-  ref,
-) {
+const FakeMotionDiv = forwardRef<
+  HTMLDivElement,
+  Record<string, unknown> & { children?: ReactNode }
+>((props, ref) => {
+  const {
+    children,
+    layout,
+    initial,
+    animate,
+    transition,
+    whileHover,
+    variants,
+    exit,
+    layoutId,
+    ...rest
+  } = props as Record<string, unknown> & { children?: ReactNode };
+  const motionAttrs: Record<string, string> = {};
+  if (layout !== undefined) motionAttrs['data-motion-layout'] = String(layout);
+  if (initial !== undefined) motionAttrs['data-motion-initial'] = 'set';
+  if (animate !== undefined) motionAttrs['data-motion-animate'] = 'set';
+  if (transition !== undefined) motionAttrs['data-motion-transition'] = 'set';
+  if (whileHover !== undefined) motionAttrs['data-motion-whilehover'] = 'set';
+  if (variants !== undefined) motionAttrs['data-motion-variants'] = 'set';
+  if (exit !== undefined) motionAttrs['data-motion-exit'] = 'set';
+  if (layoutId !== undefined) motionAttrs['data-motion-layoutid'] = String(layoutId);
   return (
-    <div ref={ref} data-fake-card="true" className={`card-base ${className ?? ''}`} {...rest}>
-      {children}
+    <div ref={ref} {...(rest as React.HTMLAttributes<HTMLDivElement>)} {...motionAttrs}>
+      {children as ReactNode}
     </div>
   );
 });
+
+// Fake shadcn Card — forwardRef, aceita className.
+const FakeCard = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, children, ...rest }, ref) => (
+    <div ref={ref} data-fake-card="true" className={`card-base ${className ?? ''}`} {...rest}>
+      {children}
+    </div>
+  ),
+);
 
 describe('Clickable — comportamento core', () => {
   it('renderiza como div com role=button e tabIndex=0 por padrão', () => {
@@ -275,6 +283,7 @@ describe('Clickable — a11y ARIA', () => {
   });
 
   it('tabIndex custom sobrescreve default', () => {
+    // eslint-disable-next-line jsx-a11y/tabindex-no-positive
     render(
       <Clickable onClick={() => {}} tabIndex={5}>
         x
@@ -284,6 +293,7 @@ describe('Clickable — a11y ARIA', () => {
   });
 
   it('tabIndex=-1 quando disabled tem prioridade sobre custom', () => {
+    // eslint-disable-next-line jsx-a11y/tabindex-no-positive
     render(
       <Clickable onClick={() => {}} tabIndex={5} disabled>
         x
@@ -446,10 +456,7 @@ describe('Clickable — polymorphism (as)', () => {
     ['section', 'SECTION'],
   ])('as=%s renderiza tag %s', (as, tag) => {
     render(
-      <Clickable
-        as={as as 'div'}
-        onClick={() => {}}
-      >
+      <Clickable as={as as 'div'} onClick={() => {}}>
         x
       </Clickable>,
     );
@@ -526,11 +533,9 @@ describe('Clickable — ref forwarding', () => {
     function Wrapper() {
       const ref = useRef<HTMLElement>(null);
       return (
-        <>
-          <Clickable ref={ref} onClick={() => ref.current?.setAttribute('data-clicked', 'yes')}>
-            x
-          </Clickable>
-        </>
+        <Clickable ref={ref} onClick={() => ref.current?.setAttribute('data-clicked', 'yes')}>
+          x
+        </Clickable>
       );
     }
     render(<Wrapper />);
@@ -596,7 +601,7 @@ describe('Clickable — children complexos', () => {
 describe('Clickable — event control', () => {
   it('handler pode chamar stopPropagation para bloquear bubbling', () => {
     const outer = vi.fn();
-    const inner = vi.fn((e: React.MouseEvent | React.KeyboardEvent) => {
+    const inner = vi.fn((e: React.KeyboardEvent | React.MouseEvent) => {
       e.stopPropagation();
     });
     render(

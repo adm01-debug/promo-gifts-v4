@@ -20,7 +20,7 @@ interface TableRowActionsProps {
   isInCompare: boolean;
   canAddToCompare: boolean;
   onToggleFavorite?: (id: string) => void;
-  onToggleCompare?: (id: string) => { added: boolean; isFull: boolean } | void;
+  onToggleCompare?: (id: string) => { added: boolean; isFull: boolean } | undefined;
   onOpenVariantPicker: (product: Product, mode: VariantActionMode) => void;
   onOpenQuickView: (product: Product) => void;
 }
@@ -74,7 +74,9 @@ export function TableRowActions({
               productId={product.id}
               productName={product.name}
               productSku={product.sku}
-              productImageUrl={product.primary_image_url || product.og_image_url || product.images?.[0]}
+              productImageUrl={
+                product.primary_image_url || product.og_image_url || product.images?.[0]
+              }
               productPrice={product.price}
               minQuantity={product.minQuantity || 1}
               variant="icon"
@@ -170,7 +172,9 @@ export function TableRowActions({
                 onToggleCompare?.(product.id);
                 showUndoToast({
                   title: `"${product.name}" removido da comparação`,
-                  onUndo: () => { onToggleCompare?.(product.id); },
+                  onUndo: () => {
+                    onToggleCompare?.(product.id);
+                  },
                 });
               } else {
                 onOpenVariantPicker(product, 'compare');

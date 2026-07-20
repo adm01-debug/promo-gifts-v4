@@ -8,6 +8,7 @@
 import * as React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { DayPicker } from 'react-day-picker';
+import type { Day } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { cn } from '@/lib/utils';
@@ -30,12 +31,12 @@ function Calendar({
       className={cn(
         // Mobile: área confortável (44×44 mín. por célula → ~7×44 = 308px de grid + padding).
         // Desktop (md:+): densidade compacta original (180px).
-        'pointer-events-auto select-none overflow-hidden p-3 w-full max-w-[340px] md:p-1.5 md:w-[180px] md:min-w-[180px] md:max-w-[180px]',
+        'pointer-events-auto w-full max-w-[340px] select-none overflow-hidden p-3 md:w-[180px] md:min-w-[180px] md:max-w-[180px] md:p-1.5',
         className,
       )}
       formatters={{
         formatWeekdayName: (date) => {
-          const narrow = ptBR.localize?.day(date.getDay() as import('date-fns').Day, { width: 'narrow' }) ?? '';
+          const narrow = ptBR.localize?.day(date.getDay() as Day, { width: 'narrow' }) ?? '';
           return narrow.charAt(0).toUpperCase();
         },
         formatCaption: (date) => {
@@ -93,7 +94,6 @@ function Calendar({
         IconLeft: () => <ChevronLeft className="h-5 w-5 md:h-3 md:w-3" />,
         IconRight: () => <ChevronRight className="h-5 w-5 md:h-3 md:w-3" />,
       }}
-
       {...props}
     />
   );

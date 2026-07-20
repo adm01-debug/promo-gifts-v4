@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { render } from "@testing-library/react";
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/react';
 
 /**
  * Cobertura contratual do efeito "preview-breath".
@@ -41,24 +41,30 @@ function renderPreviewButton() {
       >
         Preview
       </button>
-      <button data-testid="sync-btn" className="h-6">Sincronizar</button>
-      <button data-testid="more-btn" className="h-6">Mais</button>
+      <button data-testid="sync-btn" className="h-6">
+        Sincronizar
+      </button>
+      <button data-testid="more-btn" className="h-6">
+        Mais
+      </button>
     </div>,
   );
 }
 
-describe("Preview button — breath glow", () => {
-  it("aplica preview-breath apenas no botão Preview", () => {
+describe('Preview button — breath glow', () => {
+  it('aplica preview-breath apenas no botão Preview', () => {
     const { container } = renderPreviewButton();
     const preview = container.querySelector('[data-testid="pdf-preview-trigger"]')!;
     expect(preview.className).toMatch(/preview-breath/);
 
-    container
-      .querySelectorAll('button:not([data-testid="pdf-preview-trigger"])')
-      .forEach((btn) => expect(btn.className).not.toMatch(/preview-breath/));
+    for (const btn of Array.from(
+      container.querySelectorAll('button:not([data-testid="pdf-preview-trigger"])'),
+    )) {
+      expect(btn.className).not.toMatch(/preview-breath/);
+    }
   });
 
-  it("desativa o brilho com prefers-reduced-motion (utilitário motion-reduce:animate-none aplicado à raiz e ao after)", () => {
+  it('desativa o brilho com prefers-reduced-motion (utilitário motion-reduce:animate-none aplicado à raiz e ao after)', () => {
     const { container } = renderPreviewButton();
     const preview = container.querySelector('[data-testid="pdf-preview-trigger"]')!;
     // Raiz (boxShadow breath)
@@ -67,7 +73,7 @@ describe("Preview button — breath glow", () => {
     expect(preview.className).toMatch(/after:motion-reduce:animate-none/);
   });
 
-  it("mantém o shimmer (before:) funcionando independentemente do motion-reduce", () => {
+  it('mantém o shimmer (before:) funcionando independentemente do motion-reduce', () => {
     const { container } = renderPreviewButton();
     const preview = container.querySelector('[data-testid="pdf-preview-trigger"]')!;
     // Shimmer continua: usa `before:` com translate em hover, sem motion-reduce override
@@ -76,7 +82,7 @@ describe("Preview button — breath glow", () => {
     expect(preview.className).not.toMatch(/before:motion-reduce/);
   });
 
-  it("pausa o breath em hover e focus-visible para evitar conflito com o shimmer", () => {
+  it('pausa o breath em hover e focus-visible para evitar conflito com o shimmer', () => {
     const { container } = renderPreviewButton();
     const preview = container.querySelector('[data-testid="pdf-preview-trigger"]')!;
     // Raiz
@@ -87,7 +93,7 @@ describe("Preview button — breath glow", () => {
     expect(preview.className).toMatch(/focus-visible:after:animate-none/);
   });
 
-  it("garante separação de camadas: shimmer em `before:`, breath na raiz/`after:` (sem competir)", () => {
+  it('garante separação de camadas: shimmer em `before:`, breath na raiz/`after:` (sem competir)', () => {
     const { container } = renderPreviewButton();
     const preview = container.querySelector('[data-testid="pdf-preview-trigger"]')!;
     const cls = preview.className;
@@ -100,31 +106,25 @@ describe("Preview button — breath glow", () => {
     expect(cls).not.toMatch(/before:[^ ]*preview-breath/);
   });
 
-  it("preserva atributos de acessibilidade (aria-label e testid) — focus não remove a11y", () => {
+  it('preserva atributos de acessibilidade (aria-label e testid) — focus não remove a11y', () => {
     const { container } = renderPreviewButton();
     const preview = container.querySelector('[data-testid="pdf-preview-trigger"]')!;
-    expect(preview.getAttribute("aria-label")).toBe(
-      "Abrir preview da proposta para exportar PDF",
-    );
-    expect(preview.tagName).toBe("BUTTON");
+    expect(preview.getAttribute('aria-label')).toBe('Abrir preview da proposta para exportar PDF');
+    expect(preview.tagName).toBe('BUTTON');
   });
 
-  it("usa apenas tokens semânticos (hsl(var(--primary))) — contraste se adapta a tema claro/escuro", () => {
+  it('usa apenas tokens semânticos (hsl(var(--primary))) — contraste se adapta a tema claro/escuro', () => {
     const { container } = renderPreviewButton();
-    const cls = container
-      .querySelector('[data-testid="pdf-preview-trigger"]')!
-      .className;
+    const cls = container.querySelector('[data-testid="pdf-preview-trigger"]')!.className;
     // Toda cor do efeito referencia --primary; nada de #hex ou cores Tailwind hardcoded
     expect(cls).toMatch(/hsl\(var\(--primary\)/);
     expect(cls).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(cls).not.toMatch(/\b(bg|text|border|shadow)-(white|black|gray-\d|blue-\d|red-\d)/);
   });
 
-  it("usa overflow-hidden — shimmer e breath não estouram a borda arredondada do botão", () => {
+  it('usa overflow-hidden — shimmer e breath não estouram a borda arredondada do botão', () => {
     const { container } = renderPreviewButton();
-    const cls = container
-      .querySelector('[data-testid="pdf-preview-trigger"]')!
-      .className;
+    const cls = container.querySelector('[data-testid="pdf-preview-trigger"]')!.className;
     expect(cls).toMatch(/overflow-hidden/);
     expect(cls).toMatch(/rounded-full/);
   });

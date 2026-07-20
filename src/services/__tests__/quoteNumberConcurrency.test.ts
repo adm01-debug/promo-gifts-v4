@@ -20,26 +20,28 @@ class InMemoryQuotes {
   private nextId = 1;
   // simula a janela em que duas transações leem o MAX antes de qualquer
   // INSERT comitar — exatamente o que acontece em ausência de lock.
-  async insertNoLock(year_yy: string): Promise<Row> {
+  async insertNoLock(yearYy: string): Promise<Row> {
     const max = Math.max(
       10000,
       ...this.rows
-        .filter((r) => r.year_yy === year_yy)
+        .filter((r) => r.year_yy === yearYy)
         .map((r) => Number.parseInt(r.quote_number.split('/')[0], 10)),
     );
     await Promise.resolve(); // cede o event loop → outras "transações" leem o mesmo MAX
-    const number = `${max + 1}/${year_yy}`;
-    const row = { id: this.nextId++, year_yy, quote_number: number };
+    const number = `${max + 1}/${yearYy}`;
+    const row = { id: this.nextId++, year_yy: yearYy, quote_number: number };
     this.rows.push(row);
     return row;
   }
 
   private readonly locks = new Map<string, Promise<void>>();
-  async insertWithAdvisoryLock(year_yy: string): Promise<Row> {
-    const key = `quote_number:${year_yy}`;
+  async insertWithAdvisoryLock(yearYy: string): Promise<Row> {
+    const key = `quote_number:${yearYy}`;
     const prev = this.locks.get(key) ?? Promise.resolve();
     let release!: () => void;
-    const next = new Promise<void>((r) => (release = r));
+    const next = new Promise<void>((r) => {
+      release = r;
+    });
     this.locks.set(
       key,
       prev.then(() => next),
@@ -49,12 +51,12 @@ class InMemoryQuotes {
       const max = Math.max(
         10000,
         ...this.rows
-          .filter((r) => r.year_yy === year_yy)
+          .filter((r) => r.year_yy === yearYy)
           .map((r) => Number.parseInt(r.quote_number.split('/')[0], 10)),
       );
       await Promise.resolve();
-      const number = `${max + 1}/${year_yy}`;
-      const row = { id: this.nextId++, year_yy, quote_number: number };
+      const number = `${max + 1}/${yearYy}`;
+      const row = { id: this.nextId++, year_yy: yearYy, quote_number: number };
       this.rows.push(row);
       return row;
     } finally {
@@ -67,9 +69,7 @@ describe('quote_number · concorrência multi-vendedor', () => {
   it('🚨 estratégia atual (MAX+1 sem lock) PRODUZ colisões', async () => {
     const db = new InMemoryQuotes();
     const N = 50;
-    const results = await Promise.all(
-      Array.from({ length: N }, () => db.insertNoLock('26')),
-    );
+    const results = await Promise.all(Array.from({ length: N }, () => db.insertNoLock('26')));
     const numbers = results.map((r) => r.quote_number);
     const unique = new Set(numbers);
     // Provamos a vulnerabilidade: NÃO há N números distintos.
@@ -85,9 +85,7 @@ describe('quote_number · concorrência multi-vendedor', () => {
     const numbers = results.map((r) => r.quote_number);
     const unique = new Set(numbers);
     expect(unique.size).toBe(N);
-    const seqs = numbers
-      .map((n) => Number.parseInt(n.split('/')[0], 10))
-      .sort((a, b) => a - b);
+    const seqs = numbers.map((n) => Number.parseInt(n.split('/')[0], 10)).sort((a, b) => a - b);
     // sequência contínua de 10001..10001+N-1
     expect(seqs[0]).toBe(10001);
     expect(seqs[seqs.length - 1]).toBe(10000 + N);

@@ -15,9 +15,9 @@ import { formatCurrency } from '@/components/cart/CartUtilComponents';
 type CartItem = { quantity: number; product_price: number };
 function computeHeaderMeta(items: CartItem[]) {
   const skus = items.length;
-  const qty = items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  const qty = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const subtotal = items.reduce(
-    (sum, it) => sum + (it.product_price || 0) * (it.quantity || 0),
+    (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
     0,
   );
   const parts = [
@@ -29,9 +29,7 @@ function computeHeaderMeta(items: CartItem[]) {
 }
 
 // Réplica pura do gate de peso/volume da sidebar.
-function shouldShowWeightVolumeBlock(
-  wv: { weightKg: number; volumeCm3: number } | null,
-) {
+function shouldShowWeightVolumeBlock(wv: { weightKg: number; volumeCm3: number } | null) {
   return !!wv && (wv.weightKg > 0 || wv.volumeCm3 > 0);
 }
 
@@ -95,21 +93,14 @@ describe('Header meta — pluralização e formatação (100+ cenários)', () =>
       }));
       const meta = norm(computeHeaderMeta(items));
       const skus = items.length;
-      const qty = items.reduce((s, it) => s + it.quantity, 0);
+      const qty = items.reduce((s, item) => s + item.quantity, 0);
 
       // 1) Prefixo SKU(s)
-      expect(meta.startsWith(`${skus} ${skus === 1 ? 'SKU' : 'SKUs'} ·`)).toBe(
-        true,
-      );
+      expect(meta.startsWith(`${skus} ${skus === 1 ? 'SKU' : 'SKUs'} ·`)).toBe(true);
       // 2) Unidade(s)
-      expect(meta.includes(`${qty} ${qty === 1 ? 'unidade' : 'unidades'}`)).toBe(
-        true,
-      );
+      expect(meta.includes(`${qty} ${qty === 1 ? 'unidade' : 'unidades'}`)).toBe(true);
       // 3) Se houver subtotal > 0, formato de moeda pt-BR válido
-      const subtotal = items.reduce(
-        (s, it) => s + it.quantity * it.product_price,
-        0,
-      );
+      const subtotal = items.reduce((s, item) => s + item.quantity * item.product_price, 0);
       if (subtotal > 0) {
         expect(meta).toMatch(CURRENCY_RE);
       } else {
@@ -148,21 +139,15 @@ describe('Sidebar weight/volume — gate visual (100+ cenários)', () => {
   });
 
   it('ambos zero → NÃO exibe bloco', () => {
-    expect(
-      shouldShowWeightVolumeBlock({ weightKg: 0, volumeCm3: 0 }),
-    ).toBe(false);
+    expect(shouldShowWeightVolumeBlock({ weightKg: 0, volumeCm3: 0 })).toBe(false);
   });
 
   it('só peso > 0 → EXIBE', () => {
-    expect(
-      shouldShowWeightVolumeBlock({ weightKg: 0.1, volumeCm3: 0 }),
-    ).toBe(true);
+    expect(shouldShowWeightVolumeBlock({ weightKg: 0.1, volumeCm3: 0 })).toBe(true);
   });
 
   it('só volume > 0 → EXIBE', () => {
-    expect(
-      shouldShowWeightVolumeBlock({ weightKg: 0, volumeCm3: 1 }),
-    ).toBe(true);
+    expect(shouldShowWeightVolumeBlock({ weightKg: 0, volumeCm3: 1 })).toBe(true);
   });
 
   it('formatação de peso: < 1kg → gramas, >= 1kg → quilos (50 amostras)', () => {
@@ -220,12 +205,12 @@ describe('Formatação BRL — resiliência a NBSP/NNBSP (\\u00A0, \\u202F)', ()
 
   it('regex robusto casa variantes sintéticas: space, NBSP, NNBSP e sem separador', () => {
     const variants = [
-      'R$ 1.234,56',           // space
-      'R$\u00A01.234,56',      // NBSP
-      'R$\u202F1.234,56',      // NNBSP
-      'R$1.234,56',            // sem separador
-      'R$ 0,01',               // menor unidade
-      'R$ 999.999.999,99',     // 9 dígitos + separadores de milhar
+      'R$ 1.234,56', // space
+      'R$\u00A01.234,56', // NBSP
+      'R$\u202F1.234,56', // NNBSP
+      'R$1.234,56', // sem separador
+      'R$ 0,01', // menor unidade
+      'R$ 999.999.999,99', // 9 dígitos + separadores de milhar
     ];
     for (const v of variants) {
       expect(v).toMatch(RE_ROBUST);
@@ -234,11 +219,11 @@ describe('Formatação BRL — resiliência a NBSP/NNBSP (\\u00A0, \\u202F)', ()
 
   it('regex robusto REJEITA formatos inválidos', () => {
     const invalid = [
-      'R$ 1,234.56',    // formato en-US
-      'R$ 1.234',       // sem casas decimais
-      'R$ 1.234,5',     // 1 casa decimal
-      'R$ 1.234,567',   // 3 casas decimais
-      '$1.234,56',      // moeda errada
+      'R$ 1,234.56', // formato en-US
+      'R$ 1.234', // sem casas decimais
+      'R$ 1.234,5', // 1 casa decimal
+      'R$ 1.234,567', // 3 casas decimais
+      '$1.234,56', // moeda errada
       'R$ abc',
       '',
     ];
@@ -286,7 +271,7 @@ describe('Regressão — fronteiras de qty/peso/volume nunca misturam entre carr
         if (i === j) continue;
         const a = [{ quantity: cases[i].qty, product_price: cases[i].price }];
         const b = [{ quantity: cases[j].qty, product_price: cases[j].price }];
-        const metaA = norm(computeHeaderMeta(a));
+        const _metaA = norm(computeHeaderMeta(a));
         const metaB = norm(computeHeaderMeta(b));
         if (metaA === metaB) continue; // podem coincidir se qty e subtotal iguais
         // subtotal de A não vaza no meta de B
@@ -323,8 +308,11 @@ describe('Regressão — fronteiras de qty/peso/volume nunca misturam entre carr
 
   it('troca rápida A→B→C→A (100x): meta final SEMPRE reflete o último cart', () => {
     const carts = [
-      [{ quantity: 3, product_price: 10 }],          // A: R$ 30,00
-      [{ quantity: 5, product_price: 100 }, { quantity: 1, product_price: 1 }], // B: R$ 501,00
+      [{ quantity: 3, product_price: 10 }], // A: R$ 30,00
+      [
+        { quantity: 5, product_price: 100 },
+        { quantity: 1, product_price: 1 },
+      ], // B: R$ 501,00
       [], // C: vazio
     ];
     for (let i = 0; i < 100; i++) {
@@ -346,15 +334,15 @@ describe('Regressão — fronteiras de qty/peso/volume nunca misturam entre carr
 describe('Invariante — troca entre 2 carrinhos nunca mistura dados', () => {
   it('500x fuzz: meta do carrinho B nunca contém números do carrinho A', () => {
     for (let i = 0; i < 500; i++) {
-      const a = Array.from({ length: 3 + i % 10 }, () => ({
+      const a = Array.from({ length: 3 + (i % 10) }, () => ({
         quantity: 10 + (i % 7),
         product_price: 1 + (i % 5),
       }));
-      const b = Array.from({ length: 1 + i % 4 }, () => ({
+      const b = Array.from({ length: 1 + (i % 4) }, () => ({
         quantity: 1 + (i % 3),
         product_price: 100 + (i % 11),
       }));
-      const metaA = norm(computeHeaderMeta(a));
+      const _metaA = norm(computeHeaderMeta(a));
       const metaB = norm(computeHeaderMeta(b));
 
       // SKUs de A não podem aparecer no meta de B se forem diferentes
@@ -368,9 +356,7 @@ describe('Invariante — troca entre 2 carrinhos nunca mistura dados', () => {
       const subA = a.reduce((s, x) => s + x.quantity * x.product_price, 0);
       const subB = b.reduce((s, x) => s + x.quantity * x.product_price, 0);
       if (subA > 0 && subB > 0 && subA !== subB) {
-        expect(metaB.includes(formatCurrency(subA).replace(NBSP, ' '))).toBe(
-          false,
-        );
+        expect(metaB.includes(formatCurrency(subA).replace(NBSP, ' '))).toBe(false);
       }
     }
   });
@@ -394,12 +380,12 @@ describe('Extremos — quantidades, pesos e volumes fora do "normal"', () => {
     Number.MAX_SAFE_INTEGER - 1,
     9_007_199_254_740_991, // MAX_SAFE_INTEGER
     1e15,
-    1e20,               // além do MAX_SAFE_INTEGER — cientific notation risk
+    1e20, // além do MAX_SAFE_INTEGER — cientific notation risk
   ];
   const EXTREME_PRICE = [
     0,
     0.01,
-    0.001,           // subcentavo (arredondado no format)
+    0.001, // subcentavo (arredondado no format)
     1,
     99_999.99,
     1e6,
@@ -419,16 +405,7 @@ describe('Extremos — quantidades, pesos e volumes fora do "normal"', () => {
     Number.NEGATIVE_INFINITY,
     Number.NaN,
   ];
-  const EXTREME_VOLUME_M3 = [
-    0,
-    1e-9,
-    0.0009,
-    0.001,
-    1,
-    1e6,
-    Number.POSITIVE_INFINITY,
-    Number.NaN,
-  ];
+  const EXTREME_VOLUME_M3 = [0, 1e-9, 0.0009, 0.001, 1, 1e6, Number.POSITIVE_INFINITY, Number.NaN];
 
   it('formatCurrency nunca lança nem retorna string inválida em valores extremos', () => {
     for (const q of EXTREME_QTY) {
@@ -493,18 +470,16 @@ describe('Extremos — quantidades, pesos e volumes fora do "normal"', () => {
     expect(shouldShowWeightVolumeBlock({ weightKg: Infinity, volumeCm3: 0 })).toBe(true);
     expect(shouldShowWeightVolumeBlock({ weightKg: 0, volumeCm3: Infinity })).toBe(true);
     // Ambos NaN → nunca exibir (não faz sentido).
-    expect(
-      shouldShowWeightVolumeBlock({ weightKg: Number.NaN, volumeCm3: Number.NaN }),
-    ).toBe(false);
+    expect(shouldShowWeightVolumeBlock({ weightKg: Number.NaN, volumeCm3: Number.NaN })).toBe(
+      false,
+    );
   });
 
   it('regex robusto do BRL nunca casa saída extrema inválida (fuzz 500x)', () => {
     for (let i = 0; i < 500; i++) {
       // Escolhe combinação semi-aleatória de valores extremos.
-      const q =
-        EXTREME_QTY[Math.floor(Math.random() * EXTREME_QTY.length)];
-      const p =
-        EXTREME_PRICE[Math.floor(Math.random() * EXTREME_PRICE.length)];
+      const q = EXTREME_QTY[Math.floor(Math.random() * EXTREME_QTY.length)];
+      const p = EXTREME_PRICE[Math.floor(Math.random() * EXTREME_PRICE.length)];
       const items = [{ quantity: q, product_price: p }];
       const meta = norm(computeHeaderMeta(items));
 

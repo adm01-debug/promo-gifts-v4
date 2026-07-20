@@ -15,8 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export type CallbackResult = string | 'applied' | 'duplicate_ignored' | 'error' | 'exhausted';
-export type EventType =
-  'approved' | 'expired' | 'order_created' | 'rejected' | 'sent_to_client';
+export type EventType = 'approved' | 'expired' | 'order_created' | 'rejected' | 'sent_to_client';
 
 export interface CallbackEventRow {
   id: string;
@@ -56,11 +55,15 @@ export function useV4Callbacks(filters: CallbackFilters) {
     queryFn: async (): Promise<CallbackEventRow[]> => {
       // NOTE: `crm_callback_events` vive no banco canônico e não está no types.ts
       // gerado (que reflete pqp). Cast via any até regenerar tipos do canônico.
-      const client = supabase as unknown as {
-        from: (t: string) => {
-          select: (c: string) => any;
-        };
+      type QB = {
+        select: (c: string) => QB;
+        gte: (col: string, val: string) => QB;
+        order: (col: string, opts: { ascending: boolean }) => QB;
+        limit: (n: number) => QB;
+        eq: (col: string, val: string) => QB;
+        then: Promise<{ data: CallbackEventRow[] | null; error: unknown }>['then'];
       };
+      const client = supabase as unknown as { from: (t: string) => QB };
       let q = client
         .from('crm_callback_events')
         .select(
@@ -80,7 +83,12 @@ export function useV4Callbacks(filters: CallbackFilters) {
         q = q.eq('result', filters.result);
       }
       const { data, error } = await q;
-      if (error) throw error;
+      if (error)
+        throw new Error(
+          typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message?: unknown }).message)
+            : String(error),
+        );
       return (data ?? []) as CallbackEventRow[];
     },
     staleTime: 30_000,

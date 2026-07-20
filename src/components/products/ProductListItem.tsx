@@ -80,7 +80,7 @@ interface ProductListItemProps {
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: boolean;
-  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean } | void;
+  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean } | undefined;
   canAddToCompare?: boolean;
   highlightColors?: string[];
   activeColorFilter?: ActiveColorFilter | null;
@@ -455,7 +455,7 @@ export const ProductListItem = memo(
             data-testid="product-list-item-thumb"
             data-product-id={product.id}
             style={{ touchAction: 'manipulation' }}
-            onClick={(e: React.MouseEvent | React.KeyboardEvent) => {
+            onClick={(e: React.KeyboardEvent | React.MouseEvent) => {
               e.stopPropagation();
               if (
                 actionBusyRef.current ||

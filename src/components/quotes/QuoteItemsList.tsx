@@ -52,9 +52,9 @@ function QuoteItemRow({
   index,
   isExpanded,
   onUpdateQuantity,
-  onUpdatePrice,
+  onUpdatePrice: _onUpdatePrice,
   onRemove,
-  onTogglePersonalization,
+  onTogglePersonalization: _onTogglePersonalization,
   onConfirmPrice,
   renderPersonalization,
   formatCurrency,
@@ -102,7 +102,6 @@ function QuoteItemRow({
           )}
         >
           <div className="flex items-start gap-2">
-
             {/* Product Image */}
             <ProductThumb
               src={item.product_image_url}
@@ -123,7 +122,10 @@ function QuoteItemRow({
                       {item.product_sku}
                     </span>
                     {hasPersonalizations && (
-                      <Badge variant="outline" className="h-5 gap-1 border-primary/30 bg-primary/5 px-1.5 text-[10px] font-normal text-primary">
+                      <Badge
+                        variant="outline"
+                        className="h-5 gap-1 border-primary/30 bg-primary/5 px-1.5 text-[10px] font-normal text-primary"
+                      >
                         <Palette className="h-2.5 w-2.5" />
                         {item.personalizations?.length === 1
                           ? '1 gravação'
@@ -194,7 +196,13 @@ function QuoteItemRow({
                 value={qtyDraft}
                 onFocus={(e) => e.currentTarget.select()}
                 onKeyDown={(e) => {
-                  if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === '.' || e.key === ',') {
+                  if (
+                    e.key === '-' ||
+                    e.key === '+' ||
+                    e.key === 'e' ||
+                    e.key === '.' ||
+                    e.key === ','
+                  ) {
                     e.preventDefault();
                   }
                 }}
@@ -228,11 +236,9 @@ function QuoteItemRow({
               <div className="flex h-7 items-center gap-1">
                 <span
                   data-testid="quote-item-price-display"
-                  role="text"
-                  aria-readonly="true"
                   aria-label={`Valor unitário (somente leitura, não editável): ${formatCurrency(item.unit_price)}`}
                   title="Preço definido pelo catálogo — somente leitura, não editável aqui"
-                  className="whitespace-nowrap cursor-not-allowed select-none font-display text-xs font-medium tabular-nums text-muted-foreground min-[360px]:text-sm"
+                  className="cursor-not-allowed select-none whitespace-nowrap font-display text-xs font-medium tabular-nums text-muted-foreground min-[360px]:text-sm"
                 >
                   {formatCurrency(item.unit_price)}
                 </span>
@@ -260,11 +266,6 @@ function QuoteItemRow({
               </span>
             </div>
           </div>
-
-
-
-
-
         </div>
 
         {/* Personalization content — scrollable area */}

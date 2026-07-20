@@ -21,7 +21,7 @@ const mockFetchQuote = vi.fn<(id: string) => Promise<unknown>>();
 const mockCreateQuote = vi.fn<(quote: unknown, items: unknown) => Promise<unknown>>();
 
 vi.mock('@/hooks/quotes', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/quotes')>('@/hooks/quotes');
+  const actual = await vi.importActual('@/hooks/quotes');
   return {
     ...actual,
     useQuotes: () => ({
@@ -154,7 +154,10 @@ describe('useQuotesListPage — handleBulkDelete', () => {
   it('isBulkDeleting fica true durante a operação e false ao terminar', async () => {
     let resolveDelete: ((v: boolean) => void) | null = null;
     mockDeleteQuote.mockImplementation(
-      () => new Promise<boolean>((res) => { resolveDelete = res; }),
+      () =>
+        new Promise<boolean>((res) => {
+          resolveDelete = res;
+        }),
     );
 
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });

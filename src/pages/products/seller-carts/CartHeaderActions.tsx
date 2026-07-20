@@ -46,17 +46,17 @@ interface CartHeaderActionsProps {
 export function CartHeaderActions({
   cart,
   templates,
-  canCreateCart,
+  canCreateCart: _canCreateCart,
   onGenerateQuote,
-  onShareCart,
-  onDuplicateCart,
-  onExportCSV,
-  onExportPDF,
+  onShareCart: _onShareCart,
+  onDuplicateCart: _onDuplicateCart,
+  onExportCSV: _onExportCSV,
+  onExportPDF: _onExportPDF,
   onSaveTemplate,
   onLoadTemplate,
   onDeleteTemplate,
-  onClear,
-  onNavigate,
+  onClear: _onClear,
+  onNavigate: _onNavigate,
 }: CartHeaderActionsProps) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
@@ -71,7 +71,11 @@ export function CartHeaderActions({
         data-testid="cart-checkout-cta"
         disabled={!isCartValid}
         aria-disabled={!isCartValid}
-        title={isCartValid ? 'Gerar Orçamento a partir deste carrinho' : 'Adicione itens ao carrinho antes de gerar um orçamento'}
+        title={
+          isCartValid
+            ? 'Gerar Orçamento a partir deste carrinho'
+            : 'Adicione itens ao carrinho antes de gerar um orçamento'
+        }
         className="group/cta h-9 gap-2 rounded-xl bg-success px-4 text-xs font-bold text-success-foreground shadow-lg shadow-success/20 transition-all duration-300 hover:scale-[1.02] hover:bg-success/90 hover:shadow-xl hover:shadow-success/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:hover:scale-100"
         onClick={() => {
           if (!isCartValid) return;
@@ -84,7 +88,6 @@ export function CartHeaderActions({
           className="h-4 w-4 transition-transform group-hover/cta:translate-x-1"
         />
       </Button>
-
 
       {/* Save Template */}
       <Dialog

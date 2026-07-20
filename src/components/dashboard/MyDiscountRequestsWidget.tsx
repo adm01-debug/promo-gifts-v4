@@ -209,17 +209,13 @@ export function MyDiscountRequestsWidget() {
               data-testid="discount-widget-realtime-status"
               data-realtime={realtimeOk ? 'connected' : 'fallback'}
               title={
-                realtimeOk
-                  ? 'Tempo real conectado'
-                  : 'Tempo real indisponível — usando polling'
+                realtimeOk ? 'Tempo real conectado' : 'Tempo real indisponível — usando polling'
               }
               className={cn(
                 'inline-flex h-2 w-2 rounded-full',
-                realtimeOk ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse',
+                realtimeOk ? 'bg-emerald-500' : 'animate-pulse bg-amber-500',
               )}
-              aria-label={
-                realtimeOk ? 'Tempo real conectado' : 'Polling de fallback ativo'
-              }
+              aria-label={realtimeOk ? 'Tempo real conectado' : 'Polling de fallback ativo'}
             />
             {totalPending > 0 && (
               <Badge
@@ -277,8 +273,7 @@ export function MyDiscountRequestsWidget() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">
-                        Desconto solicitado:{' '}
-                        {Number(r.requested_discount_percent ?? 0).toFixed(1)}%
+                        Desconto solicitado: {Number(r.requested_discount_percent ?? 0).toFixed(1)}%
                       </p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Badge
@@ -339,7 +334,10 @@ export function MyDiscountRequestsWidget() {
                       )}
 
                       {/* Próximos passos */}
-                      <NextSteps row={r} onOpenQuote={() => navigate(`/orcamentos/${r.quote_id}`)} />
+                      <NextSteps
+                        row={r}
+                        onOpenQuote={() => navigate(`/orcamentos/${r.quote_id}`)}
+                      />
 
                       {/* Timeline completa */}
                       <DiscountApprovalAuditTrail requestId={r.id} defaultOpen />
@@ -400,9 +398,7 @@ function NextSteps({ row, onOpenQuote }: { row: RequestRow; onOpenQuote: () => v
         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
         <div className="flex-1 space-y-2">
           <p className="font-semibold text-emerald-700 dark:text-emerald-400">Desconto aprovado</p>
-          <p className="text-foreground">
-            O orçamento está liberado para envio ao cliente.
-          </p>
+          <p className="text-foreground">O orçamento está liberado para envio ao cliente.</p>
           <Button size="sm" variant="outline" className="h-7 text-[11px]" onClick={onOpenQuote}>
             Abrir orçamento
           </Button>
@@ -424,9 +420,12 @@ function NextSteps({ row, onOpenQuote }: { row: RequestRow; onOpenQuote: () => v
         <ul className="list-disc space-y-1 pl-4 text-foreground">
           <li>
             Reduza o desconto para no máximo{' '}
-            // eslint-disable-next-line eqeqeq, no-eq-null -- checagem intencional de null/undefined
-            <strong>{limit != null ? `${limit.toFixed(2)}%` : 'o seu limite atual'}</strong> e
-            reenvie ao cliente sem nova aprovação.
+            <strong>
+              {limit !== null && limit !== undefined
+                ? `${limit.toFixed(2)}%`
+                : 'o seu limite atual'}
+            </strong>{' '}
+            e reenvie ao cliente sem nova aprovação.
           </li>
           <li>
             Ou ajuste a justificativa (volume, prazo, fidelidade) e envie uma nova solicitação ao

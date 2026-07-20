@@ -12,7 +12,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuditHistory } from '../AuditHistory';
 
 vi.mock('@/hooks/admin', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/admin')>('@/hooks/admin');
+  const actual = await vi.importActual('@/hooks/admin');
   return {
     ...actual,
     fetchAuditHistory: vi.fn().mockResolvedValue([
@@ -68,9 +68,9 @@ describe('AuditHistory — acessibilidade', () => {
 
     const times = container.querySelectorAll('time');
     expect(times.length).toBeGreaterThanOrEqual(2);
-    times.forEach((t) => {
+    for (const t of Array.from(times)) {
       expect(t.getAttribute('datetime')).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    });
+    }
   });
 
   it('expand de detalhes é navegável por teclado (Enter/Space) e atualiza aria-expanded', async () => {

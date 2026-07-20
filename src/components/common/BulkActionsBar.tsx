@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 
-
 export interface BulkAction {
   id: string;
   label: string;
@@ -27,7 +26,7 @@ export function BulkActionsBar({
   selectedIds,
   entityLabel = 'item',
   actions,
-  onClear,
+  onClear: _onClear,
   showSelectAllBanner,
   totalCount,
   onSelectAll,
@@ -55,7 +54,6 @@ export function BulkActionsBar({
                 {action.label}
               </Button>
             ))}
-
           </div>
 
           {showSelectAllBanner && totalCount && onSelectAll && (

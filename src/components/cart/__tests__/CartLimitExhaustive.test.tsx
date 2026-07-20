@@ -102,22 +102,22 @@ describe('MAX_SELLER_CARTS — SSOT & coerência cross-module', () => {
     expect(SELLER_CART_LIMIT_REACHED_SHORT).not.toMatch(/Limite de 10 carrinhos/);
   });
 
-  it('edge function test-cart-limit espelha a constante do client', () => {
+  it('edge function test-cart-limit espelha a constante do client', async () => {
     const p = path.resolve(process.cwd(), 'supabase/functions/test-cart-limit/index.ts');
-    const src = fs.readFileSync(p, 'utf8');
+    const src = await fs.promises.readFile(p, 'utf8');
     // Deve conter exatamente MAX_SELLER_CARTS = 50
     expect(src).toMatch(/MAX_SELLER_CARTS\s*=\s*50\b/);
     // Não deve conter o valor antigo como assignment
     expect(src).not.toMatch(/MAX_SELLER_CARTS\s*=\s*10\b/);
   });
 
-  it('CartDialogs.tsx comenta o novo limite', () => {
+  it('CartDialogs.tsx comenta o novo limite', async () => {
     const p = path.resolve(process.cwd(), 'src/components/cart/cart-utils/CartDialogs.tsx');
-    const src = fs.readFileSync(p, 'utf8');
+    const src = await fs.promises.readFile(p, 'utf8');
     expect(src).not.toMatch(/\b10 carrinhos\b/);
   });
 
-  it('nenhum literal "10 carrinhos" resiliente no código fonte relevante', () => {
+  it('nenhum literal "10 carrinhos" resiliente no código fonte relevante', async () => {
     const roots = [
       'src/hooks/products/useSellerCarts.ts',
       'src/components/cart/CartTabsRich.tsx',
@@ -126,8 +126,12 @@ describe('MAX_SELLER_CARTS — SSOT & coerência cross-module', () => {
     ];
     for (const rel of roots) {
       const p = path.resolve(process.cwd(), rel);
-      if (!fs.existsSync(p)) continue;
-      const src = fs.readFileSync(p, 'utf8');
+      const exists = await fs.promises
+        .access(p)
+        .then(() => true)
+        .catch(() => false);
+      if (!exists) continue;
+      const src = await fs.promises.readFile(p, 'utf8');
       expect(src, `${rel} contém literal antigo`).not.toMatch(/\b10 carrinhos\b/);
     }
   });
@@ -136,8 +140,20 @@ describe('MAX_SELLER_CARTS — SSOT & coerência cross-module', () => {
 describe('CartLimitExhaustive — invariantes em toda a faixa', () => {
   afterEach(cleanup);
 
-  const boundary = [0, 1, 2, 25, MAX_SELLER_CARTS - 2, MAX_SELLER_CARTS - 1, MAX_SELLER_CARTS,
-    MAX_SELLER_CARTS + 1, MAX_SELLER_CARTS + 5, MAX_SELLER_CARTS * 2, 200, 999];
+  const boundary = [
+    0,
+    1,
+    2,
+    25,
+    MAX_SELLER_CARTS - 2,
+    MAX_SELLER_CARTS - 1,
+    MAX_SELLER_CARTS,
+    MAX_SELLER_CARTS + 1,
+    MAX_SELLER_CARTS + 5,
+    MAX_SELLER_CARTS * 2,
+    200,
+    999,
+  ];
 
   for (const count of boundary) {
     it(`n=${count}: contador, disabled e link coerentes`, () => {
@@ -168,7 +184,7 @@ describe('CartLimitExhaustive — fuzz aleatório determinístico', () => {
   // 200 seeds, contagens em [0..120] — suficiente para varrer transições
   const SEEDS = 200;
   it(`${SEEDS} simulações aleatórias mantêm invariantes`, () => {
-    const rnd = mulberry32(0xC0FFEE);
+    const rnd = mulberry32(0xc0ffee);
     for (let i = 0; i < SEEDS; i++) {
       const count = Math.floor(rnd() * 121); // 0..120
       const { counter, btn, detailsLink } = renderWith(count);
