@@ -4,6 +4,7 @@
  * PhD-level defensive programming.
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
@@ -73,8 +74,7 @@ export async function validateRLSPolicies(): Promise<RLSValidationResult> {
     for (const table of CRITICAL_TABLES) {
       try {
         // Attempt a HEAD-like query (count only)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { count: _count, error } = await (supabase as any)
+        const { count: _count, error } = await supabase
           .from(table)
           .select('*', { count: 'exact', head: true })
           .limit(1);
@@ -143,9 +143,11 @@ export async function canAccessTable(
       return { canAccess: false, reason: 'Not authenticated' };
     }
 
-    // Test with a zero-row query
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).select('*', { head: true }).limit(0);
+    // Test with a zero-row query (table is a dynamic string; double-cast to untyped client)
+    const { error } = await (supabase as unknown as SupabaseClient)
+      .from(table)
+      .select('*', { head: true })
+      .limit(0);
 
     if (error?.code === 'PGRST116') {
       return { canAccess: false, reason: 'No RLS policy' };

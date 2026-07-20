@@ -126,12 +126,13 @@ describe('MAX_SELLER_CARTS — SSOT & coerência cross-module', () => {
     ];
     for (const rel of roots) {
       const p = path.resolve(process.cwd(), rel);
-      const exists = await fs.promises
-        .access(p)
-        .then(() => true)
-        .catch(() => false);
-      if (!exists) continue;
-      const src = await fs.promises.readFile(p, 'utf8');
+      let src: string;
+      try {
+        src = await fs.promises.readFile(p, 'utf8');
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue;
+        throw err;
+      }
       expect(src, `${rel} contém literal antigo`).not.toMatch(/\b10 carrinhos\b/);
     }
   });
