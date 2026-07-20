@@ -137,7 +137,7 @@ export function buildInsertPayload(
     client_cnpj: quote.client_cnpj || null,
     contact_id: quote.contact_id ?? null,
     seller_id: userId,
-    organization_id: orgId as string,
+    organization_id: orgId!,
     status: quote.status || 'draft',
     subtotal: round2(totals.subtotal),
     discount_percent: usingPercent ? round2(quote.discount_percent || 0) : 0,
