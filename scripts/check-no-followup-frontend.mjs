@@ -19,6 +19,8 @@ const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', '.git']);
 const SKIP_FILES = new Set([
   // tipo auto-gerado pelo Lovable a partir do schema (contém tabela follow_up_reminders)
   'src/integrations/supabase/types.ts',
+  // teste que define o próprio guard — o arquivo contém a regex FORBIDDEN e descrições do teste
+  'src/components/quotes/__tests__/QuotesStatusChips.no-followup.test.tsx',
 ]);
 
 const PATTERN = /follow[-_]?up|needsFollowUp/i;
