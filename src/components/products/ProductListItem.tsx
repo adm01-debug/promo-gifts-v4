@@ -469,22 +469,6 @@ export const ProductListItem = memo(
               }
               setQuickViewOpen(true);
             }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                e.stopPropagation();
-                if (
-                  actionBusyRef.current ||
-                  variantPickerOpen ||
-                  collectionModalOpen ||
-                  shareDialogOpen ||
-                  quickViewOpen
-                ) {
-                  return;
-                }
-                setQuickViewOpen(true);
-              }
-            }}
           >
             <div key={thumbUrl} className="h-full w-full duration-500 animate-in fade-in">
               <OptimizedImage
