@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://promogifts/schemas/ssot-report.schema.json",
+  "$id": "https://promogifts.com.br/schemas/ssot-report.schema.json",
   "title": "SSOT Report",
   "description": "Artefato agregador emitido por scripts/ssot-report.mjs. Contrato evolutivo via schemaVersion (SemVer). Bumps executados por scripts/ssot-report-bump.mjs — nunca editar schemaVersion à mão.",
   "type": "object",
