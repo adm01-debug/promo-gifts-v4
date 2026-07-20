@@ -137,7 +137,7 @@ export function buildInsertPayload(
     client_cnpj: quote.client_cnpj || null,
     contact_id: quote.contact_id ?? null,
     seller_id: userId,
-    organization_id: orgId,
+    organization_id: orgId as string,
     status: quote.status || 'draft',
     subtotal: round2(totals.subtotal),
     discount_percent: usingPercent ? round2(quote.discount_percent || 0) : 0,
@@ -202,9 +202,7 @@ export function buildItemsInsertPayload(
 
   // Cor é obrigatória ao salvar/enviar orçamento. Bloqueia no front-end antes do
   // request, evitando POST inválido e mensagem genérica do backend.
-  const semCor = validItems.filter(
-    (item) => !item.color_name?.trim(),
-  );
+  const semCor = validItems.filter((item) => !item.color_name?.trim());
   if (semCor.length > 0) {
     const nomes = semCor.map((i) => i.product_name || i.product_sku || i.product_id).join(', ');
     throw new Error(
@@ -213,7 +211,6 @@ export function buildItemsInsertPayload(
   }
 
   return validItems.map((item, index) => ({
-
     quote_id: quoteId,
     product_id: item.product_id,
     product_name: item.product_name,
