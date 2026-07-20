@@ -271,7 +271,7 @@ describe('Regressão — fronteiras de qty/peso/volume nunca misturam entre carr
         if (i === j) continue;
         const a = [{ quantity: cases[i].qty, product_price: cases[i].price }];
         const b = [{ quantity: cases[j].qty, product_price: cases[j].price }];
-        const _metaA = norm(computeHeaderMeta(a));
+        const metaA = norm(computeHeaderMeta(a));
         const metaB = norm(computeHeaderMeta(b));
         if (metaA === metaB) continue; // podem coincidir se qty e subtotal iguais
         // subtotal de A não vaza no meta de B

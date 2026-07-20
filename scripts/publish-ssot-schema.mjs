@@ -107,12 +107,25 @@ const indexPayload = {
 };
 const indexText = JSON.stringify(indexPayload, null, 2) + '\n';
 
-// Snapshot imutável — se já existe, DEVE coincidir bit-a-bit com o payload
-// atual (caso contrário sinalizamos violação de imutabilidade).
+// Snapshot imutável — se já existe, o CONTEÚDO DE SCHEMA deve coincidir
+// (x-published.updatedAt é excluído: é metadata de publicação que muda a cada
+// execução e não faz parte do contrato do schema em si).
+const stripUpdatedAt = (text) => {
+  try {
+    const obj = JSON.parse(text);
+    if (obj['x-published']) {
+      const { updatedAt: _u, ...rest } = obj['x-published'];
+      obj['x-published'] = rest;
+    }
+    return JSON.stringify(obj);
+  } catch {
+    return text;
+  }
+};
 const immutableViolations = [];
 if (existsSync(versionedOut)) {
   const existing = readFileSync(versionedOut, 'utf8');
-  if (existing !== publishedText) {
+  if (stripUpdatedAt(existing) !== stripUpdatedAt(publishedText)) {
     immutableViolations.push(
       `${versionedOut} já existe com conteúdo divergente — snapshot imutável não pode mudar. Bumpe a versão antes de alterar o schema.`,
     );

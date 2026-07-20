@@ -121,7 +121,8 @@ describe('CompanySearchDropdown', () => {
       const results = screen.getAllByRole('button');
       // Should find Alpha Corp via history CNPJ match
       expect(results[1]).toHaveTextContent('Alpha Corp');
-      expect(results[1]).toHaveTextContent('111');
+      // CNPJ '111' is rendered as masked '11.1' by maskCnpj()
+      expect(results[1]).toHaveTextContent('11.1');
     });
   });
 

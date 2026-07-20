@@ -19,6 +19,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 import { useDiscountApproval } from '../useDiscountApproval';
 
+vi.mock('@tanstack/react-query', () => ({
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: vi.fn(),
+  })),
+}));
+
 // ── Mocks ────────────────────────────────────────────────────────────────────
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
@@ -69,7 +75,10 @@ vi.mock('@/lib/security/rls-denial-logger', () => ({
  * 6. profiles.select.eq.maybeSingle (seller name)
  */
 function setupInsertSuccess() {
-  mockInsert.mockReturnValue({ error: null });
+  // discount_approval_requests INSERT chains .select('id').maybeSingle()
+  const insertMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+  const insertSelect = vi.fn().mockReturnValue({ maybeSingle: insertMaybeSingle });
+  mockInsert.mockReturnValue({ select: insertSelect });
   mockUpdate.mockReturnValue({ eq: vi.fn().mockReturnValue({ error: null }) });
   // requestApproval's dedup guard chains TWO .eq() calls before .maybeSingle():
   //   .select('id').eq('quote_id', ...).eq('status', 'pending').maybeSingle()
@@ -163,9 +172,13 @@ describe('requestApproval', () => {
         const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: null });
         const innerEqFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
         const outerEqFn = vi.fn().mockReturnValue({ eq: innerEqFn, maybeSingle: maybeSingleFn });
+        const notifyInsertMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        const notifyInsertSelect = vi
+          .fn()
+          .mockReturnValue({ maybeSingle: notifyInsertMaybeSingle });
         return {
           select: vi.fn().mockReturnValue({ eq: outerEqFn }),
-          insert: vi.fn().mockResolvedValue({ error: null }),
+          insert: vi.fn().mockReturnValue({ select: notifyInsertSelect }),
         } as never;
       }
       if (table === 'quotes') {
@@ -223,26 +236,50 @@ describe('requestApproval', () => {
         darCallCount++;
         if (darCallCount === 1) {
           // First call: dedup SELECT → error
-          const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'Network error' } });
+          const maybeSingleFn = vi
+            .fn()
+            .mockResolvedValue({ data: null, error: { message: 'Network error' } });
           const innerEqFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
           const outerEqFn = vi.fn().mockReturnValue({ eq: innerEqFn });
           return { select: vi.fn().mockReturnValue({ eq: outerEqFn }) } as never;
         }
-        // Subsequent call: INSERT → success
-        return { insert: vi.fn().mockResolvedValue({ error: null }) } as never;
+        // Subsequent call: INSERT → success (.insert({}).select('id').maybeSingle() chain)
+        const dedupInsertMaybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        const dedupInsertSelect = vi.fn().mockReturnValue({ maybeSingle: dedupInsertMaybeSingle });
+        return { insert: vi.fn().mockReturnValue({ select: dedupInsertSelect }) } as never;
       }
       if (table === 'quotes') {
         return {
           update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) }),
-          select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }),
+          select: vi
+            .fn()
+            .mockReturnValue({
+              eq: vi
+                .fn()
+                .mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+                }),
+            }),
         } as never;
       }
       if (table === 'user_roles') {
-        return { select: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [], error: null }) }) } as never;
+        return {
+          select: vi
+            .fn()
+            .mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: [], error: null }) }),
+        } as never;
       }
       return {
         insert: vi.fn().mockResolvedValue({ error: null }),
-        select: vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }),
+        select: vi
+          .fn()
+          .mockReturnValue({
+            eq: vi
+              .fn()
+              .mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+              }),
+          }),
       } as never;
     });
 
@@ -430,7 +467,9 @@ describe('getApprovalStatus', () => {
   // which callers interpreted as "no pending request", bypassing the approval gate.
   it('BUG-APPROVAL-STATUS-SILENT-FAIL: loga erro e retorna null quando DB retorna error', async () => {
     const { supabase: supabaseClient } = await import('@/integrations/supabase/client');
-    const maybeSingleFn = vi.fn().mockResolvedValue({ data: null, error: { message: 'RLS denied' } });
+    const maybeSingleFn = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: { message: 'RLS denied' } });
     const limitFn = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
     const orderFn = vi.fn().mockReturnValue({ limit: limitFn });
     const eqFn = vi.fn().mockReturnValue({ order: orderFn });

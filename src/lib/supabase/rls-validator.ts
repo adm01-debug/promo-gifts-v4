@@ -159,7 +159,6 @@ export async function canAccessTable(
 
     return { canAccess: true };
   } catch {
-    // Network error; assume access (optimistic)
-    return { canAccess: true, reason: 'Check failed; allowing' };
+    return { canAccess: false, reason: 'Check failed' };
   }
 }

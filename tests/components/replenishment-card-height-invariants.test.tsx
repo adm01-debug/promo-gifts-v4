@@ -116,8 +116,8 @@ describe("Reposição card — invariância de altura (centenas de simulações)
       const cls = row!.className;
       expect(cls).toContain("flex-nowrap");
       expect(cls).toContain("overflow-hidden");
-      expect(cls).toContain("h-[var(--swatch-size-sm)]");
-      expect(cls).toContain("max-h-[var(--swatch-size-sm)]");
+      expect(cls).toContain("h-[var(--swatch-size,var(--swatch-size-sm))]");
+      expect(cls).toContain("max-h-[var(--swatch-size,var(--swatch-size-sm))]");
       expect(cls).not.toContain("flex-wrap");
       unmount();
     },
@@ -207,7 +207,7 @@ describe("Reposição card — edge cases de cores", () => {
     // hideWhenEmpty=false (BaseProductGridCard) → placeholder "N/A"
     const empty = container.querySelector('[data-testid="colors-unavailable"]');
     expect(empty).not.toBeNull();
-    expect(empty!.className).toContain("min-h-[var(--swatch-size-sm)]");
+    expect(empty!.className).toContain("min-h-[var(--swatch-size,var(--swatch-size-sm))]");
     expect(empty!.className).not.toContain("flex-wrap");
     expect(container.querySelector("article")!.className).toContain(
       "min-h-[420px]",

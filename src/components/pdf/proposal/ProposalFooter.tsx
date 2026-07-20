@@ -1,3 +1,4 @@
+import { PDF_TOKENS } from '../ProposalStyles';
 import type { ProposalTemplateData } from '../ProposalHtmlTemplate';
 
 interface Props {
@@ -19,6 +20,7 @@ export function ProposalFooter({
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'America/Sao_Paulo',
   });
 
   return (
@@ -53,7 +55,7 @@ export function ProposalFooter({
           boxSizing: 'border-box',
           fontSize: '13px',
           fontWeight: 600,
-          color: '#000',
+          color: PDF_TOKENS.textOnGreen,
           fontVariantNumeric: 'tabular-nums',
         }}
       >

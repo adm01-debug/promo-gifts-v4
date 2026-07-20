@@ -58,6 +58,8 @@ jobs:
 
       - name: Commitar baseline atualizado
         if: ${{ github.event.inputs.update_baseline == 'true' }}
+        env:
+          HUSKY: '0'
         run: |
           git config user.name  'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'

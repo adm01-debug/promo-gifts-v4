@@ -11,32 +11,49 @@
  *
  * @see docs/architecture/A11Y_CLICKABLE.md
  */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { execSync } from 'node:child_process';
-import { resolve } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { resolve, join, extname } from 'node:path';
 
 const ROOT = resolve(process.cwd());
 const BASELINE = resolve(ROOT, '.a11y/clickable-baseline.json');
 const UPDATE = process.argv.includes('--update');
 
-// Uso de rg para varredura rápida. Restrito a src/**/*.tsx, ignora testes e o próprio Clickable.
-let raw = '';
-try {
-  raw = execSync(
-    `rg -l "role=[\\"']button[\\"']" src -g '*.tsx' -g '!**/*.test.*' -g '!**/*.spec.*' -g '!**/Clickable.tsx' -g '!**/__tests__/**'`,
-    { encoding: 'utf8', cwd: ROOT },
-  );
-} catch (e) {
-  // rg exit 1 = no matches → snapshot vazio
-  if (e.status !== 1) throw e;
+const PATTERN = /role=["']button["']/;
+const SKIP_DIRS = new Set(['node_modules', 'dist', 'build', '.git', '__tests__']);
+
+function* walk(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (SKIP_DIRS.has(entry.name)) continue;
+      yield* walk(full);
+    } else if (extname(entry.name) === '.tsx') {
+      if (entry.name.includes('.test.') || entry.name.includes('.spec.')) continue;
+      if (entry.name === 'Clickable.tsx') continue;
+      yield full;
+    }
+  }
 }
-const current = new Set(
-  raw
-    .split('\n')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .sort(),
-);
+
+const srcDir = resolve(ROOT, 'src');
+const matches = [];
+
+if (existsSync(srcDir)) {
+  for (const file of walk(srcDir)) {
+    let content;
+    try {
+      content = readFileSync(file, 'utf8');
+    } catch {
+      continue;
+    }
+    if (PATTERN.test(content)) {
+      // Normalize to relative path with forward slashes (matches rg output style)
+      matches.push(file.slice(ROOT.length + 1).replace(/\\/g, '/'));
+    }
+  }
+}
+
+const current = new Set(matches.sort());
 
 let baseline = { files: [] };
 if (existsSync(BASELINE)) {
