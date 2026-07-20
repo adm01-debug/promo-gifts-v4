@@ -47,7 +47,9 @@ if (htmls.length === 0) {
   process.exit(1);
 }
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({
+  executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/opt/pw-browsers/chromium',
+});
 const summary = [];
 try {
   const context = await browser.newContext();
