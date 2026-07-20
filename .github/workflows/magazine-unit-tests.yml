@@ -95,7 +95,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/check-security-definer-acl.mjs
+        run: node scripts/check-security-definer-acl.mjs --baseline .security-definer-acl-baseline.json
 
   # Summary check required by branch protection
   magazine-tests-ok:

@@ -99,6 +99,7 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>((props, ref) =>
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
     'aria-describedby': ariaDescribedBy,
+    onKeyDown: externalKeyDown,
     ...rest
   } = props;
   const Component = (as ?? 'div') as ElementType;
@@ -111,8 +112,9 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>((props, ref) =>
     onClick(e);
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown: React.KeyboardEventHandler<HTMLElement> = (e) => {
     if (disabled) return;
+    externalKeyDown?.(e);
     if (e.key !== 'Enter' && e.key !== ' ') return;
     if (strictTarget && e.target !== e.currentTarget) return;
     e.preventDefault();
