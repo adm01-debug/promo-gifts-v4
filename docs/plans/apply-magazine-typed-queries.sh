@@ -34,16 +34,24 @@ if [[ ! -f "$TYPES" ]]; then
 fi
 # Grep em linhas não-comentário: descarta // e /* ... */ single-line.
 # Usa \s antes de "magazines:" para evitar match parcial em "my_magazines:".
-NONCOMMENT=$(sed 's|//.*$||; s|/\*[^*]*\*/||g' "$TYPES")
-if ! echo "$NONCOMMENT" | grep -qE "(^|[[:space:]])magazines: \{"; then
+# ATENÇÃO — SIGPIPE/pipefail: grep -q encerra após 1º match e envia SIGPIPE ao sed.
+# Com set -o pipefail o pipeline retorna 141 (SIGPIPE) mesmo quando o padrão FOI
+# encontrado — falso negativo silencioso. Solução: sed escreve em mktemp; grep
+# lê do arquivo (sem pipe, sem SIGPIPE). Testado com bash -x: EXIT 0 (found).
+_TYPES_STRIPPED=$(mktemp)
+sed 's|//.*$||; s|/\*[^*]*\*/||g' "$TYPES" > "$_TYPES_STRIPPED"
+if ! grep -qE "(^|[[:space:]])magazines: \{" "$_TYPES_STRIPPED"; then
+  rm -f "$_TYPES_STRIPPED"
   echo "::error::$TYPES não contém a tabela 'magazines' (fora de comentários)."
   echo "         Rode antes o workflow 'Regenerate Supabase Types' e mergeie o PR."
   exit 2
 fi
-if ! echo "$NONCOMMENT" | grep -qE "(^|[[:space:]])magazine_items: \{"; then
+if ! grep -qE "(^|[[:space:]])magazine_items: \{" "$_TYPES_STRIPPED"; then
+  rm -f "$_TYPES_STRIPPED"
   echo "::error::$TYPES não contém a tabela 'magazine_items' (fora de comentários)."
   exit 2
 fi
+rm -f "$_TYPES_STRIPPED"
 
 # ---------------------------------------------------------------------------
 # 2) Já migrado?

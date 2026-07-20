@@ -605,10 +605,12 @@ describe('Suite 3 — Auditoria estática de código (os 4 componentes)', () => 
     expect(total).toBe(3);
   });
 
-  it('S3-06: ProductListItem — 3 setQuickViewOpen legítimos (0 em onSelect de cor)', () => {
+  it('S3-06: ProductListItem — 2 setQuickViewOpen legítimos (0 em onSelect de cor)', () => {
     const c = readFileSync(PLI, 'utf8');
     const total = (c.match(/setQuickViewOpen\(true\)/g) || []).length;
-    expect(total).toBe(3);
+    // Após migração div→Clickable, teclado e mouse compartilham o mesmo onClick handler.
+    // Clickable.handleKeyDown internamente chama onClick — não existe onKeyDown separado.
+    expect(total).toBe(2);
   });
 
   it('S3-07: ProductTableRow — 0 onOpenQuickView(product, null, ...)', () => {

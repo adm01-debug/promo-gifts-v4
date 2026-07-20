@@ -647,7 +647,7 @@ describe('Clickable — onKeyDown composition', () => {
     expect(externalHandler).not.toHaveBeenCalled();
   });
 
-  it('strictTarget=true: onKeyDown externo só dispara quando target === currentTarget', () => {
+  it('strictTarget=true impede o onClick interno para eventos do filho', () => {
     const onClick = vi.fn();
     const externalHandler = vi.fn();
     render(
@@ -661,6 +661,7 @@ describe('Clickable — onKeyDown composition', () => {
     // strictTarget checks currentTarget, but onKeyDown fires before the strictTarget guard
     // for onClick — externalHandler runs for all target matches at the element level
     expect(onClick).not.toHaveBeenCalled();
+    expect(externalHandler).toHaveBeenCalledTimes(1);
   });
 });
 

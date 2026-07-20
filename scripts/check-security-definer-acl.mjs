@@ -66,7 +66,8 @@ if (baselineFile) {
     }
     console.log(`ℹ️  Baseline carregado de ${baselineFile}: ${baselineSet.size} entrada(s) conhecida(s).`);
   } catch (err) {
-    console.warn(`⚠️  Não foi possível ler baseline ${baselineFile}: ${err.message}`);
+    console.error(`❌  Não foi possível ler baseline ${baselineFile}: ${err.message}`);
+    process.exit(1);
   }
 }
 
