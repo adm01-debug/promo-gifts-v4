@@ -64,13 +64,8 @@ function makeMockMutation<TVars>() {
     vars: TVars;
     handlers: {
       onError?: (err: Error, vars: TVars, ctx: unknown) => void;
-      onSuccess?: (data: void, vars: TVars, ctx: unknown) => void;
-      onSettled?: (
-        data: undefined | void,
-        err: Error | null,
-        vars: TVars,
-        ctx: unknown,
-      ) => void;
+      onSuccess?: (data: undefined, vars: TVars, ctx: unknown) => void;
+      onSettled?: (data: undefined, err: Error | null, vars: TVars, ctx: unknown) => void;
     };
   }> = [];
   const mutate = vi.fn((vars: TVars, handlers?: unknown) => {
@@ -252,10 +247,7 @@ describe('useDebouncedCartItemActions', () => {
     qc.setQueryData<SellerCart[]>(QUERY_KEY, (prev) => {
       if (!prev) return prev;
       const cart = { ...prev[0] };
-      cart.items = [
-        cart.items[0],
-        { ...cart.items[0], id: 'item-2', quantity: 1 },
-      ];
+      cart.items = [cart.items[0], { ...cart.items[0], id: 'item-2', quantity: 1 }];
       return [cart];
     });
     const upd = makeMockMutation<{ itemId: string; quantity: number }>();
@@ -462,11 +454,7 @@ describe('useDebouncedCartItemActions', () => {
 
       // Falha da mutation → rollback flag-agnóstico: itemErrors populado.
       act(() => {
-        upd.calls[0].handlers.onError?.(
-          new Error('nope'),
-          upd.calls[0].vars,
-          undefined,
-        );
+        upd.calls[0].handlers.onError?.(new Error('nope'), upd.calls[0].vars, undefined);
       });
       expect(result.current.itemErrors['item-1']).toBeTruthy();
     });

@@ -27,7 +27,9 @@ const baseItem: ProposalItem = {
   unitPrice: 10,
 };
 
-const p = (over: Partial<ProposalItem['personalizations'] extends (infer U)[] | undefined ? U : never> = {}) => ({
+const p = (
+  over: Partial<ProposalItem['personalizations'] extends (infer U)[] | undefined ? U : never> = {},
+) => ({
   technique_name: 'Fiber Laser',
   location_name: 'Lado A',
   colors_count: 1,
@@ -67,10 +69,12 @@ describe('ProposalProductTable — invariantes das 5 mudanças', () => {
   });
 
   it('gera 2 badges empilhados quando há 2 personalizações (mudança #2)', () => {
-    const out = html([{
-      ...baseItem,
-      personalizations: [p({ location_name: 'Lado A' }), p({ location_name: 'Lado B' })],
-    }]);
+    const out = html([
+      {
+        ...baseItem,
+        personalizations: [p({ location_name: 'Lado A' }), p({ location_name: 'Lado B' })],
+      },
+    ]);
     // Cada badge é uma <table> própria — contar tables com backgroundColor:#e0f2f1
     const badgeCount = (out.match(/#e0f2f1/g) || []).length;
     expect(badgeCount).toBe(2);
@@ -88,7 +92,10 @@ describe('ProposalProductTable — dados adversariais', () => {
     ['sem personalização', { personalizations: [] }],
     ['1 personalização', { personalizations: [p()] }],
     ['2 personalizações', { personalizations: [p(), p({ location_name: 'B' })] }],
-    ['5 personalizações', { personalizations: Array.from({ length: 5 }, (_, i) => p({ location_name: `L${i}` })) }],
+    [
+      '5 personalizações',
+      { personalizations: Array.from({ length: 5 }, (_, i) => p({ location_name: `L${i}` })) },
+    ],
     ['sem location', { personalizations: [p({ location_name: undefined })] }],
     ['sem colors_count', { personalizations: [p({ colors_count: undefined })] }],
     ['sem dimensions', { personalizations: [p({ width_cm: undefined, height_cm: undefined })] }],
@@ -134,7 +141,9 @@ describe('ProposalProductTable — dados adversariais', () => {
   it('renderiza separador · entre SKU e Cor apenas quando ambos existem', () => {
     const bothOut = html([{ ...baseItem, sku: 'X', color: 'Y' }]);
     const onlySkuOut = html([{ ...baseItem, sku: 'X', color: undefined }]);
-    const onlyColorOut = html([{ ...baseItem, sku: undefined, composedCode: undefined, color: 'Y' }]);
+    const onlyColorOut = html([
+      { ...baseItem, sku: undefined, composedCode: undefined, color: 'Y' },
+    ]);
     // Contamos "·" apenas no bloco entre SKU e Cor (evitando falso positivo com outros pontos)
     expect(bothOut).toMatch(/>·</);
     expect(onlySkuOut).not.toMatch(/>·</);
@@ -142,11 +151,15 @@ describe('ProposalProductTable — dados adversariais', () => {
   });
 
   it('filtro Boolean nos badges: personalização vazia não vira badge fantasma', () => {
-    const out = html([{
-      ...baseItem,
-      // technique_name vazio + sem location → summary provavelmente vazio
-      personalizations: [{ technique_name: '', location_name: undefined, colors_count: undefined } as never],
-    }]);
+    const out = html([
+      {
+        ...baseItem,
+        // technique_name vazio + sem location → summary provavelmente vazio
+        personalizations: [
+          { technique_name: '', location_name: undefined, colors_count: undefined } as never,
+        ],
+      },
+    ]);
     const badgeCount = (out.match(/#e0f2f1/g) || []).length;
     expect(badgeCount).toBeLessThanOrEqual(1); // 0 ou 1, nunca negativo/crash
   });
@@ -159,7 +172,8 @@ describe('ProposalProductTable — resiliência (fuzz leve)', () => {
       sku: i % 3 === 0 ? undefined : `SKU-${i}`,
       composedCode: i % 5 === 0 ? `C-${i}` : undefined,
       color: i % 2 === 0 ? 'Cor Teste' : undefined,
-      colorHex: i % 4 === 0 ? undefined : `#${((i * 12345) & 0xffffff).toString(16).padStart(6, '0')}`,
+      colorHex:
+        i % 4 === 0 ? undefined : `#${((i * 12345) & 0xffffff).toString(16).padStart(6, '0')}`,
       quantity: (i % 500) + 1,
       unitPrice: (i % 100) + 0.5,
       discount: i % 7 === 0 ? i : 0,
@@ -167,7 +181,7 @@ describe('ProposalProductTable — resiliência (fuzz leve)', () => {
       imageUrl: i % 2 === 0 ? `https://x/${i}.jpg` : undefined,
       personalizations:
         i % 4 === 0
-          ? Array.from({ length: (i % 3) + 1 }, (_, j) => p({ location_name: `L${j}` }))
+          ? Array.from({ length: (i % 3) + 1 }, (_unused, j) => p({ location_name: `L${j}` }))
           : [],
     }));
     expect(() => html(items)).not.toThrow();

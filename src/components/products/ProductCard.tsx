@@ -113,6 +113,7 @@ export interface ProductCardProps {
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean } | void;
   canAddToCompare?: boolean;
   hideCategoryBadges?: boolean;
@@ -474,7 +475,9 @@ export const ProductCard = memo(
             onToggleCompare(product.id);
             showUndoToast({
               title: `"${product.name}" removido da comparação`,
-              onUndo: () => { onToggleCompare(product.id); },
+              onUndo: () => {
+                onToggleCompare(product.id);
+              },
             });
           }
         } else {
@@ -648,7 +651,7 @@ export const ProductCard = memo(
             className="cursor-zoom-in outline-none focus-visible:ring-2 focus-visible:ring-primary"
             showFocusRing={false}
             style={{ touchAction: 'manipulation' }}
-            onClick={(e: React.MouseEvent | React.KeyboardEvent) => {
+            onClick={(e: React.KeyboardEvent | React.MouseEvent) => {
               e.stopPropagation();
               openQuickView();
             }}
@@ -791,7 +794,6 @@ export const ProductCard = memo(
                   ? 'text-violet-700 group-hover:text-violet-600 dark:text-violet-300'
                   : 'text-foreground group-hover:text-primary',
               )}
-
             >
               {displayName}
             </h3>
@@ -840,7 +842,6 @@ export const ProductCard = memo(
                 max={14}
                 size="sm"
                 wrap
-
                 hideWhenEmpty={false}
                 selectedName={activeColorName ?? null}
                 onSelect={(c) => {

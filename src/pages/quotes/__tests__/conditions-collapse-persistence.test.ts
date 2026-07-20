@@ -14,8 +14,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const KEY = (id: string | null | undefined) =>
-  `quote-builder:conditions-collapsed:${id ?? 'new'}`;
+const KEY = (id: string | null | undefined) => `quote-builder:conditions-collapsed:${id ?? 'new'}`;
 
 function makeToggle(getId: () => string | null | undefined) {
   return {
@@ -73,10 +72,10 @@ describe('Conditions collapse — persistência por orçamento', () => {
       const t = makeToggle(() => id);
       t.write(i % 3 === 0);
     });
-    ids.forEach((id, i) => {
+    for (const [i, id] of ids.entries()) {
       const t = makeToggle(() => id);
       expect(t.read()).toBe(i % 3 === 0);
-    });
+    }
   });
 
   it('toggle repetido 500x mantém último valor consistente', () => {
@@ -104,16 +103,12 @@ describe('Conditions collapse — persistência por orçamento', () => {
   it('localStorage lançando erro nunca quebra leitura/escrita', () => {
     const id = 'broken';
     const original = window.localStorage.getItem.bind(window.localStorage);
-    const spyGet = vi
-      .spyOn(Storage.prototype, 'getItem')
-      .mockImplementation(() => {
-        throw new Error('quota');
-      });
-    const spySet = vi
-      .spyOn(Storage.prototype, 'setItem')
-      .mockImplementation(() => {
-        throw new Error('quota');
-      });
+    const spyGet = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+    const spySet = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
 
     const t = makeToggle(() => id);
     expect(() => t.write(true)).not.toThrow();
@@ -128,9 +123,9 @@ describe('Conditions collapse — persistência por orçamento', () => {
   it('UUIDs reais não colidem (100 amostras)', () => {
     const uuids = Array.from({ length: 100 }, () => crypto.randomUUID());
     uuids.forEach((id, i) => makeToggle(() => id).write(i % 2 === 0));
-    uuids.forEach((id, i) => {
+    for (const [i, id] of uuids.entries()) {
       expect(makeToggle(() => id).read()).toBe(i % 2 === 0);
-    });
+    }
   });
 
   it('limpar storage redefine todos para expandido', () => {

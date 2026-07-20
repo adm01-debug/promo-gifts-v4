@@ -47,9 +47,8 @@ const ALL_SOURCES: QuoteHandoffSource[] = [
 function countInWindow(rows: HandoffRow[], source: string, ms: number): number {
   const cutoff = Date.now() - ms;
   const fullName = `${QUOTE_HANDOFF_NAME_PREFIX}${source}`;
-  return rows.filter(
-    (r) => r.name === fullName && new Date(r.created_at).getTime() >= cutoff,
-  ).length;
+  return rows.filter((r) => r.name === fullName && new Date(r.created_at).getTime() >= cutoff)
+    .length;
 }
 
 function stripPrefix(name: string): string {
@@ -63,7 +62,7 @@ export function QuoteBuilderHandoffCard() {
     queryKey: ['quote-builder-handoff-telemetry'],
     queryFn: async (): Promise<HandoffRow[]> => {
       const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      const { data, error } = await supabase
+      const { data: dbData, error } = await supabase
         .from('frontend_telemetry')
         .select('name, created_at, metadata')
         .eq('event_type', QUOTE_HANDOFF_EVENT_TYPE)
@@ -72,13 +71,13 @@ export function QuoteBuilderHandoffCard() {
         .order('created_at', { ascending: false })
         .limit(500);
       if (error) throw error;
-      return (data ?? []) as HandoffRow[];
+      return (dbData ?? []) as HandoffRow[];
     },
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
 
-  const rows = data ?? [];
+  const rows = useMemo(() => data ?? [], [data]);
   const stats = useMemo(() => {
     return ALL_SOURCES.map((source) => ({
       source,
@@ -130,8 +129,8 @@ export function QuoteBuilderHandoffCard() {
         {!isError && noRecent7d && !isLoading && (
           <div className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-warning-foreground">
             <AlertTriangle className="h-4 w-4" />
-            Nenhum handoff registrado nos últimos 7 dias — investigar após o
-            próximo deploy se o fluxo Carrinho → Orçamento continua funcionando.
+            Nenhum handoff registrado nos últimos 7 dias — investigar após o próximo deploy se o
+            fluxo Carrinho → Orçamento continua funcionando.
           </div>
         )}
         <div className="overflow-x-auto">
@@ -162,9 +161,7 @@ export function QuoteBuilderHandoffCard() {
         </div>
         {latest.length > 0 && (
           <div>
-            <div className="mb-2 text-xs font-medium text-muted-foreground">
-              Últimos eventos
-            </div>
+            <div className="mb-2 text-xs font-medium text-muted-foreground">Últimos eventos</div>
             <ul className="space-y-1 text-xs">
               {latest.map((r, i) => (
                 <li key={`${r.created_at}-${i}`} className="flex justify-between gap-2">

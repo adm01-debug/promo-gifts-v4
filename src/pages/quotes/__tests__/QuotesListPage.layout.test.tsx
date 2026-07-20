@@ -3,13 +3,12 @@
  * Garante que título, busca, ordenação e CTA convivem no mesmo bloco,
  * e que data-testids críticos para E2E permanecem expostos.
  */
+import type { useQuotesListPage as _useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-type HookReturn = ReturnType<
-  typeof import('@/pages/quotes/useQuotesListPage').useQuotesListPage
->;
+type HookReturn = ReturnType<typeof _useQuotesListPage>;
 
 const baseHook = {
   navigate: vi.fn(),
@@ -40,9 +39,7 @@ const baseHook = {
 let hookValue: HookReturn = baseHook;
 
 vi.mock('@/pages/quotes/useQuotesListPage', async () => {
-  const actual = await vi.importActual<
-    typeof import('@/pages/quotes/useQuotesListPage')
-  >('@/pages/quotes/useQuotesListPage');
+  const actual = await vi.importActual('@/pages/quotes/useQuotesListPage');
   return { ...actual, useQuotesListPage: () => hookValue };
 });
 

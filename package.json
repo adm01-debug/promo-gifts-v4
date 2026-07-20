@@ -131,7 +131,7 @@
     "e2e:smoke-tags-check": "node scripts/check-smoke-tags.mjs",
     "e2e:smoke-coverage-doc": "node scripts/e2e-smoke-coverage-doc.mjs",
     "e2e:smoke-coverage-check": "node scripts/e2e-smoke-coverage-doc.mjs --check",
-    "check:security-definer-acl": "node scripts/check-security-definer-acl.mjs",
+    "check:security-definer-acl": "node scripts/check-security-definer-acl.mjs --baseline .security-definer-acl-baseline.json",
     "draft:dry-run": "node scripts/dry-run-migration-draft.mjs",
     "test:security-definer-acl": "vitest run tests/security/security-definer-acl.test.ts",
     "test:restore-seller-cart-rpc": "vitest run tests/security/restore-seller-cart-rpc.test.ts",

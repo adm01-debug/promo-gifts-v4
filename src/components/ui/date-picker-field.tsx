@@ -139,7 +139,6 @@ export function DatePickerField(props: DatePickerFieldProps) {
           id={id}
           disabled={disabled}
           data-testid={props['data-testid']}
-          aria-invalid={props['aria-invalid'] || undefined}
           aria-describedby={props['aria-describedby']}
           aria-label={props['aria-label']}
           data-empty={!selectedDate || undefined}
@@ -160,7 +159,7 @@ export function DatePickerField(props: DatePickerFieldProps) {
             aria-hidden="true"
             className={cn(isCompact ? 'h-3 w-3 text-primary' : 'h-4 w-4 text-muted-foreground')}
           />
-          <span className="flex-1 tabular-nums text-left">{label}</span>
+          <span className="flex-1 text-left tabular-nums">{label}</span>
           {allowClear && selectedDate && !disabled && (
             <span
               role="button"
@@ -215,7 +214,7 @@ export function DatePickerField(props: DatePickerFieldProps) {
                 handleClear();
                 setOpen(false);
               }}
-              className="text-xs font-medium text-destructive hover:text-destructive/80 focus:outline-none focus:ring-2 focus:ring-primary/40 rounded-sm px-1"
+              className="rounded-sm px-1 text-xs font-medium text-destructive hover:text-destructive/80 focus:outline-none focus:ring-2 focus:ring-primary/40"
               data-testid={
                 props['data-testid']
                   ? `${props['data-testid']}-footer-clear`
@@ -227,7 +226,7 @@ export function DatePickerField(props: DatePickerFieldProps) {
             <button
               type="button"
               onClick={handleToday}
-              className="text-xs font-medium text-destructive hover:text-destructive/80 focus:outline-none focus:ring-2 focus:ring-primary/40 rounded-sm px-1"
+              className="rounded-sm px-1 text-xs font-medium text-destructive hover:text-destructive/80 focus:outline-none focus:ring-2 focus:ring-primary/40"
               data-testid={
                 props['data-testid']
                   ? `${props['data-testid']}-footer-today`

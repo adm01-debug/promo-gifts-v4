@@ -12,38 +12,46 @@ import { Clickable } from '../Clickable';
 // Fake motion.div — evita depender do runtime do framer-motion dentro do jsdom.
 // Um forwardRef que renderiza `<div>` e captura todos os props extras (motion
 // props caem no passthrough e viram atributos no DOM sob `data-motion-*`).
-const FakeMotionDiv = forwardRef<HTMLDivElement, Record<string, unknown> & { children?: ReactNode }>(
-  function FakeMotionDiv(props, ref) {
-    const { children, layout, initial, animate, transition, whileHover, variants, exit, layoutId, ...rest } =
-      props as Record<string, unknown> & { children?: ReactNode };
-    const motionAttrs: Record<string, string> = {};
-    if (layout !== undefined) motionAttrs['data-motion-layout'] = String(layout);
-    if (initial !== undefined) motionAttrs['data-motion-initial'] = 'set';
-    if (animate !== undefined) motionAttrs['data-motion-animate'] = 'set';
-    if (transition !== undefined) motionAttrs['data-motion-transition'] = 'set';
-    if (whileHover !== undefined) motionAttrs['data-motion-whilehover'] = 'set';
-    if (variants !== undefined) motionAttrs['data-motion-variants'] = 'set';
-    if (exit !== undefined) motionAttrs['data-motion-exit'] = 'set';
-    if (layoutId !== undefined) motionAttrs['data-motion-layoutid'] = String(layoutId);
-    return (
-      <div ref={ref} {...(rest as React.HTMLAttributes<HTMLDivElement>)} {...motionAttrs}>
-        {children as ReactNode}
-      </div>
-    );
-  },
-);
-
-// Fake shadcn Card — forwardRef, aceita className.
-const FakeCard = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(function FakeCard(
-  { className, children, ...rest },
-  ref,
-) {
+const FakeMotionDiv = forwardRef<
+  HTMLDivElement,
+  Record<string, unknown> & { children?: ReactNode }
+>((props, ref) => {
+  const {
+    children,
+    layout,
+    initial,
+    animate,
+    transition,
+    whileHover,
+    variants,
+    exit,
+    layoutId,
+    ...rest
+  } = props as Record<string, unknown> & { children?: ReactNode };
+  const motionAttrs: Record<string, string> = {};
+  if (layout !== undefined) motionAttrs['data-motion-layout'] = String(layout);
+  if (initial !== undefined) motionAttrs['data-motion-initial'] = 'set';
+  if (animate !== undefined) motionAttrs['data-motion-animate'] = 'set';
+  if (transition !== undefined) motionAttrs['data-motion-transition'] = 'set';
+  if (whileHover !== undefined) motionAttrs['data-motion-whilehover'] = 'set';
+  if (variants !== undefined) motionAttrs['data-motion-variants'] = 'set';
+  if (exit !== undefined) motionAttrs['data-motion-exit'] = 'set';
+  if (layoutId !== undefined) motionAttrs['data-motion-layoutid'] = String(layoutId);
   return (
-    <div ref={ref} data-fake-card="true" className={`card-base ${className ?? ''}`} {...rest}>
-      {children}
+    <div ref={ref} {...(rest as React.HTMLAttributes<HTMLDivElement>)} {...motionAttrs}>
+      {children as ReactNode}
     </div>
   );
 });
+
+// Fake shadcn Card — forwardRef, aceita className.
+const FakeCard = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, children, ...rest }, ref) => (
+    <div ref={ref} data-fake-card="true" className={`card-base ${className ?? ''}`} {...rest}>
+      {children}
+    </div>
+  ),
+);
 
 describe('Clickable — comportamento core', () => {
   it('renderiza como div com role=button e tabIndex=0 por padrão', () => {
@@ -276,6 +284,7 @@ describe('Clickable — a11y ARIA', () => {
 
   it('tabIndex custom sobrescreve default', () => {
     render(
+      // eslint-disable-next-line jsx-a11y/tabindex-no-positive
       <Clickable onClick={() => {}} tabIndex={5}>
         x
       </Clickable>,
@@ -285,6 +294,7 @@ describe('Clickable — a11y ARIA', () => {
 
   it('tabIndex=-1 quando disabled tem prioridade sobre custom', () => {
     render(
+      // eslint-disable-next-line jsx-a11y/tabindex-no-positive
       <Clickable onClick={() => {}} tabIndex={5} disabled>
         x
       </Clickable>,
@@ -446,10 +456,7 @@ describe('Clickable — polymorphism (as)', () => {
     ['section', 'SECTION'],
   ])('as=%s renderiza tag %s', (as, tag) => {
     render(
-      <Clickable
-        as={as as 'div'}
-        onClick={() => {}}
-      >
+      <Clickable as={as as 'div'} onClick={() => {}}>
         x
       </Clickable>,
     );
@@ -526,11 +533,9 @@ describe('Clickable — ref forwarding', () => {
     function Wrapper() {
       const ref = useRef<HTMLElement>(null);
       return (
-        <>
-          <Clickable ref={ref} onClick={() => ref.current?.setAttribute('data-clicked', 'yes')}>
-            x
-          </Clickable>
-        </>
+        <Clickable ref={ref} onClick={() => ref.current?.setAttribute('data-clicked', 'yes')}>
+          x
+        </Clickable>
       );
     }
     render(<Wrapper />);
@@ -593,10 +598,77 @@ describe('Clickable — children complexos', () => {
   });
 });
 
+describe('Clickable — onKeyDown composition', () => {
+  it('onKeyDown externo é chamado para teclas quaisquer (não apenas Enter/Space)', () => {
+    const externalHandler = vi.fn();
+    render(
+      <Clickable onClick={() => {}} onKeyDown={externalHandler}>
+        x
+      </Clickable>,
+    );
+    fireEvent.keyDown(screen.getByRole('button'), { key: 'Tab' });
+    expect(externalHandler).toHaveBeenCalledTimes(1);
+  });
+
+  it('onKeyDown externo NÃO substitui o handler interno — Enter dispara ambos', () => {
+    const onClick = vi.fn();
+    const externalHandler = vi.fn();
+    render(
+      <Clickable onClick={onClick} onKeyDown={externalHandler}>
+        x
+      </Clickable>,
+    );
+    fireEvent.keyDown(screen.getByRole('button'), { key: 'Enter' });
+    expect(externalHandler).toHaveBeenCalledTimes(1);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('onKeyDown externo NÃO substitui o handler interno — Space dispara ambos', () => {
+    const onClick = vi.fn();
+    const externalHandler = vi.fn();
+    render(
+      <Clickable onClick={onClick} onKeyDown={externalHandler}>
+        x
+      </Clickable>,
+    );
+    fireEvent.keyDown(screen.getByRole('button'), { key: ' ' });
+    expect(externalHandler).toHaveBeenCalledTimes(1);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('onKeyDown externo não é chamado quando disabled=true', () => {
+    const externalHandler = vi.fn();
+    render(
+      <Clickable onClick={() => {}} onKeyDown={externalHandler} disabled>
+        x
+      </Clickable>,
+    );
+    fireEvent.keyDown(screen.getByRole('button'), { key: 'Enter' });
+    expect(externalHandler).not.toHaveBeenCalled();
+  });
+
+  it('strictTarget=true impede o onClick interno para eventos do filho', () => {
+    const onClick = vi.fn();
+    const externalHandler = vi.fn();
+    render(
+      <Clickable onClick={onClick} onKeyDown={externalHandler} strictTarget>
+        <button type="button" data-testid="inner">
+          filho
+        </button>
+      </Clickable>,
+    );
+    fireEvent.keyDown(screen.getByTestId('inner'), { key: 'Enter' });
+    // strictTarget checks currentTarget, but onKeyDown fires before the strictTarget guard
+    // for onClick — externalHandler runs for all target matches at the element level
+    expect(onClick).not.toHaveBeenCalled();
+    expect(externalHandler).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('Clickable — event control', () => {
   it('handler pode chamar stopPropagation para bloquear bubbling', () => {
     const outer = vi.fn();
-    const inner = vi.fn((e: React.MouseEvent | React.KeyboardEvent) => {
+    const inner = vi.fn((e: React.KeyboardEvent | React.MouseEvent) => {
       e.stopPropagation();
     });
     render(

@@ -15,11 +15,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, waitFor, fireEvent } from '@testing-library/react';
-import {
-  PdfGenerationDialog,
-  detectSafari,
-  detectBrowserPure,
-} from '../PdfGenerationDialog';
+import { PdfGenerationDialog, detectSafari, detectBrowserPure } from '../PdfGenerationDialog';
 import { PROPOSAL_FIXTURES } from '@/components/pdf/proposal/__tests__/fixtures';
 
 vi.mock('@/utils/proposalPdfReactGenerator', () => ({
@@ -77,14 +73,20 @@ async function clickImprimir() {
 }
 
 // ---------- 1) UA fuzz ----------
-const UA_TEMPLATES: Array<{ ua: (v: string) => string; expectedBrowser: string; expectedSafari: boolean }> = [
+const UA_TEMPLATES: Array<{
+  ua: (v: string) => string;
+  expectedBrowser: string;
+  expectedSafari: boolean;
+}> = [
   {
-    ua: (v) => `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${v} Safari/537.36`,
+    ua: (v) =>
+      `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${v} Safari/537.36`,
     expectedBrowser: 'chrome',
     expectedSafari: false,
   },
   {
-    ua: (v) => `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${v} Safari/605.1.15`,
+    ua: (v) =>
+      `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${v} Safari/605.1.15`,
     expectedBrowser: 'safari',
     expectedSafari: true,
   },
@@ -94,22 +96,26 @@ const UA_TEMPLATES: Array<{ ua: (v: string) => string; expectedBrowser: string; 
     expectedSafari: false,
   },
   {
-    ua: (v) => `Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML) Chrome/${v} Safari/537.36 Edg/${v}`,
+    ua: (v) =>
+      `Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML) Chrome/${v} Safari/537.36 Edg/${v}`,
     expectedBrowser: 'edge',
     expectedSafari: false,
   },
   {
-    ua: (v) => `Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1.15 (KHTML) CriOS/${v} Mobile/15E148 Safari/604.1`,
+    ua: (v) =>
+      `Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1.15 (KHTML) CriOS/${v} Mobile/15E148 Safari/604.1`,
     expectedBrowser: 'chrome', // CriOS → chrome
     expectedSafari: false,
   },
   {
-    ua: (v) => `Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1.15 (KHTML) FxiOS/${v} Mobile/15E148 Safari/604.1`,
+    ua: (v) =>
+      `Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1.15 (KHTML) FxiOS/${v} Mobile/15E148 Safari/604.1`,
     expectedBrowser: 'firefox',
     expectedSafari: false,
   },
   {
-    ua: (v) => `Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML) Version/${v} Mobile/15E148 Safari/604.1`,
+    ua: (v) =>
+      `Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML) Version/${v} Mobile/15E148 Safari/604.1`,
     expectedBrowser: 'safari',
     expectedSafari: true,
   },
@@ -128,23 +134,22 @@ const UA_TEMPLATES: Array<{ ua: (v: string) => string; expectedBrowser: string; 
 describe('Fuzz de UA (600 iterações, seed=42)', () => {
   const rand = mulberry32(42);
   const N = 600;
-  let mismatches = 0;
-  const samples: string[] = [];
-
-  for (let i = 0; i < N; i++) {
+  const fuzzCases = Array.from({ length: N }, (_, i) => {
     const tpl = UA_TEMPLATES[Math.floor(rand() * UA_TEMPLATES.length)];
     const major = Math.floor(rand() * 200);
     const minor = Math.floor(rand() * 30);
     const ua = tpl.ua(`${major}.${minor}.0`);
-    if (samples.length < 3) samples.push(ua);
-    it(`caso #${i} — ${tpl.expectedBrowser}`, () => {
-      const b = detectBrowserPure(ua);
-      const s = detectSafari(ua);
-      if (b !== tpl.expectedBrowser || s !== tpl.expectedSafari) mismatches++;
-      expect(b).toBe(tpl.expectedBrowser);
-      expect(s).toBe(tpl.expectedSafari);
-    });
-  }
+    return { i, ua, expectedBrowser: tpl.expectedBrowser, expectedSafari: tpl.expectedSafari };
+  });
+  let mismatches = 0;
+
+  it.each(fuzzCases)('caso #$i — $expectedBrowser', ({ ua, expectedBrowser, expectedSafari }) => {
+    const b = detectBrowserPure(ua);
+    const s = detectSafari(ua);
+    if (b !== expectedBrowser || s !== expectedSafari) mismatches++;
+    expect(b).toBe(expectedBrowser);
+    expect(s).toBe(expectedSafari);
+  });
 
   it('resumo: nenhum mismatch de classificação em 600 casos', () => {
     expect(mismatches).toBe(0);
@@ -152,7 +157,10 @@ describe('Fuzz de UA (600 iterações, seed=42)', () => {
 });
 
 // ---------- 2) Matriz de comportamento ----------
-const UA_MATRIX: Record<string, { ua: string; expected: 'chrome' | 'edge' | 'firefox' | 'safari' }> = {
+const UA_MATRIX: Record<
+  string,
+  { ua: string; expected: 'chrome' | 'edge' | 'firefox' | 'safari' }
+> = {
   Chrome: {
     ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML) Chrome/120.0 Safari/537.36',
     expected: 'chrome',
@@ -181,10 +189,14 @@ describe('Matriz de cenários — engine × falha', () => {
   });
 
   // Cada engine testado no cenário de popup bloqueado (openInNewTab → null).
-  Object.entries(UA_MATRIX).forEach(([name, { ua, expected }]) => {
-    it(`${name}: emite print_start com browser=${expected}`, async () => {
+  it.each(Object.entries(UA_MATRIX))(
+    '%s: emite print_start com browser correto',
+    async ([_name, { ua, expected }]) => {
       setUA(ua);
-      vi.stubGlobal('open', vi.fn(() => ({ closed: false, focus: vi.fn() })));
+      vi.stubGlobal(
+        'open',
+        vi.fn(() => ({ closed: false, focus: vi.fn() })),
+      );
       await openAndGenerate();
       await clickImprimir();
       await waitFor(() => {
@@ -193,12 +205,15 @@ describe('Matriz de cenários — engine × falha', () => {
           expect.objectContaining({ browser: expected, pdf_version: 1 }),
         );
       });
-    });
-  });
+    },
+  );
 
   it('Safari + popup bloqueado → reason=popup-blocked + evento warn', async () => {
     setUA(UA_MATRIX.Safari.ua);
-    vi.stubGlobal('open', vi.fn(() => null));
+    vi.stubGlobal(
+      'open',
+      vi.fn(() => null),
+    );
     await openAndGenerate();
     await clickImprimir();
 
@@ -214,7 +229,10 @@ describe('Matriz de cenários — engine × falha', () => {
 
   it('Safari + popup OK → reason=safari + info print_safari_fallback', async () => {
     setUA(UA_MATRIX.Safari.ua);
-    vi.stubGlobal('open', vi.fn(() => ({ closed: false, focus: vi.fn() })));
+    vi.stubGlobal(
+      'open',
+      vi.fn(() => ({ closed: false, focus: vi.fn() })),
+    );
     await openAndGenerate();
     await clickImprimir();
 
@@ -257,7 +275,9 @@ describe('Contrato de telemetria — todos os eventos incluem browser + pdf_vers
     await openAndGenerate();
     await clickImprimir();
 
-    await waitFor(() => expect(logSpies.info).toHaveBeenCalledWith('print_start', expect.any(Object)));
+    await waitFor(() =>
+      expect(logSpies.info).toHaveBeenCalledWith('print_start', expect.any(Object)),
+    );
     const [, fields] = logSpies.info.mock.calls.find(([e]) => e === 'print_start')!;
     expect(fields).toEqual(
       expect.objectContaining({
@@ -266,8 +286,8 @@ describe('Contrato de telemetria — todos os eventos incluem browser + pdf_vers
       }),
     );
     // Nenhum campo undefined
-    Object.entries(fields as Record<string, unknown>).forEach(([k, v]) => {
+    for (const [k, v] of Object.entries(fields as Record<string, unknown>)) {
       expect(v, `${k} não pode ser undefined`).not.toBeUndefined();
-    });
+    }
   });
 });

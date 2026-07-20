@@ -110,7 +110,6 @@ const HARNESS_TABLE_ITEMS: QuoteItem[] = [
   },
 ];
 
-
 const HARNESS_QUOTE_ID = 'harness-quote-id-0042';
 
 declare global {
@@ -132,7 +131,7 @@ export default function QuoteViewOrderHarness() {
     const root = document.documentElement;
     if (theme === 'dark') root.classList.add('dark');
     else root.classList.remove('dark');
-    window.__deleteQuoteCalls = window.__deleteQuoteCalls ?? [];
+    window.__deleteQuoteCalls ??= [];
     return () => {
       root.classList.remove('dark');
     };
@@ -265,7 +264,11 @@ export default function QuoteViewOrderHarness() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel ref={cancelRef} disabled={isDeleting} data-testid="quote-delete-cancel">
+              <AlertDialogCancel
+                ref={cancelRef}
+                disabled={isDeleting}
+                data-testid="quote-delete-cancel"
+              >
                 Cancelar
               </AlertDialogCancel>
               <AlertDialogAction
@@ -281,18 +284,11 @@ export default function QuoteViewOrderHarness() {
         </AlertDialog>
 
         {/* 3) Container do orçamento — sem moldura (paridade com QuoteViewPage) */}
-        <Card
-          data-testid="quote-content-card"
-          className="border-0 bg-transparent shadow-none"
-        >
+        <Card data-testid="quote-content-card" className="border-0 bg-transparent shadow-none">
           <CardContent className={cn('pt-4', qvSpacing.sectionStack)}>
-            <div className={qvType.blockTitle}>
-              Cliente · Empresa Demonstração LTDA
-            </div>
+            <div className={qvType.blockTitle}>Cliente · Empresa Demonstração LTDA</div>
             <Separator />
-            <div className={qvType.meta}>
-              [conteúdo do orçamento ocultado no harness]
-            </div>
+            <div className={qvType.meta}>[conteúdo do orçamento ocultado no harness]</div>
             <Separator />
             <div data-testid="harness-item-row" className="flex items-center justify-between gap-2">
               <span className={qvType.productName}>Garrafa esportiva 400ml</span>
@@ -350,10 +346,6 @@ export default function QuoteViewOrderHarness() {
               <h2 className="text-base font-semibold">Versões do Orçamento</h2>
               <p className="text-sm text-muted-foreground">v1 · v2 · v3 (stub)</p>
             </section>
-
-
-
-
           </CardContent>
         </Card>
       </div>

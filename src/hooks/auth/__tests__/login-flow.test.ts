@@ -51,7 +51,23 @@ vi.mock('@/services/authService', () => ({
 // Helpers
 // ──────────────────────────────────────────────────────────────
 const MOCK_USER_ID = 'user-abc-123';
-const MOCK_PROFILE = { id: MOCK_USER_ID, user_id: MOCK_USER_ID, email: 'test@example.com', full_name: 'Test User', role: 'vendedor', is_active: true, preferences: {}, avatar_url: null, phone: null, department: null, last_login_at: null, created_at: '2026-01-01', updated_at: '2026-01-01', bitrix_id: null, organization_id: null };
+const MOCK_PROFILE = {
+  id: MOCK_USER_ID,
+  user_id: MOCK_USER_ID,
+  email: 'test@example.com',
+  full_name: 'Test User',
+  role: 'vendedor',
+  is_active: true,
+  preferences: {},
+  avatar_url: null,
+  phone: null,
+  department: null,
+  last_login_at: null,
+  created_at: '2026-01-01',
+  updated_at: '2026-01-01',
+  bitrix_id: null,
+  organization_id: null,
+};
 const MOCK_ROLES = ['vendedor'];
 
 function mockRPCSuccess(profile = MOCK_PROFILE, roles = MOCK_ROLES) {
@@ -66,12 +82,6 @@ function mockRPCError(code: string, message: string) {
     data: null,
     error: { code, message },
   });
-}
-
-function mockRPCTimeout(ms = 100) {
-  rpcMock.mockImplementationOnce(
-    () => new Promise((_, reject) => setTimeout(() => reject(new Error(`hydration_timeout:profile+roles:${ms}ms`)), ms)),
-  );
 }
 
 function mockRPCForbidden() {
@@ -149,7 +159,7 @@ describe('Login Flow & Role Loading — RPC get_profile_and_roles', () => {
     });
 
     const result = await rpcMock('get_profile_and_roles', { _user_id: MOCK_USER_ID });
-    const roles = result.data?.roles ?? [];  // ?? [] reproduz o comportamento de useProfileRoles
+    const roles = result.data?.roles ?? []; // ?? [] reproduz o comportamento de useProfileRoles
     expect(Array.isArray(roles)).toBe(true);
     expect(roles).toHaveLength(0);
   });
@@ -168,9 +178,9 @@ describe('hydration_timeout — comportamento de timeout/retry', () => {
     let isTimeout = false;
 
     try {
-      await new Promise<void>((resolve, reject) =>
-        setTimeout(() => reject(new Error('hydration_timeout:profile+roles:7000ms')), 1),
-      );
+      await new Promise<void>((resolve, reject) => {
+        setTimeout(() => reject(new Error('hydration_timeout:profile+roles:7000ms')), 1);
+      });
     } catch (err) {
       if (err instanceof Error) {
         caughtError = err;
@@ -226,19 +236,23 @@ describe('Dedup de fetchUserData — sem chamadas paralelas duplicadas', () => {
     const fetchRef = { current: null as Promise<void> | null };
     const genRef = { current: 0 };
 
-    async function fetchUserData(userId: string) {
+    async function fetchUserData(_userId: string) {
       if (fetchRef.current) {
         await fetchRef.current;
         return;
       }
       let resolveDedup!: () => void;
-      const dedup = new Promise<void>((r) => { resolveDedup = r; });
+      const dedup = new Promise<void>((r) => {
+        resolveDedup = r;
+      });
       fetchRef.current = dedup;
       const gen = ++genRef.current;
 
       (async () => {
         execCount++;
-        await new Promise((r) => setTimeout(r, 20)); // simula fetch
+        await new Promise<void>((r) => {
+          setTimeout(r, 20);
+        }); // simula fetch
         if (genRef.current === gen) fetchRef.current = null;
         resolveDedup();
       })();

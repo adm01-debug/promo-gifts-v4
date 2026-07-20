@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Badge } from '@/components/ui/badge';
 import { Package, Palette, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getCategoryIcon, useCategoryIcons, type CategoryIcon } from '@/hooks/products/useCategoryIcons';
+import { getCategoryIcon, useCategoryIcons } from '@/hooks/products/useCategoryIcons';
 import { CategoryIcon as CategoryIconComponent } from '@/components/ui/CategoryIcon';
 
 /**
@@ -140,11 +140,7 @@ export const ProductCategoryBadges = memo(
                   )}
                 >
                   {/* Ícone: SVG Lucide para nomes conhecidos, emoji/texto para legados */}
-                  <CategoryIconComponent
-                    value={getIconValue(cat)}
-                    size={14}
-                    className="mr-1.5"
-                  />
+                  <CategoryIconComponent value={getIconValue(cat)} size={14} className="mr-1.5" />
                   <span className="text-xs">{cat.name}</span>
                 </Badge>
               </TooltipTrigger>

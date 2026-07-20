@@ -183,7 +183,7 @@ export function useCollections() {
 
   // Migrate localStorage data on first load
   useEffect(() => {
-    if (!user?.id || !rolesLoaded) return;  // BUG-HEAD-GUARD
+    if (!user?.id || !rolesLoaded) return; // BUG-HEAD-GUARD
 
     const migrateAndLoad = async () => {
       try {
@@ -226,25 +226,28 @@ export function useCollections() {
                     [];
                   if (items.length > 0) {
                     // BUG-COLLECTION-MIGRATE-INSERT-SILENT-FAIL FIX: bare await swallowed errors.
-                    const { error: migrateInsertErr } = await supabase.from('collection_items').insert(
-                      items.map(
-                        (
-                          item: string | { productId?: string; variant?: CollectionVariantInfo },
-                          idx: number,
-                        ) => {
-                          const isObj = typeof item === 'object';
-                          return {
-                            collection_id: newCol.id,
-                            product_id: isObj ? item.productId : item,
-                            color_name: isObj ? (item.variant?.color_name ?? null) : null,
-                            color_hex: isObj ? (item.variant?.color_hex ?? null) : null,
-                            thumbnail_url: isObj ? (item.variant?.thumbnail ?? null) : null,
-                            sort_order: idx,
-                          };
-                        },
-                      ),
-                    );
-                    if (migrateInsertErr) logger.warn('Migration: collection_items insert failed:', migrateInsertErr);
+                    const { error: migrateInsertErr } = await supabase
+                      .from('collection_items')
+                      .insert(
+                        items.map(
+                          (
+                            item: string | { productId?: string; variant?: CollectionVariantInfo },
+                            idx: number,
+                          ) => {
+                            const isObj = typeof item === 'object';
+                            return {
+                              collection_id: newCol.id,
+                              product_id: isObj ? item.productId : item,
+                              color_name: isObj ? (item.variant?.color_name ?? null) : null,
+                              color_hex: isObj ? (item.variant?.color_hex ?? null) : null,
+                              thumbnail_url: isObj ? (item.variant?.thumbnail ?? null) : null,
+                              sort_order: idx,
+                            };
+                          },
+                        ),
+                      );
+                    if (migrateInsertErr)
+                      logger.warn('Migration: collection_items insert failed:', migrateInsertErr);
                   }
                 }
               }
@@ -264,7 +267,7 @@ export function useCollections() {
     };
 
     migrateAndLoad();
-  }, [user?.id, loadCollections]);
+  }, [user?.id, rolesLoaded, loadCollections]);
 
   const createCollection = useCallback(
     (
@@ -354,8 +357,13 @@ export function useCollections() {
 
       if (Object.keys(dbUpdates).length > 0) {
         // BUG-COLLECTION-UPDATE-SILENT-FAIL FIX: .then() with no args swallowed all errors.
-        supabase.from('collections').update(dbUpdates).eq('id', id)
-          .then(({ error: upErr }) => { if (upErr) logger.warn('[collections] update failed:', upErr); });
+        supabase
+          .from('collections')
+          .update(dbUpdates)
+          .eq('id', id)
+          .then(({ error: upErr }) => {
+            if (upErr) logger.warn('[collections] update failed:', upErr);
+          });
       }
     },
     [],
@@ -364,8 +372,13 @@ export function useCollections() {
   const deleteCollection = useCallback((id: string) => {
     setCollections((prev) => prev.filter((col) => col.id !== id));
     // BUG-COLLECTION-DELETE-SILENT-FAIL FIX: .then() with no args swallowed all errors.
-    supabase.from('collections').delete().eq('id', id)
-      .then(({ error: delErr }) => { if (delErr) logger.warn('[collections] delete failed:', delErr); });
+    supabase
+      .from('collections')
+      .delete()
+      .eq('id', id)
+      .then(({ error: delErr }) => {
+        if (delErr) logger.warn('[collections] delete failed:', delErr);
+      });
   }, []);
 
   const addProductToCollection = useCallback(
@@ -403,7 +416,9 @@ export function useCollections() {
           price_at_save: priceAtSave ?? null,
           sort_order: 0,
         })
-        .then(({ error: insErr }) => { if (insErr) logger.warn('[collections] add product failed:', insErr); });
+        .then(({ error: insErr }) => {
+          if (insErr) logger.warn('[collections] add product failed:', insErr);
+        });
     },
     [],
   );
@@ -414,10 +429,7 @@ export function useCollections() {
       const correlationId = restoreCollectionLog.generateCorrelationId();
       const startedAt = (typeof performance !== 'undefined' ? performance : Date).now();
       const elapsedMs = () =>
-        Math.round(
-          (typeof performance !== 'undefined' ? performance : Date).now() -
-            startedAt,
-        );
+        Math.round((typeof performance !== 'undefined' ? performance : Date).now() - startedAt);
 
       const { data: trashed } = await supabase
         .from('collection_items_trash')
@@ -479,7 +491,8 @@ export function useCollections() {
         .from('collection_items_trash')
         .delete()
         .eq('id', trashed.id);
-      if (trashDeleteErr) logger.warn('[collections] restoreFromTrash trash delete failed:', trashDeleteErr);
+      if (trashDeleteErr)
+        logger.warn('[collections] restoreFromTrash trash delete failed:', trashDeleteErr);
       await loadCollections();
       restoreCollectionLog.emit('info', 'restore_ok', {
         correlation_id: correlationId,
@@ -497,7 +510,6 @@ export function useCollections() {
     },
     [loadCollections],
   );
-
 
   const removeProductFromCollection = useCallback((collectionId: string, productId: string) => {
     setCollections((prev) =>
@@ -519,7 +531,9 @@ export function useCollections() {
       .delete()
       .eq('collection_id', collectionId)
       .eq('product_id', productId)
-      .then(({ error: remErr }) => { if (remErr) logger.warn('[collections] remove product failed:', remErr); });
+      .then(({ error: remErr }) => {
+        if (remErr) logger.warn('[collections] remove product failed:', remErr);
+      });
   }, []);
 
   const addProductToMultipleCollections = useCallback(
@@ -563,7 +577,9 @@ export function useCollections() {
         .upsert(inserts, {
           onConflict: 'collection_id,product_id,color_name',
         })
-        .then(({ error: upsErr }) => { if (upsErr) logger.warn('[collections] addToMultiple upsert failed:', upsErr); });
+        .then(({ error: upsErr }) => {
+          if (upsErr) logger.warn('[collections] addToMultiple upsert failed:', upsErr);
+        });
     },
     [],
   );
@@ -634,7 +650,9 @@ export function useCollections() {
         .update({ sort_order: idx })
         .eq('collection_id', collectionId)
         .eq('product_id', pid)
-        .then(({ error: reorderErr }) => { if (reorderErr) logger.warn('[collections] reorder failed:', reorderErr); });
+        .then(({ error: reorderErr }) => {
+          if (reorderErr) logger.warn('[collections] reorder failed:', reorderErr);
+        });
     });
   }, []);
 
@@ -658,7 +676,9 @@ export function useCollections() {
         .update({ notes })
         .eq('collection_id', collectionId)
         .eq('product_id', productId)
-        .then(({ error: notesErr }) => { if (notesErr) logger.warn('[collections] updateProductNotes failed:', notesErr); });
+        .then(({ error: notesErr }) => {
+          if (notesErr) logger.warn('[collections] updateProductNotes failed:', notesErr);
+        });
     },
     [],
   );

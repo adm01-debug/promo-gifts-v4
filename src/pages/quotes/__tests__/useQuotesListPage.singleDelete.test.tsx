@@ -25,7 +25,7 @@ const mockFetchQuote = vi.fn<(id: string) => Promise<unknown>>();
 const mockCreateQuote = vi.fn<(quote: unknown, items: unknown) => Promise<unknown>>();
 
 vi.mock('@/hooks/quotes', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/quotes')>('@/hooks/quotes');
+  const actual = await vi.importActual('@/hooks/quotes');
   return {
     ...actual,
     useQuotes: () => ({
@@ -190,7 +190,10 @@ describe('useQuotesListPage — handleDelete (individual)', () => {
   it('isDeleting: true durante deleteQuote, false ao final', async () => {
     let resolveDelete: ((v: boolean) => void) | null = null;
     mockDeleteQuote.mockImplementationOnce(
-      () => new Promise<boolean>((res) => { resolveDelete = res; }),
+      () =>
+        new Promise<boolean>((res) => {
+          resolveDelete = res;
+        }),
     );
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setDeleteConfirmId('q1'));
@@ -214,7 +217,10 @@ describe('useQuotesListPage — handleDelete (individual)', () => {
   it('reentrada: 2 chamadas simultâneas → deleteQuote executa APENAS uma vez', async () => {
     let resolveDelete: ((v: boolean) => void) | null = null;
     mockDeleteQuote.mockImplementationOnce(
-      () => new Promise<boolean>((res) => { resolveDelete = res; }),
+      () =>
+        new Promise<boolean>((res) => {
+          resolveDelete = res;
+        }),
     );
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setDeleteConfirmId('q1'));

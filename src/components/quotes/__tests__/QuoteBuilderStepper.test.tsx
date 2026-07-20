@@ -37,11 +37,11 @@ describe('QuoteBuilderStepper UI (5 etapas)', () => {
     );
     const circles = container.querySelectorAll('li > button > .rounded-full');
     expect(circles.length).toBe(5);
-    circles.forEach((c) => {
+    for (const c of Array.from(circles)) {
       expect(c.className).toContain('h-10');
       expect(c.className).toContain('w-10');
       expect(c.className).not.toContain('ring-4');
-    });
+    }
   });
 
   it('última etapa usa last:flex-none para encostar no canto direito', () => {
@@ -49,10 +49,10 @@ describe('QuoteBuilderStepper UI (5 etapas)', () => {
     const items = container.querySelectorAll('ol > li');
     expect(items.length).toBe(5);
     // Classe utilitária aplicada via Tailwind variant; ela aparece no className
-    items.forEach((li) => {
+    for (const li of Array.from(items)) {
       expect(li.className).toContain('last:flex-none');
       expect(li.className).toContain('flex-1');
-    });
+    }
   });
 
   it('shows check icon for completed non-active steps', () => {

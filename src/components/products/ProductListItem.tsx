@@ -80,6 +80,7 @@ interface ProductListItemProps {
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
   onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean } | void;
   canAddToCompare?: boolean;
   highlightColors?: string[];
@@ -455,7 +456,7 @@ export const ProductListItem = memo(
             data-testid="product-list-item-thumb"
             data-product-id={product.id}
             style={{ touchAction: 'manipulation' }}
-            onClick={(e: React.MouseEvent | React.KeyboardEvent) => {
+            onClick={(e: React.KeyboardEvent | React.MouseEvent) => {
               e.stopPropagation();
               if (
                 actionBusyRef.current ||
@@ -467,6 +468,22 @@ export const ProductListItem = memo(
                 return;
               }
               setQuickViewOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (
+                  actionBusyRef.current ||
+                  variantPickerOpen ||
+                  collectionModalOpen ||
+                  shareDialogOpen ||
+                  quickViewOpen
+                ) {
+                  return;
+                }
+                setQuickViewOpen(true);
+              }
             }}
           >
             <div key={thumbUrl} className="h-full w-full duration-500 animate-in fade-in">

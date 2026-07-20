@@ -39,9 +39,7 @@ const quotes: Quote[] = [
   } as Quote,
 ];
 
-function renderList(
-  props: Partial<React.ComponentProps<typeof QuotesConfigurableList>> = {},
-) {
+function renderList(props: Partial<React.ComponentProps<typeof QuotesConfigurableList>> = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
@@ -61,8 +59,6 @@ function renderList(
     </QueryClientProvider>,
   );
 }
-
-
 
 describe('QuotesConfigurableList — seleção manual', () => {
   beforeEach(() => {
@@ -85,7 +81,9 @@ describe('QuotesConfigurableList — seleção manual', () => {
     const boxes = screen.getAllByRole('checkbox');
     expect(boxes.length).toBeGreaterThanOrEqual(3);
     // nenhum marcado
-    boxes.forEach((b) => expect(b).not.toBeChecked());
+    for (const b of boxes) {
+      expect(b).not.toBeChecked();
+    }
     // dica REMOVIDA — nunca deve aparecer
     expect(screen.queryByTestId('quotes-selection-hint')).toBeNull();
   });
@@ -173,22 +171,25 @@ describe('QuotesConfigurableList — seleção manual', () => {
   });
 });
 
-
 describe('QuotesConfigurableList — infinite scroll', () => {
   beforeEach(() => {
     sessionStorage.clear();
   });
 
   function makeQuotes(n: number): Quote[] {
-    return Array.from({ length: n }, (_, i) => ({
-      id: `q-${i + 1}`,
-      quote_number: `ORC-${String(i + 1).padStart(3, '0')}`,
-      client_name: `Cliente ${i + 1}`,
-      client_company: `Empresa ${i + 1}`,
-      status: 'pending',
-      total: 100 + i,
-      created_at: '2026-01-01T00:00:00Z',
-    }) as Quote);
+    return Array.from(
+      { length: n },
+      (_, i) =>
+        ({
+          id: `q-${i + 1}`,
+          quote_number: `ORC-${String(i + 1).padStart(3, '0')}`,
+          client_name: `Cliente ${i + 1}`,
+          client_company: `Empresa ${i + 1}`,
+          status: 'pending',
+          total: 100 + i,
+          created_at: '2026-01-01T00:00:00Z',
+        }) as Quote,
+    );
   }
 
   function renderWith(qs: Quote[]) {
@@ -227,19 +228,30 @@ describe('QuotesConfigurableList — infinite scroll', () => {
         this.callback = cb;
       }
       observe(target: Element) {
-        ioEntries.push({ observer: this as unknown as IntersectionObserver, callback: this.callback, target });
+        ioEntries.push({
+          observer: this as unknown as IntersectionObserver,
+          callback: this.callback,
+          target,
+        });
       }
       disconnect() {
-        ioEntries = ioEntries.filter((e) => e.observer !== (this as unknown as IntersectionObserver));
+        ioEntries = ioEntries.filter(
+          (e) => e.observer !== (this as unknown as IntersectionObserver),
+        );
       }
-      unobserve() { /* noop */ }
-      takeRecords() { return []; }
+      unobserve() {
+        /* noop */
+      }
+      takeRecords() {
+        return [];
+      }
       root: Element | null = null;
       rootMargin = '';
       thresholds: ReadonlyArray<number> = [];
     }
-    (globalThis as unknown as { IntersectionObserver: typeof IntersectionObserver }).IntersectionObserver =
-      MockIO as unknown as typeof IntersectionObserver;
+    (
+      globalThis as unknown as { IntersectionObserver: typeof IntersectionObserver }
+    ).IntersectionObserver = MockIO as unknown as typeof IntersectionObserver;
   });
 
   afterEach(() => {
@@ -261,15 +273,11 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     const qs = makeQuotes(60);
     renderWith(qs);
 
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(
-      /Exibindo 25 de 60/,
-    );
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/Exibindo 25 de 60/);
     expect(screen.getByTestId('quotes-infinite-sentinel')).toBeInTheDocument();
 
     triggerIntersection();
-    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(
-      /Exibindo 50 de 60/,
-    );
+    expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/Exibindo 50 de 60/);
 
     triggerIntersection();
     // No fim da lista, o rodapé não exibe mais contagem ("X de Y — fim da lista" removido).
@@ -307,10 +315,7 @@ describe('QuotesConfigurableList — infinite scroll', () => {
       const [filtered, setFiltered] = useState<Quote[]>(makeQuotes(60));
       return (
         <>
-          <button
-            data-testid="apply-filter"
-            onClick={() => setFiltered(makeQuotes(40))}
-          >
+          <button data-testid="apply-filter" onClick={() => setFiltered(makeQuotes(40))}>
             filtrar
           </button>
           <button
@@ -360,18 +365,14 @@ describe('QuotesConfigurableList — infinite scroll', () => {
     triggerIntersection();
     expect(screen.getByTestId('quotes-footer-count').textContent?.trim()).toBe('');
     // Nenhuma key duplicada: número de linhas renderizadas == 40
-    expect(
-      screen.getAllByTestId(/^quote-row-more-/).length,
-    ).toBe(40);
+    expect(screen.getAllByTestId(/^quote-row-more-/).length).toBe(40);
 
     // Troca de ordenação → reseta para 25 sem repetir
     act(() => {
       screen.getByTestId('apply-sort').click();
     });
     expect(screen.getByTestId('quotes-footer-count').textContent).toMatch(/Exibindo 25 de 40/);
-    expect(
-      screen.getAllByTestId(/^quote-row-more-/).length,
-    ).toBe(25);
+    expect(screen.getAllByTestId(/^quote-row-more-/).length).toBe(25);
   });
 
   it('exibe indicador de "Carregando mais…" quando isFetching=true e há itens', () => {
@@ -426,7 +427,5 @@ describe('QuotesConfigurableList — infinite scroll', () => {
   });
 });
 
-
 // Suprimi warning sobre `within` não usado mantendo o import: removo se lint reclamar.
 void within;
-

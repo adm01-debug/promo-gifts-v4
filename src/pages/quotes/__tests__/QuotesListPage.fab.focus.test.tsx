@@ -17,9 +17,8 @@ import { MemoryRouter } from 'react-router-dom';
 
 const navigateMock = vi.fn();
 
-type HookReturn = ReturnType<
-  typeof import('@/pages/quotes/useQuotesListPage').useQuotesListPage
->;
+import type { useQuotesListPage as UseQuotesListPageFn } from '@/pages/quotes/useQuotesListPage';
+type HookReturn = ReturnType<UseQuotesListPageFn>;
 
 const baseHook = {
   navigate: navigateMock,
@@ -48,9 +47,7 @@ const baseHook = {
 } as unknown as HookReturn;
 
 vi.mock('@/pages/quotes/useQuotesListPage', async () => {
-  const actual = await vi.importActual<
-    typeof import('@/pages/quotes/useQuotesListPage')
-  >('@/pages/quotes/useQuotesListPage');
+  const actual = await vi.importActual('@/pages/quotes/useQuotesListPage');
   return { ...actual, useQuotesListPage: () => baseHook };
 });
 
@@ -79,11 +76,7 @@ beforeAll(() => {
   // Radix UI Tooltip toca métodos de PointerEvent que jsdom não expõe.
   if (typeof window.PointerEvent === 'undefined') {
     // @ts-expect-error — polyfill mínimo só para Radix se contentar em testes.
-    window.PointerEvent = class extends Event {
-      constructor(type: string, init?: EventInit) {
-        super(type, init);
-      }
-    };
+    window.PointerEvent = class extends Event {};
   }
   if (!Element.prototype.hasPointerCapture) {
     Element.prototype.hasPointerCapture = () => false;

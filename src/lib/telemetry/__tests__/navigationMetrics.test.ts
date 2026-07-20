@@ -39,7 +39,7 @@ describe('navigationMetrics — kill switch e flag', () => {
     window.localStorage.setItem('nav_metrics_disabled', '1');
 
     const mod = await loadModule();
-    mod.__resetForTests();
+    mod.resetForTests();
 
     const spy = vi.spyOn(performance, 'getEntriesByType');
     mod.initNavigationMetrics();
@@ -55,7 +55,7 @@ describe('navigationMetrics — kill switch e flag', () => {
     (import.meta.env as Record<string, unknown>).DEV = false;
 
     const mod = await loadModule();
-    mod.__resetForTests();
+    mod.resetForTests();
 
     const spy = vi.spyOn(performance, 'getEntriesByType');
     mod.initNavigationMetrics();

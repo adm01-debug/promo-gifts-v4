@@ -47,25 +47,14 @@ vi.mock('@/components/ui/select', () => {
       </div>
     );
   };
-  const SelectTrigger = ({
-    children,
-    ...rest
-  }: React.HTMLAttributes<HTMLButtonElement>) => (
+  const SelectTrigger = ({ children, ...rest }: React.HTMLAttributes<HTMLButtonElement>) => (
     <button type="button" {...rest}>
       {children}
     </button>
   );
   const SelectValue = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
-  const SelectContent = ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  );
-  const SelectItem = ({
-    value,
-    children,
-  }: {
-    value: string;
-    children: React.ReactNode;
-  }) => (
+  const SelectContent = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;
+  const SelectItem = ({ value, children }: { value: string; children: React.ReactNode }) => (
     <button
       type="button"
       data-mock-select-item
@@ -83,7 +72,6 @@ vi.mock('@/components/ui/tooltip', () => {
   return { Tooltip: P, TooltipTrigger: P, TooltipContent: P };
 });
 
-// eslint-disable-next-line import/first
 import { CartStatusSelect } from '../../SellerCartsPage';
 
 const STATUSES: CartStatus[] = ['em_separacao', 'pronto_orcamento'];
@@ -145,16 +133,12 @@ function assertDomInvariants(currentStatus: CartStatus, ctx: string) {
   if (dom.busy) {
     expect(dom.aria, `INV-4 pending label ${ctx}`).toMatch(/Atualizando status/i);
     // data-status durante pending == label do pending
-    expect(dom.aria, `INV-4 label contains status ${ctx}`).toContain(
-      LABELS[dom.status],
-    );
+    expect(dom.aria, `INV-4 label contains status ${ctx}`).toContain(LABELS[dom.status]);
   } else {
     expect(dom.aria, `INV-4 idle label ${ctx}`).toMatch(/Status atual do carrinho/i);
     // Quando não-pending, data-status DEVE ser o currentStatus real
     expect(dom.status, `INV-2 idle==current ${ctx}`).toBe(currentStatus);
-    expect(dom.aria, `INV-4 label contains current ${ctx}`).toContain(
-      LABELS[currentStatus],
-    );
+    expect(dom.aria, `INV-4 label contains current ${ctx}`).toContain(LABELS[currentStatus]);
   }
 
   // INV-8: live-region sempre existe
@@ -162,9 +146,7 @@ function assertDomInvariants(currentStatus: CartStatus, ctx: string) {
 }
 
 function clickItem(value: CartStatus) {
-  const el = document.querySelector<HTMLElement>(
-    `[data-mock-select-item][data-value="${value}"]`,
-  );
+  const el = document.querySelector<HTMLElement>(`[data-mock-select-item][data-value="${value}"]`);
   if (el) fireEvent.click(el);
 }
 
@@ -215,11 +197,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
         const target = STATUSES[Math.floor(rng() * STATUSES.length)];
         clickItem(target);
         // Só conta como clique útil se não-busy e target != current visível
-        if (
-          beforeDom &&
-          !beforeDom.busy &&
-          target !== beforeDom.status
-        ) {
+        if (beforeDom && !beforeDom.busy && target !== beforeDom.status) {
           userInitiatedClicks += 1;
           successUpperBound += 1; // pode ou não confirmar; upper bound
           errorUpperBound += 1;
@@ -301,9 +279,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
     act(() => {
       vi.advanceTimersByTime(timeout * 4);
     });
-    expect(toastSuccess.mock.calls.length, `INV-7 success seed=${seed}`).toBe(
-      beforeSuccess,
-    );
+    expect(toastSuccess.mock.calls.length, `INV-7 success seed=${seed}`).toBe(beforeSuccess);
     expect(toastError.mock.calls.length, `INV-7 error seed=${seed}`).toBe(beforeError);
   });
 
@@ -311,11 +287,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
 
   it('EDGE · confirmTimeoutMs=0 dispara toast.error praticamente imediato', () => {
     render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={vi.fn()}
-        confirmTimeoutMs={0}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={vi.fn()} confirmTimeoutMs={0} />,
     );
     clickItem('pronto_orcamento');
     act(() => {
@@ -326,11 +298,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
 
   it('EDGE · confirmTimeoutMs negativo é clampado para 0', () => {
     render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={vi.fn()}
-        confirmTimeoutMs={-999}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={vi.fn()} confirmTimeoutMs={-999} />,
     );
     clickItem('pronto_orcamento');
     act(() => {
@@ -341,11 +309,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
 
   it('EDGE · confirmação chega ANTES do timeout expirar não dispara error', () => {
     const { rerender } = render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={vi.fn()}
-        confirmTimeoutMs={5000}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={vi.fn()} confirmTimeoutMs={5000} />,
     );
     clickItem('pronto_orcamento');
     act(() => {
@@ -368,11 +332,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
   it('EDGE · spam de cliques durante pending é ignorado (apenas 1 onChange)', () => {
     const onChange = vi.fn();
     render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={onChange}
-        confirmTimeoutMs={5000}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={onChange} confirmTimeoutMs={5000} />,
     );
     for (let i = 0; i < 20; i++) {
       clickItem('pronto_orcamento');
@@ -384,11 +344,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
 
   it('EDGE · parent muda currentStatus para o mesmo pending → success limpa timer', () => {
     const { rerender } = render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={vi.fn()}
-        confirmTimeoutMs={3000}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={vi.fn()} confirmTimeoutMs={3000} />,
     );
     clickItem('pronto_orcamento');
     // parent atualiza no meio do caminho
@@ -411,11 +367,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
 
   it('EDGE · unmount durante pending cancela o timer (sem toast tardio)', () => {
     const { unmount } = render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={vi.fn()}
-        confirmTimeoutMs={2000}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={vi.fn()} confirmTimeoutMs={2000} />,
     );
     clickItem('pronto_orcamento');
     unmount();
@@ -428,11 +380,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
 
   it('EDGE · trocar confirmTimeoutMs durante pending reinicia o timer (não duplica error)', () => {
     const { rerender } = render(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={vi.fn()}
-        confirmTimeoutMs={1000}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={vi.fn()} confirmTimeoutMs={1000} />,
     );
     clickItem('pronto_orcamento');
     act(() => {
@@ -440,11 +388,7 @@ describe('CartStatusSelect · fuzz 1000× (invariantes DOM + edge cases)', () =>
     });
     // Aumenta o timeout — timer antigo deve ser cancelado
     rerender(
-      <CartStatusSelect
-        currentStatus="em_separacao"
-        onChange={vi.fn()}
-        confirmTimeoutMs={5000}
-      />,
+      <CartStatusSelect currentStatus="em_separacao" onChange={vi.fn()} confirmTimeoutMs={5000} />,
     );
     act(() => {
       vi.advanceTimersByTime(600); // passou dos 1000 originais — NÃO deve disparar

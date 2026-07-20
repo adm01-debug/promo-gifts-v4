@@ -31,7 +31,7 @@ function redactValue(value: unknown): unknown {
     const out = Object.create(null) as Record<string, unknown>;
     for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
       if (BLOCKED_KEYS.has(key)) continue;
-      if (Object.prototype.hasOwnProperty.call(value, key)) {
+      if (Object.hasOwn(value as object, key)) {
         out[key] = SENSITIVE_KEY_RE.test(key) ? '[REDACTED]' : redactValue(nested);
       }
     }

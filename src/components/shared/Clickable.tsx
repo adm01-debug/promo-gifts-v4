@@ -12,12 +12,18 @@
  *
  * @see docs/architecture/A11Y_CLICKABLE.md
  */
-import { forwardRef, type ElementType, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import {
+  forwardRef,
+  type ElementType,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import { cn } from '@/lib/utils';
 
 export interface ClickableProps {
   /** Handler disparado por mouse OU teclado (Enter/Space). */
-  onClick: (event: MouseEvent | KeyboardEvent) => void;
+  onClick: (event: KeyboardEvent | MouseEvent) => void;
   children: ReactNode;
   /** Elemento renderizado (default: `div`). Aceita `motion.div`, `span`, etc. */
   as?: ElementType;
@@ -50,12 +56,14 @@ export interface ClickableProps {
   showFocusRing?: boolean;
   /** Estilo inline (evitar; preferir className). */
   style?: React.CSSProperties;
+  /** Handler de teclado adicional (complementa o Enter/Space interno). */
+  onKeyDown?: React.KeyboardEventHandler<HTMLElement>;
   /** Atributos data-* extras (preserva hooks E2E/analytics). */
-  [dataAttr: `data-${string}`]: string | number | boolean | undefined;
+  [dataAttr: `data-${string}`]: boolean | number | string | undefined;
   /** Atributos aria-* extras (aria-haspopup, aria-controls, aria-current, etc.). */
-  [ariaAttr: `aria-${string}`]: string | number | boolean | undefined;
+  [ariaAttr: `aria-${string}`]: boolean | number | string | undefined;
   /** framer-motion: layout flag (only when as={motion.*}). */
-  layout?: boolean | 'position' | 'size' | 'preserve-aspect';
+  layout?: boolean | 'position' | 'preserve-aspect' | 'size';
   /** framer-motion: initial state. */
   initial?: Record<string, unknown> | boolean;
   /** framer-motion: animate target. */
@@ -72,10 +80,7 @@ export interface ClickableProps {
  * 2. `strictTarget` — só dispara keyboard quando `e.target === e.currentTarget`.
  * 3. Enter e Space (com preventDefault para não rolar página).
  */
-export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clickable(
-  props,
-  ref,
-) {
+export const Clickable = forwardRef<HTMLElement, ClickableProps>((props, ref) => {
   const {
     onClick,
     children,
@@ -94,6 +99,7 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clicka
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
     'aria-describedby': ariaDescribedBy,
+    onKeyDown: externalKeyDown,
     ...rest
   } = props;
   const Component = (as ?? 'div') as ElementType;
@@ -106,8 +112,9 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clicka
     onClick(e);
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown: React.KeyboardEventHandler<HTMLElement> = (e) => {
     if (disabled) return;
+    externalKeyDown?.(e);
     if (e.key !== 'Enter' && e.key !== ' ') return;
     if (strictTarget && e.target !== e.currentTarget) return;
     e.preventDefault();
@@ -133,7 +140,7 @@ export const Clickable = forwardRef<HTMLElement, ClickableProps>(function Clicka
       {...passthrough}
       className={cn(
         'cursor-pointer',
-        disabled && 'cursor-not-allowed opacity-60 pointer-events-none',
+        disabled && 'pointer-events-none cursor-not-allowed opacity-60',
         showFocusRing &&
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,

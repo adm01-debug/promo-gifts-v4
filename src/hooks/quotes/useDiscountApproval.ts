@@ -81,237 +81,241 @@ export function useDiscountApproval() {
         return existing;
       }
       const promise = (async (): Promise<boolean> => {
-      try {
-        // BUG-040: Dedup guard — idempotent under double-clicks / retries.
-        // A pending row for this quote already satisfies the intent; skip the
-        // duplicate INSERT to avoid confusing the admin approval queue.
-        // BUG-APPROVAL-DEDUP-SILENT-FAIL FIX: previously { error } was not destructured.
-        // An RLS denial or network error returned { data: null, error } but the error
-        // was silently swallowed — existing stayed null and we always proceeded to INSERT,
-        // defeating the dedup guard and flooding the admin approval queue.
-        // Dedup: 1 pending por (quote_id, requested_pct, max_pct). Mesmo clique
-        // duplicado / retry de rede → curto-circuito idempotente. Pending com
-        // percentuais DIFERENTES ainda é tratado como sucesso (o índice único
-        // parcial `uniq_dar_quote_pending` impede o segundo INSERT de qualquer
-        // forma), apenas com warn explícito para diagnóstico.
-        const { data: existing, error: dupCheckErr } = await supabase
-          // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
-          .from('discount_approval_requests')
-          .select('id, requested_discount_percent, max_allowed_percent')
-          .eq('quote_id', quoteId)
-          .eq('status', 'pending')
-          .maybeSingle();
-        if (dupCheckErr) logger.warn('Dedup check failed, proceeding with INSERT:', dupCheckErr);
-        if (existing) {
-          const samePct =
-            Number(existing.requested_discount_percent) === Number(requestedPercent) &&
-            Number(existing.max_allowed_percent) === Number(maxAllowedPercent);
-          if (samePct) {
-            logger.info('Idempotent: pending approval already exists with identical pcts; skipping INSERT');
-            toast.success('Solicitação de aprovação enviada ao admin!');
-          } else {
-            logger.warn(
-              'Pending approval exists with different pcts; skipping INSERT to avoid 23505 on uniq_dar_quote_pending',
-              { existingPct: existing.requested_discount_percent, newPct: requestedPercent },
-            );
-            toast.warning(
-              'Já existe uma solicitação pendente para este orçamento com percentuais diferentes. ' +
-                'Aguarde a decisão do gestor ou ajuste para os mesmos valores.',
-              { duration: 8000 },
-            );
-          }
-          invalidateWidget();
-          return true;
-        }
-
-        const { data: inserted, error } = await supabase
-          // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
-          .from('discount_approval_requests')
-          .insert({
-            quote_id: quoteId,
-            seller_id: user.id,
-            requested_discount_percent: requestedPercent,
-            max_allowed_percent: maxAllowedPercent,
-            seller_notes: sellerNotes || null,
-          })
-          .select('id')
-          .maybeSingle();
-        if (error) {
-          // Idempotência DB: índice único parcial `uniq_dar_quote_pending`
-          // garante 1 pending por quote_id. SQLSTATE 23505 sob corrida → trata
-          // como sucesso (já existe a solicitação pendente que queríamos criar).
-          const code = (error as { code?: string }).code;
-          if (code === '23505') {
-            logger.warn('Duplicate pending approval intercepted by unique index; treating as idempotent success');
-            toast.success('Solicitação de aprovação enviada ao admin!');
+        try {
+          // BUG-040: Dedup guard — idempotent under double-clicks / retries.
+          // A pending row for this quote already satisfies the intent; skip the
+          // duplicate INSERT to avoid confusing the admin approval queue.
+          // BUG-APPROVAL-DEDUP-SILENT-FAIL FIX: previously { error } was not destructured.
+          // An RLS denial or network error returned { data: null, error } but the error
+          // was silently swallowed — existing stayed null and we always proceeded to INSERT,
+          // defeating the dedup guard and flooding the admin approval queue.
+          // Dedup: 1 pending por (quote_id, requested_pct, max_pct). Mesmo clique
+          // duplicado / retry de rede → curto-circuito idempotente. Pending com
+          // percentuais DIFERENTES ainda é tratado como sucesso (o índice único
+          // parcial `uniq_dar_quote_pending` impede o segundo INSERT de qualquer
+          // forma), apenas com warn explícito para diagnóstico.
+          const { data: dupRecord, error: dupCheckErr } = await supabase
+            // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
+            .from('discount_approval_requests')
+            .select('id, requested_discount_percent, max_allowed_percent')
+            .eq('quote_id', quoteId)
+            .eq('status', 'pending')
+            .maybeSingle();
+          if (dupCheckErr) logger.warn('Dedup check failed, proceeding with INSERT:', dupCheckErr);
+          if (dupRecord) {
+            const samePct =
+              Number(dupRecord.requested_discount_percent) === Number(requestedPercent) &&
+              Number(dupRecord.max_allowed_percent) === Number(maxAllowedPercent);
+            if (samePct) {
+              logger.info(
+                'Idempotent: pending approval already exists with identical pcts; skipping INSERT',
+              );
+              toast.success('Solicitação de aprovação enviada ao admin!');
+            } else {
+              logger.warn(
+                'Pending approval exists with different pcts; skipping INSERT to avoid 23505 on uniq_dar_quote_pending',
+                { existingPct: dupRecord.requested_discount_percent, newPct: requestedPercent },
+              );
+              toast.warning(
+                'Já existe uma solicitação pendente para este orçamento com percentuais diferentes. ' +
+                  'Aguarde a decisão do gestor ou ajuste para os mesmos valores.',
+                { duration: 8000 },
+              );
+            }
             invalidateWidget();
             return true;
           }
-          await logRlsDenial(error, {
-            table: 'discount_approval_requests',
-            op: 'INSERT',
-            endpoint: 'useDiscountApproval.requestApproval',
-            targetId: quoteId,
-            targetSellerId: user.id,
-            policyHint: 'dar_insert_scope',
-            querySummary: `requestedPct=${requestedPercent}`,
-          });
-          throw error;
-        }
-        const newRequestId = inserted?.id ?? null;
 
+          const { data: inserted, error } = await supabase
+            // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
+            .from('discount_approval_requests')
+            .insert({
+              quote_id: quoteId,
+              seller_id: user.id,
+              requested_discount_percent: requestedPercent,
+              max_allowed_percent: maxAllowedPercent,
+              seller_notes: sellerNotes || null,
+            })
+            .select('id')
+            .maybeSingle();
+          if (error) {
+            // Idempotência DB: índice único parcial `uniq_dar_quote_pending`
+            // garante 1 pending por quote_id. SQLSTATE 23505 sob corrida → trata
+            // como sucesso (já existe a solicitação pendente que queríamos criar).
+            const code = (error as { code?: string }).code;
+            if (code === '23505') {
+              logger.warn(
+                'Duplicate pending approval intercepted by unique index; treating as idempotent success',
+              );
+              toast.success('Solicitação de aprovação enviada ao admin!');
+              invalidateWidget();
+              return true;
+            }
+            await logRlsDenial(error, {
+              table: 'discount_approval_requests',
+              op: 'INSERT',
+              endpoint: 'useDiscountApproval.requestApproval',
+              targetId: quoteId,
+              targetSellerId: user.id,
+              policyHint: 'dar_insert_scope',
+              querySummary: `requestedPct=${requestedPercent}`,
+            });
+            throw error;
+          }
+          const newRequestId = inserted?.id ?? null;
 
-        // Set quote status to pending_approval so UI shows correct state.
-        // IMPORTANT: throw on failure — a swallowed error here would leave an
-        // orphaned approval request row while the quote stays editable, allowing
-        // the seller to overwrite the discount under admin review.
-        const { error: statusError } = await supabase
-          // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
-          .from('quotes')
-          .update({ status: 'pending_approval' })
-          .eq('id', quoteId);
-        if (statusError) {
-          logger.error('Failed to set quote status to pending_approval:', statusError);
-          throw statusError;
-        }
+          // Set quote status to pending_approval so UI shows correct state.
+          // IMPORTANT: throw on failure — a swallowed error here would leave an
+          // orphaned approval request row while the quote stays editable, allowing
+          // the seller to overwrite the discount under admin review.
+          const { error: statusError } = await supabase
+            // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
+            .from('quotes')
+            .update({ status: 'pending_approval' })
+            .eq('id', quoteId);
+          if (statusError) {
+            logger.error('Failed to set quote status to pending_approval:', statusError);
+            throw statusError;
+          }
 
-        // Buscar contexto do orçamento (markup + aparente) para auditoria e história
-        // BUG-DISCOUNTAPPROVAL-QUOTECTX-SELECT-SILENT-FAIL FIX: { data: quoteCtx } without
-        // error check — RLS failure silently produced null ctx, markup logged as 0 in audit.
-        // Secondary fetch: primary update already succeeded; log.warn and degrade gracefully.
-        const { data: quoteCtx, error: quoteCtxErr } = await supabase
-          // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
-          .from('quotes')
-          .select('discount_percent, negotiation_markup_percent, real_discount_percent')
-          .eq('id', quoteId)
-          .maybeSingle();
-        if (quoteCtxErr) logger.warn('Failed to fetch quote context for audit trail:', quoteCtxErr);
-        const markup = Number(quoteCtx?.negotiation_markup_percent ?? 0);
-        const apparent = Number(quoteCtx?.discount_percent ?? 0);
+          // Buscar contexto do orçamento (markup + aparente) para auditoria e história
+          // BUG-DISCOUNTAPPROVAL-QUOTECTX-SELECT-SILENT-FAIL FIX: { data: quoteCtx } without
+          // error check — RLS failure silently produced null ctx, markup logged as 0 in audit.
+          // Secondary fetch: primary update already succeeded; log.warn and degrade gracefully.
+          const { data: quoteCtx, error: quoteCtxErr } = await supabase
+            // rls-allow: fluxo de aprovação admin/seller; RLS filtra por papel
+            .from('quotes')
+            .select('discount_percent, negotiation_markup_percent, real_discount_percent')
+            .eq('id', quoteId)
+            .maybeSingle();
+          if (quoteCtxErr)
+            logger.warn('Failed to fetch quote context for audit trail:', quoteCtxErr);
+          const markup = Number(quoteCtx?.negotiation_markup_percent ?? 0);
+          const apparent = Number(quoteCtx?.discount_percent ?? 0);
 
-        // Log in quote history (incluindo flag de markup)
-        // BUG-SILENT-INSERT FIX: Supabase doesn't throw on failed mutations — it
-        // returns the error in the response. Await without destructuring meant any
-        // RLS denial or constraint violation was silently ignored, leaving gaps in
-        // the audit trail. These are non-critical secondary ops so we log but don't throw.
-        const { error: historyErr } = await supabase.from('quote_history').insert({
-          quote_id: quoteId,
-          user_id: user.id,
-          action: 'discount_approval_requested',
-          description:
-            markup > 0
-              ? `Solicitação de desconto REAL ${requestedPercent.toFixed(2)}% (aparente ${apparent.toFixed(1)}% com markup +${markup.toFixed(1)}%, limite ${maxAllowedPercent}%)`
-              : `Solicitação de desconto de ${requestedPercent}% (limite: ${maxAllowedPercent}%)`,
-          field_changed: 'discount',
-          new_value: `${requestedPercent}%`,
-          metadata: {
-            seller_notes: sellerNotes || null,
-            apparent_discount_percent: apparent,
-            real_discount_percent: requestedPercent,
-            negotiation_markup_percent: markup,
-          },
-        });
-        if (historyErr) logger.error('Failed to log quote history:', historyErr);
-
-        // Audit trail dedicado quando há markup (visibilidade admin)
-        if (markup > 0) {
-          const { error: auditErr } = await supabase.from('admin_audit_log').insert({
+          // Log in quote history (incluindo flag de markup)
+          // BUG-SILENT-INSERT FIX: Supabase doesn't throw on failed mutations — it
+          // returns the error in the response. Await without destructuring meant any
+          // RLS denial or constraint violation was silently ignored, leaving gaps in
+          // the audit trail. These are non-critical secondary ops so we log but don't throw.
+          const { error: historyErr } = await supabase.from('quote_history').insert({
+            quote_id: quoteId,
             user_id: user.id,
-            action: 'quote_negotiation_markup_applied',
-            resource_type: 'quote',
-            resource_id: quoteId,
-            details: {
-              negotiation_markup_percent: markup,
+            action: 'discount_approval_requested',
+            description:
+              markup > 0
+                ? `Solicitação de desconto REAL ${requestedPercent.toFixed(2)}% (aparente ${apparent.toFixed(1)}% com markup +${markup.toFixed(1)}%, limite ${maxAllowedPercent}%)`
+                : `Solicitação de desconto de ${requestedPercent}% (limite: ${maxAllowedPercent}%)`,
+            field_changed: 'discount',
+            new_value: `${requestedPercent}%`,
+            metadata: {
+              seller_notes: sellerNotes || null,
               apparent_discount_percent: apparent,
               real_discount_percent: requestedPercent,
-              max_allowed_percent: maxAllowedPercent,
-              context: 'discount_approval_request',
+              negotiation_markup_percent: markup,
             },
           });
-          if (auditErr) logger.error('Failed to log audit trail:', auditErr);
-        }
+          if (historyErr) logger.error('Failed to log quote history:', historyErr);
 
-        // Notify all admins — both queries are independent, run in parallel
-        // BUG-NOTIFY-ADMIN-SILENT-FAIL FIX: previously { error } was not destructured from
-        // the user_roles query. If the query failed (RLS denial, network error), adminRoles
-        // was null, the `if (adminRoles && ...)` guard silently skipped notification, and
-        // nothing was logged — admins never knew a discount approval had been requested.
-        const [{ data: adminRoles, error: rolesErr }, { data: profile }] = await Promise.all([
-          supabase.from('user_roles').select('user_id').eq('role', 'admin'),
-          supabase.from('profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
-        ]);
-        if (rolesErr) logger.warn('Failed to fetch admin roles for discount notification:', rolesErr);
-        if (adminRoles && adminRoles.length > 0) {
-          const sellerName = profile?.full_name || 'Vendedor';
-          const msg =
-            markup > 0
-              ? `${sellerName} solicitou desconto real de ${requestedPercent.toFixed(2)}% (aparente ${apparent.toFixed(1)}% com markup +${markup.toFixed(1)}%, limite ${maxAllowedPercent}%)`
-              : `${sellerName} solicitou ${requestedPercent.toFixed(1)}% de desconto (limite: ${maxAllowedPercent}%)`;
-          const deepLink = newRequestId
-            ? `/admin/usuarios?tab=discounts&request=${newRequestId}`
-            : '/admin/usuarios?tab=discounts';
-          const { error: notifyErr } = await supabase.from('workspace_notifications').insert(
-            adminRoles.map((a) => ({
-              user_id: a.user_id,
-              title: 'Solicitação de desconto',
-              message: msg,
-              type: 'warning',
-              category: 'discount',
-              action_url: deepLink,
-              metadata: {
-                request_id: newRequestId,
-                quote_id: quoteId,
-                seller_id: user.id,
-                seller_name: sellerName,
-                requested_discount_percent: requestedPercent,
-                max_allowed_percent: maxAllowedPercent,
-                real_discount_percent: requestedPercent,
-                apparent_discount_percent: apparent,
+          // Audit trail dedicado quando há markup (visibilidade admin)
+          if (markup > 0) {
+            const { error: auditErr } = await supabase.from('admin_audit_log').insert({
+              user_id: user.id,
+              action: 'quote_negotiation_markup_applied',
+              resource_type: 'quote',
+              resource_id: quoteId,
+              details: {
                 negotiation_markup_percent: markup,
-                seller_notes: sellerNotes || null,
+                apparent_discount_percent: apparent,
+                real_discount_percent: requestedPercent,
+                max_allowed_percent: maxAllowedPercent,
+                context: 'discount_approval_request',
               },
-            })),
-          );
+            });
+            if (auditErr) logger.error('Failed to log audit trail:', auditErr);
+          }
 
-          if (notifyErr) logger.error('Failed to notify admins of approval request:', notifyErr);
-        }
+          // Notify all admins — both queries are independent, run in parallel
+          // BUG-NOTIFY-ADMIN-SILENT-FAIL FIX: previously { error } was not destructured from
+          // the user_roles query. If the query failed (RLS denial, network error), adminRoles
+          // was null, the `if (adminRoles && ...)` guard silently skipped notification, and
+          // nothing was logged — admins never knew a discount approval had been requested.
+          const [{ data: adminRoles, error: rolesErr }, { data: profile }] = await Promise.all([
+            supabase.from('user_roles').select('user_id').eq('role', 'admin'),
+            supabase.from('profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
+          ]);
+          if (rolesErr)
+            logger.warn('Failed to fetch admin roles for discount notification:', rolesErr);
+          if (adminRoles && adminRoles.length > 0) {
+            const sellerName = profile?.full_name || 'Vendedor';
+            const msg =
+              markup > 0
+                ? `${sellerName} solicitou desconto real de ${requestedPercent.toFixed(2)}% (aparente ${apparent.toFixed(1)}% com markup +${markup.toFixed(1)}%, limite ${maxAllowedPercent}%)`
+                : `${sellerName} solicitou ${requestedPercent.toFixed(1)}% de desconto (limite: ${maxAllowedPercent}%)`;
+            const deepLink = newRequestId
+              ? `/admin/usuarios?tab=discounts&request=${newRequestId}`
+              : '/admin/usuarios?tab=discounts';
+            const { error: notifyErr } = await supabase.from('workspace_notifications').insert(
+              adminRoles.map((a) => ({
+                user_id: a.user_id,
+                title: 'Solicitação de desconto',
+                message: msg,
+                type: 'warning',
+                category: 'discount',
+                action_url: deepLink,
+                metadata: {
+                  request_id: newRequestId,
+                  quote_id: quoteId,
+                  seller_id: user.id,
+                  seller_name: sellerName,
+                  requested_discount_percent: requestedPercent,
+                  max_allowed_percent: maxAllowedPercent,
+                  real_discount_percent: requestedPercent,
+                  apparent_discount_percent: apparent,
+                  negotiation_markup_percent: markup,
+                  seller_notes: sellerNotes || null,
+                },
+              })),
+            );
 
-        toast.success('Solicitação de aprovação enviada ao admin!');
-        invalidateWidget();
-        return true;
-      } catch (err) {
-        logger.error('Error requesting approval:', err);
-        // Mensagens específicas por tipo de erro com ação sugerida.
-        const e = err as { code?: string; status?: number; message?: string; name?: string };
-        const status = Number(e?.status ?? 0);
-        const code = String(e?.code ?? '');
-        const msg = String(e?.message ?? '');
-        const isTimeout =
-          e?.name === 'AbortError' ||
-          /timeout|timed out|fetch failed|network/i.test(msg);
-        if (code === '23505' || status === 409) {
-          toast.warning(
-            'Já existe uma solicitação pendente para este orçamento. Verifique o widget "Minhas Solicitações" antes de tentar novamente.',
-            { duration: 8000 },
-          );
-        } else if (isTimeout) {
-          toast.error(
-            'Tempo esgotado ao enviar a solicitação. Verifique sua conexão e tente novamente.',
-            {
-              duration: 8000,
-              action: { label: 'Tentar novamente', onClick: () => void 0 },
-            },
-          );
-        } else if (status >= 500) {
-          toast.error(
-            'Falha temporária do servidor (5xx). Aguarde alguns segundos e tente novamente.',
-            { duration: 8000 },
-          );
-        } else {
-          toast.error('Erro ao solicitar aprovação. Tente novamente em instantes.');
+            if (notifyErr) logger.error('Failed to notify admins of approval request:', notifyErr);
+          }
+
+          toast.success('Solicitação de aprovação enviada ao admin!');
+          invalidateWidget();
+          return true;
+        } catch (err) {
+          logger.error('Error requesting approval:', err);
+          // Mensagens específicas por tipo de erro com ação sugerida.
+          const e = err as { code?: string; status?: number; message?: string; name?: string };
+          const status = Number(e?.status ?? 0);
+          const code = String(e?.code ?? '');
+          const msg = String(e?.message ?? '');
+          const isTimeout =
+            e?.name === 'AbortError' || /timeout|timed out|fetch failed|network/i.test(msg);
+          if (code === '23505' || status === 409) {
+            toast.warning(
+              'Já existe uma solicitação pendente para este orçamento. Verifique o widget "Minhas Solicitações" antes de tentar novamente.',
+              { duration: 8000 },
+            );
+          } else if (isTimeout) {
+            toast.error(
+              'Tempo esgotado ao enviar a solicitação. Verifique sua conexão e tente novamente.',
+              {
+                duration: 8000,
+                action: { label: 'Tentar novamente', onClick: () => undefined },
+              },
+            );
+          } else if (status >= 500) {
+            toast.error(
+              'Falha temporária do servidor (5xx). Aguarde alguns segundos e tente novamente.',
+              { duration: 8000 },
+            );
+          } else {
+            toast.error('Erro ao solicitar aprovação. Tente novamente em instantes.');
+          }
+          return false;
         }
-        return false;
-      }
       })();
       inflightApprovals.set(key, promise);
       try {

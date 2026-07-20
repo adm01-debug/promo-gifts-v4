@@ -90,14 +90,16 @@ function renderCard(
 describe('Suite 1 — ProductColorSwatches engine', () => {
   it('S1-01: renderiza todas as cores', () => {
     wrap(<ProductColorSwatches colors={COLORS} max={10} hideWhenEmpty={false} />);
-    ['azul', 'verde', 'preto', 'limiar', 'negativa'].forEach((n) =>
-      expect(document.querySelector(`[data-testid="color-swatch-${n}"]`)).not.toBeNull(),
-    );
+    for (const n of ['azul', 'verde', 'preto', 'limiar', 'negativa']) {
+      expect(document.querySelector(`[data-testid="color-swatch-${n}"]`)).not.toBeNull();
+    }
   });
 
   it('S1-02: sem seleção → aria-checked=false em todos', () => {
     const { getAllByRole } = wrap(<ProductColorSwatches colors={COLORS} max={10} />);
-    getAllByRole('radio').forEach((r) => expect(r.getAttribute('aria-checked')).toBe('false'));
+    for (const r of getAllByRole('radio')) {
+      expect(r.getAttribute('aria-checked')).toBe('false');
+    }
   });
 
   it('S1-03: sem seleção → sem botão Todos', () => {
@@ -307,7 +309,9 @@ describe('Suite 2 — BaseProductGridCard inline color selection', () => {
 
   it('S2-02: estado inicial → nenhum swatch com aria-checked=true', () => {
     const { getAllByRole } = renderCard();
-    getAllByRole('radio').forEach((r) => expect(r.getAttribute('aria-checked')).toBe('false'));
+    for (const r of getAllByRole('radio')) {
+      expect(r.getAttribute('aria-checked')).toBe('false');
+    }
   });
 
   // R1 — Clicar bolinha NÃO dispara onClick do card
@@ -493,7 +497,9 @@ describe('Suite 2 — BaseProductGridCard inline color selection', () => {
     const { getByTestId, queryByTestId, getAllByRole } = renderCard();
     fireEvent.click(getByTestId('color-swatch-azul'));
     fireEvent.click(getByTestId('color-swatches-clear'));
-    getAllByRole('radio').forEach((r) => expect(r.getAttribute('aria-checked')).toBe('false'));
+    for (const r of getAllByRole('radio')) {
+      expect(r.getAttribute('aria-checked')).toBe('false');
+    }
     expect(queryByTestId('color-swatches-clear')).toBeNull();
   });
 
@@ -882,10 +888,10 @@ describe('Suite 4 — Fluxos completos integrados', () => {
     // "Sem Img" (idx 5) e "Sem Qty" (idx 6) ficam no chip "+2" — não têm testId individual.
     const { getByTestId } = renderCard();
     const cores = ['azul', 'verde', 'preto', 'limiar', 'negativa']; // primeiras 5
-    cores.forEach((c) => {
+    for (const c of cores) {
       fireEvent.click(getByTestId(`color-swatch-${c}`));
       expect(getByTestId('qv-thumb').getAttribute('data-qv-opened')).toBe('false');
-    });
+    }
     // Verifica chip +2 existe (Sem Img + Sem Qty no overflow)
     expect(getByTestId('color-swatches-overflow')).not.toBeNull();
   });

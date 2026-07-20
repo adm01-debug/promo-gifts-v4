@@ -8,6 +8,7 @@
  *  - tooltip comercial acionado por hover E por foco de teclado
  *  - click dispara navegação para /orcamentos/novo
  */
+import type { useQuotesListPage as _useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -15,9 +16,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 const navigateMock = vi.fn();
 
-type HookReturn = ReturnType<
-  typeof import('@/pages/quotes/useQuotesListPage').useQuotesListPage
->;
+type HookReturn = ReturnType<typeof _useQuotesListPage>;
 
 const baseHook = {
   navigate: navigateMock,
@@ -46,9 +45,7 @@ const baseHook = {
 } as unknown as HookReturn;
 
 vi.mock('@/pages/quotes/useQuotesListPage', async () => {
-  const actual = await vi.importActual<
-    typeof import('@/pages/quotes/useQuotesListPage')
-  >('@/pages/quotes/useQuotesListPage');
+  const actual = await vi.importActual('@/pages/quotes/useQuotesListPage');
   return { ...actual, useQuotesListPage: () => baseHook };
 });
 

@@ -84,8 +84,9 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-const setExpiring = (h: ReturnType<typeof renderHook<ReturnType<typeof useQuotesListPage>, unknown>>) =>
-  act(() => h.result.current.setSortBy('expiring'));
+const setExpiring = (
+  h: ReturnType<typeof renderHook<ReturnType<typeof useQuotesListPage>, unknown>>,
+) => act(() => h.result.current.setSortBy('expiring'));
 
 describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', () => {
   it('I1: exclui quotes com status=expired mesmo com valid_until futuro', () => {
@@ -107,9 +108,9 @@ describe('useQuotesListPage — filtro "Vencimento próximo" (sort=expiring)', (
     ];
     const h = renderHook(() => useQuotesListPage(), { wrapper });
     setExpiring(h);
-    expect(h.result.current.filteredQuotes.map((x) => x.id).sort()).toEqual(
-      ['edge-now', 'future'].sort(),
-    );
+    expect(
+      h.result.current.filteredQuotes.map((x) => x.id).sort((a, b) => a.localeCompare(b)),
+    ).toEqual(['edge-now', 'future'].sort((a, b) => a.localeCompare(b)));
   });
 
   it('I3: exclui quotes sem valid_until', () => {
@@ -313,4 +314,3 @@ describe('useQuotesListPage — performance do filtro expiring', () => {
     expect(elapsed).toBeLessThan(500);
   });
 });
-

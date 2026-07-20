@@ -100,7 +100,12 @@ export async function detectProductBounds(
 
   // Registra a Promise desta detecção para deduplicação concurrent.
   // Removida do Map em finally (sucesso ou falha).
-  const detectionPromise = _runDetection(imageUrl, { whiteThreshold, alphaThreshold, margin, maxSize });
+  const detectionPromise = runDetectionImpl(imageUrl, {
+    whiteThreshold,
+    alphaThreshold,
+    margin,
+    maxSize,
+  });
   _pendingDetections.set(imageUrl, detectionPromise);
   try {
     return await detectionPromise;
@@ -110,16 +115,20 @@ export async function detectProductBounds(
 }
 
 // Implementação interna — chamada apenas pela função pública (jamais diretamente).
-async function _runDetection(
+async function runDetectionImpl(
   imageUrl: string,
-  { whiteThreshold, alphaThreshold, margin, maxSize }: Required<{
+  {
+    whiteThreshold,
+    alphaThreshold,
+    margin,
+    maxSize,
+  }: Required<{
     whiteThreshold: number;
     alphaThreshold: number;
     margin: number;
     maxSize: number;
   }>,
 ): Promise<ProductBounds> {
-
   await acquireDetectionSlot();
   try {
     const img = await loadImageCors(imageUrl);
@@ -153,12 +162,19 @@ async function _runDetection(
     }
 
     const { data } = imageData;
-    let minX = w, maxX = 0, minY = h, maxY = 0, productPixels = 0;
+    let minX = w,
+      maxX = 0,
+      minY = h,
+      maxY = 0,
+      productPixels = 0;
 
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const i = (y * w + x) * 4;
-        const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+        const r = data[i],
+          g = data[i + 1],
+          b = data[i + 2],
+          a = data[i + 3];
         if (a < alphaThreshold) continue;
         if (r >= whiteThreshold && g >= whiteThreshold && b >= whiteThreshold) continue;
         productPixels++;
@@ -179,9 +195,12 @@ async function _runDetection(
 
     if (productRatio > 0.95) {
       const fullBounds: ProductBounds = {
-        fractionX: 0.95, fractionY: 0.95,
-        centerX: 0.5, centerY: 0.5,
-        detected: true, imageAspectRatio,
+        fractionX: 0.95,
+        fractionY: 0.95,
+        centerX: 0.5,
+        centerY: 0.5,
+        detected: true,
+        imageAspectRatio,
       };
       boundsCache.set(imageUrl, fullBounds);
       return fullBounds;

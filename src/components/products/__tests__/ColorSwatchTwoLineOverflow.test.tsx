@@ -30,9 +30,7 @@ const makeSwatches = (n: number): ColorSwatch[] =>
   })) as unknown as ColorSwatch[];
 
 const visibleNamesV1 = () =>
-  screen
-    .queryAllByTestId(/^color-swatch-/)
-    .map((el) => el.getAttribute('data-color-name'));
+  screen.queryAllByTestId(/^color-swatch-/).map((el) => el.getAttribute('data-color-name'));
 
 const visibleNamesV2 = (container: HTMLElement) =>
   Array.from(container.querySelectorAll('button[aria-pressed]')).map((el) =>
@@ -71,9 +69,7 @@ describe('V1 ProductColorSwatches (wrap, max=14)', () => {
     );
     const names = visibleNamesV1();
     expect(names).toHaveLength(13);
-    expect(names).toEqual(
-      Array.from({ length: 13 }, (_, i) => `cor-${i}`),
-    );
+    expect(names).toEqual(Array.from({ length: 13 }, (_, i) => `cor-${i}`));
     expect(screen.getByTestId('color-swatches-overflow')).toHaveTextContent('+7');
   });
 
@@ -87,12 +83,7 @@ describe('V1 ProductColorSwatches (wrap, max=14)', () => {
     ({ total, max, visible, chip }) => {
       render(
         <TooltipProvider>
-          <ProductColorSwatches
-            colors={makeColors(total)}
-            max={max}
-            wrap
-            hideWhenEmpty={false}
-          />
+          <ProductColorSwatches colors={makeColors(total)} max={max} wrap hideWhenEmpty={false} />
         </TooltipProvider>,
       );
       const names = visibleNamesV1();
@@ -248,7 +239,9 @@ describe('A11y — chip "+N" e swatches', () => {
         <ProductColorSwatches colors={makeColors(7)} max={6} hideWhenEmpty={false} />
       </TooltipProvider>,
     );
-    expect(screen.getByTestId('color-swatches-overflow').getAttribute('aria-label')).toBe('Mais 1 cor');
+    expect(screen.getByTestId('color-swatches-overflow').getAttribute('aria-label')).toBe(
+      'Mais 1 cor',
+    );
   });
 
   it('V2: cada swatch é button com aria-label = nome da cor', () => {
@@ -262,7 +255,9 @@ describe('A11y — chip "+N" e swatches', () => {
     );
     const btns = Array.from(container.querySelectorAll('button[aria-pressed]'));
     expect(btns).toHaveLength(5);
-    btns.forEach((b, i) => expect(b.getAttribute('aria-label')).toBe(`cor-${i}`));
+    for (const [i, b] of btns.entries()) {
+      expect(b.getAttribute('aria-label')).toBe(`cor-${i}`);
+    }
   });
 });
 
@@ -364,7 +359,9 @@ describe('A11y — navegação por teclado entre swatches', () => {
     const chip = screen.getByTestId('color-swatches-overflow');
 
     // Todos os swatches participam do tab order natural (button sem tabindex=-1)
-    radios.forEach((r) => expect(r.getAttribute('tabindex')).not.toBe('-1'));
+    for (const r of radios) {
+      expect(r.getAttribute('tabindex')).not.toBe('-1');
+    }
     // Chip fora do tab order (span sem tabindex)
     expect(chip.getAttribute('tabindex')).toBeNull();
 

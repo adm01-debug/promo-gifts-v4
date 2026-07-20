@@ -39,8 +39,7 @@ interface Cart {
   items: CartItem[];
 }
 
-const clampQuantity = (q: number): number =>
-  Math.max(1, Math.min(MAX_QTY, Math.floor(q)));
+const clampQuantity = (q: number): number => Math.max(1, Math.min(MAX_QTY, Math.floor(q)));
 
 function useUpdateItemQuantityHarness(
   patchFn: (args: { itemId: string; quantity: number }) => Promise<void>,
@@ -60,8 +59,8 @@ function useUpdateItemQuantityHarness(
           [QUERY_KEY, USER_ID],
           previous.map((cart) => ({
             ...cart,
-            items: cart.items.map((it) =>
-              it.id === itemId ? { ...it, quantity: safeQty } : it,
+            items: cart.items.map((item) =>
+              item.id === itemId ? { ...item, quantity: safeQty } : item,
             ),
           })),
         );
@@ -94,9 +93,7 @@ function wrapperWith(qc: QueryClient) {
 }
 
 function seedCart(qc: QueryClient, initial: CartItem[]) {
-  qc.setQueryData<Cart[]>([QUERY_KEY, USER_ID], [
-    { id: 'cart-1', items: initial },
-  ]);
+  qc.setQueryData<Cart[]>([QUERY_KEY, USER_ID], [{ id: 'cart-1', items: initial }]);
 }
 
 function readItem(qc: QueryClient, itemId: string): CartItem | undefined {
@@ -122,7 +119,10 @@ function spyPatchFn(
   mode: 'reject' | 'resolve',
   err: Error = new Error('PostgREST 400: check constraint violation'),
 ) {
-  const seen: { snapshotDuringFlight: Cart[] | undefined; args: Array<{ itemId: string; quantity: number }> } = {
+  const seen: {
+    snapshotDuringFlight: Cart[] | undefined;
+    args: Array<{ itemId: string; quantity: number }>;
+  } = {
     snapshotDuringFlight: undefined,
     args: [],
   };
@@ -150,15 +150,11 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
     expect(computeTotal(readItem(qc, 'it-1'))).toBe(120);
 
     await act(async () => {
-      await result.current
-        .mutateAsync({ itemId: 'it-1', quantity: 80 })
-        .catch(() => {});
+      await result.current.mutateAsync({ itemId: 'it-1', quantity: 80 }).catch(() => {});
     });
 
     // Otimista foi aplicado DURANTE a corrida (patchFn viu quantity=80).
-    const midflightItem = spy.seen.snapshotDuringFlight?.[0]?.items.find(
-      (i) => i.id === 'it-1',
-    );
+    const midflightItem = spy.seen.snapshotDuringFlight?.[0]?.items.find((i) => i.id === 'it-1');
     expect(midflightItem?.quantity).toBe(80);
 
     // Rollback: cache final volta ao original.
@@ -180,9 +176,7 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
     });
 
     await act(async () => {
-      await result.current
-        .mutateAsync({ itemId: 'it-2', quantity: 999 })
-        .catch(() => {});
+      await result.current.mutateAsync({ itemId: 'it-2', quantity: 999 }).catch(() => {});
     });
 
     // Otimista visto durante a corrida.
@@ -231,9 +225,7 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
     expect(readItem(qc, 'it-clamp')?.quantity).toBe(MAX_QTY);
     expect(spy.fn).toHaveBeenCalledWith({ itemId: 'it-clamp', quantity: MAX_QTY });
     // Otimista visto DURANTE a corrida = MAX_QTY (não 9_999_999).
-    const mid = spy.seen.snapshotDuringFlight?.[0]?.items.find(
-      (i) => i.id === 'it-clamp',
-    );
+    const mid = spy.seen.snapshotDuringFlight?.[0]?.items.find((i) => i.id === 'it-clamp');
     expect(mid?.quantity).toBe(MAX_QTY);
   });
 
@@ -251,9 +243,7 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
     for (let i = 0; i < 10; i++) {
       const target = i % 2 === 0 ? 'it-a' : 'it-b';
       await act(async () => {
-        await result.current
-          .mutateAsync({ itemId: target, quantity: 100 + i })
-          .catch(() => {});
+        await result.current.mutateAsync({ itemId: target, quantity: 100 + i }).catch(() => {});
       });
       expect(readItem(qc, 'it-a')?.quantity).toBe(4);
       expect(readItem(qc, 'it-b')?.quantity).toBe(7);
@@ -296,9 +286,7 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
       { id: 'it-y', quantity: 3, product_price: 15.5 },
     ];
     seedCart(qc, originalItems);
-    const snapshotBefore = JSON.parse(
-      JSON.stringify(qc.getQueryData([QUERY_KEY, USER_ID])),
-    );
+    const snapshotBefore = JSON.parse(JSON.stringify(qc.getQueryData([QUERY_KEY, USER_ID])));
 
     const spy = spyPatchFn(qc, 'reject', new Error('constraint'));
     const { result } = renderHook(() => useUpdateItemQuantityHarness(spy.fn), {
@@ -306,9 +294,7 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
     });
 
     await act(async () => {
-      await result.current
-        .mutateAsync({ itemId: 'it-x', quantity: 500 })
-        .catch(() => {});
+      await result.current.mutateAsync({ itemId: 'it-x', quantity: 500 }).catch(() => {});
     });
 
     expect(qc.getQueryData([QUERY_KEY, USER_ID])).toEqual(snapshotBefore);
@@ -324,9 +310,7 @@ describe('updateItemQuantity · rollback em falha do PATCH', () => {
 
     // Tenta gravar 42 (mesma qty). onMutate ainda escreve otimista (idempotente).
     await act(async () => {
-      await result.current
-        .mutateAsync({ itemId: 'it-idem', quantity: 42 })
-        .catch(() => {});
+      await result.current.mutateAsync({ itemId: 'it-idem', quantity: 42 }).catch(() => {});
     });
     expect(readItem(qc, 'it-idem')?.quantity).toBe(42);
   });

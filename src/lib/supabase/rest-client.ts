@@ -50,7 +50,7 @@ export async function headRequestWithFallback(
 
     // If HEAD fails with 401/403, log but don't throw — graceful degradation
     if (HEAD_RETRY_CONFIG.statusesToRetry.includes(response.status)) {
-      console.debug(`[Supabase] HEAD request returned ${response.status}, falling back to GET`, {
+      console.warn(`[Supabase] HEAD request returned ${response.status}, falling back to GET`, {
         url,
       });
       // Silently fail — query layer will retry with normal query
@@ -60,7 +60,7 @@ export async function headRequestWithFallback(
     return response;
   } catch (error) {
     // Network error — log and return error response
-    console.debug('[Supabase] HEAD request failed with network error', {
+    console.warn('[Supabase] HEAD request failed with network error', {
       url,
       error: String(error),
     });
@@ -85,7 +85,7 @@ export function getSupabaseQueryConfig() {
   return {
     queryFn: async ({
       queryKey,
-      signal,
+      signal: _signal,
     }: {
       queryKey: readonly unknown[];
       signal?: AbortSignal;

@@ -70,10 +70,9 @@ function assertFitsOnOneLine(row: HTMLElement, containerWidth: number) {
   const total =
     children.reduce((sum, c) => sum + estimateChildWidth(c), 0) +
     Math.max(0, children.length - 1) * GAP_PX;
-  expect(
-    total,
-    `soma estimada (${total}px) deve caber em ${containerWidth}px`,
-  ).toBeLessThanOrEqual(containerWidth);
+  expect(total, `soma estimada (${total}px) deve caber em ${containerWidth}px`).toBeLessThanOrEqual(
+    containerWidth,
+  );
 }
 
 describe('ConfigurationPanelV6 — layout da linha "Tamanho da gravação"', () => {
@@ -81,7 +80,7 @@ describe('ConfigurationPanelV6 — layout da linha "Tamanho da gravação"', () 
 
   beforeEach(() => {
     // Estabiliza matchMedia para jsdom.
-    window.matchMedia = window.matchMedia || ((q: string) => ({
+    window.matchMedia ||= ((q: string) => ({
       matches: false,
       media: q,
       onchange: null,

@@ -114,7 +114,9 @@ describe('useQuotesListPage — filtro/sort', () => {
     ];
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setStatusFilter('approved'));
-    expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['b', 'c']);
+    expect(
+      result.current.filteredQuotes.map((q) => q.id).sort((a, b) => a.localeCompare(b)),
+    ).toEqual(['b', 'c']);
   });
 
   it('busca por searchTerm com ≥ 2 chars usa Fuse (após debounce)', async () => {
@@ -204,7 +206,9 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
     ];
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });
     act(() => result.current.setStatusFilter('pending'));
-    expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['a', 'b']);
+    expect(
+      result.current.filteredQuotes.map((q) => q.id).sort((a, b) => a.localeCompare(b)),
+    ).toEqual(['a', 'b']);
   });
 
   it('reset volta para "all" e mostra todos os orçamentos', () => {
@@ -229,10 +233,14 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });
 
     act(() => result.current.setStatusFilter('pending'));
-    const pendingIds = result.current.filteredQuotes.map((q) => q.id).sort();
+    const pendingIds = result.current.filteredQuotes
+      .map((q) => q.id)
+      .sort((a, b) => a.localeCompare(b));
 
     act(() => result.current.setStatusFilter('created_synced'));
-    const syncedIds = result.current.filteredQuotes.map((q) => q.id).sort();
+    const syncedIds = result.current.filteredQuotes
+      .map((q) => q.id)
+      .sort((a, b) => a.localeCompare(b));
 
     expect(pendingIds).toEqual(['a', 'b', 'c']);
     expect(syncedIds).toEqual(['a', 'b']);
@@ -256,7 +264,9 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
     expect(result.current.filteredQuotes.map((q) => q.id)).toEqual(['c']);
 
     act(() => result.current.setStatusFilter('unsynced'));
-    expect(result.current.filteredQuotes.map((q) => q.id).sort()).toEqual(['a', 'b']);
+    expect(
+      result.current.filteredQuotes.map((q) => q.id).sort((a, b) => a.localeCompare(b)),
+    ).toEqual(['a', 'b']);
   });
 
   it('filtro "created_synced" retorna apenas pending && synced_to_bitrix === true', () => {
@@ -280,12 +290,11 @@ describe('useQuotesListPage — chips de sync (Bitrix)', () => {
     const { result } = renderHook(() => useQuotesListPage(), { wrapper });
 
     act(() => result.current.setStatusFilter('created_synced'));
-    const cs = result.current.filteredQuotes.map((q) => q.id).sort();
+    const cs = result.current.filteredQuotes.map((q) => q.id).sort((a, b) => a.localeCompare(b));
     act(() => result.current.setStatusFilter('pending'));
-    const p = result.current.filteredQuotes.map((q) => q.id).sort();
+    const p = result.current.filteredQuotes.map((q) => q.id).sort((a, b) => a.localeCompare(b));
 
     expect(cs).toEqual(['a']);
     expect(p).toEqual(expect.arrayContaining(cs));
   });
 });
-

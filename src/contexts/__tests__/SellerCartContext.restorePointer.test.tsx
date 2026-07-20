@@ -25,8 +25,7 @@ const STORAGE_KEY = `seller:active-cart-id:${USER_ID}`;
 const restoreMutateAsync = vi.fn();
 
 vi.mock('@/hooks/products', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/hooks/products')>('@/hooks/products');
+  const actual = await vi.importActual('@/hooks/products');
   return {
     ...actual,
     useSellerCarts: () => ({

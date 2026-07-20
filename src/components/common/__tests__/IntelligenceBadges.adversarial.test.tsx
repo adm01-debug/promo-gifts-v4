@@ -1,6 +1,6 @@
 /**
  * BATERIA ADVERSARIAL — IntelligenceBadges × useBadgeVisibilityStore
- * 
+ *
  * Cobre exaustivamente o comportamento do toggle "Etiquetas dos Produtos"
  * para todos os 9 badge types do sistema de inteligência de mercado.
  *
@@ -22,7 +22,10 @@ const Wrapper = ({ children }: { children: React.ReactNode }) => (
   </TooltipProvider>
 );
 
-function setState(opts: { enabled: boolean; routeSettings?: Record<string, { light: boolean; dark: boolean }> }) {
+function setState(opts: {
+  enabled: boolean;
+  routeSettings?: Record<string, { light: boolean; dark: boolean }>;
+}) {
   useBadgeVisibilityStore.setState({
     badgesEnabled: opts.enabled,
     routeSettings: opts.routeSettings ?? {},
@@ -30,8 +33,15 @@ function setState(opts: { enabled: boolean; routeSettings?: Record<string, { lig
 }
 
 const ALL_BADGE_TYPES: IntelligenceBadge['type'][] = [
-  'featured', 'new-arrival', 'hot-item', 'emerging', 'declining',
-  'frequent-restock', 'last-units', 'best-seller', 'class-a',
+  'featured',
+  'new-arrival',
+  'hot-item',
+  'emerging',
+  'declining',
+  'frequent-restock',
+  'last-units',
+  'best-seller',
+  'class-a',
 ];
 
 const makeB = (type: IntelligenceBadge['type']): IntelligenceBadge => ({
@@ -46,13 +56,18 @@ const makeB = (type: IntelligenceBadge['type']): IntelligenceBadge => ({
 // Verificação por ausência do data-testid
 // ─────────────────────────────────────────────────────────────
 describe('[A] Toggle OFF — TODOS os 9 tipos desaparecem (data-testid)', () => {
-  beforeEach(() => { cleanup(); setState({ enabled: false }); });
+  beforeEach(() => {
+    cleanup();
+    setState({ enabled: false });
+  });
 
-  ALL_BADGE_TYPES.forEach((type) => {
-    it(`OCULTA type="${type}" quando toggle OFF`, () => {
-      render(<Wrapper><IntelligenceBadges badges={[makeB(type)]} /></Wrapper>);
-      expect(screen.queryByTestId(`intelligence-badge-${type}`)).not.toBeInTheDocument();
-    });
+  it.each(ALL_BADGE_TYPES)('OCULTA type="%s" quando toggle OFF', (type) => {
+    render(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB(type)]} />
+      </Wrapper>,
+    );
+    expect(screen.queryByTestId(`intelligence-badge-${type}`)).not.toBeInTheDocument();
   });
 });
 
@@ -60,13 +75,18 @@ describe('[A] Toggle OFF — TODOS os 9 tipos desaparecem (data-testid)', () => 
 // GRUPO B: Toggle ON → data-testid presente para todos os tipos
 // ─────────────────────────────────────────────────────────────
 describe('[B] Toggle ON — TODOS os 9 tipos visíveis (data-testid)', () => {
-  beforeEach(() => { cleanup(); setState({ enabled: true }); });
+  beforeEach(() => {
+    cleanup();
+    setState({ enabled: true });
+  });
 
-  ALL_BADGE_TYPES.forEach((type) => {
-    it(`EXIBE type="${type}" quando toggle ON`, () => {
-      render(<Wrapper><IntelligenceBadges badges={[makeB(type)]} /></Wrapper>);
-      expect(screen.getByTestId(`intelligence-badge-${type}`)).toBeInTheDocument();
-    });
+  it.each(ALL_BADGE_TYPES)('EXIBE type="%s" quando toggle ON', (type) => {
+    render(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB(type)]} />
+      </Wrapper>,
+    );
+    expect(screen.getByTestId(`intelligence-badge-${type}`)).toBeInTheDocument();
   });
 });
 
@@ -75,14 +95,24 @@ describe('[B] Toggle ON — TODOS os 9 tipos visíveis (data-testid)', () => {
 // ─────────────────────────────────────────────────────────────
 describe('[C] Array vazio — render null invariante', () => {
   it('toggle ON + badges[] vazio → container null', () => {
-    cleanup(); setState({ enabled: true });
-    const { container } = render(<Wrapper><IntelligenceBadges badges={[]} /></Wrapper>);
+    cleanup();
+    setState({ enabled: true });
+    const { container } = render(
+      <Wrapper>
+        <IntelligenceBadges badges={[]} />
+      </Wrapper>,
+    );
     expect(container.firstChild).toBeNull();
   });
 
   it('toggle OFF + badges[] vazio → container null', () => {
-    cleanup(); setState({ enabled: false });
-    const { container } = render(<Wrapper><IntelligenceBadges badges={[]} /></Wrapper>);
+    cleanup();
+    setState({ enabled: false });
+    const { container } = render(
+      <Wrapper>
+        <IntelligenceBadges badges={[]} />
+      </Wrapper>,
+    );
     expect(container.firstChild).toBeNull();
   });
 });
@@ -92,49 +122,53 @@ describe('[C] Array vazio — render null invariante', () => {
 // ─────────────────────────────────────────────────────────────
 describe('[D] Múltiplos badges simultâneos', () => {
   it('ON → hot-item + best-seller ambos presentes', () => {
-    cleanup(); setState({ enabled: true });
+    cleanup();
+    setState({ enabled: true });
     render(
       <Wrapper>
         <IntelligenceBadges badges={[makeB('hot-item'), makeB('best-seller')]} />
-      </Wrapper>
+      </Wrapper>,
     );
     expect(screen.getByTestId('intelligence-badge-hot-item')).toBeInTheDocument();
     expect(screen.getByTestId('intelligence-badge-best-seller')).toBeInTheDocument();
   });
 
   it('OFF → hot-item + best-seller ambos ausentes', () => {
-    cleanup(); setState({ enabled: false });
+    cleanup();
+    setState({ enabled: false });
     render(
       <Wrapper>
         <IntelligenceBadges badges={[makeB('hot-item'), makeB('best-seller')]} />
-      </Wrapper>
+      </Wrapper>,
     );
     expect(screen.queryByTestId('intelligence-badge-hot-item')).not.toBeInTheDocument();
     expect(screen.queryByTestId('intelligence-badge-best-seller')).not.toBeInTheDocument();
   });
 
   it('ON → todos os 9 types renderizados simultaneamente', () => {
-    cleanup(); setState({ enabled: true });
+    cleanup();
+    setState({ enabled: true });
     render(
       <Wrapper>
         <IntelligenceBadges badges={ALL_BADGE_TYPES.map(makeB)} />
-      </Wrapper>
+      </Wrapper>,
     );
-    ALL_BADGE_TYPES.forEach((type) => {
+    for (const type of ALL_BADGE_TYPES) {
       expect(screen.getByTestId(`intelligence-badge-${type}`)).toBeInTheDocument();
-    });
+    }
   });
 
   it('OFF → nenhum dos 9 types renderizado', () => {
-    cleanup(); setState({ enabled: false });
+    cleanup();
+    setState({ enabled: false });
     render(
       <Wrapper>
         <IntelligenceBadges badges={ALL_BADGE_TYPES.map(makeB)} />
-      </Wrapper>
+      </Wrapper>,
     );
-    ALL_BADGE_TYPES.forEach((type) => {
+    for (const type of ALL_BADGE_TYPES) {
       expect(screen.queryByTestId(`intelligence-badge-${type}`)).not.toBeInTheDocument();
-    });
+    }
   });
 });
 
@@ -144,41 +178,45 @@ describe('[D] Múltiplos badges simultâneos', () => {
 // ─────────────────────────────────────────────────────────────
 describe('[E] turnoverScore + isDemo não vazam com toggle OFF', () => {
   it('turnoverScore não aparece quando toggle OFF', () => {
-    cleanup(); setState({ enabled: false });
+    cleanup();
+    setState({ enabled: false });
     render(
       <Wrapper>
         <IntelligenceBadges badges={[makeB('best-seller')]} turnoverScore={85} />
-      </Wrapper>
+      </Wrapper>,
     );
     expect(screen.queryByText(/Potencial/i)).not.toBeInTheDocument();
   });
 
   it('isDemo chip não aparece quando toggle OFF', () => {
-    cleanup(); setState({ enabled: false });
+    cleanup();
+    setState({ enabled: false });
     render(
       <Wrapper>
         <IntelligenceBadges badges={[makeB('hot-item')]} isDemo />
-      </Wrapper>
+      </Wrapper>,
     );
     expect(screen.queryByText(/dados ilustrativos/i)).not.toBeInTheDocument();
   });
 
   it('turnoverScore APARECE quando toggle ON', () => {
-    cleanup(); setState({ enabled: true });
+    cleanup();
+    setState({ enabled: true });
     render(
       <Wrapper>
         <IntelligenceBadges badges={[makeB('best-seller')]} turnoverScore={90} />
-      </Wrapper>
+      </Wrapper>,
     );
     expect(screen.getByText(/Potencial: 90/i)).toBeInTheDocument();
   });
 
   it('isDemo chip APARECE quando toggle ON', () => {
-    cleanup(); setState({ enabled: true });
+    cleanup();
+    setState({ enabled: true });
     render(
       <Wrapper>
         <IntelligenceBadges badges={[makeB('hot-item')]} isDemo />
-      </Wrapper>
+      </Wrapper>,
     );
     expect(screen.getByText(/dados ilustrativos/i)).toBeInTheDocument();
   });
@@ -192,16 +230,26 @@ describe('[F] Cycling do toggle ON→OFF→ON', () => {
     cleanup();
     setState({ enabled: true });
     const { rerender } = render(
-      <Wrapper><IntelligenceBadges badges={[makeB('hot-item')]} /></Wrapper>
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('hot-item')]} />
+      </Wrapper>,
     );
     expect(screen.getByTestId('intelligence-badge-hot-item')).toBeInTheDocument();
 
     setState({ enabled: false });
-    rerender(<Wrapper><IntelligenceBadges badges={[makeB('hot-item')]} /></Wrapper>);
+    rerender(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('hot-item')]} />
+      </Wrapper>,
+    );
     expect(screen.queryByTestId('intelligence-badge-hot-item')).not.toBeInTheDocument();
 
     setState({ enabled: true });
-    rerender(<Wrapper><IntelligenceBadges badges={[makeB('hot-item')]} /></Wrapper>);
+    rerender(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('hot-item')]} />
+      </Wrapper>,
+    );
     expect(screen.getByTestId('intelligence-badge-hot-item')).toBeInTheDocument();
   });
 
@@ -209,16 +257,26 @@ describe('[F] Cycling do toggle ON→OFF→ON', () => {
     cleanup();
     setState({ enabled: true });
     const { rerender } = render(
-      <Wrapper><IntelligenceBadges badges={[makeB('best-seller')]} /></Wrapper>
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('best-seller')]} />
+      </Wrapper>,
     );
     expect(screen.getByTestId('intelligence-badge-best-seller')).toBeInTheDocument();
 
     setState({ enabled: false });
-    rerender(<Wrapper><IntelligenceBadges badges={[makeB('best-seller')]} /></Wrapper>);
+    rerender(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('best-seller')]} />
+      </Wrapper>,
+    );
     expect(screen.queryByTestId('intelligence-badge-best-seller')).not.toBeInTheDocument();
 
     setState({ enabled: true });
-    rerender(<Wrapper><IntelligenceBadges badges={[makeB('best-seller')]} /></Wrapper>);
+    rerender(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('best-seller')]} />
+      </Wrapper>,
+    );
     expect(screen.getByTestId('intelligence-badge-best-seller')).toBeInTheDocument();
   });
 });
@@ -228,21 +286,23 @@ describe('[F] Cycling do toggle ON→OFF→ON', () => {
 // ─────────────────────────────────────────────────────────────
 describe('[G] className prop forwarding', () => {
   it('classe custom aplicada ao container quando toggle ON', () => {
-    cleanup(); setState({ enabled: true });
+    cleanup();
+    setState({ enabled: true });
     const { container } = render(
       <Wrapper>
-        <IntelligenceBadges badges={[makeB('hot-item')]} className="gap-1.5 minha-classe" />
-      </Wrapper>
+        <IntelligenceBadges badges={[makeB('hot-item')]} className="minha-classe gap-1.5" />
+      </Wrapper>,
     );
     expect(container.querySelector('.minha-classe')).not.toBeNull();
   });
 
   it('classe custom NÃO presente quando toggle OFF (return null)', () => {
-    cleanup(); setState({ enabled: false });
+    cleanup();
+    setState({ enabled: false });
     const { container } = render(
       <Wrapper>
-        <IntelligenceBadges badges={[makeB('hot-item')]} className="gap-1.5 minha-classe" />
-      </Wrapper>
+        <IntelligenceBadges badges={[makeB('hot-item')]} className="minha-classe gap-1.5" />
+      </Wrapper>,
     );
     expect(container.querySelector('.minha-classe')).toBeNull();
   });
@@ -254,26 +314,46 @@ describe('[G] className prop forwarding', () => {
 // ─────────────────────────────────────────────────────────────
 describe('[H] Regressão PR #1524 — hot-item + best-seller', () => {
   it('[REGRESSÃO] hot-item respeita toggle OFF (era bug antes #1524)', () => {
-    cleanup(); setState({ enabled: false });
-    render(<Wrapper><IntelligenceBadges badges={[makeB('hot-item')]} /></Wrapper>);
+    cleanup();
+    setState({ enabled: false });
+    render(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('hot-item')]} />
+      </Wrapper>,
+    );
     expect(screen.queryByTestId('intelligence-badge-hot-item')).not.toBeInTheDocument();
   });
 
   it('[REGRESSÃO] best-seller respeita toggle OFF (era bug antes #1524)', () => {
-    cleanup(); setState({ enabled: false });
-    render(<Wrapper><IntelligenceBadges badges={[makeB('best-seller')]} /></Wrapper>);
+    cleanup();
+    setState({ enabled: false });
+    render(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('best-seller')]} />
+      </Wrapper>,
+    );
     expect(screen.queryByTestId('intelligence-badge-best-seller')).not.toBeInTheDocument();
   });
 
   it('[REGRESSÃO] hot-item ainda visível quando toggle ON', () => {
-    cleanup(); setState({ enabled: true });
-    render(<Wrapper><IntelligenceBadges badges={[makeB('hot-item')]} /></Wrapper>);
+    cleanup();
+    setState({ enabled: true });
+    render(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('hot-item')]} />
+      </Wrapper>,
+    );
     expect(screen.getByTestId('intelligence-badge-hot-item')).toBeInTheDocument();
   });
 
   it('[REGRESSÃO] best-seller ainda visível quando toggle ON', () => {
-    cleanup(); setState({ enabled: true });
-    render(<Wrapper><IntelligenceBadges badges={[makeB('best-seller')]} /></Wrapper>);
+    cleanup();
+    setState({ enabled: true });
+    render(
+      <Wrapper>
+        <IntelligenceBadges badges={[makeB('best-seller')]} />
+      </Wrapper>,
+    );
     expect(screen.getByTestId('intelligence-badge-best-seller')).toBeInTheDocument();
   });
 });

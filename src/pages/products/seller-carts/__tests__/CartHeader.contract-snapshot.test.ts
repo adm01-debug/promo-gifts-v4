@@ -19,9 +19,9 @@ const norm = (s: string) => s.replace(NBSP, ' ');
 
 function computeHeaderMeta(items: Item[]): string {
   const skus = items.length;
-  const qty = items.reduce((s, it) => s + (it.quantity || 0), 0);
+  const qty = items.reduce((s, item) => s + (item.quantity || 0), 0);
   const subtotal = items.reduce(
-    (s, it) => s + (it.product_price || 0) * (it.quantity || 0),
+    (s, item) => s + (item.product_price || 0) * (item.quantity || 0),
     0,
   );
   const parts = [
@@ -63,9 +63,7 @@ const CATALOG: Array<{ name: string; items: Item[] }> = [
 
 describe('CartHeader · snapshot de contrato do meta', () => {
   it('produz strings estáveis para o catálogo fechado (locka BRL + pluralização)', () => {
-    const snapshot = CATALOG.map((c) => `${c.name} → ${computeHeaderMeta(c.items)}`).join(
-      '\n',
-    );
+    const snapshot = CATALOG.map((c) => `${c.name} → ${computeHeaderMeta(c.items)}`).join('\n');
     expect(snapshot).toMatchInlineSnapshot(`
       "vazio → 0 SKUs · 0 unidades
       1 SKU · 1 unidade · R$ pequeno → 1 SKU · 1 unidade · R$ 9,90
@@ -79,8 +77,7 @@ describe('CartHeader · snapshot de contrato do meta', () => {
   });
 
   it('cada snapshot line respeita o contrato regex "N SKU(s) · N unidade(s) [· R$ X,XX]"', () => {
-    const CONTRACT =
-      /^\d+ SKUs? · \d+ unidades?(?: · R\$ \d{1,3}(?:\.\d{3})*,\d{2})?$/;
+    const CONTRACT = /^\d+ SKUs? · \d+ unidades?(?: · R\$ \d{1,3}(?:\.\d{3})*,\d{2})?$/;
     for (const c of CATALOG) {
       expect(computeHeaderMeta(c.items)).toMatch(CONTRACT);
     }
@@ -90,21 +87,8 @@ describe('CartHeader · snapshot de contrato do meta', () => {
     // Cada valor abaixo é um subtotal potencial. Se o ICU/Intl mudar de
     // política de arredondamento (half-up ↔ half-even), este snapshot quebra.
     const boundaries = [
-      0.001,
-      0.005,
-      0.0099,
-      0.01,
-      0.014,
-      0.015,
-      0.025,
-      0.995,
-      1.005,
-      1.015,
-      1.245,
-      1.255,
-      2.005,
-      999.995,
-      1000.005,
+      0.001, 0.005, 0.0099, 0.01, 0.014, 0.015, 0.025, 0.995, 1.005, 1.015, 1.245, 1.255, 2.005,
+      999.995, 1000.005,
     ];
     const rows = boundaries.map((v) => `${v} → ${norm(formatCurrency(v))}`).join('\n');
     expect(rows).toMatchInlineSnapshot(`
@@ -177,10 +161,12 @@ describe('CartHeader · snapshot de contrato do meta', () => {
       // qty extrema (limite razoável de UI)
       { qty: 100_000, price: 0.01 }, // 1000,00
       { qty: 99_999, price: 99.99 }, // 9998900,01
-    ].map(({ qty, price }) => {
-      const subtotal = qty * price;
-      return `${qty}×${price} = ${subtotal} → ${norm(formatCurrency(subtotal))}`;
-    }).join('\n');
+    ]
+      .map(({ qty, price }) => {
+        const subtotal = qty * price;
+        return `${qty}×${price} = ${subtotal} → ${norm(formatCurrency(subtotal))}`;
+      })
+      .join('\n');
 
     expect(rows).toMatchInlineSnapshot(`
       "1×0.01 = 0.01 → R$ 0,01

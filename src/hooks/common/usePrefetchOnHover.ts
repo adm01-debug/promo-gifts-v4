@@ -35,7 +35,8 @@ export interface PrefetchHandlers {
 }
 
 export function usePrefetchOnHover(
-  fn: () => Promise<unknown> | void,
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  fn: () => Promise<unknown> | undefined | void,
   { debounceMs = 120, enabled = true }: { debounceMs?: number; enabled?: boolean } = {},
 ): PrefetchHandlers {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

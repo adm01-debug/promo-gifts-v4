@@ -29,10 +29,13 @@ vi.mock('@/integrations/supabase/client', () => {
             eq: (_c2: string, _quoteId: string) =>
               // Simula latência de rede variável para forçar a race.
               new Promise((resolve) => {
-                setTimeout(() => {
-                  db.set(id, patch.sort_order);
-                  resolve({ error: null });
-                }, Math.floor(Math.random() * 15) + 5);
+                setTimeout(
+                  () => {
+                    db.set(id, patch.sort_order);
+                    resolve({ error: null });
+                  },
+                  Math.floor(Math.random() * 15) + 5,
+                );
               }),
           }),
         }),
@@ -56,9 +59,7 @@ interface Item {
 /** Snapshot do autosave (mesma lógica do useQuoteBuilderState):
  *  quando `skipAutosaveSortOrder` é true, `sort_order` é removido. */
 function buildAutosaveItems(items: Item[], skip: boolean): Item[] {
-  return skip
-    ? items.map(({ sort_order: _omit, ...rest }) => rest as Item)
-    : items;
+  return skip ? items.map(({ sort_order: _omit, ...rest }) => rest as Item) : items;
 }
 
 describe('race: persistItemsOrder × autosave global', () => {
@@ -79,15 +80,20 @@ describe('race: persistItemsOrder × autosave global', () => {
 
     // Liga a flag (como o componente faz no início de persistOrderInBackground)
     let skipAutosaveSortOrder = true;
-    const persistPromise = persistItemsOrder('q1', reorderedUI.map((i) => ({
-      id: i.id,
-      sort_order: i.sort_order!,
-    })));
+    const persistPromise = persistItemsOrder(
+      'q1',
+      reorderedUI.map((i) => ({
+        id: i.id,
+        sort_order: i.sort_order!,
+      })),
+    );
 
     // Autosave dispara MEIO da janela de latência.
-    await new Promise((r) => setTimeout(r, 3));
+    await new Promise<void>((r) => {
+      setTimeout(r, 3);
+    });
     const snapshot = buildAutosaveItems(reorderedUI, skipAutosaveSortOrder);
-    expect(snapshot.every((it) => it.sort_order === undefined)).toBe(true);
+    expect(snapshot.every((item) => item.sort_order === undefined)).toBe(true);
 
     await persistPromise;
     skipAutosaveSortOrder = false;
@@ -128,7 +134,9 @@ describe('race: persistItemsOrder × autosave global', () => {
       const rows = shuffled.map((id, i) => ({ id, sort_order: i }));
       await persistItemsOrder('q1', rows);
       // Banco bate com a UI após cada commit.
-      shuffled.forEach((id, i) => expect(db.get(id)).toBe(i));
+      for (const [i, id] of shuffled.entries()) {
+        expect(db.get(id)).toBe(i);
+      }
     }
   });
 });

@@ -23,7 +23,7 @@ const mockFetch = vi.fn<(id: string) => Promise<unknown>>();
 const mockCreate = vi.fn();
 
 vi.mock('@/hooks/quotes', async () => {
-  const actual = await vi.importActual<typeof import('@/hooks/quotes')>('@/hooks/quotes');
+  const actual = await vi.importActual('@/hooks/quotes');
   return {
     ...actual,
     useQuotes: () => ({

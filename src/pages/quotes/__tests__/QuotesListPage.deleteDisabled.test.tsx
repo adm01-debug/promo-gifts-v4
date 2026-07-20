@@ -10,13 +10,12 @@
  *  4) Múltiplos cliques no botão de confirmar NÃO disparam `handleDelete`
  *     adicionais (o browser bloqueia clique em botão desabilitado).
  */
+import type { useQuotesListPage as _useQuotesListPage } from '@/pages/quotes/useQuotesListPage';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-type HookReturn = ReturnType<
-  typeof import('@/pages/quotes/useQuotesListPage').useQuotesListPage
->;
+type HookReturn = ReturnType<typeof _useQuotesListPage>;
 
 const handleDelete = vi.fn();
 
@@ -50,9 +49,7 @@ const baseHook: HookReturn = {
 let hookValue: HookReturn = baseHook;
 
 vi.mock('@/pages/quotes/useQuotesListPage', async () => {
-  const actual = await vi.importActual<
-    typeof import('@/pages/quotes/useQuotesListPage')
-  >('@/pages/quotes/useQuotesListPage');
+  const actual = await vi.importActual('@/pages/quotes/useQuotesListPage');
   return {
     ...actual,
     useQuotesListPage: () => hookValue,

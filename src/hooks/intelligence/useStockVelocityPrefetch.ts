@@ -62,7 +62,6 @@ export function useStockVelocityPrefetch(productIds: string[]): void {
   const enabled = productIds.length > 0;
 
   useQuery({
-    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: ['stock-velocity-batch', batchKey(productIds)],
     queryFn: async (): Promise<StockVelocity[]> => {
       const all: StockVelocity[] = [];

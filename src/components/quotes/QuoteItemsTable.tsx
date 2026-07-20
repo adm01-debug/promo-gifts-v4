@@ -21,12 +21,7 @@ import { qvSpacing, qvType } from './quote-view-typography';
 import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
 import { SectionEyebrow } from './SectionEyebrow';
 import { EngravingBadge } from './EngravingBadge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -70,7 +65,7 @@ function RemovedProductBadge() {
         <TooltipTrigger asChild>
           <Badge
             variant="outline"
-            className="gap-1 border-destructive/40 bg-destructive/8 text-xs text-destructive"
+            className="bg-destructive/8 gap-1 border-destructive/40 text-xs text-destructive"
           >
             <AlertTriangle className="h-3 w-3" />
             Produto removido do catálogo
@@ -78,8 +73,8 @@ function RemovedProductBadge() {
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
           <p className="text-xs">
-            Este produto foi removido do catálogo após o orçamento ser criado.
-            Os valores foram preservados para referência histórica.
+            Este produto foi removido do catálogo após o orçamento ser criado. Os valores foram
+            preservados para referência histórica.
           </p>
         </TooltipContent>
       </Tooltip>
@@ -130,7 +125,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   );
   const headersFor = (key: keyof typeof colIds) => colIds[key];
 
-
   const renderItemRow = (item: QuoteItem, index: number) => {
     const allPersonalizations = item.personalizations || [];
     const personalizationCost = allPersonalizations.reduce(
@@ -148,11 +142,10 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         className={cn(
           'border-b border-border/50 transition-colors hover:bg-muted/40',
           index % 2 === 1 && 'bg-muted/20',
-          isProductRemoved && 'bg-destructive/5 hover:bg-destructive/8',
+          isProductRemoved && 'hover:bg-destructive/8 bg-destructive/5',
         )}
       >
         <td headers={headersFor('produto')} className={qvSpacing.cell}>
-
           <div className="flex items-start gap-3">
             <ProductThumb
               src={item.product_image_url}
@@ -223,23 +216,24 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                     nomeTabela: p.technique_name,
                     fallback: 'Gravação',
                   });
-                  return (
-                    <EngravingBadge
-                      key={pIdx}
-                      title={displayName}
-                      meta={meta}
-                    />
-                  );
+                  return <EngravingBadge key={pIdx} title={displayName} meta={meta} />;
                 })}
               </div>
             ) : (
               <span className="text-xs text-muted-foreground">—</span>
             )}
-
           </td>
         )}
-        <td headers={headersFor('qtd')} className={cn('w-16 text-center', qvSpacing.cell, qvType.qty)}>{item.quantity}</td>
-        <td headers={headersFor('un')} className={cn('w-24 text-left', qvSpacing.cell, qvType.unitPrice)}>
+        <td
+          headers={headersFor('qtd')}
+          className={cn('w-16 text-center', qvSpacing.cell, qvType.qty)}
+        >
+          {item.quantity}
+        </td>
+        <td
+          headers={headersFor('un')}
+          className={cn('w-24 text-left', qvSpacing.cell, qvType.unitPrice)}
+        >
           <div className="flex flex-col gap-0.5">
             <span>
               {formatCurrency(
@@ -262,11 +256,13 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             )}
           </div>
         </td>
-        <td headers={headersFor('total')} className={cn('w-28 text-left', qvSpacing.cell, qvType.rowTotal)}>
+        <td
+          headers={headersFor('total')}
+          className={cn('w-28 text-left', qvSpacing.cell, qvType.rowTotal)}
+        >
           {formatCurrency(itemTotal)}
         </td>
         <td headers={headersFor('act')} className={cn('text-center print:hidden', qvSpacing.cell)}>
-
           <QuoteItemDetailSheet
             item={{
               product_name: item.product_name,
@@ -311,8 +307,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const [announcement, setAnnouncement] = React.useState('');
   const announceTimer = React.useRef<number | null>(null);
   const theadRef = React.useRef<HTMLTableSectionElement>(null);
-  const [headerHeight, setHeaderHeight] = React.useState<number | null>(null);
   const [scrollbarPad, setScrollbarPad] = React.useState<number>(0);
+  const [_headerHeight, setHeaderHeight] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
@@ -335,7 +331,10 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       setScrollbarPad(pad);
       // Telemetria opcional: ative com `window.__DEBUG_QUOTE_TABLE = true`
       // em ambientes com scrollbar overlay (macOS Safari/iOS) ou bugs de alinhamento.
-      if (typeof window !== 'undefined' && (window as unknown as { __DEBUG_QUOTE_TABLE?: boolean }).__DEBUG_QUOTE_TABLE) {
+      if (
+        typeof window !== 'undefined' &&
+        (window as unknown as { __DEBUG_QUOTE_TABLE?: boolean }).__DEBUG_QUOTE_TABLE
+      ) {
         // eslint-disable-next-line no-console
         console.debug('[QuoteItemsTable] scrollbarPad', {
           pad,
@@ -352,7 +351,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
     ro.observe(el);
     return () => ro.disconnect();
   }, [enableInnerScroll, totalRows]);
-
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
@@ -399,13 +397,29 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       const page = el.clientHeight - line;
       let delta = 0;
       switch (e.key) {
-        case 'ArrowDown': delta = line; break;
-        case 'ArrowUp': delta = -line; break;
-        case 'PageDown': case ' ': delta = page; break;
-        case 'PageUp': delta = -page; break;
-        case 'Home': el.scrollTo({ top: 0, behavior: 'smooth' }); e.preventDefault(); return;
-        case 'End': el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }); e.preventDefault(); return;
-        default: return;
+        case 'ArrowDown':
+          delta = line;
+          break;
+        case 'ArrowUp':
+          delta = -line;
+          break;
+        case 'PageDown':
+        case ' ':
+          delta = page;
+          break;
+        case 'PageUp':
+          delta = -page;
+          break;
+        case 'Home':
+          el.scrollTo({ top: 0, behavior: 'smooth' });
+          e.preventDefault();
+          return;
+        case 'End':
+          el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+          e.preventDefault();
+          return;
+        default:
+          return;
       }
       e.preventDefault();
       el.scrollBy({ top: delta, behavior: 'smooth' });
@@ -423,8 +437,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
       <col style={{ width: '6rem' }} className="print:hidden" />
     </colgroup>
   );
-
-
 
   return (
     <section aria-labelledby="quote-items-heading">
@@ -448,15 +460,28 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
             >
               <ColGroup />
               <thead ref={theadRef}>
-
                 <tr>
-                  <th id={colIds.produto} scope="col" className={cn('rounded-tl-lg text-left', headerCellClass)}>Produto</th>
+                  <th
+                    id={colIds.produto}
+                    scope="col"
+                    className={cn('rounded-tl-lg text-left', headerCellClass)}
+                  >
+                    Produto
+                  </th>
                   {hasPersonalizations && (
-                    <th id={colIds.pers} scope="col" className={cn('text-left', headerCellClass)}>Personalização</th>
+                    <th id={colIds.pers} scope="col" className={cn('text-left', headerCellClass)}>
+                      Personalização
+                    </th>
                   )}
-                  <th id={colIds.qtd} scope="col" className={cn('text-center', headerCellClass)}>Qtd</th>
-                  <th id={colIds.un} scope="col" className={cn('text-left', headerCellClass)}>Unitário</th>
-                  <th id={colIds.total} scope="col" className={cn('text-left', headerCellClass)}>Total</th>
+                  <th id={colIds.qtd} scope="col" className={cn('text-center', headerCellClass)}>
+                    Qtd
+                  </th>
+                  <th id={colIds.un} scope="col" className={cn('text-left', headerCellClass)}>
+                    Unitário
+                  </th>
+                  <th id={colIds.total} scope="col" className={cn('text-left', headerCellClass)}>
+                    Total
+                  </th>
                   <th
                     id={colIds.act}
                     scope="col"
@@ -481,7 +506,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
               ],
             )}
-
             data-testid="quote-items-table-scroll"
             data-inner-scroll={enableInnerScroll ? 'true' : 'false'}
             data-scroll-at-top={scrollState.top ? 'true' : 'false'}
@@ -498,7 +522,6 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
               aria-label={`Lista de ${totalRows} itens do orçamento`}
               className="w-full table-fixed border-separate border-spacing-0"
             >
-
               <ColGroup />
               <tbody>
                 {Array.from(kitGroups.entries()).map(([groupId, group]) => (
@@ -541,7 +564,8 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
         {enableInnerScroll && (
           <>
             <span id="quote-items-scroll-help" className="sr-only">
-              Pressione setas para cima e para baixo para rolar uma linha, PageUp e PageDown para uma página, Home para o início e End para o fim.
+              Pressione setas para cima e para baixo para rolar uma linha, PageUp e PageDown para
+              uma página, Home para o início e End para o fim.
             </span>
             <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
               {announcement}

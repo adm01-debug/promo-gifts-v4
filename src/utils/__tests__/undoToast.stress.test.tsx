@@ -58,26 +58,12 @@ describe('UndoToast — testids granulares', () => {
   });
 
   it('omite testid de description quando prop ausente', () => {
-    render(
-      <UndoToastContent
-        title="t"
-        duration={3000}
-        onUndo={() => {}}
-        onTimeout={() => {}}
-      />,
-    );
+    render(<UndoToastContent title="t" duration={3000} onUndo={() => {}} onTimeout={() => {}} />);
     expect(document.querySelector('[data-testid="undo-toast-description"]')).toBeNull();
   });
 
   it('data-remaining-ms decrementa conforme o tempo avança', () => {
-    render(
-      <UndoToastContent
-        title="t"
-        duration={5000}
-        onUndo={() => {}}
-        onTimeout={() => {}}
-      />,
-    );
+    render(<UndoToastContent title="t" duration={5000} onUndo={() => {}} onTimeout={() => {}} />);
     const btn = () => q('[data-testid="undo-toast-button"]');
     expect(Number(btn().getAttribute('data-remaining-ms'))).toBe(5000);
     act(() => {
@@ -153,14 +139,7 @@ describe('UndoToast — pausa em hover/focus preserva o tempo restante', () => {
   });
 
   it('mouseEnter suspende decremento; mouseLeave retoma', () => {
-    render(
-      <UndoToastContent
-        title="t"
-        duration={5000}
-        onUndo={() => {}}
-        onTimeout={() => {}}
-      />,
-    );
+    render(<UndoToastContent title="t" duration={5000} onUndo={() => {}} onTimeout={() => {}} />);
     const root = q('[data-testid="undo-toast"]');
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -188,14 +167,7 @@ describe('UndoToast — botão fica disabled ao expirar (data-expired="true")', 
   });
 
   it('remainingMs > 0 → botão habilitado, data-expired="false"', () => {
-    render(
-      <UndoToastContent
-        title="t"
-        duration={5000}
-        onUndo={() => {}}
-        onTimeout={() => {}}
-      />,
-    );
+    render(<UndoToastContent title="t" duration={5000} onUndo={() => {}} onTimeout={() => {}} />);
     const btn = q<HTMLButtonElement>('[data-testid="undo-toast-button"]');
     expect(btn.disabled).toBe(false);
     expect(btn.getAttribute('data-expired')).toBe('false');
@@ -204,14 +176,7 @@ describe('UndoToast — botão fica disabled ao expirar (data-expired="true")', 
 
   it('quando remainingMs chega a 0: disabled=true, data-expired="true", aria-disabled="true"', () => {
     const onUndo = vi.fn();
-    render(
-      <UndoToastContent
-        title="t"
-        duration={2000}
-        onUndo={onUndo}
-        onTimeout={() => {}}
-      />,
-    );
+    render(<UndoToastContent title="t" duration={2000} onUndo={onUndo} onTimeout={() => {}} />);
     act(() => {
       vi.advanceTimersByTime(2500);
     });
@@ -251,14 +216,7 @@ describe('UndoToast — timeout dispara exatamente uma vez', () => {
   it('onTimeout chamado 1x; clique no botão após expiração NÃO chama onUndo', () => {
     const onUndo = vi.fn();
     const onTimeout = vi.fn();
-    render(
-      <UndoToastContent
-        title="t"
-        duration={2000}
-        onUndo={onUndo}
-        onTimeout={onTimeout}
-      />,
-    );
+    render(<UndoToastContent title="t" duration={2000} onUndo={onUndo} onTimeout={onTimeout} />);
     act(() => {
       vi.advanceTimersByTime(2500);
     });
@@ -333,13 +291,11 @@ describe('UndoToast — FUZZ (300 simulações)', () => {
         act(() => {
           vi.advanceTimersByTime(duration + 2000);
         });
-      } else {
+      } else if (elapsed < duration) {
         // já deve ter expirado por conta dos 8 chunks
-        if (elapsed < duration) {
-          act(() => {
-            vi.advanceTimersByTime(duration + 500);
-          });
-        }
+        act(() => {
+          vi.advanceTimersByTime(duration + 500);
+        });
       }
       expect(onTimeout.mock.calls.length).toBeGreaterThanOrEqual(1);
       // não é obrigatoriamente exatamente 1 no content puro (ele chama
