@@ -11,15 +11,16 @@
  *    a próxima regeneração pós-DROP TABLE).
  *  - Próprio arquivo do gate.
  *  - Migrations SQL (histórico imutável).
+ *
+ * Implementação: busca nativa Node.js (sem dependência de `rg` ou sistema).
  */
-import { spawnSync } from "node:child_process";
-import { relative } from "node:path";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 
 const PATTERNS = [
-  "QuoteCommentsSection",
-  "useQuoteComments",
-  String.raw`from\(['"]quote_comments['"]\)`,
-
+  /QuoteCommentsSection/,
+  /useQuoteComments/,
+  /from\(['"]quote_comments['"]\)/,
 ];
 
 const ALLOW = [
@@ -30,43 +31,63 @@ const ALLOW = [
   /^docs\//,
 ];
 
+const SKIP_DIRS = new Set(["node_modules", "dist", "coverage", ".git"]);
+
+const SEARCH_ROOTS = ["src", "scripts", "e2e", "tests"];
+
 const cwd = process.cwd();
 const violations = [];
 
-for (const pattern of PATTERNS) {
-  const res = spawnSync(
-    "rg",
-    [
-      "-n",
-      "--no-heading",
-      "--glob",
-      "!node_modules",
-      "--glob",
-      "!dist",
-      "--glob",
-      "!coverage",
-      "--glob",
-      "!.git",
-      pattern,
-      "src",
-      "scripts",
-      "e2e",
-      "tests",
-    ],
-    { encoding: "utf8" },
-  );
-  if (res.status !== 0 && res.status !== 1) {
-    console.error("rg falhou:", res.stderr);
-    process.exit(2);
+function walkDir(dir) {
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return; // directory may not exist (e.g., "tests" or "e2e")
   }
-  for (const line of (res.stdout || "").split("\n").filter(Boolean)) {
-    const [file] = line.split(":");
-    const rel = relative(cwd, file);
-    if (ALLOW.some((re) => re.test(rel))) continue;
-    violations.push(`  ${line}`);
+  for (const entry of entries) {
+    if (SKIP_DIRS.has(entry)) continue;
+    const full = join(dir, entry);
+    let stat;
+    try {
+      stat = statSync(full);
+    } catch {
+      continue;
+    }
+    if (stat.isDirectory()) {
+      walkDir(full);
+    } else if (stat.isFile()) {
+      scanFile(full);
+    }
   }
 }
 
+function scanFile(full) {
+  const rel = relative(cwd, full);
+  if (ALLOW.some((re) => re.test(rel))) return;
+
+  let content;
+  try {
+    content = readFileSync(full, "utf8");
+  } catch {
+    return; // binary or unreadable file — skip
+  }
+
+  const lines = content.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    for (const pattern of PATTERNS) {
+      if (pattern.test(line)) {
+        violations.push(`  ${rel}:${i + 1}:${line}`);
+        break; // one violation per line is enough
+      }
+    }
+  }
+}
+
+for (const root of SEARCH_ROOTS) {
+  walkDir(join(cwd, root));
+}
 
 if (violations.length > 0) {
   console.error(

@@ -47,8 +47,15 @@ if (htmls.length === 0) {
   process.exit(1);
 }
 
+// In CCR environments PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD is set, and the
+// pre-installed binary lives at /opt/pw-browsers/chromium. In standard CI
+// (GitHub Actions) playwright installs its own binary and manages the path
+// automatically — passing an explicit executablePath there causes ENOENT.
+const executablePath =
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ??
+  (process.env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD ? '/opt/pw-browsers/chromium' : undefined);
 const browser = await chromium.launch({
-  executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? '/opt/pw-browsers/chromium',
+  ...(executablePath ? { executablePath } : {}),
 });
 const summary = [];
 try {
