@@ -10,7 +10,10 @@
  *
  *  - Nenhum dado do carrinho ANTERIOR persiste ao remontar por `key`.
  *  - Peso/Volume só aparecem quando explicitamente presentes no prop atual.
- *  - O CTA "Gerar Orçamento" sempre dispara com o `cart` atual.
+ *  - Durante o loading (weightVolume nulo) a sidebar fica oculta.
+ *
+ * Nota: o CTA "Gerar Orçamento" foi movido para CartHeaderActions.
+ * O isolamento do CTA é coberto em CartHeaderActions.render.test.tsx.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -151,24 +154,25 @@ describe('CartSidebar — trocas rápidas e loading não vazam dados', () => {
     expect(screen.queryByText(/2\.0kg/)).not.toBeInTheDocument();
   });
 
-  it('CTA "Gerar Orçamento" dispara com o carrinho ATUAL após troca durante loading', () => {
+  it('fica oculta (retorna null) durante o loading — sem peso/volume do carrinho anterior', () => {
     const a = makeCart('A', 'A');
     const b = makeCart('B', 'B');
 
-    const onGenerateQuote = vi.fn();
-    const { rerender } = renderWithKey(a, { onGenerateQuote });
+    const { rerender } = renderWithKey(a, {
+      weightVolume: { weightKg: 5, volumeM3: 0.05, volumeCm3: 50000 },
+    });
+    expect(screen.getByText(/5\.0kg/)).toBeInTheDocument();
 
-    // Simula loading: rerender com o mesmo cart mas weightVolume ainda null.
+    // Troca para B: weightVolume ainda null (loading) → sidebar deve ficar oculta.
     rerender(
       <LazyMotion features={domAnimation}>
-        <CartSidebar key={b.id} {...props(b, { onGenerateQuote, weightVolume: null })} />
+        <CartSidebar key={b.id} {...props(b, { weightVolume: null })} />
       </LazyMotion>,
     );
 
-    screen.getByTestId('cart-checkout-cta').click();
-    expect(onGenerateQuote).toHaveBeenCalledTimes(1);
-    // NUNCA disparar com cart antigo.
-    expect(onGenerateQuote).toHaveBeenCalledWith(expect.objectContaining({ id: 'B' }));
-    expect(onGenerateQuote).not.toHaveBeenCalledWith(expect.objectContaining({ id: 'A' }));
+    // Nenhum rastro do carrinho A nem da sidebar visível durante o loading.
+    expect(screen.queryByTestId('cart-sidebar-hero')).not.toBeInTheDocument();
+    expect(screen.queryByText(/5\.0kg/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Peso/i)).not.toBeInTheDocument();
   });
 });

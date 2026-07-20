@@ -2,15 +2,16 @@
  * CartSidebar — render smoke + isolamento do carrinho ativo
  *
  * Após a repaginação, o subtotal/SKUs/Qtd. total saíram da sidebar
- * e passaram a viver no header da página. A sidebar mantém:
- *   - Card hero com peso/volume (quando aplicável) + CTA "Gerar Orçamento"
- *   - Atalho secundário "Ver Orçamentos" (substitui o antigo menu "Gerenciar Carrinho")
+ * e passaram a viver no header da página. A sidebar mantém
+ * EXCLUSIVAMENTE o card hero de peso/volume.
+ * O CTA "Gerar Orçamento" foi movido para CartHeaderActions (ver
+ * CartHeaderActions.render.test.tsx para o contrato do CTA).
  *
  * Estes testes garantem:
- *   1) Render mínimo (hero card + CTA)
+ *   1) Render mínimo (hero card com peso/volume quando presentes)
  *   2) NÃO reintroduziu painéis legados nem os labels Subtotal/SKUs/Qtd
  *   3) Peso/Volume aparecem quando `weightVolume` os traz
- *   4) A sidebar consome APENAS o `cart` recebido — nunca agrega
+ *   4) A sidebar consome APENAS o `weightVolume` recebido — nunca agrega
  *      dados de outros carrinhos.
  *   5) O botão "Gerenciar Carrinho" foi removido em definitivo.
  */
@@ -89,13 +90,13 @@ function renderSidebar(props: Partial<SidebarProps> = {}) {
 }
 
 describe('CartSidebar — render smoke pós-repaginação', () => {
-  it('monta card hero + CTA com data-loaded=true', () => {
-    renderSidebar();
+  it('monta card hero com data-loaded=true quando há peso/volume (CTA vive no CartHeaderActions)', () => {
+    renderSidebar({ weightVolume: { weightKg: 2.5, volumeM3: 0.012, volumeCm3: 12000 } });
     const hero = screen.getByTestId('cart-sidebar-hero');
     expect(hero).toBeInTheDocument();
     expect(hero).toHaveAttribute('data-loaded', 'true');
-    expect(screen.getByTestId('cart-checkout-cta')).toBeInTheDocument();
-    expect(screen.getByText(/Gerar Orçamento/i)).toBeInTheDocument();
+    // CTA foi movido para CartHeaderActions — não deve aparecer na sidebar.
+    expect(screen.queryByTestId('cart-checkout-cta')).not.toBeInTheDocument();
   });
 
   it('NÃO renderiza mais Subtotal/SKUs/Qtd. total (vivem no header agora)', () => {
@@ -128,7 +129,6 @@ describe('CartSidebar — render smoke pós-repaginação', () => {
     expect(screen.queryByText(/Ver Orçamentos/i)).not.toBeInTheDocument();
   });
 
-
   it('CartUtilComponents NÃO expõe mais SmartSuggestions/ActionHistoryPanel', () => {
     const exported = CartUtilComponents as Record<string, unknown>;
     expect(exported.SmartSuggestions).toBeUndefined();
@@ -158,7 +158,7 @@ describe('CartSidebar — render smoke pós-repaginação', () => {
 });
 
 describe('CartSidebar — isolamento do carrinho ativo (sem agregação)', () => {
-  it('usa APENAS o `cart` recebido — troca refletida em CTA/menu/peso', () => {
+  it('usa APENAS o `weightVolume` recebido — troca de carrinho refletida no peso exibido', () => {
     const cartA = makeCart({ id: 'A', company_name: 'Empresa A' });
     const cartB = makeCart({ id: 'B', company_name: 'Empresa B' });
 
@@ -220,10 +220,7 @@ describe('CartSidebar — isolamento do carrinho ativo (sem agregação)', () =>
     // Peso trocou para o do cartB e o do cartA sumiu.
     expect(screen.getByText(/3\.7kg/)).toBeInTheDocument();
     expect(screen.queryByText(/1\.0kg/)).not.toBeInTheDocument();
-
-    // CTA dispara com o carrinho ATUAL, não com o anterior.
-    screen.getByTestId('cart-checkout-cta').click();
-    expect(onGenerateQuote).toHaveBeenCalledTimes(1);
-    expect(onGenerateQuote).toHaveBeenCalledWith(expect.objectContaining({ id: 'B' }));
+    // O CTA foi movido para CartHeaderActions; isolamento do CTA
+    // é coberto em CartHeaderActions.render.test.tsx.
   });
 });
