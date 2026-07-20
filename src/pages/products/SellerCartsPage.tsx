@@ -79,21 +79,38 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
  *  - value/onChange no formato ISO `YYYY-MM-DD` (null = vazio)
  */
 interface ShippingDeadlinePickerProps {
+  id?: string;
+  'data-testid'?: string;
+  'aria-invalid'?: boolean;
+  'aria-describedby'?: string;
+  className?: string;
   value: string | null;
   hasError: boolean;
   onChange: (value: string | null) => void;
 }
 
-function ShippingDeadlinePicker({ value, hasError, onChange }: ShippingDeadlinePickerProps) {
+function ShippingDeadlinePicker({
+  id = 'cart-shipping-deadline',
+  'data-testid': dataTestId = 'cart-shipping-deadline-input',
+  'aria-invalid': ariaInvalidProp,
+  'aria-describedby': ariaDescribedbyProp,
+  className,
+  value,
+  hasError,
+  onChange,
+}: ShippingDeadlinePickerProps) {
   const today = React.useMemo(() => startOfDay(new Date()), []);
   return (
     <DatePickerField
-      id="cart-shipping-deadline"
-      data-testid="cart-shipping-deadline-input"
+      id={id}
+      data-testid={dataTestId}
       variant="compact"
+      className={className}
       aria-label="Prazo para envio"
-      aria-invalid={hasError || undefined}
-      aria-describedby={hasError ? 'cart-shipping-deadline-error' : undefined}
+      aria-invalid={ariaInvalidProp ?? (hasError || undefined)}
+      aria-describedby={
+        ariaDescribedbyProp ?? (hasError ? 'cart-shipping-deadline-error' : undefined)
+      }
       value={value ?? ''}
       onChange={(next) => onChange(next === '' ? null : next)}
       minDate={today}
@@ -101,8 +118,6 @@ function ShippingDeadlinePicker({ value, hasError, onChange }: ShippingDeadlineP
     />
   );
 }
-
-
 
 /**
  * Exibe o CNPJ da empresa vinculada ao carrinho ativo (busca no CRM).
@@ -182,13 +197,16 @@ export function CartStatusSelect({
   useEffect(() => {
     if (pending === null || pending === currentStatus) return;
     const targetLabel = getStatusCfg(pending).label;
-    const timer = window.setTimeout(() => {
-      setLiveMessage(`Não foi possível atualizar o status para ${targetLabel}. Tente novamente.`);
-      toast.error('Não foi possível atualizar o status', {
-        description: 'A mudança não foi confirmada. Verifique sua conexão e tente novamente.',
-      });
-      setPending(null);
-    }, Math.max(0, confirmTimeoutMs));
+    const timer = window.setTimeout(
+      () => {
+        setLiveMessage(`Não foi possível atualizar o status para ${targetLabel}. Tente novamente.`);
+        toast.error('Não foi possível atualizar o status', {
+          description: 'A mudança não foi confirmada. Verifique sua conexão e tente novamente.',
+        });
+        setPending(null);
+      },
+      Math.max(0, confirmTimeoutMs),
+    );
     return () => window.clearTimeout(timer);
   }, [pending, currentStatus, confirmTimeoutMs]);
 
@@ -258,10 +276,7 @@ export function CartStatusSelect({
         </Tooltip>
         <SelectContent align="start">
           {(
-            Object.entries(STATUS_CONFIG) as [
-              CartStatus,
-              (typeof STATUS_CONFIG)[CartStatus],
-            ][]
+            Object.entries(STATUS_CONFIG) as [CartStatus, (typeof STATUS_CONFIG)[CartStatus]][]
           ).map(([key, cfg]) => {
             const disabled = key === 'pronto_orcamento' && isEmpty;
             return (
@@ -280,9 +295,7 @@ export function CartStatusSelect({
               >
                 {cfg.label}
                 {disabled && (
-                  <span className="ml-2 text-[10px] text-muted-foreground">
-                    (carrinho vazio)
-                  </span>
+                  <span className="ml-2 text-[10px] text-muted-foreground">(carrinho vazio)</span>
                 )}
               </SelectItem>
             );
@@ -303,11 +316,6 @@ export function CartStatusSelect({
     </>
   );
 }
-
-
-
-
-
 
 export default function SellerCartsPage() {
   return (
@@ -331,7 +339,6 @@ const NOTES_PLACEHOLDERS = [
   'Aprovar arte até dia X — produção começa após confirmação...',
   'Margem-alvo: XX%. Frete por conta do cliente.',
 ];
-
 
 function SellerCartsContent() {
   const s = useSellerCartsPage();
@@ -539,7 +546,6 @@ function SellerCartsContent() {
     notesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
-
   // Stable rotating placeholder per cart — deps reduzida ao ID para evitar
   // recálculo quando outros campos do activeCart mudam (ex: notes, status).
   const activeCartId = s.activeCart?.id;
@@ -611,7 +617,6 @@ function SellerCartsContent() {
         }}
       />
 
-
       {/* Conteúdo */}
       {s.isLoading ? (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_340px]">
@@ -646,478 +651,477 @@ function SellerCartsContent() {
         />
       ) : s.activeCart ? (
         <>
-        {/* Cart header fundido — sem card, direto no fundo da página */}
-        <div
-          data-testid="active-cart-header"
-          className="group/header relative flex flex-col justify-between gap-4 py-2 sm:flex-row sm:items-center"
-        >
-          <div className="flex min-w-0 items-center gap-4">
-            {s.activeCart.company_logo_url ? (
-              <img
-                src={s.activeCart.company_logo_url}
-                alt=""
-                className="h-12 w-12 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover shadow-inner transition-transform duration-300 group-hover/header:scale-105"
-                loading="lazy"
-              />
-            ) : (
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover/header:bg-primary/20">
-                <Building2 aria-hidden="true" className="h-5 w-5 text-primary" />
-              </div>
-            )}
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <h2
-                data-testid="active-cart-company-name"
-                className="truncate font-display text-lg font-bold tracking-tight text-foreground/90"
-              >
-                {s.activeCart.company_name}
-              </h2>
-              <div className="leading-none">
-                <CartCompanyCnpj companyId={s.activeCart.company_id} />
+          {/* Cart header fundido — sem card, direto no fundo da página */}
+          <div
+            data-testid="active-cart-header"
+            className="group/header relative flex flex-col justify-between gap-4 py-2 sm:flex-row sm:items-center"
+          >
+            <div className="flex min-w-0 items-center gap-4">
+              {s.activeCart.company_logo_url ? (
+                <img
+                  src={s.activeCart.company_logo_url}
+                  alt=""
+                  className="h-12 w-12 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover shadow-inner transition-transform duration-300 group-hover/header:scale-105"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover/header:bg-primary/20">
+                  <Building2 aria-hidden="true" className="h-5 w-5 text-primary" />
+                </div>
+              )}
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <h2
+                  data-testid="active-cart-company-name"
+                  className="truncate font-display text-lg font-bold tracking-tight text-foreground/90"
+                >
+                  {s.activeCart.company_name}
+                </h2>
+                <div className="leading-none">
+                  <CartCompanyCnpj companyId={s.activeCart.company_id} />
+                </div>
               </div>
             </div>
-          </div>
-          <div
-            data-testid="cart-shipping-deadline-block"
-            className="flex min-w-0 flex-col items-start justify-center gap-1 sm:flex-1 sm:pl-4"
-          >
-            <label
-              htmlFor="cart-shipping-deadline"
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground"
+            <div
+              data-testid="cart-shipping-deadline-block"
+              className="flex min-w-0 flex-col items-start justify-center gap-1 sm:flex-1 sm:pl-4"
             >
-              <CalendarClock aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
-              Prazo p/ envio
-            </label>
-            <div className="inline-flex flex-wrap items-center gap-1.5">
-              <ShippingDeadlinePicker
-                value={s.shippingDeadlineDraft ?? null}
-                hasError={!!s.shippingDeadlineError}
-                onChange={(v) => s.handleShippingDeadlineChange(v)}
-              />
+              <label
+                htmlFor="cart-shipping-deadline"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground"
+              >
+                <CalendarClock aria-hidden="true" className="h-3.5 w-3.5 text-primary" />
+                Prazo p/ envio
+              </label>
+              <div className="inline-flex flex-wrap items-center gap-1.5">
+                <ShippingDeadlinePicker
+                  id="cart-shipping-deadline"
+                  data-testid="cart-shipping-deadline-input"
+                  aria-invalid={!!s.shippingDeadlineError || undefined}
+                  aria-describedby={
+                    s.shippingDeadlineError ? 'cart-shipping-deadline-error' : undefined
+                  }
+                  className="h-7"
+                  value={s.shippingDeadlineDraft ?? null}
+                  hasError={!!s.shippingDeadlineError}
+                  onChange={(v) => s.handleShippingDeadlineChange(v)}
+                />
 
-              {s.shippingDeadlineBadge && !s.shippingDeadlineError && (
-                <span
-                  role="status"
-                  aria-label={`Status do prazo: ${s.shippingDeadlineBadge.label}`}
-                  data-testid="cart-shipping-deadline-badge"
-                  data-status={s.shippingDeadlineBadge.status}
-                  className={cn(
-                    'status-chip-glow inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold',
-                    s.shippingDeadlineBadge.className,
-                  )}
-                >
-                  {s.shippingDeadlineBadge.label}
-                </span>
-              )}
-              {s.shippingDeadlineError && (
-                <span
-                  id="cart-shipping-deadline-error"
-                  role="alert"
-                  data-testid="cart-shipping-deadline-error"
-                  className="text-[10px] font-medium text-destructive"
-                >
-                  {s.shippingDeadlineError}
-                </span>
+                {s.shippingDeadlineBadge && !s.shippingDeadlineError && (
+                  <span
+                    role="status"
+                    aria-label={`Status do prazo: ${s.shippingDeadlineBadge.label}`}
+                    data-testid="cart-shipping-deadline-badge"
+                    data-status={s.shippingDeadlineBadge.status}
+                    className={cn(
+                      'status-chip-glow inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                      s.shippingDeadlineBadge.className,
+                    )}
+                  >
+                    {s.shippingDeadlineBadge.label}
+                  </span>
+                )}
+                {s.shippingDeadlineError && (
+                  <span
+                    id="cart-shipping-deadline-error"
+                    role="alert"
+                    data-testid="cart-shipping-deadline-error"
+                    className="text-[10px] font-medium text-destructive"
+                  >
+                    {s.shippingDeadlineError}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div
+              data-testid="cart-header-actions"
+              className="flex w-full flex-shrink-0 flex-wrap content-end items-center justify-end gap-1.5 sm:ml-auto sm:w-auto sm:gap-2 md:gap-2.5 lg:gap-3"
+            >
+              <CartStatusSelect
+                currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
+                isEmpty={(s.activeCart?.items.length ?? 0) === 0}
+                onChange={(next) => {
+                  if (s.activeCart) s.updateCartStatus(s.activeCart.id, next);
+                }}
+              />
+              <CartActionsMenu
+                canGenerateQuote={s.activeCart.items.length > 0}
+                onGenerateQuote={() => {
+                  if (s.activeCart) s.handleGenerateQuote(s.activeCart);
+                }}
+                onDelete={() => s.setConfirmDeleteCart(true)}
+              />
+              {s.activeCart.items.length > 0 && (
+                <LayoutPopover
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  gridColumns={gridColumns}
+                  setGridColumns={setGridColumns}
+                />
               )}
             </div>
           </div>
-          <div
-            data-testid="cart-header-actions"
-            className="flex w-full flex-shrink-0 flex-wrap items-center content-end justify-end gap-1.5 sm:ml-auto sm:w-auto sm:gap-2 md:gap-2.5 lg:gap-3"
-          >
-            <CartStatusSelect
-              currentStatus={(s.activeCart?.status ?? 'em_separacao') as CartStatus}
-              isEmpty={(s.activeCart?.items.length ?? 0) === 0}
-              onChange={(next) => {
-                if (s.activeCart) s.updateCartStatus(s.activeCart.id, next);
-              }}
-            />
-            <CartActionsMenu
-              canGenerateQuote={s.activeCart.items.length > 0}
-              onGenerateQuote={() => {
-                if (s.activeCart) s.handleGenerateQuote(s.activeCart);
-              }}
-              onDelete={() => s.setConfirmDeleteCart(true)}
-            />
-            {s.activeCart.items.length > 0 && (
-              <LayoutPopover
-                viewMode={viewMode}
-                setViewMode={setViewMode}
-                gridColumns={gridColumns}
-                setGridColumns={setGridColumns}
-              />
-            )}
-          </div>
-        </div>
 
-
-
-        <div className="grid w-full grid-cols-1 gap-6">
-
-          <div className="min-w-0 space-y-4">
-
-
-
-
-
-            {/* Produtos */}
-            {s.activeCart.items.length === 0 ? (
-              <CartEmptyStateSmart
-                activeCart={s.activeCart}
-                otherCarts={s.otherCarts}
-                onDuplicateLast={handleDuplicateLast}
-                onNavigateProducts={() => s.navigate('/produtos')}
-              />
-
-            ) : (
-              <>
-
-                {viewMode === 'table' ? (
-                  (() => {
-                    const { sorted, start, pageItems, safePage, totalPages } = cartTableData;
-                    const renderSortHdr = (
-                      key: SortKey,
-                      label: string,
-                      align: 'left' | 'right',
-                    ) => (
-                      // aria-sort on <th> + scope="col" (WCAG 1.3.1)
-                      <th
-                        scope="col"
-                        aria-sort={
-                          sortKey === key
-                            ? sortDir === 'asc'
-                              ? 'ascending'
-                              : 'descending'
-                            : 'none'
-                        }
-                        className={cn(
-                          rowPad,
-                          align === 'right' ? 'text-right' : 'text-left',
-                          'font-semibold',
-                        )}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleSort(key)}
-                          aria-label={`Ordenar por ${label}${sortKey === key ? `, ${sortDir === 'asc' ? 'decrescente' : 'crescente'}` : ''}`}
-                          className="inline-flex items-center gap-1 hover:text-primary"
-                          data-testid={`cart-sort-${key}`}
+          <div className="grid w-full grid-cols-1 gap-6">
+            <div className="min-w-0 space-y-4">
+              {/* Produtos */}
+              {s.activeCart.items.length === 0 ? (
+                <CartEmptyStateSmart
+                  activeCart={s.activeCart}
+                  otherCarts={s.otherCarts}
+                  onDuplicateLast={handleDuplicateLast}
+                  onNavigateProducts={() => s.navigate('/produtos')}
+                />
+              ) : (
+                <>
+                  {viewMode === 'table' ? (
+                    (() => {
+                      const { sorted, start, pageItems, safePage, totalPages } = cartTableData;
+                      const renderSortHdr = (
+                        key: SortKey,
+                        label: string,
+                        align: 'left' | 'right',
+                      ) => (
+                        // aria-sort on <th> + scope="col" (WCAG 1.3.1)
+                        <th
+                          scope="col"
+                          aria-sort={
+                            sortKey === key
+                              ? sortDir === 'asc'
+                                ? 'ascending'
+                                : 'descending'
+                              : 'none'
+                          }
+                          className={cn(
+                            rowPad,
+                            align === 'right' ? 'text-right' : 'text-left',
+                            'font-semibold',
+                          )}
                         >
-                          {label}
-                          <span className="text-[10px] opacity-70" aria-hidden="true">
-                            {sortKey === key ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}
-                          </span>
-                        </button>
-                      </th>
-                    );
-                    return (
-                      <div
-                        className="overflow-x-auto rounded-xl border border-border/40 bg-card/40"
-                        data-testid="cart-table"
-                      >
-                        <table className="w-full min-w-[720px] text-sm">
-                          <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
-                            <tr>
-                              {renderSortHdr('name', 'Produto', 'left')}
-                              <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>
-                                Cor
-                              </th>
-                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
-                                Qtd
-                              </th>
-                              {renderSortHdr('price', 'Preço', 'right')}
-                              {renderSortHdr('total', 'Total', 'right')}
-                              <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
-                                Ações
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {pageItems.map((item) => {
-                              const err = qtyErrors[item.id];
-                              return (
-                                <tr
-                                  key={item.id}
-                                  data-testid={`cart-row-${item.id}`}
-                                  className="border-t border-border/30 transition-colors hover:bg-muted/20"
-                                >
-                                  <td className={rowPad}>
-                                    <div className="flex items-center gap-2.5">
-                                      <img
-                                        src={item.product_image_url || '/placeholder.svg'}
-                                        alt=""
-                                        className="h-10 w-10 flex-shrink-0 rounded-md border border-border/30 object-cover"
-                                        loading="lazy"
-                                      />
-                                      <button
-                                        type="button"
-                                        onClick={() => s.navigate(`/produto/${item.product_id}`)}
-                                        className="line-clamp-2 text-left font-medium text-foreground hover:text-primary"
-                                      >
-                                        {item.product_name}
-                                      </button>
-                                    </div>
-                                  </td>
-                                  <td className={rowPad}>
-                                    {item.color_name ? (
-                                      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                                        {item.color_hex && (
-                                          <span
-                                            className="inline-block h-3 w-3 rounded-full border border-border/40"
-                                            style={{ background: item.color_hex }}
-                                          />
-                                        )}
-                                        {item.color_name}
-                                      </span>
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground/60">—</span>
-                                    )}
-                                  </td>
-                                  <td className={cn(rowPad, 'text-right align-top')}>
-                                    <input
-                                      type="number"
-                                      min={1}
-                                      max={999999}
-                                      step={1}
-                                      defaultValue={item.quantity}
-                                      key={`${item.id}-${item.quantity}`}
-                                      aria-label={`Quantidade de ${item.product_name}`}
-                                      data-testid={`cart-qty-input-${item.id}`}
-                                      aria-invalid={err ? true : undefined}
-                                      aria-describedby={err ? `qty-err-${item.id}` : undefined}
-                                      onChange={(e) =>
-                                        safeUpdateQuantity(
-                                          item.id,
-                                          e.target.value,
-                                          item.product_name,
-                                        )
-                                      }
-                                      onBlur={(e) => {
-                                        // Se valor inválido permaneceu, restaura ao último válido (não persiste lixo)
-                                        if (qtyErrors[item.id]) {
-                                          e.target.value = String(item.quantity);
-                                          setRowError(item.id, null);
-                                        }
-                                      }}
-                                      className={cn(
-                                        'h-8 w-20 rounded-md border bg-background px-2 text-right text-sm tabular-nums focus:outline-none',
-                                        err
-                                          ? 'border-destructive ring-1 ring-destructive/30 focus:border-destructive'
-                                          : 'border-border/40 focus:border-primary/40',
-                                      )}
-                                    />
-                                    {err && (
-                                      <p
-                                        id={`qty-err-${item.id}`}
-                                        role="alert"
-                                        data-testid={`cart-qty-error-${item.id}`}
-                                        className="mt-1 text-[10px] font-medium text-destructive"
-                                      >
-                                        {err}
-                                      </p>
-                                    )}
-                                  </td>
-                                  <td
-                                    className={cn(
-                                      rowPad,
-                                      'text-right tabular-nums text-muted-foreground',
-                                    )}
-                                  >
-                                    {formatCurrency(item.product_price)}
-                                  </td>
-                                  <td
-                                    className={cn(
-                                      rowPad,
-                                      'text-right font-semibold tabular-nums text-foreground',
-                                    )}
-                                    data-testid={`cart-row-total-${item.id}`}
-                                  >
-                                    {formatCurrency(item.product_price * item.quantity)}
-                                  </td>
-                                  <td className={cn(rowPad, 'text-right')}>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                      onClick={() =>
-                                        setPendingRemoveItem({
-                                          id: item.id,
-                                          name: item.product_name,
-                                        })
-                                      }
-                                      aria-label="Remover item"
-                                      data-testid={`cart-remove-${item.id}`}
-                                    >
-                                      <Trash2 aria-hidden="true" className="h-4 w-4" />
-                                    </Button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                        {/* Paginação */}
-                        <div
-                          className="flex flex-wrap items-center justify-between gap-2 border-t border-border/30 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
-                          data-testid="cart-table-pagination"
-                        >
-                          <span>
-                            {sorted.length === 0
-                              ? '0 itens'
-                              : `${start + 1}–${Math.min(start + pageSize, sorted.length)} de ${sorted.length}`}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <label className="flex items-center gap-1">
-                              <span>Por página:</span>
-                              <select
-                                value={pageSize}
-                                onChange={(e) => {
-                                  setPageSize(Number(e.target.value));
-                                  setPage(1);
-                                }}
-                                data-testid="cart-page-size"
-                                className="h-7 rounded-md border border-border/40 bg-background px-1.5"
-                              >
-                                {[10, 25, 50, 100].map((n) => (
-                                  <option key={n} value={n}>
-                                    {n}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 px-2"
-                              disabled={safePage <= 1}
-                              onClick={() => setPage((p) => Math.max(1, p - 1))}
-                              aria-label="Página anterior"
-                              data-testid="cart-page-prev"
-                            >
-                              ‹
-                            </Button>
-                            <span className="tabular-nums" aria-live="polite" aria-atomic>
-                              {safePage} / {totalPages}
+                          <button
+                            type="button"
+                            onClick={() => toggleSort(key)}
+                            aria-label={`Ordenar por ${label}${sortKey === key ? `, ${sortDir === 'asc' ? 'decrescente' : 'crescente'}` : ''}`}
+                            className="inline-flex items-center gap-1 hover:text-primary"
+                            data-testid={`cart-sort-${key}`}
+                          >
+                            {label}
+                            <span className="text-[10px] opacity-70" aria-hidden="true">
+                              {sortKey === key ? (sortDir === 'asc' ? '▲' : '▼') : '↕'}
                             </span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 px-2"
-                              disabled={safePage >= totalPages}
-                              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                              aria-label="Próxima página"
-                              data-testid="cart-page-next"
-                            >
-                              ›
-                            </Button>
+                          </button>
+                        </th>
+                      );
+                      return (
+                        <div
+                          className="overflow-x-auto rounded-xl border border-border/40 bg-card/40"
+                          data-testid="cart-table"
+                        >
+                          <table className="w-full min-w-[720px] text-sm">
+                            <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+                              <tr>
+                                {renderSortHdr('name', 'Produto', 'left')}
+                                <th scope="col" className={cn(rowPad, 'text-left font-semibold')}>
+                                  Cor
+                                </th>
+                                <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
+                                  Qtd
+                                </th>
+                                {renderSortHdr('price', 'Preço', 'right')}
+                                {renderSortHdr('total', 'Total', 'right')}
+                                <th scope="col" className={cn(rowPad, 'text-right font-semibold')}>
+                                  Ações
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {pageItems.map((item) => {
+                                const err = qtyErrors[item.id];
+                                return (
+                                  <tr
+                                    key={item.id}
+                                    data-testid={`cart-row-${item.id}`}
+                                    className="border-t border-border/30 transition-colors hover:bg-muted/20"
+                                  >
+                                    <td className={rowPad}>
+                                      <div className="flex items-center gap-2.5">
+                                        <img
+                                          src={item.product_image_url || '/placeholder.svg'}
+                                          alt=""
+                                          className="h-10 w-10 flex-shrink-0 rounded-md border border-border/30 object-cover"
+                                          loading="lazy"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => s.navigate(`/produto/${item.product_id}`)}
+                                          className="line-clamp-2 text-left font-medium text-foreground hover:text-primary"
+                                        >
+                                          {item.product_name}
+                                        </button>
+                                      </div>
+                                    </td>
+                                    <td className={rowPad}>
+                                      {item.color_name ? (
+                                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                                          {item.color_hex && (
+                                            <span
+                                              className="inline-block h-3 w-3 rounded-full border border-border/40"
+                                              style={{ background: item.color_hex }}
+                                            />
+                                          )}
+                                          {item.color_name}
+                                        </span>
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground/60">—</span>
+                                      )}
+                                    </td>
+                                    <td className={cn(rowPad, 'text-right align-top')}>
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        max={999999}
+                                        step={1}
+                                        defaultValue={item.quantity}
+                                        key={`${item.id}-${item.quantity}`}
+                                        aria-label={`Quantidade de ${item.product_name}`}
+                                        data-testid={`cart-qty-input-${item.id}`}
+                                        aria-invalid={err ? true : undefined}
+                                        aria-describedby={err ? `qty-err-${item.id}` : undefined}
+                                        onChange={(e) =>
+                                          safeUpdateQuantity(
+                                            item.id,
+                                            e.target.value,
+                                            item.product_name,
+                                          )
+                                        }
+                                        onBlur={(e) => {
+                                          // Se valor inválido permaneceu, restaura ao último válido (não persiste lixo)
+                                          if (qtyErrors[item.id]) {
+                                            e.target.value = String(item.quantity);
+                                            setRowError(item.id, null);
+                                          }
+                                        }}
+                                        className={cn(
+                                          'h-8 w-20 rounded-md border bg-background px-2 text-right text-sm tabular-nums focus:outline-none',
+                                          err
+                                            ? 'border-destructive ring-1 ring-destructive/30 focus:border-destructive'
+                                            : 'border-border/40 focus:border-primary/40',
+                                        )}
+                                      />
+                                      {err && (
+                                        <p
+                                          id={`qty-err-${item.id}`}
+                                          role="alert"
+                                          data-testid={`cart-qty-error-${item.id}`}
+                                          className="mt-1 text-[10px] font-medium text-destructive"
+                                        >
+                                          {err}
+                                        </p>
+                                      )}
+                                    </td>
+                                    <td
+                                      className={cn(
+                                        rowPad,
+                                        'text-right tabular-nums text-muted-foreground',
+                                      )}
+                                    >
+                                      {formatCurrency(item.product_price)}
+                                    </td>
+                                    <td
+                                      className={cn(
+                                        rowPad,
+                                        'text-right font-semibold tabular-nums text-foreground',
+                                      )}
+                                      data-testid={`cart-row-total-${item.id}`}
+                                    >
+                                      {formatCurrency(item.product_price * item.quantity)}
+                                    </td>
+                                    <td className={cn(rowPad, 'text-right')}>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                        onClick={() =>
+                                          setPendingRemoveItem({
+                                            id: item.id,
+                                            name: item.product_name,
+                                          })
+                                        }
+                                        aria-label="Remover item"
+                                        data-testid={`cart-remove-${item.id}`}
+                                      >
+                                        <Trash2 aria-hidden="true" className="h-4 w-4" />
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                          {/* Paginação */}
+                          <div
+                            className="flex flex-wrap items-center justify-between gap-2 border-t border-border/30 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
+                            data-testid="cart-table-pagination"
+                          >
+                            <span>
+                              {sorted.length === 0
+                                ? '0 itens'
+                                : `${start + 1}–${Math.min(start + pageSize, sorted.length)} de ${sorted.length}`}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <label className="flex items-center gap-1">
+                                <span>Por página:</span>
+                                <select
+                                  value={pageSize}
+                                  onChange={(e) => {
+                                    setPageSize(Number(e.target.value));
+                                    setPage(1);
+                                  }}
+                                  data-testid="cart-page-size"
+                                  className="h-7 rounded-md border border-border/40 bg-background px-1.5"
+                                >
+                                  {[10, 25, 50, 100].map((n) => (
+                                    <option key={n} value={n}>
+                                      {n}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2"
+                                disabled={safePage <= 1}
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                aria-label="Página anterior"
+                                data-testid="cart-page-prev"
+                              >
+                                ‹
+                              </Button>
+                              <span className="tabular-nums" aria-live="polite" aria-atomic>
+                                {safePage} / {totalPages}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 px-2"
+                                disabled={safePage >= totalPages}
+                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                aria-label="Próxima página"
+                                data-testid="cart-page-next"
+                              >
+                                ›
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <DndContext
-                    sensors={s.sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={s.handleDragEnd}
-                  >
-                    <SortableContext
-                      items={s.activeCart.items.map((i) => i.id)}
-                      strategy={rectSortingStrategy}
+                      );
+                    })()
+                  ) : (
+                    <DndContext
+                      sensors={s.sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={s.handleDragEnd}
                     >
-                      <div className={cn('grid gap-4', gridColsClass)}>
-                        <AnimatePresence>
-                          {s.activeCart.items.map((item, index) => (
-                            <SortableCartItem
-                              key={item.id}
-                              item={item}
-                              index={index}
-                              variant={viewMode === 'list' ? 'row' : 'card'}
-                              otherCarts={s.otherCarts}
-                              stockMap={s.stockMap}
-                              onRemove={s.handleRemoveItem}
-                              onUpdateQuantity={s.handleUpdateQuantity}
-                              onUpdateNotes={s.updateItemNotes}
-                              onMoveToCart={s.handleMoveItem}
-                              onDuplicateToCart={s.handleDuplicateItem}
-                              onNavigate={s.navigate}
-                            />
-                          ))}
-                        </AnimatePresence>
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                )}
-              </>
+                      <SortableContext
+                        items={s.activeCart.items.map((i) => i.id)}
+                        strategy={rectSortingStrategy}
+                      >
+                        <div className={cn('grid gap-4', gridColsClass)}>
+                          <AnimatePresence>
+                            {s.activeCart.items.map((item, index) => (
+                              <SortableCartItem
+                                key={item.id}
+                                item={item}
+                                index={index}
+                                variant={viewMode === 'list' ? 'row' : 'card'}
+                                otherCarts={s.otherCarts}
+                                stockMap={s.stockMap}
+                                onRemove={s.handleRemoveItem}
+                                onUpdateQuantity={s.handleUpdateQuantity}
+                                onUpdateNotes={s.updateItemNotes}
+                                onMoveToCart={s.handleMoveItem}
+                                onDuplicateToCart={s.handleDuplicateItem}
+                                onNavigate={s.navigate}
+                              />
+                            ))}
+                          </AnimatePresence>
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            {s.activeCart.items.length > 0 && (
+              <CartSidebar
+                key={s.activeCart.id}
+                cart={s.activeCart}
+                cartSubtotal={s.cartSubtotal}
+                cartTotalQty={s.cartTotalQty}
+                weightVolume={s.weightVolume}
+                templates={s.templates}
+                canCreateCart={s.canCreateCart}
+                onGenerateQuote={s.handleGenerateQuote}
+                onShareCart={s.shareCartLink}
+                onDuplicateCart={(id) => {
+                  if (s.canCreateCart) s.duplicateCart(id);
+                  else toast.error(SELLER_CART_LIMIT_REACHED_SHORT);
+                }}
+                onExportCSV={s.exportCartToCSV}
+                onExportPDF={s.exportCartToPDF}
+                onSaveTemplate={s.handleSaveTemplate}
+                onLoadTemplate={s.handleLoadTemplate}
+                onDeleteTemplate={s.deleteTemplate}
+                onClear={() => s.setConfirmClearCart(true)}
+                onNavigate={s.navigate}
+                onFocusNotes={focusNotes}
+              />
             )}
           </div>
-
-          {/* Sidebar */}
-          {s.activeCart.items.length > 0 && (
-            <CartSidebar
-              key={s.activeCart.id}
-              cart={s.activeCart}
-              cartSubtotal={s.cartSubtotal}
-              cartTotalQty={s.cartTotalQty}
-              weightVolume={s.weightVolume}
-              templates={s.templates}
-              canCreateCart={s.canCreateCart}
-              onGenerateQuote={s.handleGenerateQuote}
-              onShareCart={s.shareCartLink}
-              onDuplicateCart={(id) => {
-                if (s.canCreateCart) s.duplicateCart(id);
-                else toast.error(SELLER_CART_LIMIT_REACHED_SHORT);
-              }}
-              onExportCSV={s.exportCartToCSV}
-              onExportPDF={s.exportCartToPDF}
-              onSaveTemplate={s.handleSaveTemplate}
-              onLoadTemplate={s.handleLoadTemplate}
-              onDeleteTemplate={s.deleteTemplate}
-              onClear={() => s.setConfirmClearCart(true)}
-              onNavigate={s.navigate}
-              onFocusNotes={focusNotes}
-            />
-          )}
-        </div>
-        {/* Notas da negociação — rodapé full-width (Mudança 03).
+          {/* Notas da negociação — rodapé full-width (Mudança 03).
             🔒 Interno: seller_carts.notes NUNCA é enviado ao cliente
             (não vai para /orcamento-publico, PDF, e-mail ou sync CRM).
             RLS: seller_id = auth.uid(). */}
-        <div
-          className="group/notes space-y-2 rounded-xl border border-border/30 bg-card/40 p-3.5"
-          data-testid="cart-notes-internal-block"
-        >
-          <div className="flex items-center justify-between gap-2">
-            <label
-              htmlFor="cart-notes"
-              className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-opacity group-hover/notes:opacity-100"
-            >
-              <FileText aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Notas da negociação
-            </label>
-            <span
-              data-testid="cart-notes-internal-badge"
-              title="Estas notas são visíveis apenas para você. Não são enviadas ao cliente, ao orçamento público, ao PDF nem ao CRM."
-              className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-            >
-              <span aria-hidden="true">🔒</span> Interno — não visível ao cliente
-            </span>
-          </div>
-          <Textarea
-            id="cart-notes"
-            ref={notesRef}
-            value={s.localCartNotes}
-            onChange={(e) => s.handleCartNotesChange(e.target.value)}
-            placeholder={notesPlaceholder}
-            aria-describedby="cart-notes-internal-hint"
-            className="min-h-[88px] resize-y rounded-lg border-border/30 bg-background/50 text-sm transition-all focus:border-primary/40 focus:ring-primary/10"
-            rows={3}
-          />
-          <p
-            id="cart-notes-internal-hint"
-            className="text-[10px] leading-snug text-muted-foreground/80"
+          <div
+            className="group/notes space-y-2 rounded-xl border border-border/30 bg-card/40 p-3.5"
+            data-testid="cart-notes-internal-block"
           >
-            Uso interno para a sua negociação. O cliente <strong>não</strong> vê este conteúdo em nenhum lugar.
-          </p>
-        </div>
+            <div className="flex items-center justify-between gap-2">
+              <label
+                htmlFor="cart-notes"
+                className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground transition-opacity group-hover/notes:opacity-100"
+              >
+                <FileText aria-hidden="true" className="h-3.5 w-3.5 text-primary" /> Notas da
+                negociação
+              </label>
+              <span
+                data-testid="cart-notes-internal-badge"
+                title="Estas notas são visíveis apenas para você. Não são enviadas ao cliente, ao orçamento público, ao PDF nem ao CRM."
+                className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+              >
+                <span aria-hidden="true">🔒</span> Interno — não visível ao cliente
+              </span>
+            </div>
+            <Textarea
+              id="cart-notes"
+              ref={notesRef}
+              value={s.localCartNotes}
+              onChange={(e) => s.handleCartNotesChange(e.target.value)}
+              placeholder={notesPlaceholder}
+              aria-describedby="cart-notes-internal-hint"
+              className="min-h-[88px] resize-y rounded-lg border-border/30 bg-background/50 text-sm transition-all focus:border-primary/40 focus:ring-primary/10"
+              rows={3}
+            />
+            <p
+              id="cart-notes-internal-hint"
+              className="text-[10px] leading-snug text-muted-foreground/80"
+            >
+              Uso interno para a sua negociação. O cliente <strong>não</strong> vê este conteúdo em
+              nenhum lugar.
+            </p>
+          </div>
         </>
       ) : null}
 
