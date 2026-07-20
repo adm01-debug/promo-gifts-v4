@@ -10,7 +10,8 @@ interface UndoToastOptions {
    * Retorne `false` (ou lance) quando a operação de undo falhar — o toast
    * "Ação desfeita!" só aparece em sucesso. Retornos `void`/`true` = sucesso.
    */
-  onUndo: () => Promise<boolean | undefined> | boolean | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  onUndo: () => Promise<boolean | void> | boolean | void;
   duration?: number;
 }
 

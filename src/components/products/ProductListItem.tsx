@@ -80,7 +80,8 @@ interface ProductListItemProps {
   isFavorited?: boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: boolean;
-  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean } | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  onToggleCompare?: (productId: string) => { added: boolean; isFull: boolean } | void;
   canAddToCompare?: boolean;
   highlightColors?: string[];
   activeColorFilter?: ActiveColorFilter | null;

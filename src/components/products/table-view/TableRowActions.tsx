@@ -20,7 +20,8 @@ interface TableRowActionsProps {
   isInCompare: boolean;
   canAddToCompare: boolean;
   onToggleFavorite?: (id: string) => void;
-  onToggleCompare?: (id: string) => { added: boolean; isFull: boolean } | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+  onToggleCompare?: (id: string) => { added: boolean; isFull: boolean } | void;
   onOpenVariantPicker: (product: Product, mode: VariantActionMode) => void;
   onOpenQuickView: (product: Product) => void;
 }

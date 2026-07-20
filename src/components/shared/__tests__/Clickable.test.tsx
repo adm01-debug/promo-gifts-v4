@@ -283,8 +283,8 @@ describe('Clickable — a11y ARIA', () => {
   });
 
   it('tabIndex custom sobrescreve default', () => {
-    // eslint-disable-next-line jsx-a11y/tabindex-no-positive
     render(
+      // eslint-disable-next-line jsx-a11y/tabindex-no-positive
       <Clickable onClick={() => {}} tabIndex={5}>
         x
       </Clickable>,
@@ -293,8 +293,8 @@ describe('Clickable — a11y ARIA', () => {
   });
 
   it('tabIndex=-1 quando disabled tem prioridade sobre custom', () => {
-    // eslint-disable-next-line jsx-a11y/tabindex-no-positive
     render(
+      // eslint-disable-next-line jsx-a11y/tabindex-no-positive
       <Clickable onClick={() => {}} tabIndex={5} disabled>
         x
       </Clickable>,

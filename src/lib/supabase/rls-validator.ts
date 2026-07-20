@@ -73,9 +73,8 @@ export async function validateRLSPolicies(): Promise<RLSValidationResult> {
     for (const table of CRITICAL_TABLES) {
       try {
         // Attempt a HEAD-like query (count only)
-        const { count: _count, error } = await (
-          supabase as unknown as { from: (t: string) => unknown }
-        )
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { count: _count, error } = await (supabase as any)
           .from(table)
           .select('*', { count: 'exact', head: true })
           .limit(1);
@@ -145,10 +144,8 @@ export async function canAccessTable(
     }
 
     // Test with a zero-row query
-    const { error } = await (supabase as unknown as { from: (t: string) => unknown })
-      .from(table)
-      .select('*', { head: true })
-      .limit(0);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from(table).select('*', { head: true }).limit(0);
 
     if (error?.code === 'PGRST116') {
       return { canAccess: false, reason: 'No RLS policy' };

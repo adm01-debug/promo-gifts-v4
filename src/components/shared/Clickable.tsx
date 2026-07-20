@@ -56,6 +56,8 @@ export interface ClickableProps {
   showFocusRing?: boolean;
   /** Estilo inline (evitar; preferir className). */
   style?: React.CSSProperties;
+  /** Handler de teclado adicional (complementa o Enter/Space interno). */
+  onKeyDown?: React.KeyboardEventHandler<HTMLElement>;
   /** Atributos data-* extras (preserva hooks E2E/analytics). */
   [dataAttr: `data-${string}`]: boolean | number | string | undefined;
   /** Atributos aria-* extras (aria-haspopup, aria-controls, aria-current, etc.). */

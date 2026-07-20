@@ -308,6 +308,7 @@ export function QuoteItemsTable({ items }: QuoteItemsTableProps) {
   const announceTimer = React.useRef<number | null>(null);
   const theadRef = React.useRef<HTMLTableSectionElement>(null);
   const [scrollbarPad, setScrollbarPad] = React.useState<number>(0);
+  const [_headerHeight, setHeaderHeight] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     if (!enableInnerScroll) return;
