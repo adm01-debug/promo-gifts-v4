@@ -126,4 +126,6 @@ export async function handleLogLoginAttempt(req: Request): Promise<Response> {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}
+
+Deno.serve(handleLogLoginAttempt);
