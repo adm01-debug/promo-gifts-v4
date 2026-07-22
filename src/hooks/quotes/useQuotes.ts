@@ -7,6 +7,7 @@ import { useSalesScope } from '@/lib/auth/visibility-scope';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { quoteService } from '@/services/quoteService';
 import type { Quote, QuoteItem } from '@/hooks/quotes/quoteTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -120,14 +121,14 @@ export function useQuotes() {
   });
 
   // Actions
-  const fetchQuote = async (quoteId: string) => {
+  const fetchQuote = useCallback(async (quoteId: string) => {
     try {
       return await quoteService.fetchQuote(quoteId);
     } catch (err: unknown) {
       toast.error('Erro ao carregar orçamento', { description: getErrorMessage(err) });
       return null;
     }
-  };
+  }, []);
 
   const createQuote = async (quote: Partial<Quote>, items: QuoteItem[]) => {
     if (!user) return null;
