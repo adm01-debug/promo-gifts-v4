@@ -24,7 +24,7 @@ const MFA_ERRORS: Array<{ status: number; message: string; kind: MfaErrorKind }>
 ];
 
 describe('safeMfaCall — fuzz classificação (Onda 9)', () => {
-  beforeEach(() => resetStructuredLoggerMock());
+  beforeEach(() => { __resetBreakers(); resetStructuredLoggerMock(); });
 
   for (const op of OPS) {
     for (const e of MFA_ERRORS) {

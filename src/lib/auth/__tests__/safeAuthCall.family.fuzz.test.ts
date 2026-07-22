@@ -3,7 +3,7 @@
  * ~220 cenários combinacionais garantindo o invariante nunca-throw + userMessage sanitizada.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { safeAuthCall, type AuthErrorKind } from '@/lib/auth/safeAuthCall';
+import { safeAuthCall, type AuthErrorKind } , __resetBreakers } from '@/lib/auth/safeAuthCall';
 import {
   resetStructuredLoggerMock,
   structuredLoggerMockFactory,
@@ -36,7 +36,7 @@ const ERROR_MATRIX: Array<{ status: number; message: string; kind: AuthErrorKind
 ];
 
 describe('safeAuthCall.family — fuzz combinacional (Onda 8)', () => {
-  beforeEach(() => resetStructuredLoggerMock());
+  beforeEach(() => { __resetBreakers(); resetStructuredLoggerMock(); });
 
   // 6 ops × 8 errors = 48 cenários base
   for (const op of OPS) {
