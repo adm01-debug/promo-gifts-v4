@@ -1,1 +1,180 @@
-LyoqCiAqIFNtb2tlIEUyRSDigJQgTG9naW4gY29tIEdvb2dsZSBhdMOpIC9hdXRoL2NhbGxiYWNrLgogKgogKiBSZWFsIE9BdXRoIG7Do28gcG9kZSBzZXIgY29uZHV6aWRvIHBvciB1bSBzcGVjIGF1dG9tYXRpemFkbyAoR29vZ2xlIGJsb3F1ZWlhCiAqIGJvdHMsIGV4aWdlIDJGQSwgZXRjLikuIEVzdGUgc21va2UgdmFsaWRhIG8gKip3aXJpbmcgZG8gY2xpZW50ZSoqIGVtIGR1YXMKICogY2FtYWRhcywgc2VtIGRlcGVuZGVyIGRhIGluZnJhIE9BdXRoIHJlYWw6CiAqCiAqICAxLiBCb3TDo28gIkNvbnRpbnVhciBjb20gR29vZ2xlIiBlbSAvbG9naW4gZGlzcGFyYQogKiAgICAgYHN1cGFiYXNlLmF1dGguc2lnbkluV2l0aE9BdXRoKHsgcHJvdmlkZXI6ICdnb29nbGUnIH0pYCwgbyBxdWUgcHJvdm9jYQogKiAgICAgdW1hIG5hdmVnYcOnw6NvIHBhcmEgYDxTVVBBQkFTRV9VUkw+L2F1dGgvdjEvYXV0aG9yaXplP3Byb3ZpZGVyPWdvb2dsZSbigKZgLgogKiAgICAgSW50ZXJjZXB0YW1vcyBlc3NhIHJlcXVlc3QsIHZhbGlkYW1vcyBvIHByb3ZpZGVyL3JlZGlyZWN0IGUgYWJvcnRhbW9zCiAqICAgICBhbnRlcyBkZSBiYXRlciBubyBHb29nbGUgcmVhbC4KICoKICogIDIuIEVtIHNlZ3VpZGEgdmlzaXRhbW9zIGAvYXV0aC9jYWxsYmFjaz9jb2RlPTxtb2NrPmAgZSBtb2NrYW1vcyBvIGVuZHBvaW50CiAqICAgICBkbyBTdXBhYmFzZSBxdWUgdHJvY2EgbyBjb2RlIHBvciBzZXNzw6NvIChgL2F1dGgvdjEvdG9rZW4/Z3JhbnRfdHlwZT3igKZgKS4KICogICAgIFZlcmlmaWNhbW9zIHF1ZSBhIHDDoWdpbmEgcHJvZ3JpZGUgcGFyYSBvIGVzdGFkbyAiY29uZmlybWVkIiBlIHF1ZSBvCiAqICAgICByZWRpcmVjdCBwYXJhIGEgaG9tZSBhY29udGVjZSDigJQgcHJvdmFuZG8gcXVlIGEgVUkgZmljYSBhdXRlbnRpY2FkYSBhcMOzcwogKiAgICAgbyByb3VuZC10cmlwLgogKgogKiBUYWdzOiBAc21va2UgKHJvZGEgbm8gcHJvamVjdCBgY2hyb21pdW0tc21va2VgKS4KICovCmltcG9ydCB7IHRlc3QsIGV4cGVjdCB9IGZyb20gIi4uL2ZpeHR1cmVzL3Rlc3QtYmFzZSI7CmltcG9ydCB7IGdvdG9BbmRTZXR0bGUgfSBmcm9tICIuLi9oZWxwZXJzL25hdiI7CmltcG9ydCB7IGV4cGVjdFZpc2libGVCeVRlc3RJZCB9IGZyb20gIi4uL2hlbHBlcnMvd2FpdHMiOwoKY29uc3QgU1VQQUJBU0VfVVJMID0gKHByb2Nlc3MuZW52LlZJVEVfU1VQQUJBU0VfVVJMID8/ICJodHRwczovL2RvdWZzeHFsZmp5dXZ4dWV6cGxuLnN1cGFiYXNlLmNvIikKICAucmVwbGFjZSgvXC8rJC8sICIiKTsKY29uc3QgQVVUSE9SSVpFX0dMT0IgPSBgJHtTVVBBQkFTRV9VUkx9L2F1dGgvdjEvYXV0aG9yaXplKmA7CmNvbnN0IFRPS0VOX0dMT0IgPSBgJHtTVVBBQkFTRV9VUkx9L2F1dGgvdjEvdG9rZW4qYDsKY29uc3QgVVNFUl9HTE9CID0gYCR7U1VQQUJBU0VfVVJMfS9hdXRoL3YxL3VzZXIqYDsKCi8qKiBTZXNzw6NvIHNpbnTDqXRpY2EgdsOhbGlkYSBvIHN1ZmljaWVudGUgcGFyYSBvIGNsaWVudGUgU3VwYWJhc2UgYWNlaXRhci4gKi8KZnVuY3Rpb24gZmFrZVNlc3Npb25QYXlsb2FkKCkgewogIGNvbnN0IG5vdyA9IE1hdGguZmxvb3IoRGF0ZS5ub3coKSAvIDEwMDApOwogIC8vIEpXVCBtb2NrIOKAlCBuw6NvIHZhbGlkYWRvIHBlbG8gY2xpZW50OyBzw7MgcHJlY2lzYSB0ZXIgbyBmb3JtYXRvIGhlYWRlci5wYXlsb2FkLnNpZwogIGNvbnN0IGZha2VKd3QgPQogICAgImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS4iICsKICAgIEJ1ZmZlci5mcm9tKAogICAgICBKU09OLnN0cmluZ2lmeSh7CiAgICAgICAgc3ViOiAiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAxIiwKICAgICAgICBlbWFpbDogImUyZS1nb29nbGVAZXhhbXBsZS5jb20iLAogICAgICAgIGF1ZDogImF1dGhlbnRpY2F0ZWQiLAogICAgICAgIHJvbGU6ICJhdXRoZW50aWNhdGVkIiwKICAgICAgICBleHA6IG5vdyArIDM2MDAsCiAgICAgICAgaWF0OiBub3csCiAgICAgIH0pLAogICAgKS50b1N0cmluZygiYmFzZTY0dXJsIikgKwogICAgIi5zaWciOwogIHJldHVybiB7CiAgICBhY2Nlc3NfdG9rZW46IGZha2VKd3QsCiAgICByZWZyZXNoX3Rva2VuOiAiZmFrZS1yZWZyZXNoLXRva2VuLWUyZSIsCiAgICB0b2tlbl90eXBlOiAiYmVhcmVyIiwKICAgIGV4cGlyZXNfaW46IDM2MDAsCiAgICBleHBpcmVzX2F0OiBub3cgKyAzNjAwLAogICAgdXNlcjogewogICAgICBpZDogIjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsCiAgICAgIGF1ZDogImF1dGhlbnRpY2F0ZWQiLAogICAgICByb2xlOiAiYXV0aGVudGljYXRlZCIsCiAgICAgIGVtYWlsOiAiZTJlLWdvb2dsZUBleGFtcGxlLmNvbSIsCiAgICAgIGVtYWlsX2NvbmZpcm1lZF9hdDogbmV3IERhdGUoKS50b0lTT1N0cmluZygpLAogICAgICBhcHBfbWV0YWRhdGE6IHsgcHJvdmlkZXI6ICJnb29nbGUiLCBwcm92aWRlcnM6IFsiZ29vZ2xlIl0gfSwKICAgICAgdXNlcl9tZXRhZGF0YTogeyBmdWxsX25hbWU6ICJFMkUgR29vZ2xlIFVzZXIiIH0sCiAgICAgIGlkZW50aXRpZXM6IFtdLAogICAgICBjcmVhdGVkX2F0OiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCksCiAgICAgIHVwZGF0ZWRfYXQ6IG5ldyBEYXRlKCkudG9JU09TdHJpbmcoKSwKICAgIH0sCiAgfTsKfQoKdGVzdC5kZXNjcmliZSgiQHNtb2tlIEdvb2dsZSBPQXV0aCDigJQgd2lyaW5nIGF0w6kgL2F1dGgvY2FsbGJhY2siLCAoKSA9PiB7CiAgdGVzdC51c2UoeyBzdG9yYWdlU3RhdGU6IHsgY29va2llczogW10sIG9yaWdpbnM6IFtdIH0gfSk7CgogIHRlc3QoImNsaXF1ZSBlbSAnQ29udGludWFyIGNvbSBHb29nbGUnIGRpc3BhcmEgYXV0aG9yaXplIGNvbSBwcm92aWRlcj1nb29nbGUiLCBhc3luYyAoewogICAgcGFnZSwKICB9KSA9PiB7CiAgICAvLyBDYXB0dXJhIGEgVVJMIHBhcmEgb25kZSBvIGJvdMOjbyB0ZW50YSBuYXZlZ2FyIGUgYWJvcnRhIGFudGVzIGRlIGJhdGVyIG5vCiAgICAvLyBHb29nbGUgcmVhbCDigJQgYXNzaW0gbyBzcGVjIHJvZGEgb2ZmbGluZSBlIHNlbSBlZmVpdG9zIGNvbGF0ZXJhaXMuCiAgICBjb25zdCBhdXRob3JpemVVcmxzOiBzdHJpbmdbXSA9IFtdOwogICAgYXdhaXQgcGFnZS5yb3V0ZShBVVRIT1JJWkVfR0xPQiwgYXN5bmMgKHJvdXRlKSA9PiB7CiAgICAgIGF1dGhvcml6ZVVybHMucHVzaChyb3V0ZS5yZXF1ZXN0KCkudXJsKCkpOwogICAgICBhd2FpdCByb3V0ZS5hYm9ydCgpOwogICAgfSk7CgogICAgYXdhaXQgZ290b0FuZFNldHRsZShwYWdlLCAiL2xvZ2luIik7CiAgICBhd2FpdCBleHBlY3RWaXNpYmxlQnlUZXN0SWQocGFnZSwgInNvY2lhbC1sb2dpbi1nb29nbGUiKTsKCiAgICAvLyBPIGNsaWNrIHByb3ZvY2EgbmF2ZWdhw6fDo28gdG9wLWxldmVsIHZpYSB3aW5kb3cubG9jYXRpb24g4oCUIGFndWFyZGFtb3MgdmlhCiAgICAvLyB3YWl0Rm9yUmVxdWVzdCBuYSByb3RhIGRlIGF1dGhvcml6ZS4KICAgIGNvbnN0IHdhaXRGb3JBdXRob3JpemUgPSBwYWdlLndhaXRGb3JSZXF1ZXN0KEFVVEhPUklaRV9HTE9CLCB7IHRpbWVvdXQ6IDEwXzAwMCB9KTsKICAgIGF3YWl0IHBhZ2UubG9jYXRvcignW2RhdGEtdGVzdGlkPSJzb2NpYWwtbG9naW4tZ29vZ2xlIl0nKS5jbGljaygpOwogICAgY29uc3QgcmVxID0gYXdhaXQgd2FpdEZvckF1dGhvcml6ZTsKCiAgICBjb25zdCB1cmwgPSBuZXcgVVJMKHJlcS51cmwoKSk7CiAgICBleHBlY3QodXJsLnBhdGhuYW1lKS50b0JlKCIvYXV0aC92MS9hdXRob3JpemUiKTsKICAgIGV4cGVjdCh1cmwuc2VhcmNoUGFyYW1zLmdldCgicHJvdmlkZXIiKSkudG9CZSgiZ29vZ2xlIik7CiAgICAvLyByZWRpcmVjdF90byBkZXZlIGFwb250YXIgcGFyYSAvYXV0aC9jYWxsYmFjayBubyBwcmV2aWV3CiAgICBjb25zdCByZWRpcmVjdFRvID0gdXJsLnNlYXJjaFBhcmFtcy5nZXQoInJlZGlyZWN0X3RvIikgPz8gIiI7CiAgICBleHBlY3QocmVkaXJlY3RUbykudG9NYXRjaCgvXC9hdXRoXC9jYWxsYmFjay8pOwoKICAgIGV4cGVjdChhdXRob3JpemVVcmxzKS50b0hhdmVMZW5ndGgoMSk7CiAgfSk7CgogIHRlc3QoIi9hdXRoL2NhbGxiYWNrIGNvbSBjb2RlIHbDoWxpZG8gdHJvY2EgcG9yIHNlc3PDo28gZSBhdXRlbnRpY2EgdXN1w6FyaW8iLCBhc3luYyAoewogICAgcGFnZSwKICB9KSA9PiB7CiAgICBjb25zdCBzZXNzaW9uID0gZmFrZVNlc3Npb25QYXlsb2FkKCk7CgogICAgLy8gMS4gTW9ja2EgYSB0cm9jYSBjb2RlIOKGkiB0b2tlbiAoUEtDRSBleGNoYW5nZSkuCiAgICBhd2FpdCBwYWdlLnJvdXRlKFRPS0VOX0dMT0IsIGFzeW5jIChyb3V0ZSkgPT4gewogICAgICBjb25zdCB1cmwgPSBuZXcgVVJMKHJvdXRlLnJlcXVlc3QoKS51cmwoKSk7CiAgICAgIC8vIGdyYW50X3R5cGU9cGtjZXxhdXRob3JpemF0aW9uX2NvZGUg4oaSIGRldm9sdmUgc2Vzc8OjbyBjb21wbGV0YQogICAgICBpZiAoCiAgICAgICAgdXJsLnNlYXJjaFBhcmFtcy5nZXQoImdyYW50X3R5cGUiKSA9PT0gInBrY2UiIHx8CiAgICAgICAgdXJsLnNlYXJjaFBhcmFtcy5nZXQoImdyYW50X3R5cGUiKSA9PT0gImF1dGhvcml6YXRpb25fY29kZSIKICAgICAgKSB7CiAgICAgICAgYXdhaXQgcm91dGUuZnVsZmlsbCh7CiAgICAgICAgICBzdGF0dXM6IDIwMCwKICAgICAgICAgIGNvbnRlbnRUeXBlOiAiYXBwbGljYXRpb24vanNvbiIsCiAgICAgICAgICBib2R5OiBKU09OLnN0cmluZ2lmeShzZXNzaW9uKSwKICAgICAgICB9KTsKICAgICAgICByZXR1cm47CiAgICAgIH0KICAgICAgLy8gcmVmcmVzaF90b2tlbiAoY2FzbyBvIGNsaWVudGUgZmHDp2EgcmVmcmVzaCBsb2dvIGFww7NzIGxvZ2luKQogICAgICBhd2FpdCByb3V0ZS5mdWxmaWxsKHsKICAgICAgICBzdGF0dXM6IDIwMCwKICAgICAgICBjb250ZW50VHlwZTogImFwcGxpY2F0aW9uL2pzb24iLAogICAgICAgIGJvZHk6IEpTT04uc3RyaW5naWZ5KHNlc3Npb24pLAogICAgICB9KTsKICAgIH0pOwoKICAgIC8vIDIuIE1vY2thIC9hdXRoL3YxL3VzZXIgKGNoYW1hZG8gcGVsbyByZWZyZXNoU2Vzc2lvbiBkbyBBdXRoQ29udGV4dCkuCiAgICBhd2FpdCBwYWdlLnJvdXRlKFVTRVJfR0xPQiwgYXN5bmMgKHJvdXRlKSA9PiB7CiAgICAgIGF3YWl0IHJvdXRlLmZ1bGZpbGwoewogICAgICAgIHN0YXR1czogMjAwLAogICAgICAgIGNvbnRlbnRUeXBlOiAiYXBwbGljYXRpb24vanNvbiIsCiAgICAgICAgYm9keTogSlNPTi5zdHJpbmdpZnkoc2Vzc2lvbi51c2VyKSwKICAgICAgfSk7CiAgICB9KTsKCiAgICAvLyAzLiBWaXNpdGEgbyBjYWxsYmFjayBjb20gdW0gY29kZSBmYWtlIChQS0NFKS4KICAgIC8vICAgIE8gU1NPQ2FsbGJhY2tQYWdlIGRldGVjdGEgYD9jb2RlPWAgZSBjaGFtYSBleGNoYW5nZUNvZGVGb3JTZXNzaW9uLAogICAgLy8gICAgcXVlIGNhaSBubyBub3NzbyBtb2NrIGFjaW1hLgogICAgYXdhaXQgcGFnZS5nb3RvKCIvYXV0aC9jYWxsYmFjaz9jb2RlPWUyZS1tb2NrLWNvZGUiLCB7IHdhaXRVbnRpbDogImRvbWNvbnRlbnRsb2FkZWQiIH0pOwoKICAgIC8vIDQuIFZlcmlmaWNhIHF1ZSBhIFVJIHBhc3NvdSBwZWxvcyBlc3RhZG9zIHNlbSBjYWlyIGVtICJmYWlsZWQiLgogICAgYXdhaXQgZXhwZWN0VmlzaWJsZUJ5VGVzdElkKHBhZ2UsICJzc28tY2FsbGJhY2stdGl0bGUiLCB7IHRpbWVvdXQ6IDhfMDAwIH0pOwogICAgY29uc3QgY29udGFpbmVyID0gcGFnZS5sb2NhdG9yKCdbcm9sZT0ic3RhdHVzIl1bZGF0YS1zdGF0dXNdJyk7CiAgICBhd2FpdCBleHBlY3QoY29udGFpbmVyKS50b0JlVmlzaWJsZSgpOwoKICAgIC8vIE7Do28gZGV2ZSB0ZXIgbW9zdHJhZG8gbyBoaW50IGRlIGVycm8gZGV0YWxoYWRvLgogICAgYXdhaXQgZXhwZWN0KHBhZ2UubG9jYXRvcignW2RhdGEtdGVzdGlkPSJzc28tY2FsbGJhY2staGludCJdJykpLnRvSGF2ZUNvdW50KDApOwoKICAgIC8vIDUuIEFndWFyZGEgbyByZWRpcmVjdCBmaW5hbCDigJQgbyBjYWxsYmFjayBuYXZlZ2EgcGFyYSAiLyIgYXDDs3MgQ09ORklSTUVEX0hPTERfTVMuCiAgICAvLyAgICBBY2VpdGEgcXVhbHF1ZXIgcm90YSBpbnRlcm5hIHF1ZSBOw4NPIHNlamEgL2xvZ2luIG91IC9hdXRoICg9PSB1c3XDoXJpbyBhdXRlbnRpY2FkbykuCiAgICBhd2FpdCBleHBlY3QKICAgICAgLnBvbGwoKCkgPT4gbmV3IFVSTChwYWdlLnVybCgpKS5wYXRobmFtZSwgeyB0aW1lb3V0OiAxMF8wMDAgfSkKICAgICAgLm5vdC50b01hdGNoKC9eXC8oYXV0aHxsb2dpbikvKTsKICB9KTsKCiAgdGVzdCgiL2F1dGgvY2FsbGJhY2sgY29tID9lcnJvcj0gbW9zdHJhIGhpbnQgZGV0YWxoYWRvIGUgY8OzZGlnbyBkbyBlcnJvIiwgYXN5bmMgKHsKICAgIHBhZ2UsCiAgfSkgPT4gewogICAgLy8gQ2Vuw6FyaW8gZGUgcmVncmVzc8OjbzogcHJvdmlkZXIgcmV0b3Jub3UgZXJybyBkZSBjb25maWd1cmHDp8Ojby4KICAgIC8vIERldmUgcmVuZGVyaXphciBvIGJsb2NvICJDb21vIHJlc29sdmVyIiBkbyBleHBsYWluZXIuCiAgICBhd2FpdCBwYWdlLmdvdG8oCiAgICAgICIvYXV0aC9jYWxsYmFjaz9lcnJvcj1wcm92aWRlcl9ub3RfZW5hYmxlZCZlcnJvcl9kZXNjcmlwdGlvbj1Qcm92aWRlciUyMGlzJTIwbm90JTIwZW5hYmxlZCIsCiAgICAgIHsgd2FpdFVudGlsOiAiZG9tY29udGVudGxvYWRlZCIgfSwKICAgICk7CgogICAgLy8gTyBjYWxsYmFjayByZWRpcmVjaW9uYSBwYXJhIC9sb2dpbiBjb20gb3MgcGFyYW1zIOKAlCBtYXMgYW50ZXMgZGUgcmVkaXJlY2lvbmFyCiAgICAvLyByZW5kZXJpemEgbyBlc3RhZG8gZmFpbGVkLiBWZXJpZmljYW1vcyBwZWxvIGRlc3Rpbm8gL2xvZ2luIGNvbSBxdWVyeSBwYXJhbXMuCiAgICBhd2FpdCBleHBlY3QKICAgICAgLnBvbGwoKCkgPT4gbmV3IFVSTChwYWdlLnVybCgpKS5wYXRobmFtZSwgeyB0aW1lb3V0OiA4XzAwMCB9KQogICAgICAudG9CZSgiL2xvZ2luIik7CgogICAgY29uc3QgcGFyYW1zID0gbmV3IFVSTChwYWdlLnVybCgpKS5zZWFyY2hQYXJhbXM7CiAgICBleHBlY3QocGFyYW1zLmdldCgiZXJyb3IiKSkudG9CZSgicHJvdmlkZXJfbm90X2VuYWJsZWQiKTsKICAgIGV4cGVjdChwYXJhbXMuZ2V0KCJoaW50IikgPz8gIiIpLnRvTWF0Y2goL0FkbWluaXN0cmFkb3J8YWRtaW4vaSk7CiAgfSk7Cn0pOwo=
+/**
+ * Smoke E2E — Login com Google até /auth/callback.
+ *
+ * Real OAuth não pode ser conduzido por um spec automatizado (Google bloqueia
+ * bots, exige 2FA, etc.). Este smoke valida o **wiring do cliente** em duas
+ * camadas, sem depender da infra OAuth real:
+ *
+ *  1. Botão "Continuar com Google" em /login dispara
+ *     `supabase.auth.signInWithOAuth({ provider: 'google' })`, o que provoca
+ *     uma navegação para `<SUPABASE_URL>/auth/v1/authorize?provider=google&…`.
+ *     Interceptamos essa request, validamos o provider/redirect e abortamos
+ *     antes de bater no Google real.
+ *
+ *  2. Em seguida visitamos `/auth/callback?code=<mock>` e mockamos o endpoint
+ *     do Supabase que troca o code por sessão (`/auth/v1/token?grant_type=…`).
+ *     Verificamos que a página progride para o estado "confirmed" e que o
+ *     redirect para a home acontece — provando que a UI fica autenticada após
+ *     o round-trip.
+ *
+ * Tags: @smoke (roda no project `chromium-smoke`).
+ */
+import { test, expect } from "../fixtures/test-base";
+import { gotoAndSettle } from "../helpers/nav";
+import { expectVisibleByTestId } from "../helpers/waits";
+
+const SUPABASE_URL = (process.env.VITE_SUPABASE_URL ?? "https://doufsxqlfjyuvxuezpln.supabase.co")
+  .replace(/\/+$/, "");
+const AUTHORIZE_GLOB = `${SUPABASE_URL}/auth/v1/authorize*`;
+const TOKEN_GLOB = `${SUPABASE_URL}/auth/v1/token*`;
+const USER_GLOB = `${SUPABASE_URL}/auth/v1/user*`;
+
+/** Sessão sintética válida o suficiente para o cliente Supabase aceitar. */
+function fakeSessionPayload() {
+  const now = Math.floor(Date.now() / 1000);
+  // JWT mock — não validado pelo client; só precisa ter o formato header.payload.sig
+  const fakeJwt =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+    Buffer.from(
+      JSON.stringify({
+        sub: "00000000-0000-0000-0000-000000000001",
+        email: "e2e-google@example.com",
+        aud: "authenticated",
+        role: "authenticated",
+        exp: now + 3600,
+        iat: now,
+      }),
+    ).toString("base64url") +
+    ".sig";
+  return {
+    access_token: fakeJwt,
+    refresh_token: "fake-refresh-token-e2e",
+    token_type: "bearer",
+    expires_in: 3600,
+    expires_at: now + 3600,
+    user: {
+      id: "00000000-0000-0000-0000-000000000001",
+      aud: "authenticated",
+      role: "authenticated",
+      email: "e2e-google@example.com",
+      email_confirmed_at: new Date().toISOString(),
+      app_metadata: { provider: "google", providers: ["google"] },
+      user_metadata: { full_name: "E2E Google User" },
+      identities: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  };
+}
+
+test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test("clique em 'Continuar com Google' dispara authorize com provider=google", async ({
+    page,
+  }) => {
+    // Captura a URL para onde o botão tenta navegar e aborta antes de bater no
+    // Google real — assim o spec roda offline e sem efeitos colaterais.
+    const authorizeUrls: string[] = [];
+    await page.route(AUTHORIZE_GLOB, async (route) => {
+      authorizeUrls.push(route.request().url());
+      await route.abort();
+    });
+
+    await gotoAndSettle(page, "/login");
+    await expectVisibleByTestId(page, "social-login-google");
+
+    // O click provoca navegação top-level via window.location — aguardamos via
+    // waitForRequest na rota de authorize.
+    const waitForAuthorize = page.waitForRequest(AUTHORIZE_GLOB, { timeout: 10_000 });
+    await page.locator('[data-testid="social-login-google"]').click();
+    const req = await waitForAuthorize;
+
+    const url = new URL(req.url());
+    expect(url.pathname).toBe("/auth/v1/authorize");
+    expect(url.searchParams.get("provider")).toBe("google");
+    // redirect_to deve apontar para /auth/callback no preview
+    const redirectTo = url.searchParams.get("redirect_to") ?? "";
+    expect(redirectTo).toMatch(/\/auth\/callback/);
+
+    expect(authorizeUrls).toHaveLength(1);
+  });
+
+  test("/auth/callback com code válido troca por sessão e autentica usuário", async ({
+    page,
+  }) => {
+    const session = fakeSessionPayload();
+
+    // 1. Mocka a troca code → token (PKCE exchange).
+    await page.route(TOKEN_GLOB, async (route) => {
+      const url = new URL(route.request().url());
+      // grant_type=pkce|authorization_code → devolve sessão completa
+      if (
+        url.searchParams.get("grant_type") === "pkce" ||
+        url.searchParams.get("grant_type") === "authorization_code"
+      ) {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(session),
+        });
+        return;
+      }
+      // refresh_token (caso o cliente faça refresh logo após login)
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(session),
+      });
+    });
+
+    // 2. Mocka /auth/v1/user (chamado pelo refreshSession do AuthContext).
+    await page.route(USER_GLOB, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(session.user),
+      });
+    });
+
+    // 3. Visita o callback com um code fake (PKCE).
+    //    O SSOCallbackPage detecta `?code=` e chama exchangeCodeForSession,
+    //    que cai no nosso mock acima.
+    await page.goto("/auth/callback?code=e2e-mock-code", { waitUntil: "domcontentloaded" });
+
+    // 4. Verifica que a UI passou pelos estados sem cair em "failed".
+    await expectVisibleByTestId(page, "sso-callback-title", { timeout: 8_000 });
+    const container = page.locator('[role="status"][data-status]');
+    await expect(container).toBeVisible();
+
+    // Não deve ter mostrado o hint de erro detalhado.
+    await expect(page.locator('[data-testid="sso-callback-hint"]')).toHaveCount(0);
+
+    // 5. Aguarda o redirect final — o callback navega para "/" após CONFIRMED_HOLD_MS.
+    //    Aceita qualquer rota interna que NÃO seja /login ou /auth (== usuário autenticado).
+    await expect
+      .poll(() => new URL(page.url()).pathname, { timeout: 10_000 })
+      .not.toMatch(/^\/(auth|login)/);
+  });
+
+  test("/auth/callback com ?error= mostra hint detalhado e código do erro", async ({
+    page,
+  }) => {
+    // Cenário de regressão: provider retornou erro de configuração.
+    // Deve renderizar o bloco "Como resolver" do explainer.
+    await page.goto(
+      "/auth/callback?error=provider_not_enabled&error_description=Provider%20is%20not%20enabled",
+      { waitUntil: "domcontentloaded" },
+    );
+
+    // O callback redireciona para /login com os params — mas antes de redirecionar
+    // renderiza o estado failed. Verificamos pelo destino /login com query params.
+    await expect
+      .poll(() => new URL(page.url()).pathname, { timeout: 8_000 })
+      .toBe("/login");
+
+    const params = new URL(page.url()).searchParams;
+    expect(params.get("error")).toBe("provider_not_enabled");
+    expect(params.get("hint") ?? "").toMatch(/Administrador|admin/i);
+  });
+});
