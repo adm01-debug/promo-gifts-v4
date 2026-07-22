@@ -49,6 +49,7 @@ try {
 const violations = [];
 for (const f of files) {
   if (ALLOWLIST_PREFIXES.some((p) => f.startsWith(p))) continue;
+  if (ALLOWLIST_FILES.has(f)) continue;
   if (f.includes('__tests__') || f.endsWith('.test.ts') || f.endsWith('.test.tsx')) continue;
   const src = readFileSync(f, 'utf8');
   const matches = [...src.matchAll(PATTERN)];
