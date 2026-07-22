@@ -102,7 +102,7 @@ async function startMockServer(): Promise<{ url: string; shutdown: () => Promise
 
   // Server started — recuperar endereço real (porta 0).
   const addr = server.addr as Deno.NetAddr;
-  const url = `http://127.0.0.1:${addr.port}/doufsxqlfjyuvxuezpln`; // satisfaz CANONICAL_ID.includes()
+  const url = `http://127.0.0.1:${addr.port}`; // CANONICAL_ID warning é apenas log; não afeta status.
 
   return {
     url,
