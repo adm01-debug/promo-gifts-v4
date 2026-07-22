@@ -1,7 +1,6 @@
-import { useEffect } from 'react';
 import { Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +18,6 @@ export function DiscountApprovalHeaderBadge() {
   // está no cliente e a request vai como authenticated → HTTP 200 com RLS.
   const { isAdmin, rolesLoaded } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   const { data: count = 0 } = useQuery({
     queryKey: QUERY_KEY,
@@ -27,8 +25,11 @@ export function DiscountApprovalHeaderBadge() {
       const { count } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
+        // GET em vez de HEAD: evita 503/console noise em proxies/CDNs que
+        // tratam HEAD de PostgREST de forma inconsistente.
+        .select('id', { count: 'exact', head: false })
+        .eq('status', 'pending')
+        .limit(1);
       return count || 0;
     },
     enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto
@@ -37,29 +38,6 @@ export function DiscountApprovalHeaderBadge() {
     refetchInterval: 60_000,
     staleTime: 15_000,
   });
-
-  // Realtime: invalidate on any change
-  useEffect(() => {
-    if (!isAdmin) return;
-    const channelName = `discount-approvals-badge-${crypto.randomUUID()}`;
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'discount_approval_requests',
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [isAdmin, queryClient]);
 
   if (!isAdmin || count === 0) return null;
 

@@ -134,7 +134,7 @@ export function DevRoute({ children }: DevRouteProps) {
     );
   }
 
-  if (isDev && mfaRequired && currentAAL === 'aal1') {
+  if (isDev && hasMFA && mfaRequired && currentAAL !== 'aal2') {
     return (
       <>
         <div className="flex min-h-screen items-center justify-center bg-background">

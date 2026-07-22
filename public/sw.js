@@ -1,6 +1,6 @@
 // public/sw.js
 // Service Worker para Gifts Store PWA
-// Versão: 3.0.0
+// Versão: 3.0.1
 //
 // CHANGELOG v3.0.0 (2026-06-15 — perf/deep-optimization-2026):
 //   PERF: Cache de imagens com limite LRU (max 500 imagens, 90 dias TTL).
@@ -8,16 +8,17 @@
 //   PERF: Stale-While-Revalidate para Google Fonts (non-blocking update).
 //   PERF: Supabase API responses → Network only (não cachear dados dinâmicos).
 //   FIX: Nunca cachear requests com Authorization header.
+//   FIX v3.0.1: Navegação SPA usa Network First com fallback cacheado para evitar 503 do SW em reloads profundos.
 //
 // Estratégias por tipo de request:
-//   Navigation (SPA)        → Cache First + background update
+//   Navigation (SPA)        → Network First + cached fallback
 //   /assets/* (hashed)      → Cache First (imutável)
 //   Imagens (CDN/fornecedor) → Cache First + LRU (max 500, 90d TTL)
 //   Google Fonts             → Stale-While-Revalidate
 //   Supabase API (.supabase.co) → Network Only (dados dinâmicos)
 //   Resto                   → Stale-While-Revalidate
 
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const CACHE_NAME = `app-cache-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `images-cache-${CACHE_VERSION}`;
 const FONT_CACHE_NAME = `fonts-cache-${CACHE_VERSION}`;
@@ -177,11 +178,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ── B) Navigation (SPA) → Cache First + background update ──────────────────
+  // ── B) Navigation (SPA) → Network First + cached fallback ──────────────────
   if (request.mode === 'navigate') {
     event.respondWith(
       caches.match('/index.html').then((cached) => {
-        const networkUpdate = fetch('/index.html', { cache: 'no-cache' })
+        return fetch(request, { cache: 'no-cache' })
           .then((res) => {
             if (res && res.ok) {
               const clone = res.clone();
@@ -192,10 +193,7 @@ self.addEventListener('fetch', (event) => {
             }
             return res;
           })
-          .catch(() => null);
-
-        if (cached) return cached;
-        return networkUpdate.then((res) => res || offlineFallback());
+          .catch(() => cached || offlineFallback());
       }),
     );
     return;

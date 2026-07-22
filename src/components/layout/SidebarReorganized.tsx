@@ -362,7 +362,6 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-
 /**
  * Pure module-level function — called once on mount and on route change.
  * Returns a new object only when values differ, so React bails out via
@@ -414,8 +413,11 @@ export const SidebarReorganized = React.memo(
         const { count } = await supabase
           // rls-allow: admin-only badge query, guarded by `enabled: isAdmin`
           .from('discount_approval_requests')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
+          // GET em vez de HEAD: evita 503/console noise em proxies/CDNs que
+          // tratam HEAD de PostgREST de forma inconsistente.
+          .select('id', { count: 'exact', head: false })
+          .eq('status', 'pending')
+          .limit(1);
         return count || 0;
       },
       enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto — FIX 2026-06-18 BUG-DAR-401

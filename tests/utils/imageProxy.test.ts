@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { getProxiedImageUrl, needsProxy } from '@/utils/imageProxy';
+import {
+  deriveSpotOriginalUrlFromWorker,
+  getProxiedImageUrl,
+  needsProxy,
+} from '@/utils/imageProxy';
 
 describe('imageProxy', () => {
   describe('getProxiedImageUrl', () => {
@@ -71,6 +75,20 @@ describe('imageProxy', () => {
 
     it('retorna false para string vazia', () => {
       expect(needsProxy('')).toBe(false);
+    });
+  });
+
+  describe('deriveSpotOriginalUrlFromWorker', () => {
+    it('deriva a origem oficial da Spot para URLs do worker legado', () => {
+      expect(
+        deriveSpotOriginalUrlFromWorker(
+          'https://promo-brindes-images.adm01.workers.dev/spot/94297_106-c.jpg',
+        ),
+      ).toBe('https://www.spotgifts.com.br/fotos/produtos/94297_106-c.jpg');
+    });
+
+    it('retorna null para hosts não reconhecidos', () => {
+      expect(deriveSpotOriginalUrlFromWorker('https://example.com/spot/94297_103.jpg')).toBeNull();
     });
   });
 });

@@ -60,9 +60,13 @@ function RouteSuspense({ children }: { children: ReactNode }) {
 
 /** Helper to signal completion when Suspense resolves */
 function RouteSuspenseDone({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+
   useEffect(() => {
     NProgress.done();
-  }, []);
+    performanceTracker.endRouteTransition(pathname);
+  }, [pathname]);
+
   return <>{children}</>;
 }
 

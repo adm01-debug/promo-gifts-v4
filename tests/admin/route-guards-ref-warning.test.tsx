@@ -23,7 +23,7 @@ const authState = {
   isSupervisorOrAbove: false,
   hasMFA: false,
   mfaRequired: false,
-  currentAAL: "aal1" as const,
+  currentAAL: "aal1" as "aal1" | "aal2" | null,
   role: "agente" as const,
 };
 
@@ -104,6 +104,19 @@ describe("Route guards — React ref warning guard", () => {
     guard.expectNoRefWarning("AdminRoute outlet");
   });
 
+  it("AdminRoute bloqueia render do filho quando AAL ainda está indefinido", () => {
+    Object.assign(authState, {
+      user: { id: "u1", email: "a@b.c" },
+      canManage: true,
+      hasMFA: true,
+      mfaRequired: true,
+      currentAAL: null,
+    });
+    renderWithRoute(<AdminRoute />);
+    expect(screen.queryByText("admin-child")).not.toBeInTheDocument();
+    guard.expectNoRefWarning("AdminRoute AAL null");
+  });
+
   it("DevRoute (sem user → Navigate /login) — sem warning de ref", () => {
     renderWithRoute(<DevRoute />, "/dev");
     guard.expectNoRefWarning("DevRoute → /login");
@@ -124,6 +137,20 @@ describe("Route guards — React ref warning guard", () => {
     });
     renderWithRoute(<DevRoute />, "/dev");
     guard.expectNoRefWarning("DevRoute outlet");
+  });
+
+  it("DevRoute bloqueia render do filho dev quando AAL ainda está indefinido", () => {
+    Object.assign(authState, {
+      user: { id: "u1", email: "a@b.c" },
+      isDev: true,
+      hasMFA: true,
+      mfaRequired: true,
+      currentAAL: null,
+      role: "dev",
+    });
+    renderWithRoute(<DevRoute />, "/dev");
+    expect(screen.queryByText("dev-child")).not.toBeInTheDocument();
+    guard.expectNoRefWarning("DevRoute AAL null");
   });
 
   it("ProtectedRoute (sem user → Navigate /login) — sem warning de ref", () => {
