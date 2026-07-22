@@ -5,6 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   safeAuthCall,
+  __resetBreakers,
   type AuthErrorKind,
 } from '@/lib/auth/safeAuthCall';
 import {
@@ -27,7 +28,7 @@ function mkErr(status: number, message: string, name = 'AuthApiError') {
 }
 
 describe('safeAuthCall — sucesso e classificação', () => {
-  beforeEach(() => resetStructuredLoggerMock());
+  beforeEach(() => { __resetBreakers(); resetStructuredLoggerMock(); });
 
   it('retorna kind=ok no primeiro sucesso', async () => {
     const r = await safeAuthCall(async () => OK, { op: 'signIn' });
@@ -173,7 +174,7 @@ describe('safeAuthCall — sucesso e classificação', () => {
 });
 
 describe('safeAuthCall — fuzz combinacional (40 cenários)', () => {
-  beforeEach(() => resetStructuredLoggerMock());
+  beforeEach(() => { __resetBreakers(); resetStructuredLoggerMock(); });
 
   const errorMatrix: ReadonlyArray<[number, string]> = [
     [400, 'Invalid login credentials'],

@@ -78,6 +78,55 @@ const DEFAULT_TIMEOUT_MS = 8_000;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const BACKOFF_MS = [0, 200, 500] as const;
 
+// ==== Onda 11 — Circuit breaker in-memory por op ====
+interface BreakerState {
+  failures: number;
+  openedAt: number | null;
+}
+const BREAKER_THRESHOLD = 5;
+const BREAKER_COOLDOWN_MS = 60_000;
+const breakers: Map<string, BreakerState> = new Map();
+
+function getBreaker(op: string): BreakerState {
+  let s = breakers.get(op);
+  if (!s) {
+    s = { failures: 0, openedAt: null };
+    breakers.set(op, s);
+  }
+  return s;
+}
+
+export function breakerIsOpen(op: string): boolean {
+  const s = getBreaker(op);
+  if (s.openedAt === null) return false;
+  if (Date.now() - s.openedAt > BREAKER_COOLDOWN_MS) {
+    s.failures = 0;
+    s.openedAt = null;
+    return false;
+  }
+  return true;
+}
+
+function breakerRecordFailure(op: string, kind: AuthErrorKind): void {
+  if (kind !== 'network' && kind !== 'server' && kind !== 'timeout') return;
+  const s = getBreaker(op);
+  s.failures += 1;
+  if (s.failures >= BREAKER_THRESHOLD && s.openedAt === null) {
+    s.openedAt = Date.now();
+  }
+}
+
+function breakerRecordSuccess(op: string): void {
+  const s = getBreaker(op);
+  s.failures = 0;
+  s.openedAt = null;
+}
+
+/** Somente para testes. */
+export function __resetBreakers(): void {
+  breakers.clear();
+}
+
 function jitter(base: number): number {
   if (base === 0) return 0;
   // ±25% jitter
@@ -200,6 +249,20 @@ export async function safeAuthCall<T>(
   let lastRaw: unknown = null;
   let lastMsg = '';
 
+  // Circuit breaker aberto — short-circuit para não sobrecarregar auth-server.
+  if (breakerIsOpen(op)) {
+    log.warn(`${op}_breaker_open`, { op });
+    return {
+      kind: 'err',
+      errorKind: 'server',
+      userMessage: sanitizeMessage('server temporarily unavailable', { isDev }),
+      raw: { breaker: 'open' },
+      attempts: 0,
+      elapsedMs: 0,
+    };
+  }
+
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     if (signal?.aborted) {
       lastKind = 'timeout';
@@ -228,6 +291,7 @@ export async function safeAuthCall<T>(
               error_kind: lastKind,
             });
           }
+          breakerRecordFailure(op, lastKind);
           return {
             kind: 'err',
             errorKind: lastKind,
@@ -237,7 +301,9 @@ export async function safeAuthCall<T>(
             elapsedMs: Date.now() - started,
           };
         }
+        breakerRecordFailure(op, lastKind);
       } else {
+        breakerRecordSuccess(op);
         log.info(`${op}_ok`, { attempt });
         return {
           kind: 'ok',
@@ -258,6 +324,7 @@ export async function safeAuthCall<T>(
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   }
 
+  breakerRecordFailure(op, lastKind);
   log.error(`${op}_exhausted`, { attempts: maxRetries, error_kind: lastKind });
   return {
     kind: 'err',

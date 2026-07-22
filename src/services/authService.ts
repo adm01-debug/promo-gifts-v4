@@ -9,6 +9,8 @@ type RPCCallerFn<T = unknown> = (
   args: Record<string, unknown>,
 ) => Promise<{ data: T | null; error: PostgrestError | null }>;
 
+type UnknownData = Record<string, unknown> | null;
+
 export const authService = {
   async signIn(email: string, password: string) {
     const supabase = await getSupabaseClient();
@@ -36,7 +38,98 @@ export const authService = {
     );
   },
 
+  // ==== Onda 8 — família Safe completa ====
 
+  async signUpSafe(
+    email: string,
+    password: string,
+    opts: { signal?: AbortSignal; emailRedirectTo?: string } = {},
+  ): Promise<SafeAuthResult<UnknownData>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () =>
+        supabase.auth.signUp({
+          email,
+          password,
+          options: opts.emailRedirectTo
+            ? { emailRedirectTo: opts.emailRedirectTo }
+            : undefined,
+        }) as unknown as Promise<{ data: UnknownData; error: unknown }>,
+      { op: 'signUp', signal: opts.signal },
+    );
+  },
+
+  async signOutSafe(
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<SafeAuthResult<UnknownData>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () =>
+        supabase.auth.signOut({ scope: 'global' }) as unknown as Promise<{
+          data: UnknownData;
+          error: unknown;
+        }>,
+      { op: 'signOut', signal: opts.signal },
+    );
+  },
+
+  async resetPasswordSafe(
+    email: string,
+    opts: { signal?: AbortSignal; redirectTo?: string } = {},
+  ): Promise<SafeAuthResult<UnknownData>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () =>
+        supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: opts.redirectTo,
+        }) as unknown as Promise<{ data: UnknownData; error: unknown }>,
+      { op: 'resetPassword', signal: opts.signal },
+    );
+  },
+
+  async updatePasswordSafe(
+    password: string,
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<SafeAuthResult<UnknownData>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () =>
+        supabase.auth.updateUser({ password }) as unknown as Promise<{
+          data: UnknownData;
+          error: unknown;
+        }>,
+      { op: 'updatePassword', signal: opts.signal },
+    );
+  },
+
+  async verifyOtpSafe(
+    params: { email: string; token: string; type: 'email' | 'recovery' | 'magiclink' },
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<SafeAuthResult<UnknownData>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () =>
+        supabase.auth.verifyOtp(params) as unknown as Promise<{
+          data: UnknownData;
+          error: unknown;
+        }>,
+      { op: 'verifyOtp', signal: opts.signal },
+    );
+  },
+
+  async refreshSessionSafe(
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<SafeAuthResult<UnknownData>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () =>
+        supabase.auth.refreshSession() as unknown as Promise<{
+          data: UnknownData;
+          error: unknown;
+        }>,
+      { op: 'refreshSession', signal: opts.signal },
+    );
+  },
 
   async signOut() {
     const supabase = await getSupabaseClient();
