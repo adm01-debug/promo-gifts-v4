@@ -21,7 +21,7 @@ const loginLogLimiter = new RateLimiter({
   keyPrefix: 'login-log',
 });
 
-Deno.serve(async (req) => {
+export async function handleLogLoginAttempt(req: Request): Promise<Response> {
   const requestId = getOrCreateRequestId(req);
   const log = createStructuredLogger({ fn: "log-login-attempt", requestId, req });
 
@@ -126,4 +126,6 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}
+
+Deno.serve(handleLogLoginAttempt);
