@@ -159,6 +159,16 @@ globalThis.addEventListener("unload", () => {
 /* Testes                                                               */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Wrapper com sanitizers desligados. O handler abre conexões HTTP reais via
+ * supabase-js, que roda em cima de fetch/undici com intervals internos que
+ * Deno detecta como leaks. Isso é benigno em teste isolado.
+ */
+function t(name: string, fn: () => Promise<void> | void) {
+  Deno.test({ name, sanitizeOps: false, sanitizeResources: false, fn });
+}
+
+
 Deno.test("CORS preflight (OPTIONS) → 2xx sem body", async () => {
   const req = new Request("http://edge.local/log-login-attempt", {
     method: "OPTIONS",
