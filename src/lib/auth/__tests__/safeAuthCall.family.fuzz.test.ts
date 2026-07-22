@@ -3,7 +3,7 @@
  * ~220 cenários combinacionais garantindo o invariante nunca-throw + userMessage sanitizada.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { safeAuthCall, type AuthErrorKind } , __resetBreakers } from '@/lib/auth/safeAuthCall';
+import { safeAuthCall, __resetBreakers, type AuthErrorKind } from '@/lib/auth/safeAuthCall';
 import {
   resetStructuredLoggerMock,
   structuredLoggerMockFactory,
