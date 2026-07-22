@@ -124,13 +124,17 @@ export const quoteService = {
 
     if (error) {
       const message = sanitizeMessage(error, {
-        fallback: 'Não foi possível atualizar o orçamento. Tente novamente.',
+        fallback:
+          'Não foi possível atualizar o orçamento de forma transacional. Nenhuma alteração foi salva.',
       });
+
       throw new Error(message);
     }
 
     if (!updated) {
-      throw new Error('Não foi possível atualizar o orçamento: nenhum dado retornado.');
+      throw new Error(
+        'Não foi possível atualizar o orçamento de forma transacional: nenhum dado retornado.',
+      );
     }
 
     return { ...(updated as Quote), items } as Quote;
