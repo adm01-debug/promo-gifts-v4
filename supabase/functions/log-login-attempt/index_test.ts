@@ -159,7 +159,7 @@ globalThis.addEventListener("unload", () => {
 /* Testes                                                               */
 /* ------------------------------------------------------------------ */
 
-Deno.test("CORS preflight (OPTIONS) → 2xx sem body", async () => {
+Deno.test({ name: "CORS preflight (OPTIONS) → 2xx sem body", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const req = new Request("http://edge.local/log-login-attempt", {
     method: "OPTIONS",
     headers: {
@@ -174,7 +174,7 @@ Deno.test("CORS preflight (OPTIONS) → 2xx sem body", async () => {
   assert(res.status < 400, `OPTIONS retornou ${res.status}, esperado 2xx`);
 });
 
-Deno.test("happy path — insert ok → 200 { ok: true }", async () => {
+Deno.test({ name: "happy path — insert ok → 200 { ok: true }", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   withMock({ insertMode: { kind: "ok" }, rateLimitMode: { kind: "allow" } });
   const { status, body } = await callHandler(makeReq({
     email: "user@example.com",
@@ -185,46 +185,46 @@ Deno.test("happy path — insert ok → 200 { ok: true }", async () => {
   assertEquals((body as { ok: boolean }).ok, true);
 });
 
-Deno.test("body vazio → 400 Empty request body", async () => {
+Deno.test({ name: "body vazio → 400 Empty request body", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   withMock({ insertMode: { kind: "ok" }, rateLimitMode: { kind: "allow" } });
   const { status, body } = await callHandler(makeReq(""));
   assertEquals(status, 400);
   assertEquals((body as { error: string }).error, "Empty request body");
 });
 
-Deno.test("body só espaços → 400", async () => {
+Deno.test({ name: "body só espaços → 400", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   withMock({ insertMode: { kind: "ok" }, rateLimitMode: { kind: "allow" } });
   const { status } = await callHandler(makeReq("   \n\t "));
   assertEquals(status, 400);
 });
 
-Deno.test("JSON malformado → 400 Invalid JSON body", async () => {
+Deno.test({ name: "JSON malformado → 400 Invalid JSON body", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const { status, body } = await callHandler(makeReq("{not-json"));
   assertEquals(status, 400);
   assertEquals((body as { error: string }).error, "Invalid JSON body");
 });
 
-Deno.test("Zod: email inválido → 400", async () => {
+Deno.test({ name: "Zod: email inválido → 400", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const { status } = await callHandler(makeReq({ email: "not-an-email", success: true }));
   assertEquals(status, 400);
 });
 
-Deno.test("Zod: success ausente → 400", async () => {
+Deno.test({ name: "Zod: success ausente → 400", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const { status } = await callHandler(makeReq({ email: "u@e.com" }));
   assertEquals(status, 400);
 });
 
-Deno.test("Zod: user_id não-uuid → 400", async () => {
+Deno.test({ name: "Zod: user_id não-uuid → 400", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const { status } = await callHandler(makeReq({ email: "u@e.com", success: true, user_id: "not-uuid" }));
   assertEquals(status, 400);
 });
 
-Deno.test("Zod: email >255 chars → 400", async () => {
+Deno.test({ name: "Zod: email >255 chars → 400", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const { status } = await callHandler(makeReq({ email: "a".repeat(300) + "@e.com", success: true }));
   assertEquals(status, 400);
 });
 
-Deno.test("missing SUPABASE_URL → 200 fallback missing_env", async () => {
+Deno.test({ name: "missing SUPABASE_URL → 200 fallback missing_env", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const saved = Deno.env.get("SUPABASE_URL")!;
   Deno.env.delete("SUPABASE_URL");
   try {
@@ -237,7 +237,7 @@ Deno.test("missing SUPABASE_URL → 200 fallback missing_env", async () => {
   }
 });
 
-Deno.test("missing SUPABASE_SERVICE_ROLE_KEY → 200 fallback missing_env", async () => {
+Deno.test({ name: "missing SUPABASE_SERVICE_ROLE_KEY → 200 fallback missing_env", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const saved = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   Deno.env.delete("SUPABASE_SERVICE_ROLE_KEY");
   try {
@@ -282,7 +282,7 @@ for (const s of SQLSTATES) {
   });
 }
 
-Deno.test("PostgREST 500 → 200 fallback db_insert_failed", async () => {
+Deno.test({ name: "PostgREST 500 → 200 fallback db_insert_failed", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   withMock({ insertMode: { kind: "http_5xx", status: 500 }, rateLimitMode: { kind: "allow" } });
   const { status, body } = await callHandler(makeReq({ email: "u@e.com", success: true }));
   assert(status < 500);
@@ -290,33 +290,33 @@ Deno.test("PostgREST 500 → 200 fallback db_insert_failed", async () => {
   assertEquals((body as { fallback: boolean }).fallback, true);
 });
 
-Deno.test("PostgREST 502 → 200 fallback", async () => {
+Deno.test({ name: "PostgREST 502 → 200 fallback", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   withMock({ insertMode: { kind: "http_5xx", status: 502 }, rateLimitMode: { kind: "allow" } });
   const { status } = await callHandler(makeReq({ email: "u@e.com", success: true }));
   assert(status < 500);
 });
 
-Deno.test("PostgREST 503 → 200 fallback", async () => {
+Deno.test({ name: "PostgREST 503 → 200 fallback", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   withMock({ insertMode: { kind: "http_5xx", status: 503 }, rateLimitMode: { kind: "allow" } });
   const { status } = await callHandler(makeReq({ email: "u@e.com", success: true }));
   assert(status < 500);
 });
 
-Deno.test("rate-limiter bloqueia → 429 (NÃO 5xx)", async () => {
+Deno.test({ name: "rate-limiter bloqueia → 429 (NÃO 5xx)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   withMock({ insertMode: { kind: "ok" }, rateLimitMode: { kind: "block" } });
   const { status } = await callHandler(makeReq({ email: "u@e.com", success: true }));
   assertEquals(status, 429);
   assert(status < 500);
 });
 
-Deno.test("rate-limiter DB error (fail-open) → 200 (allowed)", async () => {
+Deno.test({ name: "rate-limiter DB error (fail-open) → 200 (allowed)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   // loginLogLimiter não é failClosed → deve permitir mesmo com erro na RPC.
   withMock({ insertMode: { kind: "ok" }, rateLimitMode: { kind: "error" } });
   const { status } = await callHandler(makeReq({ email: "u@e.com", success: true }));
   assert(status < 500, `fail-open vazou 5xx: ${status}`);
 });
 
-Deno.test("payload extra ignorado (Zod passthrough) → 200 ok", async () => {
+Deno.test({ name: "payload extra ignorado (Zod passthrough) → 200 ok", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   withMock({ insertMode: { kind: "ok" }, rateLimitMode: { kind: "allow" } });
   const { status, body } = await callHandler(makeReq({
     email: "u@e.com",
@@ -327,7 +327,7 @@ Deno.test("payload extra ignorado (Zod passthrough) → 200 ok", async () => {
   assertEquals((body as { ok: boolean }).ok, true);
 });
 
-Deno.test("payload com Unicode adversarial (RTL, ZWJ, NBSP) em user_agent → 200 ok", async () => {
+Deno.test({ name: "payload com Unicode adversarial (RTL, ZWJ, NBSP) em user_agent → 200 ok", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   withMock({ insertMode: { kind: "ok" }, rateLimitMode: { kind: "allow" } });
   const { status } = await callHandler(makeReq({
     email: "u@e.com",
@@ -337,7 +337,7 @@ Deno.test("payload com Unicode adversarial (RTL, ZWJ, NBSP) em user_agent → 20
   assertEquals(status, 200);
 });
 
-Deno.test("payload com failure_reason > 500 chars → 400 (Zod max)", async () => {
+Deno.test({ name: "payload com failure_reason > 500 chars → 400 (Zod max)", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   const { status } = await callHandler(makeReq({
     email: "u@e.com",
     success: false,
@@ -346,7 +346,7 @@ Deno.test("payload com failure_reason > 500 chars → 400 (Zod max)", async () =
   assertEquals(status, 400);
 });
 
-Deno.test("invariante final: em NENHUM cenário testado o status é 5xx", async () => {
+Deno.test({ name: "invariante final: em NENHUM cenário testado o status é 5xx", sanitizeOps: false, sanitizeResources: false, fn: async () => {
   // Meta-teste: se qualquer setUp/setDown deixou estado ruim, este captura.
   const scenarios: Array<{ label: string; setup: () => void; body: object | string }> = [
     { label: "happy", setup: () => withMock({ insertMode: { kind: "ok" }, rateLimitMode: { kind: "allow" } }), body: { email: "u@e.com", success: true } },
