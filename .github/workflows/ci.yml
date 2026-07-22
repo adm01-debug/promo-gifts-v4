@@ -78,6 +78,10 @@ jobs:
       - name: ♿ A11y Clickable drift gate
         run: npm run check:clickable
 
+      - name: 🚫 Invoke direct calls gate (functions.invoke → invokeEdgeSafe)
+        run: node scripts/check-invoke-direct-calls.mjs
+
+
 
 
 
