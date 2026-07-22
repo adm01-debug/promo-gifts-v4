@@ -3,6 +3,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { safeMfaCall, type MfaErrorKind } from '@/lib/auth/safeMfaCall';
+import { __resetBreakers } from '@/lib/auth/safeAuthCall';
 import { resetStructuredLoggerMock, structuredLoggerMockFactory } from '@/test/mockStructuredLogger';
 
 vi.mock('@/lib/telemetry/structuredLogger', async () => {
