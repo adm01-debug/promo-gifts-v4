@@ -19,6 +19,7 @@ import { logger } from '@/lib/logger';
 import { maskSensitiveText } from '@/lib/sensitive-masking';
 import { recordBridgeCall, estimatePayloadBytes } from '@/lib/telemetry/bridgeCallMetrics';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface CrmQuery {
   table: string;
@@ -313,7 +314,7 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
     const body = { operation: 'batch', queries };
     const reqBytes = estimatePayloadBytes(body);
     const requestId = newRequestId();
-    const { data, error } = await supabase.functions.invoke('crm-db-bridge', {
+    const { data, error } = await invokeEdge('crm-db-bridge', {
       body,
       headers: { [REQUEST_ID_HEADER]: requestId },
     });
@@ -505,7 +506,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
     };
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      const { data, error } = await supabase.functions.invoke('crm-db-bridge', {
+      const { data, error } = await invokeEdge('crm-db-bridge', {
         body: query,
         headers: { [REQUEST_ID_HEADER]: requestId },
       });

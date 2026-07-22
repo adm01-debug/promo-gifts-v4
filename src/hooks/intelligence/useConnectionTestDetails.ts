@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { ConnectionType, ErrorKind } from '@/hooks/intelligence/useConnectionTester';
 import { inferErrorKind } from '@/lib/error-kind-inference';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface TestDetails {
   id: string;
@@ -51,7 +52,7 @@ export function useConnectionTestDetails({ open, type, envKey, connectionId, his
     setLoading(true);
     setError(null);
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('connection-tester', {
+      const { data, error: invokeError } = await invokeEdge('connection-tester', {
         body: {
           action: 'last_test_full',
           type,

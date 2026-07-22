@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 export interface CnpjData {
   razao_social: string | null;
   nome_fantasia: string | null;
@@ -25,7 +26,7 @@ export interface CnpjData {
 }
 
 export async function fetchCnpjData(cnpj: string): Promise<CnpjData | null> {
-  const { data, error } = await supabase.functions.invoke('cnpj-lookup', {
+  const { data, error } = await invokeEdge('cnpj-lookup', {
     body: { cnpj },
   });
 

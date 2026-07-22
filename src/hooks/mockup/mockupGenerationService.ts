@@ -32,6 +32,7 @@ import { toast } from 'sonner';
 import type { PersonalizationArea } from '@/components/mockup/MultiAreaManager';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 export interface Technique {
   id: string;
   name: string;
@@ -364,7 +365,7 @@ async function invokeMockupOnce(
   params: GenerateMockupParams,
   area: PersonalizationArea,
 ): Promise<string> {
-  const generateCall = supabase.functions.invoke('generate-mockup', {
+  const generateCall = invokeEdge('generate-mockup', {
     body: buildMockupPayload(params, area),
   });
 

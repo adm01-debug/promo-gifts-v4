@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { validateFile } from '@/lib/security/file-validation';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface ImageUploadButtonProps {
   currentImageUrl: string | null;
   onUpload: (url: string) => void;
@@ -55,7 +56,7 @@ export function ImageUploadButton({
 
       while (retryCount < maxRetries && !uploadSuccess) {
         try {
-          const { data, error } = await supabase.functions.invoke('secure-upload', {
+          const { data, error } = await invokeEdge('secure-upload', {
             body: formData,
           });
 

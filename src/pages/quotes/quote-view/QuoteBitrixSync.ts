@@ -9,6 +9,7 @@ import { selectCrmById } from '@/lib/crm-db';
 import type { ProposalTemplateData } from '@/components/pdf/ProposalHtmlTemplate';
 import type { TablesUpdate } from '@/integrations/supabase/types';
 import type { Quote } from '@/hooks/quotes';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface SyncBitrixParams {
   quote: Quote;
@@ -109,7 +110,7 @@ export async function syncQuoteToBitrix({
     logger.warn('PDF generation failed:', pdfErr);
   }
 
-  const { data, error } = await supabase.functions.invoke('sync-quote-bitrix', {
+  const { data, error } = await invokeEdge('sync-quote-bitrix', {
     body: {
       quote,
       proposalData,

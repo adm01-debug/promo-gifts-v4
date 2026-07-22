@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 import { recordSecretsManagerCall } from '@/lib/telemetry/secretsManagerCallMetrics';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface SecretStatus {
   name: string;
@@ -98,7 +99,7 @@ async function invokeSecretsManager(body: InvokeBody): Promise<{
 }> {
   const requestId = newRequestId();
   const startedAt = performance.now();
-  const { data, error } = await supabase.functions.invoke('secrets-manager', {
+  const { data, error } = await invokeEdge('secrets-manager', {
     body,
     headers: { [REQUEST_ID_HEADER]: requestId },
   });

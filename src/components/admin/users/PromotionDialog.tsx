@@ -23,6 +23,7 @@ import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { type UserWithRole } from './types';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface PromotionDialogProps {
   user: UserWithRole | null;
@@ -79,7 +80,7 @@ export function PromotionDialog({
 
     setSubmitting(true);
     try {
-      const { data, error: invokeErr } = await supabase.functions.invoke('manage-users', {
+      const { data, error: invokeErr } = await invokeEdge('manage-users', {
         body: {
           action: 'promote_role',
           user_id: user.user_id,

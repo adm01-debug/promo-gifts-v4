@@ -40,6 +40,7 @@ import {
 import { ALL_CONTRACTS } from '@/lib/personalization/rpc-contracts';
 import { validateRpcPayload, type ValidationResult } from '@/lib/personalization/rpc-validator';
 import { invokeExternalRpc } from '@/lib/external-rpc';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export default function AdminExternalDbPage() {
   const { result, isLoading, listTables, describeTable } = useExternalDbInspect();
@@ -90,7 +91,7 @@ export default function AdminExternalDbPage() {
     try {
       const results: TableDiff[] = [];
       for (const t of ENGRAVING_TABLES) {
-        const { data, error } = await supabase.functions.invoke('external-db-inspect', {
+        const { data, error } = await invokeEdge('external-db-inspect', {
           body: { mode: 'columns', tableName: t.table },
         });
         if (error || !data?.success) {

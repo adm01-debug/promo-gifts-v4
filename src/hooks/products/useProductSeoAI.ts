@@ -6,6 +6,7 @@ import type { UseFormGetValues, UseFormSetValue } from 'react-hook-form';
 import type { ProductFormData } from '@/components/admin/products/ProductFormSchema';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface SeoAIResult {
   meta_title: string;
   meta_description: string;
@@ -49,7 +50,7 @@ export function useProductSeoAI(
         sale_price: getValues('sale_price'),
       };
 
-      const { data, error } = await supabase.functions.invoke('generate-product-seo', {
+      const { data, error } = await invokeEdge('generate-product-seo', {
         body: { product },
       });
 

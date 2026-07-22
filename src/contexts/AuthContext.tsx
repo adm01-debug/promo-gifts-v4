@@ -360,9 +360,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearLoginAttempts(email);
     }
 
-    getSupabaseClient()
-      .then(async (supabase) => {
-        const { error: invokeError } = await supabase.functions.invoke('log-login-attempt', {
+    import('@/lib/edge/safeInvokeCall')
+      .then(async ({ invokeEdge }) => {
+        const { error: invokeError } = await invokeEdge('log-login-attempt', {
           body: {
             email,
             user_id: data?.user?.id,

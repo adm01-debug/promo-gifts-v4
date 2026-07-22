@@ -37,6 +37,7 @@ import type { PrintAreaWithTechniques } from '@/types/gravacao';
 import { PromptCustomizationPanel } from './PromptCustomizationPanel';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface GeneratedPrompt {
   title: string;
   prompt: string;
@@ -177,7 +178,7 @@ export function PromptGenerator({
 
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-ad-prompt', {
+      const { data, error } = await invokeEdge('generate-ad-prompt', {
         body: {
           productName,
           productColor,

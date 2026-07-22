@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sparkles, Loader2, Wand2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface Suggestion {
   kit_type: 'montado' | 'original' | 'simples';
@@ -43,7 +44,7 @@ export function KitAIPromptDialog({ onApply }: KitAIPromptDialogProps) {
     setLoading(true);
     setSuggestion(null);
     try {
-      const { data, error } = await supabase.functions.invoke('kit-ai-builder', {
+      const { data, error } = await invokeEdge('kit-ai-builder', {
         body: { prompt: prompt.trim() },
       });
       if (error) throw error;

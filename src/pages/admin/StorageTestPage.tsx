@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface StorageFile {
   id: string | null;
   name: string;
@@ -157,7 +158,7 @@ export default function StorageTestPage() {
     }
     setSyncing(true);
     try {
-      const { error } = await supabase.functions.invoke('sync-external-db', {
+      const { error } = await invokeEdge('sync-external-db', {
         body: { table, direction: 'to-external' },
       });
       if (error) throw error;

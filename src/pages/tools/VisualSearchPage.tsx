@@ -38,6 +38,7 @@ import { useExternalCategoriesQuery, useColorSystem } from '@/hooks/products';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface VisualSearchResult {
   analysis: {
@@ -296,7 +297,7 @@ export default function VisualSearchPage() {
     if (!results) setResults(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('visual-search', {
+      const { data, error } = await invokeEdge('visual-search', {
         body: {
           imageBase64: base64.split(',')[1],
           category: selectedCategoryNames.length ? selectedCategoryNames.join(', ') : undefined,

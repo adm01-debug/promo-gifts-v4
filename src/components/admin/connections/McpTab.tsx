@@ -23,6 +23,7 @@ import { IssueMcpKeyForm } from './IssueMcpKeyForm';
 import { isFullAccess } from '@/lib/mcp/scopes';
 import { useDevChallenge } from '@/contexts/DevChallengeContext';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface McpKey {
   id: string;
@@ -87,7 +88,7 @@ export function McpTab() {
     });
     if (!token) return; // cancelado pelo usuário
 
-    const { data, error } = await supabase.functions.invoke('mcp-keys-revoke', {
+    const { data, error } = await invokeEdge('mcp-keys-revoke', {
       body: { key_id: id, step_up_token: token },
     });
     if (error || (data && (data as { error?: string }).error)) {

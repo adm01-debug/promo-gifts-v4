@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface CheckResult {
   ok: boolean;
@@ -45,7 +46,7 @@ export function GitHubCredentialsTester() {
   const runTest = async () => {
     setTesting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('github-credentials-test', {
+      const { data, error } = await invokeEdge('github-credentials-test', {
         body: {},
       });
       if (error) throw error;

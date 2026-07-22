@@ -20,6 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface SimulationDetail {
   fnName: string;
   status: number;
@@ -56,7 +57,7 @@ export default function SimulationPage() {
     setActiveMode(mode);
     setReport(null);
     try {
-      const { data, error } = await supabase.functions.invoke(
+      const { data, error } = await invokeEdge(
         mode === 'audit' ? 'audit-suite' : 'simulation-orchestrator',
         {
           body: mode === 'audit' ? {} : { count: mode === 'load' ? 500 : 100, mode },

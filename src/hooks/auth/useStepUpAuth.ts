@@ -2,9 +2,11 @@
  * useStepUpAuth — Client hook que orquestra o fluxo step-up (senha + OTP)
  * via edge function `step-up-verify`. Estado interno é consumido pelo
  * `StepUpAuthDialog`.
+ *
+ * Onda 19.1: chamadas migradas para `invokeEdge` (SSOT `invokeEdgeSafe`).
  */
 import { useCallback, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 import { logger } from '@/lib/logger';
 
 export type StepUpAction =
@@ -58,7 +60,8 @@ export function useStepUpAuth() {
   const requestChallenge = useCallback(async (req: ChallengeRequest) => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      const { data, error } = await supabase.functions.invoke('step-up-verify', {
+      const { data, error } = await invokeEdge<{ challenge_id?: string }>('step-up-verify', {
+        op: 'step-up.request',
         body: {
           step: 'request',
           action: req.action,
@@ -75,9 +78,9 @@ export function useStepUpAuth() {
         });
         return;
       }
-      challengeIdRef.current = data.challenge_id as string;
+      challengeIdRef.current = data.challenge_id;
       setState({
-        challengeId: data.challenge_id as string,
+        challengeId: data.challenge_id,
         passwordVerified: false,
         loading: false,
         error: null,
@@ -97,7 +100,8 @@ export function useStepUpAuth() {
     if (!challengeId) return;
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      const { data, error } = await supabase.functions.invoke('step-up-verify', {
+      const { data, error } = await invokeEdge<{ password_verified?: boolean }>('step-up-verify', {
+        op: 'step-up.verify_password',
         body: { step: 'verify_password', challenge_id: challengeId, password },
       });
       if (error || !data?.password_verified) {
@@ -119,7 +123,8 @@ export function useStepUpAuth() {
     if (!challengeId) return null;
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      const { data, error } = await supabase.functions.invoke('step-up-verify', {
+      const { data, error } = await invokeEdge<{ token?: string }>('step-up-verify', {
+        op: 'step-up.verify_otp',
         body: { step: 'verify_otp', challenge_id: challengeId, otp },
       });
       if (error || !data?.token) {
@@ -131,7 +136,7 @@ export function useStepUpAuth() {
         return null;
       }
       setState((s) => ({ ...s, loading: false, error: null }));
-      return data.token as string;
+      return data.token;
     } catch {
       setState((s) => ({ ...s, loading: false, error: 'Falha de rede ao validar código.' }));
       return null;
@@ -142,9 +147,8 @@ export function useStepUpAuth() {
     const challengeId = challengeIdRef.current;
     if (!challengeId) return;
     try {
-      // BUG-STEPUP-CANCEL-SILENT-FAIL FIX: functions.invoke returns { data, error }
-      // for application-level errors — bare await discarded them.
-      const { error: cancelErr } = await supabase.functions.invoke('step-up-verify', {
+      const { error: cancelErr } = await invokeEdge('step-up-verify', {
+        op: 'step-up.cancel',
         body: { step: 'cancel', challenge_id: challengeId, cancel_reason: reason ?? null },
       });
       if (cancelErr) logger.warn('[step-up] cancel RPC failed:', cancelErr);

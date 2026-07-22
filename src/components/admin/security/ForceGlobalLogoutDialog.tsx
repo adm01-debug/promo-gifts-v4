@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { LogOut, AlertTriangle, Loader2 } from 'lucide-react';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export function ForceGlobalLogoutDialog() {
   const [open, setOpen] = useState(false);
@@ -27,7 +28,7 @@ export function ForceGlobalLogoutDialog() {
     if (!isValid) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('force-global-logout', {
+      const { data, error } = await invokeEdge('force-global-logout', {
         body: { confirm: 'FORCE_LOGOUT_ALL' },
       });
 

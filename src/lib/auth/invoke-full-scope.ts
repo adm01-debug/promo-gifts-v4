@@ -29,6 +29,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { StepUpAction } from '@/hooks/auth';
 import { handleStepUpError } from '@/lib/auth/step-up-error';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 type ChallengeFn = (req: {
   action: StepUpAction;
@@ -93,7 +94,7 @@ export async function invokeFullScopeFunction<
     const token = await challenge({ action, actionLabel, targetRef });
     if (!token) return { status: 'cancelled' };
 
-    const { data, error } = await supabase.functions.invoke(functionName, {
+    const { data, error } = await invokeEdge(functionName, {
       body: { ...body, step_up_token: token },
     });
 

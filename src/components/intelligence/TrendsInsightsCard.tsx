@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/ui';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface TrendsInsightsCardProps {
   days: number;
@@ -38,7 +39,7 @@ export function TrendsInsightsCard({ days }: TrendsInsightsCardProps) {
         });
         return MOCK_INSIGHTS;
       }
-      const { data: queryRows, error } = await supabase.functions.invoke('trends-insights', {
+      const { data: queryRows, error } = await invokeEdge('trends-insights', {
         body: { days },
       });
       if (error) {

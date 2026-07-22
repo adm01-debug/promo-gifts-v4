@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import type { Quote } from '@/hooks/quotes';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface SyncPromoChampionsParams {
   quote: Quote;
@@ -43,7 +44,7 @@ export async function syncQuoteToPromoChampions({
   // `correlation_key` no payload garante dedupe no destino.
   const correlationKey = `quote:${quoteId}:sent:${quote.updated_at ?? ''}`;
 
-  const { data, error } = await supabase.functions.invoke('quote-sync-promo-champions', {
+  const { data, error } = await invokeEdge('quote-sync-promo-champions', {
     body: {
       quote_id: quoteId,
       quote_number: quote.quote_number,

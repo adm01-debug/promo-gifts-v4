@@ -13,6 +13,7 @@ import { useDevChallenge } from '@/contexts/DevChallengeContext';
 import { handleStepUpError } from '@/lib/auth/step-up-error';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface McpKeyRow {
   id: string;
@@ -250,7 +251,7 @@ export function useMcpKeys() {
       }
 
       const attempt = async (tk: string): Promise<boolean> => {
-        const { data, error } = await supabase.functions.invoke('mcp-keys-revoke', {
+        const { data, error } = await invokeEdge('mcp-keys-revoke', {
           body: { key_id: id, reason: reason ?? null, step_up_token: tk },
           headers: log.headers(),
         });
