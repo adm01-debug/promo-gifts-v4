@@ -154,24 +154,24 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
         finishWithError('timeout', { autoFallback: true });
       }, REDIRECT_TIMEOUT_MS);
 
-      try {
-        const supabase = await getSupabaseClient();
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: redirect_uri },
+      const { authService } = await import('@/services/authService');
+      const res = await authService.signInWithOAuthSafe({
+        provider: 'google',
+        redirectTo: redirect_uri,
+      });
+      if (res.kind === 'err') {
+        authDebugError('social-login', 'signInWithOAuthSafe err', {
+          errorKind: res.errorKind,
         });
-        if (error) {
-          authDebugError('social-login', 'supabase.signInWithOAuth returned error', error);
-          finishWithError(mapOAuthError(error.message));
-          return;
-        }
-        authDebug('social-login', 'redirect dispatched via Supabase OAuth');
-        // Sucesso: o navegador deve redirecionar. Timers serão limpos pelo unmount/visibilitychange.
-      } catch (err) {
-        authDebugError('social-login', 'unexpected exception during OAuth', err);
-        const raw = err instanceof Error ? err.message : 'Tente novamente mais tarde';
+        const raw =
+          res.errorKind === 'network' || res.errorKind === 'timeout'
+            ? 'network'
+            : res.userMessage;
         finishWithError(mapOAuthError(raw));
+        return;
       }
+      authDebug('social-login', 'redirect dispatched via Supabase OAuth');
+      // Sucesso: o navegador deve redirecionar. Timers serão limpos pelo unmount/visibilitychange.
     };
 
     // Publica a função `retry()` no ref do pai (banner de erro).
