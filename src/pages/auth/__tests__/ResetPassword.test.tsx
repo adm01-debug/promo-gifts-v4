@@ -27,9 +27,14 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
       getSession: (...args: unknown[]) => mockGetSession(...args),
-      updateUser: (...args: unknown[]) => mockUpdateUser(...args),
       onAuthStateChange: (...args: unknown[]) => mockOnAuthStateChange(...args),
     },
+  },
+}));
+
+vi.mock('@/services/authService', () => ({
+  authService: {
+    updatePasswordSafe: (...args: unknown[]) => mockUpdateUser(...args),
   },
 }));
 
