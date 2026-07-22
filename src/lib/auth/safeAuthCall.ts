@@ -249,6 +249,20 @@ export async function safeAuthCall<T>(
   let lastRaw: unknown = null;
   let lastMsg = '';
 
+  // Circuit breaker aberto — short-circuit para não sobrecarregar auth-server.
+  if (breakerIsOpen(op)) {
+    log.warn(`${op}_breaker_open`, { op });
+    return {
+      kind: 'err',
+      errorKind: 'server',
+      userMessage: sanitizeMessage('server temporarily unavailable', { isDev }),
+      raw: { breaker: 'open' },
+      attempts: 0,
+      elapsedMs: 0,
+    };
+  }
+
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     if (signal?.aborted) {
       lastKind = 'timeout';
