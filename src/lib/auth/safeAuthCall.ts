@@ -222,6 +222,12 @@ export async function safeAuthCall<T>(
           status: result.error.status ?? null,
         });
         if (!isRetryable(lastKind) || attempt === maxRetries) {
+          if (isRetryable(lastKind) && attempt === maxRetries) {
+            log.error(`${op}_exhausted`, {
+              attempts: attempt,
+              error_kind: lastKind,
+            });
+          }
           return {
             kind: 'err',
             errorKind: lastKind,
