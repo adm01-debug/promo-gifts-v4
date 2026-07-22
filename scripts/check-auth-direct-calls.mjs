@@ -21,6 +21,13 @@ const ALLOWLIST_PREFIXES = [
   // Onda 15: 'src/hooks/auth/' removido — usePasswordResetRequests usa resetPasswordSafe.
 ];
 
+// Legacy OAuth boot/redirect surface — revelado pelo regex v2 (Onda 15).
+// TODO(Onda 16): migrar para signInWithOAuthSafe / exchangeCodeForSessionSafe.
+const ALLOWLIST_FILES = new Set([
+  'src/components/auth/SocialLoginButtons.tsx',
+  'src/pages/auth/SSOCallbackPage.tsx',
+]);
+
 // Onda 15 — Regex v2: cobre `.auth.method(` e `['auth'].method(` / `["auth"].method(`.
 const MUTABLE_METHODS =
   'signInWithPassword|signInWithOtp|signInWithOAuth|signUp|signOut|resetPasswordForEmail|updateUser|verifyOtp|refreshSession|exchangeCodeForSession|reauthenticate';
