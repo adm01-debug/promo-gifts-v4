@@ -129,13 +129,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await authService.refreshSessionSafe();
 
       // BUG-CRÍTICO FIX: kid rotacionado / bad_jwt → recovery agressiva.
-      if (!res.ok && res.rawError && isBadJwtError(res.rawError)) {
+      if (res.kind === 'err' && isBadJwtError(res.raw)) {
         log.warn('bad_jwt_detected', { err: res.userMessage });
         await recoverSession('refreshSession:bad_jwt');
         return;
       }
 
-      const refreshed = (res.data ?? null) as { session?: Session | null } | null;
+      const refreshed =
+        res.kind === 'ok' ? ((res.data ?? null) as { session?: Session | null } | null) : null;
       const nextSession =
         refreshed?.session ?? (await supabase.auth.getSession()).data.session;
       if (mountedRef.current) {
