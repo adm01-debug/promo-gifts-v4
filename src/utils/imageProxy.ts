@@ -55,7 +55,7 @@ const SUPABASE_FUNCTION_BASE = (() => {
       console.warn(
         '[imageProxy] VITE_SUPABASE_PROJECT_ID contém URL completa em vez de só o ID.',
         'Configure apenas o ID (ex: doufsxqlfjyuvxuezpln) no Vercel.',
-        'Consulte .env.example para detalhes. (PR #1649)'
+        'Consulte .env.example para detalhes. (PR #1649)',
       );
     }
     const cleanId = rawId.replace(/^https?:\/\//, '').replace(/\.supabase\.co.*$/, '');
@@ -145,7 +145,7 @@ export function deriveSpotOriginalUrlFromWorker(url: string | null | undefined):
   try {
     const parsed = new URL(url);
     if (parsed.hostname !== PROMO_GIFTS_IMAGES_WORKER_HOST) return null;
-    const match = parsed.pathname.match(/^\/spot\/([^/?#]+\.(?:jpe?g|png|webp))$/i);
+    const match = /^\/spot\/([^/?#]+\.(?:jpe?g|png|webp))$/i.exec(parsed.pathname);
     if (!match?.[1]) return null;
     return `${SPOT_ORIGIN_BASE}${match[1]}`;
   } catch {
