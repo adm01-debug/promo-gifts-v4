@@ -51,6 +51,11 @@ const VariationSchema = z.unknown().superRefine((value, ctx) => {
       message: "Variation must include id/external_id/sku as non-empty string up to 255 chars",
     });
   }
+
+  const parsed = z.record(z.string().max(100), JsonValueSchema).safeParse(record);
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) ctx.addIssue(issue);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -79,11 +84,21 @@ const ProductV1 = z.object({
   images: z.array(z.string().url().max(2000)).max(50).optional(),
   video_url: z.string().url().max(2000).optional().nullable(),
   colors: z
-    .array(z.object({ name: z.string(), hex: z.string(), group: z.string().optional() }))
+    .array(
+      z.object({
+        name: z.string().max(100),
+        hex: z.string().max(20),
+        group: z.string().max(100).optional(),
+      }),
+    )
     .max(100)
     .optional(),
   materials: z.array(z.string().max(100)).max(50).optional(),
-  tags: z.record(z.array(z.string())).optional(),
+  tags: z.record(z.string().max(100), z.array(z.string().max(100)).max(50)).superRefine((obj, ctx) => {
+    if (Object.keys(obj).length > 100) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "tags must have at most 100 keys" });
+    }
+  }).optional(),
   kit_items: z
     .array(
       z.object({

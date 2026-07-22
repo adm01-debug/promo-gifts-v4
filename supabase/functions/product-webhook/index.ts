@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
+import type { Database } from '../../../src/integrations/supabase/types.ts';
 import { crypto } from 'https://deno.land/std@0.224.0/crypto/mod.ts';
 import { encodeHex } from 'https://deno.land/std@0.224.0/encoding/hex.ts';
 import { buildPublicCorsHeaders } from '../_shared/cors.ts';
@@ -154,7 +155,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 
 async function isReplayNonce(
   // deno-lint-ignore no-explicit-any
-  supabase: SupabaseClient<any>,
+  supabase: SupabaseClient<Database>,
   nonce: string,
   timestamp: number,
   toleranceSec: number,
@@ -197,7 +198,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
   try {
     const rawBody = await req.text();
@@ -423,7 +424,7 @@ Deno.serve(async (req) => {
 
 async function upsertProducts(
   // deno-lint-ignore no-explicit-any
-  supabase: SupabaseClient<any>,
+  supabase: SupabaseClient<Database>,
   products: ProductPayload[],
   chunkSize: number,
 ): Promise<UpsertOutcome> {
