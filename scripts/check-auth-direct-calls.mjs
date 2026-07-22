@@ -20,7 +20,7 @@ const ALLOWLIST_PREFIXES = [
   'src/integrations/',
   // 'src/contexts/AuthContext.tsx' removido na Onda 13 — usa authService.*Safe.
   'src/hooks/auth/',
-  'src/pages/auth/ResetPassword.tsx', // usa updateUser após token recovery — refactor futuro
+  // 'src/pages/auth/ResetPassword.tsx' removido na Onda 14 — usa updatePasswordSafe.
 ];
 
 const PATTERN = /supabase\.auth\.(signInWithPassword|signUp|signOut|resetPasswordForEmail|updateUser|verifyOtp|refreshSession)\s*\(/g;
