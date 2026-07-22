@@ -111,7 +111,7 @@ export async function normalizeInvokeError(err: unknown): Promise<NormalizedErro
   return {
     message: bodyMsg || baseMsg || 'edge error',
     status,
-    name,
+    name: outName,
   };
 }
 
