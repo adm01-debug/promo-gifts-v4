@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { logger } from '@/lib/logger';
+import { safeAuthCall, type SafeAuthResult } from '@/lib/auth/safeAuthCall';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 // BUG-FIX v2.1: tipo explícito para cast seguro de supabase.rpc
