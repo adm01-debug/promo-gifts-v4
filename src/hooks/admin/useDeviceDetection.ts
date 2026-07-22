@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { untypedFrom } from '@/lib/supabase-untyped';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface DeviceInfo {
   fingerprint: string;
@@ -93,7 +94,7 @@ export function useDeviceDetection(targetUserId?: string) {
     try {
       const deviceInfo = getDeviceInfo();
 
-      const { data, error } = await supabase.functions.invoke('detect-new-device', {
+      const { data, error } = await invokeEdge('detect-new-device', {
         body: {
           userId: user.id,
           userEmail: user.email,

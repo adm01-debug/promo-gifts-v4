@@ -9,6 +9,7 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getBestPantoneMatch, type PantoneMatch } from '@/utils/color-matching';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface DetectedColor {
   name: string;
@@ -79,7 +80,7 @@ export function useLogoColorAnalysis() {
     try {
       const resizedBase64 = await resizeImage(imageBase64);
 
-      const { data, error: fnError } = await supabase.functions.invoke('analyze-logo-colors', {
+      const { data, error: fnError } = await invokeEdge('analyze-logo-colors', {
         body: { imageBase64: resizedBase64 },
       });
 

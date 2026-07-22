@@ -38,6 +38,7 @@ import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder'
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 type LoginForm = LoginFormData;
 
@@ -159,7 +160,7 @@ export default function Auth() {
       if (!isLighthousePlaceholder) {
         try {
           const supabase = await getSupabaseClient();
-          const { data, error } = await supabase.functions.invoke('get-visitor-info');
+          const { data, error } = await invokeEdge('get-visitor-info');
           if (!cancelled && !error && data) {
             if (data.ip) setCurrentIP(data.ip);
             if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);

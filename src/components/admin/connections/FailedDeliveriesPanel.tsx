@@ -20,6 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ExportButton } from './ExportButton';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface FailedDelivery {
   id: string;
@@ -63,7 +64,7 @@ export function FailedDeliveriesPanel() {
   const replay = async (id: string) => {
     setReplayingId(id);
     try {
-      const { data: result, error } = await supabase.functions.invoke('webhook-dispatcher', {
+      const { data: result, error } = await invokeEdge('webhook-dispatcher', {
         body: { event: '__replay__', replay_delivery_id: id },
       });
       if (error) throw error;

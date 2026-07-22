@@ -19,6 +19,7 @@ export type {
   QuoteItemPersonalization,
   PersonalizationTechnique,
 } from '@/hooks/quotes/quoteTypes';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 type QuoteHistoryOptions = {
   fieldChanged?: string;
@@ -315,7 +316,7 @@ export function useQuotes() {
   const syncQuoteToBitrix = async (quoteId: string): Promise<boolean> => {
     const log = createClientLogger('quote.syncBitrix', { base: { quoteId } });
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('quote-sync', {
+      const { data, error: fnError } = await invokeEdge('quote-sync', {
         body: { action: 'sync_quote', data: { quoteId } },
         headers: log.headers(),
       });
@@ -335,7 +336,7 @@ export function useQuotes() {
 
   const testWebhookConnection = async (): Promise<boolean> => {
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('quote-sync', {
+      const { data, error: fnError } = await invokeEdge('quote-sync', {
         body: { action: 'test_webhook', data: {} },
       });
       if (fnError) throw new Error(fnError.message);

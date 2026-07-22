@@ -44,6 +44,7 @@ import {
 } from '@/lib/telemetry/secretsManagerCallMetrics';
 import { useSecretsManager } from '@/hooks/admin';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 const MAX_RECENT = 8;
 
@@ -142,7 +143,7 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
     try {
       // Action `status` é alias leve de `list`. Pedimos um nome inexistente
       // para minimizar payload — só queremos validar o roundtrip.
-      const { data, error } = await supabase.functions.invoke('secrets-manager', {
+      const { data, error } = await invokeEdge('secrets-manager', {
         body: { action: 'status', names: [] as string[] },
         headers: { [REQUEST_ID_HEADER]: requestId },
       });

@@ -1,6 +1,7 @@
 import { logger } from '@/lib/logger';
 import { useState, useCallback } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface IPValidationResult {
   isAllowed: boolean;
@@ -19,7 +20,7 @@ export function useIPValidation() {
     try {
       // Usar a nossa própria edge function que é mais confiável e contorna AdBlockers
       const supabase = await getSupabaseClient();
-      const { data, error } = await supabase.functions.invoke('get-visitor-info');
+      const { data, error } = await invokeEdge('get-visitor-info');
       if (error || !data?.ip) {
         logger.warn('Fallback to secondary IP identification');
         const ipCtrl = new AbortController();
@@ -91,7 +92,7 @@ export function useIPValidation() {
 
         // Chamar edge function validate-access
         const supabase = await getSupabaseClient();
-        const { data, error } = await supabase.functions.invoke('validate-access', {
+        const { data, error } = await invokeEdge('validate-access', {
           body: {
             ip: currentIP,
             userAgent: navigator.userAgent,
@@ -176,7 +177,7 @@ export function useIPValidation() {
         const supabase = await getSupabaseClient();
         // BUG-IPVALIDATION-LOGIN-LOG-SILENT-FAIL FIX: functions.invoke returns { data, error }
         // for application errors — bare await discarded them. try-catch only catches network failures.
-        const { error: loginLogErr } = await supabase.functions.invoke('log-login-attempt', {
+        const { error: loginLogErr } = await invokeEdge('log-login-attempt', {
           body: {
             email,
             user_id: userId,

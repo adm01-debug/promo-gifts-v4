@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/ui';
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface ProductAnalysis {
   productType: string;
   material: string;
@@ -49,7 +50,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       setIsLoading(true);
 
       try {
-        const { data, error } = await supabase.functions.invoke('visual-search', {
+        const { data, error } = await invokeEdge('visual-search', {
           body: { imageBase64 },
         });
 

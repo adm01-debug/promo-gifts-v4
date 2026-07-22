@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface DropboxEntry {
   '.tag': 'file' | 'folder';
@@ -26,7 +27,7 @@ export function useDropboxFiles() {
 
   const checkConnection = useCallback(async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('dropbox-list', {
+      const { data, error } = await invokeEdge('dropbox-list', {
         body: { action: 'check' },
       });
       if (error) throw error;
@@ -41,7 +42,7 @@ export function useDropboxFiles() {
   const listFiles = useCallback(async (path = '') => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('dropbox-list', {
+      const { data, error } = await invokeEdge('dropbox-list', {
         body: { path, action: 'list' },
       });
       if (error) throw error;

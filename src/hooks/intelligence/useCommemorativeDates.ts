@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 // Tipos baseados nas respostas das RPCs
 export interface CommemorativeDate {
   id: string;
@@ -58,7 +59,7 @@ async function callCommemorativeDatesAPI<T>(
     throw new Error('Usuário não autenticado');
   }
 
-  const { data, error } = await supabase.functions.invoke('commemorative-dates', {
+  const { data, error } = await invokeEdge('commemorative-dates', {
     body: { action, params },
   });
 

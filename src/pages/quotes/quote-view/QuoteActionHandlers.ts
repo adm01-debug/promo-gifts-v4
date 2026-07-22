@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale';
 import { logger } from '@/lib/logger';
 import { isValidQuoteTransition } from '@/lib/quote-status-config';
 import type { QuoteStatus } from '@/types/quote';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -150,7 +151,7 @@ export async function handleSyncBitrix(params: {
     logger.warn('PDF generation failed:', pdfErr);
   }
 
-  const { data, error } = await supabase.functions.invoke('sync-quote-bitrix', {
+  const { data, error } = await invokeEdge('sync-quote-bitrix', {
     body: {
       quote,
       proposalData,

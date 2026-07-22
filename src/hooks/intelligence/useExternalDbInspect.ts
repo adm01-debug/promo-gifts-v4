@@ -5,6 +5,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface TableInfo {
   name: string;
@@ -31,7 +32,7 @@ export function useExternalDbInspect() {
     async (action = 'list_tables', params: Record<string, unknown> = {}) => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.functions.invoke('external-db-inspect', {
+        const { data, error } = await invokeEdge('external-db-inspect', {
           body: { action, ...params },
         });
         if (error) throw error;

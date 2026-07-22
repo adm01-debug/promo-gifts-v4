@@ -38,6 +38,7 @@ import { OwnershipRepairDialog } from '@/components/admin/OwnershipRepairDialog'
 import { logger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/to-error-message';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface ReportDetail {
   table: string;
   owner_column: string;
@@ -95,7 +96,7 @@ export default function OwnershipAuditAdminPage() {
   async function runNow() {
     setRunning(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ownership-audit', {
+      const { data, error } = await invokeEdge('ownership-audit', {
         body: { triggered_by: 'manual_admin' },
       });
       if (error) throw error;

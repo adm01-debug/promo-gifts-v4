@@ -32,6 +32,7 @@ import {
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 const toJson = (value: unknown): Json => value as Json;
 const toJsonRecord = (value: Json | null | undefined): Record<string, Json> =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -153,7 +154,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
         ]
           .filter(Boolean)
           .join('\n\nREFINEMENT INSTRUCTION: ');
-        const { data, error } = await supabase.functions.invoke('generate-ad-image', {
+        const { data, error } = await invokeEdge('generate-ad-image', {
           headers: log.headers(),
           body: {
             productImageUrl: deps.currentImage,

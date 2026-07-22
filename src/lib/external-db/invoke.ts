@@ -24,6 +24,7 @@ import {
   KillSwitchActiveError,
 } from './kill-switch-client';
 import { recordKillSwitchHit } from './kill-switch-telemetry';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
@@ -232,7 +233,7 @@ export async function invokeWithRetry(
   }
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const { data, error } = await supabase.functions.invoke('external-db-bridge', {
+    const { data, error } = await invokeEdge('external-db-bridge', {
       body,
       headers: { [REQUEST_ID_HEADER]: requestId },
     });

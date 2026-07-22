@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getErrorCopy } from '@/lib/connection-error-copy';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export type ConnectionType = 'bitrix24' | 'mcp' | 'n8n' | 'supabase' | 'webhook_outbound';
 export type ErrorKind = 'auth' | 'config' | 'dns' | 'http' | 'network' | 'timeout' | 'unknown';
@@ -62,7 +63,7 @@ export function useConnectionTester() {
       });
       log.info('test_start');
       try {
-        const { data, error } = await supabase.functions.invoke('connection-tester', {
+        const { data, error } = await invokeEdge('connection-tester', {
           body: { action: 'test', type, config, connection_id, env_key },
           headers: log.headers(),
         });
@@ -137,7 +138,7 @@ export function useConnectionTester() {
       latency_ms: number | null;
     } | null> => {
       try {
-        const { data, error } = await supabase.functions.invoke('connection-tester', {
+        const { data, error } = await invokeEdge('connection-tester', {
           body: {
             action: 'last_test',
             type,

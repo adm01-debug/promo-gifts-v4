@@ -23,6 +23,7 @@ import { createProductFuseOptions, rankProductSearchResults } from '@/utils/prod
 import { useWordMagicStore } from '@/stores/useWordMagicStore'; // fix_version: word-magic-search-2026-07-03
 import type { PromobrindProduct } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export type SearchResultType =
   | 'art_file'
@@ -313,7 +314,7 @@ export function useGlobalSearch() {
     try {
       // BUG-SEARCH-SEMANTIC-SILENT-FAIL FIX: { data } without error check — AI search
       // failures were invisible; fallback to keyword intent is intentional (/* silent */).
-      const { data: aiResponse, error: aiErr } = await supabase.functions.invoke('semantic-search', {
+      const { data: aiResponse, error: aiErr } = await invokeEdge('semantic-search', {
         body: { query: searchQuery },
       });
       if (aiErr) logger.warn('[global-search] semantic-search invoke failed — falling back to keyword intent:', aiErr);

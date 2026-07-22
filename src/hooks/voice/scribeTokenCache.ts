@@ -4,6 +4,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 const CACHE_TTL_MS = 12 * 60 * 1000; // 12 minutes
 
@@ -40,7 +41,7 @@ export async function getScribeToken(): Promise<string> {
 
 async function fetchToken(): Promise<string | null> {
   try {
-    const { data, error } = await supabase.functions.invoke('elevenlabs-scribe-token');
+    const { data, error } = await invokeEdge('elevenlabs-scribe-token');
     if (error || !data?.token) {
       logger.warn('[Voice] Failed to fetch Scribe token:', error);
       cachedToken = null;

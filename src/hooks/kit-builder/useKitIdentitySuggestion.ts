@@ -6,6 +6,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface IdentitySuggestion {
   tag: string;
@@ -29,7 +30,7 @@ export function useKitIdentitySuggestion() {
     setIsLoading(true);
     setSuggestion(null);
     try {
-      const { data, error } = await supabase.functions.invoke('kit-identity-suggest', {
+      const { data, error } = await invokeEdge('kit-identity-suggest', {
         body: input,
       });
       if (error) throw error;

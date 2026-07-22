@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface AIComparisonAdvisorProps {
   products: Product[];
@@ -85,7 +86,7 @@ export function AIComparisonAdvisor({ products }: AIComparisonAdvisorProps) {
         supplier: p.supplier?.name,
       }));
 
-      const { data, error } = await supabase.functions.invoke('comparison-ai-advisor', {
+      const { data, error } = await invokeEdge('comparison-ai-advisor', {
         body: { products: slim },
       });
 

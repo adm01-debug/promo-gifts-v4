@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface UseProductsByCategoryOptions {
   categoryIds: string[];
   includeDescendants?: boolean;
@@ -88,7 +89,7 @@ export function useProductsByCategory({
     setError(null);
 
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('categories-api', {
+      const { data, error: invokeError } = await invokeEdge('categories-api', {
         body: {
           action: 'products_by_categories',
           categoryIds,
@@ -189,7 +190,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
       const token = ++fetchTokenRef.current;
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.functions.invoke('categories-api', {
+        const { data, error } = await invokeEdge('categories-api', {
           body: {
             action: 'descendants',
             categoryIds: idsForFetch,

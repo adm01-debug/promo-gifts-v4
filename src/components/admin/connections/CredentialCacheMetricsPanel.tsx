@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 type CacheEntry = {
   name: string;
@@ -78,7 +79,7 @@ export function CredentialCacheMetricsPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: invErr } = await supabase.functions.invoke('secrets-manager', {
+    const { data, error: invErr } = await invokeEdge('secrets-manager', {
       body: { action: 'cache_metrics' },
     });
     if (invErr) {
@@ -92,7 +93,7 @@ export function CredentialCacheMetricsPanel() {
   }, []);
 
   const reset = useCallback(async () => {
-    const { data, error: invErr } = await supabase.functions.invoke('secrets-manager', {
+    const { data, error: invErr } = await invokeEdge('secrets-manager', {
       body: { action: 'reset_cache_metrics' },
     });
     if (invErr || !data?.ok) {

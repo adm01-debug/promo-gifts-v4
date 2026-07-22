@@ -41,6 +41,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 import { logger } from '@/lib/logger';
 import { toErrorMessage } from '@/lib/to-error-message';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface RepairAction {
   table: string;
   owner_column: string;
@@ -94,7 +95,7 @@ export function OwnershipRepairDialog({ reportId, hasIssues }: Props) {
   async function invoke(dryRun: boolean): Promise<RepairResult | null> {
     setRunning(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ownership-repair', {
+      const { data, error } = await invokeEdge('ownership-repair', {
         body: { report_id: reportId, dry_run: dryRun, triggered_by: dryRun ? 'dry_run' : 'apply' },
       });
       if (error) throw error;
