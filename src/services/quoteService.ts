@@ -161,10 +161,13 @@ export const quoteService = {
           item.personalizations,
           insertedItem.id,
         );
-        const { error } = await supabase.from('quote_item_personalizations').insert(persPayload);
+        const insertPersonalizationsResult = await supabase
+          .from('quote_item_personalizations')
+          .insert(persPayload);
+        const { error } = insertPersonalizationsResult;
 
         if (error) {
-          throw Object.assign(error, {
+          const enrichedError = Object.assign(error, {
             context: {
               quoteId,
               quoteItemId: insertedItem.id,
@@ -172,6 +175,8 @@ export const quoteService = {
             },
             message: `Falha ao inserir personalizações do item ${insertedItem.id} no orçamento ${quoteId}: ${error.message}`,
           });
+
+          throw enrichedError;
         }
       }
     }
