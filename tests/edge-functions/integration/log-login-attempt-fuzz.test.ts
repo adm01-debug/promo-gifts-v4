@@ -192,10 +192,12 @@ describe("log-login-attempt — payloads adversariais (14)", () => {
 describe("log-login-attempt — fuzz seeded (500 iterações, seed 0x10G1N0)", () => {
   afterEach(() => resetExternalMocks());
 
-  it("500 cenários aleatórios: status SEMPRE < 500", async () => {
+  it("N cenários aleatórios: status SEMPRE < 500 (scale via FUZZ_STRESS)", async () => {
     const SEED = 0x10_61_11_10; // 0xL0G1N0 mnemônico
     const rnd = mulberry32(SEED);
-    const iterations = 500;
+    // FUZZ_STRESS=10 → 5.000 iterações; =100 → 50.000. Default 500.
+    const stress = Math.max(1, Number(process.env.FUZZ_STRESS ?? "1") | 0);
+    const iterations = 500 * stress;
     const failures: Array<{ i: number; status: number; outcome: Outcome; payloadLen: number }> = [];
 
     for (let i = 0; i < iterations; i++) {
