@@ -17,7 +17,7 @@
  * "doufsxqlfjyuvxuezpln" para não disparar o log de project_mismatch.
  */
 import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { handleLogLoginAttempt } from "./index.ts";
+import { handleLogLoginAttempt, __resetBreakerForTests } from "./index.ts";
 
 /* ------------------------------------------------------------------ */
 /* Servidor mock local (PostgREST-like)                                 */
