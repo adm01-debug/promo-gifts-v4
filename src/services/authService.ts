@@ -131,6 +131,38 @@ export const authService = {
     );
   },
 
+  // ==== Onda 16 — OAuth boot/redirect + PKCE callback ====
+
+  async signInWithOAuthSafe(
+    params: { provider: 'apple' | 'google'; redirectTo?: string },
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<SafeAuthResult<UnknownData>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () =>
+        supabase.auth.signInWithOAuth({
+          provider: params.provider,
+          options: params.redirectTo ? { redirectTo: params.redirectTo } : undefined,
+        }) as unknown as Promise<{ data: UnknownData; error: unknown }>,
+      { op: 'signInWithOAuth', signal: opts.signal, maxRetries: 1 },
+    );
+  },
+
+  async exchangeCodeForSessionSafe(
+    code: string,
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<SafeAuthResult<UnknownData>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () =>
+        supabase.auth.exchangeCodeForSession(code) as unknown as Promise<{
+          data: UnknownData;
+          error: unknown;
+        }>,
+      { op: 'exchangeCodeForSession', signal: opts.signal, maxRetries: 1 },
+    );
+  },
+
   async signOut() {
     const supabase = await getSupabaseClient();
     try {
