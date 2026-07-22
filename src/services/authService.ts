@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { logger } from '@/lib/logger';
+import { safeAuthCall, type SafeAuthResult } from '@/lib/auth/safeAuthCall';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 // BUG-FIX v2.1: tipo explícito para cast seguro de supabase.rpc
@@ -16,6 +17,23 @@ export const authService = {
       password,
     });
   },
+
+  /**
+   * Variante resiliente de signIn (Onda 7 — safeAuthCall SSOT).
+   * Retorna `SafeAuthResult` classificado + userMessage sanitizada.
+   * Novos callers devem preferir esta; `signIn` legado mantido para
+   * compat com AuthContext e testes existentes.
+   */
+  async signInSafe(
+    email: string,
+    password: string,
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<SafeAuthResult<Awaited<ReturnType<typeof this.signIn>>['data']>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () => supabase.auth.signInWithPassword({ email, password }),
+      { op: 'signIn', signal: opts.signal },
+    );
 
   async signOut() {
     const supabase = await getSupabaseClient();
