@@ -324,6 +324,7 @@ export async function safeAuthCall<T>(
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
   }
 
+  breakerRecordFailure(op, lastKind);
   log.error(`${op}_exhausted`, { attempts: maxRetries, error_kind: lastKind });
   return {
     kind: 'err',
