@@ -301,6 +301,7 @@ export async function safeAuthCall<T>(
           };
         }
       } else {
+        breakerRecordSuccess(op);
         log.info(`${op}_ok`, { attempt });
         return {
           kind: 'ok',
