@@ -120,7 +120,7 @@ function makeBuilder(table: string) {
     is(col: string, val: unknown) { state.filters.push(['is', col, val]); return b; },
     in(col: string, val: unknown) { state.filters.push(['in', col, val]); return b; },
     order() { return b; },
-    maybeSingle() { return Promise.resolve(resolveSingle()); },
+    maybeSingle() { return Promise.resolve(state.op === 'insert' ? runMutation() : resolveSingle()); },
     single() { return Promise.resolve(state.op === 'insert' ? runMutation() : resolveSingle()); },
     then(onF: (v: unknown) => unknown, onR?: (e: unknown) => unknown) {
       const result = state.op === 'select' ? resolveList() : runMutation();
