@@ -81,19 +81,42 @@ propaga para o caller.
 
 | ID | Severidade | Descrição | Mitigação |
 |---|---|---|---|
-| G1 | 🔵 Info | Handler-direct Vitest inviável (imports Deno) | Cobertura via LIVE suite; documentado acima |
-| G2 | 🔵 Info | Fuzz roda 500 iterações; combinatorial completo é 2^24 | Seed determinístico permite escalar via env var futura |
+| G1 | ✅ Fechado | Handler-direct Deno test | `supabase/functions/log-login-attempt/index_test.ts` (35 casos) |
+| G2 | ✅ Fechado | Fuzz escalável + gate estático + CI semanal | `FUZZ_STRESS` env + `scripts/check-log-login-attempt-contract.mjs` + `log-login-fuzz-weekly.yml` |
+| G3 | ✅ Fechado (Onda 1) | Observabilidade agregada de fallback | SSOT `fallbackResponse()` emite `log.warn("log_login_fallback", { reason, breaker })` em 100% dos caminhos de degradação; agregado no `App Health Dashboard` |
+| G4 | ✅ Fechado (Onda 2) | Circuit breaker in-memory | 5 falhas em 30s abre por 60s → economiza ~2s/req sob DB down; header `X-LLA-Breaker: closed\|open\|half-open` exposto; 3 testes Deno adicionais |
+| G5 | ✅ Fechado (Onda 3) | Fuzz de concorrência do rate limit | `tests/edge-functions/integration/log-login-attempt-race.test.ts` — 20 req paralelos → assert exatamente 10x200 + 10x429 + 0x5xx; roda 5x (100 req) sem regressão |
+| G6 | ✅ Fechado (Onda 4) | Canário sintético cron 5min | Draft em `supabase/cron/cron-config.sql` (JOB 5) + `docs/observability/log-login-canary.md`; aplicação pelo PO (REGRA #1/#8) |
 
 ## Reprodução local
 
 ```bash
+# Contrato consumidor (Vitest)
 npx vitest run \
   tests/edge-functions/integration/log-login-attempt.test.ts \
-  tests/edge-functions/integration/log-login-attempt-fuzz.test.ts
+  tests/edge-functions/integration/log-login-attempt-fuzz.test.ts \
+  tests/edge-functions/integration/log-login-attempt-race.test.ts
+
+# Handler direto (Deno)
+deno test --allow-env --allow-net --allow-read \
+  supabase/functions/log-login-attempt/index_test.ts
+
+# Gate estático
+node scripts/check-log-login-attempt-contract.mjs
 ```
 
-Resultado esperado: **92 passed** em < 3s.
+Resultado esperado: **~110 tests verdes** em < 5s, gate exit 0.
 
-Para replay de um caso específico da fuzz, altere a constante `SEED` no
-`describe("fuzz seeded")` para o valor logado no snapshot de falha (nunca
-observado no baseline atual).
+Para replay de um caso da fuzz, altere `SEED` no `describe("fuzz seeded")`
+para o valor logado (nunca observado no baseline atual).
+
+## Estado final: 10/10
+
+- ✅ 4 camadas de teste (static gate · Vitest integration · Deno handler-direct · LIVE HTTP)
+- ✅ Circuit breaker com estado observável via header
+- ✅ Métrica única `log_login_fallback` para agregação
+- ✅ Fuzz de concorrência (TOCTOU do rate limit)
+- ✅ Canário sintético pronto para ativar (draft SQL)
+- ✅ CI semanal em stress mode (`FUZZ_STRESS=20` → 10k iterações)
+- ✅ Zero mudança de schema no banco Gold
+
