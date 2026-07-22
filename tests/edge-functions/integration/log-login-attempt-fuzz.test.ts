@@ -121,7 +121,7 @@ describe("log-login-attempt — métodos HTTP (7)", () => {
   const methods = ["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH", "HEAD"];
   for (const m of methods) {
     it(`método ${m} → status < 500`, async () => {
-      mockEdgeFunctionFetch({ [FN]: { status: m === "OPTIONS" ? 204 : m === "POST" ? 200 : 400, body: {} } });
+      mockEdgeFunctionFetch({ [FN]: { status: m === "POST" || m === "OPTIONS" ? 200 : 400, body: {} } });
       const res = await fetch(`${BASE}${FN}`, {
         method: m,
         headers: m === "POST" ? CT_JSON : undefined,
