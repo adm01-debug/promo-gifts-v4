@@ -1,0 +1,50 @@
+name: log-login-attempt — Fuzz Stress Weekly
+
+# Roda a matriz fuzz do log-login-attempt em modo stress (10k+ iterações)
+# semanalmente para catch de regressões no contrato "nunca-5xx".
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # segunda 06:00 UTC (03:00 BRT)
+  workflow_dispatch:
+    inputs:
+      stress_factor:
+        description: 'Multiplicador de iterações (FUZZ_STRESS)'
+        required: false
+        default: '20'
+
+concurrency:
+  group: log-login-fuzz-weekly
+  cancel-in-progress: true
+
+jobs:
+  fuzz-stress:
+    name: Fuzz stress (log-login-attempt)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static gate — contrato nunca-5xx
+        run: npm run check:log-login-contract
+
+      - name: Run fuzz stress
+        env:
+          FUZZ_STRESS: ${{ github.event.inputs.stress_factor || '20' }}
+        run: npx vitest run tests/edge-functions/integration/log-login-attempt-fuzz.test.ts --reporter=verbose
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Run Deno handler-direct tests
+        run: deno test --allow-env --allow-net --allow-read supabase/functions/log-login-attempt/index_test.ts

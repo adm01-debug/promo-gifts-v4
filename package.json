@@ -162,6 +162,7 @@
     "test:edge:live": "TZ=America/Sao_Paulo vitest run tests/edge-functions/live/ --reporter=verbose",
     "test:edge:live:coverage": "TZ=America/Sao_Paulo vitest run tests/edge-functions/live/ --reporter=verbose --coverage --coverage.reporter=text --coverage.reporter=json-summary --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 --coverage.thresholds.branches=0 --coverage.thresholds.statements=0",
     "check:edge-live-coverage": "node scripts/check-edge-live-coverage.mjs",
+    "check:log-login-contract": "node scripts/check-log-login-attempt-contract.mjs",
     "test:edge:integration:coverage": "TZ=America/Sao_Paulo vitest run tests/edge-functions/integration/ --reporter=verbose --coverage --coverage.reporter=text --coverage.reporter=json-summary --coverage.thresholds.lines=0 --coverage.thresholds.functions=0 --coverage.thresholds.branches=0 --coverage.thresholds.statements=0",
     "test:fuzz": "node scripts/fuzz-testing.mjs",
     "test:fuzz:uploads": "node scripts/fuzz-edge-uploads.mjs",
