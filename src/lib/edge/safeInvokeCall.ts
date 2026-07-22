@@ -94,14 +94,18 @@ export async function normalizeInvokeError(err: unknown): Promise<NormalizedErro
   }
 
   // FunctionsRelayError / FunctionsFetchError → sem status HTTP real, mapear p/ network.
+  // Forçamos name='TypeError' para o classifier do safeAuthCall reconhecer como network.
+  let outName = name;
   if (
     status === 0 &&
     (name === 'FunctionsRelayError' ||
       name === 'FunctionsFetchError' ||
       name === 'TypeError' ||
-      baseMsg.toLowerCase().includes('failed to fetch'))
+      baseMsg.toLowerCase().includes('failed to fetch') ||
+      baseMsg.toLowerCase().includes('relay') ||
+      baseMsg.toLowerCase().includes('fetch'))
   ) {
-    status = 0; // classifyThrown resolverá como 'network'
+    outName = 'TypeError';
   }
 
   return {
