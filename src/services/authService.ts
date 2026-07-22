@@ -34,6 +34,9 @@ export const authService = {
       () => supabase.auth.signInWithPassword({ email, password }),
       { op: 'signIn', signal: opts.signal },
     );
+  },
+
+
 
   async signOut() {
     const supabase = await getSupabaseClient();
