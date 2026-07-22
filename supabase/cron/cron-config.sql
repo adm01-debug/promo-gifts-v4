@@ -78,6 +78,39 @@ SELECT cron.schedule(
 );
 
 -- =====================================================
+-- JOB 5 (DRAFT — NÃO APLICAR SEM APROVAÇÃO DO PO): Canário log-login-attempt
+-- =====================================================
+-- Ver docs/observability/log-login-canary.md
+-- Dispara um login sintético a cada 5min para detectar regressão silenciosa
+-- do contrato "nunca-5xx" entre deploys.
+--
+-- Bloqueio: REGRA #1/#8 — mudança em cron.job no BD canônico
+-- (doufsxqlfjyuvxuezpln) exige aprovação explícita do PO.
+--
+-- Ao aplicar, descomente o bloco abaixo:
+--
+-- SELECT cron.schedule(
+--   'canary-log-login-attempt',
+--   '*/5 * * * *', -- a cada 5 minutos
+--   $$
+--   SELECT
+--     net.http_post(
+--       url := current_setting('app.supabase_url') || '/functions/v1/log-login-attempt',
+--       headers := jsonb_build_object(
+--         'Content-Type', 'application/json',
+--         'x-canary', 'true'
+--       ),
+--       body := jsonb_build_object(
+--         'email',          'canary@promogifts.internal',
+--         'success',        false,
+--         'failure_reason', 'synthetic',
+--         'user_agent',     'canary/1.0'
+--       )
+--     ) AS request_id;
+--   $$
+-- );
+
+-- =====================================================
 -- Visualizar jobs agendados
 -- =====================================================
 -- SELECT * FROM cron.job;
@@ -89,3 +122,5 @@ SELECT cron.schedule(
 -- SELECT cron.unschedule('send-daily-digest');
 -- SELECT cron.unschedule('cleanup-old-notifications');
 -- SELECT cron.unschedule('purge-favorite-trash');
+-- SELECT cron.unschedule('canary-log-login-attempt');
+

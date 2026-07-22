@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from "../_shared/cors.ts";
 import { RateLimiter, applyRateLimit } from "../_shared/rate-limiter.ts";
 import { z } from "npm:zod@3.23.8";
-import { createStructuredLogger } from "../_shared/structured-logger.ts";
+import { createStructuredLogger, type StructuredLogger } from "../_shared/structured-logger.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
 
 const LoginAttemptSchema = z.object({
@@ -20,6 +20,81 @@ const loginLogLimiter = new RateLimiter({
   windowMs: 60 * 1000,
   keyPrefix: 'login-log',
 });
+
+/* ------------------------------------------------------------------ */
+/* Onda 1 (G3): SSOT de degradação — sempre passa por este helper.     */
+/* Emite log.warn("log_login_fallback", { reason, ... }) para o        */
+/* App Health Dashboard e Sentry monitor agregarem 1 métrica única.   */
+/* ------------------------------------------------------------------ */
+
+type FallbackReason = "missing_env" | "db_insert_failed" | "internal_error" | "breaker_open";
+
+function fallbackResponse(
+  log: StructuredLogger,
+  reason: FallbackReason,
+  corsHeaders: Record<string, string>,
+  breakerState: BreakerState,
+  extra: Record<string, unknown> = {},
+): Response {
+  log.warn("log_login_fallback", { reason, breaker: breakerState, ...extra });
+  return new Response(
+    JSON.stringify({ ok: false, fallback: true, reason }),
+    {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "X-LLA-Breaker": breakerState,
+      },
+    },
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Onda 2 (G4): Circuit breaker in-memory.                              */
+/* Estado por instância (edge worker). 5 falhas consecutivas em 30s    */
+/* abre o breaker por 60s → pula DB e vai direto ao fallback.          */
+/* ------------------------------------------------------------------ */
+
+type BreakerState = "closed" | "open" | "half-open";
+
+const BREAKER_THRESHOLD = 5;
+const BREAKER_WINDOW_MS = 30_000;
+const BREAKER_COOLDOWN_MS = 60_000;
+
+interface BreakerInternal {
+  failures: number[]; // timestamps of recent failures
+  openedAt: number | null;
+}
+
+const breaker: BreakerInternal = { failures: [], openedAt: null };
+
+function getBreakerState(now: number = Date.now()): BreakerState {
+  if (breaker.openedAt === null) return "closed";
+  const elapsed = now - breaker.openedAt;
+  if (elapsed >= BREAKER_COOLDOWN_MS) return "half-open";
+  return "open";
+}
+
+function recordBreakerSuccess(): void {
+  breaker.failures = [];
+  breaker.openedAt = null;
+}
+
+function recordBreakerFailure(now: number = Date.now()): void {
+  // GC failures fora da janela
+  breaker.failures = breaker.failures.filter((t) => now - t < BREAKER_WINDOW_MS);
+  breaker.failures.push(now);
+  if (breaker.failures.length >= BREAKER_THRESHOLD && breaker.openedAt === null) {
+    breaker.openedAt = now;
+  }
+}
+
+/** Test-only reset (nunca chamado em produção). */
+export function __resetBreakerForTests(): void {
+  breaker.failures = [];
+  breaker.openedAt = null;
+}
 
 export async function handleLogLoginAttempt(req: Request): Promise<Response> {
   const requestId = getOrCreateRequestId(req);
@@ -44,6 +119,7 @@ export async function handleLogLoginAttempt(req: Request): Promise<Response> {
       log.warn("rate_limit_exceeded");
       const headers = new Headers(rateLimitResponse.headers);
       Object.entries(corsHeaders).forEach(([k, v]) => headers.set(k, v));
+      headers.set("X-LLA-Breaker", getBreakerState());
       return new Response(rateLimitResponse.body, {
         status: rateLimitResponse.status,
         headers,
@@ -81,11 +157,15 @@ export async function handleLogLoginAttempt(req: Request): Promise<Response> {
 
     if (!supabaseUrl || !serviceRoleKey) {
       log.error("missing_env_vars", { url: !!supabaseUrl, key: !!serviceRoleKey });
-      // Fire-and-forget audit: never break the caller with a 500.
-      return new Response(
-        JSON.stringify({ ok: false, fallback: true, reason: "missing_env" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return fallbackResponse(log, "missing_env", corsHeaders, getBreakerState());
+    }
+
+    // Circuit breaker: se open, pula DB.
+    const breakerState = getBreakerState();
+    if (breakerState === "open") {
+      return fallbackResponse(log, "breaker_open", corsHeaders, "open", {
+        failures_in_window: breaker.failures.length,
+      });
     }
 
     // Use service_role to bypass RLS
@@ -107,24 +187,30 @@ export async function handleLogLoginAttempt(req: Request): Promise<Response> {
         details: error.details,
         hint: error.hint,
       });
-      // Graceful degradation: audit-log failure must not blank-screen the app.
-      return new Response(
-        JSON.stringify({ ok: false, fallback: true, reason: "db_insert_failed" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      recordBreakerFailure();
+      return fallbackResponse(log, "db_insert_failed", corsHeaders, getBreakerState(), {
+        sqlstate: error.code,
+      });
     }
+
+    // Sucesso → reseta breaker (fecha se estava half-open).
+    recordBreakerSuccess();
 
     log.info("login_attempt_logged", { email, success });
     return log.respond(new Response(
       JSON.stringify({ ok: true }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "X-LLA-Breaker": "closed",
+        },
+      }
     ));
   } catch (err) {
     log.error("internal_error", { err: err instanceof Error ? err.message : String(err) });
-    return new Response(
-      JSON.stringify({ ok: false, fallback: true, reason: "internal_error" }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return fallbackResponse(log, "internal_error", corsHeaders, getBreakerState());
   }
 }
 

@@ -17,7 +17,7 @@
  * "doufsxqlfjyuvxuezpln" para não disparar o log de project_mismatch.
  */
 import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { handleLogLoginAttempt } from "./index.ts";
+import { handleLogLoginAttempt, __resetBreakerForTests } from "./index.ts";
 
 /* ------------------------------------------------------------------ */
 /* Servidor mock local (PostgREST-like)                                 */
@@ -391,7 +391,56 @@ t("invariante final: em NENHUM cenário testado o status é 5xx", async () => {
   }
 });
 
+/* ------------------------------------------------------------------ */
+/* Onda 2 (G4) — Circuit breaker                                        */
+/* ------------------------------------------------------------------ */
+
+t("breaker: 5 falhas consecutivas → 6ª request pula DB (breaker_open)", async () => {
+  __resetBreakerForTests();
+  withMock({
+    insertMode: { kind: "sqlstate", code: "53100", message: "disk full" },
+    rateLimitMode: { kind: "allow" },
+  });
+  // 5 falhas — abre o breaker
+  for (let i = 0; i < 5; i++) {
+    const { status, body } = await callHandler(makeReq({ email: `u${i}@e.com`, success: true }));
+    assertEquals(status, 200);
+    assertEquals((body as { reason: string }).reason, "db_insert_failed");
+  }
+  // 6ª — deve ser breaker_open, SEM tocar no DB (mesmo mock, sem consumo)
+  const { status, body } = await callHandler(makeReq({ email: "u6@e.com", success: true }));
+  assertEquals(status, 200);
+  assertEquals((body as { fallback: boolean }).fallback, true);
+  assertEquals((body as { reason: string }).reason, "breaker_open");
+});
+
+t("breaker: header X-LLA-Breaker exposto em resposta de sucesso", async () => {
+  __resetBreakerForTests();
+  withMock({ insertMode: { kind: "ok" }, rateLimitMode: { kind: "allow" } });
+  const res = await handleLogLoginAttempt(makeReq({ email: "u@e.com", success: true }));
+  await res.body?.cancel();
+  assertEquals(res.headers.get("X-LLA-Breaker"), "closed");
+});
+
+t("breaker: sucesso reseta contador (não abre nunca se intercalado)", async () => {
+  __resetBreakerForTests();
+  for (let i = 0; i < 20; i++) {
+    withMock({
+      insertMode: i % 2 === 0 ? { kind: "sqlstate", code: "40001", message: "serialization" } : { kind: "ok" },
+      rateLimitMode: { kind: "allow" },
+    });
+    const { status, body } = await callHandler(makeReq({ email: `u${i}@e.com`, success: true }));
+    assertEquals(status, 200);
+    // Nunca deve virar breaker_open — sucesso zera o contador entre falhas
+    assert(
+      (body as { reason?: string }).reason !== "breaker_open",
+      `breaker abriu indevidamente na iter ${i}`,
+    );
+  }
+});
+
 // Ensure server is properly shut down at end
 globalThis.addEventListener("beforeunload", () => {
   mock.shutdown();
 });
+
