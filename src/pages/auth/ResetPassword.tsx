@@ -100,39 +100,40 @@ export default function ResetPassword() {
 
   const handleSubmit = async (data: ResetPasswordFormData) => {
     setIsSubmitting(true);
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: data.password,
-      });
+    const res = await authService.updatePasswordSafe(data.password);
 
-      if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Erro ao redefinir senha',
-          description: 'Não foi possível redefinir sua senha. O link pode ter expirado.',
-        });
-        return;
-      }
-
-      setIsSuccess(true);
-      toast({
-        title: 'Senha redefinida!',
-        description: 'Sua senha foi alterada com sucesso.',
-      });
-
-      // Redirect after 3 seconds
-      redirectTimerRef.current = setTimeout(() => {
-        navigate('/');
-      }, 3000);
-    } catch {
+    if (res.kind === 'err') {
+      const description = (() => {
+        switch (res.errorKind) {
+          case 'credential':
+            return 'Link expirado ou já utilizado. Solicite um novo link.';
+          case 'ratelimit':
+            return 'Muitas tentativas. Aguarde 1 minuto e tente novamente.';
+          case 'network':
+          case 'timeout':
+            return 'Sem conexão no momento. Verifique sua internet e tente novamente.';
+          default:
+            return res.userMessage;
+        }
+      })();
       toast({
         variant: 'destructive',
-        title: 'Erro inesperado',
-        description: 'Tente novamente mais tarde',
+        title: 'Erro ao redefinir senha',
+        description,
       });
-    } finally {
       setIsSubmitting(false);
+      return;
     }
+
+    setIsSuccess(true);
+    toast({
+      title: 'Senha redefinida!',
+      description: 'Sua senha foi alterada com sucesso.',
+    });
+    redirectTimerRef.current = setTimeout(() => {
+      navigate('/');
+    }, 3000);
+    setIsSubmitting(false);
   };
 
   if (isCheckingToken) {
