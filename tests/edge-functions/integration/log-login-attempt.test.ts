@@ -126,7 +126,7 @@ describe("log-login-attempt — contrato nunca-5xx", () => {
   });
 
   it("CORS preflight (OPTIONS) → 2xx", async () => {
-    const spec: EdgeFnResponseSpec = { status: 204, body: null };
+    const spec: EdgeFnResponseSpec = { status: 200, body: { ok: true } };
     mockEdgeFunctionFetch({ [FN]: spec });
     const res = await fetch(`${BASE}${FN}`, {
       method: "OPTIONS",
