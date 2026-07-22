@@ -279,7 +279,7 @@ const SQLSTATES = [
 ];
 
 for (const s of SQLSTATES) {
-  Deno.test(`SQLSTATE ${s.code} (${s.label}) → 200 fallback db_insert_failed`, async () => {
+  t(`SQLSTATE ${s.code} (${s.label}) → 200 fallback db_insert_failed`, async () => {
     withMock({
       insertMode: { kind: "sqlstate", code: s.code, message: `simulated ${s.label}` },
       rateLimitMode: { kind: "allow" },
@@ -291,6 +291,7 @@ for (const s of SQLSTATES) {
     assertEquals((body as { reason: string }).reason, "db_insert_failed");
   });
 }
+
 
 t("PostgREST 500 → 200 fallback db_insert_failed", async () => {
   withMock({ insertMode: { kind: "http_5xx", status: 500 }, rateLimitMode: { kind: "allow" } });
