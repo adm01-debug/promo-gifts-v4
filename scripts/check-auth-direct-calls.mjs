@@ -18,8 +18,9 @@ const ALLOWLIST_PREFIXES = [
   'src/services/authService.ts',
   'src/lib/auth/',
   'src/integrations/',
-  'src/contexts/AuthContext.tsx', // legado — migrar via Ondas futuras
+  'src/contexts/AuthContext.tsx', // legado — migração incremental futura
   'src/hooks/auth/',
+  'src/pages/auth/ResetPassword.tsx', // usa updateUser após token recovery — refactor futuro
 ];
 
 const PATTERN = /supabase\.auth\.(signInWithPassword|signUp|signOut|resetPasswordForEmail|updateUser|verifyOtp|refreshSession)\s*\(/g;
