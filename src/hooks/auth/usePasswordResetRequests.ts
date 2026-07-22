@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { useToast } from '@/hooks/ui/use-toast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { authService } from '@/services/authService';
 
 import { logger } from '@/lib/logger';
 export interface PasswordResetRequest {
@@ -70,12 +71,27 @@ export function usePasswordResetRequests() {
 
       if (updateError) throw updateError;
 
-      // Enviar email de reset de senha via Supabase Auth
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(request.email, {
+      // Enviar email de reset de senha via wrapper Safe (nunca lança, classifica errorKind).
+      const resetRes = await authService.resetPasswordSafe(request.email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
-      if (resetError) throw resetError;
+      if (resetRes.kind === 'err') {
+        const description =
+          resetRes.errorKind === 'ratelimit'
+            ? 'Muitas solicitações em pouco tempo. Aguarde 1 minuto e tente novamente.'
+            : resetRes.errorKind === 'network' || resetRes.errorKind === 'timeout'
+              ? 'Sem conexão com o servidor. Verifique sua internet e tente novamente.'
+              : resetRes.errorKind === 'credential'
+                ? 'Email inválido ou não cadastrado.'
+                : resetRes.userMessage;
+        toast({
+          variant: 'destructive',
+          title: 'Falha ao enviar email de recuperação',
+          description,
+        });
+        return false;
+      }
 
       toast({
         title: 'Solicitação aprovada',
