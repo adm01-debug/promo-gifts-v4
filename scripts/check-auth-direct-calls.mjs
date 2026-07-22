@@ -6,7 +6,7 @@
  *  - src/services/authService.ts (SSOT)
  *  - src/lib/auth/**            (wrappers)
  *  - src/integrations/**        (client auto-gen)
- *  - **/__tests__/**            (testes)
+ *  - __tests__ folders          (testes)
  *
  * Falha o CI se detectar chamada direta em novo arquivo (baseline via allowlist).
  */
