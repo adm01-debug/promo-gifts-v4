@@ -48,12 +48,7 @@ export function UnmetDemandCard({ days }: UnmetDemandCardProps) {
       if (error) throw error;
 
       const map = new Map<string, { count: number; last: string }>();
-      type SearchAnalyticsRow = {
-        search_term: string | null;
-        created_at: string;
-      };
-
-      ((rows as SearchAnalyticsRow[] | null) ?? []).forEach((r) => {
+      (rows ?? []).forEach((r) => {
         const raw = typeof r.search_term === 'string' ? r.search_term : '';
         const key = raw.trim().toLowerCase();
         if (!key) return;

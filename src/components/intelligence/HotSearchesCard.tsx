@@ -51,12 +51,7 @@ export function HotSearchesCard({ days }: HotSearchesCardProps) {
 
       const recent = new Map<string, number>();
       const previous = new Map<string, number>();
-      type SearchAnalyticsRow = {
-        search_term: string | null;
-        created_at: string;
-      };
-
-      ((rows as SearchAnalyticsRow[] | null) ?? []).forEach((r) => {
+      (rows ?? []).forEach((r) => {
         const raw = typeof r.search_term === 'string' ? r.search_term : '';
         const key = raw.trim().toLowerCase();
         if (!key) return;
