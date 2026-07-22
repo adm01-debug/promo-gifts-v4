@@ -38,24 +38,21 @@ const IGNORE_PATTERNS = [
 const RE_A = /\.functions\s*\.\s*invoke\s*\(/g;
 const RE_B = /\[\s*["']functions["']\s*\]\s*\.\s*invoke\s*\(/g;
 
-/** Remove comentários de linha e bloco + strings simples/duplas/template. */
-function stripNonCode(src) {
+/** Zera comentários (linha e bloco), preservando quebras de linha. */
+function stripComments(src) {
   let out = '';
   let i = 0;
   const n = src.length;
   while (i < n) {
     const c = src[i];
     const c2 = src[i + 1];
-    // Block comment
     if (c === '/' && c2 === '*') {
       const end = src.indexOf('*/', i + 2);
       const chunk = src.slice(i, end === -1 ? n : end + 2);
-      // preserva quebras de linha p/ manter numeração
       out += chunk.replace(/[^\n]/g, ' ');
       i += chunk.length;
       continue;
     }
-    // Line comment
     if (c === '/' && c2 === '/') {
       const end = src.indexOf('\n', i);
       const chunk = src.slice(i, end === -1 ? n : end);
@@ -63,23 +60,62 @@ function stripNonCode(src) {
       i += chunk.length;
       continue;
     }
-    // String literal (', ", `)
+    // pula string literal SEM apagar — usada só p/ RE_B (que precisa de `"functions"`)
     if (c === '"' || c === "'" || c === '`') {
       const quote = c;
       let j = i + 1;
       while (j < n) {
-        if (src[j] === '\\') {
-          j += 2;
+        if (src[j] === '\\') { j += 2; continue; }
+        if (src[j] === quote) { j += 1; break; }
+        if (quote === '`' && src[j] === '$' && src[j + 1] === '{') {
+          let depth = 1; j += 2;
+          while (j < n && depth > 0) {
+            if (src[j] === '{') depth += 1;
+            else if (src[j] === '}') depth -= 1;
+            j += 1;
+          }
           continue;
         }
-        if (src[j] === quote) {
-          j += 1;
-          break;
-        }
-        // template literal ${...} → recursa simples
+        j += 1;
+      }
+      out += src.slice(i, j);
+      i = j;
+      continue;
+    }
+    out += c;
+    i += 1;
+  }
+  return out;
+}
+
+/** Zera comentários E string literals — usado p/ RE_A. */
+function stripCommentsAndStrings(src) {
+  let out = '';
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i];
+    const c2 = src[i + 1];
+    if (c === '/' && c2 === '*') {
+      const end = src.indexOf('*/', i + 2);
+      const chunk = src.slice(i, end === -1 ? n : end + 2);
+      out += chunk.replace(/[^\n]/g, ' ');
+      i += chunk.length; continue;
+    }
+    if (c === '/' && c2 === '/') {
+      const end = src.indexOf('\n', i);
+      const chunk = src.slice(i, end === -1 ? n : end);
+      out += chunk.replace(/[^\n]/g, ' ');
+      i += chunk.length; continue;
+    }
+    if (c === '"' || c === "'" || c === '`') {
+      const quote = c;
+      let j = i + 1;
+      while (j < n) {
+        if (src[j] === '\\') { j += 2; continue; }
+        if (src[j] === quote) { j += 1; break; }
         if (quote === '`' && src[j] === '$' && src[j + 1] === '{') {
-          let depth = 1;
-          j += 2;
+          let depth = 1; j += 2;
           while (j < n && depth > 0) {
             if (src[j] === '{') depth += 1;
             else if (src[j] === '}') depth -= 1;
@@ -91,8 +127,7 @@ function stripNonCode(src) {
       }
       const chunk = src.slice(i, j);
       out += chunk.replace(/[^\n]/g, ' ');
-      i = j;
-      continue;
+      i = j; continue;
     }
     out += c;
     i += 1;
@@ -110,24 +145,25 @@ function scanFile(absPath) {
   const rel = relative(ROOT, absPath).split(sep).join('/');
   if (shouldIgnore(rel)) return [];
   let src;
-  try {
-    src = readFileSync(absPath, 'utf8');
-  } catch {
-    return [];
-  }
+  try { src = readFileSync(absPath, 'utf8'); } catch { return []; }
   if (!src.includes('.invoke')) return [];
-  const code = stripNonCode(src);
+  const codeNoStrings = stripCommentsAndStrings(src);
+  const codeWithStrings = stripComments(src);
   const hits = [];
-  for (const re of [RE_A, RE_B]) {
-    re.lastIndex = 0;
-    let m;
-    while ((m = re.exec(code)) !== null) {
-      const line = code.slice(0, m.index).split('\n').length;
-      hits.push({ file: rel, line });
-    }
+  RE_A.lastIndex = 0;
+  let m;
+  while ((m = RE_A.exec(codeNoStrings)) !== null) {
+    const line = codeNoStrings.slice(0, m.index).split('\n').length;
+    hits.push({ file: rel, line });
+  }
+  RE_B.lastIndex = 0;
+  while ((m = RE_B.exec(codeWithStrings)) !== null) {
+    const line = codeWithStrings.slice(0, m.index).split('\n').length;
+    hits.push({ file: rel, line });
   }
   return hits;
 }
+
 
 function collect() {
   const files = globSync('src/**/*.{ts,tsx}', { cwd: ROOT, absolute: true });
