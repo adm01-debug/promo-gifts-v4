@@ -78,6 +78,55 @@ const DEFAULT_TIMEOUT_MS = 8_000;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const BACKOFF_MS = [0, 200, 500] as const;
 
+// ==== Onda 11 — Circuit breaker in-memory por op ====
+interface BreakerState {
+  failures: number;
+  openedAt: number | null;
+}
+const BREAKER_THRESHOLD = 5;
+const BREAKER_COOLDOWN_MS = 60_000;
+const breakers: Map<string, BreakerState> = new Map();
+
+function getBreaker(op: string): BreakerState {
+  let s = breakers.get(op);
+  if (!s) {
+    s = { failures: 0, openedAt: null };
+    breakers.set(op, s);
+  }
+  return s;
+}
+
+export function breakerIsOpen(op: string): boolean {
+  const s = getBreaker(op);
+  if (s.openedAt === null) return false;
+  if (Date.now() - s.openedAt > BREAKER_COOLDOWN_MS) {
+    s.failures = 0;
+    s.openedAt = null;
+    return false;
+  }
+  return true;
+}
+
+function breakerRecordFailure(op: string, kind: AuthErrorKind): void {
+  if (kind !== 'network' && kind !== 'server' && kind !== 'timeout') return;
+  const s = getBreaker(op);
+  s.failures += 1;
+  if (s.failures >= BREAKER_THRESHOLD && s.openedAt === null) {
+    s.openedAt = Date.now();
+  }
+}
+
+function breakerRecordSuccess(op: string): void {
+  const s = getBreaker(op);
+  s.failures = 0;
+  s.openedAt = null;
+}
+
+/** Somente para testes. */
+export function __resetBreakers(): void {
+  breakers.clear();
+}
+
 function jitter(base: number): number {
   if (base === 0) return 0;
   // ±25% jitter
