@@ -153,3 +153,35 @@ export async function invokeEdgeSafe<T = unknown>(
     isDev,
   }) as Promise<SafeInvokeResult<T>>;
 }
+
+/**
+ * Adapter drop-in que preserva o shape `{ data, error }` de `supabase.functions.invoke`.
+ * Reduz o custo de migração dos 71 call sites legados: basta trocar
+ * `supabase.functions.invoke('fn', { body })` por `invokeEdge('fn', { body })`.
+ *
+ * O erro devolvido já vem sanitizado (`userMessage` como `message`) e classificado
+ * (`errorKind` como `name`), preservando a expectativa de `throw error` do caller.
+ */
+export interface InvokeCompatError {
+  message: string;
+  name: string;
+  status: number;
+}
+
+export async function invokeEdge<T = unknown>(
+  fnName: string,
+  options: InvokeOptions = {},
+): Promise<{ data: T | null; error: InvokeCompatError | null }> {
+  const r = await invokeEdgeSafe<T>(fnName, options);
+  if (r.kind === 'ok') {
+    return { data: (r.data ?? null) as T | null, error: null };
+  }
+  return {
+    data: null,
+    error: {
+      message: r.userMessage,
+      name: r.errorKind,
+      status: 0,
+    },
+  };
+}
