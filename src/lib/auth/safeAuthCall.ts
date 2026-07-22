@@ -291,6 +291,7 @@ export async function safeAuthCall<T>(
               error_kind: lastKind,
             });
           }
+          breakerRecordFailure(op, lastKind);
           return {
             kind: 'err',
             errorKind: lastKind,
@@ -300,6 +301,7 @@ export async function safeAuthCall<T>(
             elapsedMs: Date.now() - started,
           };
         }
+        breakerRecordFailure(op, lastKind);
       } else {
         breakerRecordSuccess(op);
         log.info(`${op}_ok`, { attempt });
