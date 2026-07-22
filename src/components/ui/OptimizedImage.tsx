@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { ImageOff, Loader2 } from 'lucide-react';
 import { getBlurhashDominantColor } from '@/utils/image-utils';
+import { deriveSpotOriginalUrlFromWorker } from '@/utils/imageProxy';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackClassName?: string;
@@ -40,6 +41,8 @@ export function OptimizedImage({
   ...props
 }: OptimizedImageProps) {
   const blurhashColor = useMemo(() => getBlurhashDominantColor(blurhash), [blurhash]);
+  const workerSpotFallback = useMemo(() => deriveSpotOriginalUrlFromWorker(src), [src]);
+  const resolvedUrlOriginal = urlOriginal ?? workerSpotFallback;
   const [isLoaded, setIsLoaded] = useState(false);
   // 0 = src primaria (CF) | 1 = urlOriginal (origem fornecedor) | 2 = erro (icone)
   const [fallbackStage, setFallbackStage] = useState<0 | 1 | 2>(0);
@@ -149,11 +152,15 @@ export function OptimizedImage({
     : fallbackStage === 0
       ? src
       : fallbackStage === 1
-        ? (urlOriginal ?? undefined)
+        ? (resolvedUrlOriginal ?? undefined)
         : undefined;
 
   const handleImageError: React.ReactEventHandler<HTMLImageElement> = (e) => {
-    if (fallbackStage === 0 && urlOriginal && !urlOriginal.includes('/placeholder')) {
+    if (
+      fallbackStage === 0 &&
+      resolvedUrlOriginal &&
+      !resolvedUrlOriginal.includes('/placeholder')
+    ) {
       setFallbackStage(1);
       setIsLoaded(false);
     } else {
