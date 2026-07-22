@@ -14,8 +14,8 @@
  * `/log-login-attempt` com um contador atômico local. Não substitui a
  * suíte LIVE — complementa validando a lógica do consumidor sob rajada.
  */
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mockEdgeFunctionFetch, resetExternalMocks } from "../../p0/_mocks";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { resetExternalMocks } from "../../p0/_mocks";
 
 const BASE = "https://doufsxqlfjyuvxuezpln.supabase.co/functions/v1";
 const FN = "/log-login-attempt";
@@ -29,23 +29,39 @@ const VALID_BODY = JSON.stringify({
 const LIMIT = 10;
 const BURST = 20;
 
+/**
+ * Instala um fetch mock com contador atômico local. Reproduz o comportamento
+ * do rate-limiter real: consome 1 slot por request, devolve 429 quando o
+ * bucket estoura. Ordem de resolução das promises = ordem de chegada
+ * (JS single-threaded no event-loop), o que exercita o mesmo TOCTOU do
+ * bucket compartilhado do rate-limiter Deno.
+ */
+function installRateLimitedMock(limit: number) {
+  let count = 0;
+  const fetchMock = vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : (input as Request).url;
+    if (!url.includes(FN)) {
+      return new Response(JSON.stringify({ error: "Not mocked: " + url }), { status: 501 });
+    }
+    count += 1;
+    if (count > limit) {
+      return new Response(JSON.stringify({ error: "Too Many Requests" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "60" },
+      });
+    }
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return { getCount: () => count };
+}
+
 describe("log-login-attempt — race condition no rate limit (BURST=20, LIMIT=10)", () => {
   beforeEach(() => {
-    // Setup: um contador que devolve 200 até LIMIT, depois 429.
-    let count = 0;
-    mockEdgeFunctionFetch({
-      [FN]: () => {
-        count += 1;
-        if (count > LIMIT) {
-          return {
-            status: 429,
-            body: { error: "Too Many Requests" },
-            headers: { "Retry-After": "60", "X-RateLimit-Remaining": "0" },
-          };
-        }
-        return { status: 200, body: { ok: true } };
-      },
-    });
+    installRateLimitedMock(LIMIT);
   });
   afterEach(() => resetExternalMocks());
 
@@ -64,12 +80,13 @@ describe("log-login-attempt — race condition no rate limit (BURST=20, LIMIT=10
     expect(ok, `esperado ${LIMIT} 200, obtido ${ok}`).toBe(LIMIT);
     expect(tooMany, `esperado ${BURST - LIMIT} 429, obtido ${tooMany}`).toBe(BURST - LIMIT);
 
-    // Drain bodies para não vazar handles no Vitest
     await Promise.all(results.map((r) => r.text().catch(() => "")));
   });
 
   it("rajada repetida 5x (100 requests) mantém invariante nunca-5xx", async () => {
     for (let round = 0; round < 5; round++) {
+      // Reset do bucket a cada round (simula nova janela do rate-limiter)
+      installRateLimitedMock(LIMIT);
       const promises = Array.from({ length: BURST }, () =>
         fetch(`${BASE}${FN}`, { method: "POST", headers: CT_JSON, body: VALID_BODY }),
       );
@@ -80,3 +97,4 @@ describe("log-login-attempt — race condition no rate limit (BURST=20, LIMIT=10
     }
   });
 });
+
