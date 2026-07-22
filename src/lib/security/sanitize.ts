@@ -67,14 +67,28 @@ export function sanitizeUrl(
  */
 export function sanitizeText(text: string | null | undefined): string {
   if (!text) return '';
-  // Iteratively strip HTML tags until stable (prevents incomplete-multi-character-sanitization
-  // where e.g. "<scr<script>ipt>" survives a single-pass strip).
+
+  // Step 1: Strip dangerous block elements (script, style, etc.) including
+  // their entire content. Must happen BEFORE generic tag stripping so
+  // <script>alert(1)</script> doesn't leave "alert(1)" in the output.
+  const DANGEROUS_BLOCKS =
+    /<(script|style|iframe|object|embed|applet|form|link|meta|base)\b[^>]*>[\s\S]*?<\/\1>/gi;
   let current = text;
+  let prev = '';
+  while (prev !== current) {
+    prev = current;
+    current = current.replace(DANGEROUS_BLOCKS, '');
+  }
+
+  // Step 2: Iteratively strip remaining HTML tags until stable (prevents
+  // incomplete-multi-character-sanitization where "<scr<script>ipt>" would
+  // survive a single-pass strip).
   for (let i = 0; i < 20; i++) {
     const next = current.replace(/<[^>]*>/g, '');
     if (next === current) break;
     current = next;
   }
+
   // Remove any remaining lone angle brackets that could not form a valid tag
   return current.replace(/[<>]/g, '').trim();
 }

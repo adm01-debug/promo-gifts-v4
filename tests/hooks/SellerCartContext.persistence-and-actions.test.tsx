@@ -1,6 +1,7 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SellerCartProvider, useSellerCartContext } from '@/contexts/SellerCartContext';
 
 const mockMutate = vi.fn();
@@ -47,14 +48,24 @@ vi.mock('@/hooks/products', () => ({
   }),
 }));
 
-const wrapper = ({ children }: { children: React.ReactNode }) => (
-  <SellerCartProvider>{children}</SellerCartProvider>
-);
+const wrapper = ({ children }: { children: React.ReactNode }) => {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return (
+    <QueryClientProvider client={qc}>
+      <SellerCartProvider>{children}</SellerCartProvider>
+    </QueryClientProvider>
+  );
+};
 
 describe('SellerCartContext - carrinho', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     localStorage.clear();
     mockMutate.mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('inclui item, altera quantidade e remove item delegando para mutações', () => {
@@ -69,6 +80,8 @@ describe('SellerCartContext - carrinho', () => {
       });
       result.current.updateItemQuantity('i1', 7);
       result.current.removeItem('i2');
+      // Avança os timers para disparar o debounce do updateItemQuantity
+      vi.runAllTimers();
     });
 
     // add agora delega via mutateAsync({ cartId, item }) — sem 2º arg de opções
@@ -77,8 +90,16 @@ describe('SellerCartContext - carrinho', () => {
       cartId: 'cart-1',
       item: expect.objectContaining({ product_id: 'p3', quantity: 1 }),
     });
-    expect(mockMutate).toHaveBeenCalledWith({ itemId: 'i1', quantity: 7 });
-    expect(mockMutate).toHaveBeenCalledWith('i2');
+    // updateItemQuantity usa debounce via useDebouncedCartItemActions — dispara após runAllTimers
+    expect(mockMutate).toHaveBeenCalledWith(
+      { itemId: 'i1', quantity: 7 },
+      expect.objectContaining({ onError: expect.any(Function), onSuccess: expect.any(Function) }),
+    );
+    // removeItem passa callbacks de erro/sucesso/settled via useDebouncedCartItemActions
+    expect(mockMutate).toHaveBeenCalledWith(
+      'i2',
+      expect.objectContaining({ onError: expect.any(Function), onSuccess: expect.any(Function) }),
+    );
   });
 
   it('calcula subtotal/total em tempo real a partir dos itens atuais', () => {
