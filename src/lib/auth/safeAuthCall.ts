@@ -157,11 +157,27 @@ async function withTimeout<T>(
     if (external.aborted) ctrl.abort();
     else external.addEventListener('abort', onExternalAbort, { once: true });
   }
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const abortPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      ctrl.abort();
+      reject(Object.assign(new Error('timeout'), { name: 'AbortError' }));
+    }, timeoutMs);
+    if (ctrl.signal.aborted) {
+      reject(Object.assign(new Error('aborted'), { name: 'AbortError' }));
+    } else {
+      ctrl.signal.addEventListener(
+        'abort',
+        () =>
+          reject(Object.assign(new Error('aborted'), { name: 'AbortError' })),
+        { once: true },
+      );
+    }
+  });
   try {
-    return await fn(ctrl.signal);
+    return await Promise.race([fn(ctrl.signal), abortPromise]);
   } finally {
-    clearTimeout(timer);
+    if (timer) clearTimeout(timer);
     if (external) external.removeEventListener('abort', onExternalAbort);
   }
 }
