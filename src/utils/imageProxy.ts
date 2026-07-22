@@ -102,6 +102,7 @@ export function needsProxy(url: string | null | undefined): boolean {
 // Outros fornecedores: padrão opaco → não derivável sem lookup no banco.
 
 const SPOT_ORIGIN_BASE = 'https://www.spotgifts.com.br/fotos/produtos/';
+const PROMO_GIFTS_IMAGES_WORKER_HOST = 'promo-brindes-images.adm01.workers.dev';
 
 /**
  * Tenta derivar a url_original do fornecedor a partir da URL CDN do Cloudflare.
@@ -129,6 +130,24 @@ export function deriveOriginalUrl(cfUrl: string | null | undefined): string | nu
       }
     }
     return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Tenta derivar a url_original da Spot a partir de URLs do worker legado.
+ * Worker: promo-brindes-images.adm01.workers.dev/spot/{filename}
+ * Origem: spotgifts.com.br/fotos/produtos/{filename}
+ */
+export function deriveSpotOriginalUrlFromWorker(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname !== PROMO_GIFTS_IMAGES_WORKER_HOST) return null;
+    const match = parsed.pathname.match(/^\/spot\/([^/?#]+\.(?:jpe?g|png|webp))$/i);
+    if (!match?.[1]) return null;
+    return `${SPOT_ORIGIN_BASE}${match[1]}`;
   } catch {
     return null;
   }
