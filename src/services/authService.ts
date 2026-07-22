@@ -18,6 +18,23 @@ export const authService = {
     });
   },
 
+  /**
+   * Variante resiliente de signIn (Onda 7 — safeAuthCall SSOT).
+   * Retorna `SafeAuthResult` classificado + userMessage sanitizada.
+   * Novos callers devem preferir esta; `signIn` legado mantido para
+   * compat com AuthContext e testes existentes.
+   */
+  async signInSafe(
+    email: string,
+    password: string,
+    opts: { signal?: AbortSignal } = {},
+  ): Promise<SafeAuthResult<Awaited<ReturnType<typeof this.signIn>>['data']>> {
+    const supabase = await getSupabaseClient();
+    return safeAuthCall(
+      () => supabase.auth.signInWithPassword({ email, password }),
+      { op: 'signIn', signal: opts.signal },
+    );
+
   async signOut() {
     const supabase = await getSupabaseClient();
     try {
