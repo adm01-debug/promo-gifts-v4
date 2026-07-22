@@ -125,18 +125,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     log.info('start');
     try {
       const supabase = await getSupabaseClient();
-      const { data, error } = await supabase.auth.refreshSession();
+      // Onda 13 — refreshSession via wrapper Safe (timeout + retry + breaker).
+      const res = await authService.refreshSessionSafe();
 
       // BUG-CRÍTICO FIX: kid rotacionado / bad_jwt → recovery agressiva.
-      // Antes, o erro era descartado silenciosamente e o usuário ficava
-      // logado no client mas deslogado no server até reabrir a aba.
-      if (error && isBadJwtError(error)) {
-        log.warn('bad_jwt_detected', { err: error.message });
+      if (res.kind === 'err' && isBadJwtError(res.raw)) {
+        log.warn('bad_jwt_detected', { err: res.userMessage });
         await recoverSession('refreshSession:bad_jwt');
         return;
       }
 
-      const nextSession = data?.session ?? (await supabase.auth.getSession()).data.session;
+      const refreshed =
+        res.kind === 'ok' ? ((res.data ?? null) as { session?: Session | null } | null) : null;
+      const nextSession =
+        refreshed?.session ?? (await supabase.auth.getSession()).data.session;
       if (mountedRef.current) {
         setSession(nextSession);
         setUser(nextSession?.user ?? null);

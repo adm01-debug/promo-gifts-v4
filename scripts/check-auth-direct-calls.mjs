@@ -18,7 +18,7 @@ const ALLOWLIST_PREFIXES = [
   'src/services/authService.ts',
   'src/lib/auth/',
   'src/integrations/',
-  'src/contexts/AuthContext.tsx', // legado — migração incremental futura
+  // 'src/contexts/AuthContext.tsx' removido na Onda 13 — usa authService.*Safe.
   'src/hooks/auth/',
   'src/pages/auth/ResetPassword.tsx', // usa updateUser após token recovery — refactor futuro
 ];
