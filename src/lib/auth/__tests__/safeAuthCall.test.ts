@@ -5,8 +5,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   safeAuthCall,
+  __resetBreakers,
   type AuthErrorKind,
-} , __resetBreakers } from '@/lib/auth/safeAuthCall';
+} from '@/lib/auth/safeAuthCall';
 import {
   resetStructuredLoggerMock,
   findLoggerEventsByScope,
