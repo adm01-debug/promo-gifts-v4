@@ -179,23 +179,28 @@ export default function SSOCallbackPage() {
         if (code) {
           tracer.setFlow('pkce');
           tracer.step('pkce-exchange-start', { codePrefix: `${code.slice(0, 6)}…` });
-          const { data: exData, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) {
-            tracer.stepError('pkce-exchange-failed', exchangeError);
+          const { authService } = await import('@/services/authService');
+          const exRes = await authService.exchangeCodeForSessionSafe(code);
+          if (exRes.kind === 'err') {
+            tracer.stepError('pkce-exchange-failed', new Error(exRes.userMessage));
             logger.error('[sso-callback] exchangeCodeForSession failed', {
               flowId: tracer.flowId,
-              message: exchangeError.message,
+              errorKind: exRes.errorKind,
             });
-            goLogin(exchangeError.message);
+            goLogin(exRes.userMessage);
             return;
           }
-          tracer.captureSession(exData?.session ?? null);
+          const exData = exRes.data as { session?: unknown } | null;
+          const session = (exData?.session ?? null) as
+            | Parameters<typeof tracer.captureSession>[0];
+          tracer.captureSession(session);
           tracer.step('pkce-exchange-ok', {
-            hasSession: !!exData?.session,
-            provider: exData?.session?.user?.app_metadata?.provider ?? null,
+            hasSession: !!session,
+            provider:
+              (session as { user?: { app_metadata?: { provider?: string } } } | null)?.user
+                ?.app_metadata?.provider ?? null,
           });
-          await goHome(exData?.session ?? null);
+          await goHome(session);
           return;
         }
 
