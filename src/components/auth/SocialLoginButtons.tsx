@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef, forwardRef } from 'react';
-import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+
 import { useToast } from '@/hooks/ui/use-toast';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
 import { markOAuthPending, clearOAuthPending, readOAuthPending } from '@/lib/auth/oauth-pending';
