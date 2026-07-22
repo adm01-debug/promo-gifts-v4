@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { useToast } from '@/hooks/ui/use-toast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { authService } from '@/services/authService';
 
 import { logger } from '@/lib/logger';
 export interface PasswordResetRequest {
