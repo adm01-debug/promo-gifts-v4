@@ -48,19 +48,33 @@ vi.mock('@/lib/telemetry/structuredLogger', () => ({
   }),
 }));
 
-// Supabase client: `from(...).insert(...).select().single()` rejeita com
-// erro simulando RLS/5xx/abort. Cobre o caminho do onError do addItem.
+// Supabase client — mock via Proxy que responde a QUALQUER cadeia
+// `.from().select().eq().eq().is/eq().maybeSingle()` (findVariantInCart)
+// e faz o `.insert(...)` rejeitar, exercitando o onError do addItem.
 const insertRejects = vi.fn();
+function makeChain(mode: 'select' | 'insert'): unknown {
+  const chain: Record<string, unknown> = {};
+  const proxy: unknown = new Proxy(chain, {
+    get(_t, prop: string) {
+      if (prop === 'then') return undefined; // não é thenable até o terminal
+      if (prop === 'maybeSingle') {
+        return async () => ({ data: null, error: null });
+      }
+      if (prop === 'single') {
+        return async () => ({ data: null, error: null });
+      }
+      if (prop === 'insert') {
+        return (payload: unknown) => insertRejects(payload);
+      }
+      // Encadeamento fluente: select/eq/is/update/order/... retornam o próprio proxy.
+      return () => proxy;
+    },
+  });
+  return mode === 'select' ? proxy : proxy;
+}
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: () => ({
-      insert: (payload: unknown) => ({
-        select: () => ({
-          single: () => insertRejects(payload),
-        }),
-      }),
-      select: () => ({ eq: () => ({ order: () => Promise.resolve({ data: [], error: null }) }) }),
-    }),
+    from: () => makeChain('select'),
   },
 }));
 
