@@ -18,6 +18,7 @@ import { safeAuthCall, type SafeAuthResult } from '@/lib/auth/safeAuthCall';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
+import { recordInvokeEvent } from '@/lib/edge/invokeTelemetrySink';
 
 export type EdgeErrorKind =
   | 'client'
