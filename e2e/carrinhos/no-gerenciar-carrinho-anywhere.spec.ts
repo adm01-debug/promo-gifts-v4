@@ -12,9 +12,8 @@
  * Se este teste falhar, alguém reintroduziu o rótulo em algum ponto da UI.
  */
 import { test, expect, type Page } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart } from '../helpers/cart-mock';
 
 const FORBIDDEN = /Gerenciar Carrinho/i;
 
