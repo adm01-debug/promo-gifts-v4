@@ -50,7 +50,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       setIsLoading(true);
 
       try {
-        const { data, error } = await invokeEdge('visual-search', {
+        const { data, error } = await invokeEdge<{ products: SearchResult[]; analysis: ProductAnalysis; error?: string }>('visual-search', {
           body: { imageBase64 },
         });
 
@@ -58,11 +58,11 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
           throw new Error(error.message);
         }
 
-        if (data.error) {
+        if (data?.error) {
           throw new Error(data.error);
         }
 
-        const { products, analysis } = data;
+        const { products, analysis } = data ?? { products: [], analysis: {} as ProductAnalysis };
 
         toast({
           title: 'Busca concluída!',
