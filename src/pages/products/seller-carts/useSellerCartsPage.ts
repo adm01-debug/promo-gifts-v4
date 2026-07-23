@@ -478,6 +478,12 @@ export function useSellerCartsPage() {
     // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
     // consome número de orçamento — o orçamento só se torna real quando o vendedor
     // preenche gravação/pagamento/entrega e clica em Salvar. O carrinho é PRESERVADO.
+    trackQuoteFinalizedFromCart({
+      cartId: cart.id,
+      companyId: cart.company_id ?? null,
+      companyName: cart.company_name ?? null,
+      itemCount: validItems.length,
+    });
     navigate('/orcamentos/novo', {
       state: {
         fromCart: true,
