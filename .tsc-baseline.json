@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-23T15:22:17.438Z",
-  "totalErrors": 198,
+  "generatedAt": "2026-07-23T15:31:44.138Z",
+  "totalErrors": 188,
   "counts": {
     "src/components/admin/ImageUploadButton.tsx": {
       "TS18046": 1
@@ -13,9 +13,6 @@
     },
     "src/components/admin/connections/IntegrationsHealthCard.tsx": {
       "TS2339": 3
-    },
-    "src/components/admin/connections/WebhookPlaygroundPanel.tsx": {
-      "TS2339": 10
     },
     "src/components/admin/security/keys/UpdateMcpKeyDialog.tsx": {
       "TS2339": 1
