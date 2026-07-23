@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-23T15:36:50.138Z",
-  "totalErrors": 181,
+  "generatedAt": "2026-07-23T15:41:31.608Z",
+  "totalErrors": 175,
   "counts": {
     "src/components/admin/ImageUploadButton.tsx": {
       "TS18046": 1
@@ -78,10 +78,6 @@
       "TS2339": 3
     },
     "src/hooks/mockup/mockupGenerationService.ts": {
-      "TS2339": 2
-    },
-    "src/hooks/products/useProductSeoAI.ts": {
-      "TS18046": 4,
       "TS2339": 2
     },
     "src/hooks/simulation/useLogoColorAnalysis.ts": {
