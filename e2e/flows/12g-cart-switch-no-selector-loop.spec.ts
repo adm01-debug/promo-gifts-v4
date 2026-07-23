@@ -1,0 +1,120 @@
+/**
+ * Regressão do "loop do CartSelectorDialog" ao trocar de carrinho no QuickAdd.
+ *
+ * BUG: com 2+ carrinhos ativos, o botão "Adicionar ao Carrinho" (dentro do
+ * popover do QuickAddToQuote) reabria o `CartSelectorDialog` mesmo quando já
+ * havia um `activeCart` definido — trancando o vendedor num loop após clicar
+ * em "Trocar" e escolher outra empresa.
+ *
+ * Fix: guarda em `handleAddToQuote` só abre o seletor quando NÃO há
+ * `activeCart`. Este spec exercita o fluxo completo:
+ *   1. Semear 2 carrinhos via mock da API `seller_carts`
+ *   2. Abrir popover do QuickAdd em um card do catálogo
+ *   3. Clicar em "Trocar" → seletor abre → escolher o outro carrinho
+ *   4. Reabrir o popover e clicar "Adicionar ao Carrinho"
+ *   5. VERIFICAR: o `CartSelectorDialog` NÃO reabre (sem loop)
+ *
+ * Política SSOT (e2e/fixtures/selectors.ts) — apenas data-testid.
+ * Skip tolerante em ambientes sem catálogo (segue padrão do 12-cart-checkout).
+ */
+import { test, expect, requireAuth } from "../fixtures/test-base";
+import { gotoAndSettle } from "../helpers/nav";
+import { Sel, TID } from "../fixtures/selectors";
+import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
+
+const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
+
+test.describe("Regressão: trocar carrinho não abre seletor em loop", () => {
+  test.beforeEach(() => requireAuth());
+
+  test("após 'Trocar' + escolher outro carrinho, 'Adicionar ao Carrinho' NÃO reabre o seletor", async ({
+    page,
+  }) => {
+    // 1. Semeia 2 carrinhos ativos ANTES de qualquer navegação — a query
+    //    seller_carts é feita em cascata pelo SellerCartContext no boot.
+    const cartA = makeMockCart(0, 1);
+    const cartB = makeMockCart(1, 1);
+    await mockSellerCartsAPI(page, [cartA, cartB]);
+
+    await gotoAndSettle(page, "/produtos");
+
+    const card = page.locator(Sel.product.card).first();
+    if (!(await card.isVisible().catch(() => false))) {
+      test.skip(true, "Catálogo vazio neste ambiente");
+      return;
+    }
+
+    // 2. Abre o popover do QuickAddToQuote via ações rápidas do card.
+    const actionsToggle = card.locator(Sel.product.actionsToggle).first();
+    if (await actionsToggle.isVisible().catch(() => false)) {
+      await actionsToggle.click().catch(() => {});
+    }
+    const cartTrigger = card.locator(Sel.product.cartTrigger).first();
+    if (!(await cartTrigger.isVisible().catch(() => false))) {
+      test.skip(true, "Card sem trigger de carrinho neste ambiente");
+      return;
+    }
+    await cartTrigger.click();
+
+    // O popover pode exigir escolha de variante primeiro; se aparecer o próprio
+    // seletor de carrinho de cara (sem activeCart pré-definido no fluxo real),
+    // usamos ele como ponto de partida.
+    const addBtn = page.locator(Sel.product.cardAddToCart).first();
+    const selectorDialog = page.locator(SEL_SELECTOR_DIALOG).first();
+
+    const first = await Promise.race([
+      addBtn.waitFor({ state: "visible", timeout: 8_000 }).then(() => "quantity"),
+      selectorDialog.waitFor({ state: "visible", timeout: 8_000 }).then(() => "selector"),
+    ]).catch(() => null);
+
+    if (!first) {
+      test.skip(true, "Popover do QuickAdd não abriu (variante obrigatória neste card)");
+      return;
+    }
+
+    // 3. Garante que o seletor abra e escolhe o carrinho B (troca de empresa).
+    if (first === "quantity") {
+      // Popover já mostra "→ Empresa X   Trocar" — aciona o botão Trocar.
+      // Como o "Trocar" não tem data-testid dedicado, buscamos pelo texto
+      // dentro do card do popover (exceção controlada e localizada).
+      const trocar = page.getByRole("button", { name: /^trocar$/i }).first();
+      if (!(await trocar.isVisible().catch(() => false))) {
+        test.skip(true, "Botão Trocar ausente — popover em estado inesperado");
+        return;
+      }
+      await trocar.click();
+    }
+    await expect(selectorDialog).toBeVisible({ timeout: 8_000 });
+
+    // Clica no cartão B do seletor.
+    const cartBRow = page.locator(TID(`cart-selector-item-${cartB.id}`)).first();
+    await expect(cartBRow).toBeVisible({ timeout: 5_000 });
+    await cartBRow.click();
+
+    // Após escolher, o popover auto-fecha em 1200ms (setTimeout do QuickAdd).
+    await expect(selectorDialog).toBeHidden({ timeout: 5_000 });
+
+    // 4. Reabre o popover no MESMO card — activeCart agora é o B.
+    if (await actionsToggle.isVisible().catch(() => false)) {
+      await actionsToggle.click().catch(() => {});
+    }
+    await cartTrigger.click();
+    await expect(addBtn).toBeVisible({ timeout: 8_000 });
+
+    // 5. Clica em "Adicionar ao Carrinho" — o BUG faria o seletor reabrir.
+    //    Com o fix, ele adiciona direto ao activeCart e o popover fecha.
+    await addBtn.click();
+
+    // Aguarda uma janela suficiente para o seletor "reabrir" caso o bug
+    // volte — se aparecer, o teste falha imediatamente.
+    await expect(selectorDialog).toBeHidden({ timeout: 2_000 });
+
+    // Confirma que o botão entrou em estado "Adicionado" (isAdded=true) ou
+    // que o popover fechou — ambos são sinais válidos de sucesso.
+    const stillVisible = await addBtn.isVisible().catch(() => false);
+    if (stillVisible) {
+      // O texto muda para "Adicionado!" enquanto o popover não fecha.
+      await expect(addBtn).toContainText(/adicionado/i, { timeout: 3_000 });
+    }
+  });
+});
