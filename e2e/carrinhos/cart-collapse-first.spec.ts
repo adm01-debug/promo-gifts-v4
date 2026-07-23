@@ -10,21 +10,20 @@
  *  - persistência do estado de colapso em localStorage após refresh.
  */
 import { test, expect } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
-import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart } from '../helpers/cart-mock';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 
 test.describe('Carrinhos · recolher/expandir primeiro carrinho', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await loginAs(page, 'user');
   });
 
   test('primeiro carrinho colapsa, expande e persiste após refresh', async ({ page }) => {
-    const carts = [makeMockCart(0, 1), makeMockCart(1, 1), makeMockCart(2, 1)];
-    await mockSellerCartsAPI(page, carts);
-
-    await gotoAndSettle(page, '/');
+    const { carts } = await setupAuthedWithCarts(page, {
+      role: 'user',
+      count: 3,
+      itemsPerCart: 1,
+      gotoUrl: '/',
+    });
     await page.getByTestId('cart-trigger').click();
     await expect(page.getByTestId('cart-drawer')).toBeVisible();
 
