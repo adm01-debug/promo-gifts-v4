@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-23T15:31:44.138Z",
-  "totalErrors": 188,
+  "generatedAt": "2026-07-23T15:36:50.138Z",
+  "totalErrors": 181,
   "counts": {
     "src/components/admin/ImageUploadButton.tsx": {
       "TS18046": 1
@@ -83,10 +83,6 @@
     "src/hooks/products/useProductSeoAI.ts": {
       "TS18046": 4,
       "TS2339": 2
-    },
-    "src/hooks/products/useProductsByCategory.ts": {
-      "TS18046": 2,
-      "TS2339": 5
     },
     "src/hooks/simulation/useLogoColorAnalysis.ts": {
       "TS2339": 3
