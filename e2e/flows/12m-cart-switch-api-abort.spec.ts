@@ -114,9 +114,8 @@ test.describe("Regressão: aborto de rede na troca de carrinho", () => {
     });
 
     try {
-      // 1. Toast de erro visível.
-      const errorToast = page.locator('[data-sonner-toast][data-type="error"]').first();
-      await expect(errorToast).toBeVisible({ timeout: 6_000 });
+      // 1. Toast de erro visível com o TEXTO EXATO do SSOT (sonner default).
+      await assertCartAddErrorToast(page, { expectAutoDismiss: false });
       expect(abortAttempts, "insert deveria ter sido tentado ao menos 1x").toBeGreaterThan(0);
 
       // 2. Confirma que o seletor não reabre nos próximos ~1.5s de forma
