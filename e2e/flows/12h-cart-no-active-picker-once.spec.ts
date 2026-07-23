@@ -16,7 +16,7 @@
  *     encadeado em cada etapa: se voltar a ficar visível, o teste falha
  *     no ponto exato do loop, com stack de origem determinístico.
  */
-import { test, expect, requireAuth } from "../fixtures/test-base";
+import { test, expect } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel, TID } from "../fixtures/selectors";
 import {
