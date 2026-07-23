@@ -37,8 +37,18 @@ export interface QuoteFinalizedPayload {
   itemCount: number;
 }
 
+export interface CheckoutStartedPayload {
+  cartId: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  itemCount: number;
+  /** Origem UI do clique no CTA (ex.: 'carts_list_page', 'cart_detail_header'). */
+  source: string;
+}
+
 export type CartAnalyticsEvent =
   | { name: 'cart.company_switched'; ts: string; payload: CartCompanySwitchedPayload }
+  | { name: 'cart.checkout_started'; ts: string; payload: CheckoutStartedPayload }
   | { name: 'cart.quote_finalized'; ts: string; payload: QuoteFinalizedPayload };
 
 const E2E_BUFFER_KEY = '__e2eAnalytics__';
