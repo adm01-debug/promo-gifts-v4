@@ -14,17 +14,16 @@
  *  • A quantidade exibida é a nova (não voltou ao valor original).
  */
 import { test, expect, type Page } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart, type MockCart } from '../helpers/cart-mock';
+import type { MockCart } from '../helpers/cart-mock';
 
-function buildCarts(): MockCart[] {
-  const cart = makeMockCart(0, 1);
+function transformCart(cart: MockCart): MockCart {
   cart.company_id = 'co-retry';
   cart.company_name = 'Empresa Retry';
   cart.seller_cart_items[0].id = 'item-retry-1';
   cart.seller_cart_items[0].quantity = 2;
-  return [cart];
+  return cart;
 }
 
 /**
@@ -59,8 +58,13 @@ test.describe('Carrinhos · popover — retry após erro @smoke', () => {
   test('clicar em "Tentar de novo" refaz o PATCH e limpa o alerta', async ({
     page,
   }) => {
-    await loginAs(page, 'seller');
-    await mockSellerCartsAPI(page, buildCarts());
+    await setupAuthedWithCarts(page, {
+      role: 'seller',
+      count: 1,
+      itemsPerCart: 1,
+      gotoUrl: null,
+      transform: (c) => transformCart(c),
+    });
     const patch = await mockFlakyPatch(page, { failCount: 1, delayMs: 50 });
 
     await gotoAndSettle(page, '/');
