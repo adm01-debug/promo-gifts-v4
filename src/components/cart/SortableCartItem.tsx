@@ -446,7 +446,22 @@ export const SortableCartItem = memo(
                   aria-label={`Quantidade para ${item.product_name}`}
                   data-testid="cart-qty-input"
                   value={qtyDraft}
-                  onFocus={(e) => e.target.select()}
+                  onFocus={(e) => {
+                    const el = e.currentTarget;
+                    const end = el.value.length;
+                    // posiciona o cursor no fim sem selecionar o conteúdo.
+                    // <input type="number"> não suporta setSelectionRange em
+                    // alguns navegadores (lança InvalidStateError) — envolvemos
+                    // em try/catch e rodamos no próximo frame para sobrepor
+                    // qualquer seleção implícita aplicada no focus via Tab.
+                    requestAnimationFrame(() => {
+                      try {
+                        el.setSelectionRange(end, end);
+                      } catch {
+                        /* type=number em Chrome/Safari — ignorar */
+                      }
+                    });
+                  }}
                   onChange={(e) => setQtyDraft(e.target.value)}
                   onBlur={commitQty}
                   onKeyDown={(e) => {
