@@ -77,6 +77,21 @@ export function QuickAddToQuote({
       return;
     }
 
+    // Se o insert virá para um cartId específico E ele difere do activeCart,
+    // registramos a "troca de empresa" ANTES do insert — a UI segue com o
+    // fluxo mesmo que a mutation falhe (o toast de erro é emitido em outro
+    // ponto). Assim analytics reflete a intenção do vendedor.
+    if (cartId && cartId !== activeCart?.id) {
+      const target = carts.find((c) => c.id === cartId) ?? null;
+      trackCartCompanySwitched({
+        fromCartId: activeCart?.id ?? null,
+        toCartId: cartId,
+        companyId: target?.company_id ?? null,
+        companyName: target?.company_name ?? null,
+        source: 'quick_add_selector',
+      });
+    }
+
     addToActiveCart(
       {
         product_id: productId,
