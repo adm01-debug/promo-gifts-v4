@@ -522,7 +522,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
       if (!error && !data?.error) {
         record(true, data);
         consecutiveRateLimitHits = 0;
-        return data as CrmResponse<T>;
+        return data as unknown as CrmResponse<T>;
       }
 
       const msg = error ? await extractCrmErrorMessage(error) : data?.error || 'Unknown CRM error';
