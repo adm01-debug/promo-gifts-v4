@@ -38,16 +38,17 @@ for (const vp of VIEWPORTS) {
   test.describe(`Regressão · "Gerenciar Carrinho" ausente (${vp.name}) @carrinhos`, () => {
     test.beforeEach(async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await loginAs(page, 'user');
     });
 
     test('lista de carrinhos, detalhe do carrinho e /orcamentos não expõem o rótulo', async ({
       page,
     }) => {
-      const carts = [makeMockCart(0, 2)];
-      await mockSellerCartsAPI(page, carts);
-
-      await gotoAndSettle(page, '/carrinhos');
+      const { carts } = await setupAuthedWithCarts(page, {
+        role: 'user',
+        count: 1,
+        itemsPerCart: 2,
+        gotoUrl: '/carrinhos',
+      });
       await assertNoGerenciarCarrinho(page);
 
       await gotoAndSettle(page, `/carrinhos/${carts[0].id}`);
