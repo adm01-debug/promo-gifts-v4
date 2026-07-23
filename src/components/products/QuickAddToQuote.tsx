@@ -15,7 +15,11 @@ import type { ExternalVariantStock } from '@/hooks/products';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 import { getProxiedImageUrl } from '@/utils/imageProxy';
-import { trackCartCompanySwitched } from '@/lib/analytics/cartAnalytics';
+import {
+  trackCartCompanySwitched,
+  trackCartCompanySwitchFailed,
+  type CartCompanySwitchFailedPayload,
+} from '@/lib/analytics/cartAnalytics';
 
 interface QuickAddToQuoteProps {
   productId: string;
@@ -67,7 +71,7 @@ export function QuickAddToQuote({
     setSelectedVariant(v);
   };
 
-  const handleAddToQuote = (cartId?: string) => {
+  const handleAddToQuote = async (cartId?: string) => {
     // Só mostramos o seletor quando NÃO há carrinho ativo. Se já existe activeCart
     // (por exemplo após o usuário ter clicado em "Trocar" e escolhido um carrinho),
     // adicionamos direto — do contrário o botão "Adicionar ao Carrinho" reabriria
@@ -81,18 +85,21 @@ export function QuickAddToQuote({
     // registramos a "troca de empresa" ANTES do insert — a UI segue com o
     // fluxo mesmo que a mutation falhe (o toast de erro é emitido em outro
     // ponto). Assim analytics reflete a intenção do vendedor.
-    if (cartId && cartId !== activeCart?.id) {
+    const isSwitch = Boolean(cartId && cartId !== activeCart?.id);
+    let switchContext: Omit<CartCompanySwitchFailedPayload, 'reason' | 'status'> | null = null;
+    if (isSwitch && cartId) {
       const target = carts.find((c) => c.id === cartId) ?? null;
-      trackCartCompanySwitched({
+      switchContext = {
         fromCartId: activeCart?.id ?? null,
         toCartId: cartId,
         companyId: target?.company_id ?? null,
         companyName: target?.company_name ?? null,
         source: 'quick_add_selector',
-      });
+      };
+      trackCartCompanySwitched(switchContext);
     }
 
-    addToActiveCart(
+    const ok = await addToActiveCart(
       {
         product_id: productId,
         product_name: productName,
@@ -105,6 +112,22 @@ export function QuickAddToQuote({
       },
       cartId,
     );
+
+    // Falha na troca de empresa: emitimos EXATAMENTE UM `cart.company_switch_failed`,
+    // sempre APÓS o `cart.company_switched` correspondente. O consumidor de analytics
+    // pareia os dois eventos pelo `toCartId` para medir taxa de sucesso da troca.
+    // Nota: o toast de erro é emitido pelo onError do useSellerCarts (SSOT); aqui
+    // apenas registramos telemetria — sem toast duplicado.
+    if (isSwitch && !ok && switchContext) {
+      trackCartCompanySwitchFailed({
+        ...switchContext,
+        reason: 'mutation_failed',
+        status: null,
+      });
+      // Não avança o feedback visual de sucesso: sai cedo mantendo o popover
+      // aberto para o vendedor tentar novamente.
+      return;
+    }
 
     // Feedback visual confirmando o carrinho de destino. Damos destaque
     // especial ao caso "troca de empresa" (cartId veio do CartSelectorDialog)
