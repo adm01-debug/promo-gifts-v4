@@ -196,7 +196,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
       const token = ++fetchTokenRef.current;
       setIsLoading(true);
       try {
-        const { data, error } = await invokeEdge('categories-api', {
+        const { data, error } = await invokeEdge<{ success: boolean; data?: string[] }>('categories-api', {
           body: {
             action: 'descendants',
             categoryIds: idsForFetch,
@@ -204,7 +204,7 @@ export function useCategoryDescendants(categoryIds: string[]) {
         });
 
         if (token !== fetchTokenRef.current) return; // superseded — nova seleção de categoria
-        if (!error && data.success) {
+        if (!error && data?.success) {
           setDescendantIds(data.data || []);
         }
       } catch (err) {
