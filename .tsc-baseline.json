@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-23T15:07:47.019Z",
-  "totalErrors": 210,
+  "generatedAt": "2026-07-23T15:22:17.438Z",
+  "totalErrors": 198,
   "counts": {
     "src/components/admin/ImageUploadButton.tsx": {
       "TS18046": 1
@@ -73,9 +73,6 @@
     },
     "src/hooks/intelligence/useExternalDbInspect.ts": {
       "TS2345": 1
-    },
-    "src/hooks/intelligence/useMagicUpGeneration.ts": {
-      "TS2339": 12
     },
     "src/hooks/intelligence/useStockVelocityPrefetch.ts": {
       "TS2769": 1
