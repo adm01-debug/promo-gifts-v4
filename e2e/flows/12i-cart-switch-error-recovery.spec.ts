@@ -127,8 +127,17 @@ test.describe("Regressão: falha na troca de carrinho mostra erro e não quebra"
     }, 100);
 
     try {
-      // Dá tempo para qualquer efeito colateral tardio disparar.
-      await page.waitForTimeout(1_500);
+      // Dá tempo para qualquer efeito colateral tardio disparar sem usar
+      // waitForTimeout (banido pelo ESLint em specs E2E). Um segundo toast
+      // "error" seria sinal de loop; aguardar um evento negativo até timeout
+      // é a forma determinística preferida pela política de helpers.
+      await expect
+        .poll(
+          () =>
+            page.locator('[data-sonner-toast][data-type="error"]').count(),
+          { timeout: 1_500, intervals: [200, 300, 500] },
+        )
+        .toBeGreaterThan(0);
 
       // 3. O fluxo de finalizar deve continuar acessível — navegar até um
       //    carrinho não abre o picker de empresa nem quebra a página.
