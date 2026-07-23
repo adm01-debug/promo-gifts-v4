@@ -21,6 +21,7 @@ import { test, expect } from "../fixtures/test-base";
 import { Sel, TID } from "../fixtures/selectors";
 import { setupAuthedWithCarts } from "../helpers/cart-setup";
 import { gotoAndSettle } from "../helpers/nav";
+import { startForbiddenDialogWatcher } from "../helpers/dialog-watcher";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
@@ -29,7 +30,7 @@ const SEL_CHECKOUT_CTA = TID("cart-checkout-cta");
 test.describe("Regressão: trocar carrinho não abre seletor em loop", () => {
   test("após 'Trocar' + escolher outro carrinho, 'Adicionar ao Carrinho' NÃO reabre o seletor", async ({
     page,
-  }) => {
+  }, testInfo) => {
     // SSOT: login autenticado + 2 carrinhos mockados + navegação para /produtos,
     // em ordem determinística (login → mock → goto). O `SellerCartContext`
     // dispara a query de seller_carts no boot da rota, então o mock JÁ está
@@ -155,24 +156,16 @@ test.describe("Regressão: trocar carrinho não abre seletor em loop", () => {
     //    (navegação para /orcamentos/novo).
     const companyPicker = page.locator(SEL_COMPANY_PICKER).first();
 
-    // Instala um "watcher": se qualquer um dos dois dialogs ficar visível
-    // enquanto o checkout roda, capturamos e reprovamos o teste.
-    let selectorOpenedDuringCheckout = false;
-    let pickerOpenedDuringCheckout = false;
-    const watcher = setInterval(() => {
-      void selectorDialog
-        .isVisible()
-        .then((v) => {
-          if (v) selectorOpenedDuringCheckout = true;
-        })
-        .catch(() => {});
-      void companyPicker
-        .isVisible()
-        .then((v) => {
-          if (v) pickerOpenedDuringCheckout = true;
-        })
-        .catch(() => {});
-    }, 100);
+    // Watcher determinístico: se algum dos dialogs proibidos ficar visível
+    // durante o checkout, anexa screenshot + HTML ao relatório e falha o teste
+    // com mensagem descritiva (timestamp, seletor culpado, URL).
+    const watcher = startForbiddenDialogWatcher(page, testInfo, {
+      label: "checkout-after-switch",
+      selectors: {
+        "cart-selector-dialog": SEL_SELECTOR_DIALOG,
+        "cart-company-picker-select": SEL_COMPANY_PICKER,
+      },
+    });
 
     try {
       await gotoAndSettle(page, `/carrinhos/${cartB.id}`);
@@ -230,16 +223,11 @@ test.describe("Regressão: trocar carrinho não abre seletor em loop", () => {
         ).toBe(cartB.id);
       }
     } finally {
-      clearInterval(watcher);
+      await watcher.stop();
     }
 
-    expect(
-      selectorOpenedDuringCheckout,
-      "CartSelectorDialog NÃO deve abrir durante o checkout após troca de carrinho",
-    ).toBe(false);
-    expect(
-      pickerOpenedDuringCheckout,
-      "CartCompanyPickerDialog NÃO deve abrir durante o checkout após troca de carrinho",
-    ).toBe(false);
+    // Falha rica: lista cada hit com timestamp/URL/seletor + anexa screenshot
+    // e HTML ao test-results. O trace do teste (config Playwright) cobre o resto.
+    await watcher.assertNoHits();
   });
 });
