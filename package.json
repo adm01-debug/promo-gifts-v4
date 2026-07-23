@@ -88,6 +88,8 @@
     "qa:lint": "npm run lint:config && eslint src --max-warnings=0",
     "qa:typecheck": "tsc -p tsconfig.app.json --noEmit",
     "qa:full": "npm run check:package-duplicate-scripts && npm run lint:baseline && npm run qa:typecheck && npm run qa:lint",
+    "qa:round": "node scripts/round-quality-report.mjs",
+    "qa:round:fast": "node scripts/round-quality-report.mjs --no-eslint",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
     "prepare": "husky",
