@@ -10,9 +10,9 @@
  *      voltam para o rascunho antigo.
  */
 import { test, expect } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart, type MockCart } from '../helpers/cart-mock';
+import type { MockCart } from '../helpers/cart-mock';
 
 const STALE_DRAFT = {
   version: 2,
