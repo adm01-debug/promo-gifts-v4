@@ -12,17 +12,16 @@
  * `useDebouncedCartItemActions`.
  */
 import { test, expect, type Page } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart, type MockCart } from '../helpers/cart-mock';
+import type { MockCart } from '../helpers/cart-mock';
 
-function buildCarts(): MockCart[] {
-  const cart = makeMockCart(0, 1);
+function transformCart(cart: MockCart): MockCart {
   cart.company_id = 'co-optimistic';
   cart.company_name = 'Empresa Optimistic';
   cart.seller_cart_items[0].id = 'item-optimistic-1';
   cart.seller_cart_items[0].quantity = 3;
-  return [cart];
+  return cart;
 }
 
 /** Intercepta PATCH em seller_cart_items com atraso configurável e conta chamadas. */
@@ -57,8 +56,13 @@ async function mockSlowItemDelete(page: Page, delayMs: number): Promise<void> {
 
 test.describe('Carrinhos · popover — update otimista + debounce @smoke', () => {
   test('cliques em + refletem instantaneamente e coalescem em 1 PATCH', async ({ page }) => {
-    await loginAs(page, 'seller');
-    await mockSellerCartsAPI(page, buildCarts());
+    await setupAuthedWithCarts(page, {
+      role: 'seller',
+      count: 1,
+      itemsPerCart: 1,
+      gotoUrl: null,
+      transform: (c) => transformCart(c),
+    });
     const patch = await mockSlowItemPatch(page, 800);
 
     await gotoAndSettle(page, '/');
