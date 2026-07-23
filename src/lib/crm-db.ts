@@ -314,7 +314,12 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
     const body = { operation: 'batch', queries };
     const reqBytes = estimatePayloadBytes(body);
     const requestId = newRequestId();
-    const { data, error } = await invokeEdge('crm-db-bridge', {
+    const { data, error } = await invokeEdge<{
+      success?: boolean;
+      error?: string;
+      results?: unknown;
+      request_id?: string;
+    }>('crm-db-bridge', {
       body,
       headers: { [REQUEST_ID_HEADER]: requestId },
     });
@@ -506,10 +511,13 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
     };
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      const { data, error } = await invokeEdge('crm-db-bridge', {
-        body: query,
-        headers: { [REQUEST_ID_HEADER]: requestId },
-      });
+      const { data, error } = await invokeEdge<{ error?: string } & Record<string, unknown>>(
+        'crm-db-bridge',
+        {
+          body: query,
+          headers: { [REQUEST_ID_HEADER]: requestId },
+        },
+      );
 
       if (!error && !data?.error) {
         record(true, data);
