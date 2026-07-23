@@ -45,7 +45,7 @@ export function useConnectionTestHistory({
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fnErr } = await invokeEdge('connection-tester', {
+      const { data, error: fnErr } = await invokeEdge<{ items?: TestHistoryItem[]; total?: number }>('connection-tester', {
         body: {
           action: 'test_history',
           type,

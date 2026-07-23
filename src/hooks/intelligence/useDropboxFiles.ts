@@ -27,7 +27,7 @@ export function useDropboxFiles() {
 
   const checkConnection = useCallback(async () => {
     try {
-      const { data, error } = await invokeEdge('dropbox-list', {
+      const { data, error } = await invokeEdge<{ connected?: boolean }>('dropbox-list', {
         body: { action: 'check' },
       });
       if (error) throw error;
@@ -42,7 +42,7 @@ export function useDropboxFiles() {
   const listFiles = useCallback(async (path = '') => {
     setIsLoading(true);
     try {
-      const { data, error } = await invokeEdge('dropbox-list', {
+      const { data, error } = await invokeEdge<{ entries?: DropboxEntry[] }>('dropbox-list', {
         body: { path, action: 'list' },
       });
       if (error) throw error;
