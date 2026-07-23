@@ -15,6 +15,7 @@ import type { ExternalVariantStock } from '@/hooks/products';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 import { getProxiedImageUrl } from '@/utils/imageProxy';
+import { trackCartCompanySwitched } from '@/lib/analytics/cartAnalytics';
 
 interface QuickAddToQuoteProps {
   productId: string;
@@ -74,6 +75,21 @@ export function QuickAddToQuote({
     if (!cartId && !activeCart && carts.length > 1 && !showSelector) {
       setShowSelector(true);
       return;
+    }
+
+    // Se o insert virá para um cartId específico E ele difere do activeCart,
+    // registramos a "troca de empresa" ANTES do insert — a UI segue com o
+    // fluxo mesmo que a mutation falhe (o toast de erro é emitido em outro
+    // ponto). Assim analytics reflete a intenção do vendedor.
+    if (cartId && cartId !== activeCart?.id) {
+      const target = carts.find((c) => c.id === cartId) ?? null;
+      trackCartCompanySwitched({
+        fromCartId: activeCart?.id ?? null,
+        toCartId: cartId,
+        companyId: target?.company_id ?? null,
+        companyName: target?.company_name ?? null,
+        source: 'quick_add_selector',
+      });
     }
 
     addToActiveCart(

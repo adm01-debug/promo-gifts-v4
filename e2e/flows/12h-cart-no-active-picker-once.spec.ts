@@ -111,6 +111,29 @@ test.describe("Regressão: sem activeCart, seletor abre 1x e finalização não 
     await expectVisibleByTestId(page, cartARowTid);
     await page.locator(TID(cartARowTid)).first().click();
 
+    // Analytics: escolher o cartão A no seletor conta como troca de empresa
+    // (fromCartId=null → toCartId=cartA).
+    await expect
+      .poll(
+        async () =>
+          await page.evaluate(() => {
+            const buf =
+              (window as unknown as { __e2eAnalytics__?: Array<Record<string, unknown>> })
+                .__e2eAnalytics__ ?? [];
+            return buf.filter((e) => e.name === "cart.company_switched").length;
+          }),
+        { timeout: 3_000, message: "cart.company_switched deveria ter sido emitido" },
+      )
+      .toBeGreaterThan(0);
+    const switchEvent = await page.evaluate(() => {
+      const buf =
+        (window as unknown as { __e2eAnalytics__?: Array<Record<string, unknown>> })
+          .__e2eAnalytics__ ?? [];
+      return buf.find((e) => e.name === "cart.company_switched") ?? null;
+    });
+    expect(switchEvent).not.toBeNull();
+    expect((switchEvent as { payload: { toCartId: string } }).payload.toCartId).toBe(cartA.id);
+
     // Fechou e não reabriu — assert determinístico (sem sleep).
     await waitForTestIdHidden(page, TID_SELECTOR_DIALOG);
     await expect(selectorDialog).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
@@ -142,5 +165,27 @@ test.describe("Regressão: sem activeCart, seletor abre 1x e finalização não 
     // Invariantes finais: os dois dialogs continuam ocultos na página destino.
     await expect(selectorDialog).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
     await expect(companyPicker).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
+
+    // Analytics: `cart.quote_finalized` deve ter sido emitido com cartId=A.
+    await expect
+      .poll(
+        async () =>
+          await page.evaluate(() => {
+            const buf =
+              (window as unknown as { __e2eAnalytics__?: Array<Record<string, unknown>> })
+                .__e2eAnalytics__ ?? [];
+            return buf.filter((e) => e.name === "cart.quote_finalized").length;
+          }),
+        { timeout: 3_000, message: "cart.quote_finalized deveria ter sido emitido" },
+      )
+      .toBeGreaterThan(0);
+    const finalizeEvent = await page.evaluate(() => {
+      const buf =
+        (window as unknown as { __e2eAnalytics__?: Array<Record<string, unknown>> })
+          .__e2eAnalytics__ ?? [];
+      return buf.find((e) => e.name === "cart.quote_finalized") ?? null;
+    });
+    expect(finalizeEvent).not.toBeNull();
+    expect((finalizeEvent as { payload: { cartId: string } }).payload.cartId).toBe(cartA.id);
   });
 });

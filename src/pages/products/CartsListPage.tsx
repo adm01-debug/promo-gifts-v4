@@ -69,6 +69,7 @@ import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { formatCurrency, getStatusCfg, STATUS_CONFIG } from '@/components/cart/CartUtilComponents';
 import { cn } from '@/lib/utils';
+import { trackQuoteFinalizedFromCart } from '@/lib/analytics/cartAnalytics';
 import { maskCnpj } from '@/utils/masks';
 import { useCrmCompanies } from '@/hooks/crm/useCrmCompanies';
 import type { SellerCart, CartStatus } from '@/hooks/products';
@@ -142,6 +143,12 @@ function CartsListContent() {
         });
         return;
       }
+      trackQuoteFinalizedFromCart({
+        cartId: cart.id,
+        companyId: cart.company_id ?? null,
+        companyName: cart.company_name ?? null,
+        itemCount: cart.items.length,
+      });
       navigate('/orcamentos/novo', {
         state: {
           fromCart: true,
