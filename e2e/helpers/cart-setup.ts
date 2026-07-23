@@ -41,6 +41,18 @@ export interface SetupAuthedWithCartsOptions {
    * cenários específicos). Recebe o carrinho gerado e devolve o final.
    */
   transform?: (cart: MockCart, idx: number) => MockCart;
+  /**
+   * Se `true`, aguarda a primeira resposta de `GET /rest/v1/seller_carts*`
+   * antes de retornar. Elimina o race em que um `expect` executa contra o
+   * DOM ANTES do React Query hidratar o cache do `SellerCartContext`.
+   *
+   * Só faz sentido em conjunto com `gotoUrl != null`. Timeout: 10s (Playwright
+   * default para waitForResponse). Silenciosamente ignorado se `gotoUrl` for
+   * `null` — não há navegação que dispare a query.
+   *
+   * Default: `false` (backward compatible).
+   */
+  waitForHydration?: boolean;
 }
 
 export interface SetupAuthedWithCartsResult {
@@ -56,7 +68,7 @@ export interface SetupAuthedWithCartsResult {
  * Garante sessão autenticada + N carrinhos mockados prontos antes do fluxo.
  *
  * ORDEM CRÍTICA (não altere sem ler o header deste arquivo):
- *   loginAs → mockSellerCartsAPI → gotoAndSettle
+ *   loginAs → mockSellerCartsAPI → gotoAndSettle [→ waitForResponse]
  */
 export async function setupAuthedWithCarts(
   page: Page,
@@ -68,6 +80,7 @@ export async function setupAuthedWithCarts(
     itemsPerCart = 1,
     gotoUrl = "/produtos",
     transform,
+    waitForHydration = false,
   } = opts;
 
   if (count < 1) {
@@ -88,7 +101,20 @@ export async function setupAuthedWithCarts(
 
   // 4. Navega (opcional) — dispara a query já interceptada.
   if (gotoUrl !== null) {
-    await gotoAndSettle(page, gotoUrl);
+    if (waitForHydration) {
+      // Arma o waiter ANTES do goto: a resposta pode chegar imediatamente
+      // após o boot do SellerCartContext e queremos capturá-la sem race.
+      const hydration = page.waitForResponse(
+        (res) =>
+          res.url().includes("/rest/v1/seller_carts") &&
+          res.request().method() === "GET",
+        { timeout: 10_000 },
+      );
+      await gotoAndSettle(page, gotoUrl);
+      await hydration;
+    } else {
+      await gotoAndSettle(page, gotoUrl);
+    }
   }
 
   return {
