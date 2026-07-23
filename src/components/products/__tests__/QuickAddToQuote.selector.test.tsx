@@ -84,8 +84,8 @@ describe('QuickAddToQuote — abre CartSelectorDialog sem activeCart', () => {
       />,
     );
 
-    // Abre popover
-    fireEvent.click(screen.getByRole('button', { name: /adicionar/i }));
+    // Abre popover (trigger visível: "Orçar")
+    fireEvent.click(screen.getByRole('button', { name: /orçar/i }));
 
     // Seleciona variante (SingleVariantPicker mockado)
     fireEvent.click(screen.getByTestId('variant-picker'));
