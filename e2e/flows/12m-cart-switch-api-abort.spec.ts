@@ -25,6 +25,7 @@ import {
   assertActiveCartHeader,
   assertFinalizeCtaTargets,
 } from "../helpers/cart-assertions";
+import { assertCartAddErrorToast } from "../helpers/cart-toast-assertions";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
