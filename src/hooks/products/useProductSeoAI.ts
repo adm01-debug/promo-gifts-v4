@@ -50,7 +50,7 @@ export function useProductSeoAI(
         sale_price: getValues('sale_price'),
       };
 
-      const { data, error } = await invokeEdge('generate-product-seo', {
+      const { data, error } = await invokeEdge<Partial<SeoAIResult> & { error?: string; slug?: string }>('generate-product-seo', {
         body: { product },
       });
 
