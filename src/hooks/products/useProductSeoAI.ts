@@ -58,13 +58,14 @@ export function useProductSeoAI(
       if (data?.error) throw new Error(data.error);
 
       for (const field of SEO_FIELDS) {
-        if (data[field]) {
-          setValue(field, data[field], { shouldDirty: true });
+        const value = data?.[field];
+        if (value !== undefined && value !== null) {
+          setValue(field, value, { shouldDirty: true });
         }
       }
 
       // Generate canonical_url from slug
-      if (data.slug) {
+      if (data?.slug) {
         setValue('canonical_url', `/produto/${data.slug}`, { shouldDirty: true });
       }
 
