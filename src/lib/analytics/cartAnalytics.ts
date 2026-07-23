@@ -157,6 +157,20 @@ export function trackCartCheckoutStarted(payload: CheckoutStartedPayload): void 
   pushToE2EBuffer(evt);
 }
 
+export function trackCartCompanySwitchFailed(
+  payload: CartCompanySwitchFailedPayload,
+): void {
+  const evt: CartAnalyticsEvent = {
+    name: 'cart.company_switch_failed',
+    ts: new Date().toISOString(),
+    payload,
+  };
+  // Severidade `warn` — não é erro fatal (o vendedor pode tentar de novo)
+  // mas é um sinal de negócio que queremos ver agregado em dashboards.
+  log.warn('cart_company_switch_failed', { ...payload });
+  pushToE2EBuffer(evt);
+}
+
 /** Helper de teste — limpa o buffer entre cenários. */
 export function __resetCartAnalyticsBufferForTests(): void {
   if (typeof window === 'undefined') return;
