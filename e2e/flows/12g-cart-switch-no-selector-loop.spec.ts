@@ -198,6 +198,34 @@ test.describe("Regressão: trocar carrinho não abre seletor em loop", () => {
         // Depois de finalizar, os dialogs continuam ocultos.
         await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
         await expect(companyPicker).toBeHidden({ timeout: 1_000 });
+
+        // Analytics: o "Gerar Orçamento" deve emitir `cart.quote_finalized`
+        // referenciando o carrinho B (destino da troca).
+        await expect
+          .poll(
+            async () =>
+              await page.evaluate(() => {
+                const buf =
+                  (window as unknown as {
+                    __e2eAnalytics__?: Array<Record<string, unknown>>;
+                  }).__e2eAnalytics__ ?? [];
+                return buf.filter((e) => e.name === "cart.quote_finalized").length;
+              }),
+            { timeout: 3_000, message: "cart.quote_finalized deveria ter sido emitido" },
+          )
+          .toBeGreaterThan(0);
+
+        const finalizeEvent = await page.evaluate(() => {
+          const buf =
+            (window as unknown as {
+              __e2eAnalytics__?: Array<Record<string, unknown>>;
+            }).__e2eAnalytics__ ?? [];
+          return buf.find((e) => e.name === "cart.quote_finalized") ?? null;
+        });
+        expect(finalizeEvent).not.toBeNull();
+        expect(
+          (finalizeEvent as { payload: { cartId: string } }).payload.cartId,
+        ).toBe(cartB.id);
       }
     } finally {
       clearInterval(watcher);
