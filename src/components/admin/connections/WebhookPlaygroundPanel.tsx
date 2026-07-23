@@ -80,7 +80,13 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
     setBusy(true);
     setResult(null);
     try {
-      const { data, error } = await invokeEdge('webhook-dispatcher', {
+      const { data, error } = await invokeEdge<{
+        success?: boolean;
+        status_code?: number | null;
+        latency_ms?: number;
+        response_body?: string;
+        error?: string;
+      }>('webhook-dispatcher', {
         body: {
           event,
           payload: parsed,
