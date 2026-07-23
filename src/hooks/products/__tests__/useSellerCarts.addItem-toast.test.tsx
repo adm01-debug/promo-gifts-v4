@@ -86,7 +86,8 @@ describe('useSellerCarts · toast de erro do addItem (contrato de UI)', () => {
   beforeEach(() => {
     toastError.mockClear();
     toastSuccess.mockClear();
-    insertRejects.mockReset();
+    insertError.mockReset();
+    insertError.mockImplementation(() => ({ error: new Error('boom-default') }));
   });
   afterEach(() => {
     vi.clearAllTimers();
@@ -100,7 +101,7 @@ describe('useSellerCarts · toast de erro do addItem (contrato de UI)', () => {
   });
 
   it('onError · usa o título SSOT e delega description a sanitizeError, SEM duration', async () => {
-    insertRejects.mockRejectedValue(new Error('rls: 42501'));
+    insertError.mockImplementation(() => ({ error: new Error('rls: 42501') }));
 
     // Import dinâmico p/ garantir que os mocks estejam ativos.
     const { useSellerCarts } = await import('../useSellerCarts');
