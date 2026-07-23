@@ -76,8 +76,37 @@ export interface CheckoutStartedPayload {
   source: CartCheckoutSource;
 }
 
+/**
+ * SSOT dos motivos possíveis para `cart.company_switch_failed`.
+ *   - `mutation_failed`  — o insert em `seller_cart_items` retornou erro
+ *     não-recuperável (400/403/429/500 ou aborto de rede) após o vendedor
+ *     escolher outra empresa no CartSelectorDialog.
+ *   - `session_expired`  — JWT expirado (401/bad_jwt); o fluxo SSOT de
+ *     recuperação de sessão assumiu (ver spec 12t).
+ *   - `rate_limited`     — variação de `mutation_failed` para 429/PostgREST
+ *     rate limit; separa métricas de saturação (ver spec 12u).
+ */
+export const CART_SWITCH_FAILURE_REASONS = [
+  'mutation_failed',
+  'session_expired',
+  'rate_limited',
+] as const;
+export type CartSwitchFailureReason = (typeof CART_SWITCH_FAILURE_REASONS)[number];
+
+export interface CartCompanySwitchFailedPayload {
+  fromCartId: string | null;
+  toCartId: string;
+  companyId?: string | null;
+  companyName?: string | null;
+  source: CartSwitchSource;
+  reason: CartSwitchFailureReason;
+  /** Status HTTP quando conhecido (útil para dashboards por faixa). */
+  status?: number | null;
+}
+
 export type CartAnalyticsEvent =
   | { name: 'cart.company_switched'; ts: string; payload: CartCompanySwitchedPayload }
+  | { name: 'cart.company_switch_failed'; ts: string; payload: CartCompanySwitchFailedPayload }
   | { name: 'cart.checkout_started'; ts: string; payload: CheckoutStartedPayload }
   | { name: 'cart.quote_finalized'; ts: string; payload: QuoteFinalizedPayload };
 
