@@ -53,12 +53,17 @@ test.describe('Handoff Carrinho → QuoteBuilder · persistência pós-reload/tr
   test('autosave não sobrescreve dados do carrinho após reload ou visibility change', async ({
     page,
   }) => {
-    await loginAs(page, 'seller');
-
-    const cart: MockCart = makeMockCart(0, 2);
-    cart.company_name = '123 Solar (DO CARRINHO)';
-    cart.seller_cart_items[0].product_name = 'Produto CORRETO do carrinho';
-    await mockSellerCartsAPI(page, [cart]);
+    const { cartA: cart } = await setupAuthedWithCarts(page, {
+      role: 'seller',
+      count: 1,
+      itemsPerCart: 2,
+      gotoUrl: null,
+      transform: (c: MockCart) => {
+        c.company_name = '123 Solar (DO CARRINHO)';
+        c.seller_cart_items[0].product_name = 'Produto CORRETO do carrinho';
+        return c;
+      },
+    });
 
     await page.addInitScript((draft) => {
       window.localStorage.setItem('quote_builder_autosave', JSON.stringify(draft));
