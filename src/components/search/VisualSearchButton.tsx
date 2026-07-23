@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/ui';
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
+import { sanitizeMessage } from '@/lib/security/sanitize-message';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface ProductAnalysis {
   productType: string;
