@@ -44,6 +44,7 @@ import {
   subscribeInvokeSink,
   type InvokeGlobalSummary,
 } from '@/lib/edge/invokeTelemetrySink';
+import { rankBottlenecks, rollupByCategory } from '@/lib/edge/invokeBottlenecks';
 
 const WINDOW_OPTIONS = [
   { value: 60_000, label: '1min' },
