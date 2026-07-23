@@ -272,19 +272,24 @@ function simulateWebhookIdempotency() {
   const flow = "webhook-idempotency";
   const N = 80 * SCALE;
   const seen = new Map();
+  // Chaves fixas por event — reflete o padrão de produção (mesmo emissor
+  // reutiliza a chave só para o mesmo tipo de evento). Colisões entre events
+  // diferentes são tratadas como CONFLITO no store, não como duplicata.
+  const KEY_BY_EVENT = { "order.created": "idem-order", "quote.updated": "idem-quote" };
   for (let i = 0; i < N; i++) {
-    const key = pick(["idem-A", "idem-B", "idem-C", `idem-${i}`, null, ""]);
-    const payload = { event: pick(["order.created", "quote.updated"]), data: { i } };
-    const dedupKey = key || `${payload.event}:${JSON.stringify(payload.data)}`;
+    const event = pick(["order.created", "quote.updated"]);
+    const rawKey = pick([KEY_BY_EVENT[event], `idem-${i}`, null, ""]);
+    const payload = { event, data: { i } };
+    const dedupKey = rawKey || `${event}:${JSON.stringify(payload.data)}`;
     const first = !seen.has(dedupKey);
     if (first) seen.set(dedupKey, payload);
-    // Invariante: mesma chave → mesmo payload persistido
+    // Invariante: mesma chave dedup → mesmo event persistido
     if (!first) {
       const prev = seen.get(dedupKey);
       record(flow, prev.event === payload.event, { dedupKey }, "same-key-same-event", prev.event, payload.event);
     }
-    // Invariante: chave nula/vazia gera dedup determinístico
-    if (!key) {
+    // Invariante: chave nula/vazia gera dedup determinístico não-vazio
+    if (!rawKey) {
       record(flow, dedupKey.length > 0, { dedupKey }, "empty-key-derives-fallback", "non-empty", dedupKey);
     }
   }
