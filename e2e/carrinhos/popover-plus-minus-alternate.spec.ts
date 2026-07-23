@@ -89,8 +89,13 @@ test.describe('Carrinhos · popover — alternância rápida +/- @smoke', () => 
   });
 
   test('durante a sequência, o valor exibido nunca faz flicker para o inicial', async ({ page }) => {
-    await loginAs(page, 'seller');
-    await mockSellerCartsAPI(page, buildCarts());
+    await setupAuthedWithCarts(page, {
+      role: 'seller',
+      count: 1,
+      itemsPerCart: 1,
+      gotoUrl: null,
+      transform: (c) => transformCart(c),
+    });
     await mockSlowPatch(page, 500);
 
     await gotoAndSettle(page, '/');
