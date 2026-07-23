@@ -141,8 +141,10 @@ export async function invokeEdgeSafe<T = unknown>(
 
   const call = async (): Promise<{ data: T | null; error: NormalizedError | null }> => {
     const supa = await getSupabaseClient();
+    // `body` é `unknown` na nossa API pública; o cliente aceita apenas tipos
+    // serializáveis. Cast defensivo mantém o contrato do wrapper.
     const { data, error } = await supa.functions.invoke<T>(fnName, {
-      body,
+      body: body as Record<string, unknown> | undefined,
       headers: outboundHeaders,
     });
     if (error) {
