@@ -175,7 +175,7 @@ export function AppHealthDashboard() {
       </div>
 
       {/* Lookup por request-id */}
-      <Card>
+      <Card ref={lookupCardRef} data-testid="app-health-lookup-card">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm">
             <Search className="h-4 w-4 text-primary" />
