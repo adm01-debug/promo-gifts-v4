@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-07-23T19:50:54.443Z",
+  "projects": "chromium-smoke",
+  "totals": {
+    "total": 55,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 45,
+    "duration": 38343
+  },
+  "features": [
+    {
+      "feature": "uncategorized",
+      "total": 55,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 45,
+      "duration": 38343,
+      "failures": []
+    }
+  ],
+  "e2eNames": []
+}
