@@ -89,7 +89,13 @@ export function useProductsByCategory({
     setError(null);
 
     try {
-      const { data, error: invokeError } = await invokeEdge('categories-api', {
+      const { data, error: invokeError } = await invokeEdge<{
+        success: boolean;
+        error?: string;
+        productIds?: string[];
+        categoriesUsed?: number;
+        source?: string | null;
+      }>('categories-api', {
         body: {
           action: 'products_by_categories',
           categoryIds,
