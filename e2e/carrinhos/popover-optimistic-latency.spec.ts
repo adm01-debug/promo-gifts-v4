@@ -92,8 +92,13 @@ test.describe('Carrinhos · popover — update otimista + debounce @smoke', () =
   test('clique na lixeira remove o item do popover instantaneamente com DELETE latente', async ({
     page,
   }) => {
-    await loginAs(page, 'seller');
-    await mockSellerCartsAPI(page, buildCarts());
+    await setupAuthedWithCarts(page, {
+      role: 'seller',
+      count: 1,
+      itemsPerCart: 1,
+      gotoUrl: null,
+      transform: (c) => transformCart(c),
+    });
     await mockSlowItemDelete(page, 1000);
 
     await gotoAndSettle(page, '/');
