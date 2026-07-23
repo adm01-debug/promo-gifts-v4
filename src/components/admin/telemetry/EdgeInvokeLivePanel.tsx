@@ -44,6 +44,7 @@ import {
   subscribeInvokeSink,
   type InvokeGlobalSummary,
 } from '@/lib/edge/invokeTelemetrySink';
+import { rankBottlenecks, rollupByCategory } from '@/lib/edge/invokeBottlenecks';
 
 const WINDOW_OPTIONS = [
   { value: 60_000, label: '1min' },
@@ -88,6 +89,9 @@ export function EdgeInvokeLivePanel() {
     if (!values.length) return null;
     return values[Math.floor(values.length * 0.5)] ?? null;
   }, [summary]);
+
+  const bottlenecks = useMemo(() => rankBottlenecks(summary, { limit: 5 }), [summary]);
+  const categories = useMemo(() => rollupByCategory(summary), [summary]);
 
   const errorTone =
     summary.errorRatio >= 0.05
@@ -215,6 +219,129 @@ export function EdgeInvokeLivePanel() {
           value={fmtMs(p95Global)}
           hint="p95 mediano entre fns"
         />
+      </div>
+
+      {/* Top gargalos + rollup por categoria */}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <Card data-testid="edge-invoke-live-bottlenecks">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Top gargalos</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40 text-left">
+                <tr>
+                  <th className="px-2 py-1.5">Function</th>
+                  <th className="px-2 py-1.5">Categoria</th>
+                  <th className="px-2 py-1.5">Motivo</th>
+                  <th className="px-2 py-1.5 text-right">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bottlenecks.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-4 text-center text-muted-foreground">
+                      Nenhum gargalo detectado.
+                    </td>
+                  </tr>
+                ) : (
+                  bottlenecks.map((b) => (
+                    <tr key={b.fn} className="border-t border-border/40">
+                      <td
+                        className="max-w-[180px] truncate px-2 py-1.5 font-mono"
+                        title={b.fn}
+                      >
+                        {b.fn}
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <Badge variant="outline" className="text-[10px]">
+                          {b.category}
+                        </Badge>
+                      </td>
+                      <td className="px-2 py-1.5 text-muted-foreground">{b.reason}</td>
+                      <td
+                        className={cn(
+                          'px-2 py-1.5 text-right font-semibold tabular-nums',
+                          b.score >= 50
+                            ? 'text-destructive'
+                            : b.score >= 10
+                              ? 'text-warning'
+                              : 'text-foreground',
+                        )}
+                      >
+                        {b.score.toFixed(1)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="edge-invoke-live-categories">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Por categoria</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <table className="w-full text-xs">
+              <thead className="bg-muted/40 text-left">
+                <tr>
+                  <th className="px-2 py-1.5">Categoria</th>
+                  <th className="px-2 py-1.5 text-right">Fns</th>
+                  <th className="px-2 py-1.5 text-right">Total</th>
+                  <th className="px-2 py-1.5 text-right">Falha</th>
+                  <th className="px-2 py-1.5 text-right">% erro</th>
+                  <th className="px-2 py-1.5 text-right">Pior p95</th>
+                  <th className="px-2 py-1.5 text-right">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categories.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-4 text-center text-muted-foreground">
+                      Sem dados.
+                    </td>
+                  </tr>
+                ) : (
+                  categories.map((c) => (
+                    <tr key={c.category} className="border-t border-border/40">
+                      <td className="px-2 py-1.5 font-medium">{c.category}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">{c.fns}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">{c.total}</td>
+                      <td
+                        className={cn(
+                          'px-2 py-1.5 text-right tabular-nums',
+                          c.failed > 0 && 'font-semibold text-destructive',
+                        )}
+                      >
+                        {c.failed}
+                      </td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">
+                        {fmtPct(c.errorRatio)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">
+                        {fmtMs(c.worstP95Ms)}
+                      </td>
+                      <td
+                        className={cn(
+                          'px-2 py-1.5 text-right font-semibold tabular-nums',
+                          c.score >= 50
+                            ? 'text-destructive'
+                            : c.score >= 10
+                              ? 'text-warning'
+                              : 'text-foreground',
+                        )}
+                      >
+                        {c.score.toFixed(1)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabela por edge fn */}
