@@ -8,7 +8,7 @@ import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { useCartTemplates, type CartTemplateItem, type SellerCart, type AddToCartInput } from '@/hooks/products';
 import { ProductsContext } from '@/contexts/ProductsContext';
 import { supabase } from '@/integrations/supabase/client';
-import { trackQuoteFinalizedFromCart } from '@/lib/analytics/cartAnalytics';
+import { trackQuoteFinalizedFromCart, trackCartCheckoutStarted } from '@/lib/analytics/cartAnalytics';
 import {
   exportCartToCSV,
   exportCartToPDF,
@@ -421,6 +421,17 @@ export function useSellerCartsPage() {
       });
       return;
     }
+    // Emite o "start" do checkout ANTES de abrir o diálogo de confirmação —
+    // dá ordem determinística p/ specs de analytics (switched → started →
+    // finalized). Se o vendedor cancelar o diálogo, `finalized` simplesmente
+    // não sai; o `started` continua sendo o marcador de intenção.
+    trackCartCheckoutStarted({
+      cartId: cart.id,
+      companyId: cart.company_id ?? null,
+      companyName: cart.company_name ?? null,
+      itemCount: cart.items.length,
+      source: 'cart_detail_header',
+    });
     setConfirmQuoteCart(cart);
   }, []);
 

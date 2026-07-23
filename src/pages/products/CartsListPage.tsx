@@ -69,7 +69,7 @@ import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { CartCompanyPickerDialog } from '@/components/cart/CartCompanyPickerDialog';
 import { formatCurrency, getStatusCfg, STATUS_CONFIG } from '@/components/cart/CartUtilComponents';
 import { cn } from '@/lib/utils';
-import { trackQuoteFinalizedFromCart } from '@/lib/analytics/cartAnalytics';
+import { trackQuoteFinalizedFromCart, trackCartCheckoutStarted } from '@/lib/analytics/cartAnalytics';
 import { maskCnpj } from '@/utils/masks';
 import { useCrmCompanies } from '@/hooks/crm/useCrmCompanies';
 import type { SellerCart, CartStatus } from '@/hooks/products';
@@ -143,6 +143,15 @@ function CartsListContent() {
         });
         return;
       }
+      // Ordem determinística: started ANTES do finalized. Este handler não
+      // usa diálogo de confirmação, então os dois eventos saem em sequência.
+      trackCartCheckoutStarted({
+        cartId: cart.id,
+        companyId: cart.company_id ?? null,
+        companyName: cart.company_name ?? null,
+        itemCount: cart.items.length,
+        source: 'carts_list_page',
+      });
       trackQuoteFinalizedFromCart({
         cartId: cart.id,
         companyId: cart.company_id ?? null,
