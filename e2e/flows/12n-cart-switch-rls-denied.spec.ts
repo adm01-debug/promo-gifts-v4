@@ -20,6 +20,10 @@ import { Sel, TID } from "../fixtures/selectors";
 import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
 import { startForbiddenDialogWatcher } from "../helpers/dialog-watcher";
 import { readAnalyticsEventNames, resetAnalyticsBuffer } from "../helpers/analytics";
+import {
+  assertActiveCartHeader,
+  assertFinalizeCtaTargets,
+} from "../helpers/cart-assertions";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
@@ -141,7 +145,13 @@ test.describe("Regressão: RLS 4xx na troca de carrinho", () => {
 
       // 4. Fluxo de checkout continua acessível pela navegação direta —
       //    sem picker de empresa e sem o seletor ressuscitando.
-      await gotoAndSettle(page, `/carrinhos/${cartA.id}`);
+      await assertActiveCartHeader(page, cartA);
+      await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
+      await expect(page.locator(SEL_COMPANY_PICKER)).toBeHidden({ timeout: 1_000 });
+
+      // 5. CTA de finalizar do carrinho ORIGINAL continua apontando pra cartA
+      //    (a rejeição RLS não pode ter "movido" o ponteiro pra cartB).
+      await assertFinalizeCtaTargets(page, cartA);
       await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
       await expect(page.locator(SEL_COMPANY_PICKER)).toBeHidden({ timeout: 1_000 });
     } finally {
