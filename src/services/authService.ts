@@ -33,7 +33,11 @@ export const authService = {
   ): Promise<SafeAuthResult<Awaited<ReturnType<typeof this.signIn>>['data']>> {
     const supabase = await getSupabaseClient();
     return safeAuthCall(
-      () => supabase.auth.signInWithPassword({ email, password }),
+      () =>
+        supabase.auth.signInWithPassword({ email, password }) as unknown as Promise<{
+          data: Awaited<ReturnType<typeof this.signIn>>['data'] | null;
+          error: unknown;
+        }>,
       { op: 'signIn', signal: opts.signal },
     );
   },

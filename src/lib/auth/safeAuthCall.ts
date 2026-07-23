@@ -70,8 +70,10 @@ export interface SafeAuthOptions {
 }
 
 interface SupabaseLikeResult<T> {
-  data?: T;
-  error?: { message?: string; status?: number; name?: string } | null;
+  data?: T | null;
+  // Aceita qualquer shape de erro (AuthError, PostgrestError, unknown) — o
+  // classificador em `classifyAuthError` normaliza via checagem defensiva.
+  error?: unknown;
 }
 
 const DEFAULT_TIMEOUT_MS = 8_000;
