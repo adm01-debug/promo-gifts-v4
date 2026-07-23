@@ -67,3 +67,47 @@ if (r.kind === 'ok') {
   `webhook-dispatcher`, `manage-users`, `step-up-verify`).
 - **20** — workflow semanal `edge-invoke-fuzz-weekly.yml` (stress do wrapper).
 - **21** — `useInvokeEdge` com toast + telemetria integrados.
+
+---
+
+## Onda 20 — Telemetria & Correlação
+
+Após 19 (migração completa: baseline = 0), o wrapper agora emite telemetria
+estruturada e propaga `X-Request-Id` para o edge.
+
+### Eventos emitidos pelo `edge.invoke`
+
+| Evento                       | Nível | Campos principais                                                 |
+|------------------------------|-------|-------------------------------------------------------------------|
+| `edge_invoke_start`          | info  | `fn`, `op`, `request_id`, `has_body`, `max_retries`               |
+| `edge_invoke_ok`             | info  | `fn`, `request_id`, `latency_ms`, `attempts`                      |
+| `edge_invoke_failed`         | warn  | `fn`, `request_id`, `latency_ms`, `error_kind`, `attempts`        |
+| `edge_invoke_breaker_open`   | warn  | `fn`, `request_id`, `latency_ms`                                  |
+
+> `error_kind` ∈ `credential | ratelimit | network | server | timeout | client | unknown`.
+> O motor (`safeAuthCall`) continua emitindo `<op>_ok/_failed/_exhausted/_breaker_open`
+> em paralelo — o wrapper apenas espelha em nível "superfície" para agregação por edge.
+
+### Propagação de `X-Request-Id`
+
+- Se o caller não fornecer, o wrapper gera um UUID v4 por chamada.
+- O header `X-Request-Id` é injetado no request outbound automaticamente.
+- Precedência: `options.requestId` > `options.headers['X-Request-Id']` > gerado.
+- O ID é devolvido em `result.requestId` para o caller correlacionar em Sentry
+  ou em logs próprios.
+
+```ts
+const r = await invokeEdgeSafe('my-fn', { body });
+Sentry.setTag('request_id', r.requestId);
+```
+
+### Métricas agregadas — `get_edge_invoke_summary(_minutes)`
+
+Draft SQL em `qa/migrations-draft/2026-07-23_get_edge_invoke_summary.sql`
+(aplicar via painel Supabase — REGRA #1). Retorna req/min, p50/p95/p99, %erro
+por edge nos últimos N minutos, lendo `webhook_delivery_metrics`.
+
+### Gate CI
+
+`scripts/check-client-structured-logging.mjs` inclui `src/lib/edge/safeInvokeCall.ts`
+em `CRITICAL_MODULES` — regressão silenciosa no logger falha o CI.

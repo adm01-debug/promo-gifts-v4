@@ -1,50 +1,46 @@
 /**
  * safeInvokeCall — Onda 17: SSOT para `supabase.functions.invoke`.
+ * Onda 20: telemetria estruturada + propagação de X-Request-Id.
  *
- * Aplica o mesmo contrato "nunca-throw / nunca-vaza-técnica" já provado em
- * `safeAuthCall` (Ondas 7-16) a toda a superfície de chamadas de Edge Functions.
- *
- * - Timeout por tentativa (default 10s, edges são mais lentas que auth-server).
- * - Retry exponencial só em falhas transitórias (network/server/timeout).
- * - Circuit breaker por `fnName` (isolado entre edges — 5 falhas / 30s → cooldown 60s).
- * - Classificação de erro (`EdgeErrorKind`) cobrindo as 3 classes do supabase-js
- *   (`FunctionsHttpError`, `FunctionsRelayError`, `FunctionsFetchError`) + status HTTP.
+ * - Timeout, retry, circuit breaker delegados a `safeAuthCall`.
+ * - Logger dedicado `edge.invoke` emite `edge_invoke_{start,ok,failed,breaker_open}`
+ *   com fnName, request_id, latência e status. Nunca vaza PII (só metadata).
+ * - `X-Request-Id` outbound: gerado por chamada (UUID v4) quando o caller não
+ *   fornecer; devolvido no resultado para correlação Sentry/edge-logs.
  * - Parser defensivo do body (JSON quebrado / HTML de proxy não explode).
- * - `userMessage` sanitizada (sem status bruto / stack em produção).
  *
  * Uso:
- *   const r = await invokeEdgeSafe('log-login-attempt', { email }, { op: 'log-login' });
+ *   const r = await invokeEdgeSafe('log-login-attempt', { body: { email } });
  *   if (r.kind === 'ok') { ... r.data ... } else { toast.error(r.userMessage); }
+ *   console.log('correlation:', r.requestId);
  */
 import { safeAuthCall, type SafeAuthResult } from '@/lib/auth/safeAuthCall';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 
 export type EdgeErrorKind =
-  | 'client' // 4xx exceto 401/403/429
-  | 'credential' // 401/403
-  | 'ratelimit' // 429
+  | 'client'
+  | 'credential'
+  | 'ratelimit'
   | 'network'
   | 'server'
   | 'timeout'
   | 'unknown';
 
-export type SafeInvokeResult<T> = SafeAuthResult<T>;
+/** Resultado estendido: mantém shape do safeAuthCall + requestId de correlação. */
+export type SafeInvokeResult<T> = SafeAuthResult<T> & { requestId: string };
 
 export interface InvokeOptions {
-  /** Nome curto p/ log e breaker. Default: `edge.<fnName>`. */
   op?: string;
-  /** Body serializável (JSON). */
   body?: unknown;
-  /** Headers extras. */
   headers?: Record<string, string>;
-  /** Timeout por tentativa em ms. Default 10s. */
   timeoutMs?: number;
-  /** Máx tentativas totais. Default 2 (edges já são caras). */
   maxRetries?: number;
-  /** AbortSignal externo. */
   signal?: AbortSignal;
-  /** Sobrescreve `isDev` do sanitizador. */
   isDev?: boolean;
+  /** Reaproveita um request_id existente (ex.: continuação de fluxo). */
+  requestId?: string;
 }
 
 interface NormalizedError {
@@ -55,7 +51,6 @@ interface NormalizedError {
 
 /**
  * Normaliza qualquer erro do supabase.functions.invoke em `{message,status,name}`.
- * Cobre as 3 classes do supabase-js e casos onde `context.status` é ausente.
  */
 export async function normalizeInvokeError(err: unknown): Promise<NormalizedError> {
   if (!err || typeof err !== 'object') {
@@ -69,13 +64,11 @@ export async function normalizeInvokeError(err: unknown): Promise<NormalizedErro
   const name = e.name ?? '';
   const baseMsg = e.message ?? '';
   const ctx = e.context;
-  let status = ctx?.status ?? 0;
+  const status = ctx?.status ?? 0;
   let bodyMsg = '';
 
-  // FunctionsHttpError: tenta extrair `error` do body (JSON) sem explodir.
   if (ctx?.body) {
     try {
-      // context.body pode ser Response ou string/objeto já lido.
       if (typeof ctx.body === 'string') {
         try {
           const parsed = JSON.parse(ctx.body) as { error?: string; message?: string };
@@ -88,13 +81,10 @@ export async function normalizeInvokeError(err: unknown): Promise<NormalizedErro
         bodyMsg = b.error ?? b.message ?? '';
       }
     } catch {
-      // parser defensivo: nunca propagar
       bodyMsg = '';
     }
   }
 
-  // FunctionsRelayError / FunctionsFetchError → sem status HTTP real, mapear p/ network.
-  // Forçamos name='TypeError' para o classifier do safeAuthCall reconhecer como network.
   let outName = name;
   if (
     status === 0 &&
@@ -108,17 +98,12 @@ export async function normalizeInvokeError(err: unknown): Promise<NormalizedErro
     outName = 'TypeError';
   }
 
-  return {
-    message: bodyMsg || baseMsg || 'edge error',
-    status,
-    name: outName,
-  };
+  return { message: bodyMsg || baseMsg || 'edge error', status, name: outName };
 }
 
-/**
- * Wrapper único para `supabase.functions.invoke`.
- * Delega ao motor `safeAuthCall` (breaker/timeout/retry) após normalizar erros.
- */
+/** Logger SSOT do wrapper. Único ponto de emissão da superfície invoke. */
+const edgeLog = createClientLogger('edge.invoke');
+
 export async function invokeEdgeSafe<T = unknown>(
   fnName: string,
   options: InvokeOptions = {},
@@ -131,13 +116,32 @@ export async function invokeEdgeSafe<T = unknown>(
     maxRetries = 2,
     signal,
     isDev,
+    requestId: providedRequestId,
   } = options;
+
+  // Request-id por chamada — reaproveita se o caller já fornecer (via option
+  // ou via header explícito), senão gera. NUNCA sobrescreve intencionalmente.
+  const callerHeaderId =
+    headers?.[REQUEST_ID_HEADER] ??
+    headers?.[REQUEST_ID_HEADER.toLowerCase()] ??
+    undefined;
+  const requestId = providedRequestId ?? callerHeaderId ?? newRequestId();
+  const outboundHeaders = { ...(headers ?? {}), [REQUEST_ID_HEADER]: requestId };
+  const startedAt = Date.now();
+
+  edgeLog.info('edge_invoke_start', {
+    fn: fnName,
+    op,
+    request_id: requestId,
+    has_body: body !== undefined && body !== null,
+    max_retries: maxRetries,
+  });
 
   const call = async (): Promise<{ data: T | null; error: NormalizedError | null }> => {
     const supa = await getSupabaseClient();
     const { data, error } = await supa.functions.invoke<T>(fnName, {
       body,
-      headers,
+      headers: outboundHeaders,
     });
     if (error) {
       return { data: null, error: await normalizeInvokeError(error) };
@@ -145,36 +149,63 @@ export async function invokeEdgeSafe<T = unknown>(
     return { data: (data ?? null) as T | null, error: null };
   };
 
-  return safeAuthCall<T>(call as never, {
+  const inner = (await safeAuthCall<T>(call as never, {
     op,
     timeoutMs,
     maxRetries,
     signal,
     isDev,
-  }) as Promise<SafeInvokeResult<T>>;
+  })) as SafeAuthResult<T>;
+
+  const latencyMs = Date.now() - startedAt;
+
+  if (inner.kind === 'ok') {
+    edgeLog.info('edge_invoke_ok', {
+      fn: fnName,
+      request_id: requestId,
+      latency_ms: latencyMs,
+      attempts: inner.attempts,
+    });
+  } else {
+    // Detecta breaker aberto (safeAuthCall devolve attempts=0 e raw.breaker='open').
+    const raw = inner.raw as { breaker?: string } | null;
+    if (raw?.breaker === 'open') {
+      edgeLog.warn('edge_invoke_breaker_open', {
+        fn: fnName,
+        request_id: requestId,
+        latency_ms: latencyMs,
+      });
+    } else {
+      // WARN em vez de ERROR: safeAuthCall já emite ERROR estruturado internamente
+      // em `<op>_exhausted`. Aqui só espelhamos como sinal do wrapper, sem duplicar
+      // ruído no Sentry (memory: Structured Logging & Correlation).
+      edgeLog.warn('edge_invoke_failed', {
+        fn: fnName,
+        request_id: requestId,
+        latency_ms: latencyMs,
+        error_kind: inner.errorKind,
+        attempts: inner.attempts,
+      });
+    }
+  }
+
+  return { ...inner, requestId } as SafeInvokeResult<T>;
 }
 
-/**
- * Adapter drop-in que preserva o shape `{ data, error }` de `supabase.functions.invoke`.
- * Reduz o custo de migração dos 71 call sites legados: basta trocar
- * `supabase.functions.invoke('fn', { body })` por `invokeEdge('fn', { body })`.
- *
- * O erro devolvido já vem sanitizado (`userMessage` como `message`) e classificado
- * (`errorKind` como `name`), preservando a expectativa de `throw error` do caller.
- */
 export interface InvokeCompatError {
   message: string;
   name: string;
   status: number;
+  request_id: string;
 }
 
 export async function invokeEdge<T = unknown>(
   fnName: string,
   options: InvokeOptions = {},
-): Promise<{ data: T | null; error: InvokeCompatError | null }> {
+): Promise<{ data: T | null; error: InvokeCompatError | null; requestId: string }> {
   const r = await invokeEdgeSafe<T>(fnName, options);
   if (r.kind === 'ok') {
-    return { data: (r.data ?? null) as T | null, error: null };
+    return { data: (r.data ?? null) as T | null, error: null, requestId: r.requestId };
   }
   return {
     data: null,
@@ -182,6 +213,8 @@ export async function invokeEdge<T = unknown>(
       message: r.userMessage,
       name: r.errorKind,
       status: 0,
+      request_id: r.requestId,
     },
+    requestId: r.requestId,
   };
 }

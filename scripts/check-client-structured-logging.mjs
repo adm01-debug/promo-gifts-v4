@@ -42,6 +42,10 @@ const CRITICAL_MODULES = [
   'src/hooks/products/useSellerCarts.ts',
   'src/lib/telemetry/quoteStatusTelemetry.ts',
   'src/pages/mockups/MockupGenerator.tsx',
+  // Onda 20 — wrapper SSOT da superfície `functions.invoke` DEVE instrumentar
+  // com createClientLogger('edge.invoke'). Regressão silenciosa aqui faz sumir
+  // p95/erros de toda a superfície de Edge Functions no /admin/telemetria.
+  'src/lib/edge/safeInvokeCall.ts',
 ];
 
 // Legados aceitos temporariamente. NÃO adicionar novos.
