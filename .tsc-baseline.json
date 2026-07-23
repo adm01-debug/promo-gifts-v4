@@ -1,12 +1,9 @@
 {
-  "generatedAt": "2026-07-23T15:53:24.503Z",
-  "totalErrors": 161,
+  "generatedAt": "2026-07-23T15:57:55.674Z",
+  "totalErrors": 145,
   "counts": {
     "src/components/admin/ImageUploadButton.tsx": {
       "TS18046": 1
-    },
-    "src/components/admin/connections/CredentialCacheMetricsPanel.tsx": {
-      "TS2339": 4
     },
     "src/components/admin/connections/FailedDeliveriesPanel.tsx": {
       "TS2339": 1
@@ -30,10 +27,6 @@
     "src/components/magic-up/PromptGenerator.tsx": {
       "TS2345": 1
     },
-    "src/components/search/VisualSearchButton.tsx": {
-      "TS18046": 2,
-      "TS2339": 2
-    },
     "src/components/search/useGlobalSearch.ts": {
       "TS2339": 3
     },
@@ -55,14 +48,8 @@
     "src/hooks/intelligence/useConnectionTestDetails.ts": {
       "TS2339": 1
     },
-    "src/hooks/intelligence/useConnectionTestHistory.ts": {
-      "TS2339": 4
-    },
     "src/hooks/intelligence/useConnectionTester.ts": {
       "TS2339": 2
-    },
-    "src/hooks/intelligence/useDropboxFiles.ts": {
-      "TS2339": 4
     },
     "src/hooks/intelligence/useExternalDbInspect.ts": {
       "TS2345": 1
