@@ -66,8 +66,11 @@ export function QuickAddToQuote({
   };
 
   const handleAddToQuote = (cartId?: string) => {
-    // Se temos múltiplos carrinhos e nenhum foi explicitamente passado, mostramos o seletor
-    if (!cartId && carts.length > 1 && !showSelector) {
+    // Só mostramos o seletor quando NÃO há carrinho ativo. Se já existe activeCart
+    // (por exemplo após o usuário ter clicado em "Trocar" e escolhido um carrinho),
+    // adicionamos direto — do contrário o botão "Adicionar ao Carrinho" reabriria
+    // o seletor indefinidamente (loop) quando o vendedor tem 2+ carrinhos.
+    if (!cartId && !activeCart && carts.length > 1 && !showSelector) {
       setShowSelector(true);
       return;
     }
