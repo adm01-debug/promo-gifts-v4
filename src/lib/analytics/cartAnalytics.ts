@@ -21,13 +21,43 @@ import { createClientLogger } from '@/lib/telemetry/structuredLogger';
 
 const log = createClientLogger('cart.analytics');
 
+/**
+ * SSOT das origens UI possíveis para `cart.company_switched`.
+ *   - `quick_add_selector` — QuickAdd (catálogo) abriu o CartSelectorDialog
+ *     e o vendedor escolheu OUTRO carrinho antes do insert.
+ *   - `seller_carts_page`  — troca detectada por mudança de rota em
+ *     /carrinhos/:id (cards da lista, back/forward, deep-link).
+ *
+ * Regra de payload por origem (validada em cartAnalytics.contract.test.ts):
+ *   - `seller_carts_page`  → `fromCartId` DEVE ser não-nulo (é uma troca
+ *     A→B; o mount inicial não emite — validado no spec 12o).
+ *   - `quick_add_selector` → `fromCartId` PODE ser null quando o vendedor
+ *     escolhe o primeiro carrinho ativo (não há `activeCart` anterior).
+ */
+export const CART_SWITCH_SOURCES = [
+  'quick_add_selector',
+  'seller_carts_page',
+] as const;
+export type CartSwitchSource = (typeof CART_SWITCH_SOURCES)[number];
+
+/**
+ * SSOT das origens UI possíveis para `cart.checkout_started`.
+ *   - `carts_list_page`     — clique em "Gerar Orçamento" no card da lista.
+ *   - `cart_detail_header`  — clique no CTA do header dentro de /carrinhos/:id.
+ */
+export const CART_CHECKOUT_SOURCES = [
+  'carts_list_page',
+  'cart_detail_header',
+] as const;
+export type CartCheckoutSource = (typeof CART_CHECKOUT_SOURCES)[number];
+
 export interface CartCompanySwitchedPayload {
   fromCartId: string | null;
   toCartId: string;
   companyId?: string | null;
   companyName?: string | null;
-  /** Origem UI do evento (ex.: 'quick_add_selector', 'seller_carts_page'). */
-  source: string;
+  /** Origem UI do evento — restrita ao enum `CartSwitchSource`. */
+  source: CartSwitchSource;
 }
 
 export interface QuoteFinalizedPayload {
@@ -42,8 +72,8 @@ export interface CheckoutStartedPayload {
   companyId?: string | null;
   companyName?: string | null;
   itemCount: number;
-  /** Origem UI do clique no CTA (ex.: 'carts_list_page', 'cart_detail_header'). */
-  source: string;
+  /** Origem UI do clique no CTA — restrita ao enum `CartCheckoutSource`. */
+  source: CartCheckoutSource;
 }
 
 export type CartAnalyticsEvent =
