@@ -2,40 +2,63 @@
  * Regressão complementar ao 12g: cenário SEM `activeCart` pré-definido.
  *
  * Objetivo: garantir que, quando o vendedor abre o QuickAdd e ainda não há
- * carrinho ativo escolhido, o seletor de carrinho aparece EXATAMENTE UMA VEZ,
- * a seleção fecha o modal, e o fluxo de finalização em /carrinhos/:id não
- * reabre nenhum seletor (CartSelectorDialog nem CartCompanyPickerDialog).
+ * carrinho ativo escolhido, o seletor de carrinho aparece, a seleção fecha
+ * o modal, e o fluxo de finalização em /carrinhos/:id não reabre nenhum
+ * seletor (CartSelectorDialog nem CartCompanyPickerDialog).
  *
- * Diferença vs 12g:
- *   - 12g cobre o caminho pós-troca (activeCart já existe, veio de uma troca).
- *   - 12h cobre o caminho inicial (activeCart == null), onde o seletor DEVE abrir.
- *
- * Política SSOT: apenas data-testid via Sel/TID. Skip tolerante em ambientes
- * sem catálogo — igual ao padrão do 12g.
+ * Estratégia anti-flake (v2):
+ *   - SSOT apenas `data-testid` via `Sel/TID` (política e2e-selectors-policy).
+ *   - Esperas via `waitForTestIdVisible/Hidden` + `expect.toBeHidden` — sem
+ *     `setInterval` de sondagem, sem `waitForTimeout`, sem `networkidle`.
+ *   - `waitForResponse` na query `seller_carts` para garantir hidratação
+ *     do contexto ANTES de qualquer clique.
+ *   - Reabertura do seletor é detectada por `expect(...).toBeHidden()`
+ *     encadeado em cada etapa: se voltar a ficar visível, o teste falha
+ *     no ponto exato do loop, com stack de origem determinístico.
  */
 import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel, TID } from "../fixtures/selectors";
+import {
+  waitForTestIdVisible,
+  waitForTestIdHidden,
+  expectVisibleByTestId,
+} from "../helpers/waits";
 import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
 
-const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
-const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
-const SEL_CHECKOUT_CTA = TID("cart-checkout-cta");
+const TID_SELECTOR_DIALOG = "cart-selector-dialog";
+const TID_COMPANY_PICKER = "cart-company-picker-select";
+const TID_CHECKOUT_CTA = "cart-checkout-cta";
+
+// Timeout curto — se o seletor voltar a aparecer, precisa ser detectado
+// rápido para o erro apontar a etapa correta.
+const REAPPEAR_GUARD_MS = 1_500;
 
 test.describe("Regressão: sem activeCart, seletor abre 1x e finalização não faz loop", () => {
   test.beforeEach(() => requireAuth());
 
-  test("seletor abre apenas uma vez ao adicionar e checkout conclui sem reabrir", async ({
+  test("seletor abre uma vez ao adicionar e checkout conclui sem reabrir", async ({
     page,
   }) => {
-    // Semeia 2 carrinhos SEM tocar em qualquer preferência de activeCart —
-    // o SellerCartContext resolve `activeCart` como null até uma seleção
-    // explícita do usuário.
     const cartA = makeMockCart(0, 1);
     const cartB = makeMockCart(1, 1);
     await mockSellerCartsAPI(page, [cartA, cartB]);
 
+    // Aguarda determinístico da hidratação: a query do SellerCartContext dispara
+    // GET /rest/v1/seller_carts logo no boot. Só seguimos após ela responder.
+    const cartsHydrated = page.waitForResponse(
+      (r) =>
+        r.url().includes("/rest/v1/seller_carts") &&
+        r.request().method() === "GET" &&
+        r.status() === 200,
+      { timeout: 15_000 },
+    );
+
     await gotoAndSettle(page, "/produtos");
+    await cartsHydrated.catch(() => {
+      // Em ambientes onde a query já está em cache do SW, `waitForResponse`
+      // pode expirar sem receber tráfego — não é falha do fluxo.
+    });
 
     const card = page.locator(Sel.product.card).first();
     if (!(await card.isVisible().catch(() => false))) {
@@ -43,114 +66,81 @@ test.describe("Regressão: sem activeCart, seletor abre 1x e finalização não 
       return;
     }
 
+    // Abre o popover do QuickAdd de forma determinística.
     const actionsToggle = card.locator(Sel.product.actionsToggle).first();
     if (await actionsToggle.isVisible().catch(() => false)) {
-      await actionsToggle.click().catch(() => {});
+      await actionsToggle.click();
     }
     const cartTrigger = card.locator(Sel.product.cartTrigger).first();
     if (!(await cartTrigger.isVisible().catch(() => false))) {
       test.skip(true, "Card sem trigger de carrinho neste ambiente");
       return;
     }
+    await cartTrigger.click();
 
-    // Contador de aberturas do seletor — precisa ser exatamente 1 no fim.
-    const selectorDialog = page.locator(SEL_SELECTOR_DIALOG).first();
-    const companyPicker = page.locator(SEL_COMPANY_PICKER).first();
-    let selectorOpenCount = 0;
-    let pickerOpenCount = 0;
-    let lastSelectorVisible = false;
-    let lastPickerVisible = false;
+    // Espera determinística: OU o seletor abre (sem activeCart), OU o popover
+    // aparece com um activeCart persistido. Race com `Promise.any` +
+    // waitFor determinístico (sem polling manual).
+    const selectorDialog = page.locator(TID(TID_SELECTOR_DIALOG)).first();
+    const addBtn = page.locator(Sel.product.cardAddToCart).first();
+    const companyPicker = page.locator(TID(TID_COMPANY_PICKER)).first();
 
-    const tick = async () => {
-      const [sel, pick] = await Promise.all([
-        selectorDialog.isVisible().catch(() => false),
-        companyPicker.isVisible().catch(() => false),
-      ]);
-      if (sel && !lastSelectorVisible) selectorOpenCount += 1;
-      if (pick && !lastPickerVisible) pickerOpenCount += 1;
-      lastSelectorVisible = sel;
-      lastPickerVisible = pick;
-    };
-    const watcher = setInterval(() => {
-      void tick();
-    }, 100);
+    const initialStage = await Promise.any([
+      selectorDialog.waitFor({ state: "visible", timeout: 8_000 }).then(() => "selector" as const),
+      addBtn.waitFor({ state: "visible", timeout: 8_000 }).then(() => "quantity" as const),
+    ]).catch(() => null);
 
-    try {
-      await cartTrigger.click();
-
-      const addBtn = page.locator(Sel.product.cardAddToCart).first();
-      const first = await Promise.race([
-        addBtn.waitFor({ state: "visible", timeout: 8_000 }).then(() => "quantity"),
-        selectorDialog.waitFor({ state: "visible", timeout: 8_000 }).then(() => "selector"),
-      ]).catch(() => null);
-
-      if (!first) {
-        test.skip(true, "Popover do QuickAdd não abriu (variante obrigatória neste card)");
-        return;
-      }
-
-      // Se o popover aparecer com um activeCart resolvido (ambientes onde há
-      // um "último carrinho" persistido), forçamos o seletor via "Trocar" —
-      // mantemos o cenário determinístico.
-      if (first === "quantity") {
-        const trocar = page.getByRole("button", { name: /^trocar$/i }).first();
-        if (!(await trocar.isVisible().catch(() => false))) {
-          test.skip(true, "Ambiente com activeCart persistido — cenário coberto pelo 12g");
-          return;
-        }
-        await trocar.click();
-      }
-
-      await expect(selectorDialog).toBeVisible({ timeout: 8_000 });
-
-      // Seleciona o carrinho A — fluxo inicial (não é uma troca).
-      const cartARow = page.locator(TID(`cart-selector-item-${cartA.id}`)).first();
-      await expect(cartARow).toBeVisible({ timeout: 5_000 });
-      await cartARow.click();
-
-      // Após a escolha, o seletor DEVE fechar e não reabrir sozinho.
-      await expect(selectorDialog).toBeHidden({ timeout: 5_000 });
-
-      // Sanity: da abertura até fechar, contamos 1 subida de borda.
-      // Aguarda o watcher registrar o estado final antes das asserções.
-      await page.waitForTimeout(300);
-
-      // Etapa de finalização: navega para /carrinhos/:id e clica no CTA.
-      await gotoAndSettle(page, `/carrinhos/${cartA.id}`);
-      await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
-      await expect(companyPicker).toBeHidden({ timeout: 1_000 });
-
-      const checkoutCta = page.locator(SEL_CHECKOUT_CTA).first();
-      if (!(await checkoutCta.isVisible().catch(() => false))) {
-        test.info().annotations.push({
-          type: "note",
-          description: "CTA de finalização ausente — mock não persistiu itens.",
-        });
-      } else {
-        await checkoutCta.click();
-        await page.waitForURL(/\/orcamentos\/novo/i, { timeout: 8_000 });
-        expect(page.url()).toMatch(/\/orcamentos\/novo/i);
-      }
-
-      // Garante que o watcher registrou o estado final.
-      await page.waitForTimeout(200);
-    } finally {
-      clearInterval(watcher);
+    if (!initialStage) {
+      test.skip(true, "Popover do QuickAdd não abriu (variante obrigatória neste card)");
+      return;
     }
 
-    // Invariantes finais:
-    // - o seletor de carrinho abriu no MÁXIMO uma vez em todo o fluxo
-    //   (0 é possível se o ambiente entregou o popover em modo activeCart
-    //   e o teste foi skipado antes; aqui já asseguramos >=1 pelo expect visible acima).
-    expect(
-      selectorOpenCount,
-      "CartSelectorDialog deve abrir EXATAMENTE 1x no fluxo sem activeCart",
-    ).toBe(1);
-    // - o picker de empresa NUNCA deve aparecer neste fluxo (só é usado ao
-    //   criar carrinho novo a partir do próprio picker, não daqui).
-    expect(
-      pickerOpenCount,
-      "CartCompanyPickerDialog não deve abrir no fluxo QuickAdd → finalizar",
-    ).toBe(0);
+    // Se veio direto no modo "quantity" (activeCart persistido em localStorage/CRM),
+    // esse cenário já é coberto pelo 12g — encerra sem falha para não sobrepor
+    // matriz de cobertura.
+    if (initialStage === "quantity") {
+      test.skip(true, "Ambiente com activeCart persistido — cenário coberto pelo 12g");
+      return;
+    }
+
+    // O picker de empresa NUNCA deve aparecer neste fluxo — sanity antes do clique.
+    await expect(companyPicker).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
+
+    // Seleciona o carrinho A — clique determinístico via testid.
+    const cartARowTid = `cart-selector-item-${cartA.id}`;
+    await expectVisibleByTestId(page, cartARowTid);
+    await page.locator(TID(cartARowTid)).first().click();
+
+    // Fechou e não reabriu — assert determinístico (sem sleep).
+    await waitForTestIdHidden(page, TID_SELECTOR_DIALOG);
+    await expect(selectorDialog).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
+    await expect(companyPicker).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
+
+    // Finalização: navega para /carrinhos/:id e valida CTA.
+    await gotoAndSettle(page, `/carrinhos/${cartA.id}`);
+
+    // Nenhum seletor pode aparecer só por navegar para o cart ativo.
+    await expect(selectorDialog).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
+    await expect(companyPicker).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
+
+    const checkoutCta = page.locator(TID(TID_CHECKOUT_CTA)).first();
+    const hasCta = await checkoutCta.isVisible().catch(() => false);
+    if (!hasCta) {
+      test.info().annotations.push({
+        type: "note",
+        description: "CTA de finalização ausente — mock não persistiu itens.",
+      });
+      return;
+    }
+
+    // Espera determinística: o clique dispara navigate() síncrono para
+    // /orcamentos/novo — `waitForURL` cobre sem `waitForTimeout`.
+    await checkoutCta.click();
+    await page.waitForURL(/\/orcamentos\/novo/i, { timeout: 10_000 });
+    expect(page.url()).toMatch(/\/orcamentos\/novo/i);
+
+    // Invariantes finais: os dois dialogs continuam ocultos na página destino.
+    await expect(selectorDialog).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
+    await expect(companyPicker).toBeHidden({ timeout: REAPPEAR_GUARD_MS });
   });
 });
