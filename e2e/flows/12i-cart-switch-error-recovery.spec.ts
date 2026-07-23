@@ -15,7 +15,7 @@
 import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel, TID } from "../fixtures/selectors";
-import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
+import { setupAuthedWithCarts } from "../helpers/cart-setup";
 import {
   assertActiveCartHeader,
   assertFinalizeCtaTargets,
@@ -31,9 +31,12 @@ test.describe("Regressão: falha na troca de carrinho mostra erro e não quebra"
   test("POST seller_cart_items 500 → toast de erro, sem loop de seletor, checkout navegável", async ({
     page,
   }) => {
-    const cartA = makeMockCart(0, 1);
-    const cartB = makeMockCart(1, 1);
-    await mockSellerCartsAPI(page, [cartA, cartB]);
+    const { cartA, cartB } = await setupAuthedWithCarts(page, {
+      count: 2,
+      itemsPerCart: 1,
+      gotoUrl: null,
+    });
+    if (!cartB) throw new Error("setupAuthedWithCarts com count=2 deveria gerar cartB");
 
     // Intercepta inserção de itens e força 500 para simular a falha de
     // "troca de empresa" que estoura durante o insert no banco.

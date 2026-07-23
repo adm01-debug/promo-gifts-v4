@@ -10,17 +10,16 @@
  *  • Nenhum alerta de erro aparece (mutations bem-sucedidas → estado limpo).
  */
 import { test, expect, type Page } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart, type MockCart } from '../helpers/cart-mock';
+import type { MockCart } from '../helpers/cart-mock';
 
-function buildCarts(): MockCart[] {
-  const cart = makeMockCart(0, 1);
+function transformCart(cart: MockCart): MockCart {
   cart.company_id = 'co-alternate';
   cart.company_name = 'Empresa Alternate';
   cart.seller_cart_items[0].id = 'item-alt-1';
   cart.seller_cart_items[0].quantity = 5;
-  return [cart];
+  return cart;
 }
 
 async function mockSlowPatch(
@@ -45,8 +44,13 @@ async function mockSlowPatch(
 
 test.describe('Carrinhos · popover — alternância rápida +/- @smoke', () => {
   test('sequência +,+,+,-,-,+,-,+ termina em 5+1=6 com writes coalescidos', async ({ page }) => {
-    await loginAs(page, 'seller');
-    await mockSellerCartsAPI(page, buildCarts());
+    await setupAuthedWithCarts(page, {
+      role: 'seller',
+      count: 1,
+      itemsPerCart: 1,
+      gotoUrl: null,
+      transform: (c) => transformCart(c),
+    });
     const patch = await mockSlowPatch(page, 600);
 
     await gotoAndSettle(page, '/');
@@ -85,8 +89,13 @@ test.describe('Carrinhos · popover — alternância rápida +/- @smoke', () => 
   });
 
   test('durante a sequência, o valor exibido nunca faz flicker para o inicial', async ({ page }) => {
-    await loginAs(page, 'seller');
-    await mockSellerCartsAPI(page, buildCarts());
+    await setupAuthedWithCarts(page, {
+      role: 'seller',
+      count: 1,
+      itemsPerCart: 1,
+      gotoUrl: null,
+      transform: (c) => transformCart(c),
+    });
     await mockSlowPatch(page, 500);
 
     await gotoAndSettle(page, '/');

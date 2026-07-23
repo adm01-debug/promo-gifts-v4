@@ -11,9 +11,9 @@
  * `[QuoteBuilder handoff] fromCart`, para permitir auditoria em produção.
  */
 import { test, expect } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart, type MockCart } from '../helpers/cart-mock';
+import type { MockCart } from '../helpers/cart-mock';
 
 const STALE_DRAFT = {
   version: 2,
@@ -54,13 +54,18 @@ test.describe('Handoff Carrinho → QuoteBuilder · rascunho antigo NÃO sobresc
   test('clique em "Orçamento" no carrinho abre QuoteBuilder com dados do carrinho, ignorando autosave', async ({
     page,
   }) => {
-    // 1) Login e mock do carrinho ANTES de qualquer navegação.
-    await loginAs(page, 'seller');
-
-    const cart: MockCart = makeMockCart(0, 2);
-    cart.company_name = '123 Solar (DO CARRINHO)';
-    cart.seller_cart_items[0].product_name = 'Produto CORRETO do carrinho';
-    await mockSellerCartsAPI(page, [cart]);
+    // 1) Login + mock do carrinho ANTES de qualquer navegação (via SSOT).
+    const { cartA: cart } = await setupAuthedWithCarts(page, {
+      role: 'seller',
+      count: 1,
+      itemsPerCart: 2,
+      gotoUrl: null,
+      transform: (c: MockCart) => {
+        c.company_name = '123 Solar (DO CARRINHO)';
+        c.seller_cart_items[0].product_name = 'Produto CORRETO do carrinho';
+        return c;
+      },
+    });
 
     // 2) Semeia rascunho antigo em localStorage — a "armadilha" que reproduzia o bug.
     await page.addInitScript((draft) => {

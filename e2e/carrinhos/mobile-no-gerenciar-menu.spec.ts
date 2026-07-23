@@ -4,21 +4,22 @@
  * em definitivo do header.
  */
 import { test, expect } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
-import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart } from '../helpers/cart-mock';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 
 test.describe('CartMobile · sem "Gerenciar Carrinho" nem "Ver Orçamentos" @carrinhos', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 }); // iPhone 12
-    await loginAs(page, 'user');
   });
 
   test('menu móvel não expõe "Gerenciar Carrinho" nem "Ver Orçamentos"', async ({ page }) => {
-    const carts = [makeMockCart(0, 3)];
-    await mockSellerCartsAPI(page, carts);
-
-    await gotoAndSettle(page, `/carrinhos/${carts[0].id}`);
+    const { cartA } = await setupAuthedWithCarts(page, {
+      role: 'user',
+      count: 1,
+      itemsPerCart: 3,
+      gotoUrl: `/carrinhos/mock-cart-0`,
+    });
+    // gotoUrl acima usa id previsível gerado por makeMockCart
+    void cartA;
 
     await expect(page.getByText(/Gerenciar Carrinho/i)).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Gerenciar Carrinho/i })).toHaveCount(0);

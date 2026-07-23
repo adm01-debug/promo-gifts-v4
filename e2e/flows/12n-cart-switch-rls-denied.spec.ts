@@ -17,7 +17,7 @@
 import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel, TID } from "../fixtures/selectors";
-import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
+import { setupAuthedWithCarts } from "../helpers/cart-setup";
 import { startForbiddenDialogWatcher } from "../helpers/dialog-watcher";
 import { readAnalyticsEventNames, resetAnalyticsBuffer } from "../helpers/analytics";
 import {
@@ -35,9 +35,12 @@ test.describe("Regressão: RLS 4xx na troca de carrinho", () => {
   test("POST seller_cart_items 403 (42501) → toast, sem loop de seletor", async ({
     page,
   }, testInfo) => {
-    const cartA = makeMockCart(0, 1);
-    const cartB = makeMockCart(1, 1);
-    await mockSellerCartsAPI(page, [cartA, cartB]);
+    const { cartA, cartB } = await setupAuthedWithCarts(page, {
+      count: 2,
+      itemsPerCart: 1,
+      gotoUrl: null,
+    });
+    if (!cartB) throw new Error("setupAuthedWithCarts com count=2 deveria gerar cartB");
 
     // Simula rejeição por RLS. PostgREST devolve 403 com corpo padrão
     // { code: "42501", message: "new row violates row-level security policy"...}.
