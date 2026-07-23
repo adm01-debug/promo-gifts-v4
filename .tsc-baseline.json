@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-23T15:41:31.608Z",
-  "totalErrors": 175,
+  "generatedAt": "2026-07-23T15:45:23.695Z",
+  "totalErrors": 170,
   "counts": {
     "src/components/admin/ImageUploadButton.tsx": {
       "TS18046": 1
@@ -22,10 +22,6 @@
     },
     "src/components/audit/AuditReport.tsx": {
       "TS2345": 1
-    },
-    "src/components/compare/AIComparisonAdvisor.tsx": {
-      "TS18046": 3,
-      "TS2339": 2
     },
     "src/components/kit-builder/KitAIPromptDialog.tsx": {
       "TS18046": 1,
