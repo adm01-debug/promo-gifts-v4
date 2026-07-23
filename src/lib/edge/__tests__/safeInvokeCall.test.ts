@@ -177,3 +177,120 @@ describe('safeInvokeCall — Onda 17', () => {
     }
   });
 });
+
+// ============================================================================
+// Onda 20 — Telemetria & Propagação de X-Request-Id
+// ============================================================================
+import {
+  filterLoggerEvents,
+  findLoggerEvent,
+} from '@/test/mockStructuredLogger';
+import { REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
+
+describe('safeInvokeCall — Onda 20 telemetria', () => {
+  beforeEach(() => {
+    __resetBreakers();
+    resetStructuredLoggerMock();
+    mockInvoke.mockReset();
+  });
+
+  it('sucesso → emite start + ok com request_id e latency_ms', async () => {
+    mockInvoke.mockResolvedValue({ data: { x: 1 }, error: null });
+    const r = await invokeEdgeSafe('my-fn', { body: { a: 1 } });
+    expect(r.kind).toBe('ok');
+    const start = findLoggerEvent('edge.invoke', 'edge_invoke_start');
+    const ok = findLoggerEvent('edge.invoke', 'edge_invoke_ok');
+    expect(start?.fields.fn).toBe('my-fn');
+    expect(start?.fields.request_id).toMatch(/^[0-9a-f-]{16,}$/);
+    expect(ok?.fields.fn).toBe('my-fn');
+    expect(ok?.fields.request_id).toBe(start?.fields.request_id);
+    expect(typeof ok?.fields.latency_ms).toBe('number');
+  });
+
+  it('falha → emite edge_invoke_failed com error_kind e latency_ms', async () => {
+    mockInvoke.mockResolvedValue({
+      data: null,
+      error: { name: 'FunctionsHttpError', message: 'x', context: { status: 500 } },
+    });
+    const r = await invokeEdgeSafe('my-fn', { maxRetries: 1 });
+    expect(r.kind).toBe('err');
+    const failed = findLoggerEvent('edge.invoke', 'edge_invoke_failed');
+    expect(failed?.fields.error_kind).toBe('server');
+    expect(failed?.fields.fn).toBe('my-fn');
+    expect(typeof failed?.fields.latency_ms).toBe('number');
+  });
+
+  it('breaker aberto → emite edge_invoke_breaker_open', async () => {
+    mockInvoke.mockResolvedValue({
+      data: null,
+      error: { name: 'FunctionsHttpError', message: 'x', context: { status: 500 } },
+    });
+    for (let i = 0; i < 5; i++) {
+      await invokeEdgeSafe('bk-fn', { maxRetries: 1 });
+    }
+    resetStructuredLoggerMock();
+    const r = await invokeEdgeSafe('bk-fn', { maxRetries: 1 });
+    expect(r.kind).toBe('err');
+    const brk = findLoggerEvent('edge.invoke', 'edge_invoke_breaker_open');
+    expect(brk?.fields.fn).toBe('bk-fn');
+  });
+
+  it('injeta X-Request-Id outbound (gerado) quando caller não fornece', async () => {
+    mockInvoke.mockResolvedValue({ data: {}, error: null });
+    const r = await invokeEdgeSafe('hdr-fn', {});
+    expect(r.kind).toBe('ok');
+    const call = mockInvoke.mock.calls[0];
+    const hdrs = call?.[1]?.headers as Record<string, string>;
+    expect(hdrs[REQUEST_ID_HEADER]).toBeTruthy();
+    expect(hdrs[REQUEST_ID_HEADER]).toBe(r.requestId);
+  });
+
+  it('respeita X-Request-Id fornecido via option.requestId', async () => {
+    mockInvoke.mockResolvedValue({ data: {}, error: null });
+    const fixed = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
+    const r = await invokeEdgeSafe('hdr-fn', { requestId: fixed });
+    expect(r.requestId).toBe(fixed);
+    const hdrs = mockInvoke.mock.calls[0]?.[1]?.headers as Record<string, string>;
+    expect(hdrs[REQUEST_ID_HEADER]).toBe(fixed);
+  });
+
+  it('respeita X-Request-Id fornecido via headers custom', async () => {
+    mockInvoke.mockResolvedValue({ data: {}, error: null });
+    const fixed = 'cccccccc-dddd-4eee-8fff-000000000000';
+    const r = await invokeEdgeSafe('hdr-fn', {
+      headers: { [REQUEST_ID_HEADER]: fixed },
+    });
+    expect(r.requestId).toBe(fixed);
+    const hdrs = mockInvoke.mock.calls[0]?.[1]?.headers as Record<string, string>;
+    expect(hdrs[REQUEST_ID_HEADER]).toBe(fixed);
+  });
+
+  it('fuzz × 120 — sempre emite start; ok|failed|breaker_open depois', async () => {
+    for (let i = 0; i < 120; i++) {
+      resetStructuredLoggerMock();
+      const roll = Math.random();
+      if (roll < 0.25) mockInvoke.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+      else if (roll < 0.5)
+        mockInvoke.mockResolvedValueOnce({
+          data: null,
+          error: { name: 'FunctionsHttpError', message: 'x', context: { status: 500 } },
+        });
+      else if (roll < 0.75)
+        mockInvoke.mockResolvedValueOnce({
+          data: null,
+          error: { name: 'FunctionsHttpError', message: 'x', context: { status: 429 } },
+        });
+      else mockInvoke.mockResolvedValueOnce({ data: { ok: 1 }, error: null });
+      const r = await invokeEdgeSafe(`fz-${i % 3}`, { maxRetries: 1, timeoutMs: 200 });
+      const starts = filterLoggerEvents('edge.invoke', 'edge_invoke_start');
+      expect(starts.length).toBe(1);
+      // request_id do resultado bate com o do log
+      expect(starts[0].fields.request_id).toBe(r.requestId);
+      const terminal =
+        findLoggerEvent('edge.invoke', 'edge_invoke_ok') ||
+        findLoggerEvent('edge.invoke', 'edge_invoke_failed') ||
+        findLoggerEvent('edge.invoke', 'edge_invoke_breaker_open');
+      expect(terminal).toBeTruthy();
+    }
+  });
+});
