@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { isBadJwtError, maybeRecoverFromError } from '@/lib/auth/session-recovery';
 import { SELLER_CART_TOASTS } from './sellerCartToasts';
 
 const cartDeleteLog = createClientLogger('cart.delete');
@@ -609,6 +610,17 @@ export function useSellerCarts() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
+      // JWT expirado / bad_jwt (PostgREST 401 com "JWT expired"): delega para
+      // o fluxo SSOT de recuperação de sessão — ele mostra o toast "Sua sessão
+      // expirou. Faça login novamente." e redireciona para /login?next=…,
+      // fechando o CartSelectorDialog junto com o unmount da rota. Suprimimos
+      // o toast genérico de "Falha ao adicionar" para não empilhar mensagens
+      // conflitantes com a UX de sessão expirada.
+      const status = (err as Error & { status?: number }).status;
+      if (isBadJwtError(err) || (status === 401 && /jwt/i.test(err.message ?? ''))) {
+        maybeRecoverFromError(err, 'cart.addItem');
+        return;
+      }
       // Copy SSOT em `sellerCartToasts.ts`. NÃO passar `duration:` —
       // dependemos do auto-dismiss padrão do sonner (~4 s) nos asserts
       // E2E (12i/12m/12n) que garantem que o toast some e não empilha.
