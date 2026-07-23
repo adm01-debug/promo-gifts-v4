@@ -90,6 +90,9 @@ export function EdgeInvokeLivePanel() {
     return values[Math.floor(values.length * 0.5)] ?? null;
   }, [summary]);
 
+  const bottlenecks = useMemo(() => rankBottlenecks(summary, { limit: 5 }), [summary]);
+  const categories = useMemo(() => rollupByCategory(summary), [summary]);
+
   const errorTone =
     summary.errorRatio >= 0.05
       ? 'destructive'
