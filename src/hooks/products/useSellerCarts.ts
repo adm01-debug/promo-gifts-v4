@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { SELLER_CART_TOASTS } from './sellerCartToasts';
 
 const cartDeleteLog = createClientLogger('cart.delete');
 
@@ -608,7 +609,10 @@ export function useSellerCarts() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
     },
     onError: (err: Error) => {
-      toast.error('Não foi possível adicionar ao carrinho', { description: sanitizeError(err) });
+      // Copy SSOT em `sellerCartToasts.ts`. NÃO passar `duration:` —
+      // dependemos do auto-dismiss padrão do sonner (~4 s) nos asserts
+      // E2E (12i/12m/12n) que garantem que o toast some e não empilha.
+      toast.error(SELLER_CART_TOASTS.addItemError.title, { description: sanitizeError(err) });
     },
   });
 

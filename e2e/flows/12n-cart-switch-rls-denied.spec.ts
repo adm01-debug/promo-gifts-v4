@@ -24,6 +24,7 @@ import {
   assertActiveCartHeader,
   assertFinalizeCtaTargets,
 } from "../helpers/cart-assertions";
+import { assertCartAddErrorToast } from "../helpers/cart-toast-assertions";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
@@ -120,9 +121,9 @@ test.describe("Regressão: RLS 4xx na troca de carrinho", () => {
     });
 
     try {
-      // 1. Toast de erro visível.
-      const errorToast = page.locator('[data-sonner-toast][data-type="error"]').first();
-      await expect(errorToast).toBeVisible({ timeout: 6_000 });
+      // 1. Toast de erro visível com o TEXTO EXATO do SSOT
+      //    (protege contra copy genérica em regressão do RLS path).
+      await assertCartAddErrorToast(page, { expectAutoDismiss: false });
       expect(rlsAttempts, "insert deveria ter sido tentado ao menos 1x").toBeGreaterThan(0);
 
       // 2. Confirma que o seletor não reabre nos próximos ~1.5s (poll

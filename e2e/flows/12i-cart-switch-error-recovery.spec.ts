@@ -20,6 +20,7 @@ import {
   assertActiveCartHeader,
   assertFinalizeCtaTargets,
 } from "../helpers/cart-assertions";
+import { assertCartAddErrorToast } from "../helpers/cart-toast-assertions";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
@@ -110,12 +111,11 @@ test.describe("Regressão: falha na troca de carrinho mostra erro e não quebra"
       .waitFor({ state: "hidden", timeout: 5_000 })
       .catch(() => {});
 
-    // 1. Mensagem de erro deve ficar visível. Sonner renderiza os toasts com
-    //    data-type="error" no wrapper `[data-sonner-toast]`.
-    const errorToast = page
-      .locator('[data-sonner-toast][data-type="error"]')
-      .first();
-    await expect(errorToast).toBeVisible({ timeout: 6_000 });
+    // 1. Mensagem de erro visível com o TEXTO EXATO do SSOT
+    //    (protege contra regressão para copy genérica tipo "Operação falhou").
+    //    Sem `expectAutoDismiss` aqui — validaremos o dismiss ao final,
+    //    depois de checar loop e navegação; assim damos tempo natural.
+    await assertCartAddErrorToast(page, { expectAutoDismiss: false });
     expect(insertAttempts).toBeGreaterThan(0);
 
     // 2. Watcher: garante que o seletor NÃO reabre em loop nos próximos
