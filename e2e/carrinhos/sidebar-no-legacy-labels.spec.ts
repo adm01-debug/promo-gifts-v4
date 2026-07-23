@@ -8,6 +8,7 @@
  */
 import { test, expect } from '@playwright/test';
 import { setupAuthedWithCarts } from '../helpers/cart-setup';
+import { gotoAndSettle } from '../helpers/nav';
 
 const FORBIDDEN_LABELS = [
   /Saúde do carrinho/i,
@@ -31,7 +32,6 @@ test.describe('CartSidebar · smoke pós-faxina (sem painéis legados)', () => {
       itemsPerCart: 3,
       gotoUrl: null,
     });
-    const { gotoAndSettle } = await import('../helpers/nav');
     await gotoAndSettle(page, `/carrinhos/${cartA.id}`);
 
     // Espera o CartSidebar marcar data-loaded="true" no card hero —
