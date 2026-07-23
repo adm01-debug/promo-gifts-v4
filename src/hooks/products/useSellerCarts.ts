@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { SELLER_CART_TOASTS } from './sellerCartToasts';
 
 const cartDeleteLog = createClientLogger('cart.delete');
 
