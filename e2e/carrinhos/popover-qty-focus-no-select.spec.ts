@@ -91,4 +91,77 @@ test.describe('Carrinhos · popover — foco no input de tiragem não seleciona 
 
     await expect(qty).toHaveValue('39');
   });
+
+  /**
+   * A11y · navegação por teclado deve trazer foco ao input com cursor no fim,
+   * sem highlight de texto. Combina três invariantes:
+   *  a) o input é foco-alvo real do Tab (foco de teclado, não só ponteiro);
+   *  b) o indicador visual de foco (:focus-visible → ring) é aplicado — usuários
+   *     de teclado precisam ver onde estão;
+   *  c) NÃO há texto selecionado dentro do input, verificado tanto pela API
+   *     `selectionStart/selectionEnd` (quando o browser expõe em type=number)
+   *     quanto por `window.getSelection().toString()`.
+   */
+  test('a11y · Tab foca o input com cursor no fim, sem seleção de texto e com anel de foco visível', async ({
+    page,
+  }) => {
+    const qty = await openPopoverWithItem(page);
+
+    const dec = page.getByTestId('cart-qty-decrement').first();
+    await dec.focus();
+    await page.keyboard.press('Tab');
+    await expect(qty).toBeFocused();
+
+    // Aguarda o rAF do onFocus reposicionar o cursor.
+    await page.waitForTimeout(50);
+
+    // (a+c) Introspecção do input focado.
+    const focusState = await qty.evaluate((el: HTMLInputElement) => {
+      let start: number | null = null;
+      let end: number | null = null;
+      try {
+        // `selectionStart`/`selectionEnd` lançam em type=number em alguns
+        // browsers — o try/catch abaixo preserva a semântica: se não expõe,
+        // fica null e caímos no fallback da seleção do documento.
+        start = el.selectionStart;
+        end = el.selectionEnd;
+      } catch {
+        /* type=number sem API de seleção — tudo bem */
+      }
+      const docSelection = window.getSelection()?.toString() ?? '';
+      const isFocused = document.activeElement === el;
+      return { start, end, valueLength: el.value.length, docSelection, isFocused };
+    });
+
+    expect(focusState.isFocused, 'input deve estar focado após Tab').toBe(true);
+
+    // Nada selecionado a nível de documento (cobre também browsers que não
+    // expõem selectionStart em type=number).
+    expect(
+      focusState.docSelection,
+      'nenhum texto deve estar selecionado no documento',
+    ).toBe('');
+
+    // Quando o browser expõe a API, cursor deve estar colapsado no fim.
+    if (focusState.start !== null && focusState.end !== null) {
+      expect(
+        focusState.start,
+        'seleção deve estar colapsada (start === end)',
+      ).toBe(focusState.end);
+      expect(
+        focusState.end,
+        'cursor deve estar no fim do valor',
+      ).toBe(focusState.valueLength);
+    }
+
+    // (b) Indicador de foco visível: a classe do input define
+    // `focus:ring-1 focus:ring-primary/20` → box-shadow não-nula quando focado.
+    const boxShadow = await qty.evaluate(
+      (el) => window.getComputedStyle(el).boxShadow,
+    );
+    expect(
+      boxShadow,
+      'anel de foco (:focus) deve ser aplicado para usuários de teclado',
+    ).not.toBe('none');
+  });
 });
