@@ -280,11 +280,12 @@ export async function safeAuthCall<T>(
       if (result.error) {
         lastKind = classifySupabaseError(result.error);
         lastRaw = result.error;
-        lastMsg = result.error.message ?? '';
+        const errObj = (result.error ?? {}) as { message?: string; status?: number };
+        lastMsg = errObj.message ?? '';
         log.warn(`${op}_failed`, {
           attempt,
           error_kind: lastKind,
-          status: result.error.status ?? null,
+          status: errObj.status ?? null,
         });
         if (!isRetryable(lastKind) || attempt === maxRetries) {
           if (isRetryable(lastKind) && attempt === maxRetries) {
