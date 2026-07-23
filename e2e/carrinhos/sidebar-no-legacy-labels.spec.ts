@@ -7,9 +7,7 @@
  * `src/pages/products/seller-carts/**` ou `src/components/cart/**` mudam.
  */
 import { test, expect } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
-import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart } from '../helpers/cart-mock';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 
 const FORBIDDEN_LABELS = [
   /Saúde do carrinho/i,
@@ -22,16 +20,19 @@ const FORBIDDEN_LABELS = [
 test.describe('CartSidebar · smoke pós-faxina (sem painéis legados)', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await loginAs(page, 'user');
   });
 
   test('sidebar mostra hero + CTA e NÃO renderiza Saúde/Inteligência/Histórico/Sugestões', async ({
     page,
   }) => {
-    const carts = [makeMockCart(0, 3)];
-    await mockSellerCartsAPI(page, carts);
-
-    await gotoAndSettle(page, `/carrinhos/${carts[0].id}`);
+    const { cartA } = await setupAuthedWithCarts(page, {
+      role: 'user',
+      count: 1,
+      itemsPerCart: 3,
+      gotoUrl: null,
+    });
+    const { gotoAndSettle } = await import('../helpers/nav');
+    await gotoAndSettle(page, `/carrinhos/${cartA.id}`);
 
     // Espera o CartSidebar marcar data-loaded="true" no card hero —
     // mais determinístico que networkidle (que sofre com WebSockets/polling)
