@@ -70,8 +70,10 @@ export interface SafeAuthOptions {
 }
 
 interface SupabaseLikeResult<T> {
-  data?: T;
-  error?: { message?: string; status?: number; name?: string } | null;
+  data?: T | null;
+  // Aceita qualquer shape de erro (AuthError, PostgrestError, unknown) — o
+  // classificador em `classifyAuthError` normaliza via checagem defensiva.
+  error?: unknown;
 }
 
 const DEFAULT_TIMEOUT_MS = 8_000;
@@ -278,11 +280,12 @@ export async function safeAuthCall<T>(
       if (result.error) {
         lastKind = classifySupabaseError(result.error);
         lastRaw = result.error;
-        lastMsg = result.error.message ?? '';
+        const errObj = (result.error ?? {}) as { message?: string; status?: number };
+        lastMsg = errObj.message ?? '';
         log.warn(`${op}_failed`, {
           attempt,
           error_kind: lastKind,
-          status: result.error.status ?? null,
+          status: errObj.status ?? null,
         });
         if (!isRetryable(lastKind) || attempt === maxRetries) {
           if (isRetryable(lastKind) && attempt === maxRetries) {

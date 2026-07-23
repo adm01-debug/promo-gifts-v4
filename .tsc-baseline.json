@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-23T13:45:22.389Z",
-  "totalErrors": 227,
+  "generatedAt": "2026-07-23T14:47:35.273Z",
+  "totalErrors": 218,
   "counts": {
     "src/components/admin/ImageUploadButton.tsx": {
       "TS18046": 1
@@ -127,9 +127,6 @@
     "src/pages/tools/VisualSearchPage.tsx": {
       "TS18046": 1,
       "TS2345": 1
-    },
-    "src/services/authService.ts": {
-      "TS2322": 9
     },
     "src/services/magazineService.ts": {
       "TS2322": 12,

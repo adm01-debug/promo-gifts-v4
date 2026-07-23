@@ -30,10 +30,14 @@ export const authService = {
     email: string,
     password: string,
     opts: { signal?: AbortSignal } = {},
-  ): Promise<SafeAuthResult<Awaited<ReturnType<typeof this.signIn>>['data']>> {
+  ): Promise<SafeAuthResult<UnknownData>> {
     const supabase = await getSupabaseClient();
     return safeAuthCall(
-      () => supabase.auth.signInWithPassword({ email, password }),
+      () =>
+        supabase.auth.signInWithPassword({ email, password }) as unknown as Promise<{
+          data: UnknownData;
+          error: unknown;
+        }>,
       { op: 'signIn', signal: opts.signal },
     );
   },
