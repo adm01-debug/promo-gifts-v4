@@ -88,6 +88,16 @@ export function trackQuoteFinalizedFromCart(payload: QuoteFinalizedPayload): voi
   pushToE2EBuffer(evt);
 }
 
+export function trackCartCheckoutStarted(payload: CheckoutStartedPayload): void {
+  const evt: CartAnalyticsEvent = {
+    name: 'cart.checkout_started',
+    ts: new Date().toISOString(),
+    payload,
+  };
+  log.info('cart_checkout_started', { ...payload });
+  pushToE2EBuffer(evt);
+}
+
 /** Helper de teste — limpa o buffer entre cenários. */
 export function __resetCartAnalyticsBufferForTests(): void {
   if (typeof window === 'undefined') return;
