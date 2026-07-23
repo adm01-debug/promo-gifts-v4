@@ -12,18 +12,17 @@
  *   • Não aparece alerta de erro para operações bem-sucedidas.
  */
 import { test, expect, type Page } from '@playwright/test';
-import { loginAs } from '../helpers/auth';
+import { setupAuthedWithCarts } from '../helpers/cart-setup';
 import { gotoAndSettle } from '../helpers/nav';
-import { mockSellerCartsAPI, makeMockCart, type MockCart } from '../helpers/cart-mock';
+import type { MockCart } from '../helpers/cart-mock';
 
-function buildCarts(): MockCart[] {
-  const cart = makeMockCart(0, 1);
+function transformCart(cart: MockCart): MockCart {
   cart.company_id = 'co-jitter';
   cart.company_name = 'Empresa Jitter';
   cart.company_location = 'Varejo | Revenda';
   cart.seller_cart_items[0].id = 'item-jitter-1';
   cart.seller_cart_items[0].quantity = 10;
-  return [cart];
+  return cart;
 }
 
 async function mockJitteredPatch(
@@ -46,8 +45,13 @@ test.describe('Carrinhos · popover — latência variável + jitter @smoke', ()
   test('12 cliques alternados com jitter 150-1200ms: commits coalescidos + zero flicker', async ({
     page,
   }) => {
-    await loginAs(page, 'seller');
-    await mockSellerCartsAPI(page, buildCarts());
+    await setupAuthedWithCarts(page, {
+      role: 'seller',
+      count: 1,
+      itemsPerCart: 1,
+      gotoUrl: null,
+      transform: (c) => transformCart(c),
+    });
     const patch = await mockJitteredPatch(page, { minMs: 150, maxMs: 1200 });
 
     await gotoAndSettle(page, '/');
