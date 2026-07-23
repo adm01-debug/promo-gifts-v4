@@ -11,8 +11,7 @@
  *   2. `CartSelectorDialog` fecha e NÃO reabre em loop.
  *   3. Analytics `cart.company_switched` FOI emitido (a intenção é tracked
  *      ANTES do insert — ver QuickAddToQuote.tsx L84-93).
- *   4. Analytics `cart.quote_finalized` NÃO é emitido (a troca falhou, o
- *      vendedor não deve conseguir "concluir" um checkout fantasma).
+ *   4. Analytics `cart.quote_finalized` NÃO é emitido.
  *   5. Navegar para /carrinhos/:id do carrinho A continua respondendo sem
  *      abrir `cart-company-picker-select`.
  */
@@ -21,7 +20,7 @@ import { gotoAndSettle } from "../helpers/nav";
 import { Sel, TID } from "../fixtures/selectors";
 import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
 import { startForbiddenDialogWatcher } from "../helpers/dialog-watcher";
-import { readAnalyticsBuffer } from "../helpers/analytics";
+import { readAnalyticsEventNames, resetAnalyticsBuffer } from "../helpers/analytics";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
@@ -36,9 +35,8 @@ test.describe("Regressão: aborto de rede na troca de carrinho", () => {
     const cartB = makeMockCart(1, 1);
     await mockSellerCartsAPI(page, [cartA, cartB]);
 
-    // Aborta o insert (não é 5xx — o cliente supabase-js resolve com
-    // `error.message: "Failed to fetch"` sem status). Esse é o caminho
-    // silencioso que já causou regressão no passado.
+    // Aborta o insert (não é 5xx — supabase-js resolve com "Failed to fetch"
+    // sem status HTTP). Esse caminho já causou regressão silenciosa antes.
     let abortAttempts = 0;
     await page.route(/\/rest\/v1\/seller_cart_items(\?|$)/i, async (route) => {
       if (route.request().method() === "POST") {
@@ -48,13 +46,6 @@ test.describe("Regressão: aborto de rede na troca de carrinho", () => {
       }
       await route.fallback();
     });
-
-    // Watcher determinístico: falha o teste com screenshot no primeiro
-    // reopen espúrio do seletor.
-    const watcher = await startForbiddenDialogWatcher(page, testInfo, [
-      SEL_SELECTOR_DIALOG,
-      SEL_COMPANY_PICKER,
-    ]);
 
     await gotoAndSettle(page, "/produtos");
 
@@ -73,11 +64,6 @@ test.describe("Regressão: aborto de rede na troca de carrinho", () => {
       test.skip(true, "Card sem trigger de carrinho neste ambiente");
       return;
     }
-
-    // O watcher deve estar tolerante à ABERTURA legítima do seletor. Ativamos
-    // o modo "armed" só depois que o usuário escolher o cart B e o seletor
-    // fechar (ver watcher.arm() abaixo).
-    watcher.disarm();
     await cartTrigger.click();
 
     const selectorDialog = page.locator(SEL_SELECTOR_DIALOG).first();
@@ -102,9 +88,7 @@ test.describe("Regressão: aborto de rede na troca de carrinho", () => {
     await expect(selectorDialog).toBeVisible({ timeout: 8_000 });
 
     // Zera buffer de analytics logo antes da ação de switch.
-    await page.evaluate(() => {
-      (window as unknown as Record<string, unknown>).__e2eAnalytics__ = [];
-    });
+    await resetAnalyticsBuffer(page);
 
     const cartBRow = page.locator(TID(`cart-selector-item-${cartB.id}`)).first();
     await expect(cartBRow).toBeVisible({ timeout: 5_000 });
@@ -112,38 +96,48 @@ test.describe("Regressão: aborto de rede na troca de carrinho", () => {
 
     // Seletor deve fechar — a partir daqui QUALQUER reabertura é loop bug.
     await selectorDialog.waitFor({ state: "hidden", timeout: 5_000 }).catch(() => {});
-    watcher.arm();
 
-    // 1. Toast de erro visível.
-    const errorToast = page.locator('[data-sonner-toast][data-type="error"]').first();
-    await expect(errorToast).toBeVisible({ timeout: 6_000 });
-    expect(abortAttempts, "insert deveria ter sido tentado ao menos 1x").toBeGreaterThan(0);
+    // Watcher inicia SÓ agora (o seletor já teve seu momento legítimo de
+    // abertura). Qualquer reabertura daqui pra frente = falha rica com
+    // screenshot + HTML anexados ao trace do Playwright.
+    const watcher = startForbiddenDialogWatcher(page, testInfo, {
+      label: "12m-switch-abort",
+      selectors: {
+        selector_dialog: SEL_SELECTOR_DIALOG,
+        company_picker: SEL_COMPANY_PICKER,
+      },
+    });
 
-    // 2. Confirma que o seletor não reabre nos próximos ~1.5s (watcher
-    //    dispara instantaneamente se abrir; o poll aqui só drena o event
-    //    loop de forma determinística — sem waitForTimeout).
-    await expect
-      .poll(() => page.locator(SEL_SELECTOR_DIALOG).isVisible().catch(() => false), {
-        timeout: 1_500,
-        intervals: [200, 300, 500],
-      })
-      .toBe(false);
+    try {
+      // 1. Toast de erro visível.
+      const errorToast = page.locator('[data-sonner-toast][data-type="error"]').first();
+      await expect(errorToast).toBeVisible({ timeout: 6_000 });
+      expect(abortAttempts, "insert deveria ter sido tentado ao menos 1x").toBeGreaterThan(0);
 
-    // 3. Analytics: switch foi emitido (intenção), finalize NÃO.
-    const events = await readAnalyticsBuffer(page);
-    const names = events.map((e) => e.name);
-    expect(names, "cart.company_switched deve estar no buffer").toContain(
-      "cart.company_switched",
-    );
-    expect(names, "cart.quote_finalized NÃO deve ter sido emitido").not.toContain(
-      "cart.quote_finalized",
-    );
+      // 2. Confirma que o seletor não reabre nos próximos ~1.5s de forma
+      //    determinística (sem waitForTimeout — banido pelo ESLint).
+      await expect
+        .poll(
+          () => page.locator(SEL_SELECTOR_DIALOG).isVisible().catch(() => false),
+          { timeout: 1_500, intervals: [200, 300, 500] },
+        )
+        .toBe(false);
 
-    // 4. Navegar para o carrinho A ainda funciona — sem picker de empresa.
-    await gotoAndSettle(page, `/carrinhos/${cartA.id}`);
-    await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
-    await expect(page.locator(SEL_COMPANY_PICKER)).toBeHidden({ timeout: 1_000 });
+      // 3. Analytics: switch foi emitido (intenção), finalize NÃO.
+      const names = await readAnalyticsEventNames(page);
+      expect(names, "cart.company_switched deve estar no buffer").toContain(
+        "cart.company_switched",
+      );
+      expect(names, "cart.quote_finalized NÃO deve ter sido emitido").not.toContain(
+        "cart.quote_finalized",
+      );
 
-    watcher.stop();
+      // 4. Navegar para o carrinho A ainda funciona — sem picker de empresa.
+      await gotoAndSettle(page, `/carrinhos/${cartA.id}`);
+      await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
+      await expect(page.locator(SEL_COMPANY_PICKER)).toBeHidden({ timeout: 1_000 });
+    } finally {
+      await watcher.assertNoHits();
+    }
   });
 });
