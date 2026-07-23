@@ -53,8 +53,10 @@ export function AppHealthDashboard() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const { data, isLoading, isFetching, refetch } = useAppHealth(windowMinutes);
 
-  const handleLookup = async () => {
-    const id = requestIdQuery.trim();
+  const lookupCardRef = useRef<HTMLDivElement | null>(null);
+
+  const runLookup = async (rawId: string) => {
+    const id = rawId.trim();
     if (!id) return;
     setLookupLoading(true);
     try {
@@ -69,6 +71,24 @@ export function AppHealthDashboard() {
       setLookupLoading(false);
     }
   };
+
+  const handleLookup = () => runLookup(requestIdQuery);
+
+  useEffect(() => {
+    const handler = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ requestId?: string }>).detail;
+      const id = detail?.requestId?.trim();
+      if (!id) return;
+      setRequestIdQuery(id);
+      void runLookup(id);
+      if (lookupCardRef.current) {
+        lookupCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    window.addEventListener(REQUEST_ID_LOOKUP_EVENT, handler as EventListener);
+    return () => window.removeEventListener(REQUEST_ID_LOOKUP_EVENT, handler as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const kpis = data?.kpis;
   const topRoutesByError = data?.top_routes_by_error ?? [];
