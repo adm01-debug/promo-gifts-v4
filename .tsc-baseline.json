@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-23T14:47:35.273Z",
-  "totalErrors": 218,
+  "generatedAt": "2026-07-23T15:07:47.019Z",
+  "totalErrors": 210,
   "counts": {
     "src/components/admin/ImageUploadButton.tsx": {
       "TS18046": 1
@@ -99,9 +99,6 @@
     },
     "src/hooks/voice/scribeTokenCache.ts": {
       "TS2339": 2
-    },
-    "src/lib/crm-db.ts": {
-      "TS2339": 8
     },
     "src/pages/Simulation.tsx": {
       "TS2345": 1
