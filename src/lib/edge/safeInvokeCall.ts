@@ -168,6 +168,14 @@ export async function invokeEdgeSafe<T = unknown>(
       latency_ms: latencyMs,
       attempts: inner.attempts,
     });
+    recordInvokeEvent({
+      ts: Date.now(),
+      kind: 'ok',
+      fn: fnName,
+      requestId,
+      latencyMs,
+      attempts: inner.attempts,
+    });
   } else {
     // Detecta breaker aberto (safeAuthCall devolve attempts=0 e raw.breaker='open').
     const raw = inner.raw as { breaker?: string } | null;
@@ -176,6 +184,13 @@ export async function invokeEdgeSafe<T = unknown>(
         fn: fnName,
         request_id: requestId,
         latency_ms: latencyMs,
+      });
+      recordInvokeEvent({
+        ts: Date.now(),
+        kind: 'breaker_open',
+        fn: fnName,
+        requestId,
+        latencyMs,
       });
     } else {
       // WARN em vez de ERROR: safeAuthCall já emite ERROR estruturado internamente
@@ -186,6 +201,15 @@ export async function invokeEdgeSafe<T = unknown>(
         request_id: requestId,
         latency_ms: latencyMs,
         error_kind: inner.errorKind,
+        attempts: inner.attempts,
+      });
+      recordInvokeEvent({
+        ts: Date.now(),
+        kind: 'failed',
+        fn: fnName,
+        requestId,
+        latencyMs,
+        errorKind: inner.errorKind,
         attempts: inner.attempts,
       });
     }
