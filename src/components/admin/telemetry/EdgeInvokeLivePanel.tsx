@@ -139,6 +139,46 @@ export function EdgeInvokeLivePanel() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => {
+              if (!events.length) {
+                toast.info('Nada para exportar');
+                return;
+              }
+              triggerDownload(
+                buildDownloadFilename('csv'),
+                invokeEventsToCSV(events),
+                'text/csv;charset=utf-8',
+              );
+              toast.success(`CSV exportado (${events.length} eventos)`);
+            }}
+            data-testid="edge-invoke-live-export-csv"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (!events.length) {
+                toast.info('Nada para exportar');
+                return;
+              }
+              triggerDownload(
+                buildDownloadFilename('json'),
+                invokeEventsToJSON(events),
+                'application/json',
+              );
+              toast.success(`JSON exportado (${events.length} eventos)`);
+            }}
+            data-testid="edge-invoke-live-export-json"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            JSON
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => clearInvokeSink()}
             data-testid="edge-invoke-live-clear"
           >
