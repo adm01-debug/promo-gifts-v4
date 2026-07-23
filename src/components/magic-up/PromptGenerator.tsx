@@ -178,7 +178,7 @@ export function PromptGenerator({
 
     setGenerating(true);
     try {
-      const { data, error } = await invokeEdge('generate-ad-prompt', {
+      const { data, error } = await invokeEdge<{ prompts?: string[]; error?: string }>('generate-ad-prompt', {
         body: {
           productName,
           productColor,

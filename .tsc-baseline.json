@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-23T15:45:23.695Z",
-  "totalErrors": 170,
+  "generatedAt": "2026-07-23T15:53:24.503Z",
+  "totalErrors": 161,
   "counts": {
     "src/components/admin/ImageUploadButton.tsx": {
       "TS18046": 1
@@ -28,7 +28,7 @@
       "TS2339": 2
     },
     "src/components/magic-up/PromptGenerator.tsx": {
-      "TS2339": 5
+      "TS2345": 1
     },
     "src/components/search/VisualSearchButton.tsx": {
       "TS18046": 2,
@@ -90,9 +90,6 @@
     },
     "src/pages/admin/OwnershipAuditAdminPage.tsx": {
       "TS2339": 2
-    },
-    "src/pages/auth/Auth.tsx": {
-      "TS2339": 5
     },
     "src/pages/quotes/quote-view/QuoteActionHandlers.ts": {
       "TS2339": 3
