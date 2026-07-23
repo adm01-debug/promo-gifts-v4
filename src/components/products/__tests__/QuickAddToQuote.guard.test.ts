@@ -11,7 +11,7 @@
  * Guarda espelhada em src/components/products/QuickAddToQuote.tsx (handleAddToQuote):
  *   if (!cartId && !activeCart && carts.length > 1 && !showSelector) { showSelector() }
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 function shouldOpenSelector(args: {
   cartId?: string;
