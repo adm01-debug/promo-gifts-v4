@@ -16,7 +16,7 @@
  *     encadeado em cada etapa: se voltar a ficar visível, o teste falha
  *     no ponto exato do loop, com stack de origem determinístico.
  */
-import { test, expect, requireAuth } from "../fixtures/test-base";
+import { test, expect } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel, TID } from "../fixtures/selectors";
 import {
@@ -24,7 +24,7 @@ import {
   waitForTestIdHidden,
   expectVisibleByTestId,
 } from "../helpers/waits";
-import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
+import { setupAuthedWithCarts } from "../helpers/cart-setup";
 
 const TID_SELECTOR_DIALOG = "cart-selector-dialog";
 const TID_COMPANY_PICKER = "cart-company-picker-select";
@@ -35,17 +35,12 @@ const TID_CHECKOUT_CTA = "cart-checkout-cta";
 const REAPPEAR_GUARD_MS = 1_500;
 
 test.describe("Regressão: sem activeCart, seletor abre 1x e finalização não faz loop", () => {
-  test.beforeEach(() => requireAuth());
-
   test("seletor abre uma vez ao adicionar e checkout conclui sem reabrir", async ({
     page,
   }) => {
-    const cartA = makeMockCart(0, 1);
-    const cartB = makeMockCart(1, 1);
-    await mockSellerCartsAPI(page, [cartA, cartB]);
-
     // Aguarda determinístico da hidratação: a query do SellerCartContext dispara
-    // GET /rest/v1/seller_carts logo no boot. Só seguimos após ela responder.
+    // GET /rest/v1/seller_carts logo no boot. Registramos o listener ANTES do
+    // goto (feito por `setupAuthedWithCarts`) para não perder a resposta.
     const cartsHydrated = page.waitForResponse(
       (r) =>
         r.url().includes("/rest/v1/seller_carts") &&
@@ -54,7 +49,15 @@ test.describe("Regressão: sem activeCart, seletor abre 1x e finalização não 
       { timeout: 15_000 },
     );
 
-    await gotoAndSettle(page, "/produtos");
+    // SSOT: login + seed + goto em ordem garantida (login → mock → goto).
+    const { cartA, cartB } = await setupAuthedWithCarts(page, {
+      count: 2,
+      itemsPerCart: 1,
+      gotoUrl: "/produtos",
+    });
+    // cartB é referenciado adiante no fluxo (evita "unused" no strict mode).
+    void cartB;
+
     await cartsHydrated.catch(() => {
       // Em ambientes onde a query já está em cache do SW, `waitForResponse`
       // pode expirar sem receber tráfego — não é falha do fluxo.
