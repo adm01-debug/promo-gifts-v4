@@ -16,6 +16,10 @@ import { test, expect, requireAuth } from "../fixtures/test-base";
 import { gotoAndSettle } from "../helpers/nav";
 import { Sel, TID } from "../fixtures/selectors";
 import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
+import {
+  assertActiveCartHeader,
+  assertFinalizeCtaTargets,
+} from "../helpers/cart-assertions";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
