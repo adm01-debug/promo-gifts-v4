@@ -135,13 +135,35 @@ export function useSellerCartsPage() {
   // nesta sessao (existia e sumiu -> redireciona em silencio).
   const lastResolvedCartIdRef = useRef<string | null>(null);
 
+  // Ref do último cart id p/ o qual emitimos `cart.company_switched` a partir
+  // desta página. Guarda idempotência contra reruns do effect (mudanças em
+  // `carts` que não alteram o route id não devem re-emitir o evento).
+  const lastSwitchEmittedForRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!routeCartId || isLoading) return;
     if (routeCartId === 'novo') return;
-    const found = carts.some((c) => c.id === routeCartId);
+    const found = carts.find((c) => c.id === routeCartId);
     if (found) {
+      const prev = lastResolvedCartIdRef.current;
       lastResolvedCartIdRef.current = routeCartId;
       setActiveCartId(routeCartId);
+      // Espelha o evento emitido pelo QuickAdd (source='quick_add_selector')
+      // quando a troca acontece pela navegação lateral (cards da lista de
+      // carrinhos ou entrada direta pela URL de outro carrinho). Só emite se:
+      //   - há um `prev` válido (evita ruído no mount inicial);
+      //   - a troca é entre carrinhos distintos;
+      //   - ainda não emitimos para este destino (idempotência inter-renders).
+      if (prev && prev !== routeCartId && lastSwitchEmittedForRef.current !== routeCartId) {
+        lastSwitchEmittedForRef.current = routeCartId;
+        trackCartCompanySwitched({
+          fromCartId: prev,
+          toCartId: routeCartId,
+          companyId: found.company_id ?? null,
+          companyName: found.company_name ?? null,
+          source: 'seller_carts_page',
+        });
+      }
       return;
     }
     // Nao encontrado: a RLS ja oculta carrinhos de outros vendedores, entao cair
