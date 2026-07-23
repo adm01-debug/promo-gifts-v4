@@ -79,7 +79,7 @@ export function CredentialCacheMetricsPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: invErr } = await invokeEdge('secrets-manager', {
+    const { data, error: invErr } = await invokeEdge<{ ok?: boolean; error?: { message?: string }; metrics?: Snapshot }>('secrets-manager', {
       body: { action: 'cache_metrics' },
     });
     if (invErr) {
