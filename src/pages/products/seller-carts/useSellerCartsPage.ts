@@ -8,7 +8,11 @@ import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { useCartTemplates, type CartTemplateItem, type SellerCart, type AddToCartInput } from '@/hooks/products';
 import { ProductsContext } from '@/contexts/ProductsContext';
 import { supabase } from '@/integrations/supabase/client';
-import { trackQuoteFinalizedFromCart, trackCartCheckoutStarted } from '@/lib/analytics/cartAnalytics';
+import {
+  trackQuoteFinalizedFromCart,
+  trackCartCheckoutStarted,
+  trackCartCompanySwitched,
+} from '@/lib/analytics/cartAnalytics';
 import {
   exportCartToCSV,
   exportCartToPDF,
