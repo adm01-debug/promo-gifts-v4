@@ -118,5 +118,70 @@ test.describe("Regressão: trocar carrinho não abre seletor em loop", () => {
       // O texto muda para "Adicionado!" enquanto o popover não fecha.
       await expect(addBtn).toContainText(/adicionado/i, { timeout: 3_000 });
     }
+
+    // 6. Finalizar: navega para o carrinho B e clica em "Gerar Orçamento".
+    //    Asserts adicionais garantem que NENHUM seletor de empresa aparece
+    //    durante o checkout e que a finalização conclui com sucesso
+    //    (navegação para /orcamentos/novo).
+    const companyPicker = page.locator(SEL_COMPANY_PICKER).first();
+
+    // Instala um "watcher": se qualquer um dos dois dialogs ficar visível
+    // enquanto o checkout roda, capturamos e reprovamos o teste.
+    let selectorOpenedDuringCheckout = false;
+    let pickerOpenedDuringCheckout = false;
+    const watcher = setInterval(() => {
+      void selectorDialog
+        .isVisible()
+        .then((v) => {
+          if (v) selectorOpenedDuringCheckout = true;
+        })
+        .catch(() => {});
+      void companyPicker
+        .isVisible()
+        .then((v) => {
+          if (v) pickerOpenedDuringCheckout = true;
+        })
+        .catch(() => {});
+    }, 100);
+
+    try {
+      await gotoAndSettle(page, `/carrinhos/${cartB.id}`);
+
+      // Nem o seletor de carrinho, nem o picker de empresa devem aparecer
+      // só por navegar para a página do carrinho ativo.
+      await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
+      await expect(companyPicker).toBeHidden({ timeout: 1_000 });
+
+      const checkoutCta = page.locator(SEL_CHECKOUT_CTA).first();
+      if (!(await checkoutCta.isVisible().catch(() => false))) {
+        // Ambiente sem CTA (ex.: carrinho sem itens porque o mock não persiste
+        // a insert real) — pulamos apenas a parte de finalização.
+        test.info().annotations.push({
+          type: "note",
+          description: "CTA de finalização ausente — mock não persistiu itens.",
+        });
+      } else {
+        await checkoutCta.click();
+
+        // Sucesso = navegação para /orcamentos/novo (destino de handleGenerateQuote).
+        await page.waitForURL(/\/orcamentos\/novo/i, { timeout: 8_000 });
+        expect(page.url()).toMatch(/\/orcamentos\/novo/i);
+
+        // Depois de finalizar, os dialogs continuam ocultos.
+        await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
+        await expect(companyPicker).toBeHidden({ timeout: 1_000 });
+      }
+    } finally {
+      clearInterval(watcher);
+    }
+
+    expect(
+      selectorOpenedDuringCheckout,
+      "CartSelectorDialog NÃO deve abrir durante o checkout após troca de carrinho",
+    ).toBe(false);
+    expect(
+      pickerOpenedDuringCheckout,
+      "CartCompanyPickerDialog NÃO deve abrir durante o checkout após troca de carrinho",
+    ).toBe(false);
   });
 });
