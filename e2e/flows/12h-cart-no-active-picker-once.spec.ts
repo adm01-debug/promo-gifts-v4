@@ -24,7 +24,7 @@ import {
   waitForTestIdHidden,
   expectVisibleByTestId,
 } from "../helpers/waits";
-import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
+import { setupAuthedWithCarts } from "../helpers/cart-setup";
 
 const TID_SELECTOR_DIALOG = "cart-selector-dialog";
 const TID_COMPANY_PICKER = "cart-company-picker-select";
