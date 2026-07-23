@@ -1,5 +1,6 @@
 import { useState, useId } from 'react';
 import { Plus, Check, ShoppingCart, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -88,6 +89,22 @@ export function QuickAddToQuote({
       },
       cartId,
     );
+
+    // Feedback visual confirmando o carrinho de destino. Damos destaque
+    // especial ao caso "troca de empresa" (cartId veio do CartSelectorDialog)
+    // para o vendedor confirmar que o item entrou no carrinho correto antes
+    // de finalizar. Se o cartId não bater com a lista (edge case), caímos no
+    // fallback do activeCart.
+    const destinationCart =
+      (cartId ? carts.find((c) => c.id === cartId) : null) ?? activeCart ?? null;
+    const destinationName = destinationCart?.company_name ?? 'carrinho ativo';
+    if (cartId) {
+      toast.success(`Adicionado ao carrinho de ${destinationName}`, {
+        description: `${quantity} un. de "${productName}" — confira antes de finalizar.`,
+      });
+    } else {
+      toast.success(`Adicionado ao carrinho de ${destinationName}`);
+    }
 
     setIsAdded(true);
     setShowSelector(false);
