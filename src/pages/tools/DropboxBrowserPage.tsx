@@ -3,9 +3,10 @@ import { useDropboxFiles } from '@/hooks/intelligence';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Folder, File, ArrowUp, Image, RefreshCw, CloudOff, Cloud } from 'lucide-react';
+import { Folder, File, ArrowUp, Image, RefreshCw, Cloud } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { EdgeFallback } from '@/components/shared/EdgeFallback';
 
 export default function DropboxBrowserPage() {
   const {
@@ -13,10 +14,12 @@ export default function DropboxBrowserPage() {
     isLoading,
     isConnected,
     currentPath,
+    error,
     checkConnection,
     listFiles,
     navigateToFolder,
     navigateUp,
+    retry,
   } = useDropboxFiles();
 
   useEffect(() => {
@@ -43,14 +46,15 @@ export default function DropboxBrowserPage() {
           path="/dropbox"
           noIndex
         />
-        <CloudOff className="h-16 w-16 text-muted-foreground" />
-        <h2 className="font-display text-xl font-semibold text-foreground">
-          Dropbox não conectado
-        </h2>
-        <p className="max-w-md text-center text-muted-foreground">
-          Configure o token de acesso do Dropbox nas variáveis de ambiente para usar esta
-          integração.
-        </p>
+        <EdgeFallback
+          variant="disconnected"
+          title="Dropbox não conectado"
+          description="Configure a integração do Dropbox nas conexões do painel administrativo para navegar seus arquivos por aqui."
+          tip="Se você é administrador, valide o token em Admin › Conexões."
+          onRetry={retry}
+          retryLabel="Verificar novamente"
+          isRetrying={isLoading}
+        />
       </div>
     );
   }
