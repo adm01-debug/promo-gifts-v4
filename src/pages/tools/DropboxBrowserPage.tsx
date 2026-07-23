@@ -118,8 +118,24 @@ export default function DropboxBrowserPage() {
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
+          ) : error ? (
+            <EdgeFallback
+              variant="error"
+              title="Não foi possível listar os arquivos"
+              error={error}
+              tip="Verifique sua conexão ou tente novamente em alguns instantes."
+              onRetry={retry}
+              isRetrying={isLoading}
+            />
           ) : entries.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">Pasta vazia</p>
+            <EdgeFallback
+              variant="empty"
+              title="Pasta vazia"
+              description="Nenhum arquivo ou subpasta nesta localização."
+              onRetry={retry}
+              retryLabel="Recarregar"
+              isRetrying={isLoading}
+            />
           ) : (
             <div className="divide-y">
               {entries
