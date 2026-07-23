@@ -154,7 +154,16 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
         ]
           .filter(Boolean)
           .join('\n\nREFINEMENT INSTRUCTION: ');
-        const { data, error } = await invokeEdge('generate-ad-image', {
+        const { data, error } = await invokeEdge<{
+          imageUrl?: string;
+          model?: string;
+          outputChannel?: string;
+          aspectRatio?: string;
+          qualityMode?: string;
+          creativeMode?: string;
+          compositionMode?: string;
+          error?: string;
+        }>('generate-ad-image', {
           headers: log.headers(),
           body: {
             productImageUrl: deps.currentImage,
