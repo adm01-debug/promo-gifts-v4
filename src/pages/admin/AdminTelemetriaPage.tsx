@@ -94,6 +94,11 @@ const AppHealthDashboard = lazy(() =>
     default: m.AppHealthDashboard,
   })),
 );
+const EdgeInvokeLivePanel = lazy(() =>
+  import('@/components/admin/telemetry/EdgeInvokeLivePanel').then((m) => ({
+    default: m.EdgeInvokeLivePanel,
+  })),
+);
 const QuoteBuilderHandoffCard = lazy(() =>
   import('@/components/admin/telemetry/QuoteBuilderHandoffCard').then((m) => ({
     default: m.QuoteBuilderHandoffCard,
@@ -211,6 +216,11 @@ export default function AdminTelemetriaPage() {
         {/* Saúde da Aplicação — KPIs 4xx/5xx por rota, webhooks, latência por edge fn + lookup por request-id */}
         <Suspense fallback={<CardSkeleton height={520} label="Carregando saúde da aplicação" />}>
           <AppHealthDashboard />
+        </Suspense>
+
+        {/* Onda 21 — Painel live in-memory da superfície invokeEdgeSafe (sessão atual) */}
+        <Suspense fallback={<CardSkeleton height={360} label="Carregando edge invokes live" />}>
+          <EdgeInvokeLivePanel />
         </Suspense>
 
         {/* Guardrail automático: interrompe regressões antes que afetem usuários */}
