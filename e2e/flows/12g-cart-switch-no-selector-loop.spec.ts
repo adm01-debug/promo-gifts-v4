@@ -20,6 +20,7 @@
 import { test, expect } from "../fixtures/test-base";
 import { Sel, TID } from "../fixtures/selectors";
 import { setupAuthedWithCarts } from "../helpers/cart-setup";
+import { gotoAndSettle } from "../helpers/nav";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
