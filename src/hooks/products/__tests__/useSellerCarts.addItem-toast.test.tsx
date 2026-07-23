@@ -145,7 +145,7 @@ describe('useSellerCarts · toast de erro do addItem (contrato de UI)', () => {
   });
 
   it('idempotência · uma falha == exatamente um toast (sem duplicação)', async () => {
-    insertRejects.mockRejectedValue(new Error('boom'));
+    insertError.mockImplementation(() => ({ error: new Error('boom') }));
     const { useSellerCarts } = await import('../useSellerCarts');
     const { result } = renderHook(() => useSellerCarts(), { wrapper });
 
