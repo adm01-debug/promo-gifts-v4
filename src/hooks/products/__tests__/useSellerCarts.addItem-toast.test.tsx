@@ -50,32 +50,28 @@ vi.mock('@/lib/telemetry/structuredLogger', () => ({
 
 // Supabase client — mock via Proxy que responde a QUALQUER cadeia
 // `.from().select().eq().eq().is/eq().maybeSingle()` (findVariantInCart)
-// e faz o `.insert(...)` rejeitar, exercitando o onError do addItem.
-const insertRejects = vi.fn();
-function makeChain(mode: 'select' | 'insert'): unknown {
+// e faz o `.insert(...)` resolver com `{ error }`, exercitando o onError
+// do addItem (o hook faz `const { error } = await ...insert(...)`).
+const insertError = vi.fn(() => ({ error: new Error('boom-default') }));
+function makeChain(): unknown {
   const chain: Record<string, unknown> = {};
   const proxy: unknown = new Proxy(chain, {
     get(_t, prop: string) {
-      if (prop === 'then') return undefined; // não é thenable até o terminal
-      if (prop === 'maybeSingle') {
-        return async () => ({ data: null, error: null });
-      }
-      if (prop === 'single') {
+      if (prop === 'then') return undefined;
+      if (prop === 'maybeSingle' || prop === 'single') {
         return async () => ({ data: null, error: null });
       }
       if (prop === 'insert') {
-        return (payload: unknown) => insertRejects(payload);
+        return async (_payload: unknown) => insertError();
       }
-      // Encadeamento fluente: select/eq/is/update/order/... retornam o próprio proxy.
+      // .select/.eq/.is/.update/.order/... encadeiam fluentemente.
       return () => proxy;
     },
   });
-  return mode === 'select' ? proxy : proxy;
+  return proxy;
 }
 vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: () => makeChain('select'),
-  },
+  supabase: { from: () => makeChain() },
 }));
 
 // ---- Fixture -------------------------------------------------------------
