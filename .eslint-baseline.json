@@ -1,5 +1,259 @@
 {
-  "generatedAt": "2026-07-20T18:21:32.775Z",
-  "totalErrors": 0,
-  "counts": {}
+  "generatedAt": "2026-07-23T13:51:25.059Z",
+  "totalErrors": 163,
+  "counts": {
+    "src/components/admin/ImageUploadButton.tsx": {
+      "@typescript-eslint/only-throw-error": 2
+    },
+    "src/components/admin/OwnershipRepairDialog.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/connections/CredentialCacheMetricsPanel.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/connections/FailedDeliveriesPanel.tsx": {
+      "@typescript-eslint/only-throw-error": 1
+    },
+    "src/components/admin/connections/GitHubCredentialsTester.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/connections/IntegrationsHealthCard.tsx": {
+      "@typescript-eslint/only-throw-error": 1
+    },
+    "src/components/admin/connections/SecretsManagerHealthPanel.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/connections/WebhookPlaygroundPanel.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/security/BlockIpButton.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/security/ForceGlobalLogoutDialog.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/security/keys/UpdateMcpKeyDialog.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/security/keys/diagnostics/FullOpDiagnosticsPanel.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/admin/telemetry/EdgeInvokeLivePanel.tsx": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/components/admin/users/PromotionDialog.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/audit/AuditReport.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/bi/BIAiCopilot.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/compare/AIComparisonAdvisor.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/intelligence/MarketIntelligenceInsightsCard.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/intelligence/TrendsInsightsCard.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/kit-builder/KitAIPromptDialog.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/magic-up/PromptGenerator.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/components/search/VisualSearchButton.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/admin/useDeviceDetection.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/admin/useIPValidation.ts": {
+      "@typescript-eslint/no-unused-vars": 3
+    },
+    "src/hooks/admin/useSecretsManager.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/auth/use2FA.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/common/useConsecutiveFailures.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/common/useTransactionalEmail.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/intelligence/useConnectionTestDetails.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/intelligence/useConnectionTestHistory.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/intelligence/useConnectionTester.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/intelligence/useDropboxFiles.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 2,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/intelligence/useExternalDbInspect.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/intelligence/useMagicUpGeneration.ts": {
+      "@typescript-eslint/only-throw-error": 1
+    },
+    "src/hooks/kit-builder/useKitIdentitySuggestion.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/products/useProductSeoAI.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/products/useProductsByCategory.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/simulation/useLogoColorAnalysis.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/hooks/voice/scribeTokenCache.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/lib/auth/__tests__/safeAuthCall.breaker.test.ts": {
+      "@typescript-eslint/require-await": 7
+    },
+    "src/lib/auth/__tests__/safeAuthCall.family.fuzz.test.ts": {
+      "@typescript-eslint/require-await": 5
+    },
+    "src/lib/auth/__tests__/safeAuthCall.test.ts": {
+      "@typescript-eslint/only-throw-error": 1,
+      "@typescript-eslint/require-await": 12,
+      "no-throw-literal": 1
+    },
+    "src/lib/auth/__tests__/safeMfaCall.fuzz.test.ts": {
+      "@typescript-eslint/only-throw-error": 1,
+      "@typescript-eslint/require-await": 6
+    },
+    "src/lib/auth/invoke-full-scope.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/lib/auth/safeAuthCall.ts": {
+      "@typescript-eslint/consistent-generic-constructors": 1,
+      "@typescript-eslint/naming-convention": 1,
+      "@typescript-eslint/no-unnecessary-boolean-literal-compare": 1,
+      "@typescript-eslint/sort-type-constituents": 2,
+      "no-promise-executor-return": 1
+    },
+    "src/lib/auth/safeMfaCall.ts": {
+      "@typescript-eslint/sort-type-constituents": 3
+    },
+    "src/lib/edge/__tests__/invokeTelemetrySink.test.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/lib/edge/__tests__/safeInvokeCall.test.ts": {
+      "@typescript-eslint/require-await": 1,
+      "no-duplicate-imports": 1
+    },
+    "src/lib/edge/invokeTelemetrySink.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/lib/edge/safeInvokeCall.ts": {
+      "@typescript-eslint/require-await": 1,
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/lib/external-db/invoke.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/pages/Simulation.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/only-throw-error": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/pages/admin/AdminExternalDbPage.tsx": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/pages/admin/OwnershipAuditAdminPage.tsx": {
+      "@typescript-eslint/only-throw-error": 1
+    },
+    "src/pages/admin/StorageTestPage.tsx": {
+      "@typescript-eslint/only-throw-error": 1
+    },
+    "src/pages/auth/Auth.tsx": {
+      "@typescript-eslint/no-unused-vars": 1
+    },
+    "src/pages/quotes/quote-view/QuotePromoChampionsSync.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    },
+    "src/pages/tools/VisualSearchPage.tsx": {
+      "@typescript-eslint/only-throw-error": 1
+    },
+    "src/services/__tests__/authService.oauth.test.ts": {
+      "@typescript-eslint/require-await": 1
+    },
+    "src/services/authService.ts": {
+      "@typescript-eslint/sort-type-constituents": 1
+    },
+    "src/utils/cnpj-lookup.ts": {
+      "@typescript-eslint/no-unused-vars": 1,
+      "unused-imports/no-unused-imports": 1
+    }
+  }
 }

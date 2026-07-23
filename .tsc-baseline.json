@@ -1,5 +1,146 @@
 {
-  "generatedAt": "2026-07-17T15:21:28.945Z",
-  "totalErrors": 0,
-  "counts": {}
+  "generatedAt": "2026-07-23T13:45:22.389Z",
+  "totalErrors": 227,
+  "counts": {
+    "src/components/admin/ImageUploadButton.tsx": {
+      "TS18046": 1
+    },
+    "src/components/admin/connections/CredentialCacheMetricsPanel.tsx": {
+      "TS2339": 4
+    },
+    "src/components/admin/connections/FailedDeliveriesPanel.tsx": {
+      "TS2339": 1
+    },
+    "src/components/admin/connections/IntegrationsHealthCard.tsx": {
+      "TS2339": 3
+    },
+    "src/components/admin/connections/WebhookPlaygroundPanel.tsx": {
+      "TS2339": 10
+    },
+    "src/components/admin/security/keys/UpdateMcpKeyDialog.tsx": {
+      "TS2339": 1
+    },
+    "src/components/admin/users/PromotionDialog.tsx": {
+      "TS2339": 2
+    },
+    "src/components/audit/AuditReport.tsx": {
+      "TS2345": 1
+    },
+    "src/components/compare/AIComparisonAdvisor.tsx": {
+      "TS18046": 3,
+      "TS2339": 2
+    },
+    "src/components/kit-builder/KitAIPromptDialog.tsx": {
+      "TS18046": 1,
+      "TS2339": 2
+    },
+    "src/components/magic-up/PromptGenerator.tsx": {
+      "TS2339": 5
+    },
+    "src/components/search/VisualSearchButton.tsx": {
+      "TS18046": 2,
+      "TS2339": 2
+    },
+    "src/components/search/useGlobalSearch.ts": {
+      "TS2339": 3
+    },
+    "src/hooks/admin/useDeviceDetection.ts": {
+      "TS18046": 2
+    },
+    "src/hooks/admin/useIPValidation.ts": {
+      "TS2339": 2
+    },
+    "src/hooks/auth/use2FA.ts": {
+      "TS2339": 2
+    },
+    "src/hooks/common/useConsecutiveFailures.ts": {
+      "TS2339": 2
+    },
+    "src/hooks/intelligence/useCommemorativeDates.ts": {
+      "TS2339": 3
+    },
+    "src/hooks/intelligence/useConnectionTestDetails.ts": {
+      "TS2339": 1
+    },
+    "src/hooks/intelligence/useConnectionTestHistory.ts": {
+      "TS2339": 4
+    },
+    "src/hooks/intelligence/useConnectionTester.ts": {
+      "TS2339": 2
+    },
+    "src/hooks/intelligence/useDropboxFiles.ts": {
+      "TS2339": 4
+    },
+    "src/hooks/intelligence/useExternalDbInspect.ts": {
+      "TS2345": 1
+    },
+    "src/hooks/intelligence/useMagicUpGeneration.ts": {
+      "TS2339": 12
+    },
+    "src/hooks/intelligence/useStockVelocityPrefetch.ts": {
+      "TS2769": 1
+    },
+    "src/hooks/kit-builder/useKitIdentitySuggestion.ts": {
+      "TS2339": 3
+    },
+    "src/hooks/mockup/mockupGenerationService.ts": {
+      "TS2339": 2
+    },
+    "src/hooks/products/useProductSeoAI.ts": {
+      "TS18046": 4,
+      "TS2339": 2
+    },
+    "src/hooks/products/useProductsByCategory.ts": {
+      "TS18046": 2,
+      "TS2339": 5
+    },
+    "src/hooks/simulation/useLogoColorAnalysis.ts": {
+      "TS2339": 3
+    },
+    "src/hooks/voice/scribeTokenCache.ts": {
+      "TS2339": 2
+    },
+    "src/lib/crm-db.ts": {
+      "TS2339": 8
+    },
+    "src/pages/Simulation.tsx": {
+      "TS2345": 1
+    },
+    "src/pages/admin/AdminExternalDbPage.tsx": {
+      "TS2339": 3
+    },
+    "src/pages/admin/OwnershipAuditAdminPage.tsx": {
+      "TS2339": 2
+    },
+    "src/pages/auth/Auth.tsx": {
+      "TS2339": 5
+    },
+    "src/pages/quotes/quote-view/QuoteActionHandlers.ts": {
+      "TS2339": 3
+    },
+    "src/pages/quotes/quote-view/QuoteBitrixSync.ts": {
+      "TS2339": 3
+    },
+    "src/pages/quotes/quote-view/QuotePromoChampionsSync.ts": {
+      "TS2339": 2
+    },
+    "src/pages/tools/VisualSearchPage.tsx": {
+      "TS18046": 1,
+      "TS2345": 1
+    },
+    "src/services/authService.ts": {
+      "TS2322": 9
+    },
+    "src/services/magazineService.ts": {
+      "TS2322": 12,
+      "TS2339": 13,
+      "TS2345": 27,
+      "TS2353": 2,
+      "TS2589": 4,
+      "TS2769": 26
+    },
+    "src/utils/cnpj-lookup.ts": {
+      "TS2339": 3
+    }
+  }
 }
