@@ -129,7 +129,18 @@ export function PopoverQtyInput({
         value={draft}
         onFocus={(e) => {
           setEditing(true);
-          e.target.select();
+          const el = e.currentTarget;
+          const end = el.value.length;
+          // posiciona o cursor no fim sem selecionar o valor (mesmo padrão
+          // de SortableCartItem). rAF sobrepõe a seleção implícita que
+          // Chrome/Safari aplicam quando o input recebe foco via Tab.
+          requestAnimationFrame(() => {
+            try {
+              el.setSelectionRange(end, end);
+            } catch {
+              /* alguns browsers não aceitam setSelectionRange — ignorar */
+            }
+          });
         }}
         onChange={(e) => {
           const raw = e.target.value;
