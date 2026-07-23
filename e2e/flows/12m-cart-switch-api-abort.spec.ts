@@ -21,6 +21,10 @@ import { Sel, TID } from "../fixtures/selectors";
 import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
 import { startForbiddenDialogWatcher } from "../helpers/dialog-watcher";
 import { readAnalyticsEventNames, resetAnalyticsBuffer } from "../helpers/analytics";
+import {
+  assertActiveCartHeader,
+  assertFinalizeCtaTargets,
+} from "../helpers/cart-assertions";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
