@@ -23,6 +23,8 @@ import { Sel, TID } from "../fixtures/selectors";
 import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
+const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
+const SEL_CHECKOUT_CTA = TID("cart-checkout-cta");
 
 test.describe("Regressão: trocar carrinho não abre seletor em loop", () => {
   test.beforeEach(() => requireAuth());
