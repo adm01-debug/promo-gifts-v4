@@ -1,5 +1,5 @@
 {
-  "startedAt": "2026-07-23T16:32:22.853Z",
+  "startedAt": "2026-07-23T16:32:52.211Z",
   "scale": 1,
   "flows": {
     "quote-calc": {
@@ -23,9 +23,9 @@
       "failed": 0
     },
     "webhook-idempotency": {
-      "total": 60,
-      "passed": 43,
-      "failed": 17
+      "total": 57,
+      "passed": 57,
+      "failed": 0
     },
     "magazine-publish": {
       "total": 100,
@@ -33,162 +33,8 @@
       "failed": 0
     }
   },
-  "gaps": [
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-B"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-C"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "quote.updated",
-      "actual": "order.created"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-B"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-C"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "quote.updated",
-      "actual": "order.created"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-C"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "quote.updated",
-      "actual": "order.created"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-C"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "quote.updated",
-      "actual": "order.created"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-B"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    },
-    {
-      "flow": "webhook-idempotency",
-      "scenario": {
-        "dedupKey": "idem-A"
-      },
-      "invariant": "same-key-same-event",
-      "expected": "order.created",
-      "actual": "quote.updated"
-    }
-  ],
-  "finishedAt": "2026-07-23T16:32:22.861Z",
-  "totalScenarios": 1523,
-  "totalFailed": 17
+  "gaps": [],
+  "finishedAt": "2026-07-23T16:32:52.227Z",
+  "totalScenarios": 1520,
+  "totalFailed": 0
 }

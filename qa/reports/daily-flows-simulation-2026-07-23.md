@@ -1,6 +1,6 @@
 # Daily Flows Simulation — 2026-07-23
 
-**Escala:** 1× · **Cenários:** 1523 · **Falhas:** 17
+**Escala:** 1× · **Cenários:** 1520 · **Falhas:** 0
 
 ## Sumário por fluxo
 
@@ -10,27 +10,9 @@
 | `price-freshness` | 375 | 375 | 0 |
 | `cnpj-validation` | 214 | 214 | 0 |
 | `invoke-edge-policy` | 174 | 174 | 0 |
-| `webhook-idempotency` | 60 | 43 | 17 |
+| `webhook-idempotency` | 57 | 57 | 0 |
 | `magazine-publish` | 100 | 100 | 0 |
 
 ## Gaps detectados (primeiros 20)
 
-| Fluxo | Invariante | Esperado | Observado | Cenário |
-|---|---|---|---|---|
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-B"}` |
-| webhook-idempotency | same-key-same-event | `"quote.updated"` | `"order.created"` | `{"dedupKey":"idem-C"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-B"}` |
-| webhook-idempotency | same-key-same-event | `"quote.updated"` | `"order.created"` | `{"dedupKey":"idem-C"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
-| webhook-idempotency | same-key-same-event | `"quote.updated"` | `"order.created"` | `{"dedupKey":"idem-C"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
-| webhook-idempotency | same-key-same-event | `"quote.updated"` | `"order.created"` | `{"dedupKey":"idem-C"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-B"}` |
-| webhook-idempotency | same-key-same-event | `"order.created"` | `"quote.updated"` | `{"dedupKey":"idem-A"}` |
+_Nenhum gap detectado — todos os invariantes segurando._
