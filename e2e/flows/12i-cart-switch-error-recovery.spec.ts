@@ -142,7 +142,14 @@ test.describe("Regressão: falha na troca de carrinho mostra erro e não quebra"
       // 3. O fluxo de finalizar deve continuar acessível — navegar até um
       //    carrinho não abre o picker de empresa nem quebra a página.
       const companyPicker = page.locator(SEL_COMPANY_PICKER).first();
-      await gotoAndSettle(page, `/carrinhos/${cartA.id}`);
+      await assertActiveCartHeader(page, cartA);
+      await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
+      await expect(companyPicker).toBeHidden({ timeout: 1_000 });
+
+      // 4. CTA de finalizar do carrinho ORIGINAL continua apontando para o
+      //    cartA (não foi "movido" silenciosamente para o cartB por causa
+      //    do insert falho).
+      await assertFinalizeCtaTargets(page, cartA);
       await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
       await expect(companyPicker).toBeHidden({ timeout: 1_000 });
     } finally {
