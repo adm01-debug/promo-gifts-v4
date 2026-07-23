@@ -143,6 +143,12 @@ function CartsListContent() {
         });
         return;
       }
+      trackQuoteFinalizedFromCart({
+        cartId: cart.id,
+        companyId: cart.company_id ?? null,
+        companyName: cart.company_name ?? null,
+        itemCount: cart.items.length,
+      });
       navigate('/orcamentos/novo', {
         state: {
           fromCart: true,
