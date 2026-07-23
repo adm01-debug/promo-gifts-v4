@@ -15,6 +15,7 @@ import type { ExternalVariantStock } from '@/hooks/products';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
 import { getProxiedImageUrl } from '@/utils/imageProxy';
+import { trackCartCompanySwitched } from '@/lib/analytics/cartAnalytics';
 
 interface QuickAddToQuoteProps {
   productId: string;
