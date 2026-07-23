@@ -93,6 +93,34 @@ test.describe("Regressão: trocar carrinho não abre seletor em loop", () => {
     await expect(cartBRow).toBeVisible({ timeout: 5_000 });
     await cartBRow.click();
 
+    // Analytics: a escolha do carrinho B deve emitir `cart.company_switched`
+    // com `source: 'quick_add_selector'` e `toCartId` apontando para o B.
+    await expect
+      .poll(
+        async () =>
+          await page.evaluate(() => {
+            const buf =
+              (window as unknown as { __e2eAnalytics__?: Array<Record<string, unknown>> })
+                .__e2eAnalytics__ ?? [];
+            return buf.filter((e) => e.name === "cart.company_switched").length;
+          }),
+        { timeout: 3_000, message: "cart.company_switched deveria ter sido emitido" },
+      )
+      .toBeGreaterThan(0);
+
+    const switchEvent = await page.evaluate(() => {
+      const buf =
+        (window as unknown as { __e2eAnalytics__?: Array<Record<string, unknown>> })
+          .__e2eAnalytics__ ?? [];
+      return buf.find((e) => e.name === "cart.company_switched") ?? null;
+    });
+    expect(switchEvent).not.toBeNull();
+    expect((switchEvent as { payload: { toCartId: string; source: string } }).payload.toCartId)
+      .toBe(cartB.id);
+    expect((switchEvent as { payload: { source: string } }).payload.source).toBe(
+      "quick_add_selector",
+    );
+
     // Após escolher, o popover auto-fecha em 1200ms (setTimeout do QuickAdd).
     await expect(selectorDialog).toBeHidden({ timeout: 5_000 });
 
