@@ -137,6 +137,7 @@ export async function invokeEdgeSafe<T = unknown>(
     has_body: body !== undefined && body !== null,
     max_retries: maxRetries,
   });
+  recordInvokeEvent({ ts: startedAt, kind: 'start', fn: fnName, requestId });
 
   const call = async (): Promise<{ data: T | null; error: NormalizedError | null }> => {
     const supa = await getSupabaseClient();
