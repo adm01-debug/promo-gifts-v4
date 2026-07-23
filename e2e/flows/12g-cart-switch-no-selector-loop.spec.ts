@@ -17,28 +17,29 @@
  * Política SSOT (e2e/fixtures/selectors.ts) — apenas data-testid.
  * Skip tolerante em ambientes sem catálogo (segue padrão do 12-cart-checkout).
  */
-import { test, expect, requireAuth } from "../fixtures/test-base";
-import { gotoAndSettle } from "../helpers/nav";
+import { test, expect } from "../fixtures/test-base";
 import { Sel, TID } from "../fixtures/selectors";
-import { mockSellerCartsAPI, makeMockCart } from "../helpers/cart-mock";
+import { setupAuthedWithCarts } from "../helpers/cart-setup";
 
 const SEL_SELECTOR_DIALOG = TID("cart-selector-dialog");
 const SEL_COMPANY_PICKER = TID("cart-company-picker-select");
 const SEL_CHECKOUT_CTA = TID("cart-checkout-cta");
 
 test.describe("Regressão: trocar carrinho não abre seletor em loop", () => {
-  test.beforeEach(() => requireAuth());
-
   test("após 'Trocar' + escolher outro carrinho, 'Adicionar ao Carrinho' NÃO reabre o seletor", async ({
     page,
   }) => {
-    // 1. Semeia 2 carrinhos ativos ANTES de qualquer navegação — a query
-    //    seller_carts é feita em cascata pelo SellerCartContext no boot.
-    const cartA = makeMockCart(0, 1);
-    const cartB = makeMockCart(1, 1);
-    await mockSellerCartsAPI(page, [cartA, cartB]);
-
-    await gotoAndSettle(page, "/produtos");
+    // SSOT: login autenticado + 2 carrinhos mockados + navegação para /produtos,
+    // em ordem determinística (login → mock → goto). O `SellerCartContext`
+    // dispara a query de seller_carts no boot da rota, então o mock JÁ está
+    // registrado quando ela chega.
+    const { cartA, cartB } = await setupAuthedWithCarts(page, {
+      count: 2,
+      itemsPerCart: 1,
+      gotoUrl: "/produtos",
+    });
+    // cartA é referenciado em asserts adiante — evita warning strict.
+    void cartA;
 
     const card = page.locator(Sel.product.card).first();
     if (!(await card.isVisible().catch(() => false))) {
