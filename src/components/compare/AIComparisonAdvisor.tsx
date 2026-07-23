@@ -86,7 +86,12 @@ export function AIComparisonAdvisor({ products }: AIComparisonAdvisorProps) {
         supplier: p.supplier?.name,
       }));
 
-      const { data, error } = await invokeEdge('comparison-ai-advisor', {
+      const { data, error } = await invokeEdge<{
+        bullets?: string[];
+        bestFor?: Record<string, string>;
+        rationale?: string;
+        error?: string;
+      }>('comparison-ai-advisor', {
         body: { products: slim },
       });
 
@@ -94,9 +99,9 @@ export function AIComparisonAdvisor({ products }: AIComparisonAdvisorProps) {
       if (data?.error) throw new Error(data.error);
 
       const advice: AdvisorResult = {
-        bullets: data.bullets ?? [],
-        bestFor: data.bestFor ?? {},
-        rationale: data.rationale,
+        bullets: data?.bullets ?? [],
+        bestFor: data?.bestFor ?? {},
+        rationale: data?.rationale,
       };
       writeCache(key, advice);
       setResult(advice);
