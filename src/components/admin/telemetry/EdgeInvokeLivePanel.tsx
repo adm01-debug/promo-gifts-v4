@@ -15,8 +15,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Radio, Zap, AlertTriangle, ShieldAlert, Timer, Trash2 } from 'lucide-react';
+import {
+  Radio,
+  Zap,
+  AlertTriangle,
+  ShieldAlert,
+  Timer,
+  Trash2,
+  Download,
+  Copy,
+  Search,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import {
+  buildDownloadFilename,
+  copyRequestId,
+  emitRequestIdLookup,
+  invokeEventsToCSV,
+  invokeEventsToJSON,
+  triggerDownload,
+} from '@/lib/edge/invokeExport';
+import { shortRequestId } from '@/lib/telemetry/requestId';
 import {
   aggregateInvokeEvents,
   clearInvokeSink,
