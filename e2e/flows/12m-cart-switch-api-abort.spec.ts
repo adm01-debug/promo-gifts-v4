@@ -137,7 +137,12 @@ test.describe("Regressão: aborto de rede na troca de carrinho", () => {
       );
 
       // 4. Navegar para o carrinho A ainda funciona — sem picker de empresa.
-      await gotoAndSettle(page, `/carrinhos/${cartA.id}`);
+      await assertActiveCartHeader(page, cartA);
+      await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
+      await expect(page.locator(SEL_COMPANY_PICKER)).toBeHidden({ timeout: 1_000 });
+
+      // 5. CTA de finalizar do carrinho ORIGINAL continua apontando pra cartA.
+      await assertFinalizeCtaTargets(page, cartA);
       await expect(selectorDialog).toBeHidden({ timeout: 1_000 });
       await expect(page.locator(SEL_COMPANY_PICKER)).toBeHidden({ timeout: 1_000 });
     } finally {
