@@ -15,8 +15,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Radio, Zap, AlertTriangle, ShieldAlert, Timer, Trash2 } from 'lucide-react';
+import {
+  Radio,
+  Zap,
+  AlertTriangle,
+  ShieldAlert,
+  Timer,
+  Trash2,
+  Download,
+  Copy,
+  Search,
+} from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import {
+  buildDownloadFilename,
+  copyRequestId,
+  emitRequestIdLookup,
+  invokeEventsToCSV,
+  invokeEventsToJSON,
+  triggerDownload,
+} from '@/lib/edge/invokeExport';
+import { shortRequestId } from '@/lib/telemetry/requestId';
 import {
   aggregateInvokeEvents,
   clearInvokeSink,
@@ -116,6 +136,46 @@ export function EdgeInvokeLivePanel() {
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (!events.length) {
+                toast.info('Nada para exportar');
+                return;
+              }
+              triggerDownload(
+                buildDownloadFilename('csv'),
+                invokeEventsToCSV(events),
+                'text/csv;charset=utf-8',
+              );
+              toast.success(`CSV exportado (${events.length} eventos)`);
+            }}
+            data-testid="edge-invoke-live-export-csv"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (!events.length) {
+                toast.info('Nada para exportar');
+                return;
+              }
+              triggerDownload(
+                buildDownloadFilename('json'),
+                invokeEventsToJSON(events),
+                'application/json',
+              );
+              toast.success(`JSON exportado (${events.length} eventos)`);
+            }}
+            data-testid="edge-invoke-live-export-json"
+          >
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            JSON
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -243,6 +303,105 @@ export function EdgeInvokeLivePanel() {
                       <td className="px-2 py-1.5 text-right tabular-nums">{fmtMs(f.p99Ms)}</td>
                     </tr>
                   ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Eventos recentes — copiar request-id / deep-link para lookup histórico */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Eventos recentes</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="max-h-[280px] overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-muted/40">
+                <tr className="text-left">
+                  <th className="px-2 py-1.5">Quando</th>
+                  <th className="px-2 py-1.5">Kind</th>
+                  <th className="px-2 py-1.5">Function</th>
+                  <th className="px-2 py-1.5">request-id</th>
+                  <th className="px-2 py-1.5 text-right">Latência</th>
+                  <th className="px-2 py-1.5 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody data-testid="edge-invoke-live-events">
+                {events.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                      Sem eventos capturados nesta sessão.
+                    </td>
+                  </tr>
+                ) : (
+                  events
+                    .slice(-20)
+                    .reverse()
+                    .map((ev, i) => (
+                      <tr key={`${ev.ts}-${i}`} className="border-t border-border/40">
+                        <td className="px-2 py-1.5 tabular-nums text-muted-foreground">
+                          {new Date(ev.ts).toLocaleTimeString('pt-BR')}
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Badge
+                            variant={
+                              ev.kind === 'failed'
+                                ? 'destructive'
+                                : ev.kind === 'breaker_open'
+                                  ? 'secondary'
+                                  : ev.kind === 'ok'
+                                    ? 'outline'
+                                    : 'secondary'
+                            }
+                            className="text-[10px]"
+                          >
+                            {ev.kind}
+                          </Badge>
+                        </td>
+                        <td className="max-w-[180px] truncate px-2 py-1.5 font-mono" title={ev.fn}>
+                          {ev.fn}
+                        </td>
+                        <td className="px-2 py-1.5 font-mono text-[10px]" title={ev.requestId}>
+                          {shortRequestId(ev.requestId)}
+                        </td>
+                        <td className="px-2 py-1.5 text-right tabular-nums">
+                          {fmtMs(ev.latencyMs)}
+                        </td>
+                        <td className="px-2 py-1.5 text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              aria-label="Copiar request-id"
+                              onClick={async () => {
+                                const ok = await copyRequestId(ev.requestId);
+                                if (ok) toast.success('request-id copiado');
+                                else toast.error('Falha ao copiar');
+                              }}
+                              data-testid={`edge-invoke-live-copy-${i}`}
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              aria-label="Buscar no histórico"
+                              onClick={() => {
+                                emitRequestIdLookup(ev.requestId);
+                                toast.info('Enviando para o lookup histórico…');
+                              }}
+                              data-testid={`edge-invoke-live-lookup-${i}`}
+                            >
+                              <Search className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                 )}
               </tbody>
             </table>
