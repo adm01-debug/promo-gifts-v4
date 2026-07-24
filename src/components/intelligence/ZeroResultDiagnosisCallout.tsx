@@ -1,4 +1,4 @@
-import { AlertCircle, Filter, Loader2 } from 'lucide-react';
+import { AlertCircle, Filter, Loader2, FileText, ShoppingCart } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,46 @@ import {
   useZeroResultDiagnosis,
   type FilterKey,
 } from '@/hooks/intelligence/useZeroResultDiagnosis';
+
+/**
+ * Mini-preview de quantos orçamentos + pedidos apareceriam ao aplicar uma
+ * ampliação (remover filtro ou ampliar janela). Renderiza `—` quando o probe
+ * ainda não rodou (null).
+ */
+function PreviewBadges({
+  quotes,
+  orders,
+  testId,
+}: {
+  quotes: number | null | undefined;
+  orders: number | null | undefined;
+  testId?: string;
+}) {
+  const fmt = (n: number | null | undefined) =>
+    typeof n === 'number' ? n.toLocaleString('pt-BR') : '—';
+  return (
+    <span
+      className="ml-1 inline-flex items-center gap-1 align-middle"
+      data-testid={testId}
+      aria-label={`Prévia: ${fmt(quotes)} orçamentos e ${fmt(orders)} pedidos`}
+    >
+      <Badge
+        variant="outline"
+        className="gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[11px] font-medium text-amber-900 dark:text-amber-100"
+      >
+        <FileText className="h-3 w-3" aria-hidden="true" />
+        {fmt(quotes)} orç.
+      </Badge>
+      <Badge
+        variant="outline"
+        className="gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[11px] font-medium text-amber-900 dark:text-amber-100"
+      >
+        <ShoppingCart className="h-3 w-3" aria-hidden="true" />
+        {fmt(orders)} ped.
+      </Badge>
+    </span>
+  );
+}
 
 interface Props {
   /** Só ativa quando pedidos+orçamentos = 0. Pai controla. */
@@ -81,12 +121,18 @@ export function ZeroResultDiagnosisCallout({
   const actions: React.ReactNode[] = [];
 
   if (data.culprit === 'window') {
+    const w = data.widenedPreview;
     title = 'Nenhuma venda registrada nesta janela';
     body = (
       <>
         O banco Gold não tem <strong>nenhum</strong> orçamento ou pedido nos últimos{' '}
-        <strong>{days} dias</strong> — nem mesmo sem os filtros aplicados. Amplie o período para
-        buscar dados históricos.
+        <strong>{days} dias</strong> — nem mesmo sem os filtros aplicados.
+        {w && (
+          <>
+            {' '}Ao ampliar para <strong>{w.days} dias</strong>, a prévia mostra{' '}
+            <PreviewBadges quotes={w.quotes} orders={w.orders} testId="zero-diagnosis-preview-window" />.
+          </>
+        )}
       </>
     );
     if (onWidenWindow) {
@@ -98,7 +144,7 @@ export function ZeroResultDiagnosisCallout({
           onClick={onWidenWindow}
           data-testid="zero-diagnosis-widen-window"
         >
-          Ampliar janela
+          Ampliar janela{w ? ` para ${w.days}d` : ''}
         </Button>,
       );
     }
@@ -106,12 +152,15 @@ export function ZeroResultDiagnosisCallout({
     title = 'A combinação de filtros zerou os resultados';
     body = (
       <>
-        Existem <strong>{data.unfilteredQuoteCount}</strong> orçamentos no período, mas a
+        Existem <strong>{data.unfilteredQuoteCount}</strong> orçamentos e{' '}
+        <strong>{data.unfilteredOrderCount}</strong> pedidos no período, mas a
         <em> intersecção</em> dos filtros aplicados não bate com nenhum deles. Remova pelo menos um
-        dos filtros abaixo para recuperar resultados:
+        dos filtros abaixo — a prévia mostra o que voltaria em cada caso:
       </>
     );
     data.filtersToWiden.forEach((f) => {
+      const q = data.leaveOneOut[f.key];
+      const o = data.leaveOneOutOrders[f.key];
       actions.push(
         <Button
           key={f.key}
@@ -119,14 +168,19 @@ export function ZeroResultDiagnosisCallout({
           variant="outline"
           onClick={() => onClearFilter?.(f.key)}
           data-testid={`zero-diagnosis-clear-${f.key}`}
+          className="gap-2"
         >
-          Remover {KEY_LABEL[f.key]}: {f.label}
+          <span>
+            Remover {KEY_LABEL[f.key]}: {f.label}
+          </span>
+          <PreviewBadges quotes={q} orders={o} testId={`zero-diagnosis-preview-${f.key}`} />
         </Button>,
       );
     });
   } else if (data.culprit) {
     const filter = data.filtersToWiden[0];
-    const probe = data.leaveOneOut[data.culprit];
+    const q = data.leaveOneOut[data.culprit];
+    const o = data.leaveOneOutOrders[data.culprit];
     title = `Filtro de ${KEY_LABEL[data.culprit]} está bloqueando os resultados`;
     body = (
       <>
@@ -134,8 +188,9 @@ export function ZeroResultDiagnosisCallout({
         <Badge variant="outline" className="border-primary/30 text-primary">
           {filter?.label ?? '—'}
         </Badge>{' '}
-        haveria <strong>{probe}</strong> orçamento{probe === 1 ? '' : 's'} na janela de{' '}
-        <strong>{days} dias</strong>. Amplie ou remova esse filtro para ver os dados.
+        a prévia mostra{' '}
+        <PreviewBadges quotes={q} orders={o} testId={`zero-diagnosis-preview-${data.culprit}`} />{' '}
+        na janela de <strong>{days} dias</strong>. Amplie ou remova esse filtro para ver os dados.
       </>
     );
     if (onClearFilter && filter) {
