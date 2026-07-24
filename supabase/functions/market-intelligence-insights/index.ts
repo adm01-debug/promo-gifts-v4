@@ -434,6 +434,7 @@ Deno.serve(async (req) => {
           tokens_input: usage.prompt_tokens ?? null,
           tokens_output: usage.completion_tokens ?? null,
           period_days: summary.period_days,
+          focus,
         },
       }),
     ]);
