@@ -36,14 +36,17 @@ const ERROR_MATRIX: Array<{ status: number; message: string; kind: AuthErrorKind
 ];
 
 describe('safeAuthCall.family — fuzz combinacional (Onda 8)', () => {
-  beforeEach(() => { __resetBreakers(); resetStructuredLoggerMock(); });
+  beforeEach(() => {
+    __resetBreakers();
+    resetStructuredLoggerMock();
+  });
 
   // 6 ops × 8 errors = 48 cenários base
   for (const op of OPS) {
     for (const e of ERROR_MATRIX) {
       it(`op=${op} status=${e.status} → nunca lança, kind=${e.kind}`, async () => {
         const r = await safeAuthCall(
-          async () => ({ data: null, error: { status: e.status, message: e.message } }),
+          () => Promise.resolve({ data: null, error: { status: e.status, message: e.message } }),
           { op, maxRetries: 1, timeoutMs: 500 },
         );
         expect(r.kind).toBe('err');
@@ -70,9 +73,8 @@ describe('safeAuthCall.family — fuzz combinacional (Onda 8)', () => {
     for (const t of THROWS) {
       it(`op=${op} throws ${t.label} → nunca explode`, async () => {
         const r = await safeAuthCall(
-          async () => {
-            throw t.err;
-          },
+          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+          () => Promise.reject(t.err),
           { op, maxRetries: 1, timeoutMs: 200 },
         );
         expect(r.kind).toBe('err');
@@ -85,7 +87,7 @@ describe('safeAuthCall.family — fuzz combinacional (Onda 8)', () => {
     it(`op=${op} respeita AbortSignal já abortado`, async () => {
       const ctrl = new AbortController();
       ctrl.abort();
-      const r = await safeAuthCall(async () => ({ data: {}, error: null }), {
+      const r = await safeAuthCall(() => Promise.resolve({ data: {}, error: null }), {
         op,
         signal: ctrl.signal,
         maxRetries: 1,
@@ -97,7 +99,7 @@ describe('safeAuthCall.family — fuzz combinacional (Onda 8)', () => {
   // Sucesso em cada op
   for (const op of OPS) {
     it(`op=${op} sucesso primeiro attempt`, async () => {
-      const r = await safeAuthCall(async () => ({ data: { ok: true }, error: null }), {
+      const r = await safeAuthCall(() => Promise.resolve({ data: { ok: true }, error: null }), {
         op,
         maxRetries: 1,
       });
@@ -110,15 +112,18 @@ describe('safeAuthCall.family — fuzz combinacional (Onda 8)', () => {
     for (let i = 0; i < 100; i++) {
       const op = OPS[i % OPS.length];
       const roll = Math.random();
-      const call = async (): Promise<{ data: unknown; error: unknown }> => {
-        if (roll < 0.2) throw new TypeError('Failed to fetch');
+      const call = (): Promise<{ data: unknown; error: unknown }> => {
+        if (roll < 0.2) return Promise.reject(new TypeError('Failed to fetch'));
         if (roll < 0.4)
-          return { data: null, error: { status: 500, message: 'boom' } };
+          return Promise.resolve({ data: null, error: { status: 500, message: 'boom' } });
         if (roll < 0.6)
-          return { data: null, error: { status: 429, message: 'rate limit' } };
+          return Promise.resolve({ data: null, error: { status: 429, message: 'rate limit' } });
         if (roll < 0.8)
-          return { data: null, error: { status: 401, message: 'invalid_credentials' } };
-        return { data: { ok: true }, error: null };
+          return Promise.resolve({
+            data: null,
+            error: { status: 401, message: 'invalid_credentials' },
+          });
+        return Promise.resolve({ data: { ok: true }, error: null });
       };
       const r = await safeAuthCall(call, { op, maxRetries: 1, timeoutMs: 200 });
       expect(['ok', 'err']).toContain(r.kind);

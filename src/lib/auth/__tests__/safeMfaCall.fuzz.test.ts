@@ -4,7 +4,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { safeMfaCall, type MfaErrorKind } from '@/lib/auth/safeMfaCall';
 import { __resetBreakers } from '@/lib/auth/safeAuthCall';
-import { resetStructuredLoggerMock, structuredLoggerMockFactory } from '@/test/mockStructuredLogger';
+import {
+  resetStructuredLoggerMock,
+  structuredLoggerMockFactory,
+} from '@/test/mockStructuredLogger';
 
 vi.mock('@/lib/telemetry/structuredLogger', async () => {
   const mod = await import('@/test/mockStructuredLogger');
@@ -25,13 +28,16 @@ const MFA_ERRORS: Array<{ status: number; message: string; kind: MfaErrorKind }>
 ];
 
 describe('safeMfaCall — fuzz classificação (Onda 9)', () => {
-  beforeEach(() => { __resetBreakers(); resetStructuredLoggerMock(); });
+  beforeEach(() => {
+    __resetBreakers();
+    resetStructuredLoggerMock();
+  });
 
   for (const op of OPS) {
     for (const e of MFA_ERRORS) {
       it(`op=${op} status=${e.status} msg="${e.message}" → kind=${e.kind}`, async () => {
         const r = await safeMfaCall(
-          async () => ({ data: null, error: { status: e.status, message: e.message } }),
+          () => Promise.resolve({ data: null, error: { status: e.status, message: e.message } }),
           { op, maxRetries: 1, timeoutMs: 300 },
         );
         expect(r.kind).toBe('err');
@@ -46,7 +52,7 @@ describe('safeMfaCall — fuzz classificação (Onda 9)', () => {
   // Sucesso
   for (const op of OPS) {
     it(`op=${op} sucesso`, async () => {
-      const r = await safeMfaCall(async () => ({ data: { id: 'f1' }, error: null }), {
+      const r = await safeMfaCall(() => Promise.resolve({ data: { id: 'f1' }, error: null }), {
         op,
         maxRetries: 1,
       });
@@ -65,9 +71,8 @@ describe('safeMfaCall — fuzz classificação (Onda 9)', () => {
     for (const t of THROWS) {
       it(`op=${op} throws ${String((t as { name?: string } | null)?.name ?? typeof t)} → err`, async () => {
         const r = await safeMfaCall(
-          async () => {
-            throw t;
-          },
+          // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+          () => Promise.reject(t),
           { op, maxRetries: 1, timeoutMs: 200 },
         );
         expect(r.kind).toBe('err');
@@ -80,7 +85,7 @@ describe('safeMfaCall — fuzz classificação (Onda 9)', () => {
     it(`op=${op} aborta imediatamente se signal já abortado`, async () => {
       const c = new AbortController();
       c.abort();
-      const r = await safeMfaCall(async () => ({ data: {}, error: null }), {
+      const r = await safeMfaCall(() => Promise.resolve({ data: {}, error: null }), {
         op,
         signal: c.signal,
         maxRetries: 1,
@@ -94,10 +99,13 @@ describe('safeMfaCall — fuzz classificação (Onda 9)', () => {
     const results = await Promise.all(
       Array.from({ length: 3 }, (_, i) =>
         safeMfaCall(
-          async () =>
+          () =>
             i === 0
-              ? { data: { id: 'ok' }, error: null }
-              : { data: null, error: { status: 401, message: 'challenge expired' } },
+              ? Promise.resolve({ data: { id: 'ok' }, error: null })
+              : Promise.resolve({
+                  data: null,
+                  error: { status: 401, message: 'challenge expired' },
+                }),
           { op: 'mfaChallenge', maxRetries: 1, timeoutMs: 200 },
         ),
       ),
@@ -111,15 +119,15 @@ describe('safeMfaCall — fuzz classificação (Onda 9)', () => {
     for (let i = 0; i < 80; i++) {
       const op = OPS[i % OPS.length];
       const roll = Math.random();
-      const call = async (): Promise<{ data: unknown; error: unknown }> => {
-        if (roll < 0.15) throw new TypeError('Failed to fetch');
+      const call = (): Promise<{ data: unknown; error: unknown }> => {
+        if (roll < 0.15) return Promise.reject(new TypeError('Failed to fetch'));
         if (roll < 0.35)
-          return { data: null, error: { status: 422, message: 'invalid otp' } };
+          return Promise.resolve({ data: null, error: { status: 422, message: 'invalid otp' } });
         if (roll < 0.55)
-          return { data: null, error: { status: 401, message: 'expired' } };
+          return Promise.resolve({ data: null, error: { status: 401, message: 'expired' } });
         if (roll < 0.7)
-          return { data: null, error: { status: 500, message: 'boom' } };
-        return { data: { ok: true }, error: null };
+          return Promise.resolve({ data: null, error: { status: 500, message: 'boom' } });
+        return Promise.resolve({ data: { ok: true }, error: null });
       };
       const r = await safeMfaCall(call, { op, maxRetries: 1, timeoutMs: 150 });
       expect(['ok', 'err']).toContain(r.kind);
