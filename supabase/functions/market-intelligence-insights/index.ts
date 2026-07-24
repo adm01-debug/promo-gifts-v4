@@ -366,14 +366,14 @@ Deno.serve(async (req) => {
 
     if (aiResp.status === 429) {
       log("warn", "ai_rate_limited", { user_id: userId, ai_duration_ms: aiDuration });
-      return new Response(JSON.stringify({ error: "rate_limited", ...buildFallback(summary) }), {
+      return new Response(JSON.stringify({ error: "rate_limited", ...buildFallback(summary, focus) }), {
         status: 429,
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
     if (aiResp.status === 402) {
       log("warn", "ai_no_credits", { user_id: userId });
-      return new Response(JSON.stringify({ error: "no_credits", ...buildFallback(summary) }), {
+      return new Response(JSON.stringify({ error: "no_credits", ...buildFallback(summary, focus) }), {
         status: 402,
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
@@ -381,7 +381,7 @@ Deno.serve(async (req) => {
     if (!aiResp.ok) {
       const txt = await aiResp.text();
       log("error", "ai_error", { user_id: userId, status: aiResp.status, body: txt.slice(0, 300) });
-      return new Response(JSON.stringify(buildFallback(summary)), {
+      return new Response(JSON.stringify(buildFallback(summary, focus)), {
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
@@ -398,7 +398,7 @@ Deno.serve(async (req) => {
     }
     if (!parsed || !parsed.summary) {
       log("warn", "ai_parse_failed", { user_id: userId });
-      return new Response(JSON.stringify(buildFallback(summary)), {
+      return new Response(JSON.stringify(buildFallback(summary, focus)), {
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
