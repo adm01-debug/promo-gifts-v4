@@ -67,6 +67,32 @@ async function countQuotesInWindow(
   return count ?? 0;
 }
 
+/**
+ * Conta pedidos (orders) na janela, opcionalmente restringido a product_ids
+ * via order_items. Mesmo padrão de countQuotesInWindow.
+ */
+async function countOrdersInWindow(
+  sinceIso: string,
+  productIds: string[] | null,
+): Promise<number> {
+  if (productIds && productIds.length === 0) return 0;
+
+  if (!productIds) {
+    const { count } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', sinceIso);
+    return count ?? 0;
+  }
+
+  const { count } = await supabase
+    .from('order_items')
+    .select('order_id', { count: 'exact', head: true })
+    .gte('created_at', sinceIso)
+    .in('product_id', productIds.slice(0, 200));
+  return count ?? 0;
+}
+
 async function resolveProductIds(
   categoryId?: string | null,
   supplierId?: string | null,
