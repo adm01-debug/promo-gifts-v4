@@ -131,6 +131,25 @@ export function MarketIntelligenceInsightsCard({
   const { toast } = useToast();
   const [focus, setFocus] = useState<InsightFocus>('auto');
   const [forceRefreshTick, setForceRefreshTick] = useState(0);
+  const { data: diagnosis } = useZeroResultDiagnosis({
+    enabled: data?.empty === true,
+    days,
+    categoryId,
+    supplierId,
+    productId,
+    categoryName,
+    supplierName,
+    productName,
+  });
+
+  const diagnosisMention = data?.empty
+    ? buildDiagnosisMention(diagnosis, days, {
+        category: categoryName,
+        supplier: supplierName,
+        product: productName,
+      })
+    : null;
+
 
   const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: [
