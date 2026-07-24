@@ -7,6 +7,7 @@ import {
   type FilterKey,
 } from '@/hooks/intelligence/useZeroResultDiagnosis';
 import { ZeroResultSubstitutes } from '@/components/intelligence/ZeroResultSubstitutes';
+import { trackZeroResultActionClicked } from '@/lib/analytics/zeroResultAnalytics';
 
 /**
  * Mini-preview de quantos orçamentos + pedidos apareceriam ao aplicar uma
@@ -148,7 +149,17 @@ export function ZeroResultDiagnosisCallout({
           key="widen"
           size="sm"
           variant="outline"
-          onClick={onWidenWindow}
+          onClick={() => {
+            trackZeroResultActionClicked({
+              action: 'widen_window',
+              culpritBefore: 'window',
+              days,
+              previewQuotes: w?.quotes ?? null,
+              previewOrders: w?.orders ?? null,
+              widenedToDays: w?.days ?? null,
+            });
+            onWidenWindow();
+          }}
           data-testid="zero-diagnosis-widen-window"
         >
           Ampliar janela{w ? ` para ${w.days}d` : ''}
@@ -173,7 +184,17 @@ export function ZeroResultDiagnosisCallout({
           key={f.key}
           size="sm"
           variant="outline"
-          onClick={() => onClearFilter?.(f.key)}
+          onClick={() => {
+            trackZeroResultActionClicked({
+              action: 'clear_filter',
+              culpritBefore: 'intersection',
+              filterKey: f.key,
+              days,
+              previewQuotes: q ?? null,
+              previewOrders: o ?? null,
+            });
+            onClearFilter?.(f.key);
+          }}
           data-testid={`zero-diagnosis-clear-${f.key}`}
           className="gap-2"
         >
@@ -206,7 +227,17 @@ export function ZeroResultDiagnosisCallout({
           key={filter.key}
           size="sm"
           variant="outline"
-          onClick={() => onClearFilter(filter.key)}
+          onClick={() => {
+            trackZeroResultActionClicked({
+              action: 'clear_filter',
+              culpritBefore: data.culprit,
+              filterKey: filter.key,
+              days,
+              previewQuotes: q ?? null,
+              previewOrders: o ?? null,
+            });
+            onClearFilter(filter.key);
+          }}
           data-testid={`zero-diagnosis-clear-${filter.key}`}
         >
           Remover filtro de {KEY_LABEL[filter.key]}
@@ -219,7 +250,19 @@ export function ZeroResultDiagnosisCallout({
     body = <>Não há orçamentos nem pedidos na janela selecionada.</>;
     if (onWidenWindow) {
       actions.push(
-        <Button key="widen" size="sm" variant="outline" onClick={onWidenWindow}>
+        <Button
+          key="widen"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            trackZeroResultActionClicked({
+              action: 'widen_window',
+              culpritBefore: null,
+              days,
+            });
+            onWidenWindow();
+          }}
+        >
           Ampliar janela
         </Button>,
       );
@@ -249,7 +292,21 @@ export function ZeroResultDiagnosisCallout({
           supplierId={supplierId}
           productId={productId}
           culprit={data.culprit}
-          onApplySubstitute={onApplySubstitute}
+          onApplySubstitute={
+            onApplySubstitute
+              ? (key, value) => {
+                  trackZeroResultActionClicked({
+                    action: 'apply_substitute',
+                    culpritBefore: data.culprit,
+                    filterKey: key,
+                    days,
+                    substituteId: value.id,
+                    substituteName: value.name,
+                  });
+                  onApplySubstitute(key, value);
+                }
+              : undefined
+          }
         />
       </AlertDescription>
     </Alert>

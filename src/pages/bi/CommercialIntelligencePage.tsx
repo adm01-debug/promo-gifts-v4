@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import {
   IntelligenceFilterBar,
@@ -18,6 +18,11 @@ import { Brain, Clock } from 'lucide-react';
 import { useDebouncedFilters } from '@/hooks/common';
 import { useCommercialKPIs } from '@/hooks/intelligence';
 import type { FilterKey } from '@/hooks/intelligence/useZeroResultDiagnosis';
+import {
+  trackZeroResultOutcome,
+  type ZeroResultAction,
+  type ZeroResultCulprit,
+} from '@/lib/analytics/zeroResultAnalytics';
 
 export default function CommercialIntelligencePage() {
   const [lastRefresh] = useState<Date>(new Date());
@@ -48,7 +53,30 @@ export default function CommercialIntelligencePage() {
     !isLoadingKpis && !!kpis && kpis.totalOrders === 0 && kpis.totalQuotes === 0;
   const showZeroDiagnosis = isEmptyResult && (hasActiveFilter || filters.days <= 30);
 
+  // Rastreio da ação em curso — usado para emitir `bi.zero_result.outcome`
+  // assim que a nova query de KPIs terminar. Mantido em ref para não causar
+  // re-render extra.
+  const pendingActionRef = useRef<{
+    action: ZeroResultAction;
+    culpritBefore: ZeroResultCulprit;
+    daysBefore: number;
+    startedAt: number;
+  } | null>(null);
+
+  const beginPendingAction = (
+    action: ZeroResultAction,
+    culpritBefore: ZeroResultCulprit,
+  ) => {
+    pendingActionRef.current = {
+      action,
+      culpritBefore,
+      daysBefore: filters.days,
+      startedAt: performance.now(),
+    };
+  };
+
   const clearFilter = (key: FilterKey) => {
+    beginPendingAction('clear_filter', key);
     setFilters((prev) => {
       if (key === 'category') return { ...prev, categoryId: null, categoryName: null };
       if (key === 'supplier') return { ...prev, supplierId: null, supplierName: null };
@@ -57,6 +85,7 @@ export default function CommercialIntelligencePage() {
   };
 
   const widenWindow = () => {
+    beginPendingAction('widen_window', 'window');
     setFilters((prev) => {
       const ladder = [7, 30, 90, 180, 365];
       const next = ladder.find((d) => d > prev.days) ?? 365;
@@ -68,12 +97,34 @@ export default function CommercialIntelligencePage() {
     key: FilterKey,
     value: { id: string; name: string },
   ) => {
+    beginPendingAction('apply_substitute', key);
     setFilters((prev) => {
       if (key === 'category') return { ...prev, categoryId: value.id, categoryName: value.name };
       if (key === 'supplier') return { ...prev, supplierId: value.id, supplierName: value.name };
       return { ...prev, productId: value.id, productName: value.name };
     });
   };
+
+  // Emite `bi.zero_result.outcome` quando os KPIs da nova consulta chegam
+  // após uma ação do usuário no callout. Roda no máximo uma vez por ação
+  // (o ref é limpo após emitir).
+  useEffect(() => {
+    const pending = pendingActionRef.current;
+    if (!pending) return;
+    if (isLoadingKpis || !kpis) return;
+    const stillZero = kpis.totalOrders === 0 && kpis.totalQuotes === 0;
+    trackZeroResultOutcome({
+      action: pending.action,
+      culpritBefore: pending.culpritBefore,
+      culpritAfter: stillZero ? pending.culpritBefore : null,
+      stillZero,
+      daysBefore: pending.daysBefore,
+      daysAfter: filters.days,
+      resolvedInMs: Math.round(performance.now() - pending.startedAt),
+    });
+    pendingActionRef.current = null;
+  }, [isLoadingKpis, kpis, filters.days]);
+
 
   const formatRelative = (d: Date) => {
     const diff = Math.round((Date.now() - d.getTime()) / 1000);
