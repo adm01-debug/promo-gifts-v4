@@ -3,6 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchPromobrindProducts, fetchPromobrindCategories } from '@/lib/external-db';
 import type { FilterKey } from '@/hooks/intelligence/useZeroResultDiagnosis';
 
+export interface SubstituteContributor {
+  id: string;
+  name: string;
+  quotes: number;
+  orders: number;
+  score: number;
+}
+
 export interface Substitute {
   id: string;
   name: string;
@@ -12,6 +20,13 @@ export interface Substitute {
   orders: number;
   /** Score combinado usado para ranking (pedidos pesam 2x). */
   score: number;
+  /**
+   * Top contribuintes que compõem este score:
+   *  - Para `category`/`supplier`: produtos que mais aparecem na dimensão.
+   *  - Para `product`: contexto da categoria + fornecedor do próprio produto.
+   * Ordenado do maior para o menor score.
+   */
+  contributors: SubstituteContributor[];
 }
 
 export interface ZeroResultSubstitutes {
