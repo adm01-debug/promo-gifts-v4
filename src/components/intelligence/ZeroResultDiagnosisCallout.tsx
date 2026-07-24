@@ -121,12 +121,18 @@ export function ZeroResultDiagnosisCallout({
   const actions: React.ReactNode[] = [];
 
   if (data.culprit === 'window') {
+    const w = data.widenedPreview;
     title = 'Nenhuma venda registrada nesta janela';
     body = (
       <>
         O banco Gold não tem <strong>nenhum</strong> orçamento ou pedido nos últimos{' '}
-        <strong>{days} dias</strong> — nem mesmo sem os filtros aplicados. Amplie o período para
-        buscar dados históricos.
+        <strong>{days} dias</strong> — nem mesmo sem os filtros aplicados.
+        {w && (
+          <>
+            {' '}Ao ampliar para <strong>{w.days} dias</strong>, a prévia mostra{' '}
+            <PreviewBadges quotes={w.quotes} orders={w.orders} testId="zero-diagnosis-preview-window" />.
+          </>
+        )}
       </>
     );
     if (onWidenWindow) {
@@ -138,7 +144,7 @@ export function ZeroResultDiagnosisCallout({
           onClick={onWidenWindow}
           data-testid="zero-diagnosis-widen-window"
         >
-          Ampliar janela
+          Ampliar janela{w ? ` para ${w.days}d` : ''}
         </Button>,
       );
     }
@@ -146,12 +152,15 @@ export function ZeroResultDiagnosisCallout({
     title = 'A combinação de filtros zerou os resultados';
     body = (
       <>
-        Existem <strong>{data.unfilteredQuoteCount}</strong> orçamentos no período, mas a
+        Existem <strong>{data.unfilteredQuoteCount}</strong> orçamentos e{' '}
+        <strong>{data.unfilteredOrderCount}</strong> pedidos no período, mas a
         <em> intersecção</em> dos filtros aplicados não bate com nenhum deles. Remova pelo menos um
-        dos filtros abaixo para recuperar resultados:
+        dos filtros abaixo — a prévia mostra o que voltaria em cada caso:
       </>
     );
     data.filtersToWiden.forEach((f) => {
+      const q = data.leaveOneOut[f.key];
+      const o = data.leaveOneOutOrders[f.key];
       actions.push(
         <Button
           key={f.key}
@@ -159,14 +168,19 @@ export function ZeroResultDiagnosisCallout({
           variant="outline"
           onClick={() => onClearFilter?.(f.key)}
           data-testid={`zero-diagnosis-clear-${f.key}`}
+          className="gap-2"
         >
-          Remover {KEY_LABEL[f.key]}: {f.label}
+          <span>
+            Remover {KEY_LABEL[f.key]}: {f.label}
+          </span>
+          <PreviewBadges quotes={q} orders={o} testId={`zero-diagnosis-preview-${f.key}`} />
         </Button>,
       );
     });
   } else if (data.culprit) {
     const filter = data.filtersToWiden[0];
-    const probe = data.leaveOneOut[data.culprit];
+    const q = data.leaveOneOut[data.culprit];
+    const o = data.leaveOneOutOrders[data.culprit];
     title = `Filtro de ${KEY_LABEL[data.culprit]} está bloqueando os resultados`;
     body = (
       <>
@@ -174,8 +188,9 @@ export function ZeroResultDiagnosisCallout({
         <Badge variant="outline" className="border-primary/30 text-primary">
           {filter?.label ?? '—'}
         </Badge>{' '}
-        haveria <strong>{probe}</strong> orçamento{probe === 1 ? '' : 's'} na janela de{' '}
-        <strong>{days} dias</strong>. Amplie ou remova esse filtro para ver os dados.
+        a prévia mostra{' '}
+        <PreviewBadges quotes={q} orders={o} testId={`zero-diagnosis-preview-${data.culprit}`} />{' '}
+        na janela de <strong>{days} dias</strong>. Amplie ou remova esse filtro para ver os dados.
       </>
     );
     if (onClearFilter && filter) {
