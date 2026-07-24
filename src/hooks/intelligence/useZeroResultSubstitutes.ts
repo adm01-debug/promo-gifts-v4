@@ -146,6 +146,10 @@ export function useZeroResultSubstitutes({
         string,
         { name: string; categoryId: string | null; supplierId: string | null }
       >();
+      // Contribuintes: para cada categoria/fornecedor, mantém a lista de
+      // productIds que somaram no seu score (com nome e contagens).
+      const contributorsByCategory = new Map<string, SubstituteContributor[]>();
+      const contributorsBySupplier = new Map<string, SubstituteContributor[]>();
 
       for (const p of products) {
         const score = perProduct.get(p.id);
@@ -156,6 +160,14 @@ export function useZeroResultSubstitutes({
           supplierId: p.supplier_id ?? null,
         });
 
+        const contributor: SubstituteContributor = {
+          id: p.id,
+          name: p.name,
+          quotes: score.quotes,
+          orders: score.orders,
+          score: score.quotes + score.orders * 2,
+        };
+
         const catId = p.category_id ?? p.main_category_id;
         if (catId) {
           const cur = perCategory.get(catId) ?? { quotes: 0, orders: 0 };
@@ -163,6 +175,9 @@ export function useZeroResultSubstitutes({
             quotes: cur.quotes + score.quotes,
             orders: cur.orders + score.orders,
           });
+          const list = contributorsByCategory.get(catId) ?? [];
+          list.push(contributor);
+          contributorsByCategory.set(catId, list);
         }
         if (p.supplier_id) {
           const cur = perSupplier.get(p.supplier_id) ?? { quotes: 0, orders: 0 };
@@ -171,13 +186,23 @@ export function useZeroResultSubstitutes({
             orders: cur.orders + score.orders,
           });
           if (p.brand) supplierNameById.set(p.supplier_id, p.brand);
+          const list = contributorsBySupplier.get(p.supplier_id) ?? [];
+          list.push(contributor);
+          contributorsBySupplier.set(p.supplier_id, list);
         }
       }
+
+      const topContributors = (list: SubstituteContributor[] | undefined) =>
+        (list ?? [])
+          .slice()
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3);
 
       const toRanked = (
         m: Map<string, { quotes: number; orders: number }>,
         nameFor: (id: string) => string | undefined,
         excludeId: string | null | undefined,
+        contribMap: Map<string, SubstituteContributor[]>,
       ): Substitute[] =>
         Array.from(m.entries())
           .filter(([id, v]) => id !== excludeId && v.quotes + v.orders > 0)
@@ -187,6 +212,7 @@ export function useZeroResultSubstitutes({
             quotes: v.quotes,
             orders: v.orders,
             score: v.quotes + v.orders * 2,
+            contributors: topContributors(contribMap.get(id)),
           }))
           .sort((a, b) => b.score - a.score)
           .slice(0, limit);
@@ -197,10 +223,10 @@ export function useZeroResultSubstitutes({
       const wantProduct = culprit === 'product' || culprit === 'intersection';
 
       const categoriesRanked = wantCategory
-        ? toRanked(perCategory, (id) => catNameById.get(id), categoryId)
+        ? toRanked(perCategory, (id) => catNameById.get(id), categoryId, contributorsByCategory)
         : [];
       const suppliersRanked = wantSupplier
-        ? toRanked(perSupplier, (id) => supplierNameById.get(id), supplierId)
+        ? toRanked(perSupplier, (id) => supplierNameById.get(id), supplierId, contributorsBySupplier)
         : [];
       const productsRanked = wantProduct
         ? Array.from(perProduct.entries())
@@ -215,12 +241,39 @@ export function useZeroResultSubstitutes({
             })
             .map(([id, v]) => {
               const meta = productMetaById.get(id)!;
+              // Contexto do produto: categoria e fornecedor a que pertence.
+              const contributors: SubstituteContributor[] = [];
+              if (meta.categoryId) {
+                const catName = catNameById.get(meta.categoryId);
+                if (catName) {
+                  contributors.push({
+                    id: `cat:${meta.categoryId}`,
+                    name: `Categoria: ${catName}`,
+                    quotes: v.quotes,
+                    orders: v.orders,
+                    score: v.quotes + v.orders * 2,
+                  });
+                }
+              }
+              if (meta.supplierId) {
+                const supName = supplierNameById.get(meta.supplierId);
+                if (supName) {
+                  contributors.push({
+                    id: `sup:${meta.supplierId}`,
+                    name: `Fornecedor: ${supName}`,
+                    quotes: v.quotes,
+                    orders: v.orders,
+                    score: v.quotes + v.orders * 2,
+                  });
+                }
+              }
               return {
                 id,
                 name: meta.name,
                 quotes: v.quotes,
                 orders: v.orders,
                 score: v.quotes + v.orders * 2,
+                contributors,
               };
             })
             .sort((a, b) => b.score - a.score)
