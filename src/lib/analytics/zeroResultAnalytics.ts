@@ -18,6 +18,7 @@ export const ZERO_RESULT_ACTIONS = [
   'clear_filter',
   'widen_window',
   'apply_substitute',
+  'undo',
 ] as const;
 export type ZeroResultAction = (typeof ZERO_RESULT_ACTIONS)[number];
 

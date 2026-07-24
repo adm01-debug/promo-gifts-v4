@@ -63,6 +63,12 @@ export default function CommercialIntelligencePage() {
     startedAt: number;
   } | null>(null);
 
+  // Snapshot dos filtros ANTES da última ação disparada pelo callout. Usado
+  // pelo botão "Desfazer". Mantido em state para forçar re-render e alternar
+  // a visibilidade do botão. Limpo assim que o usuário desfaz ou muda filtros
+  // manualmente por outra via.
+  const [undoSnapshot, setUndoSnapshot] = useState<IntelligenceFilters | null>(null);
+
   const beginPendingAction = (
     action: ZeroResultAction,
     culpritBefore: ZeroResultCulprit,
@@ -75,7 +81,13 @@ export default function CommercialIntelligencePage() {
     };
   };
 
+  const captureUndoSnapshot = () => {
+    // Congela o estado ATUAL (pré-ação) para permitir reversão.
+    setUndoSnapshot(rawFilters);
+  };
+
   const clearFilter = (key: FilterKey) => {
+    captureUndoSnapshot();
     beginPendingAction('clear_filter', key);
     setFilters((prev) => {
       if (key === 'category') return { ...prev, categoryId: null, categoryName: null };
@@ -85,6 +97,7 @@ export default function CommercialIntelligencePage() {
   };
 
   const widenWindow = () => {
+    captureUndoSnapshot();
     beginPendingAction('widen_window', 'window');
     setFilters((prev) => {
       const ladder = [7, 30, 90, 180, 365];
@@ -97,12 +110,20 @@ export default function CommercialIntelligencePage() {
     key: FilterKey,
     value: { id: string; name: string },
   ) => {
+    captureUndoSnapshot();
     beginPendingAction('apply_substitute', key);
     setFilters((prev) => {
       if (key === 'category') return { ...prev, categoryId: value.id, categoryName: value.name };
       if (key === 'supplier') return { ...prev, supplierId: value.id, supplierName: value.name };
       return { ...prev, productId: value.id, productName: value.name };
     });
+  };
+
+  const undoLastAction = () => {
+    if (!undoSnapshot) return;
+    beginPendingAction('undo', null);
+    setFilters(undoSnapshot);
+    setUndoSnapshot(null);
   };
 
   // Emite `bi.zero_result.outcome` quando os KPIs da nova consulta chegam
@@ -169,7 +190,16 @@ export default function CommercialIntelligencePage() {
 
         {/* Filters — sticky no scroll · UI controlada por rawFilters (sem latência), refetch debounced */}
         <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 -mx-3 border-b border-border/40 bg-background/85 px-3 py-2 backdrop-blur-md sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8">
-          <IntelligenceFilterBar filters={rawFilters} onFiltersChange={setFilters} />
+          <IntelligenceFilterBar
+            filters={rawFilters}
+            onFiltersChange={(next) => {
+              // Alteração manual pelo usuário na barra invalida o snapshot
+              // de undo — não faria sentido "desfazer" para um estado que
+              // ele próprio acabou de sobrescrever.
+              setUndoSnapshot(null);
+              setFilters(next);
+            }}
+          />
         </div>
 
         {/* KPI Summary */}
@@ -199,6 +229,8 @@ export default function CommercialIntelligencePage() {
               onClearFilter={clearFilter}
               onWidenWindow={widenWindow}
               onApplySubstitute={applySubstitute}
+              canUndo={!!undoSnapshot}
+              onUndo={undoLastAction}
             />
           </div>
         )}
