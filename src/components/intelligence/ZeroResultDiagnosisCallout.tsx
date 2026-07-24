@@ -8,6 +8,7 @@ import {
 } from '@/hooks/intelligence/useZeroResultDiagnosis';
 import { ZeroResultSubstitutes } from '@/components/intelligence/ZeroResultSubstitutes';
 import { trackZeroResultActionClicked } from '@/lib/analytics/zeroResultAnalytics';
+import { trackSubstituteApplied } from '@/lib/analytics/intelligenceAnalytics';
 
 /**
  * Mini-preview de quantos orçamentos + pedidos apareceriam ao aplicar uma
