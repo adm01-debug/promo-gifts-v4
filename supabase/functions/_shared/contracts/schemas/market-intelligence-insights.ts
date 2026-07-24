@@ -6,6 +6,9 @@
  */
 import { z } from "https://esm.sh/zod@3.23.8";
 
+export const InsightFocusEnum = z.enum(["auto", "conversion", "ticket", "rupture"]);
+export type InsightFocus = z.infer<typeof InsightFocusEnum>;
+
 export const MarketIntelligenceInsightsV1 = z.object({
   days: z.number().int().min(1).max(365).optional(),
   categoryId: z.string().max(100).nullable().optional(),
@@ -15,6 +18,7 @@ export const MarketIntelligenceInsightsV1 = z.object({
   supplierName: z.string().max(255).nullable().optional(),
   productName: z.string().max(255).nullable().optional(),
   forceRefresh: z.boolean().optional(),
+  focus: InsightFocusEnum.optional(),
 });
 
 export const MarketIntelligenceInsightsV2 = z
@@ -27,6 +31,7 @@ export const MarketIntelligenceInsightsV2 = z
     supplierName: z.string().min(1).max(255).nullable().optional(),
     productName: z.string().min(1).max(255).nullable().optional(),
     forceRefresh: z.boolean().default(false),
+    focus: InsightFocusEnum.default("auto"),
   })
   .strict();
 
