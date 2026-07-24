@@ -59,9 +59,12 @@ async function callCommemorativeDatesAPI<T>(
     throw new Error('Usuário não autenticado');
   }
 
-  const { data, error } = await invokeEdge('commemorative-dates', {
-    body: { action, params },
-  });
+  const { data, error } = await invokeEdge<{ success?: boolean; error?: string; data?: T }>(
+    'commemorative-dates',
+    {
+      body: { action, params },
+    },
+  );
 
   if (error) {
     logger.error(`Error calling commemorative-dates/${action}:`, error);

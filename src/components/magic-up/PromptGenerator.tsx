@@ -178,27 +178,30 @@ export function PromptGenerator({
 
     setGenerating(true);
     try {
-      const { data, error } = await invokeEdge<{ prompts?: string[]; error?: string }>('generate-ad-prompt', {
-        body: {
-          productName,
-          productColor,
-          productCategory: null, // Categoria não disponível nas props atuais — requer prop productCategory
-          techniqueName: selectedTech?.nome || null,
-          locationName: locationLabel || null,
-          maxWidth: selectedArea?.max_width || null,
-          maxHeight: selectedArea?.max_height || null,
-          dimensionUnit: selectedArea?.unit || 'cm',
-          isCurved: selectedArea?.is_curved || false,
-          clientName,
-          clientSegment,
-          brandColorName,
-          objective,
-          tone,
-          targetAudience: audience,
-          season: season === 'none' ? '' : season,
-          numberOfPrompts: 4,
+      const { data, error } = await invokeEdge<{ prompts?: GeneratedPrompt[]; error?: string }>(
+        'generate-ad-prompt',
+        {
+          body: {
+            productName,
+            productColor,
+            productCategory: null, // Categoria não disponível nas props atuais — requer prop productCategory
+            techniqueName: selectedTech?.nome || null,
+            locationName: locationLabel || null,
+            maxWidth: selectedArea?.max_width || null,
+            maxHeight: selectedArea?.max_height || null,
+            dimensionUnit: selectedArea?.unit || 'cm',
+            isCurved: selectedArea?.is_curved || false,
+            clientName,
+            clientSegment,
+            brandColorName,
+            objective,
+            tone,
+            targetAudience: audience,
+            season: season === 'none' ? '' : season,
+            numberOfPrompts: 4,
+          },
         },
-      });
+      );
 
       if (error) throw error;
 

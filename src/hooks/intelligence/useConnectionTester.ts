@@ -63,7 +63,7 @@ export function useConnectionTester() {
       });
       log.info('test_start');
       try {
-        const { data, error } = await invokeEdge('connection-tester', {
+        const { data, error } = await invokeEdge<{ result?: TestResult }>('connection-tester', {
           body: { action: 'test', type, config, connection_id, env_key },
           headers: log.headers(),
         });
@@ -138,7 +138,14 @@ export function useConnectionTester() {
       latency_ms: number | null;
     } | null> => {
       try {
-        const { data, error } = await invokeEdge('connection-tester', {
+        const { data, error } = await invokeEdge<{
+          last?: {
+            last_test_at?: string | null;
+            last_test_ok?: boolean | null;
+            last_test_message?: string | null;
+            last_latency_ms?: number | null;
+          };
+        }>('connection-tester', {
           body: {
             action: 'last_test',
             type,

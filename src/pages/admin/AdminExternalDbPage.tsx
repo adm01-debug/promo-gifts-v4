@@ -91,7 +91,11 @@ export default function AdminExternalDbPage() {
     try {
       const results: TableDiff[] = [];
       for (const t of ENGRAVING_TABLES) {
-        const { data, error } = await invokeEdge('external-db-inspect', {
+        const { data, error } = await invokeEdge<{
+          success?: boolean;
+          error?: string;
+          columns?: string[];
+        }>('external-db-inspect', {
           body: { mode: 'columns', tableName: t.table },
         });
         if (error || !data?.success) {

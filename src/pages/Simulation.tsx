@@ -57,7 +57,7 @@ export default function SimulationPage() {
     setActiveMode(mode);
     setReport(null);
     try {
-      const { data, error } = await invokeEdge(
+      const { data, error } = await invokeEdge<SimulationReport>(
         mode === 'audit' ? 'audit-suite' : 'simulation-orchestrator',
         {
           body: mode === 'audit' ? {} : { count: mode === 'load' ? 500 : 100, mode },

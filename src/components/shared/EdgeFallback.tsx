@@ -14,19 +14,12 @@
  *   <EdgeFallback variant="empty" title="Nenhum arquivo encontrado" />
  */
 import { type ReactElement, type ReactNode } from 'react';
-import {
-  AlertTriangle,
-  CloudOff,
-  Inbox,
-  Loader2,
-  RefreshCw,
-  type LucideIcon,
-} from 'lucide-react';
+import { AlertTriangle, CloudOff, Inbox, Loader2, RefreshCw, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SafeMessage } from '@/components/errors/SafeMessage';
 import { cn } from '@/lib/utils';
 
-export type EdgeFallbackVariant = 'error' | 'disconnected' | 'empty' | 'loading';
+export type EdgeFallbackVariant = 'disconnected' | 'empty' | 'error' | 'loading';
 
 export interface EdgeFallbackProps {
   variant: EdgeFallbackVariant;
@@ -97,7 +90,7 @@ export function EdgeFallback({
         )}
       />
       <h2 className="font-display text-lg font-semibold text-foreground">{resolvedTitle}</h2>
-      {error != null ? (
+      {error !== null && error !== undefined ? (
         <SafeMessage
           error={error}
           className="max-w-sm text-sm text-muted-foreground"

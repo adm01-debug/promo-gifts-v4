@@ -1,11 +1,9 @@
 import { authenticateRequest, authErrorResponse } from "../_shared/auth.ts";
 import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { getOrCreateRequestId } from "../_shared/request-id.ts";
-import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { getCorsHeaders } from "../_shared/cors.ts";
 import { safeErrorResponse } from "../_shared/error-response.ts";
 import { getCredential } from "../_shared/credentials.ts";
-
-const corsHeaders = buildPublicCorsHeaders();
 
 interface ScanLog {
   user_id: string;
@@ -19,6 +17,7 @@ interface ScanLog {
 Deno.serve(async (req) => {
   const requestId = getOrCreateRequestId(req);
   const log = createStructuredLogger({ fn: "secure-upload", requestId, req });
+  const corsHeaders = getCorsHeaders(req);
 
   if (req.method === "OPTIONS") {
     return log.respond(new Response("ok", { headers: corsHeaders }));

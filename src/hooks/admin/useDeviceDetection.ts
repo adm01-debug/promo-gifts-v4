@@ -94,13 +94,16 @@ export function useDeviceDetection(targetUserId?: string) {
     try {
       const deviceInfo = getDeviceInfo();
 
-      const { data, error } = await invokeEdge('detect-new-device', {
-        body: {
-          userId: user.id,
-          userEmail: user.email,
-          deviceInfo,
+      const { data, error } = await invokeEdge<{ isNewDevice: boolean; isNewIP: boolean }>(
+        'detect-new-device',
+        {
+          body: {
+            userId: user.id,
+            userEmail: user.email,
+            deviceInfo,
+          },
         },
-      });
+      );
 
       if (error) {
         logger.error('Error checking device:', error);
@@ -108,8 +111,8 @@ export function useDeviceDetection(targetUserId?: string) {
       }
 
       return {
-        isNewDevice: data.isNewDevice || false,
-        isNewIP: data.isNewIP || false,
+        isNewDevice: data?.isNewDevice || false,
+        isNewIP: data?.isNewIP || false,
       };
     } catch (error: unknown) {
       logger.error('Device detection error:', error);

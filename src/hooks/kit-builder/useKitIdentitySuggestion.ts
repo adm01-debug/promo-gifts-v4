@@ -30,9 +30,12 @@ export function useKitIdentitySuggestion() {
     setIsLoading(true);
     setSuggestion(null);
     try {
-      const { data, error } = await invokeEdge('kit-identity-suggest', {
-        body: input,
-      });
+      const { data, error } = await invokeEdge<{ error?: string; suggestion?: IdentitySuggestion }>(
+        'kit-identity-suggest',
+        {
+          body: input,
+        },
+      );
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const s = data?.suggestion as IdentitySuggestion | undefined;

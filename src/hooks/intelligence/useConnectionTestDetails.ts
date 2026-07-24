@@ -52,15 +52,18 @@ export function useConnectionTestDetails({ open, type, envKey, connectionId, his
     setLoading(true);
     setError(null);
     try {
-      const { data, error: invokeError } = await invokeEdge('connection-tester', {
-        body: {
-          action: 'last_test_full',
-          type,
-          env_key: envKey,
-          connection_id: connectionId,
-          id: historyId,
+      const { data, error: invokeError } = await invokeEdge<{ details?: TestDetails | null }>(
+        'connection-tester',
+        {
+          body: {
+            action: 'last_test_full',
+            type,
+            env_key: envKey,
+            connection_id: connectionId,
+            id: historyId,
+          },
         },
-      });
+      );
       if (invokeError) throw invokeError;
       const raw = (data?.details ?? null) as TestDetails | null;
       // Fallback: registros antigos podem ter `error.kind = null`. Inferimos o

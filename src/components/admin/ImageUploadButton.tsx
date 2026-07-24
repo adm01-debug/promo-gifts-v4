@@ -56,7 +56,7 @@ export function ImageUploadButton({
 
       while (retryCount < maxRetries && !uploadSuccess) {
         try {
-          const { data, error } = await invokeEdge('secure-upload', {
+          const { data, error } = await invokeEdge<{ url: string }>('secure-upload', {
             body: formData,
           });
 
@@ -68,7 +68,7 @@ export function ImageUploadButton({
             throw error;
           }
 
-          onUpload(data.url);
+          onUpload(data!.url);
           toast.success('Imagem enviada com segurança!');
           uploadSuccess = true;
         } catch (error: unknown) {
@@ -123,7 +123,9 @@ export function ImageUploadButton({
         const filePath = urlParts[1];
         // BUG-IMAGEUPLOAD-REMOVE-SILENT-FAIL FIX: storage.remove returns { data, error }
         // — bare await discarded the error, calling onRemove even on failure.
-        const { error: removeErr } = await supabase.storage.from('personalization-images').remove([filePath]);
+        const { error: removeErr } = await supabase.storage
+          .from('personalization-images')
+          .remove([filePath]);
         if (removeErr) throw removeErr;
       }
       onRemove();

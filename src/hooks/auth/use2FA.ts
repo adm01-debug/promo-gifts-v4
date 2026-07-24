@@ -148,14 +148,17 @@ export function use2FA(targetUserId?: string) {
        * graciosamente com mensagem de erro ao inves de expor o secret.
        */
       try {
-        const { data, error } = await invokeEdge('verify-2fa-token', {
-          body: {
-            action: 'disable',
-            target_user_id: effectiveUserId,
-            token: token ?? null,
-            is_admin_bypass: !!targetUserId && !token,
+        const { data, error } = await invokeEdge<{ success: boolean; error?: string }>(
+          'verify-2fa-token',
+          {
+            body: {
+              action: 'disable',
+              target_user_id: effectiveUserId,
+              token: token ?? null,
+              is_admin_bypass: !!targetUserId && !token,
+            },
           },
-        });
+        );
 
         if (error || !data?.success) {
           return {

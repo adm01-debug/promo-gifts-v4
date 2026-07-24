@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
@@ -79,7 +78,11 @@ export function CredentialCacheMetricsPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, error: invErr } = await invokeEdge<{ ok?: boolean; error?: { message?: string }; metrics?: Snapshot }>('secrets-manager', {
+    const { data, error: invErr } = await invokeEdge<{
+      ok?: boolean;
+      error?: { message?: string };
+      metrics?: Snapshot;
+    }>('secrets-manager', {
       body: { action: 'cache_metrics' },
     });
     if (invErr) {
@@ -87,7 +90,7 @@ export function CredentialCacheMetricsPanel() {
     } else if (!data?.ok) {
       setError(data?.error?.message ?? 'Falha ao carregar métricas.');
     } else {
-      setSnapshot(data.metrics as Snapshot);
+      setSnapshot(data.metrics!);
     }
     setLoading(false);
   }, []);

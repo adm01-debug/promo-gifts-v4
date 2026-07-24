@@ -297,7 +297,7 @@ export default function VisualSearchPage() {
     if (!results) setResults(null);
 
     try {
-      const { data, error } = await invokeEdge('visual-search', {
+      const { data, error } = await invokeEdge<VisualSearchResult>('visual-search', {
         body: {
           imageBase64: base64.split(',')[1],
           category: selectedCategoryNames.length ? selectedCategoryNames.join(', ') : undefined,
@@ -308,7 +308,7 @@ export default function VisualSearchPage() {
 
       if (error) throw error;
       setResults(data);
-      void saveToHistory(base64, data.analysis?.productType ?? 'Produto');
+      void saveToHistory(base64, data?.analysis?.productType ?? 'Produto');
       toast.success('Análise concluída com sucesso!');
     } catch (rawErr: unknown) {
       logger.error('Visual search error:', rawErr);

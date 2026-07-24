@@ -23,7 +23,6 @@ interface BulkRequest {
 interface UpdatedUser {
   id: string;
   email: string | null;
-  password: string;
 }
 
 const corsHeaders = buildPublicCorsHeaders({
@@ -189,7 +188,7 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        updatedUsers.push({ id: u.id, email, password });
+        updatedUsers.push({ id: u.id, email });
       }
     }
 

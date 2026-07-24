@@ -96,7 +96,9 @@ export default function OwnershipAuditAdminPage() {
   async function runNow() {
     setRunning(true);
     try {
-      const { data, error } = await invokeEdge('ownership-audit', {
+      const { data, error } = await invokeEdge<{
+        summary?: { total_tables_scanned: number; total_issues_found: number };
+      }>('ownership-audit', {
         body: { triggered_by: 'manual_admin' },
       });
       if (error) throw error;
