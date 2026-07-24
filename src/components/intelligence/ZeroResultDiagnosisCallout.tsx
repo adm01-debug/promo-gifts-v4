@@ -62,6 +62,11 @@ interface Props {
   onClearFilter?: (key: FilterKey) => void;
   /** Callback para ampliar a janela em dias. */
   onWidenWindow?: () => void;
+  /** Callback para aplicar um substituto ranqueado (ex.: trocar categoria). */
+  onApplySubstitute?: (
+    key: FilterKey,
+    value: { id: string; name: string },
+  ) => void;
 }
 
 const KEY_LABEL: Record<FilterKey, string> = {
