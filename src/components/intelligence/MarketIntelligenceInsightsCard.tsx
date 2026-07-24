@@ -30,6 +30,59 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/ui';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
+import {
+  useZeroResultDiagnosis,
+  type FilterKey,
+  type ZeroResultDiagnosis,
+} from '@/hooks/intelligence/useZeroResultDiagnosis';
+
+const FILTER_LABEL: Record<FilterKey, string> = {
+  category: 'categoria',
+  supplier: 'fornecedor',
+  product: 'produto',
+};
+
+/**
+ * Constrói uma frase PT-BR que menciona o filtro culpado (ou janela) e,
+ * quando aplicável, a prévia de recuperação ao remover o filtro ou ampliar a janela.
+ */
+function buildDiagnosisMention(
+  diag: ZeroResultDiagnosis | undefined,
+  days: number,
+  names: { category?: string | null; supplier?: string | null; product?: string | null },
+): string | null {
+  if (!diag || !diag.culprit) return null;
+  const c = diag.culprit;
+  if (c === 'window') {
+    const w = diag.widenedPreview;
+    if (w && (w.quotes > 0 || w.orders > 0)) {
+      return `Diagnóstico: a janela de ${days} dias é o gargalo — ampliando para ${w.days} dias, apareceriam ${w.quotes} orçamento(s) e ${w.orders} pedido(s).`;
+    }
+    return `Diagnóstico: a janela de ${days} dias não capturou atividade — considere ampliar para 90 ou 180 dias.`;
+  }
+  if (c === 'intersection') {
+    const w = diag.widenedPreview;
+    const tail = w && (w.quotes > 0 || w.orders > 0)
+      ? ` Ampliando a janela para ${w.days} dias, viriam ${w.quotes} orçamento(s) e ${w.orders} pedido(s).`
+      : '';
+    return `Diagnóstico: a combinação atual de filtros está vazia na janela de ${days} dias.${tail}`;
+  }
+  const label = FILTER_LABEL[c];
+  const nameMap: Record<FilterKey, string | null | undefined> = {
+    category: names.category,
+    supplier: names.supplier,
+    product: names.product,
+  };
+  const name = nameMap[c];
+  const nameSuffix = name ? ` "${name}"` : '';
+  const q = diag.leaveOneOut[c];
+  const o = diag.leaveOneOutOrders[c];
+  const preview =
+    q != null && o != null
+      ? ` — removê-lo recuperaria ${q} orçamento(s) e ${o} pedido(s)`
+      : '';
+  return `Diagnóstico: o filtro de ${label}${nameSuffix} está zerando os dados${preview}.`;
+}
 
 export type InsightFocus = 'auto' | 'conversion' | 'ticket' | 'rupture';
 
