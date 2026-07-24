@@ -242,6 +242,15 @@ export function ZeroResultDiagnosisCallout({
             {actions}
           </div>
         )}
+        <ZeroResultSubstitutes
+          enabled={enabled}
+          days={days}
+          categoryId={categoryId}
+          supplierId={supplierId}
+          productId={productId}
+          culprit={data.culprit}
+          onApplySubstitute={onApplySubstitute}
+        />
       </AlertDescription>
     </Alert>
   );
