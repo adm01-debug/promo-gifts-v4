@@ -98,6 +98,8 @@ export function ZeroResultDiagnosisCallout({
   onClearFilter,
   onWidenWindow,
   onApplySubstitute,
+  canUndo,
+  onUndo,
 }: Props) {
   const { data, isLoading } = useZeroResultDiagnosis({
     enabled,
