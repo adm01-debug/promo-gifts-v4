@@ -184,7 +184,17 @@ export function ZeroResultDiagnosisCallout({
           key={f.key}
           size="sm"
           variant="outline"
-          onClick={() => onClearFilter?.(f.key)}
+          onClick={() => {
+            trackZeroResultActionClicked({
+              action: 'clear_filter',
+              culpritBefore: 'intersection',
+              filterKey: f.key,
+              days,
+              previewQuotes: q ?? null,
+              previewOrders: o ?? null,
+            });
+            onClearFilter?.(f.key);
+          }}
           data-testid={`zero-diagnosis-clear-${f.key}`}
           className="gap-2"
         >
