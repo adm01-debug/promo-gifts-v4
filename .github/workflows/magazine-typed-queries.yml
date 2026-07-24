@@ -174,9 +174,9 @@ jobs:
           fi
           echo "::notice::Gate de contagens OK (magazines=$FROM_MAG, magazine_items=$FROM_MI, untypedFrom=$UF_COUNT)"
 
-      - name: Typecheck (tsgo)
+      - name: Typecheck (tsc)
         if: steps.gate.outputs.ready == 'true'
-        run: npx tsgo --noEmit
+        run: npx tsc --noEmit
 
       - name: Lint untypedFrom × types.ts
         if: steps.gate.outputs.ready == 'true'
