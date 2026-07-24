@@ -26,7 +26,11 @@ export function AuditReport() {
   const runAudit = async () => {
     setLoading(true);
     try {
-      const { data, error } = await invokeEdge('audit-suite');
+      const { data, error } = await invokeEdge<{
+        status?: string;
+        timestamp?: string;
+        results?: AuditResult[];
+      }>('audit-suite');
       if (error) throw error;
       setReport(data);
       toast.success('Auditoria concluída com sucesso');

@@ -365,7 +365,7 @@ async function invokeMockupOnce(
   params: GenerateMockupParams,
   area: PersonalizationArea,
 ): Promise<string> {
-  const generateCall = invokeEdge('generate-mockup', {
+  const generateCall = invokeEdge<{ mockupUrl?: string }>('generate-mockup', {
     body: buildMockupPayload(params, area),
   });
 
@@ -532,8 +532,11 @@ export async function deleteMockupFromDb(id: string, userId?: string): Promise<v
 
   if (pathsToRemove.length > 0) {
     // BUG-MOCKUP-STORAGE-REMOVE-SILENT-FAIL FIX: storage.remove returns { data, error } — not throws.
-    const { error: storageErr } = await supabase.storage.from('mockup-assets').remove(pathsToRemove);
-    if (storageErr) logger.warn('[deleteMockupFromDb] Storage cleanup failed (non-fatal):', storageErr);
+    const { error: storageErr } = await supabase.storage
+      .from('mockup-assets')
+      .remove(pathsToRemove);
+    if (storageErr)
+      logger.warn('[deleteMockupFromDb] Storage cleanup failed (non-fatal):', storageErr);
   }
 }
 

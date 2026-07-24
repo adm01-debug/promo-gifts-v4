@@ -141,9 +141,9 @@ jobs:
           set -e
           TS_MAG=$(grep -cE "magazines: \{" src/integrations/supabase/types.ts || true)
           TS_MI=$(grep -cE "magazine_items: \{" src/integrations/supabase/types.ts || true)
-          UF_COUNT=$(grep -c "untypedFrom" src/services/magazineService.ts || echo 0)
-          FROM_MAG=$(grep -cE "\.from\((\"|')magazines(\"|')" src/services/magazineService.ts || echo 0)
-          FROM_MI=$(grep -cE "\.from\((\"|')magazine_items(\"|')" src/services/magazineService.ts || echo 0)
+          UF_COUNT=$(grep -c "untypedFrom" src/services/magazineService.ts || true)
+          FROM_MAG=$(grep -cE "\.from\((\"|')magazines(\"|')" src/services/magazineService.ts || true)
+          FROM_MI=$(grep -cE "\.from\((\"|')magazine_items(\"|')" src/services/magazineService.ts || true)
 
           echo "ts_magazines=$TS_MAG"           >> "$GITHUB_OUTPUT"
           echo "ts_magazine_items=$TS_MI"       >> "$GITHUB_OUTPUT"
@@ -174,9 +174,9 @@ jobs:
           fi
           echo "::notice::Gate de contagens OK (magazines=$FROM_MAG, magazine_items=$FROM_MI, untypedFrom=$UF_COUNT)"
 
-      - name: Typecheck (tsgo)
+      - name: Typecheck (tsc)
         if: steps.gate.outputs.ready == 'true'
-        run: npx tsgo --noEmit
+        run: npx tsc --noEmit
 
       - name: Lint untypedFrom × types.ts
         if: steps.gate.outputs.ready == 'true'
@@ -210,9 +210,9 @@ jobs:
           REPORT="qa/reports/magazine-typed-queries-revalidation.md"
           TS_MAG=$(grep -cE "magazines: \{" src/integrations/supabase/types.ts || true)
           TS_MI=$(grep -cE "magazine_items: \{" src/integrations/supabase/types.ts || true)
-          UF_COUNT=$(grep -c "untypedFrom" src/services/magazineService.ts || echo 0)
-          FROM_MAG=$(grep -cE "\.from\((\"|')magazines(\"|')" src/services/magazineService.ts || echo 0)
-          FROM_MI=$(grep -cE "\.from\((\"|')magazine_items(\"|')" src/services/magazineService.ts || echo 0)
+          UF_COUNT=$(grep -c "untypedFrom" src/services/magazineService.ts || true)
+          FROM_MAG=$(grep -cE "\.from\((\"|')magazines(\"|')" src/services/magazineService.ts || true)
+          FROM_MI=$(grep -cE "\.from\((\"|')magazine_items(\"|')" src/services/magazineService.ts || true)
 
           ARTIFACT_URL="https://github.com/$REPO/actions/runs/$RUN_ID#artifacts"
 

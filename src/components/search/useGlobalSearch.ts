@@ -314,10 +314,17 @@ export function useGlobalSearch() {
     try {
       // BUG-SEARCH-SEMANTIC-SILENT-FAIL FIX: { data } without error check — AI search
       // failures were invisible; fallback to keyword intent is intentional (/* silent */).
-      const { data: aiResponse, error: aiErr } = await invokeEdge('semantic-search', {
+      const { data: aiResponse, error: aiErr } = await invokeEdge<{
+        success: boolean;
+        intent: SearchIntent;
+      }>('semantic-search', {
         body: { query: searchQuery },
       });
-      if (aiErr) logger.warn('[global-search] semantic-search invoke failed — falling back to keyword intent:', aiErr);
+      if (aiErr)
+        logger.warn(
+          '[global-search] semantic-search invoke failed — falling back to keyword intent:',
+          aiErr,
+        );
       if (controller.signal.aborted) return;
       setIsAIProcessing(false);
 

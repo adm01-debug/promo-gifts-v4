@@ -80,7 +80,10 @@ export function useLogoColorAnalysis() {
     try {
       const resizedBase64 = await resizeImage(imageBase64);
 
-      const { data, error: fnError } = await invokeEdge('analyze-logo-colors', {
+      const { data, error: fnError } = await invokeEdge<{
+        error?: string;
+        colors?: Array<{ name: string; hex: string }>;
+      }>('analyze-logo-colors', {
         body: { imageBase64: resizedBase64 },
       });
 

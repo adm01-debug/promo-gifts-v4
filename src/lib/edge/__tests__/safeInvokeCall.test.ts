@@ -98,7 +98,7 @@ describe('safeInvokeCall — Onda 17', () => {
         context: { status: 500, body: JSON.stringify({ error: 'db offline' }) },
       },
     });
-    const norm = await normalizeInvokeError({
+    const norm = normalizeInvokeError({
       name: 'FunctionsHttpError',
       message: 'fallback',
       context: { status: 500, body: JSON.stringify({ error: 'db offline' }) },

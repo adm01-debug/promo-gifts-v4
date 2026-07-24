@@ -37,7 +37,9 @@ export async function handleDownloadPDF(
   quote: Quote | null,
 ): Promise<void> {
   if (!proposalData || !quote) return;
-  const blob = await generateProposalPDFv2(proposalData, { isDraft: (quote.status as string) === 'draft' });
+  const blob = await generateProposalPDFv2(proposalData, {
+    isDraft: (quote.status as string) === 'draft',
+  });
   downloadPDF(blob, `proposta-${(quote.quote_number || 'sem-numero').replace(/\s+/g, '')}.pdf`);
   toast.success('PDF gerado com sucesso!');
 }
@@ -137,7 +139,9 @@ export async function handleSyncBitrix(params: {
   let pdfStorageUrl: string | undefined;
   let filename: string | undefined;
   try {
-    const blob = await generateProposalPDFv2(proposalData, { isDraft: (quote.status as string) === 'draft' });
+    const blob = await generateProposalPDFv2(proposalData, {
+      isDraft: (quote.status as string) === 'draft',
+    });
     filename = `proposta-${(quote.quote_number || quoteId).replace(/\s+/g, '')}.pdf`;
     const storagePath = `quotes/${quoteId}/${filename}`;
     const { error: uploadError } = await supabase.storage
@@ -151,7 +155,11 @@ export async function handleSyncBitrix(params: {
     logger.warn('PDF generation failed:', pdfErr);
   }
 
-  const { data, error } = await invokeEdge('sync-quote-bitrix', {
+  const { data, error } = await invokeEdge<{
+    ok: boolean;
+    error?: string;
+    result?: { quote_id?: string; message?: string };
+  }>('sync-quote-bitrix', {
     body: {
       quote,
       proposalData,

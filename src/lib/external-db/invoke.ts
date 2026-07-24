@@ -8,7 +8,6 @@
  * Ver: src/lib/external-db/kill-switch-client.ts e
  *      docs/PATCH_external_db_bridge_kill_switch.md.
  */
-import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
 import { ensureCloudReady, CloudNotReadyError, getCachedCloudStatus } from '@/lib/cloud-status';

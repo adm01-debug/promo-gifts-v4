@@ -70,7 +70,7 @@ function rowToMagazine(row: MagazineRow, items: MagazineItemRow[]): Magazine {
     },
     items: [...items].sort((a, b) => a.position - b.position).map(rowToItem),
     pageOrder: row.page_order as number[] | null,
-    status: row.status,
+    status: row.status as 'archived' | 'draft' | 'published',
     publicToken: row.public_token,
     viewCount: row.view_count ?? 0,
     publishedAt: row.published_at,

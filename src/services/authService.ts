@@ -55,17 +55,13 @@ export const authService = {
         supabase.auth.signUp({
           email,
           password,
-          options: opts.emailRedirectTo
-            ? { emailRedirectTo: opts.emailRedirectTo }
-            : undefined,
+          options: opts.emailRedirectTo ? { emailRedirectTo: opts.emailRedirectTo } : undefined,
         }) as unknown as Promise<{ data: UnknownData; error: unknown }>,
       { op: 'signUp', signal: opts.signal },
     );
   },
 
-  async signOutSafe(
-    opts: { signal?: AbortSignal } = {},
-  ): Promise<SafeAuthResult<UnknownData>> {
+  async signOutSafe(opts: { signal?: AbortSignal } = {}): Promise<SafeAuthResult<UnknownData>> {
     const supabase = await getSupabaseClient();
     return safeAuthCall(
       () =>
@@ -107,7 +103,7 @@ export const authService = {
   },
 
   async verifyOtpSafe(
-    params: { email: string; token: string; type: 'email' | 'recovery' | 'magiclink' },
+    params: { email: string; token: string; type: 'email' | 'magiclink' | 'recovery' },
     opts: { signal?: AbortSignal } = {},
   ): Promise<SafeAuthResult<UnknownData>> {
     const supabase = await getSupabaseClient();
@@ -208,16 +204,15 @@ export const authService = {
    * RPC combinada: retorna profile + roles em um único round-trip.
    * Seguro: `as unknown as RPCCallerFn` evita erro TS em strict mode.
    */
-  async getProfileAndRoles(
-    userId: string,
-  ): Promise<{
+  async getProfileAndRoles(userId: string): Promise<{
     data: { profile: Record<string, unknown> | null; roles: string[] | null } | null;
     error: PostgrestError | null;
   }> {
     const supabase = await getSupabaseClient();
-    const caller = supabase.rpc as unknown as RPCCallerFn<
-      { profile: Record<string, unknown> | null; roles: string[] | null }
-    >;
+    const caller = supabase.rpc as unknown as RPCCallerFn<{
+      profile: Record<string, unknown> | null;
+      roles: string[] | null;
+    }>;
     return caller('get_profile_and_roles', { _user_id: userId });
   },
 

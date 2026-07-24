@@ -1,5 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
-
 import { logger } from '@/lib/logger';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 export interface CnpjData {
@@ -26,9 +24,12 @@ export interface CnpjData {
 }
 
 export async function fetchCnpjData(cnpj: string): Promise<CnpjData | null> {
-  const { data, error } = await invokeEdge('cnpj-lookup', {
-    body: { cnpj },
-  });
+  const { data, error } = await invokeEdge<{ success?: boolean; error?: string; data?: CnpjData }>(
+    'cnpj-lookup',
+    {
+      body: { cnpj },
+    },
+  );
 
   if (error) {
     logger.error('[CNPJ-Lookup] Error:', error);
@@ -39,5 +40,5 @@ export async function fetchCnpjData(cnpj: string): Promise<CnpjData | null> {
     throw new Error(data?.error || 'Erro na consulta do CNPJ');
   }
 
-  return data.data as CnpjData;
+  return data.data!;
 }

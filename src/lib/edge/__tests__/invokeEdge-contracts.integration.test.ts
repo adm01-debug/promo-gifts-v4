@@ -22,7 +22,7 @@ void structuredLoggerMockFactory;
 
 const mockInvoke = vi.fn();
 vi.mock('@/integrations/supabase/lazy-client', () => ({
-  getSupabaseClient: async () => ({ functions: { invoke: mockInvoke } }),
+  getSupabaseClient: () => ({ functions: { invoke: mockInvoke } }),
 }));
 
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
@@ -81,10 +81,9 @@ describe('invokeEdge contract — secrets-manager', () => {
 
   it('erro embutido em envelope (200) é preservado para o caller', async () => {
     ok({ ok: false, error: { message: 'secret_not_found' } });
-    const r = await invokeEdge<{ ok?: boolean; error?: { message?: string } }>(
-      'secrets-manager',
-      { body: { action: 'cache_metrics' } },
-    );
+    const r = await invokeEdge<{ ok?: boolean; error?: { message?: string } }>('secrets-manager', {
+      body: { action: 'cache_metrics' },
+    });
     // 200 com error no body é sucesso do wrapper — a UI trata o `ok:false`.
     expect(r.error).toBeNull();
     expect(r.data?.ok).toBe(false);

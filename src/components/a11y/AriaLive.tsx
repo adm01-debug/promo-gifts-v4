@@ -1,4 +1,12 @@
-import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  createContext,
+  useContext,
+  type ReactNode,
+} from 'react';
 
 /**
  * ARIA Live Regions for dynamic content announcements
@@ -28,7 +36,7 @@ export function AriaLiveProvider({ children }: { children: ReactNode }) {
   const [statusMessage, setStatusMessage] = useState('');
   const [progressMessage, setProgressMessage] = useState('');
 
-  // Clear messages after announcement
+  // Clear messages after announcement — using useEffect for proper cleanup
   useEffect(() => {
     if (politeMessage) {
       const timer = setTimeout(() => setPoliteMessage(''), 1000);
@@ -43,38 +51,53 @@ export function AriaLiveProvider({ children }: { children: ReactNode }) {
     }
   }, [assertiveMessage]);
 
-  const announce = (message: string, priority: 'assertive' | 'polite' = 'polite') => {
+  useEffect(() => {
+    if (statusMessage) {
+      const timer = setTimeout(() => setStatusMessage(''), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusMessage]);
+
+  useEffect(() => {
+    if (progressMessage) {
+      const timer = setTimeout(() => setProgressMessage(''), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [progressMessage]);
+
+  const announce = useCallback((message: string, priority: 'assertive' | 'polite' = 'polite') => {
     if (priority === 'assertive') {
       setAssertiveMessage(message);
     } else {
       setPoliteMessage(message);
     }
-  };
+  }, []);
 
-  const announceStatus = (message: string) => {
+  const announceStatus = useCallback((message: string) => {
     setStatusMessage(message);
-    setTimeout(() => setStatusMessage(''), 1000);
-  };
+  }, []);
 
-  const announceAlert = (message: string) => {
+  const announceAlert = useCallback((message: string) => {
     setAssertiveMessage(message);
-  };
+  }, []);
 
-  const announceProgress = (current: number, total: number, label = 'Progresso') => {
+  const announceProgress = useCallback((current: number, total: number, label = 'Progresso') => {
     const percentage = Math.round((current / total) * 100);
     setProgressMessage(`${label}: ${percentage}% completo, ${current} de ${total}`);
-    setTimeout(() => setProgressMessage(''), 1500);
-  };
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      announce,
+      announceStatus,
+      announceAlert,
+      announceProgress,
+    }),
+    [announce, announceStatus, announceAlert, announceProgress],
+  );
 
   return (
-    <AriaLiveContext.Provider
-      value={{
-        announce,
-        announceStatus,
-        announceAlert,
-        announceProgress,
-      }}
-    >
+    <AriaLiveContext.Provider value={contextValue}>
       {children}
 
       {/* Polite announcements - non-interruptive */}

@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   ENGRAVING_TABLES,
@@ -91,7 +90,11 @@ export default function AdminExternalDbPage() {
     try {
       const results: TableDiff[] = [];
       for (const t of ENGRAVING_TABLES) {
-        const { data, error } = await invokeEdge('external-db-inspect', {
+        const { data, error } = await invokeEdge<{
+          success?: boolean;
+          error?: string;
+          columns?: string[];
+        }>('external-db-inspect', {
           body: { mode: 'columns', tableName: t.table },
         });
         if (error || !data?.success) {

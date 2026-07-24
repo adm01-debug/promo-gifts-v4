@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from 'react';
 
 interface A11yContextType {
   reducedMotion: boolean;
@@ -101,24 +109,44 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     }
   }, [keyboardMode]);
 
-  const announceMessage = (message: string, priority: 'assertive' | 'polite' = 'polite') => {
-    setAnnouncement({ message, priority });
-    // Clear after announcement
-    setTimeout(() => setAnnouncement(null), 1000);
-  };
+  // Clear announcement after it's read — useEffect for proper cleanup
+  useEffect(() => {
+    if (announcement) {
+      const timer = setTimeout(() => setAnnouncement(null), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [announcement]);
+
+  const announceMessage = useCallback(
+    (message: string, priority: 'assertive' | 'polite' = 'polite') => {
+      setAnnouncement({ message, priority });
+    },
+    [],
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      reducedMotion,
+      highContrast,
+      fontSize,
+      keyboardMode,
+      announceMessage,
+      setFontSize,
+      setHighContrast,
+    }),
+    [
+      reducedMotion,
+      highContrast,
+      fontSize,
+      keyboardMode,
+      announceMessage,
+      setFontSize,
+      setHighContrast,
+    ],
+  );
 
   return (
-    <A11yContext.Provider
-      value={{
-        reducedMotion,
-        highContrast,
-        fontSize,
-        keyboardMode,
-        announceMessage,
-        setFontSize,
-        setHighContrast,
-      }}
-    >
+    <A11yContext.Provider value={contextValue}>
       {children}
 
       {/* Screen Reader Announcements */}

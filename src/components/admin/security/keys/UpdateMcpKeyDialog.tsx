@@ -185,7 +185,7 @@ export function UpdateMcpKeyDialog({ source, open, onOpenChange, onUpdated }: Pr
         handleSuccess(result.data);
       } else {
         // Edição comum: chamada direta (sem step-up).
-        const { data, error } = await invokeEdge('mcp-keys-update', {
+        const { data, error } = await invokeEdge<{ ok: boolean }>('mcp-keys-update', {
           body: { ...body, step_up_token: null },
         });
         if (

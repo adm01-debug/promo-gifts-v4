@@ -80,7 +80,7 @@ export function PromotionDialog({
 
     setSubmitting(true);
     try {
-      const { data, error: invokeErr } = await invokeEdge('manage-users', {
+      const { data, error: invokeErr } = await invokeEdge<{ error?: string }>('manage-users', {
         body: {
           action: 'promote_role',
           user_id: user.user_id,

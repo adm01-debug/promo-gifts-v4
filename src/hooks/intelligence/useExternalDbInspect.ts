@@ -32,7 +32,7 @@ export function useExternalDbInspect() {
     async (action = 'list_tables', params: Record<string, unknown> = {}) => {
       setIsLoading(true);
       try {
-        const { data, error } = await invokeEdge('external-db-inspect', {
+        const { data, error } = await invokeEdge<InspectResult>('external-db-inspect', {
           body: { action, ...params },
         });
         if (error) throw error;

@@ -34,10 +34,7 @@ const log = createClientLogger('cart.analytics');
  *   - `quick_add_selector` → `fromCartId` PODE ser null quando o vendedor
  *     escolhe o primeiro carrinho ativo (não há `activeCart` anterior).
  */
-export const CART_SWITCH_SOURCES = [
-  'quick_add_selector',
-  'seller_carts_page',
-] as const;
+export const CART_SWITCH_SOURCES = ['quick_add_selector', 'seller_carts_page'] as const;
 export type CartSwitchSource = (typeof CART_SWITCH_SOURCES)[number];
 
 /**
@@ -45,10 +42,7 @@ export type CartSwitchSource = (typeof CART_SWITCH_SOURCES)[number];
  *   - `carts_list_page`     — clique em "Gerar Orçamento" no card da lista.
  *   - `cart_detail_header`  — clique no CTA do header dentro de /carrinhos/:id.
  */
-export const CART_CHECKOUT_SOURCES = [
-  'carts_list_page',
-  'cart_detail_header',
-] as const;
+export const CART_CHECKOUT_SOURCES = ['carts_list_page', 'cart_detail_header'] as const;
 export type CartCheckoutSource = (typeof CART_CHECKOUT_SOURCES)[number];
 
 export interface CartCompanySwitchedPayload {
@@ -105,9 +99,9 @@ export interface CartCompanySwitchFailedPayload {
 }
 
 export type CartAnalyticsEvent =
-  | { name: 'cart.company_switched'; ts: string; payload: CartCompanySwitchedPayload }
-  | { name: 'cart.company_switch_failed'; ts: string; payload: CartCompanySwitchFailedPayload }
   | { name: 'cart.checkout_started'; ts: string; payload: CheckoutStartedPayload }
+  | { name: 'cart.company_switch_failed'; ts: string; payload: CartCompanySwitchFailedPayload }
+  | { name: 'cart.company_switched'; ts: string; payload: CartCompanySwitchedPayload }
   | { name: 'cart.quote_finalized'; ts: string; payload: QuoteFinalizedPayload };
 
 const E2E_BUFFER_KEY = '__e2eAnalytics__';
@@ -157,9 +151,7 @@ export function trackCartCheckoutStarted(payload: CheckoutStartedPayload): void 
   pushToE2EBuffer(evt);
 }
 
-export function trackCartCompanySwitchFailed(
-  payload: CartCompanySwitchFailedPayload,
-): void {
+export function trackCartCompanySwitchFailed(payload: CartCompanySwitchFailedPayload): void {
   const evt: CartAnalyticsEvent = {
     name: 'cart.company_switch_failed',
     ts: new Date().toISOString(),
@@ -172,6 +164,7 @@ export function trackCartCompanySwitchFailed(
 }
 
 /** Helper de teste — limpa o buffer entre cenários. */
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export function __resetCartAnalyticsBufferForTests(): void {
   if (typeof window === 'undefined') return;
   (window as unknown as Record<string, unknown>)[E2E_BUFFER_KEY] = [];

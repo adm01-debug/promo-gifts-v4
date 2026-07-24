@@ -17,18 +17,18 @@ import type { InvokeFnSummary, InvokeGlobalSummary } from './invokeTelemetrySink
 
 export type EndpointCategory =
   | 'auth'
+  | 'comparison'
+  | 'connection'
   | 'crm'
+  | 'dropbox'
   | 'magazine'
   | 'magic-up'
-  | 'webhook'
-  | 'comparison'
-  | 'dropbox'
-  | 'visual-search'
-  | 'connection'
-  | 'secrets'
   | 'mcp'
+  | 'other'
   | 'quote'
-  | 'other';
+  | 'secrets'
+  | 'visual-search'
+  | 'webhook';
 
 interface CategoryRule {
   category: EndpointCategory;
@@ -103,7 +103,8 @@ export function computeBottleneckScore(s: InvokeFnSummary): { score: number; rea
   const volumeBoost = Math.log10(1 + Math.max(0, s.total));
   const breakerPenalty = s.breakerOpen > 0 ? 5 + s.breakerOpen : 0;
 
-  const score = Math.round((latencyPenalty + errorPenalty + breakerPenalty) * (1 + volumeBoost) * 10) / 10;
+  const score =
+    Math.round((latencyPenalty + errorPenalty + breakerPenalty) * (1 + volumeBoost) * 10) / 10;
 
   const parts: string[] = [];
   if (p95 > 300) parts.push(`p95 ${p95}ms`);
@@ -156,7 +157,7 @@ export function rollupByCategory(summary: InvokeGlobalSummary): CategoryRollup[]
     cur.failed += s.failed;
     cur.breakerOpen += s.breakerOpen;
     if (typeof s.p95Ms === 'number') {
-      cur.worstP95Ms = cur.worstP95Ms == null ? s.p95Ms : Math.max(cur.worstP95Ms, s.p95Ms);
+      cur.worstP95Ms = cur.worstP95Ms === null ? s.p95Ms : Math.max(cur.worstP95Ms, s.p95Ms);
     }
     map.set(cat, cur);
   }

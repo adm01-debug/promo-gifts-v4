@@ -74,7 +74,6 @@ async function ensureCrmSession(): Promise<void> {
   }
 }
 
-
 // ============================================
 // CIRCUIT BREAKER para 429 / rate-limit
 // ============================================
@@ -396,7 +395,6 @@ function isStatementTimeout(msg: string): boolean {
   return lower.includes('statement timeout') || lower.includes('57014') || lower.includes('504');
 }
 
-
 /**
  * Padroes que indicam erros DEFINITIVOS — nunca fazer retry.
  */
@@ -511,7 +509,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
     };
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      const { data, error } = await invokeEdge<{ error?: string } & Record<string, unknown>>(
+      const { data, error } = await invokeEdge<Record<string, unknown> & { error?: string }>(
         'crm-db-bridge',
         {
           body: query,
@@ -536,7 +534,12 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
           table: query.table,
           message: safeCrmLogMessage(msg),
         });
-        return { data: [], count: 0, stale: true, error: 'statement_timeout' } as unknown as CrmResponse<T>;
+        return {
+          data: [],
+          count: 0,
+          stale: true,
+          error: 'statement_timeout',
+        } as unknown as CrmResponse<T>;
       }
 
       // Rate-limit: ativa circuit breaker (que drena a fila) e nao faz retry
@@ -549,7 +552,6 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
         });
         throw new Error(`CRM DB error: ${msg}`);
       }
-
 
       if (attempt < MAX_RETRIES && isRetryableCrmError(msg)) {
         const delay = INITIAL_BACKOFF_MS * 2 ** attempt;

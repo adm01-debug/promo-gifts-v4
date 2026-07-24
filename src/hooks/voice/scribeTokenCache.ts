@@ -41,7 +41,7 @@ export async function getScribeToken(): Promise<string> {
 
 async function fetchToken(): Promise<string | null> {
   try {
-    const { data, error } = await invokeEdge('elevenlabs-scribe-token');
+    const { data, error } = await invokeEdge<{ token?: string }>('elevenlabs-scribe-token');
     if (error || !data?.token) {
       logger.warn('[Voice] Failed to fetch Scribe token:', error);
       cachedToken = null;

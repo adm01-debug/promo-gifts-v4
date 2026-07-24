@@ -42,6 +42,7 @@ ALLOWLIST=(
   personalization_simulations
   personalization_techniques
   print_area_techniques
+  product_badge_definitions
   product_category_assignments
   product_component_location_techniques
   product_group_components

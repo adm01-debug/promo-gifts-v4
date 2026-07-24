@@ -4,7 +4,10 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { __resetBreakers } from '@/lib/auth/safeAuthCall';
-import { resetStructuredLoggerMock, structuredLoggerMockFactory } from '@/test/mockStructuredLogger';
+import {
+  resetStructuredLoggerMock,
+  structuredLoggerMockFactory,
+} from '@/test/mockStructuredLogger';
 
 vi.mock('@/lib/telemetry/structuredLogger', async () => {
   const mod = await import('@/test/mockStructuredLogger');
@@ -17,7 +20,7 @@ const mockAuth = {
   exchangeCodeForSession: vi.fn(),
 };
 vi.mock('@/integrations/supabase/lazy-client', () => ({
-  getSupabaseClient: async () => ({ auth: mockAuth }),
+  getSupabaseClient: () => Promise.resolve({ auth: mockAuth }),
 }));
 
 import { authService } from '@/services/authService';

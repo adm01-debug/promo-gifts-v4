@@ -110,7 +110,11 @@ export async function syncQuoteToBitrix({
     logger.warn('PDF generation failed:', pdfErr);
   }
 
-  const { data, error } = await invokeEdge('sync-quote-bitrix', {
+  const { data, error } = await invokeEdge<{
+    ok: boolean;
+    error?: string;
+    result?: { quote_id?: string; message?: string };
+  }>('sync-quote-bitrix', {
     body: {
       quote,
       proposalData,

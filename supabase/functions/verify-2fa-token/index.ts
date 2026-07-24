@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.4';
 import * as OTPAuth from 'https://esm.sh/otpauth@9.3.5';
-import { buildPublicCorsHeaders } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
 import { createStructuredLogger } from '../_shared/structured-logger.ts';
 import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
@@ -27,18 +27,19 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-const corsHeaders = buildPublicCorsHeaders();
-
-function json(data: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json', ...extraHeaders },
-  });
+function makeJson(cors: Record<string, string>) {
+  return (data: unknown, status = 200, extraHeaders: Record<string, string> = {}) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...cors, 'Content-Type': 'application/json', ...extraHeaders },
+    });
 }
 
 Deno.serve(async (req: Request) => {
   const requestId = getOrCreateRequestId(req);
   const log = createStructuredLogger({ fn: 'verify-2fa-token', requestId, req });
+  const corsHeaders = getCorsHeaders(req);
+  const json = makeJson(corsHeaders);
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

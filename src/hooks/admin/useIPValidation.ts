@@ -20,7 +20,7 @@ export function useIPValidation() {
     try {
       // Usar a nossa própria edge function que é mais confiável e contorna AdBlockers
       const supabase = await getSupabaseClient();
-      const { data, error } = await invokeEdge('get-visitor-info');
+      const { data, error } = await invokeEdge<{ ip?: string }>('get-visitor-info');
       if (error || !data?.ip) {
         logger.warn('Fallback to secondary IP identification');
         const ipCtrl = new AbortController();

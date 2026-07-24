@@ -96,10 +96,12 @@ export default function OwnershipAuditAdminPage() {
   async function runNow() {
     setRunning(true);
     try {
-      const { data, error } = await invokeEdge('ownership-audit', {
+      const { data, error } = await invokeEdge<{
+        summary?: { total_tables_scanned: number; total_issues_found: number };
+      }>('ownership-audit', {
         body: { triggered_by: 'manual_admin' },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       toast.success(
         `Auditoria concluída: ${data?.summary?.total_tables_scanned ?? 0} tabelas, ` +
           `${data?.summary?.total_issues_found ?? 0} problemas.`,

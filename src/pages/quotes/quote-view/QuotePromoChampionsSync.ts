@@ -3,7 +3,6 @@
  * Reaproveita a infra do outbound_webhooks (registro em /admin/conexoes).
  * Idempotência é garantida pelo próprio dispatcher via correlation key do payload.
  */
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import type { Quote } from '@/hooks/quotes';
@@ -31,34 +30,35 @@ export async function syncQuoteToPromoChampions({
   }
   const quoteId = quote.id;
 
-  logQuoteHistory(
-    quoteId,
-    'sync_started',
-    'Sincronização com Promo Champions iniciada',
-  ).catch((err) => {
-    logger.warn('logQuoteHistory(sync_started PC) failed', { err, quoteId });
-  });
+  logQuoteHistory(quoteId, 'sync_started', 'Sincronização com Promo Champions iniciada').catch(
+    (err) => {
+      logger.warn('logQuoteHistory(sync_started PC) failed', { err, quoteId });
+    },
+  );
 
   // Evento canônico `quote.sent` — o dispatcher fanout para todos os webhooks
   // registrados que assinam esse evento (Promo Champions inclui-se aí).
   // `correlation_key` no payload garante dedupe no destino.
   const correlationKey = `quote:${quoteId}:sent:${quote.updated_at ?? ''}`;
 
-  const { data, error } = await invokeEdge('quote-sync-promo-champions', {
-    body: {
-      quote_id: quoteId,
-      quote_number: quote.quote_number,
-      status: quote.status,
-      client_id: quote.client_id,
-      client_name: quote.client_name,
-      total: quote.total,
-      updated_at: quote.updated_at,
-      seller_email: userEmail,
+  const { data, error } = await invokeEdge<{ ok?: boolean; error?: string }>(
+    'quote-sync-promo-champions',
+    {
+      body: {
+        quote_id: quoteId,
+        quote_number: quote.quote_number,
+        status: quote.status,
+        client_id: quote.client_id,
+        client_name: quote.client_name,
+        total: quote.total,
+        updated_at: quote.updated_at,
+        seller_email: userEmail,
+      },
     },
-  });
+  );
 
-  if (error || (data?.ok === false)) {
-    const msg = (data?.error) || error?.message || 'Erro desconhecido';
+  if (error || data?.ok === false) {
+    const msg = data?.error || error?.message || 'Erro desconhecido';
     await logQuoteHistory(
       quoteId,
       'sync_error',
@@ -67,12 +67,9 @@ export async function syncQuoteToPromoChampions({
     throw new Error(msg);
   }
 
-  await logQuoteHistory(
-    quoteId,
-    'sync_success',
-    'Sincronizado com Promo Champions',
-    { correlation_key: correlationKey },
-  );
+  await logQuoteHistory(quoteId, 'sync_success', 'Sincronizado com Promo Champions', {
+    correlation_key: correlationKey,
+  });
 
   toast.success('Orçamento enviado ao Promo Champions!');
   return { success: true };

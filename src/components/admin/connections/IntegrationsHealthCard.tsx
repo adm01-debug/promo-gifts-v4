@@ -263,7 +263,11 @@ export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatu
   const handleAudit = async () => {
     setAuditing(true);
     try {
-      const { data: report, error } = await invokeEdge('connections-hub-audit');
+      const { data: report, error } = await invokeEdge<{
+        score: number;
+        passed: number;
+        total: number;
+      }>('connections-hub-audit');
       if (error) throw error;
       const score = report?.score ?? 0;
       const passed = report?.passed ?? 0;

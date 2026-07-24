@@ -41,7 +41,9 @@ Deno.serve(async (req) => {
     const tag = `audit-${Date.now().toString(36)}`;
     const seller1Email = `${tag}-s1@audit.local`;
     const seller2Email = `${tag}-s2@audit.local`;
-    const password = "AuditPassword123!";
+    const pwBytes = new Uint8Array(18);
+    crypto.getRandomValues(pwBytes);
+    const password = Array.from(pwBytes, b => b.toString(16).padStart(2, '0')).join('');
 
     // 1. Setup Users
     const createS1 = await admin.auth.admin.createUser({ email: seller1Email, password, email_confirm: true });

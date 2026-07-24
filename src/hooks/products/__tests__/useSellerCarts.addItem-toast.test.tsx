@@ -59,10 +59,10 @@ function makeChain(): unknown {
     get(_t, prop: string) {
       if (prop === 'then') return undefined;
       if (prop === 'maybeSingle' || prop === 'single') {
-        return async () => ({ data: null, error: null });
+        return () => ({ data: null, error: null });
       }
       if (prop === 'insert') {
-        return async (_payload: unknown) => insertError();
+        return (_payload: unknown) => insertError();
       }
       // .select/.eq/.is/.update/.order/... encadeiam fluentemente.
       return () => proxy;
@@ -95,9 +95,7 @@ describe('useSellerCarts · toast de erro do addItem (contrato de UI)', () => {
 
   it('SSOT · título e descrição estão fixados em sellerCartToasts', () => {
     // Guard-rail: se alguém renomear a chave, o teste falha antes do build.
-    expect(SELLER_CART_TOASTS.addItemError.title).toBe(
-      'Não foi possível adicionar ao carrinho',
-    );
+    expect(SELLER_CART_TOASTS.addItemError.title).toBe('Não foi possível adicionar ao carrinho');
   });
 
   it('onError · usa o título SSOT e delega description a sanitizeError, SEM duration', async () => {

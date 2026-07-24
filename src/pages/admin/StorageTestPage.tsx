@@ -161,7 +161,7 @@ export default function StorageTestPage() {
       const { error } = await invokeEdge('sync-external-db', {
         body: { table, direction: 'to-external' },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       toast({ title: 'Sucesso', description: 'Sincronização concluída.' });
     } catch {
       toast({
