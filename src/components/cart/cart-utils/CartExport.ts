@@ -13,9 +13,9 @@ import { formatCurrency } from '../CartUtilComponents';
  *    com = + - @ TAB ou CR são prefixados com aspa simples para não serem
  *    interpretados como fórmula ao abrir a planilha.
  */
-export function csvCell(value: string | number | null | undefined): string {
+export function csvCell(value: number | string | null | undefined): string {
   const raw = value === null || value === undefined ? '' : String(value);
-  const guarded = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+  const guarded = /^[=+\-@\t\r\n]/.test(raw) ? `'${raw}` : raw;
   return `"${guarded.replace(/"/g, '""')}"`;
 }
 
@@ -69,7 +69,7 @@ export function buildCartCsv(cart: SellerCart): string {
   return [header, ...rows].join('\n');
 }
 
-export function exportCartToCSV(cart: SellerCart) {
+export function exportCartToCSV(cart: SellerCart): void {
   const csv = buildCartCsv(cart);
   // Prefixa BOM para o Excel reconhecer UTF-8 e exibir acentos corretamente.
   const BOM = '\uFEFF';
@@ -83,7 +83,7 @@ export function exportCartToCSV(cart: SellerCart) {
   toast.success('CSV exportado com sucesso');
 }
 
-export async function exportCartToPDF(cart: SellerCart) {
+export async function exportCartToPDF(cart: SellerCart): Promise<void> {
   const { default: jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
 
@@ -133,7 +133,7 @@ export async function exportCartToPDF(cart: SellerCart) {
   toast.success('PDF exportado com sucesso');
 }
 
-export function shareCartLink(cartId: string) {
+export function shareCartLink(cartId: string): void {
   const url = `${window.location.origin}/carrinhos/${cartId}`;
   const clip = navigator.clipboard?.writeText?.(url);
   // Em contexto inseguro (HTTP) ou sem permissão, a Clipboard API pode estar

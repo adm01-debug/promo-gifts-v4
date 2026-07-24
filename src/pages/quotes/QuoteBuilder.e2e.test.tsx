@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useQuoteBuilderState } from '@/hooks/quotes/useQuoteBuilderState';
@@ -25,12 +26,11 @@ vi.mock('@/hooks/quotes', async () => {
   return {
     ...actual,
     useQuotes: () => ({
-      createQuote: vi.fn(async () => ({ id: 'new-id', quote_number: 'ORC-1' })),
+      createQuote: vi.fn(() => ({ id: 'new-id', quote_number: 'ORC-1' })),
       updateQuote: vi.fn(),
       fetchQuote: vi.fn(),
       isLoading: false,
     }),
-    useQuoteTemplates: () => ({ templates: [] }),
     useSellerDiscountLimits: () => ({ myLimit: 10 }),
     useDiscountApproval: () => ({ requestApproval: vi.fn() }),
   };
@@ -51,7 +51,7 @@ describe('QuoteBuilder Full E2E Flow (Logic)', () => {
     vi.clearAllMocks();
   });
 
-  it('should show validation errors when mandatory fields are missing', async () => {
+  it('should show validation errors when mandatory fields are missing', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
 
     // 1. Início: sem empresa/contato
@@ -108,7 +108,7 @@ describe('QuoteBuilder Full E2E Flow (Logic)', () => {
     expect(result.current.validationErrors).not.toContain('valor_frete');
   });
 
-  it('should complete the full wizard flow logically', async () => {
+  it('should complete the full wizard flow logically', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
 
     // 1. Cliente

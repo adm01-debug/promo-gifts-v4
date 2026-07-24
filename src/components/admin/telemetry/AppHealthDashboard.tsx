@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { REQUEST_ID_LOOKUP_EVENT } from '@/lib/edge/invokeExport';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -52,8 +53,10 @@ export function AppHealthDashboard() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const { data, isLoading, isFetching, refetch } = useAppHealth(windowMinutes);
 
-  const handleLookup = async () => {
-    const id = requestIdQuery.trim();
+  const lookupCardRef = useRef<HTMLDivElement | null>(null);
+
+  const runLookup = async (rawId: string) => {
+    const id = rawId.trim();
     if (!id) return;
     setLookupLoading(true);
     try {
@@ -68,6 +71,24 @@ export function AppHealthDashboard() {
       setLookupLoading(false);
     }
   };
+
+  const handleLookup = () => runLookup(requestIdQuery);
+
+  useEffect(() => {
+    const handler = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ requestId?: string }>).detail;
+      const id = detail?.requestId?.trim();
+      if (!id) return;
+      setRequestIdQuery(id);
+      void runLookup(id);
+      if (lookupCardRef.current) {
+        lookupCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    window.addEventListener(REQUEST_ID_LOOKUP_EVENT, handler as EventListener);
+    return () => window.removeEventListener(REQUEST_ID_LOOKUP_EVENT, handler as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const kpis = data?.kpis;
   const topRoutesByError = data?.top_routes_by_error ?? [];
@@ -154,7 +175,7 @@ export function AppHealthDashboard() {
       </div>
 
       {/* Lookup por request-id */}
-      <Card>
+      <Card ref={lookupCardRef} data-testid="app-health-lookup-card">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm">
             <Search className="h-4 w-4 text-primary" />
@@ -434,7 +455,7 @@ function KpiCard({
   label: string;
   value: string;
   sub?: string;
-  tone?: 'muted' | 'warning' | 'destructive';
+  tone?: 'destructive' | 'muted' | 'warning';
 }) {
   return (
     <Card

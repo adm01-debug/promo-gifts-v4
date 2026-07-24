@@ -3,16 +3,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   Bookmark,
   BookmarkPlus,
@@ -364,25 +355,17 @@ export function SavedFilters<T = Record<string, unknown>>({
       </Popover>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir filtro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O filtro será removido permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteConfirmId && handleDeleteFilter(deleteConfirmId)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(o) => !o && setDeleteConfirmId(null)}
+        variant="destructive"
+        title="Excluir filtro?"
+        description="Esta ação não pode ser desfeita. O filtro será removido permanentemente."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={() => { if (deleteConfirmId) handleDeleteFilter(deleteConfirmId); }}
+        testId="saved-filters-delete-dialog"
+      />
     </>
   );
 }

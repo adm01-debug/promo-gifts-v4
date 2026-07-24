@@ -30,7 +30,7 @@ import { SpaceScene } from '@/pages/auth/AuthBranding';
  *  - `confirmed`: tudo OK, navegando para destino
  *  - `failed`: erro detectado, redirecionando para /login
  */
-type CallbackStatus = 'processing' | 'slow' | 'confirming' | 'confirmed' | 'failed';
+type CallbackStatus = 'confirmed' | 'confirming' | 'failed' | 'processing' | 'slow';
 
 const CONFIRMED_HOLD_MS = 700;
 const SLOW_HINT_MS = 3000;
@@ -179,23 +179,28 @@ export default function SSOCallbackPage() {
         if (code) {
           tracer.setFlow('pkce');
           tracer.step('pkce-exchange-start', { codePrefix: `${code.slice(0, 6)}…` });
-          const { data: exData, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) {
-            tracer.stepError('pkce-exchange-failed', exchangeError);
+          const { authService } = await import('@/services/authService');
+          const exRes = await authService.exchangeCodeForSessionSafe(code);
+          if (exRes.kind === 'err') {
+            tracer.stepError('pkce-exchange-failed', new Error(exRes.userMessage));
             logger.error('[sso-callback] exchangeCodeForSession failed', {
               flowId: tracer.flowId,
-              message: exchangeError.message,
+              errorKind: exRes.errorKind,
             });
-            goLogin(exchangeError.message);
+            goLogin(exRes.userMessage);
             return;
           }
-          tracer.captureSession(exData?.session ?? null);
+          const exData = exRes.data as { session?: unknown } | null;
+          const session = (exData?.session ?? null) as
+            | Parameters<typeof tracer.captureSession>[0];
+          tracer.captureSession(session);
           tracer.step('pkce-exchange-ok', {
-            hasSession: !!exData?.session,
-            provider: exData?.session?.user?.app_metadata?.provider ?? null,
+            hasSession: !!session,
+            provider:
+              (session as { user?: { app_metadata?: { provider?: string } } } | null)?.user
+                ?.app_metadata?.provider ?? null,
           });
-          await goHome(exData?.session ?? null);
+          await goHome(session);
           return;
         }
 
@@ -292,10 +297,7 @@ export default function SSOCallbackPage() {
         </div>
         {status === 'failed' && errorDetail && (
           <div
-            className={
-              'w-full rounded-lg border px-3 py-2 text-left text-xs ' +
-              SEVERITY_STYLES[errorDetail.severity]
-            }
+            className={`w-full rounded-lg border px-3 py-2 text-left text-xs ${SEVERITY_STYLES[errorDetail.severity]}`}
             data-testid="sso-callback-hint"
             data-severity={errorDetail.severity}
             data-error-code={errorDetail.code}
@@ -366,10 +368,7 @@ function StatusSteps({ status }: { status: CallbackStatus }) {
             className={`flex flex-1 flex-col items-center gap-2 ${done ? 'text-white' : ''}`}
           >
             <span
-              className={
-                'h-1.5 w-full rounded-full transition-all duration-500 ' +
-                (done ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/5')
-              }
+              className={`h-1.5 w-full rounded-full transition-all duration-500 ${done ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/5'}`}
               aria-current={active ? 'step' : undefined}
             />
             <span>{s.label}</span>

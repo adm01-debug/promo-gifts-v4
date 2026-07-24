@@ -20,7 +20,7 @@ export interface TrendingScoreInput {
 export interface TrendingScoreResult {
   score: number; // 0..∞ (1.0 = estável; >1 cresceu; <1 caiu)
   growthPercent: number; // crescimento % vs baseline
-  classification: 'rising' | 'stable' | 'falling' | 'new';
+  classification: 'falling' | 'new' | 'rising' | 'stable';
 }
 
 /**
@@ -79,7 +79,7 @@ export function calculateDelta(
   previous: number,
 ): {
   delta: number;
-  direction: 'up' | 'down' | 'neutral';
+  direction: 'down' | 'neutral' | 'up';
   isSignificant: boolean;
 } | null {
   if (previous === 0 && current === 0) return null;

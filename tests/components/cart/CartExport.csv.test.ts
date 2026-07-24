@@ -28,7 +28,7 @@ const makeCart = (items: Partial<typeof baseItem>[]): SellerCart =>
     company_location: null,
     company_logo_url: null,
     notes: null,
-    status: 'novo',
+    status: 'em_separacao',
     created_at: '',
     updated_at: '',
     items: items.map((i) => ({ ...baseItem, ...i })),

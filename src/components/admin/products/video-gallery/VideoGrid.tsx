@@ -213,7 +213,7 @@ export function VideoGrid({
                     <Button
                       type="button"
                       size="icon"
-                      aria-label="Carregando"
+                      aria-label={regeneratingId === video.id ? 'Gerando miniatura...' : 'Gerar miniatura'}
                       variant="ghost"
                       className="h-6 w-6 bg-foreground/50 text-primary-foreground hover:bg-warning"
                       disabled={regeneratingId === video.id}

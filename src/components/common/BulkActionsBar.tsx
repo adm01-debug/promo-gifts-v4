@@ -1,12 +1,11 @@
 import { type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
 
 export interface BulkAction {
   id: string;
   label: string;
   icon: ReactNode;
-  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost';
+  variant?: 'default' | 'destructive' | 'ghost' | 'outline' | 'secondary';
   onClick: (ids: string[]) => void;
 }
 
@@ -27,7 +26,7 @@ export function BulkActionsBar({
   selectedIds,
   entityLabel = 'item',
   actions,
-  onClear,
+  onClear: _onClear,
   showSelectAllBanner,
   totalCount,
   onSelectAll,
@@ -55,11 +54,6 @@ export function BulkActionsBar({
                 {action.label}
               </Button>
             ))}
-
-            <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={onClear}>
-              <X className="h-3.5 w-3.5" />
-              Limpar
-            </Button>
           </div>
 
           {showSelectAllBanner && totalCount && onSelectAll && (

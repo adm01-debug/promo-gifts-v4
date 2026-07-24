@@ -17,6 +17,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type IncidentSeverity = 'P0' | 'P1' | 'P2';
 export type IncidentSource = 'notification' | 'test_history';
@@ -143,10 +144,19 @@ async function fetchIncidents(): Promise<IncidentItem[]> {
 }
 
 export function useRecentIncidents() {
+  // BUG-INCIDENT-403 FIX (2026-06-22): adicionado rolesLoaded + isAdmin guard.
+  // Sem guard, fetchIncidents disparava durante o boot com JWT não validado,
+  // causando requests desnecessários a workspace_notifications e
+  // connection_test_history antes da sessão estar pronta.
+  // Incidentes são dados de admin — sem isAdmin o resultado seria [] de qualquer forma.
+  const { rolesLoaded, isAdmin } = useAuth();
   return useQuery({
     queryKey: ['connections-recent-incidents'],
     queryFn: fetchIncidents,
+    enabled: rolesLoaded && isAdmin,  // garante JWT pronto + permissão admin
     refetchInterval: 60_000,
     staleTime: 30_000,
+    retry: 0,
+    retryOnMount: false,
   });
 }

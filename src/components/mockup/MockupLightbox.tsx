@@ -63,7 +63,7 @@ export function MockupLightbox({
                     </Badge>
                     {mockup.location_name && (
                       <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                        <MapPin className="h-2.5 w-2.5" /> {mockup.location_name}
+                        <MapPin aria-hidden="true" className="h-2.5 w-2.5" /> {mockup.location_name}
                       </span>
                     )}
                   </div>
@@ -77,7 +77,7 @@ export function MockupLightbox({
                   </Badge>
                 )}
                 <span className="flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
-                  <Clock className="h-3 w-3" />
+                  <Clock aria-hidden="true" className="h-3 w-3" />
                   {formatDistanceToNow(new Date(mockup.created_at), {
                     addSuffix: true,
                     locale: ptBR,
@@ -91,7 +91,7 @@ export function MockupLightbox({
                   className="h-8 gap-1.5 border-border bg-muted text-xs text-foreground hover:bg-muted"
                   onClick={() => onLoadFromHistory(mockup)}
                 >
-                  <RotateCcw className="h-3.5 w-3.5" /> Regenerar
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" /> Regenerar
                 </Button>
                 <ShareMenu
                   mockupUrl={mockup.mockup_url}
@@ -104,16 +104,16 @@ export function MockupLightbox({
                   className="h-8 gap-1.5 border-border bg-muted text-xs text-foreground hover:bg-muted"
                   onClick={() => onDownload(mockup.layout_url || mockup.mockup_url)}
                 >
-                  <Download className="h-3.5 w-3.5" /> Baixar PDF
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" /> Baixar PDF
                 </Button>
                 <Button
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8 text-muted-foreground hover:bg-muted hover:text-primary-foreground"
                   onClick={handleClose}
-                  aria-label="Fechar"
+                  aria-label="Fechar lightbox"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </div>
             </div>
@@ -141,25 +141,25 @@ export function MockupLightbox({
               <div className="flex items-center gap-1">
                 <Button
                   size="icon"
-                  aria-label="Reduzir"
+                  aria-label="Diminuir zoom"
                   variant="ghost"
                   className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-primary-foreground"
                   onClick={() => setZoom((z) => Math.max(z - 0.25, 0.25))}
                   disabled={zoom <= 0.25}
                 >
-                  <ZoomOut className="h-3.5 w-3.5" />
+                  <ZoomOut className="h-3.5 w-3.5" aria-hidden="true" />
                 </Button>
                 <span className="w-12 text-center text-xs font-medium text-muted-foreground">
                   {Math.round(zoom * 100)}%
                 </span>
                 <Button
                   size="icon"
-                  aria-label="Ampliar"
+                  aria-label="Aumentar zoom"
                   variant="ghost"
                   className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-primary-foreground"
                   onClick={() => setZoom((z) => Math.min(z + 0.25, 5))}
                 >
-                  <ZoomIn className="h-3.5 w-3.5" />
+                  <ZoomIn className="h-3.5 w-3.5" aria-hidden="true" />
                 </Button>
                 <Button
                   size="icon"
@@ -168,7 +168,7 @@ export function MockupLightbox({
                   className="h-7 w-7 text-muted-foreground hover:bg-muted hover:text-primary-foreground"
                   onClick={() => setZoom(1)}
                 >
-                  <RotateCcw className="h-3 w-3" />
+                  <RotateCcw className="h-3 w-3" aria-hidden="true" />
                 </Button>
               </div>
             </div>

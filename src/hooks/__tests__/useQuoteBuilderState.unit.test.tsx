@@ -34,7 +34,6 @@ vi.mock('@/hooks/quotes', () => ({
     fetchQuote: vi.fn(),
     isLoading: false,
   })),
-  useQuoteTemplates: vi.fn(() => ({ templates: [] })),
   useQuoteItems: vi.fn(() => ({
     items: [],
     setItems: vi.fn(),

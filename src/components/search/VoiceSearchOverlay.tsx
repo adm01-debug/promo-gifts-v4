@@ -43,7 +43,7 @@ const PHASE_META: Record<VoiceAgentPhase, { title: string; subtitle: string; emo
 };
 
 export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOverlayProps>(
-  function VoiceSearchOverlay(
+  (
     {
       isOpen,
       phase,
@@ -61,7 +61,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
       onSimulateCommand,
     },
     _ref,
-  ) {
+  ) => {
     const [isAutoStarting, setIsAutoStarting] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [bootingTimedOut, setBootingTimedOut] = useState(false);
@@ -157,7 +157,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
 
     // Border glow
     const borderGlow = useMemo(() => {
-      const match = colors.primary.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+      const match = /hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/.exec(colors.primary);
       const [h, s, l] = match ? [match[1], match[2], match[3]] : ['220', '80', '55'];
       return {
         border: `hsla(${h}, ${s}%, ${l}%, 0.35)`,
@@ -169,7 +169,7 @@ export const VoiceSearchOverlay = React.forwardRef<HTMLDivElement, VoiceSearchOv
     }, [colors.primary]);
 
     // Haptic feedback
-    const vibrate = useCallback((pattern: number | number[]) => {
+    const vibrate = useCallback((pattern: number[] | number) => {
       try {
         navigator?.vibrate?.(pattern);
       } catch {

@@ -10,8 +10,10 @@
  *       → nunca conta o mesmo `id` 2x, mesmo se upstream juntar SKU×fornecedor
  *         e emitir linhas duplicadas.
  *   I2  confirmedUnits + inTransitUnits + pendingUnits + partialUnits
- *           + completedUnits + cancelledUnits === totalUnits
- *       → a soma por status fecha exatamente com o total (sem dupla contagem).
+ *           + completedUnits + cancelledUnits + (unknown-status units) === totalUnits
+ *       → entradas com status desconhecido somam em totalUnits mas não em
+ *         nenhum bucket nomeado; os buckets nomeados fecham com totalUnits
+ *         apenas quando todos os status são conhecidos.
  *   I3  uniqueProducts <= totalEntries
  *   I4  overdueCount <= totalEntries
  *   I5  totalUnits >= 0 (qualquer `expectedQuantity` negativo é tratado como 0).

@@ -55,7 +55,9 @@ vi.mock('@/lib/logger', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   // Default: fetchMyLimit retorna null (sem limite cadastrado)
-  mockSelect.mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null }) }) });
+  mockSelect.mockReturnValue({
+    eq: vi.fn().mockReturnValue({ maybeSingle: vi.fn().mockResolvedValue({ data: null }) }),
+  });
   mockOrder.mockResolvedValue({ data: [], error: null });
   mockUpsert.mockReturnValue({ error: null });
   mockEq.mockReturnValue({ error: null });
@@ -109,8 +111,30 @@ describe('fetchMyLimit', () => {
     const { supabase } = await import('@/integrations/supabase/client');
 
     renderHook(() => useSellerDiscountLimits());
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise((r) => {
+      setTimeout(r, 50);
+    });
     expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  // BUG-LIMIT-SILENT-FAIL regression:
+  // Previously { error } was not destructured — a network failure or RLS denial left
+  // myLimit=null which callers treated as "no limit configured" → unlimited discounts.
+  it('BUG-LIMIT-SILENT-FAIL: loga erro e mantém myLimit=null quando DB retorna error', async () => {
+    const eqFn = vi.fn().mockReturnValue({
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: { message: 'Network error' } }),
+    });
+    mockSelect.mockReturnValue({ eq: eqFn });
+
+    const { logger } = await import('@/lib/logger');
+    const { result } = renderHook(() => useSellerDiscountLimits());
+    await waitFor(() => expect(mockSelect).toHaveBeenCalled());
+
+    expect(vi.mocked(logger.error)).toHaveBeenCalledWith(
+      'Error fetching seller discount limit:',
+      expect.anything(),
+    );
+    expect(result.current.myLimit).toBeNull();
   });
 });
 

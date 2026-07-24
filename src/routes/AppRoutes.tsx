@@ -14,6 +14,37 @@ import { quoteRoutes } from './quote-routes';
 import { toolsRoutes } from './tools-routes';
 import { OptimizedImageDemo } from './lazy-pages';
 
+// Dev-only visual harness — não monta em build de produção.
+// Suíte versionada em e2e/visual/preview-button.spec.ts e protegida
+// pelo gate scripts/check-visual-preview-suite.mjs.
+const PreviewButtonHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/PreviewButtonHarness'))
+  : null;
+const QuoteViewOrderHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/QuoteViewOrderHarness'))
+  : null;
+const QuoteItemsListMobileHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/QuoteItemsListMobileHarness'))
+  : null;
+const QuoteItemEditorSheetHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/QuoteItemEditorSheetHarness'))
+  : null;
+const QuoteAddProductButtonHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/QuoteAddProductButtonHarness'))
+  : null;
+const CalendarHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/CalendarHarness'))
+  : null;
+const DatePickerFieldHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/DatePickerFieldHarness'))
+  : null;
+const NegotiationMarkupCardHarness = import.meta.env.DEV
+  ? lazyWithRetry(() => import('@/pages/__visual/NegotiationMarkupCardHarness'))
+  : null;
+
+
+
+
 // NProgress configuration
 NProgress.configure({ showSpinner: false, speed: 250, minimum: 0.2, trickleSpeed: 100 });
 
@@ -99,6 +130,47 @@ export function AppRoutes() {
             /debug/images was previously inside toolsRoutes (ProtectedRoute)
             which caused E2E specs to fail with auth redirect. */}
         <Route path="/debug/images" element={<OptimizedImageDemo />} />
+
+        {/* Dev-only visual regression harness — não monta em produção */}
+        {PreviewButtonHarness && (
+          <Route path="/__visual/preview-button" element={<PreviewButtonHarness />} />
+        )}
+        {QuoteViewOrderHarness && (
+          <Route path="/__visual/quote-view-order" element={<QuoteViewOrderHarness />} />
+        )}
+        {QuoteItemsListMobileHarness && (
+          <Route
+            path="/__visual/quote-items-list-mobile"
+            element={<QuoteItemsListMobileHarness />}
+          />
+        )}
+        {QuoteItemEditorSheetHarness && (
+          <Route
+            path="/__visual/quote-item-editor-sheet"
+            element={<QuoteItemEditorSheetHarness />}
+          />
+        )}
+        {QuoteAddProductButtonHarness && (
+          <Route
+            path="/__visual/quote-add-product-button"
+            element={<QuoteAddProductButtonHarness />}
+          />
+        )}
+        {CalendarHarness && (
+          <Route path="/__visual/calendar" element={<CalendarHarness />} />
+        )}
+        {DatePickerFieldHarness && (
+          <Route path="/__visual/date-picker-field" element={<DatePickerFieldHarness />} />
+        )}
+        {NegotiationMarkupCardHarness && (
+          <Route
+            path="/__visual/negotiation-markup-card"
+            element={<NegotiationMarkupCardHarness />}
+          />
+        )}
+
+
+
 
         <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedAppLayout />}>

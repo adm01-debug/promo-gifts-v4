@@ -21,8 +21,8 @@ interface Props {
   rows: Array<Record<string, unknown>>;
   columns?: Array<{ key: string; header: string }>;
   formats?: Array<'csv' | 'json'>;
-  size?: 'sm' | 'default';
-  variant?: 'outline' | 'ghost' | 'secondary';
+  size?: 'default' | 'sm';
+  variant?: 'ghost' | 'outline' | 'secondary';
   disabled?: boolean;
   label?: string;
 }
@@ -53,7 +53,7 @@ export function ExportButton({
   const [busy, setBusy] = useState(false);
   const isEmpty = !rows || rows.length === 0;
 
-  const handle = async (fmt: 'csv' | 'json') => {
+  const handle = (fmt: 'csv' | 'json') => {
     if (isEmpty) {
       toast.info('Nada para exportar');
       return;

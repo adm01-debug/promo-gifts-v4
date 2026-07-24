@@ -33,9 +33,9 @@ export function ChatEmptyState({
         },
         {
           emoji: '📞',
-          label: 'Follow-up',
+          label: 'Retomar contato',
           prompt:
-            'Quais orçamentos estão pendentes? Sugira mensagens de follow-up para retomar contato com este cliente.',
+            'Quais orçamentos estão pendentes? Sugira mensagens para retomar contato com este cliente.',
         },
         {
           emoji: '🎯',
@@ -67,8 +67,8 @@ export function ChatEmptyState({
         },
         {
           emoji: '📞',
-          label: 'Dicas de follow-up',
-          prompt: 'Me dê dicas de como fazer follow-up eficiente em orçamentos pendentes.',
+          label: 'Dicas de retomada',
+          prompt: 'Me dê dicas de como retomar contato em orçamentos pendentes.',
         },
         {
           emoji: '🎯',
@@ -112,7 +112,7 @@ export function ChatEmptyState({
       >
         {clientId
           ? `Seu assistente pessoal para vender mais para ${clientName || 'este cliente'}.`
-          : 'Seu assistente pessoal de vendas. Produtos, propostas, follow-ups e oportunidades.'}
+          : 'Seu assistente pessoal de vendas. Produtos, propostas e oportunidades.'}
       </motion.p>
       <motion.div
         variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0 } }}

@@ -9,15 +9,15 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { noveltyDaysElapsed, noveltyBadgeLabelFromElapsed } from '@/lib/products/novelty-days';
 
 export type ProductStatusBadgeType =
-  | 'novelty'
-  | 'promotion'
   | 'featured'
   | 'kit'
-  | 'urgency'
+  | 'novelty'
   | 'out-of-stock'
-  | 'packaging';
+  | 'packaging'
+  | 'promotion'
+  | 'urgency';
 
-export type UrgencyType = 'limited-stock' | 'trending' | 'ending-soon';
+export type UrgencyType = 'ending-soon' | 'limited-stock' | 'trending';
 
 interface PackagingMetadata {
   packingType?: string | null;
@@ -36,7 +36,7 @@ const PACKAGING_CONTEXT_LABELS: Record<string, string> = {
 interface ProductStatusBadgeProps {
   type: ProductStatusBadgeType;
   urgencyType?: UrgencyType;
-  value?: string | number;
+  value?: number | string;
   daysRemaining?: number;
   /**
    * Idade da novidade em dias (desde a detecção). Quando fornecido, é usado
@@ -46,7 +46,7 @@ interface ProductStatusBadgeProps {
    * pipeline (~60 dias), onde `30 - daysRemaining` produziria valores negativos.
    */
   daysElapsed?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   onClick?: (e: React.MouseEvent) => void;
   className?: string;
   showTooltip?: boolean;
@@ -81,14 +81,13 @@ export function ProductStatusBadge({
     return s.badgesEnabled;
   });
 
-  // Hide all status badges when user has disabled them.
-  // Exceção: urgências contextuais permanecem visíveis, EXCETO "limited-stock"
-  // (badge "Estoque baixo"), que deve respeitar o toggle global como as demais
-  // badges de status de estoque (out-of-stock, etc.).
-  if (!badgesEnabled) {
-    const isToggleableUrgency = type === 'urgency' && urgencyType === 'limited-stock';
-    if (type !== 'urgency' || isToggleableUrgency) return null;
-  }
+  // Quando o toggle "Etiquetas dos Produtos" está desligado, TODOS os badges de
+  // status/marketing são ocultados (featured, novelty, out-of-stock, packaging,
+  // promotion, kit, urgency:limited-stock, urgency:trending, urgency:ending-soon).
+  // Badges de fornecedor, categoria e cores ficam sempre visíveis — eles são
+  // renderizados por outros componentes e não passam por aqui.
+  // fix_version: badge-toggle-v2 — cobertura total de urgency badges
+  if (!badgesEnabled) return null;
 
   const isClickable = !!onClick;
 
@@ -132,16 +131,15 @@ export function ProductStatusBadge({
           return 'bg-[#FF1493] text-white font-bold shadow-[0_2px_8px_rgba(255,20,147,0.4)] ring-1 ring-white/20';
         }
         // Badge "Novidade X dias" (canto esquerdo) — cor por faixa, sempre legível
-        const daysElapsed = resolvedNoveltyElapsed;
-        if (daysElapsed <= 5) {
+        if (resolvedNoveltyElapsed <= 5) {
           // Recém-chegado — azul vívido
           return 'bg-[#2563EB] text-white font-semibold shadow-[0_2px_8px_rgba(37,99,235,0.35)]';
         }
-        if (daysElapsed <= 15) {
+        if (resolvedNoveltyElapsed <= 15) {
           // Ainda fresco — roxo
           return 'bg-[#7C3AED] text-white font-semibold shadow-[0_2px_8px_rgba(124,58,237,0.35)]';
         }
-        if (daysElapsed <= 23) {
+        if (resolvedNoveltyElapsed <= 23) {
           // Meio da janela — âmbar com texto escuro p/ contraste
           return 'bg-[#F59E0B] text-[#1F1300] font-bold shadow-[0_2px_8px_rgba(245,158,11,0.35)]';
         }
@@ -206,11 +204,10 @@ export function ProductStatusBadge({
           </>
         );
       case 'novelty': {
-        const daysElapsed = resolvedNoveltyElapsed;
-        const label = noveltyBadgeLabelFromElapsed(daysElapsed);
+        const label = noveltyBadgeLabelFromElapsed(resolvedNoveltyElapsed);
         return (
           <>
-            {daysElapsed <= 5 && <Sparkles className={iconSize} />}
+            {resolvedNoveltyElapsed <= 5 && <Sparkles className={iconSize} />}
             <span>{value || label}</span>
           </>
         );
@@ -247,12 +244,13 @@ export function ProductStatusBadge({
   const getTooltipContent = () => {
     switch (type) {
       case 'novelty': {
-        const daysElapsed = resolvedNoveltyElapsed;
         return (
           <div className="text-sm">
             <p className="font-semibold">🆕 Produto Novidade</p>
             <p className="text-muted-foreground">
-              {daysElapsed === 0 ? 'Adicionado hoje!' : `Adicionado há ${daysElapsed} dias`}
+              {resolvedNoveltyElapsed === 0
+                ? 'Adicionado hoje!'
+                : `Adicionado há ${resolvedNoveltyElapsed} dias`}
             </p>
             {daysRemaining !== undefined && (
               <p className="mt-0.5 text-xs text-muted-foreground">

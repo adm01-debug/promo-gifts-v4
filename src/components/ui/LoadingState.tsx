@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 interface LoadingStateProps {
   text?: string;
-  size?: 'sm' | 'md' | 'lg';
-  variant?: 'spinner' | 'dots' | 'skeleton';
+  size?: 'lg' | 'md' | 'sm';
+  variant?: 'dots' | 'skeleton' | 'spinner';
   className?: string;
 }
 
@@ -62,9 +62,9 @@ export function LoadingState({
  */
 interface LoadingSkeletonProps {
   className?: string;
-  variant?: 'text' | 'circular' | 'rectangular';
-  width?: string | number;
-  height?: string | number;
+  variant?: 'circular' | 'rectangular' | 'text';
+  width?: number | string;
+  height?: number | string;
   lines?: number;
 }
 
@@ -151,7 +151,7 @@ export function LoadingTable({ rows = 5, columns = 4, className }: LoadingTableP
       {/* Rows */}
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div key={rowIndex} className="flex gap-4 border-b p-3 last:border-0">
-          {Array.from({ length: columns }).map((_, colIndex) => (
+          {Array.from({ length: columns }).map((_b, colIndex) => (
             <Skeleton
               key={colIndex}
               className={cn('h-4 flex-1', colIndex === 0 && 'w-1/4 flex-none')}

@@ -1,0 +1,23 @@
+name: Auth surface fuzz (weekly)
+
+on:
+  schedule:
+    - cron: '0 5 * * 1' # Segunda 05:00 UTC
+  workflow_dispatch:
+
+jobs:
+  auth-fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FUZZ_STRESS: '10000'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Auth wrappers fuzz + breaker
+        run: bunx vitest run src/lib/auth --reporter=default
+      - name: Static gate — chamadas diretas fora do SSOT
+        run: node scripts/check-auth-direct-calls.mjs

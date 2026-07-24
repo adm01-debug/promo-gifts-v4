@@ -24,6 +24,9 @@ import {
   Eraser,
   Minus,
   Eye,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -32,16 +35,61 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSellerCartContextSafe } from '@/contexts/SellerCartContext';
+import { useCrmCompanies } from '@/hooks/crm/useCrmCompanies';
+import { MAX_SELLER_CARTS } from '@/hooks/products/useSellerCarts';
 import { CartCompanyPicker } from './CartCompanyPicker';
 import { PriceLabel } from './CartUtilComponents';
 import { formatCurrency } from '@/lib/format';
+import { resolveCartCompanyCnpj } from './cartCompanyCnpj';
+import { CartItemErrorAlert } from './CartItemErrorAlert';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { showUndoToast } from '@/utils/undoToast';
+import {
+  UNDO_DURATION_MS,
+  UNDO_TOAST_DESCRIPTION,
+  deletedToastTitle,
+} from '@/pages/products/seller-carts/undoCopy';
+import { useState, useEffect, useRef } from 'react';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+
+const cartHeaderLog = createClientLogger('cart.header');
+import { PopoverQtyInput } from './PopoverQtyInput';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+
 
 export function CartHeaderButton() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const deleteDialogHandoffRef = useRef(false);
+  // UI-local: carrinhos que o usuário recolheu explicitamente. Necessário porque
+  // o contexto faz fallback automático para carts[0] quando activeCartId === null,
+  // o que impediria o usuário de recolher o primeiro carrinho da lista.
+  // Persistido em localStorage para sobreviver a refresh; sanitizado contra
+  // ids que não existem mais na lista (cart removido/renomeado).
+  const COLLAPSED_STORAGE_KEY = 'seller:collapsed-cart-ids';
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try {
+      const raw = window.localStorage.getItem(COLLAPSED_STORAGE_KEY);
+      if (!raw) return new Set();
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? new Set(parsed.filter((x) => typeof x === 'string')) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
 
   // Listen for FAB "open cart" event
   useEffect(() => {
@@ -50,25 +98,65 @@ export function CartHeaderButton() {
     return () => window.removeEventListener('open-seller-cart', handler);
   }, []);
 
-  // Keyboard shortcut: Alt+O to toggle cart
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key.toLowerCase() === 'o') {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  // BUG-9 FIX: Alt+O foi removido — conflitava com Alt+O=Orçamentos no Sidebar.
+  // O atalho correto para abrir o carrinho é Ctrl+Shift+C (registrado em useGlobalShortcuts
+  // e passado via onToggleCart em MainLayout).
+  // Este componente também responde ao evento customizado 'open-seller-cart'
+  // (disparado por QuickQuoteFAB, useGlobalShortcuts→onToggleCart, etc.).
 
   // SAFE context hook — retorna null em vez de lançar erro quando o Provider está ausente.
   // Resolve 21.664 unhandled_error + 5.123 React_Boundary_Error em frontend_telemetry.
   const cartContext = useSellerCartContextSafe();
 
+  // RULES-OF-HOOKS FIX (2026-06-29): estes dois useEffect rodavam DEPOIS do early
+  // return `if (!cartContext)` abaixo, o que alterava a contagem de hooks entre
+  // renders na transição contexto-ausente↔presente (Suspense fallback / HMR /
+  // Provider montando) — justamente o cenário que este componente diz mitigar — e
+  // disparava o crash "Rendered more hooks than during the previous render".
+  // Agora rodam SEMPRE (null-safe) e o early return fica ABAIXO de todos os hooks.
+
+  // Sanitiza collapsedIds: remove ids que não existem mais na lista (cart deletado/renomeado).
+  useEffect(() => {
+    const list = cartContext?.carts;
+    if (!list) return;
+    const validIds = new Set(list.map((c) => c.id));
+    setCollapsedIds((prev) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (validIds.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [cartContext?.carts]);
+
+  // Persiste collapsedIds em localStorage para sobreviver a refresh.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        COLLAPSED_STORAGE_KEY,
+        JSON.stringify(Array.from(collapsedIds)),
+      );
+    } catch {
+      /* quota/safari private mode — ignora silenciosamente */
+    }
+  }, [collapsedIds]);
+
+  // Enriquecimento de CNPJ: carrinhos legados guardam ramo em `company_location`.
+  // Buscamos CNPJ do CRM (cache 10min compartilhado) para exibir CNPJ no popover.
+  const { data: crmCompanies = [] } = useCrmCompanies({ is_customer: true });
+  const cnpjByCompanyId = new Map<string, string>();
+  for (const c of crmCompanies) {
+    if (c.cnpj) cnpjByCompanyId.set(c.id, c.cnpj);
+  }
+
+
   // Null-guard: context temporariamente ausente (Suspense fallback, HMR, concurrent recovery,
   // ou Provider fora da árvore). Em vez de um botão inerte, o ícone NAVEGA para a página de
   // carrinhos — garante que o clique no carrinho do header nunca fique morto.
+  // IMPORTANTE: este return fica DEPOIS de todos os hooks (Rules of Hooks).
   if (!cartContext) {
     return (
       <Button
@@ -79,7 +167,7 @@ export function CartHeaderButton() {
         aria-label="Abrir carrinhos"
         onClick={() => navigate('/carrinhos')}
       >
-        <ShoppingCart className="h-[17px] w-[17px]" strokeWidth={1.75} />
+        <ShoppingCart aria-hidden="true" className="h-[17px] w-[17px]" strokeWidth={1.75} />
       </Button>
     );
   }
@@ -93,12 +181,70 @@ export function CartHeaderButton() {
     canCreateCart,
     setActiveCartId,
     deleteCart,
+    restoreCart,
+    isDeletingCart,
     removeItem,
     updateItemQuantity,
     clearCart,
+    restoreItems,
+    itemErrors,
+    clearItemError,
   } = cartContext;
 
+  const handleRemoveWithUndo = (
+    cartId: string,
+    item: {
+      id: string;
+      product_id: string;
+      product_name: string;
+      product_sku: string | null;
+      product_image_url: string | null;
+      product_price: number;
+      quantity: number;
+      color_name: string | null;
+      color_hex: string | null;
+      notes: string | null;
+      sort_order: number | null;
+    },
+  ) => {
+    const snapshot = {
+      product_id: item.product_id,
+      product_name: item.product_name,
+      product_sku: item.product_sku ?? undefined,
+      product_image_url: item.product_image_url ?? undefined,
+      product_price: item.product_price,
+      quantity: item.quantity,
+      color_name: item.color_name ?? undefined,
+      color_hex: item.color_hex ?? undefined,
+      notes: item.notes ?? undefined,
+      sort_order: item.sort_order ?? undefined,
+    };
+    removeItem(item.id);
+    showUndoToast({
+      title: 'Item removido',
+      description: item.product_name,
+      duration: 5000,
+      onUndo: () => restoreItems(cartId, [snapshot]),
+    });
+  };
+
+  // Debug em dev: rastreia activeCartId, fallback e collapsedIds.
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.debug('[CartHeaderButton]', {
+      activeCartId,
+      collapsedIds: Array.from(collapsedIds),
+      fallbackTo: !activeCartId && carts.length > 0 ? carts[0].id : null,
+    });
+  }
+
+
+  const pendingDeleteCart = pendingDeleteId
+    ? carts.find((c) => c.id === pendingDeleteId) ?? null
+    : null;
+
   return (
+    <>
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -109,11 +255,19 @@ export function CartHeaderButton() {
                 size="icon"
                 data-testid="cart-trigger"
                 className="relative h-8 w-8 rounded-full text-muted-foreground transition-all duration-200 hover:bg-primary/10 hover:text-foreground"
-                aria-label="Carrinho"
+                aria-label={
+                  totalItems > 0
+                    ? `Carrinho — ${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`
+                    : 'Carrinho vazio'
+                }
+                aria-expanded={open}
               >
-                <ShoppingCart className="h-[17px] w-[17px]" strokeWidth={1.75} />
+                <ShoppingCart aria-hidden="true" className="h-[17px] w-[17px]" strokeWidth={1.75} />
                 {totalItems > 0 && (
-                  <span className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] font-bold text-primary-foreground shadow-sm animate-in zoom-in-50">
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary p-0 text-[10px] font-bold text-primary-foreground shadow-sm animate-in zoom-in-50"
+                  >
                     {totalItems > 99 ? '99+' : totalItems}
                   </span>
                 )}
@@ -123,16 +277,21 @@ export function CartHeaderButton() {
         </TooltipTrigger>
         <TooltipContent className="border-border bg-card">
           Carrinho de Orçamentos{' '}
-          <kbd className="text-tooltip ml-1.5 rounded bg-muted px-1 py-0.5 font-mono">Alt+O</kbd>
+          <kbd className="text-tooltip ml-1.5 rounded bg-muted px-1 py-0.5 font-mono">Ctrl+Shift+C</kbd>
         </TooltipContent>
       </Tooltip>
 
       <PopoverContent
         data-testid="cart-drawer"
-        className="w-[420px] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
+        className="w-[min(386px,calc(100vw-1rem))] max-h-[min(80vh,560px)] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
         align="end"
         sideOffset={8}
-        onCloseAutoFocus={() => setShowPicker(false)}
+        onCloseAutoFocus={(event) => {
+          setShowPicker(false);
+          if (deleteDialogHandoffRef.current) {
+            event.preventDefault();
+          }
+        }}
       >
         {showPicker ? (
           <div className="animate-fade-in p-4">
@@ -145,7 +304,7 @@ export function CartHeaderButton() {
                 className="h-6 w-6"
                 onClick={() => setShowPicker(false)}
               >
-                <X className="h-3.5 w-3.5" />
+                <X aria-hidden="true" className="h-3.5 w-3.5" />
               </Button>
             </div>
             <CartCompanyPicker
@@ -158,7 +317,10 @@ export function CartHeaderButton() {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/40 bg-muted/5 px-4 pb-3 pt-4">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 shadow-inner">
+                <div
+                  aria-hidden="true"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 shadow-inner"
+                >
                   <ShoppingCart className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex flex-col">
@@ -167,10 +329,12 @@ export function CartHeaderButton() {
                   </h3>
                   <div className="mt-0.5 flex items-center gap-1.5">
                     <span className="text-[10px] font-bold tabular-nums text-muted-foreground">
-                      {carts.length}/3
+                      {carts.length}/{MAX_SELLER_CARTS}
                     </span>
                     <span className="text-[10px] text-muted-foreground opacity-30">|</span>
                     <button
+                      type="button"
+                      aria-label="Ver todos os carrinhos"
                       className="text-[10px] font-bold text-primary underline-offset-2 transition-colors hover:text-primary/80 hover:underline"
                       onClick={() => {
                         setOpen(false);
@@ -189,7 +353,7 @@ export function CartHeaderButton() {
                   className="h-8 gap-1.5 rounded-lg px-3 text-[11px] font-bold text-primary transition-all hover:scale-105 hover:bg-primary/10 active:scale-95"
                   onClick={() => setShowPicker(true)}
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <Plus aria-hidden="true" className="h-3.5 w-3.5" />
                   Novo
                 </Button>
               )}
@@ -211,7 +375,7 @@ export function CartHeaderButton() {
                     </div>
                     {i === 0 && (
                       <div className="space-y-2.5 border-t border-border/20 pt-2">
-                        {Array.from({ length: 2 }, (_, j) => (
+                        {Array.from({ length: 2 }, (_el, j) => (
                           <div key={j} className="flex items-center gap-2">
                             <Skeleton className="h-8 w-8 rounded-lg" />
                             <div className="flex-1 space-y-1.5">
@@ -228,7 +392,7 @@ export function CartHeaderButton() {
             ) : carts.length === 0 ? (
               <div className="px-4 pb-5 pt-6 text-center">
                 <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/30">
-                  <Package className="h-7 w-7 text-muted-foreground/50" />
+                  <Package aria-hidden="true" className="h-7 w-7 text-muted-foreground/50" />
                 </div>
                 <p className="mb-1 text-sm font-medium">Nenhum carrinho</p>
                 <p className="mx-auto mb-4 max-w-[220px] text-xs text-muted-foreground">
@@ -239,64 +403,107 @@ export function CartHeaderButton() {
                   className="gap-1.5 rounded-lg text-xs"
                   onClick={() => setShowPicker(true)}
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <Plus aria-hidden="true" className="h-3.5 w-3.5" />
                   Criar Carrinho
                 </Button>
               </div>
             ) : (
               <>
-                <ScrollArea className="max-h-[440px]">
+                <ScrollArea
+                  data-testid="cart-popover-scroll"
+                  className="h-[min(352px,calc(80vh-9rem),calc(100dvh-9rem))]"
+                >
+
                   <div className="space-y-2 p-3">
                     {carts.map((cart) => {
-                      const isActive = cart.id === activeCartId;
+                      const isActive = cart.id === activeCartId && !collapsedIds.has(cart.id);
                       return (
                         <div
                           key={cart.id}
                           className={cn(
-                            'group cursor-pointer rounded-xl border transition-all duration-200',
+                            'group rounded-xl border transition-all duration-200',
                             isActive
                               ? 'border-primary/30 bg-primary/5'
                               : 'border-border/40 hover:border-border/60 hover:bg-muted/30',
                           )}
-                          onClick={() => setActiveCartId(cart.id)}
                         >
                           {/* Cart header */}
                           <div className="flex items-center gap-2.5 px-3 py-2.5">
-                            {cart.company_logo_url ? (
-                              <img
-                                src={cart.company_logo_url}
-                                alt="Logo da empresa"
-                                className="h-9 w-9 flex-shrink-0 rounded-full border border-border/50 bg-background object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div
-                                className={cn(
-                                  'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
-                                  isActive
-                                    ? 'bg-primary/15 text-primary'
-                                    : 'bg-muted text-muted-foreground',
-                                )}
-                              >
-                                <Building2 className="h-4 w-4" />
-                              </div>
-                            )}
-
-                            <div className="min-w-0 flex-1">
-                              <p
-                                className={cn(
-                                  'truncate text-[13px] font-semibold leading-tight',
-                                  isActive && 'text-primary',
-                                )}
-                              >
-                                {cart.company_name}
-                              </p>
-                              {cart.company_location && (
-                                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                  {cart.company_location}
-                                </p>
+                            <button
+                              type="button"
+                              aria-label={
+                                isActive
+                                  ? `Recolher carrinho de ${cart.company_name}`
+                                  : `Expandir carrinho de ${cart.company_name}`
+                              }
+                              aria-pressed={isActive}
+                              aria-expanded={isActive}
+                              className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                              onClick={() => {
+                                setPendingDeleteId(null);
+                                if (isActive) {
+                                  setCollapsedIds((prev) => new Set(prev).add(cart.id));
+                                } else {
+                                  setCollapsedIds((prev) => {
+                                    if (!prev.has(cart.id)) return prev;
+                                    const next = new Set(prev);
+                                    next.delete(cart.id);
+                                    return next;
+                                  });
+                                  setActiveCartId(cart.id);
+                                }
+                              }}
+                            >
+                              {cart.company_logo_url ? (
+                                <img
+                                  src={cart.company_logo_url}
+                                  alt={`Logo de ${cart.company_name}`}
+                                  className="h-9 w-9 flex-shrink-0 rounded-full border border-border/50 bg-background object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div
+                                  className={cn(
+                                    'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full',
+                                    isActive
+                                      ? 'bg-primary/15 text-primary'
+                                      : 'bg-muted text-muted-foreground',
+                                  )}
+                                >
+                                  <Building2 aria-hidden="true" className="h-4 w-4" />
+                                </div>
                               )}
-                            </div>
+
+                              <div className="min-w-0 flex-1">
+                                <p
+                                  className={cn(
+                                    'truncate text-[13px] font-semibold leading-tight',
+                                    isActive && 'text-primary',
+                                  )}
+                                >
+                                  {cart.company_name}
+                                </p>
+                                {(() => {
+                                  const { display, isCnpj } = resolveCartCompanyCnpj(
+                                    cart,
+                                    cnpjByCompanyId,
+                                  );
+                                  if (!display) return null;
+                                  return (
+                                    <p
+                                      data-testid={`cart-company-subtitle-${cart.id}`}
+                                      data-kind={isCnpj ? 'cnpj' : 'ramo'}
+                                      className={cn(
+                                        'mt-0.5 text-[11px] text-muted-foreground',
+                                        isCnpj && 'font-mono',
+                                      )}
+                                    >
+                                      {display}
+                                    </p>
+                                  );
+                                })()}
+                              </div>
+                            </button>
 
                             <div className="flex flex-shrink-0 items-center gap-1.5">
                               {cart.items.length > 0 && (
@@ -311,38 +518,136 @@ export function CartHeaderButton() {
                                   {cart.items.length} {cart.items.length === 1 ? 'item' : 'itens'}
                                 </span>
                               )}
-                              {/* Limpar carrinho */}
+                              {/* Limpar carrinho — com undo toast */}
                               {isActive && cart.items.length > 0 && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <button
+                                      type="button"
+                                      aria-label={`Limpar itens do carrinho de ${cart.company_name}`}
                                       className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
-                                      onClick={(e) => {
+                                      onClick={async (e) => {
                                         e.stopPropagation();
-                                        clearCart(cart.id);
+                                        const snapshot = cart.items.map((item) => ({
+                                          product_id: item.product_id,
+                                          product_name: item.product_name,
+                                          product_sku: item.product_sku || undefined,
+                                          product_image_url: item.product_image_url || undefined,
+                                          product_price: item.product_price,
+                                          quantity: item.quantity,
+                                          color_name: item.color_name || undefined,
+                                          color_hex: item.color_hex || undefined,
+                                          notes: item.notes ?? undefined,
+                                          sort_order: item.sort_order ?? undefined,
+                                        }));
+                                        try {
+                                          await clearCart(cart.id);
+                                          showUndoToast({
+                                            title: 'Carrinho limpo',
+                                            description: `${snapshot.length} ${snapshot.length === 1 ? 'item removido' : 'itens removidos'}`,
+                                            onUndo: () => restoreItems(cart.id, snapshot),
+                                          });
+                                        } catch {
+                                          // clearCart already shows its own error toast
+                                        }
                                       }}
                                     >
-                                      <Eraser className="h-3.5 w-3.5" />
+                                      <Eraser aria-hidden="true" className="h-3.5 w-3.5" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent side="top">Limpar itens</TooltipContent>
                                 </Tooltip>
                               )}
-                              {/* Excluir carrinho */}
+                              {/* Excluir carrinho — abre AlertDialog de confirmação */}
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <button
-                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
+                                    type="button"
+                                    aria-label={`Excluir carrinho de ${cart.company_name}`}
+                                    data-testid={`cart-delete-${cart.id}`}
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-colors hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100 disabled:opacity-50"
                                     style={{ opacity: isActive ? 1 : undefined }}
-                                    onClick={(e) => {
+                                    disabled={isDeletingCart}
+                                    onPointerDown={(e) => {
+                                      // Bloqueia o Radix Tooltip/Popover de dar preventDefault
+                                      // e engolir o clique subsequente (bug reportado: nada acontece).
                                       e.stopPropagation();
-                                      deleteCart(cart.id);
+                                    }}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      const id = cart.id;
+                                      cartHeaderLog.info('cart_delete_click', { cart_id: id });
+                                      // Fecha o Popover ANTES do dialog abrir para evitar corrida
+                                      // de foco entre dois DismissableLayers do Radix (Popover +
+                                      // AlertDialog), que estava impedindo o dialog de aparecer.
+                                      deleteDialogHandoffRef.current = true;
+                                      setOpen(false);
+                                      cartHeaderLog.debug('cart_popover_closed_for_dialog', { cart_id: id });
+                                      // Agenda a abertura do dialog no próximo tick para garantir
+                                      // que o Popover já tenha desmontado seu focus-scope. Fallback
+                                      // para setTimeout em ambientes sem rAF (jsdom/SSR) evita que
+                                      // o dialog nunca abra em testes headless.
+                                      const scheduleOpen = () => {
+                                        setPendingDeleteId(id);
+                                        cartHeaderLog.info('cart_delete_dialog_open', { cart_id: id });
+                                        globalThis.setTimeout(() => {
+                                          deleteDialogHandoffRef.current = false;
+                                        }, 0);
+                                      };
+                                      if (typeof requestAnimationFrame === 'function') {
+                                        requestAnimationFrame(scheduleOpen);
+                                      } else {
+                                        globalThis.setTimeout(scheduleOpen, 0);
+                                      }
                                     }}
                                   >
-                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <Trash2 aria-hidden="true" className="h-3.5 w-3.5" />
                                   </button>
                                 </TooltipTrigger>
                                 <TooltipContent side="top">Excluir carrinho</TooltipContent>
+                              </Tooltip>
+                              {/* Recolher/expandir carrinho — chevron explícito */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label={
+                                      isActive
+                                        ? `Recolher carrinho de ${cart.company_name}`
+                                        : `Expandir carrinho de ${cart.company_name}`
+                                    }
+                                    aria-expanded={isActive}
+                                    aria-pressed={!isActive}
+                                    data-collapsed={!isActive}
+                                    data-testid={`cart-toggle-${cart.id}`}
+                                    className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-all duration-150 hover:bg-primary/10 hover:text-primary active:scale-90 data-[collapsed=true]:bg-primary/10 data-[collapsed=true]:text-primary"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPendingDeleteId(null);
+                                      if (isActive) {
+                                        setCollapsedIds((prev) => new Set(prev).add(cart.id));
+                                      } else {
+                                        setCollapsedIds((prev) => {
+                                          if (!prev.has(cart.id)) return prev;
+                                          const next = new Set(prev);
+                                          next.delete(cart.id);
+                                          return next;
+                                        });
+                                        setActiveCartId(cart.id);
+                                      }
+                                    }}
+                                  >
+                                    {isActive ? (
+                                      <ChevronUp aria-hidden="true" className="h-3.5 w-3.5" />
+                                    ) : (
+                                      <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
+                                    )}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  {isActive ? 'Recolher' : 'Expandir'}
+                                </TooltipContent>
                               </Tooltip>
                             </div>
                           </div>
@@ -350,47 +655,107 @@ export function CartHeaderButton() {
                           {/* Items list — only for active cart */}
                           {isActive && cart.items.length > 0 && (
                             <div className="space-y-1.5 border-t border-border/30 px-3 py-2">
-                              {cart.items.slice(0, 5).map((item) => (
+                              {cart.items.slice(0, 5).map((item, idx) => (
                                 <div
                                   key={item.id}
                                   className="group/item relative flex items-start gap-2.5 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-background/60"
                                 >
-                                  <div className="group/img relative flex-shrink-0">
-                                    {item.product_image_url ? (
-                                      <img
-                                        src={item.product_image_url}
-                                        alt={item.product_name}
-                                        className="mt-0.5 h-9 w-9 rounded-lg border border-border/30 bg-background object-contain p-0.5 transition-transform group-hover/img:scale-110"
-                                        loading="lazy"
+                                  <div className="flex flex-shrink-0 flex-col items-center justify-between gap-1.5 self-stretch">
+                                    <div className="group/img relative">
+                                      {item.product_image_url ? (
+                                        <img
+                                          src={item.product_image_url}
+                                          alt={item.product_name}
+                                          className="mt-0.5 h-9 w-9 rounded-lg border border-border/30 bg-background object-contain p-0.5 transition-transform group-hover/img:scale-110"
+                                          loading="lazy"
+                                        />
+                                      ) : (
+                                        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-muted/40">
+                                          <Package
+                                            aria-hidden="true"
+                                            className="h-3.5 w-3.5 text-muted-foreground/50"
+                                          />
+                                        </div>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          navigate(`/produto/${item.product_id}`);
+                                          setOpen(false);
+                                        }}
+                                        aria-label={`Ver produto ${item.product_name}`}
+                                        className="absolute inset-0 flex items-center justify-center rounded-lg bg-primary/10 opacity-0 transition-opacity group-hover/img:opacity-100"
+                                      >
+                                        <Eye aria-hidden="true" className="h-3 w-3 text-primary" />
+                                      </button>
+                                    </div>
+                                    {/* Qty stepper abaixo da imagem */}
+                                    <div className="flex items-center gap-0 overflow-hidden rounded-md border border-border/50">
+                                      <button
+                                        type="button"
+                                        aria-label={
+                                          item.quantity <= 1
+                                            ? `Remover ${item.product_name}`
+                                            : `Diminuir quantidade de ${item.product_name}`
+                                        }
+                                        className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (item.quantity <= 1) {
+                                            handleRemoveWithUndo(cart.id, item);
+                                          } else {
+                                            updateItemQuantity(item.id, item.quantity - 1);
+                                          }
+                                        }}
+                                      >
+                                        {item.quantity <= 1 ? (
+                                          <Trash2
+                                            aria-hidden="true"
+                                            className="h-3 w-3 text-destructive"
+                                          />
+                                        ) : (
+                                          <Minus aria-hidden="true" className="h-3 w-3" />
+                                        )}
+                                      </button>
+                                      <PopoverQtyInput
+                                        itemId={item.id}
+                                        productName={item.product_name}
+                                        quantity={item.quantity}
+                                        autoFocus={idx === 0}
+                                        onCommit={(next) =>
+                                          updateItemQuantity(item.id, next)
+                                        }
                                       />
-                                    ) : (
-                                      <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-muted/40">
-                                        <Package className="h-3.5 w-3.5 text-muted-foreground/50" />
-                                      </div>
-                                    )}
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/produto/${item.product_id}`);
-                                        setOpen(false);
-                                      }}
-                                      className="absolute inset-0 flex items-center justify-center rounded-lg bg-primary/10 opacity-0 transition-opacity group-hover/img:opacity-100"
-                                    >
-                                      <Eye className="h-3 w-3 text-primary" />
-                                    </button>
+                                      <button
+                                        type="button"
+                                        aria-label={`Aumentar quantidade de ${item.product_name}`}
+                                        className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                                        disabled={item.quantity >= 999999}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (item.quantity >= 999999) return;
+                                          updateItemQuantity(item.id, item.quantity + 1);
+                                        }}
+                                      >
+                                        <Plus aria-hidden="true" className="h-3 w-3" />
+                                      </button>
+                                    </div>
                                   </div>
 
                                   <div className="min-w-0 flex-1">
-                                    <p
-                                      className="line-clamp-2 cursor-pointer text-[11px] font-medium leading-tight text-foreground/90 transition-colors hover:text-primary"
+                                    <button
+                                      type="button"
+                                      className="line-clamp-2 min-h-0 w-full cursor-pointer text-left text-[11px] font-medium leading-tight text-foreground/90 transition-colors hover:text-primary"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         navigate(`/produto/${item.product_id}`);
                                         setOpen(false);
                                       }}
+                                      aria-label={`Ver produto ${item.product_name}`}
                                     >
                                       {item.product_name}
-                                    </p>
+                                    </button>
                                     {item.color_name && (
                                       <div className="mt-1 flex items-center gap-1.5 opacity-80">
                                         <div
@@ -404,65 +769,52 @@ export function CartHeaderButton() {
                                         </span>
                                       </div>
                                     )}
-                                    {/* Price + Qty stepper row */}
-                                    <div className="mt-1.5 flex items-center justify-between gap-2">
-                                      <PriceLabel
-                                        label="Unitário"
-                                        value={item.product_price}
-                                        isPrimary
-                                        className="flex-row items-center gap-1.5 space-y-0 text-[10px]"
+                                    {/* Qty stepper foi movido para baixo da imagem */}
+                                    {itemErrors[item.id] && (
+                                      <CartItemErrorAlert
+                                        itemId={item.id}
+                                        productName={item.product_name}
+                                        focusRetry
+                                        onDismiss={() => clearItemError(item.id)}
+                                        onRetry={() =>
+                                          updateItemQuantity(item.id, item.quantity)
+                                        }
                                       />
-                                      {/* Qty stepper */}
-                                      <div className="flex items-center gap-0 overflow-hidden rounded-md border border-border/50">
-                                        <button
-                                          className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (item.quantity <= 1) {
-                                              removeItem(item.id);
-                                            } else {
-                                              updateItemQuantity(item.id, item.quantity - 1);
-                                            }
-                                          }}
-                                        >
-                                          {item.quantity <= 1 ? (
-                                            <Trash2 className="h-3 w-3 text-destructive" />
-                                          ) : (
-                                            <Minus className="h-3 w-3" />
-                                          )}
-                                        </button>
-                                        <span className="flex h-6 min-w-[28px] items-center justify-center border-x border-border/30 bg-muted/20 text-[11px] font-bold tabular-nums">
-                                          {item.quantity}
-                                        </span>
-                                        <button
-                                          className="flex h-6 w-6 items-center justify-center text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            updateItemQuantity(item.id, item.quantity + 1);
-                                          }}
-                                        >
-                                          <Plus className="h-3 w-3" />
-                                        </button>
-                                      </div>
-                                    </div>
+                                    )}
                                   </div>
 
-                                  {/* Subtotal vertical for quick scanning */}
-                                  <PriceLabel
-                                    label="Total"
-                                    value={item.product_price * item.quantity}
-                                    className="min-w-[60px] items-end"
-                                  />
+                                  {/* Unitário destacado no topo + Total alinhado com o stepper */}
+                                  <div
+                                    data-testid={`cart-item-prices-${item.id}`}
+                                    className="flex min-w-[60px] flex-col items-end justify-between self-stretch"
+                                  >
+                                    <PriceLabel
+                                      label="Unitário"
+                                      value={item.product_price}
+                                      testId={`cart-item-unit-${item.id}`}
+                                      isPrimary
+                                      className="items-end"
+                                    />
+                                    <PriceLabel
+                                      label="Total"
+                                      value={item.product_price * item.quantity}
+                                      testId={`cart-item-total-${item.id}`}
+                                      className="flex-row items-baseline gap-1 space-y-0 text-[10px]"
+                                    />
+                                  </div>
+
 
                                   {/* Remove button */}
                                   <button
+                                    type="button"
+                                    aria-label={`Remover ${item.product_name} do carrinho`}
                                     className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover/item:opacity-100"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      removeItem(item.id);
+                                      handleRemoveWithUndo(cart.id, item);
                                     }}
                                   >
-                                    <X className="h-3 w-3" />
+                                    <X aria-hidden="true" className="h-3 w-3" />
                                   </button>
                                 </div>
                               ))}
@@ -484,11 +836,12 @@ export function CartHeaderButton() {
                   activeCart.items.length > 0 &&
                   (() => {
                     const subtotal = activeCart.items.reduce(
-                      (sum, item) => sum + item.product_price * item.quantity,
+                      (sum, item) =>
+                        sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
                       0,
                     );
                     return (
-                      <div className="space-y-2 border-t border-border/40 p-3">
+                      <div data-testid="cart-popover-footer" className="space-y-2 border-t border-border/40 p-3">
                         {/* Subtotal */}
                         <div className="flex items-center justify-between px-1">
                           <span className="text-xs text-muted-foreground">
@@ -525,7 +878,7 @@ export function CartHeaderButton() {
                             });
                           }}
                         >
-                          <ArrowRight className="h-3.5 w-3.5" />
+                          <ArrowRight aria-hidden="true" className="h-3.5 w-3.5" />
                           Gerar Orçamento
                         </Button>
                       </div>
@@ -537,5 +890,116 @@ export function CartHeaderButton() {
         )}
       </PopoverContent>
     </Popover>
+    <AlertDialog
+      open={pendingDeleteId !== null}
+      onOpenChange={(o) => {
+        if (!o && !isDeletingCart) setPendingDeleteId(null);
+      }}
+    >
+      <AlertDialogContent
+        className="!max-w-[358px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl supports-[backdrop-filter]:bg-card/80"
+        data-testid="cart-delete-dialog"
+      >
+        {/* Top accent bar — destructive */}
+        <div
+          aria-hidden="true"
+          className="h-[3px] w-full bg-gradient-to-r from-transparent via-destructive to-transparent"
+        />
+
+        <div className="px-4 pb-1.5 pt-4">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-3">
+              {/* Icon tile com glow */}
+              <div className="relative flex-shrink-0">
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 -z-10 rounded-xl blur-lg opacity-60 bg-destructive/30"
+                />
+                <div className="flex h-9 w-9 animate-scale-in items-center justify-center rounded-xl bg-destructive/10 ring-1 ring-inset ring-destructive/20 transition-transform duration-300 hover:scale-105">
+                  <Trash2 className="h-[18px] w-[18px] text-destructive" strokeWidth={2.2} />
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                <AlertDialogTitle className="text-sm font-semibold leading-tight tracking-tight text-foreground">
+                  Excluir carrinho?
+                </AlertDialogTitle>
+                <AlertDialogDescription
+                  className="text-xs leading-relaxed text-muted-foreground"
+                  data-testid="cart-delete-dialog-description"
+                >
+                  {pendingDeleteCart ? (
+                    <>
+                      <span className="font-semibold text-foreground">
+                        "{pendingDeleteCart.company_name}"
+                      </span>{' '}
+                      será removido — você pode desfazer por até 8 segundos após a confirmação.
+                    </>
+                  ) : (
+                    'O carrinho será removido — você pode desfazer por até 8 segundos após a confirmação.'
+                  )}
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+        </div>
+
+        {/* Divisor + footer */}
+        <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
+          <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
+            <AlertDialogCancel
+              data-testid="cart-delete-cancel"
+              disabled={isDeletingCart}
+              aria-label="Cancelar"
+              className="mt-0 h-[26px] min-h-[26px] whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 py-0 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              aria-label="Confirmar exclusão do carrinho"
+              aria-busy={isDeletingCart}
+              data-testid="cart-delete-confirm"
+              disabled={isDeletingCart}
+              className="inline-flex h-[26px] min-h-[26px] items-center whitespace-nowrap rounded-md bg-destructive px-3.5 py-0 text-xs font-semibold text-destructive-foreground shadow-sm shadow-destructive/20 transition-all hover:bg-destructive/90 hover:shadow-md hover:shadow-destructive/30 active:scale-[0.98] disabled:opacity-60"
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!pendingDeleteId || isDeletingCart) return;
+                try {
+                  const snapshot = await deleteCart(pendingDeleteId);
+                  setPendingDeleteId(null);
+                  showUndoToast({
+                    title: deletedToastTitle(1),
+                    description: UNDO_TOAST_DESCRIPTION,
+                    duration: UNDO_DURATION_MS,
+                    onUndo: async () => {
+                      // Toast de sucesso (com métricas) + toast de erro
+                      // (com mapping por SQLSTATE) já são emitidos por `restoreCart`.
+                      const newId = await restoreCart(snapshot);
+                      return !!newId;
+                    },
+                  });
+                } catch {
+                  // toast de erro já é emitido pela mutation; mantém dialog aberto
+                }
+              }}
+            >
+              {isDeletingCart ? (
+                <>
+                  <Loader2
+                    aria-hidden="true"
+                    data-testid="cart-delete-loading"
+                    className="mr-1.5 h-3.5 w-3.5 animate-spin"
+                  />
+                  Excluindo…
+                </>
+              ) : (
+                'Excluir'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

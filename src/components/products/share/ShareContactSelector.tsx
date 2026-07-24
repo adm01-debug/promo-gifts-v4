@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { searchCrm, selectCrm } from '@/lib/crm-db';
 import { type CrmContact, type CrmContactEmail, type CrmContactPhone } from '@/types/crm';
+import { maskCnpj } from '@/utils/masks';
 
 interface CompanyOption {
   id: string;
@@ -309,7 +310,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
                   <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{c.name}</p>
-                    {c.cnpj && <p className="text-xs text-muted-foreground">{c.cnpj}</p>}
+                    {c.cnpj && <p className="text-xs text-muted-foreground font-mono">{maskCnpj(c.cnpj)}</p>}
                   </div>
                 </button>
               ))}

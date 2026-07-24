@@ -3,7 +3,9 @@ import { searchCrm } from '@/lib/crm-db';
 import { applyPixMask, validatePixKey } from '@/utils/pixMask';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { validateCnpj, maskCep } from '@/utils/masks';
+import { validateCnpj, maskCep, normalizeCnpj } from '@/utils/masks';
+import { assertPersistableCnpj } from '@/utils/cnpj-schema';
+import { cnpjErrorHaystack, mapCnpjError } from '@/utils/cnpj-errors';
 import { fetchAddressByCep } from '@/utils/viacep';
 import { fetchCnpjData } from '@/utils/cnpj-lookup';
 import { logger } from '@/lib/logger';
@@ -144,7 +146,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     return null;
   };
 
-  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: string | boolean) => {
+  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: boolean | string) => {
     setPixKeys((prev) => {
       const updated = prev.map((k) => {
         if (k.id !== id)
@@ -325,7 +327,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjDigits = cnpj.replace(/\D/g, '');
+    const cnpjDigits = normalizeCnpj(cnpj);
     if (cnpjDigits.length > 0 && !validateCnpj(cnpjDigits)) {
       setCnpjError('CNPJ inválido');
       toast.error('CNPJ informado é inválido');
@@ -338,14 +340,17 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     if (cnpjDigits.length === 14) {
       try {
         const { untypedFrom } = await import('@/lib/supabase-untyped');
-        const { data: existingRecords } = await untypedFrom<{
+        // BUG-NEWSUPPLIER-CNPJ-DUPCHECK-SILENT-FAIL FIX: { data } without error check — a failed
+        // SELECT silently bypassed the CNPJ dup check; now throws so the outer catch logs it.
+        const { data: existingRecords, error: cnpjCheckErr } = await untypedFrom<{
           id: string;
           name: string;
           cnpj: string;
         }>('suppliers')
           .select('id,name,cnpj')
-          .eq('cnpj', cnpj.trim())
+          .eq('cnpj', cnpjDigits)
           .limit(1);
+        if (cnpjCheckErr) throw cnpjCheckErr;
         if (existingRecords && existingRecords.length > 0) {
           toast.error(`Já existe um fornecedor com este CNPJ: "${existingRecords[0].name}".`);
           setSaving(false);
@@ -428,11 +433,23 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         transportadoraId,
       );
 
+      let persistableCnpj: string | null;
+      try {
+        persistableCnpj = assertPersistableCnpj(cnpj);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'CNPJ inválido';
+        setCnpjError(msg);
+        toast.error(msg);
+        setSaving(false);
+        return;
+      }
+
       const data: Record<string, unknown> = {
         name: name.trim(),
         code: generatedCode,
         trading_name: tradingName.trim() || null,
-        cnpj: cnpj.trim() || null,
+        cnpj: persistableCnpj,
+
         active: isActive,
         organization_id: ORGANIZATION_ID,
         contact_name: contacts[0]?.name?.trim() || null,
@@ -457,12 +474,9 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         inscricao_estadual: inscricaoEstadual.trim() || null,
         tax_regime: regimeTributario || null,
         state_uf: estadoFaturamento || null,
-        // BUG-19 FIX: persist social media to dedicated columns
-        instagram: instagram.trim() || null,
-        facebook: facebook.trim() || null,
-        linkedin: linkedin.trim() || null,
-        youtube: youtube.trim() || null,
-        tiktok: tiktok.trim() || null,
+        // NOTE: the suppliers table has NO instagram/facebook/linkedin/youtube/tiktok
+        // columns, so sending them made PostgREST reject the whole insert (PGRST204).
+        // They are omitted here until dedicated columns exist; the UI inputs are kept.
         created_at: now,
         updated_at: now,
       };
@@ -478,7 +492,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
         if (logoUrl) {
           try {
             const tempPath = new URL(logoUrl).pathname.split('/supplier-logos/').pop();
-            if (tempPath && tempPath.startsWith('suppliers/new-')) {
+            if (tempPath?.startsWith('suppliers/new-')) {
               const ext = tempPath.split('.').pop() || 'png';
               const canonicalPath = `suppliers/${result.id}.${ext}`;
               const { error: moveError } = await supabase.storage
@@ -519,7 +533,18 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       }
     } catch (err: unknown) {
       logger.error('Failed to create supplier', err);
-      toast.error('Erro ao criar fornecedor');
+      // SSOT: mapCnpjError garante a MESMA copy do inline client-side para
+      // erros vindos do backend (23514 *_cnpj_*_chk, 23505 suppliers_cnpj_org_uniq, Zod).
+      const hay = cnpjErrorHaystack(err);
+      if (/cnpj/i.test(hay)) {
+        const mapped = mapCnpjError(err);
+        const cnpjCopy = mapped.message;
+        setCnpjError(cnpjCopy);
+        toast.error(cnpjCopy);
+      } else {
+        toast.error('Erro ao criar fornecedor');
+      }
+
     } finally {
       setSaving(false);
     }

@@ -47,10 +47,18 @@ export interface Product {
   created_at: string;
   updated_at: string;
   synced_at: string;
+  /**
+   * Color Swatches V2 (2026-06-22) — JSONB pré-computado pela tabela Gold.
+   * Populado por fn_rebuild_color_swatches (hierarquia P1→P4 de imagem).
+   * 7.153 produtos, 16.631 swatches, 97,4% CF CDN.
+   * Consumido por useProductColorSwatch + ColorSwatchPicker quando useColorSwatchesV2=true.
+   */
+  color_swatches?: unknown[] | null;
+  has_colors?: boolean | null;
 }
 
 export interface ProductCategoryRef {
-  id?: string | number;
+  id?: number | string;
   name?: string;
   icon?: string;
 }
@@ -105,7 +113,7 @@ export interface ProductMetadata {
 // Filtros de busca
 export interface ProductFilters {
   search?: string;
-  category_id?: string | number;
+  category_id?: number | string;
   category_name?: string;
   subcategory?: string;
   supplier_id?: string;
@@ -121,14 +129,14 @@ export interface ProductFilters {
 // Produto simplificado para listagens
 export type ProductListItem = Pick<
   Product,
-  | 'id'
-  | 'sku'
-  | 'name'
-  | 'price'
-  | 'images'
   | 'category_name'
-  | 'featured'
-  | 'new_arrival'
-  | 'stock_status'
   | 'colors'
+  | 'featured'
+  | 'id'
+  | 'images'
+  | 'name'
+  | 'new_arrival'
+  | 'price'
+  | 'sku'
+  | 'stock_status'
 >;

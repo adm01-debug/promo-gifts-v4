@@ -159,7 +159,7 @@ export function ClientOverview360({ clientId }: Props) {
                   {bi.lastOrderDate ? fmtDate(bi.lastOrderDate) : '—'}
                 </div>
                 <Badge
-                  variant={recencyTone as 'default' | 'secondary' | 'destructive'}
+                  variant={recencyTone as 'default' | 'destructive' | 'secondary'}
                   className="mt-2"
                 >
                   {recencyLabel}

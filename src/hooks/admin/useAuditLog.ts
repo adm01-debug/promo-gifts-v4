@@ -1,28 +1,24 @@
 import { logger } from '@/lib/logger';
-import { type createClient } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
-// 'audit_log' table not yet in generated schema — bypass type checking via raw client cast
-const db = supabase as unknown as ReturnType<typeof createClient>;
-
-export type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE';
+export type AuditAction = 'DELETE' | 'INSERT' | 'UPDATE';
 
 export type AuditEntityType =
-  | 'products'
-  | 'product_variants'
-  | 'product_images'
-  | 'product_videos'
-  | 'quotes'
-  | 'quote_items'
-  | 'orders'
-  | 'order_items'
-  | 'suppliers'
   | 'categories'
-  | 'material_types'
   | 'color_variations'
   | 'companies'
-  | 'company_contacts';
+  | 'company_contacts'
+  | 'material_types'
+  | 'order_items'
+  | 'orders'
+  | 'product_images'
+  | 'product_variants'
+  | 'product_videos'
+  | 'products'
+  | 'quote_items'
+  | 'quotes'
+  | 'suppliers';
 
 interface AuditLogParams {
   action: AuditAction;
@@ -67,16 +63,16 @@ export function useAuditLog() {
     newValues = null,
   }: AuditLogParams): Promise<{ success: boolean; error?: Error }> => {
     try {
-      const { error } = await db.from('audit_log').insert({
+      const { error } = await untypedFrom<AuditLogEntry>('audit_log').insert({
         user_id: user?.id || null,
         action,
         entity_type: entityType,
         entity_id: entityId,
         old_values: oldValues,
         new_values: newValues,
-        ip_address: null, // Pode ser capturado via API externa se necessário
+        ip_address: null,
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-      } as never);
+      });
 
       if (error) {
         logger.error('Erro ao registrar audit log:', error);
@@ -210,8 +206,7 @@ export async function fetchAuditHistory(
   entityType: AuditEntityType,
   entityId: string,
 ): Promise<AuditLogEntry[]> {
-  const { data, error } = await db
-    .from('audit_log')
+  const { data, error } = await untypedFrom<AuditLogEntry>('audit_log')
     .select(
       `
       *,
@@ -246,8 +241,7 @@ export async function fetchAllAuditLogs(
   },
   limit = 100,
 ): Promise<AuditLogEntry[]> {
-  let query = db
-    .from('audit_log')
+  let query = untypedFrom<AuditLogEntry>('audit_log')
     .select(
       `
       *,

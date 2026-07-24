@@ -1,0 +1,140 @@
+name: E2E · Check Calendar snapshots
+# Roda o spec visual do calendário SEM --update-snapshots.
+# Falha o CI se qualquer PNG divergir do baseline comitado.
+on:
+  pull_request:
+    paths:
+      - "src/components/ui/calendar.tsx"
+      - "src/pages/__visual/CalendarHarness.tsx"
+      - "e2e/ui/calendar-visual.spec.ts"
+      - "e2e/ui/calendar-visual.spec.ts-snapshots/**"
+      - ".github/workflows/e2e-check-calendar-snapshots.yml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: e2e-check-calendar-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - name: Bootstrap
+        run: npm run e2e:bootstrap
+      - name: Start Vite
+        run: |
+          nohup bun run dev > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          tail -n 100 /tmp/vite.log >&2; exit 1
+      - name: Run visual check (falha em qualquer divergência)
+        id: visual
+        run: |
+          npx playwright test e2e/ui/calendar-visual.spec.ts \
+            --project=chromium-public \
+            --reporter=list,html
+      - name: Upload diffs (antes/depois)
+        if: failure()
+        id: upload_diffs
+        uses: actions/upload-artifact@v4
+        with:
+          name: calendar-visual-diffs
+          path: |
+            test-results/**/*-diff.png
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+          if-no-files-found: ignore
+      - name: Upload Playwright HTML report
+        if: failure()
+        id: upload_report
+        uses: actions/upload-artifact@v4
+        with:
+          name: calendar-playwright-report
+          path: playwright-report/**
+          if-no-files-found: ignore
+
+      - name: Job Summary com links de artefatos
+        if: failure()
+        run: |
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          {
+            echo "## ❌ Calendar visual check falhou"
+            echo ""
+            echo "Baseline do calendário **Condições** divergiu. Artefatos anexados a este run:"
+            echo ""
+            echo "- 🖼️ **Diffs (antes/depois):** [\`calendar-visual-diffs\`](${RUN_URL}#artifacts)"
+            echo "- 📊 **Playwright HTML report:** [\`calendar-playwright-report\`](${RUN_URL}#artifacts)"
+            echo "- 🔗 **Run completo:** ${RUN_URL}"
+            echo ""
+            echo "### Para regenerar as baselines localmente"
+            echo '```bash'
+            echo "npm run e2e:calendar:conditions:update"
+            echo "git add e2e/ui/calendar-visual.spec.ts-snapshots"
+            echo 'git commit -m "chore(e2e): update calendar conditions baselines"'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comentar no PR com links de diffs
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const marker = '<!-- calendar-visual-check -->';
+            const body = [
+              marker,
+              '### 🖼️ Calendar visual check falhou (Condições)',
+              '',
+              'A baseline PNG do calendário **Condições** divergiu neste PR.',
+              '',
+              `- **Diffs (antes / depois / diff):** [\`calendar-visual-diffs\`](${runUrl}#artifacts)`,
+              `- **Playwright HTML report:** [\`calendar-playwright-report\`](${runUrl}#artifacts)`,
+              `- **Run completo:** ${runUrl}`,
+              '',
+              '#### Se a mudança visual é intencional, regenere e comite as baselines:',
+              '```bash',
+              'npm run e2e:calendar:conditions:update',
+              'git add e2e/ui/calendar-visual.spec.ts-snapshots',
+              'git commit -m "chore(e2e): update calendar conditions baselines"',
+              'git push',
+              '```',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

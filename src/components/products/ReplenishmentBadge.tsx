@@ -6,7 +6,7 @@ import { RefreshCw } from 'lucide-react';
 interface ReplenishmentBadgeProps {
   daysSince: number;
   showDays?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   className?: string;
 }
 
@@ -93,7 +93,5 @@ export function ReplenishmentBadgeCompact({
   daysSince: number;
   className?: string;
 }) {
-  return (
-    <ReplenishmentBadge daysSince={daysSince} size="sm" showDays={true} className={className} />
-  );
+  return <ReplenishmentBadge daysSince={daysSince} size="sm" showDays className={className} />;
 }

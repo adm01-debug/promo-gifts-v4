@@ -46,6 +46,7 @@ export function SalesGoalsCard() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.target_value <= 0) return;
     await createGoal(formData);
     setIsDialogOpen(false);
     setFormData({
@@ -162,7 +163,11 @@ export function SalesGoalsCard() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isCreating}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isCreating || formData.target_value <= 0}
+                >
                   {isCreating ? 'Criando...' : 'Criar Meta'}
                 </Button>
               </form>

@@ -127,7 +127,8 @@ const FULL_WIDTH_WIDGET_IDS = new Set([
 ]);
 
 export function CustomizableDashboard() {
-  const { user } = useAuth();
+  // BUG-HEAD-GUARD FIX (2026-06-23): 2 HEAD requests sem guard de rolesLoaded.
+  const { user, rolesLoaded } = useAuth();
   const [widgetOrder, setWidgetOrder] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [metrics, setMetrics] = useState({ quotes: 0, quotesDraft: 0 });
@@ -159,7 +160,7 @@ export function CustomizableDashboard() {
 
   // Fetch real metrics — RLS faz o isolamento; só filtramos manualmente quando o escopo é "self".
   useEffect(() => {
-    if (!user) return;
+    if (!user || !rolesLoaded) return;  // BUG-HEAD-GUARD
     const fetchMetrics = async () => {
       // rls-allow: respeita can_view_all_sales; RLS filtra por seller
       let quotesQ = supabase.from('quotes').select('id', { count: 'exact', head: true });
@@ -183,7 +184,7 @@ export function CustomizableDashboard() {
       });
     };
     fetchMetrics();
-  }, [user, orgId, salesScope]);
+  }, [user, rolesLoaded, orgId, salesScope]);  // BUG-HEAD-GUARD
 
   const saveLayout = useCallback((configs: WidgetConfig[]) => {
     localStorage.setItem(LAYOUT_KEY, JSON.stringify(configs));

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 // Tipos baseados nas respostas das RPCs
 export interface CommemorativeDate {
   id: string;
@@ -58,9 +59,12 @@ async function callCommemorativeDatesAPI<T>(
     throw new Error('Usuário não autenticado');
   }
 
-  const { data, error } = await supabase.functions.invoke('commemorative-dates', {
-    body: { action, params },
-  });
+  const { data, error } = await invokeEdge<{ success?: boolean; error?: string; data?: T }>(
+    'commemorative-dates',
+    {
+      body: { action, params },
+    },
+  );
 
   if (error) {
     logger.error(`Error calling commemorative-dates/${action}:`, error);
@@ -91,7 +95,7 @@ export function useActiveCommemorativeDates() {
  * Hook para buscar próximas datas comemorativas (para dashboard/planejamento)
  * @param daysAhead - Número de dias à frente para buscar (padrão: 60)
  */
-export function useUpcomingCommemorativeDates(daysAhead: number = 60) {
+export function useUpcomingCommemorativeDates(daysAhead = 60) {
   return useQuery({
     queryKey: ['commemorative-dates', 'upcoming', daysAhead],
     queryFn: () =>
@@ -125,8 +129,8 @@ export function useCommemorativeDatesWithColors() {
  */
 export function useProductsByCommemorativeDate(
   slug: string | null,
-  limit: number = 100,
-  includeAllColors: boolean = false,
+  limit = 100,
+  includeAllColors = false,
 ) {
   return useQuery({
     queryKey: ['commemorative-dates', 'products', slug, limit, includeAllColors],

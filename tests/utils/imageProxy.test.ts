@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  deriveSpotOriginalUrlFromWorker,
-  getProxiedImageUrl,
-  needsProxy,
-} from '@/utils/imageProxy';
+import { getProxiedImageUrl, needsProxy, deriveSpotOriginalUrlFromWorker } from '@/utils/imageProxy';
 
 describe('imageProxy', () => {
   describe('getProxiedImageUrl', () => {

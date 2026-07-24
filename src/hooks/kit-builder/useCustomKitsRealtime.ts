@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
 
 export function useCustomKitsRealtime() {
   const { user } = useAuth();
@@ -16,7 +17,11 @@ export function useCustomKitsRealtime() {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel(`user:${user.id}:custom-kits`)
+      // BUG-RT-CHANNEL FIX: sufixo único por montagem. `user:${id}:custom-kits` sozinho
+      // colide quando o hook remonta (removeChannel é assíncrono) ou monta em paralelo,
+      // reaproveitando o canal JÁ inscrito e aplicando .on('postgres_changes') APÓS
+      // subscribe() → "cannot add postgres_changes callbacks ... after subscribe()" (crash de render).
+      .channel(`user:${user.id}:custom-kits:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {
@@ -29,7 +34,12 @@ export function useCustomKitsRealtime() {
           queryClient.invalidateQueries({ queryKey: ['custom-kits'] });
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[useCustomKitsRealtime] channel error — polling staleTime maintains freshness', { status, err });
+          queryClient.invalidateQueries({ queryKey: ['custom-kits'] });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

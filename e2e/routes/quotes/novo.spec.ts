@@ -10,7 +10,6 @@ import { waitRouteReady, mockEdgeFn } from "../_shared";
 buildAuthedRouteSuite({
   name: "/orcamentos/novo (wizard)",
   path: "/orcamentos/novo",
-  primary: { kind: "rest", key: "quote_templates", successBody: [] },
 });
 
 // ---------------------------------------------------------------------------
@@ -21,9 +20,6 @@ test.describe("/orcamentos/novo — fluxos críticos", () => {
   test("happy: wizard renderiza primeiro step sem erros JS", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", e => errors.push(e.message));
-    await page.route(/\/rest\/v1\/quote_templates/, r =>
-      r.fulfill({ status: 200, contentType: "application/json", body: "[]" })
-    );
     await gotoAndSettle(page, "/orcamentos/novo");
     await waitRouteReady(page);
     expect(errors).toHaveLength(0);
@@ -32,9 +28,6 @@ test.describe("/orcamentos/novo — fluxos críticos", () => {
   });
 
   test("campo cliente: campo de busca de cliente renderiza", async ({ page }) => {
-    await page.route(/\/rest\/v1\/quote_templates/, r =>
-      r.fulfill({ status: 200, contentType: "application/json", body: "[]" })
-    );
     await gotoAndSettle(page, "/orcamentos/novo");
     await waitRouteReady(page);
     const clientInput = page.locator("[data-testid*='client'], input[placeholder*='client' i], input[placeholder*='empresa' i]").first();
@@ -47,9 +40,6 @@ test.describe("/orcamentos/novo — fluxos críticos", () => {
   });
 
   test("campo CNPJ: aceita formato e dispara lookup", async ({ page }) => {
-    await page.route(/\/rest\/v1\/quote_templates/, r =>
-      r.fulfill({ status: 200, contentType: "application/json", body: "[]" })
-    );
     await mockEdgeFn(page, "cnpj-lookup", 200, {
       cnpj: "11222333000181",
       name: "Empresa Teste LTDA",
@@ -67,9 +57,6 @@ test.describe("/orcamentos/novo — fluxos críticos", () => {
   });
 
   test("botão próximo: não avança sem preencher campos obrigatórios", async ({ page }) => {
-    await page.route(/\/rest\/v1\/quote_templates/, r =>
-      r.fulfill({ status: 200, contentType: "application/json", body: "[]" })
-    );
     await gotoAndSettle(page, "/orcamentos/novo");
     await waitRouteReady(page);
     const nextBtn = page.locator("[data-testid*='next'], [data-testid*='proximo'], button[type='submit']").first();
@@ -85,9 +72,6 @@ test.describe("/orcamentos/novo — fluxos críticos", () => {
   });
 
   test("erro 400 na busca de CNPJ exibe mensagem amigável (sem stack trace)", async ({ page }) => {
-    await page.route(/\/rest\/v1\/quote_templates/, r =>
-      r.fulfill({ status: 200, contentType: "application/json", body: "[]" })
-    );
     await mockEdgeFn(page, "cnpj-lookup", 400, { error: "invalid_cnpj", message: "CNPJ inválido" });
     await gotoAndSettle(page, "/orcamentos/novo");
     await waitRouteReady(page);
@@ -102,24 +86,8 @@ test.describe("/orcamentos/novo — fluxos críticos", () => {
     }
   });
 
-  test("erro 503 da API de templates exibe fallback sem crash JS", async ({ page }) => {
-    await page.route(/\/rest\/v1\/quote_templates/, r =>
-      r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "service_unavailable" }) })
-    );
-    await gotoAndSettle(page, "/orcamentos/novo");
-    await waitRouteReady(page);
-    const errors: string[] = [];
-    page.on("pageerror", e => errors.push(e.message));
-    await page.waitForTimeout(500);
-    expect(errors).toHaveLength(0);
-    expect(await page.locator("body").isVisible()).toBe(true);
-  });
-
   test("@mobile: wizard não tem overflow horizontal em 375px", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.route(/\/rest\/v1\/quote_templates/, r =>
-      r.fulfill({ status: 200, contentType: "application/json", body: "[]" })
-    );
     await gotoAndSettle(page, "/orcamentos/novo");
     await waitRouteReady(page);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);

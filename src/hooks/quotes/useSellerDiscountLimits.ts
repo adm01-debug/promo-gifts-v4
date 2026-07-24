@@ -26,11 +26,15 @@ export function useSellerDiscountLimits() {
   // Fetch own limit (for sellers)
   const fetchMyLimit = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('seller_discount_limits')
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
+    // BUG-LIMIT-SILENT-FAIL FIX: previously errors were silently swallowed.
+    // A network failure or RLS denial would leave myLimit=null, treating it
+    // as "no limit configured" and allowing unlimited discounts.
+    if (error) logger.error('Error fetching seller discount limit:', error);
     setMyLimit(data?.max_discount_percent ?? null);
   }, [user]);
 
@@ -53,6 +57,14 @@ export function useSellerDiscountLimits() {
   const setLimit = useCallback(
     async (userId: string, maxPercent: number, notes?: string): Promise<boolean> => {
       if (!user) return false;
+      // GUARD (hardening): bloqueia o upsert quando o vendedor nao possui vinculo de conta
+      // (user_id ausente/vazio). O banco ja rejeita user_id nulo (NOT NULL + FK -> profiles),
+      // mas este guard evita o erro 23502 e entrega feedback claro em vez de um toast generico.
+      if (!userId) {
+        logger.error('setLimit: userId ausente - vendedor sem vinculo de conta (user_id)');
+        toast.error('Vendedor invalido: conta sem vinculo. Atualize o cadastro do vendedor.');
+        return false;
+      }
       try {
         const { error } = await supabase.from('seller_discount_limits').upsert(
           {

@@ -19,7 +19,7 @@ import { logger } from '@/lib/logger';
 const INSTANCE_KEY = Symbol.for('lovable_products_context_instance');
 const globalObj = (typeof window !== 'undefined' ? window : {}) as Record<symbol, unknown>;
 const isDuplicateModule = globalObj[INSTANCE_KEY] && globalObj[INSTANCE_KEY] !== Math.random();
-globalObj[INSTANCE_KEY] = globalObj[INSTANCE_KEY] || Math.random();
+globalObj[INSTANCE_KEY] ||= Math.random();
 
 interface ProductsContextType {
   /** Cached products (only those that have been requested) */
@@ -196,22 +196,17 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
   // Memoize the products array from cache
   const products = useMemo(() => [...cache.values()], [cache]);
 
+  const ctxValue = useMemo(
+    () => ({ products, isLoading, fetchError, getProductById, getProductsByIds, registerProducts }),
+    [products, isLoading, fetchError, getProductById, getProductsByIds, registerProducts],
+  );
+
   if (initError) {
     return <>{children}</>;
   }
 
   return (
-    <ProductsContext.Provider
-      key={key}
-      value={{
-        products,
-        isLoading,
-        fetchError,
-        getProductById,
-        getProductsByIds,
-        registerProducts,
-      }}
-    >
+    <ProductsContext.Provider key={key} value={ctxValue}>
       {children}
     </ProductsContext.Provider>
   );

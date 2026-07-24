@@ -12,7 +12,11 @@ import {
   thStyle,
   tdStyle,
   totalsRowStyle,
+  TOTALS_BLOCK_WIDTH_PX,
 } from './ProposalStyles';
+import { getTotalsColorTokens } from '@/lib/pdf/totalsColorScheme';
+import { maskCnpj } from '@/utils/masks';
+import { getProposalImageUrl } from '@/utils/image-utils';
 import {
   formatPaymentTerms,
   formatPaymentMethod,
@@ -21,6 +25,7 @@ import {
   type ProposalItem,
   type ProposalTemplateData,
 } from './ProposalHtmlTemplate';
+import { formatPersonalizationsList } from '@/lib/quotes/personalizationSummary';
 
 /* ─── Header ─── */
 export function HeaderSection({ data }: { data: ProposalTemplateData }) {
@@ -89,7 +94,7 @@ export function HeaderSection({ data }: { data: ProposalTemplateData }) {
           position: 'absolute',
           zIndex: 10,
           textAlign: 'right',
-          color: '#ffffff',
+          color: '#111',
           top: '50%',
           right: '32px',
           transform: 'translateY(-60%)',
@@ -178,7 +183,7 @@ export function ClientBar({
         <div style={{ fontWeight: 600, fontSize: '16px', color: '#222' }}>{company}</div>
         {cnpj && (
           <div style={{ fontSize: '11px', color: '#666', marginTop: '3px', fontWeight: 700 }}>
-            CNPJ: {cnpj}
+            CNPJ: {maskCnpj(cnpj)}
           </div>
         )}
       </div>
@@ -210,35 +215,20 @@ export function ProductRow({ item }: { item: ProposalItem }) {
       const pTotal = p.total_cost || 0;
       return sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0);
     }, 0) || 0;
-  const allInUnitPrice = item.unitPrice + persUnitCost;
+  const allInUnitPrice = item.unitPrice + persUnitCost; // display only (rounded per-unit)
   const itemDiscount = item.discount || 0;
-  const total = item.quantity * allInUnitPrice - itemDiscount * item.quantity;
+  // BUG-048c: use p.total_cost directly for line total to avoid double-rounding
+  const persTotal = item.personalizations?.reduce((s, p) => s + (p.total_cost || 0), 0) || 0;
+  const total = item.quantity * item.unitPrice + persTotal - itemDiscount * item.quantity;
 
-  const gravacao = item.personalizations
-    ?.map((p) => {
-      let s = p.technique_name;
-      let widthCm = p.width_cm;
-      let heightCm = p.height_cm;
-      if ((!widthCm || !heightCm) && p.notes) {
-        const dimMatch = p.notes.match(/\|\s*([\d.]+)×([\d.]+)cm/);
-        if (dimMatch) {
-          widthCm = parseFloat(dimMatch[1]);
-          heightCm = parseFloat(dimMatch[2]);
-        }
-      }
-      if (widthCm && heightCm) s += ` ${widthCm}×${heightCm}cm`;
-      if (p.colors_count) s += ` | ${p.colors_count} cor${p.colors_count > 1 ? 'es' : ''}`;
-      if (p.material) s += ` | ${p.material}`;
-      return s;
-    })
-    .join(' · ');
+  const gravacao = formatPersonalizationsList(item.personalizations ?? []);
 
   return (
     <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
       <td style={{ ...tdStyle, textAlign: 'center', padding: '20px 8px', width: '90px' }}>
         {item.imageUrl ? (
           <img
-            src={item.imageUrl}
+            src={getProposalImageUrl(item.imageUrl)}
             alt={item.name}
             crossOrigin="anonymous"
             style={{
@@ -398,22 +388,41 @@ export function ProductsTable({ items }: { items: ProposalItem[] }) {
 
 /* ─── Totals ─── */
 export function TotalsSection({ data }: { data: ProposalTemplateData }) {
+  const tokens = getTotalsColorTokens();
   const shippingLabel = data.shippingType
     ? formatShipping(data.shippingType, data.shippingCost)
     : data.shippingCost
       ? fmt(data.shippingCost)
       : 'Cortesia';
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-      <div style={{ width: '380px' }}>
+    <div
+      style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}
+      data-totals-scheme={tokens.scheme}
+    >
+      <div style={{ width: `${TOTALS_BLOCK_WIDTH_PX}px` }}>
         <div style={totalsRowStyle}>
           <span>Subtotal:</span>
           <span style={{ fontWeight: 500 }}>{fmt(data.subtotal)}</span>
         </div>
+        {/* Economia — badge de destaque (paridade com ProposalTotals) */}
         {data.discount && data.discount > 0 && (
-          <div style={totalsRowStyle}>
-            <span>Desconto Global:</span>
-            <span style={{ fontWeight: 500 }}>- {fmt(data.discount)}</span>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: tokens.discount.bg,
+              color: tokens.discount.fg,
+              padding: '8px 14px',
+              margin: '6px 0',
+              borderRadius: '6px',
+              ...(tokens.discount.border ? { border: `1px solid ${tokens.discount.border}` } : {}),
+            }}
+          >
+            <span style={{ fontWeight: 700, fontSize: '13px' }}>Você economiza</span>
+            <span style={{ fontWeight: 800, fontSize: '15px', whiteSpace: 'nowrap' }}>
+              − {fmt(data.discount)}
+            </span>
           </div>
         )}
         <div style={totalsRowStyle}>
@@ -422,15 +431,17 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
         </div>
         <div
           style={{
-            backgroundColor: GREEN,
-            color: '#fff',
-            padding: '15px 20px',
+            backgroundColor: tokens.total.bg,
+            color: tokens.total.fg,
+            padding: '9.7px 20px',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             marginTop: '15px',
             borderRadius: '6px',
-            boxShadow: '0 4px 10px rgba(0,200,83, 0.2)',
+            ...(tokens.total.border
+              ? { border: `1px solid ${tokens.total.border}` }
+              : { boxShadow: '0 4px 10px rgba(0,200,83, 0.2)' }),
           }}
         >
           <span
@@ -439,16 +450,23 @@ export function TotalsSection({ data }: { data: ProposalTemplateData }) {
               fontWeight: 700,
               textTransform: 'uppercase',
               fontSize: '15px',
+              color: tokens.total.fg,
             }}
           >
-            Valor Total:
+            Total:
           </span>
           <strong
-            style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800, fontSize: '24px' }}
+            style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontWeight: 800,
+              fontSize: '24px',
+              color: tokens.total.fg,
+            }}
           >
             {fmt(data.total)}
           </strong>
         </div>
+
       </div>
     </div>
   );
@@ -474,12 +492,12 @@ export function NotesSection({ data }: { data: ProposalTemplateData }) {
       <div style={{ fontWeight: 700, fontSize: '13px', color: '#333', marginBottom: '8px' }}>
         Informações Relevantes:
       </div>
-      <div>- Todos os valores são para produtos já personalizados conforme descrição.</div>
+      
       {methodLabel && <div>- 💳 Forma de Pagamento: {methodLabel}.</div>}
       {termsLabel && <div>- 💵 Prazo de Pagamento: {termsLabel}.</div>}
       {deliveryLabel && <div>- 📦 Prazo de Entrega: {deliveryLabel}.</div>}
       {data.shippingType && <div>- 🚚 Frete: {shippingLabel}.</div>}
-      <div>- Todos produtos passam por controle de qualidade.</div>
+      
       {data.validUntil && <div>- 📅 Validade da Proposta: {data.validUntil}.</div>}
     </div>
   );

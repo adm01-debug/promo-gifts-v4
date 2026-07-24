@@ -5,7 +5,7 @@ import type { SecretStatus } from '@/hooks/admin';
 
 const SUFFIXES = ['URL', 'ANON_KEY', 'SERVICE_ROLE_KEY'] as const;
 
-type Aggregate = 'db' | 'env' | 'mixed' | 'partial' | 'none';
+type Aggregate = 'db' | 'env' | 'mixed' | 'none' | 'partial';
 
 function aggregateSource(
   envKey: string,

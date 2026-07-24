@@ -57,8 +57,9 @@ export function useCategoryById(categoryId: string | undefined) {
 
 export function useCategoriesByIds(categoryIds: string[]) {
   const { data: categories = [] } = useExternalCategoriesQuery();
-  return useMemo(
-    () => (categoryIds.length ? categories.filter((cat) => categoryIds.includes(cat.id)) : []),
-    [categoryIds, categories],
-  );
+  return useMemo(() => {
+    if (!categoryIds.length) return [];
+    const idSet = new Set(categoryIds);
+    return categories.filter((cat) => idSet.has(cat.id));
+  }, [categoryIds, categories]);
 }

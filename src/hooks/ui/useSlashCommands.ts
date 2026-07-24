@@ -10,7 +10,7 @@ export interface CommandDefinition {
   label: string;
   description: string;
   icon: string; // lucide icon name
-  action: () => void | Promise<void>;
+  action: () => Promise<void> | void;
   keywords?: string[];
   devOnly?: boolean;
 }

@@ -11,7 +11,7 @@ interface SuppliersFilterProps {
   setSupplierSearch: (v: string) => void;
   supplierOptions: Array<{ id: string; name: string; leadTimeDays?: number | null }>;
   suppliersLoading: boolean;
-  toggleArrayFilter: (key: keyof FilterState, value: string | number) => void;
+  toggleArrayFilter: (key: keyof FilterState, value: number | string) => void;
 }
 
 export function SuppliersFilter({

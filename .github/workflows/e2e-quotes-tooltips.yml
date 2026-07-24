@@ -1,0 +1,101 @@
+name: E2E Quotes Tooltips (04m-quotes-status-tooltip*)
+
+# Roda o suite de tooltips didáticos de status (chips + badges) em todos
+# os pushes/PRs que tocam o SSOT ou os specs relacionados, e via
+# workflow_dispatch para validar staging populado sob demanda.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/components/quotes/QuotesStatusChips.tsx"
+      - "src/components/quotes/__tests__/QuotesStatusChips*.test.ts"
+      - "src/types/quote.ts"
+      - "e2e/flows/04m-quotes-status-tooltip*.spec.ts"
+      - "e2e/helpers/quotes-status-seed.ts"
+      - "e2e/fixtures/selectors.ts"
+      - "docs/QUOTES_STATUS_TOOLTIPS.md"
+      - ".github/workflows/e2e-quotes-tooltips.yml"
+  pull_request:
+    paths:
+      - "src/components/quotes/QuotesStatusChips.tsx"
+      - "src/components/quotes/__tests__/QuotesStatusChips*.test.ts"
+      - "src/types/quote.ts"
+      - "e2e/flows/04m-quotes-status-tooltip*.spec.ts"
+      - "e2e/helpers/quotes-status-seed.ts"
+      - "e2e/fixtures/selectors.ts"
+      - "docs/QUOTES_STATUS_TOOLTIPS.md"
+      - ".github/workflows/e2e-quotes-tooltips.yml"
+  workflow_dispatch:
+
+jobs:
+  quotes-tooltips-e2e:
+    name: Playwright — 04m-quotes-status-tooltip*
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build app
+        run: npm run build
+
+      # Gate unitário primeiro — barato e detecta divergência de SSOT
+      # antes de gastar minutos no Playwright.
+      - name: Unit gate — SSOT parity + tooltips
+        run: |
+          npx vitest run \
+            src/components/quotes/__tests__/QuotesStatusChips.tooltips.test.ts \
+            src/components/quotes/__tests__/QuotesStatusChips.ssot-parity.test.ts
+
+      # 1ª passada: roda os 3 specs sem retries internos.
+      - name: Run 04m-quotes-status-tooltip* (1ª passada)
+        id: run1
+        run: npx playwright test e2e/flows/04m-quotes-status-tooltip --project=chromium-authed --retries=0 --reporter=html,list,github
+        env:
+          CI: "1"
+
+      # 2ª passada: rerroda APENAS os specs que falharam, uma única vez.
+      - name: Re-run failed specs (única retentativa)
+        if: failure() && steps.run1.conclusion == 'failure'
+        run: npx playwright test --last-failed --project=chromium-authed --retries=0 --reporter=html,list,github
+        env:
+          CI: "1"
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-04m-tooltips
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload test-results (trace, screenshot, video)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-04m-tooltips
+          path: |
+            test-results/
+            e2e/.evidence/
+          retention-days: 14
+          if-no-files-found: ignore

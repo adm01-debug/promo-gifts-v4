@@ -1,0 +1,165 @@
+name: drafts-index-check
+
+# =============================================================================
+# Garante que o índice de rascunhos em `qa/migrations-draft/README.md` (bloco
+# DRAFT-INDEX) está sincronizado com os arquivos `.sql` do diretório.
+#
+# Falha quando:
+#   • um novo rascunho foi adicionado sem regenerar o índice, OU
+#   • um rascunho foi removido/renomeado sem atualizar o índice.
+#
+# Correção local:
+#   npm run drafts:list
+#   git add qa/migrations-draft/README.md
+#
+# O status draft → migration → DB (`DRAFTS_STATUS.md`) NÃO é gate aqui — ele
+# depende de acesso ao banco, e o script `map-drafts-to-migrations.mjs` já é
+# safe-by-default. Se quiser publicá-lo como artefato, use o job opcional
+# abaixo.
+# =============================================================================
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'qa/migrations-draft/**'
+      - 'scripts/list-migration-drafts.mjs'
+      - 'scripts/map-drafts-to-migrations.mjs'
+      - 'scripts/check-draft-canonical-target.mjs'
+      - 'scripts/build-drafts-pr-comment.mjs'
+      - '.github/workflows/drafts-index-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'qa/migrations-draft/**'
+      - 'scripts/list-migration-drafts.mjs'
+      - 'scripts/map-drafts-to-migrations.mjs'
+      - 'scripts/check-draft-canonical-target.mjs'
+      - 'scripts/build-drafts-pr-comment.mjs'
+  workflow_dispatch:
+  workflow_dispatch:
+
+permissions:
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: drafts-index-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-index:
+    name: Drafts index (bloqueante)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Drafts index (drafts:check)
+        run: npm run drafts:check
+
+      - name: Alvo canônico dos rascunhos (drafts:target:check)
+        # Falha se algum rascunho declarar `pqp` como alvo, esquecer de
+        # declarar alvo canônico, ou se uma migration promovida em
+        # `supabase/migrations/` referenciar `pqp` em código executável.
+        run: npm run drafts:target:check
+
+      - name: Status dos rascunhos (drafts:status:check)
+        # Falha a PR quando:
+        #   • DRAFTS_STATUS.md está desatualizado (rode `npm run drafts:status`), OU
+        #   • existe draft 🟡 "não promovido" sem entrada em
+        #     qa/migrations-draft/REVIEWS.json (acknowledged_not_promoted), OU
+        #   • REVIEWS.json contém entradas órfãs (draft removido/promovido).
+        # Não depende de PG (o script trata "sem acesso ao DB" como ❔, e ❔
+        # NÃO conta como "não promovido").
+        run: npm run drafts:status:check
+
+  publish-status:
+    name: Drafts status (informacional)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit
+
+      # Sem PG* configurado, o script marca "sem acesso ao DB" mas NÃO falha —
+      # o job é informacional. Configure PGHOST/PGUSER/PGPASSWORD/PGDATABASE em
+      # secrets do repo para habilitar a checagem contra o DB canônico.
+      - name: Gerar DRAFTS_STATUS.md
+        env:
+          PGHOST: ${{ secrets.PGHOST }}
+          PGPORT: ${{ secrets.PGPORT }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
+        run: npm run drafts:status
+
+      - name: Montar comentário do PR (destaques 🟡 / ❔)
+        if: github.event_name == 'pull_request'
+        run: node scripts/build-drafts-pr-comment.mjs
+
+      - name: Publicar/atualizar comentário no PR
+        # Upsert idempotente: procura comentário com o marker HTML fixo
+        # e atualiza; se não existir, cria. Evita spam a cada push.
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('qa/migrations-draft/PR_COMMENT.md', 'utf8');
+            const marker = '<!-- drafts-status-comment:v1 -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+              core.notice(`Comentário atualizado (id=${existing.id})`);
+            } else {
+              const created = await github.rest.issues.createComment({ owner, repo, issue_number, body });
+              core.notice(`Comentário criado (id=${created.data.id})`);
+            }
+
+      - name: Sumário do job
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f qa/migrations-draft/DRAFTS_STATUS.md ]; then
+            echo "## Status dos rascunhos" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat qa/migrations-draft/DRAFTS_STATUS.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload DRAFTS_STATUS.md
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: drafts-status-${{ github.sha }}
+          path: qa/migrations-draft/DRAFTS_STATUS.md
+          if-no-files-found: warn
+          retention-days: 14

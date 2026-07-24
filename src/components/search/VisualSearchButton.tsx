@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/ui';
 import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
+import { sanitizeMessage } from '@/lib/security/sanitize-message';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface ProductAnalysis {
   productType: string;
   material: string;
@@ -49,7 +51,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       setIsLoading(true);
 
       try {
-        const { data, error } = await supabase.functions.invoke('visual-search', {
+        const { data, error } = await invokeEdge<{ products: SearchResult[]; analysis: ProductAnalysis; error?: string }>('visual-search', {
           body: { imageBase64 },
         });
 
@@ -57,11 +59,11 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
           throw new Error(error.message);
         }
 
-        if (data.error) {
+        if (data?.error) {
           throw new Error(data.error);
         }
 
-        const { products, analysis } = data;
+        const { products, analysis } = data ?? { products: [], analysis: {} as ProductAnalysis };
 
         toast({
           title: 'Busca concluída!',
@@ -72,10 +74,13 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
         setIsOpen(false);
       } catch (error) {
         logger.error('Visual search error:', error);
+        const description = sanitizeMessage(error, {
+          isDev: false,
+          fallback: 'Não foi possível processar a imagem. Tente novamente com outra foto.',
+        });
         toast({
-          title: 'Erro na busca',
-          description:
-            error instanceof Error ? error.message : 'Não foi possível processar a imagem.',
+          title: 'Erro na busca visual',
+          description,
           variant: 'destructive',
         });
       } finally {
@@ -86,7 +91,7 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
   );
 
   const handleFileSelect = useCallback(
-    async (file: File) => {
+    (file: File) => {
       if (!file.type.startsWith('image/')) {
         toast({
           title: 'Arquivo inválido',
@@ -132,16 +137,18 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       e.stopPropagation();
       setDragActive(false);
 
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        handleFileSelect(e.dataTransfer.files[0]);
+      const dtFile = e.dataTransfer.files?.[0];
+      if (dtFile) {
+        handleFileSelect(dtFile);
       }
     },
     [handleFileSelect],
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileSelect(e.target.files[0]);
+    const inputFile = e.target.files?.[0];
+    if (inputFile) {
+      handleFileSelect(inputFile);
     }
   };
 

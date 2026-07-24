@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 // ─── Count Up Animation ─────────────────────────────────────────
 
-function useCountUp(end: number, duration: number = 800): number {
+function useCountUp(end: number, duration = 800): number {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (end === 0) {
@@ -27,7 +27,7 @@ function useCountUp(end: number, duration: number = 800): number {
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const easeOutQuart = 1 - (1 - progress) ** 4;
       setCount(Math.floor(end * easeOutQuart));
       if (progress < 1) rafId = requestAnimationFrame(animate);
     };
@@ -40,7 +40,7 @@ function useCountUp(end: number, duration: number = 800): number {
 
 // ─── Stat Card ───────────────────────────────────────────────────
 
-type StatVariant = 'success' | 'warning' | 'info' | 'default' | 'orange';
+type StatVariant = 'default' | 'info' | 'orange' | 'success' | 'warning';
 
 interface StatCardProps {
   readonly label: string;
@@ -189,6 +189,7 @@ export function ReplenishmentStatsCards() {
     restockedToday: 0,
     restockedThisWeek: 0,
     restockedLast15Days: 0,
+    restockedLast30Days: 0,
     topSupplierName: null,
     topSupplierCount: 0,
     reorderedThisWeek: 0,
@@ -204,6 +205,7 @@ export function ReplenishmentStatsCards() {
       <StatCard
         label="Repostos Hoje"
         value={s.restockedToday}
+        subtitle="snapshot diário às 02h"
         icon={<CalendarPlus className="h-4 w-4 sm:h-5 sm:w-5" />}
         variant="info"
         delay={0}

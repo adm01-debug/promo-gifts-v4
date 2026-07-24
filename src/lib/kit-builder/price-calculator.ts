@@ -12,7 +12,7 @@ import type { KitItem, KitBox, KitPersonalization } from './types';
 /**
  * Calcula o preço total da caixa
  */
-export function calculateBoxPrice(box: KitBox | null, quantity: number = 1): number {
+export function calculateBoxPrice(box: KitBox | null, quantity = 1): number {
   if (!box) return 0;
   return box.price * quantity;
 }
@@ -32,7 +32,7 @@ export function calculateItemsPrice(items: KitItem[]): number {
 export function calculatePersonalizationPrice(
   personalization: KitPersonalization,
   items: KitItem[],
-  quantity: number = 1,
+  quantity = 1,
 ): number {
   let total = 0;
 
@@ -59,7 +59,7 @@ export function calculateTotalKitPrice(
   box: KitBox | null,
   items: KitItem[],
   personalization: KitPersonalization,
-  kitQuantity: number = 1,
+  kitQuantity = 1,
 ): {
   boxPrice: number;
   itemsPrice: number;
@@ -141,7 +141,7 @@ export function generatePriceBreakdown(
   box: KitBox | null,
   items: KitItem[],
   personalization: KitPersonalization,
-  kitQuantity: number = 1,
+  kitQuantity = 1,
 ): PriceBreakdownItem[] {
   const breakdown: PriceBreakdownItem[] = [];
 

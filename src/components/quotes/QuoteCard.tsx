@@ -18,7 +18,7 @@ export interface QuoteCardData {
   valid_until?: string | null;
 }
 
-const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+const STATUS_VARIANTS: Record<string, 'default' | 'destructive' | 'outline' | 'secondary'> = {
   draft: 'outline',
   pending_approval: 'secondary',
   sent: 'default',

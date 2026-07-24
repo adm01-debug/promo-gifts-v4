@@ -18,7 +18,7 @@ import { shouldRetry } from '@/lib/db/postgrest';
 
 const STALE = 2 * 60 * 1000;
 
-export type StockNotificationKind = 'stockout' | 'low' | 'new' | 'restocked';
+export type StockNotificationKind = 'low' | 'new' | 'restocked' | 'stockout';
 
 export interface StockNotificationCounts {
   stockout: number;
@@ -119,7 +119,7 @@ function buildArgs(limit: number, since?: string | null): Record<string, unknown
 // ─── Contadores (server-side, exatos, filtrados por período) ──────
 
 export function useStockNotificationCounts(since?: string | null) {
-  return useQuery<StockNotificationCounts, Error>({
+  return useQuery<StockNotificationCounts>({
     queryKey: ['stock-notif-counts', since ?? 'all'],
     queryFn: async () => {
       const args: Record<string, unknown> = {};
@@ -129,13 +129,15 @@ export function useStockNotificationCounts(since?: string | null) {
         args,
       )) as RpcResult<CountsRow>;
       if (error) throw new Error(error.message);
-      const d = data ?? { stockout: 0, low_stock: 0, novelties: 0, restocks: 0 };
+      // PostgREST SETOF functions wrap results in an array; unwrap before accessing fields.
+      const raw = Array.isArray(data) ? (data as CountsRow[])[0] : (data as CountsRow | null);
+      const d = raw ?? { stockout: 0, low_stock: 0, novelties: 0, restocks: 0 };
       return {
-        stockout: d.stockout,
-        low_stock: d.low_stock,
-        novelties: d.novelties,
-        restocks: d.restocks,
-        total: d.stockout + d.low_stock + d.novelties + d.restocks,
+        stockout: d.stockout ?? 0,
+        low_stock: d.low_stock ?? 0,
+        novelties: d.novelties ?? 0,
+        restocks: d.restocks ?? 0,
+        total: (d.stockout ?? 0) + (d.low_stock ?? 0) + (d.novelties ?? 0) + (d.restocks ?? 0),
       };
     },
     staleTime: STALE,
@@ -146,7 +148,7 @@ export function useStockNotificationCounts(since?: string | null) {
 // ─── Listas por categoria, filtradas por período ──────────────────
 
 export function useStockoutAlerts(limit = 50, since?: string | null) {
-  return useQuery<StockNotificationItem[], Error>({
+  return useQuery<StockNotificationItem[]>({
     queryKey: ['stock-notif-stockout', limit, since ?? 'all'],
     queryFn: async () => {
       const { data, error } = (await untypedRpc(
@@ -154,9 +156,7 @@ export function useStockoutAlerts(limit = 50, since?: string | null) {
         buildArgs(limit, since),
       )) as RpcResult<StockoutRow[]>;
       if (error) throw new Error(error.message);
-      return (data ?? []).map((r) =>
-        baseItem(r, 'stockout', 'stockout', r.last_stock_update_at),
-      );
+      return (data ?? []).map((r) => baseItem(r, 'stockout', 'stockout', r.last_stock_update_at));
     },
     staleTime: STALE,
     retry: shouldRetry,
@@ -164,7 +164,7 @@ export function useStockoutAlerts(limit = 50, since?: string | null) {
 }
 
 export function useLowStockAlerts(limit = 50, since?: string | null) {
-  return useQuery<StockNotificationItem[], Error>({
+  return useQuery<StockNotificationItem[]>({
     queryKey: ['stock-notif-low', limit, since ?? 'all'],
     queryFn: async () => {
       const { data, error } = (await untypedRpc(
@@ -183,7 +183,7 @@ export function useLowStockAlerts(limit = 50, since?: string | null) {
 }
 
 export function useNoveltyAlerts(limit = 30, since?: string | null) {
-  return useQuery<StockNotificationItem[], Error>({
+  return useQuery<StockNotificationItem[]>({
     queryKey: ['stock-notif-novelty', limit, since ?? 'all'],
     queryFn: async () => {
       const { data, error } = (await untypedRpc(
@@ -203,7 +203,7 @@ export function useNoveltyAlerts(limit = 30, since?: string | null) {
 }
 
 export function useRecentRestocks(limit = 30, since?: string | null) {
-  return useQuery<StockNotificationItem[], Error>({
+  return useQuery<StockNotificationItem[]>({
     queryKey: ['stock-notif-restocks', limit, since ?? 'all'],
     queryFn: async () => {
       const { data, error } = (await untypedRpc(
@@ -211,9 +211,7 @@ export function useRecentRestocks(limit = 30, since?: string | null) {
         buildArgs(limit, since),
       )) as RpcResult<RestockRow[]>;
       if (error) throw new Error(error.message);
-      return (data ?? []).map((r) =>
-        baseItem(r, 'restocked', 'restocked', r.last_restock_date),
-      );
+      return (data ?? []).map((r) => baseItem(r, 'restocked', 'restocked', r.last_restock_date));
     },
     staleTime: STALE,
     retry: shouldRetry,

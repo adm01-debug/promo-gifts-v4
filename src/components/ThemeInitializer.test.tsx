@@ -12,6 +12,7 @@ vi.mock('@/lib/theme-presets', () => ({
   DEFAULT_FONT_SANS: '',
   DEFAULT_FONT_DISPLAY: '',
   CSS_VARS_TO_APPLY: [],
+  STORAGE_KEY: 'gifts-store-theme-config',
 }));
 
 describe('ThemeInitializer', () => {

@@ -57,31 +57,53 @@ export function sortProducts(
 ): Product[] {
   if (options?.skipSort) return products;
 
+  // Non-mutating: operate on a shallow copy so the caller's array is unchanged.
+  const arr = [...products];
+
   switch (sortBy) {
     // BUG-SORT FIX: 'name-asc'/'name-desc' caíam no default (no-op) apesar de
     // serem valores válidos de ProductFilters.sortBy. Tratados aqui explicitamente.
     // ('name' e 'name-asc' compartilham o mesmo corpo via fall-through de case vazio.)
     case 'name':
     case 'name-asc':
-      products.sort(byNameThenId);
+      arr.sort(byNameThenId);
       break;
     case 'name-desc':
-      products.sort((a, b) => byNameThenId(b, a));
+      arr.sort((a, b) => byNameThenId(b, a));
       break;
 
     case 'price-asc':
-      products.sort(withIdTiebreak((a, b) => a.price - b.price));
+      // NULLS LAST: null/undefined/NaN prices sort after all real prices.
+      // Fix-NaN: ?? only catches null/undefined. Use Number.isFinite to also catch NaN.
+      // Guard: Infinity - Infinity = NaN → aPrice === bPrice → return 0 (id tiebreak).
+      arr.sort(
+        withIdTiebreak((a, b) => {
+          const aPrice = Number.isFinite(a.price) ? (a.price as number) : Infinity;
+          const bPrice = Number.isFinite(b.price) ? (b.price as number) : Infinity;
+          return aPrice === bPrice ? 0 : aPrice - bPrice;
+        }),
+      );
       break;
     case 'price-desc':
-      products.sort(withIdTiebreak((a, b) => b.price - a.price));
+      // NULLS LAST: null/undefined/NaN prices sort after all real prices in descending order.
+      // Fix-NaN: same NaN guard as price-asc.
+      arr.sort(
+        withIdTiebreak((a, b) => {
+          const aPrice = Number.isFinite(a.price) ? (a.price as number) : -Infinity;
+          const bPrice = Number.isFinite(b.price) ? (b.price as number) : -Infinity;
+          return aPrice === bPrice ? 0 : bPrice - aPrice;
+        }),
+      );
       break;
     case 'stock':
-      products.sort(withIdTiebreak((a, b) => (b.stock || 0) - (a.stock || 0)));
+      arr.sort(withIdTiebreak((a, b) => (b.stock ?? 0) - (a.stock ?? 0)));
       break;
     case 'newest':
-      products.sort((a, b) => {
-        const bTime = new Date(b.created_at || b.updated_at || 0).getTime();
-        const aTime = new Date(a.created_at || a.updated_at || 0).getTime();
+      arr.sort((a, b) => {
+        const bRaw = b.created_at || b.updated_at;
+        const aRaw = a.created_at || a.updated_at;
+        const bTime = bRaw ? new Date(bRaw).getTime() : -Infinity;
+        const aTime = aRaw ? new Date(aRaw).getTime() : -Infinity;
         if (bTime !== aTime) return bTime - aTime;
         // Se datas iguais, prioriza os que têm flag newArrival
         if (b.newArrival !== a.newArrival) return b.newArrival ? 1 : -1;
@@ -92,7 +114,7 @@ export function sortProducts(
       const sMap = options?.supplierSalesMap;
       if (sMap && sMap.size > 0) {
         // Real data from external DB (mv_product_intelligence)
-        products.sort((a, b) => {
+        arr.sort((a, b) => {
           const aEntry = sMap.get(a.id);
           const bEntry = sMap.get(b.id);
           const aScore = aEntry?.turnoverScore ?? 0;
@@ -107,12 +129,12 @@ export function sortProducts(
       } else {
         // Fallback: flags do produto (quando MV nao populada)
         // Prioriza featured, depois newArrival, depois stock como proxy de "giro"
-        products.sort((a, b) => {
+        arr.sort((a, b) => {
           const aScore = (a.featured ? 10 : 0) + (a.newArrival ? 5 : 0);
           const bScore = (b.featured ? 10 : 0) + (b.newArrival ? 5 : 0);
           if (bScore !== aScore) return bScore - aScore;
-          const aStock = a.stock || 0;
-          const bStock = b.stock || 0;
+          const aStock = a.stock ?? 0;
+          const bStock = b.stock ?? 0;
           if (bStock !== aStock) return bStock - aStock;
           return byNameThenId(a, b);
         });
@@ -130,10 +152,10 @@ export function sortProducts(
     // Adicionado alias para best-seller-promo (semanticamente equivalente).
     case 'best-seller-promo':
     case 'popularity':
-      products.sort((a, b) => {
+      arr.sort((a, b) => {
         const map = options?.promoSalesMap;
-        const aCount = map?.get(a.id) || 0;
-        const bCount = map?.get(b.id) || 0;
+        const aCount = map?.get(a.id) ?? 0;
+        const bCount = map?.get(b.id) ?? 0;
         if (bCount !== aCount) return bCount - aCount;
         return byNameThenId(a, b);
       });
@@ -147,5 +169,5 @@ export function sortProducts(
       break;
   }
 
-  return products;
+  return arr;
 }

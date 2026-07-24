@@ -24,7 +24,7 @@ import {
 import { logger } from '@/lib/logger';
 export interface Message {
   id?: string;
-  role: 'user' | 'assistant';
+  role: 'assistant' | 'user';
   content: string;
   timestamp?: number;
   isError?: boolean;
@@ -90,7 +90,7 @@ export function useExpertChat({
     tags: [],
   });
   const [showFilters, setShowFilters] = useState(false);
-  const [historyDateFilter, setHistoryDateFilter] = useState<'all' | 'today' | 'week' | 'month'>(
+  const [historyDateFilter, setHistoryDateFilter] = useState<'all' | 'month' | 'today' | 'week'>(
     'all',
   );
   const [autoPlayTts, setAutoPlayTts] = useState(() => {
@@ -127,7 +127,7 @@ export function useExpertChat({
   const handleAutoSend = useCallback((text: string) => {
     setInput(text);
     setTimeout(() => {
-      const sendBtn = document.querySelector('[data-oracle-send]') as HTMLButtonElement;
+      const sendBtn = document.querySelector<HTMLButtonElement>('[data-oracle-send]');
       sendBtn?.click();
     }, 50);
   }, []);
@@ -351,7 +351,20 @@ export function useExpertChat({
           toast.error('Faça login para salvar orçamentos');
           return;
         }
-        const { data: quote, error } = await supabase
+        // Typed bypass: quotes.insert() uses RejectExcessProperties which rejects
+        // extra fields via deep union — cast avoids TS2345 without losing safety.
+        type QuoteInsertResult = PromiseLike<{
+          data: { id: string; quote_number: string } | null;
+          error: { message: string; code?: string } | null;
+        }>;
+        type QuoteFrom = {
+          from: (t: string) => {
+            insert: (row: Record<string, unknown>) => {
+              select: (cols: string) => { single: () => QuoteInsertResult };
+            };
+          };
+        };
+        const { data: quote, error } = await (supabase as unknown as QuoteFrom)
           // rls-allow: RLS aplica seller_id automaticamente
           .from('quotes')
           .insert({
@@ -361,11 +374,12 @@ export function useExpertChat({
             client_id: clientId || null,
             client_name: clientName || 'Sem cliente',
             notes: proposalContent.slice(0, 2000),
-            internal_notes: 'Gerado pelo Flow - Assistente Pessoal',
           })
           .select('id, quote_number')
           .single();
-        if (error) throw error;
+        if (error)
+          throw new Error((error as { message?: string }).message ?? 'Erro ao criar rascunho');
+        if (!quote) throw new Error('Quote criado mas dados não retornados');
         toast.success(`Rascunho ${quote.quote_number} criado!`, {
           description: 'Redirecionando para o editor…',
           duration: 2000,
@@ -574,10 +588,10 @@ export function useExpertChat({
                 const content = parsed.choices?.[0]?.delta?.content;
                 if (content) {
                   assistantMessage += content;
+                  const snapshot = assistantMessage;
                   setMessages((prev) => {
                     const n = [...prev];
-                    if (n[n.length - 1]?.role === 'assistant')
-                      n[n.length - 1].content = assistantMessage;
+                    if (n[n.length - 1]?.role === 'assistant') n[n.length - 1].content = snapshot;
                     return n;
                   });
                 }
@@ -641,16 +655,28 @@ export function useExpertChat({
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
+        // BUG-EXPERTCHAT-TTS-PREF-SELECT-SILENT-FAIL FIX: if SELECT failed, profile was null
+        // and currentPrefs became {}, causing the UPDATE to overwrite all other preferences.
+        const { data: profile, error: profileFetchErr } = await supabase
           .from('profiles')
           .select('preferences')
           .eq('user_id', user.id)
           .maybeSingle();
+        if (profileFetchErr) {
+          logger.warn(
+            '[expert-chat] Could not fetch profile prefs — TTS pref not persisted:',
+            profileFetchErr,
+          );
+          return;
+        }
         const currentPrefs = (profile?.preferences as Record<string, unknown>) || {};
-        await supabase
+        // BUG-EXPERTCHAT-TTS-PREF-UPDATE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+        const { error: prefErr } = await supabase
           .from('profiles')
           .update({ preferences: { ...currentPrefs, flow_autoplay_tts: next } })
           .eq('user_id', user.id);
+        if (prefErr)
+          logger.warn('[expert-chat] TTS preference update failed (non-fatal):', prefErr);
       }
     } catch {
       /* empty */

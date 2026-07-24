@@ -17,7 +17,7 @@ const formatCurrency = (val: number) => `$${val.toFixed(4)}`;
 const formatNumber = (val: number) => val.toLocaleString('pt-BR');
 
 export default function AdminAiUsagePage() {
-  const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
+  const [period, setPeriod] = useState<'day' | 'month' | 'week'>('month');
   const { data: stats, isLoading: statsLoading } = useAiUsageStats(period);
   const { data: logs, isLoading: logsLoading } = useAiUsageLogs({ period, limit: 200 });
 

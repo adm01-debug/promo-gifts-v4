@@ -51,6 +51,22 @@ export default defineConfig({
       },
       testIgnore: [/auth\.setup\.ts/],
     },
+    {
+      name: 'firefox-public',
+      use: {
+        ...devices['Desktop Firefox'],
+        viewport: { width: 1280, height: 720 },
+      },
+      testIgnore: [/auth\.setup\.ts/],
+    },
+    {
+      name: 'webkit-public',
+      use: {
+        ...devices['Desktop Safari'],
+        viewport: { width: 1280, height: 720 },
+      },
+      testIgnore: [/auth\.setup\.ts/],
+    },
 
     // 3. Projetos Autenticados (reaproveita login do setup)
     {

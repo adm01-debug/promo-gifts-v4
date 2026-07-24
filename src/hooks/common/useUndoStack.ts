@@ -8,7 +8,7 @@ import { logger } from '@/lib/logger';
 export interface UndoEntry {
   id: string;
   label: string;
-  undo: () => void | Promise<void>;
+  undo: () => Promise<void> | void;
   /** ms desde push */
   pushedAt: number;
 }

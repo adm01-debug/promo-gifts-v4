@@ -4,23 +4,14 @@
  */
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Package, Plus, Pencil, Trash2, Loader2, AlertCircle, Boxes } from 'lucide-react';
+import { Package, Plus, Pencil, Trash2, AlertCircle, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 import { ComponentForm } from './ComponentForm';
 import { ComponentMediaManager } from './ComponentMediaManager';
@@ -357,28 +348,18 @@ export function ProductKitComponentsSection({
         </div>
       </ScrollArea>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir componente?</AlertDialogTitle>
-            <AlertDialogDescription>
-              O componente <strong>{deleteTarget?.component_name}</strong> e suas áreas de gravação
-              serão removidos permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isSaving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        variant="destructive"
+        title="Excluir componente?"
+        description={`O componente "${deleteTarget?.component_name ?? ''}" e suas áreas de gravação serão removidos permanentemente.`}
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={handleDelete}
+        loading={isSaving}
+        testId="kit-component-delete"
+      />
     </div>
   );
 }

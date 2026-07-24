@@ -7,7 +7,7 @@ import type { ConnectionType } from '@/hooks/intelligence';
  */
 export function mapConnectionToTester(
   connectionId: string | undefined,
-): { type: ConnectionType; envKey?: 'promobrind' | 'crm' } | null {
+): { type: ConnectionType; envKey?: 'crm' | 'promobrind' } | null {
   if (!connectionId) return null;
   if (connectionId === 'n8n') return { type: 'n8n' };
   if (connectionId === 'bitrix24') return { type: 'bitrix24' };
@@ -56,7 +56,7 @@ export function formatFullPtBr(iso: string): string {
 export function buildUpdatedTooltip(
   updatedAt: string | null | undefined,
   updatedByEmail: string | null | undefined,
-  updatedBy?: string | null | undefined,
+  updatedBy?: string | null,
 ): string | undefined {
   if (!updatedAt) return undefined;
 

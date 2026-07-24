@@ -4,6 +4,7 @@
  * Use somente em produtos de demonstração (ex.: SKU 09138).
  */
 import { useRef } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { Sparkles, ChevronLeft, ChevronRight, Trophy, TrendingUp, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -187,6 +188,8 @@ function MockMiniCard({
 
 export function SmartRecommendationsMock() {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  // Scroll horizontal via mouse wheel (fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(scrollerRef);
   const scrollBy = (delta: number) =>
     scrollerRef.current?.scrollBy({ left: delta, behavior: 'smooth' });
 

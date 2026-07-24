@@ -20,7 +20,7 @@ export interface SecretImpact {
   /** Fluxos de negócio afetados (verbos de ação). */
   flows: string[];
   /** Severidade percebida quando ausente. */
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  severity: 'critical' | 'high' | 'low' | 'medium';
 }
 
 const PROMOBRIND_FULL: SecretImpact = {

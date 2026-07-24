@@ -13,6 +13,7 @@ import { Search, Package, X, SearchX, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { getCdnUrl } from '@/utils/image-utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -113,9 +114,9 @@ export function MockupProductSelector({
 
   const handleColorSelect = (variant: ExternalVariantStock | null, product: Product) => {
     const variantThumb = variant?.selected_thumbnail
-      ? `${variant.selected_thumbnail}/thumbnail`
+      ? getCdnUrl(variant.selected_thumbnail, 'thumbnail')
       : null;
-    const variantFirstImg = variant?.images?.[0] ? `${variant.images[0]}/thumbnail` : null;
+    const variantFirstImg = variant?.images?.[0] ? getCdnUrl(variant.images[0], 'thumbnail') : null;
     const imageUrl = variantThumb || variantFirstImg || product.images?.[0] || '/placeholder.svg';
 
     onSelect({
@@ -148,7 +149,7 @@ export function MockupProductSelector({
             onError={(e) => {
               const t = e.currentTarget;
               if (t.src.includes('/thumbnail')) {
-                t.src = t.src.replace('/thumbnail', '');
+                t.src = getCdnUrl(t.src, 'public');
               } else if (selection.product.images?.[0]) {
                 t.src = selection.product.images[0];
               } else {
@@ -182,9 +183,9 @@ export function MockupProductSelector({
           className="h-7 w-7 shrink-0 hover:bg-destructive/10 hover:text-destructive"
           onClick={handleClear}
           disabled={disabled}
-          aria-label="Fechar"
+          aria-label="Remover produto selecionado"
         >
-          <X className="h-3.5 w-3.5" />
+          <X aria-hidden="true" className="h-3.5 w-3.5" />
         </Button>
       </div>
     );
@@ -212,7 +213,7 @@ export function MockupProductSelector({
             disabled={disabled}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 transition-transform group-hover:scale-110">
-              <Search className="h-5 w-5 text-primary" />
+              <Search aria-hidden="true" className="h-5 w-5 text-primary" />
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-semibold">Buscar produto</span>
@@ -225,7 +226,7 @@ export function MockupProductSelector({
         <DialogContent className="overflow-hidden border-border/40 p-0 shadow-2xl sm:max-w-[800px]">
           <DialogHeader className="p-6 pb-2">
             <DialogTitle className="flex items-center gap-2 font-display text-2xl">
-              <Package className="h-6 w-6 text-primary" />
+              <Package aria-hidden="true" className="h-6 w-6 text-primary" />
               Selecione o Produto
             </DialogTitle>
           </DialogHeader>
@@ -234,8 +235,12 @@ export function MockupProductSelector({
             {/* Search Header */}
             <div className="shrink-0 space-y-4 p-6 pt-2">
               <div className="group relative">
-                <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                <Search
+                  aria-hidden="true"
+                  className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary"
+                />
                 <Input
+                  aria-label="Buscar produto por nome, SKU ou palavras-chave"
                   placeholder="Busque por nome, SKU ou palavras-chave..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -244,17 +249,23 @@ export function MockupProductSelector({
                 />
                 {searchQuery && (
                   <button
+                    type="button"
+                    aria-label="Limpar busca de produto"
                     onClick={() => setSearchQuery('')}
                     className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
                   >
-                    <X className="h-5 w-5" />
+                    <X aria-hidden="true" className="h-5 w-5" />
                   </button>
                 )}
               </div>
 
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-4">
-                  <p className="text-xs font-medium text-muted-foreground">
+                  <p
+                    className="text-xs font-medium text-muted-foreground"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
                     {isLoadingProducts
                       ? 'Carregando catálogo...'
                       : isSearching
@@ -263,10 +274,12 @@ export function MockupProductSelector({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Filter aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
                   <select
+                    aria-label="Ordenar produtos"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                    onBlur={(e) => setSortBy(e.target.value as typeof sortBy)}
                     className="cursor-pointer border-none bg-transparent text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus:ring-0"
                   >
                     <option value="default">Relevância</option>
@@ -304,7 +317,7 @@ export function MockupProductSelector({
                 ) : sortedProducts.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                     <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-                      <SearchX className="h-10 w-10 opacity-20" />
+                      <SearchX aria-hidden="true" className="h-10 w-10 opacity-20" />
                     </div>
                     <p className="font-display text-xl font-bold text-foreground">
                       Nenhum resultado
@@ -338,11 +351,18 @@ export function MockupProductSelector({
                               className="group relative flex cursor-pointer flex-col rounded-2xl border border-border/30 bg-card p-3 outline-none transition-all duration-300 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 focus-visible:ring-2 focus-visible:ring-primary"
                               role="button"
                               tabIndex={0}
-                              onKeyDown={(e) => e.key === 'Enter' && handleProductPick(product)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  handleProductPick(product);
+                                }
+                              }}
                             >
                               <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-muted">
                                 <img
-                                  src={product.image_url}
+                                  src={
+                                    product.image_url || product.images?.[0] || '/placeholder.svg'
+                                  }
                                   alt={product.name}
                                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                   loading="lazy"

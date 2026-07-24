@@ -12,6 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCrmInfiniteCompanySelector } from '@/hooks/crm';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { useReducedMotion } from '@/hooks/ui/useReducedMotion';
+import { maskCnpj } from '@/utils/masks';
 import type { MockupClient } from './MockupConfigPanel';
 
 interface MockupClientSelectorProps {
@@ -26,7 +28,7 @@ function CompanyAvatar({
 }: {
   name: string;
   logoUrl?: string | null;
-  size?: 'sm' | 'md';
+  size?: 'md' | 'sm';
 }) {
   const dim = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-8 h-8 text-xs';
 
@@ -64,6 +66,7 @@ export function MockupClientSelector({
   const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const reducedMotion = useReducedMotion();
 
   const {
     data,
@@ -101,11 +104,21 @@ export function MockupClientSelector({
   if (selectedClient) {
     return (
       <div
+        role="button"
+        tabIndex={0}
         className="group flex min-h-[44px] w-full cursor-pointer items-center gap-3 rounded-md border border-border bg-background px-3 py-2 transition-colors hover:border-primary/50"
         data-testid="mockup-client-chip"
+        aria-label={`Empresa selecionada: ${selectedClient.name}. Clique para remover`}
         onClick={() => {
           onClientSelect(null);
           setTimeout(() => inputRef.current?.focus(), 50);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClientSelect(null);
+            setTimeout(() => inputRef.current?.focus(), 50);
+          }
         }}
       >
         <CompanyAvatar name={selectedClient.name} logoUrl={selectedClient.logo_url} />
@@ -119,13 +132,16 @@ export function MockupClientSelector({
               <>
                 {selectedClient.ramo && <span className="text-xs text-muted-foreground">·</span>}
                 <span className="font-mono text-xs text-muted-foreground">
-                  {selectedClient.cnpj}
+                  {maskCnpj(selectedClient.cnpj)}
                 </span>
               </>
             )}
           </div>
         </div>
-        <X className="h-4 w-4 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+        <X
+          className="h-4 w-4 flex-shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+          aria-hidden="true"
+        />
       </div>
     );
   }
@@ -144,10 +160,14 @@ export function MockupClientSelector({
     <div ref={containerRef} className="relative z-40 w-full" data-testid="mockup-client-selector">
       {/* Campo de busca — z-50 + isolate para ficar acima do backdrop-blur */}
       <div className="relative isolate z-50">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search
+          aria-hidden="true"
+          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+        />
         <Input
           ref={inputRef}
           data-testid="mockup-client-search-input"
+          aria-label="Buscar empresa"
           placeholder="Buscar empresa..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -155,14 +175,19 @@ export function MockupClientSelector({
           className="h-11 bg-background pl-9"
         />
         {isLoading ? (
-          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-primary" />
+          <Loader2
+            aria-hidden="true"
+            className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-primary"
+          />
         ) : (
           searchQuery.length > 0 && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
+              aria-label="Limpar busca de cliente"
               className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
             >
-              <X className="h-4 w-4" />
+              <X aria-hidden="true" className="h-4 w-4" />
             </button>
           )
         )}
@@ -175,7 +200,7 @@ export function MockupClientSelector({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: reducedMotion ? 0 : 0.15 }}
             className="fixed inset-0 z-30 bg-black/20 backdrop-blur-[2px]"
             onClick={() => setIsFocused(false)}
           />
@@ -186,15 +211,19 @@ export function MockupClientSelector({
       <AnimatePresence>
         {showDropdown && (
           <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: reducedMotion ? 0 : 0.2, ease: 'easeOut' }}
             className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-primary/30 bg-popover shadow-xl shadow-black/25 ring-1 ring-primary/10"
           >
             {/* Header com contagem */}
             <div className="flex items-center justify-between border-b border-border/50 bg-muted/30 px-3 py-2">
-              <span className="text-xs font-medium text-muted-foreground">
+              <span
+                className="text-xs font-medium text-muted-foreground"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 {isLoading
                   ? 'Carregando...'
                   : isError
@@ -209,9 +238,12 @@ export function MockupClientSelector({
             <div className="relative">
               <ScrollArea style={{ height: `${dropdownHeight}px` }}>
                 {isError ? (
-                  <div className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center">
+                  <div
+                    role="alert"
+                    className="flex flex-col items-center justify-center gap-3 px-4 py-8 text-center"
+                  >
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-                      <AlertCircle className="h-6 w-6 text-destructive" />
+                      <AlertCircle className="h-6 w-6 text-destructive" aria-hidden="true" />
                     </div>
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-foreground">Falha ao carregar CRM</p>
@@ -234,14 +266,17 @@ export function MockupClientSelector({
                       }}
                       className="mt-1 h-8 gap-2 border-destructive/20 transition-colors hover:bg-destructive/5 hover:text-destructive"
                     >
-                      <RefreshCw className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')} />
+                      <RefreshCw
+                        aria-hidden="true"
+                        className={cn('h-3.5 w-3.5', isLoading && 'animate-spin')}
+                      />
                       {isLoading ? 'Tentando...' : 'Tentar novamente'}
                     </Button>
                   </div>
                 ) : filteredCompanies.length === 0 ? (
                   <div className="flex flex-col items-center justify-center gap-2 px-4 py-6 text-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
-                      <Building2 className="h-5 w-5 text-muted-foreground/60" />
+                      <Building2 aria-hidden="true" className="h-5 w-5 text-muted-foreground/60" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
@@ -293,7 +328,7 @@ export function MockupClientSelector({
                                   <span className="text-xs text-muted-foreground/50">·</span>
                                 )}
                                 <span className="truncate font-mono text-[11px] text-muted-foreground/70">
-                                  {company.cnpj}
+                                  {maskCnpj(company.cnpj)}
                                 </span>
                               </>
                             )}
@@ -303,7 +338,7 @@ export function MockupClientSelector({
                     ))}
                   </div>
                 )}
-                {hasNextPage && !searchQuery && (
+                {hasNextPage && (
                   <div className="flex justify-center border-t border-border/30 p-2">
                     <Button
                       variant="ghost"
@@ -316,7 +351,9 @@ export function MockupClientSelector({
                       disabled={isFetchingNextPage}
                     >
                       {isFetchingNextPage ? (
-                        <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                        <Loader2 aria-hidden="true" className="mr-2 h-3 w-3 animate-spin" />
+                      ) : searchQuery ? (
+                        'Buscar em mais registros...'
                       ) : (
                         'Carregar mais empresas...'
                       )}

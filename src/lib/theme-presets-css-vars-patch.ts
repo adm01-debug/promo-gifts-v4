@@ -2,29 +2,15 @@
  * theme-presets-css-vars-patch.ts
  * BUG-04 Fix — documentação do patch aplicado a CSS_VARS_TO_APPLY
  *
- * O array CSS_VARS_TO_APPLY em src/lib/theme-presets.ts deve incluir
- * os tokens orange-* para que applyThemePreset() os atualize ao trocar de preset.
+ * PATCH STATUS: APPLIED (2026-05-25). Os tokens orange-* foram adicionados
+ * ao array CSS_VARS_TO_APPLY em src/lib/theme-presets.ts:162-169.
  *
- * APLICAR MANUALMENTE em src/lib/theme-presets.ts:
- * Localizar o final do array CSS_VARS_TO_APPLY (linha com 'chart-1',)
- * e adicionar as 5 linhas abaixo ANTES do fechamento ];
- *
- * ```ts
- * export const CSS_VARS_TO_APPLY: (keyof ThemeModeColors)[] = [
- *   // ... tokens existentes ...
- *   'chart-1',
- *   // BUG-04 fix — @see docs/design-system-audit-2026-05-25.md
- *   'orange',
- *   'orange-hover',
- *   'orange-active',
- *   'orange-glow',
- *   'orange-foreground',
- * ];
- * ```
- *
- * Sem esses 5 tokens, applyThemePreset() nunca atualiza --orange-*
- * ao trocar de preset. Componentes usando hsl(var(--orange)) ficam
+ * Contexto histórico: sem esses 5 tokens, applyThemePreset() nunca atualizava
+ * --orange-* ao trocar de preset. Componentes usando hsl(var(--orange)) ficavam
  * travados no valor padrão (217 91% 60% = azul).
+ *
+ * O validateBug04Patch() abaixo serve como sentinel de regressão —
+ * importável em testes para garantir que o patch não seja revertido.
  *
  * @see docs/design-system-audit-2026-05-25.md BUG-04
  */
@@ -41,7 +27,7 @@ export const BUG_04_PATCH = {
   insertAfter: 'chart-1',
   reason: 'applyThemePreset() nunca atualizava --orange-* tokens ao trocar de preset',
   appliedAt: '2026-05-25',
-  status: 'PENDING_MANUAL_APPLY' as const,
+  status: 'APPLIED' as const,
 };
 
 /**

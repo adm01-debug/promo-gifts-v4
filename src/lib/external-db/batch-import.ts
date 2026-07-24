@@ -7,6 +7,12 @@ import { logger } from '@/lib/logger';
 
 export type ImportMode = 'insert' | 'upsert';
 
+// Canonical Gold organization (SSOT doufsxqlfjyuvxuezpln). REQUIRED by the products RLS
+// INSERT policy is_org_owner_or_admin(organization_id) — without it every imported row is
+// rejected ("new row violates row-level security policy"). Kept local so this data-layer
+// module has no dependency on the UI layer where the same constant also lives.
+const ORGANIZATION_ID = '5db5aee1-064b-4ef4-9193-345dcd8274ea';
+
 export interface ImportRow {
   sku: string;
   name: string;
@@ -45,8 +51,7 @@ export interface ImportRow {
   box_quantity?: number | null;
   box_volume_cm3?: number | null;
   box_image?: string | null;
-  // Mídia
-  image_url?: string | null;
+  // Mídia (NOTE: `products` has no `image_url` column — use `primary_image_url`)
   primary_image_url?: string | null;
   og_image_url?: string | null;
   // Flags
@@ -61,6 +66,21 @@ export interface ImportRow {
   gender?: string | null;
   dimensions?: string | null;
   [key: string]: unknown;
+}
+
+/**
+ * Defensive: `products` has no `image_url` column. If a row still carries one (e.g. a CSV
+ * header literally named "image_url"), fold it into `primary_image_url` so the chunk insert
+ * does not fail with PGRST204 ("Could not find the 'image_url' column").
+ */
+export function sanitizeImportRow(row: ImportRow): Record<string, unknown> {
+  // Fold the phantom `image_url` into `primary_image_url` (products has no image_url
+  // column → PGRST204) AND inject organization_id, which the products RLS INSERT policy
+  // is_org_owner_or_admin(organization_id) requires — without it every row is rejected.
+  const { image_url, ...rest } = row as ImportRow & { image_url?: unknown };
+  const out: Record<string, unknown> = { ...rest, organization_id: ORGANIZATION_ID };
+  if (image_url && !out.primary_image_url) out.primary_image_url = String(image_url);
+  return out;
 }
 
 export interface BatchImportProgress {
@@ -151,8 +171,11 @@ export async function executeBatchImport(
     try {
       const response = await dbInvoke<{ id: string; sku: string; name: string }>({
         table: 'products',
-        operation: 'batch_insert',
-        data: chunk as unknown as Record<string, unknown>,
+        // upsert mode targets the unique `sku` index (onConflict) so existing products are
+        // updated instead of a 23505 unique violation; batch_insert is a plain INSERT.
+        operation: mode === 'upsert' ? 'upsert' : 'batch_insert',
+        // sanitizeImportRow folds the phantom image_url AND injects organization_id (RLS).
+        data: chunk.map(sanitizeImportRow) as unknown as Record<string, unknown>,
         ...(mode === 'upsert' ? { onConflict: 'sku' } : {}),
       });
 

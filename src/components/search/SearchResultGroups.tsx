@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { HighlightMatch } from './HighlightMatch';
 import type { SearchResult } from '@/hooks/common';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -42,8 +43,10 @@ export function SearchResultItem({
   onHover,
 }: ResultItemProps) {
   const isProduct = result.type === 'product';
-  const productImg =
-    isProduct && result.data?.images?.[0] ? getCdnUrl(result.data.images[0], 'card') : null;
+  const rawProductImg = isProduct ? (result.data?.images?.[0] ?? null) : null;
+  const productImg = rawProductImg ? getCdnUrl(rawProductImg, 'card') : null;
+  // BUG-SEARCH-CORS FIX: urlOriginal permite fallback para supplier CDN quando CF falha
+  const productImgFallback = getProxiedImageUrl(rawProductImg) ?? null;
 
   return (
     <button
@@ -68,6 +71,7 @@ export function SearchResultItem({
             alt=""
             className="object-contain"
             containerClassName="h-full w-full"
+            urlOriginal={productImgFallback}
           />
         ) : (
           typeIcons[result.type] || result.icon

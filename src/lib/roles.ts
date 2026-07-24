@@ -7,13 +7,13 @@
 import { type LucideIcon, Code2, ShieldCheck, User } from 'lucide-react';
 
 export type AppRole =
-  | 'dev'
-  | 'supervisor'
-  | 'vendedor'
+  | 'admin'
   | 'agente'
   | 'coordenador'
-  | 'admin'
-  | 'manager';
+  | 'dev'
+  | 'manager'
+  | 'supervisor'
+  | 'vendedor';
 
 export type RoleVisual = {
   /** Rótulo exibido ao usuário (sempre em português). */
@@ -21,7 +21,7 @@ export type RoleVisual = {
   /** Ícone Lucide associado ao role. */
   Icon: LucideIcon;
   /** Variante do <Badge> shadcn. */
-  variant: 'default' | 'secondary' | 'outline';
+  variant: 'default' | 'outline' | 'secondary';
   /** Classes adicionais usando tokens semânticos do design system. */
   className: string;
   /** Descrição curta para tooltips/legendas. */

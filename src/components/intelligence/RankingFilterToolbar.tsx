@@ -50,7 +50,7 @@ interface Supplier {
   name: string;
 }
 interface Category {
-  id: string | number;
+  id: number | string;
   name: string;
 }
 

@@ -125,9 +125,13 @@ export default function SimuladorWizard() {
 
   const handleLoadDraft = (draft: (typeof drafts)[0]) => {
     if (draft.product_data) {
-      wizard.selectProduct(draft.product_data);
-      wizard.setQuantity(draft.quantity);
-      // Personalizations will be restored via the product selection flow
+      // Restore the full draft (product + quantity + personalizations) atomically.
+      // selectProduct alone would wipe personalizations — see LOAD_DRAFT reducer.
+      wizard.loadDraft({
+        product: draft.product_data,
+        quantity: draft.quantity,
+        personalizations: draft.personalizations ?? [],
+      });
       toast.success(`Rascunho "${draft.title}" carregado`);
     }
   };

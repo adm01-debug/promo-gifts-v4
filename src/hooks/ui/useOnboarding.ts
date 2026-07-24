@@ -8,7 +8,7 @@ export interface OnboardingStep {
   title: string;
   description: string;
   targetSelector: string;
-  position: 'top' | 'bottom' | 'left' | 'right';
+  position: 'bottom' | 'left' | 'right' | 'top';
   route?: string;
 }
 
@@ -95,7 +95,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     id: 'notifications',
     title: 'Central de Notificações',
     description:
-      'Receba alertas importantes, lembretes de follow-up e atualizações de orçamentos. Configure lembretes para nunca perder um deal!',
+      'Receba alertas importantes, lembretes e atualizações de orçamentos. Configure lembretes para nunca perder um deal!',
     targetSelector: "[data-tour='notifications']",
     position: 'bottom',
   },
@@ -163,35 +163,39 @@ export function useOnboarding() {
             setShowTour(true);
           }
         } else {
-          // Double check if record was created in the meantime to avoid race conditions
-          const { data: retryData } = await supabase
+          const { data: newData, error: insertError } = await supabase
             .from('user_onboarding')
-            .select('*')
-            .eq('user_id', user.id)
-            .maybeSingle();
+            .insert({
+              user_id: user.id,
+              has_completed_tour: false,
+              current_step: 0,
+            })
+            .select()
+            .single();
 
-          if (retryData) {
-            setOnboardingId(retryData.id);
-            setHasCompletedTour(retryData.has_completed_tour || false);
-            setCurrentStep(retryData.current_step || 0);
-            if (!retryData.has_completed_tour) setShowTour(true);
-          } else {
-            const { data: newData, error: insertError } = await supabase
-              .from('user_onboarding')
-              .insert({
-                user_id: user.id,
-                has_completed_tour: false,
-                current_step: 0,
-              })
-              .select()
-              .single();
-
-            if (insertError) {
+          if (insertError) {
+            if (insertError.code === '23505') {
+              // Race condition: another tab inserted concurrently — fetch the winner row
+              // BUG-ONBOARDING-RACEDATA-SELECT-SILENT-FAIL FIX: { data: raceData } without
+              // error check — RLS failure silently left onboarding state uninitialised.
+              const { data: raceData, error: raceErr } = await supabase
+                .from('user_onboarding')
+                .select('*')
+                .eq('user_id', user.id)
+                .maybeSingle();
+              if (raceErr) logger.warn('[useOnboarding] race-condition recovery fetch failed:', raceErr);
+              if (raceData) {
+                setOnboardingId(raceData.id);
+                setHasCompletedTour(raceData.has_completed_tour || false);
+                setCurrentStep(raceData.current_step || 0);
+                if (!raceData.has_completed_tour) setShowTour(true);
+              }
+            } else {
               logger.error('Error creating onboarding:', insertError);
-            } else if (newData) {
-              setOnboardingId(newData.id);
-              setShowTour(true);
             }
+          } else if (newData) {
+            setOnboardingId(newData.id);
+            setShowTour(true);
           }
         }
       } catch (err) {
@@ -211,13 +215,15 @@ export function useOnboarding() {
 
       setCurrentStep(step);
 
-      await supabase
+      // BUG-ONBOARDING-STEP-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: stepErr } = await supabase
         .from('user_onboarding')
         .update({
           current_step: step,
           completed_steps: ONBOARDING_STEPS.slice(0, step).map((s) => s.id),
         })
         .eq('id', onboardingId);
+      if (stepErr) logger.warn('[onboarding] updateStep failed:', stepErr);
     },
     [user, onboardingId],
   );
@@ -229,7 +235,8 @@ export function useOnboarding() {
     setShowTour(false);
     setHasCompletedTour(true);
 
-    await supabase
+    // BUG-ONBOARDING-COMPLETE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+    const { error: completeErr } = await supabase
       .from('user_onboarding')
       .update({
         has_completed_tour: true,
@@ -237,6 +244,7 @@ export function useOnboarding() {
         completed_steps: ONBOARDING_STEPS.map((s) => s.id),
       })
       .eq('id', onboardingId);
+    if (completeErr) logger.warn('[onboarding] completeTour failed:', completeErr);
   }, [user, onboardingId]);
 
   // Skip tour
@@ -246,13 +254,15 @@ export function useOnboarding() {
     setShowTour(false);
     setHasCompletedTour(true);
 
-    await supabase
+    // BUG-ONBOARDING-SKIP-SILENT-FAIL FIX: bare await swallowed RLS errors.
+    const { error: skipErr } = await supabase
       .from('user_onboarding')
       .update({
         has_completed_tour: true,
         completed_at: new Date().toISOString(),
       })
       .eq('id', onboardingId);
+    if (skipErr) logger.warn('[onboarding] skipTour failed:', skipErr);
   }, [user, onboardingId]);
 
   // Restart tour
@@ -263,7 +273,8 @@ export function useOnboarding() {
     setShowTour(true);
     setHasCompletedTour(false);
 
-    await supabase
+    // BUG-ONBOARDING-RESTART-SILENT-FAIL FIX: bare await swallowed RLS errors.
+    const { error: restartErr } = await supabase
       .from('user_onboarding')
       .update({
         has_completed_tour: false,
@@ -272,6 +283,7 @@ export function useOnboarding() {
         completed_at: null,
       })
       .eq('id', onboardingId);
+    if (restartErr) logger.warn('[onboarding] restartTour failed:', restartErr);
   }, [user, onboardingId]);
 
   // Navigate to next step

@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+  type ReactNode,
+} from 'react';
 
 type TooltipStyle = 'compact' | 'standard';
 
@@ -70,28 +78,26 @@ export function ThemeProvider({
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [storageKey]);
 
-  const setTheme = () => {
-    // Theme is fixed to dark
+  const setTheme = useCallback(() => {
     localStorage.setItem(storageKey, 'dark');
-  };
+  }, [storageKey]);
 
-  const toggleTheme = () => {
-    // No-op as theme is fixed to dark
-  };
+  const toggleTheme = useCallback(() => {
+    // Theme is fixed to dark — no-op
+  }, []);
 
-  const setTooltipStyle = (style: TooltipStyle) => {
-    localStorage.setItem(tooltipStorageKey, style);
-    setTooltipStyleState(style);
-  };
+  const setTooltipStyle = useCallback(
+    (style: TooltipStyle) => {
+      localStorage.setItem(tooltipStorageKey, style);
+      setTooltipStyleState(style);
+    },
+    [tooltipStorageKey],
+  );
 
-  const value: ThemeContextType = {
-    theme,
-    actualTheme,
-    tooltipStyle,
-    setTheme,
-    toggleTheme,
-    setTooltipStyle,
-  };
+  const value = useMemo<ThemeContextType>(
+    () => ({ theme, actualTheme, tooltipStyle, setTheme, toggleTheme, setTooltipStyle }),
+    [theme, actualTheme, tooltipStyle, setTheme, toggleTheme, setTooltipStyle],
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

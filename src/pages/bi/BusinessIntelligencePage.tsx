@@ -46,6 +46,7 @@ import { useSeasonalPeakNotifications } from '@/hooks/bi/useSeasonalPeakNotifica
 import { useClientSeasonality } from '@/hooks/bi/useClientSeasonality';
 import { useCrmCompany } from '@/hooks/crm';
 import { getCompanyDisplayName } from '@/types/crm';
+import { maskCnpj } from '@/utils/masks';
 
 export default function BusinessIntelligencePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -183,7 +184,7 @@ export default function BusinessIntelligencePage() {
                 {company.cnpj && (
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <FileText className="h-3.5 w-3.5" />
-                    <span className="text-xs">{company.cnpj}</span>
+                    <span className="text-xs font-mono">{maskCnpj(company.cnpj)}</span>
                   </div>
                 )}
                 {ramoAtividade && (

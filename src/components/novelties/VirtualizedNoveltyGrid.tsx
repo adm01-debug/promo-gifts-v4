@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { NoveltyWithDetails } from '@/hooks/products';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
@@ -17,17 +17,25 @@ interface VirtualizedNoveltyGridProps {
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onProductClick: (id: string) => void;
-  onStatusClick?: (type: string, value?: string | number) => void;
+  onStatusClick?: (type: string, value?: number | string) => void;
   colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
+  /** Incrementa p/ rolar o container ao topo (troca de filtros). */
+  scrollToTopToken?: number;
+  /**
+   * Elemento de scroll EXTERNO (overflow-y-auto). A página de Novidades
+   * cria um container com altura fixa para que a barra de rolagem fique
+   * ao lado dos produtos — não no body. Obrigatório.
+   */
+  scrollElementRef: RefObject<HTMLElement | null>;
 }
 
 /**
- * Grade virtualizada de Novidades — espelha a implementação de Reposição
- * para garantir colunas responsivas, espaçamento vertical uniforme (pb-8)
- * e alinhamento interno consistente em todas as resoluções.
+ * Grade virtualizada de Novidades — agora ancorada num container de scroll
+ * INTERNO (passado via `scrollElementRef`). A janela do navegador permanece
+ * sem barra de rolagem; o scrollbar aparece à direita do grid de produtos.
  */
 export function VirtualizedNoveltyGrid({
   products,
@@ -41,50 +49,57 @@ export function VirtualizedNoveltyGrid({
   hasMore = false,
   isLoadingMore = false,
   onLoadMore,
+  scrollToTopToken = 0,
+  scrollElementRef,
 }: VirtualizedNoveltyGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
 
+  const estimatedRowHeight = numCols <= 2 ? 520 : numCols <= 3 ? 480 : numCols <= 4 ? 460 : 440;
+
   const virtualizer = useVirtualizer({
     count: rowCount,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 480,
-    overscan: 3,
+    getScrollElement: () => scrollElementRef.current,
+    estimateSize: () => estimatedRowHeight,
+    overscan: 5,
     measureElement: (el) => el.getBoundingClientRect().height,
   });
 
+  // Reset de scroll ao topo quando os filtros mudam (skip 1º render).
+  const isFirstScrollRef = useRef(true);
   useEffect(() => {
-    const el = parentRef.current;
-    if (!el || !onLoadMore) return;
+    if (isFirstScrollRef.current) {
+      isFirstScrollRef.current = false;
+      return;
+    }
+    scrollElementRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [scrollToTopToken, scrollElementRef]);
 
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-    const handleScroll = () => {
+  // Infinite scroll baseado no scroll do CONTAINER interno.
+  useEffect(() => {
+    if (!onLoadMore) return;
+    const el = scrollElementRef.current;
+    if (!el) return;
+    const onScroll = () => {
       if (!hasMore || isLoadingMore) return;
-      if (el.scrollHeight - el.scrollTop - el.clientHeight < 640) {
-        onLoadMore();
-      }
+      const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const threshold = Math.max(640, el.clientHeight);
+      if (remaining < threshold) onLoadMore();
     };
-
-    el.addEventListener('scroll', handleScroll, { passive: true });
-    timeoutId = setTimeout(handleScroll, 180);
-
+    el.addEventListener('scroll', onScroll, { passive: true });
+    const t = setTimeout(onScroll, 180);
     return () => {
-      el.removeEventListener('scroll', handleScroll);
-      if (timeoutId) clearTimeout(timeoutId);
+      el.removeEventListener('scroll', onScroll);
+      clearTimeout(t);
     };
-  }, [products.length, hasMore, isLoadingMore, onLoadMore]);
+  }, [products.length, hasMore, isLoadingMore, onLoadMore, scrollElementRef]);
 
   return (
     <div
       ref={parentRef}
       data-testid="novelty-list-wrapper"
-      className="scrollbar-products overflow-y-auto pr-2"
-      style={{
-        height:
-          'max(420px, calc(100vh - var(--header-h,56px) - var(--breadcrumb-h,0px) - var(--novelty-sticky-h,160px) - 112px))',
-      }}
       role="list"
       aria-label="Grade de novidades"
     >

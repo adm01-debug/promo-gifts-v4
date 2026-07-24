@@ -289,7 +289,7 @@ function calculatePriceFromTable(
   if (table.precoPorCor && colors && table.maxCores) {
     if (colors > table.maxCores) {
       const fatorCor = colors / table.maxCores;
-      unitPrice = unitPrice * fatorCor;
+      unitPrice *= fatorCor;
     }
   }
 

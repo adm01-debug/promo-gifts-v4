@@ -36,7 +36,7 @@ export function useVideoVariantLinks(productId?: string) {
   });
 
   const createLink = useMutation({
-    mutationFn: async (link: Omit<VideoVariantLink, 'id' | 'created_at'>) => {
+    mutationFn: async (link: Omit<VideoVariantLink, 'created_at' | 'id'>) => {
       const { data, error } = await supabase
         .from('video_variant_links')
         .insert(link)

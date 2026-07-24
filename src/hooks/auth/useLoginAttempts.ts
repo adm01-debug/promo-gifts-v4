@@ -4,6 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface LoginAttempt {
   id: string;
@@ -24,6 +25,8 @@ interface UseLoginAttemptsOptions {
 }
 
 export function useLoginAttempts(options: UseLoginAttemptsOptions = {}) {
+  // BUG-HEAD-GUARD FIX (2026-06-23): admin-only queries sem guard.
+  const { rolesLoaded, isAdmin } = useAuth();
   const { page = 1, pageSize = 50, emailFilter, successFilter } = options;
 
   return useQuery({
@@ -59,11 +62,15 @@ export function useLoginAttempts(options: UseLoginAttemptsOptions = {}) {
      * disparava refetch completo da tabela login_attempts. Para dados de
      * auditoria histórica, 30s de cache é razoável e reduz carga no banco.
      */
+    enabled: rolesLoaded && Boolean(isAdmin),
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
 }
 
 export function useLoginAttemptStats() {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 3 HEAD requests com refetchInterval=60s.
+  const { rolesLoaded, isAdmin } = useAuth();
   return useQuery({
     queryKey: ['login-attempt-stats'],
     queryFn: async () => {
@@ -94,8 +101,11 @@ export function useLoginAttemptStats() {
         failRate24h: total24h ? Math.round(((failed24h || 0) / total24h) * 100) : 0,
       };
     },
+    enabled: rolesLoaded && Boolean(isAdmin),
     refetchInterval: 60_000,
     // FIX: staleTime alinhado com refetchInterval para evitar refetch duplo no focus
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

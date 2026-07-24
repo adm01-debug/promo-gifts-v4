@@ -91,7 +91,7 @@ export function IntelligenceFilterBar({ filters, onFiltersChange }: Intelligence
     if (!prodSearch.trim()) return products.slice(0, 50);
     const q = prodSearch.toLowerCase().trim();
     return products
-      .filter((p) => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)))
+      .filter((p) => p.name.toLowerCase().includes(q) || p.sku?.toLowerCase().includes(q))
       .slice(0, 50);
   }, [products, prodSearch]);
 

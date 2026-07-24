@@ -2,7 +2,7 @@
  * GalleryColorVariations — Cards de variações de cor abaixo da galeria
  */
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Play, Package } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { ColorTooltipContent, colorTooltipClassName } from '../ColorTooltipConte
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface ColorMedia {
   name: string;
@@ -36,10 +37,14 @@ export function GalleryColorVariations({
   activeColorName,
 }: GalleryColorVariationsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const sortedColors = sortByColorGroup(
-    colors,
-    (c) => c.name,
-    (c) => c.hex,
+  const sortedColors = useMemo(
+    () =>
+      sortByColorGroup(
+        colors,
+        (c) => c.name,
+        (c) => c.hex,
+      ),
+    [colors],
   );
 
   // Sync scroll to selected color
@@ -137,6 +142,7 @@ export function GalleryColorVariations({
                         <div className="h-full w-full">
                           <OptimizedImage
                             src={getCdnUrl(color.images?.[0] || color.image || '', 'thumbnail')}
+                            urlOriginal={getProxiedImageUrl(color.images?.[0] || color.image || '') ?? null}
                             alt={color.name}
                             className="object-cover transition-transform duration-700 ease-out group-hover/color:scale-110"
                             containerClassName="h-full w-full"

@@ -19,11 +19,13 @@
    sem quebrar posicionamentos fixed/sticky.
    ───────────────────────────────────────────── */
 html {
-  overflow-x: hidden;
+  /* `clip` (não `hidden`): hidden promove overflow-y para auto, criando
+     scroll container que anula position:sticky da sidebar. */
+  overflow-x: clip;
   min-height: 100dvh; /* dvh = dynamic viewport height (iOS Safari) */
 }
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100dvh;
 }
 

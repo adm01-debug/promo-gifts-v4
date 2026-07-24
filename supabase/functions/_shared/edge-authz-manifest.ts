@@ -59,7 +59,6 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "commemorative-dates": { category: "public", rationale: "Calendário público" },
   "categories-api": { category: "public", rationale: "Catálogo de categorias público" },
   "materials-api": { category: "public", rationale: "Catálogo de materiais público" },
-  "generate-mockup": { category: "public", rationale: "Geração de mockup — token público assinado", enforcedBy: "custom", skipAnonBypassTest: true },
   "product-webhook": { category: "public", rationale: "Webhook de produto — HMAC inline", enforcedBy: "custom", skipAnonBypassTest: true },
   "webhook-inbound": { category: "public", rationale: "Webhook inbound — assinatura HMAC", enforcedBy: "custom", skipAnonBypassTest: true },
   "semantic-search": { category: "public", rationale: "Busca semântica — rate-limited, sem dados sensíveis", skipAnonBypassTest: true },
@@ -96,6 +95,10 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "generate-ad-prompt": { category: "authenticated", rationale: "Geração de prompt para anúncio" },
   "generate-product-seo": { category: "authenticated", rationale: "SEO de produto" },
   "analyze-logo-colors": { category: "authenticated", rationale: "Análise de cores de logo" },
+  // generate-mockup: compositor canvas server-side — exige JWT via authenticateRequest()
+  // (NÃO é "token público assinado": não existe verificação de assinatura no código).
+  // GUARD: manter como "authenticated" — não reverter para "public". verify_jwt=true (config.toml).
+  "generate-mockup": { category: "authenticated", rationale: "Geração de mockup (compositor canvas) — authenticateRequest (JWT obrigatório)", enforcedBy: "custom" },
   "magic-up-score": { category: "authenticated", rationale: "Scoring criativo do user" },
   "voice-agent": { category: "authenticated", rationale: "Voice agent do user" },
   "quote-sync": { category: "authenticated", rationale: "Sync do orçamento do próprio vendedor" },
@@ -142,9 +145,19 @@ export const EDGE_AUTHZ_MANIFEST: Record<string, AuthzEntry> = {
   "mcp-server": { category: "scoped", rationale: "Token MCP com escopos read/write/admin", enforcedBy: "custom" },
   "crm-db-bridge": { category: "scoped", rationale: "JWT + RBAC custom interno", enforcedBy: "custom" },
   "simulation-orchestrator": { category: "scoped", rationale: "Orquestrador de simulacoes — HMAC N8N_PRODUCT_WEBHOOK_SECRET", enforcedBy: "custom" },
+  "receive-crm-callback": { category: "scoped", rationale: "Callback do CRM Promo Champions — x-api-key custom (timing-safe)", enforcedBy: "custom", skipAnonBypassTest: true, skipAuthBypassTest: true },
 
   // ---------------- Service (server-to-server) ----------------
   "sync-external-db": { category: "service", rationale: "Sync DB externo — service_role_key server-to-server", enforcedBy: "custom" },
   "asia-ingestion": { category: "service", rationale: "Sync paginado catálogo ASIA — cron/service via x-cron-secret (ASIA_INGESTION_CRON_SECRET)", enforcedBy: "custom" },
   "backfill-image-dimensions": { category: "service", rationale: "Backfill dimensões product_images — cron via x-cron-secret (BACKFILL_DIM_CRON_SECRET)", enforcedBy: "custom" },
+  "generate-blurhashes": { category: "service", rationale: "Gera blurhashes — cron via authorizeCron (service_role + x-cron-secret)", enforcedBy: "custom" },
+  "hash-product-images": { category: "service", rationale: "Hash perceptual de imagens — cron via authorizeCron (service_role + x-cron-secret)", enforcedBy: "custom" },
+  "audit-suite": { category: "dev", rationale: "Suite de auditoria — service_role + has_role(dev) inline", enforcedBy: "custom" },
+  "word-magic": { category: "authenticated", rationale: "Geração de copy via IA — authenticateRequest (JWT obrigatório)", enforcedBy: "custom" },
+
+  // ---------------- Test CI edges (não-produção, Lovable 2026-06-19) ----------------
+  "test-cart-concurrency": { category: "dev", rationale: "Teste CI de concorrência de carrinho — service_role interno", enforcedBy: "custom" },
+  "test-cart-limit": { category: "dev", rationale: "Teste CI de limite de carrinho — service_role interno", enforcedBy: "custom" },
+  "test-cart-rls": { category: "dev", rationale: "Teste CI de RLS de carrinho — service_role interno", enforcedBy: "custom" },
 };

@@ -114,7 +114,7 @@ export function ExpectedKeysMatchPanel({
     () =>
       extConns
         .filter((c) => !!c.env_key && !expectedEnvKeys.has(c.env_key.toLowerCase()))
-        .map((c) => ({ env_key: c.env_key as string, name: c.name })),
+        .map((c) => ({ env_key: c.env_key!, name: c.name })),
     [extConns, expectedEnvKeys],
   );
 
@@ -198,7 +198,7 @@ export function ExpectedKeysMatchPanel({
 
               <ul className="space-y-1">
                 {d.expectedSecrets.map((s) => {
-                  const state: 'ok' | 'empty' | 'missing' = !s.present
+                  const state: 'empty' | 'missing' | 'ok' = !s.present
                     ? 'missing'
                     : !s.hasValue
                       ? 'empty'

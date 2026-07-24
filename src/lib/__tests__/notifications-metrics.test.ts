@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { notificationsMetrics } from '../notifications-metrics';
 
@@ -28,7 +29,7 @@ describe('notifications-metrics regression tests', () => {
     expect(snap.ratio).toBe(0.5);
   });
 
-  it('should classify fetches within or after TTL correctly', async () => {
+  it('should classify fetches within or after TTL correctly', () => {
     // First fetch is always afterTtl
     notificationsMetrics.recordFetch('prefetch');
     let snap = notificationsMetrics.snapshot();

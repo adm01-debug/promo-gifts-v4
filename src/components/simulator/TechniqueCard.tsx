@@ -46,7 +46,7 @@ interface TechniqueCardProps {
   quantity: number;
   onToggle: () => void;
   onUpdateSetting: (field: keyof TechniqueSettings, value: number) => void;
-  viewMode: 'expanded' | 'compact';
+  viewMode: 'compact' | 'expanded';
 }
 
 export function TechniqueCard({

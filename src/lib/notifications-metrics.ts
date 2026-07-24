@@ -27,8 +27,8 @@
 
 import { logger } from '@/lib/logger';
 
-export type TriggerSource = 'hover' | 'focus' | 'drawer-open';
-export type FetchSource = 'initial' | 'polling' | 'prefetch' | 'mutation' | 'filter-change';
+export type TriggerSource = 'drawer-open' | 'focus' | 'hover';
+export type FetchSource = 'filter-change' | 'initial' | 'mutation' | 'polling' | 'prefetch';
 export type BadgeRenderSource = 'cache' | 'network';
 
 export interface BadgeRenderStat {
@@ -184,7 +184,8 @@ const throttleByEvent = new Map<string, ThrottleEntry>();
 
 function emit(event: string, payload: Record<string, unknown>) {
   if (!isDebugEnabled()) return;
-  logger.debug(`[notifications-metrics:${event}]`, payload);
+  // eslint-disable-next-line no-console
+  console.log(`[notifications-metrics:${event}]`, event, payload);
 }
 
 function debugLog(event: string, payload: Record<string, unknown>) {
@@ -293,7 +294,7 @@ export const notificationsMetrics = {
     };
   },
 
-  logBadgeBudgetSummary(reason: string = 'unmount') {
+  logBadgeBudgetSummary(reason = 'unmount') {
     if (!isDebugEnabled()) return;
     const budget = buildBudget();
     if (budget.total === 0) return;
@@ -304,7 +305,7 @@ export const notificationsMetrics = {
     });
   },
 
-  recordTriggerToFetch(sample: Omit<TriggerToFetchTiming, 'totalMs' | 'withinTtl' | 'at'>) {
+  recordTriggerToFetch(sample: Omit<TriggerToFetchTiming, 'at' | 'totalMs' | 'withinTtl'>) {
     const totalMs = Number((sample.debounceMs + sample.fetchMs).toFixed(2));
     const withinTtl = totalMs < TRIGGER_TO_FETCH_TTL_MS;
     const full: TriggerToFetchTiming = {

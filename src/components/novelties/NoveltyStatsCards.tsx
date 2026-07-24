@@ -1,27 +1,43 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Sparkles, CalendarPlus, CalendarRange, CalendarDays, Building2 } from 'lucide-react';
+import {
+  Sparkles,
+  CalendarPlus,
+  CalendarRange,
+  CalendarDays,
+  Building2,
+  AlertCircle,
+} from 'lucide-react';
 import { useNoveltyStats, type NoveltyStatsDisplay } from '@/hooks/products';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-
 import { logger } from '@/lib/logger';
-function useCountUp(end: number, duration: number = 800) {
+
+/**
+ * ISSUE-28 FIX: animated count-up que começa do valor ATUAL exibido (não de 0)
+ * quando o `end` muda. Isso evita reiniciar do zero na atualização de stats, que
+ * causava um efeito visualmente abrupto ao fazer refresh dos cards após 5 minutos.
+ */
+function useCountUp(end: number, duration = 800) {
   const [count, setCount] = useState(0);
+  // Rastreia o valor atual exibido para usar como ponto de partida da próxima animação.
+  const countRef = useRef(0);
+  countRef.current = count;
+
   useEffect(() => {
-    if (end === 0) {
-      setCount(0);
-      return;
-    }
+    const startValue = countRef.current;
+    if (startValue === end) return; // sem mudança — não reinicia animação
     let startTime: number | null = null;
+    let rafId: number;
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      setCount(Math.floor(end * easeOutQuart));
-      if (progress < 1) requestAnimationFrame(animate);
+      const easeOutQuart = 1 - (1 - progress) ** 4;
+      setCount(Math.round(startValue + (end - startValue) * easeOutQuart));
+      if (progress < 1) rafId = requestAnimationFrame(animate);
     };
-    requestAnimationFrame(animate);
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
   }, [end, duration]);
   return count;
 }
@@ -32,7 +48,7 @@ interface StatCardProps {
   suffix?: string;
   subtitle?: string;
   icon: React.ReactNode;
-  variant: 'success' | 'warning' | 'info' | 'default' | 'orange';
+  variant: 'default' | 'info' | 'orange' | 'success' | 'warning';
   delay?: number;
 }
 
@@ -140,6 +156,29 @@ export function NoveltyStatsCards() {
 
   if (error) {
     logger.error('Erro ao carregar estatísticas:', error);
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Card key={i} className="border-border/50 border-destructive/20">
+            <CardContent className="p-2.5 sm:p-3">
+              <div className="flex items-center gap-2.5">
+                <div className="shrink-0 rounded-lg bg-destructive/10 p-2">
+                  <AlertCircle className="h-4 w-4 text-destructive/70 sm:h-5 sm:w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-lg font-bold tabular-nums leading-tight text-muted-foreground sm:text-xl">
+                    —
+                  </p>
+                  <p className="truncate text-[10px] leading-tight text-muted-foreground/60 sm:text-xs">
+                    Indisponível
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   }
 
   return (

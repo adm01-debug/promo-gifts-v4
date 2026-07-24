@@ -21,7 +21,7 @@ interface MobileProductActionsProps {
 }
 
 export const MobileProductActions = React.forwardRef<HTMLDivElement, MobileProductActionsProps>(
-  function MobileProductActions(
+  (
     {
       productId,
       productName,
@@ -35,7 +35,7 @@ export const MobileProductActions = React.forwardRef<HTMLDivElement, MobileProdu
       product,
     },
     ref,
-  ) {
+  ) => {
     const navigate = useNavigate();
     const [quoteWizardOpen, setQuoteWizardOpen] = useState(false);
 

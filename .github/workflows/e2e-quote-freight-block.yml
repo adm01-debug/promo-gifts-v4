@@ -1,0 +1,151 @@
+name: E2E Quote Freight Block (visual)
+
+# Regressão visual do bloco Frete no QuoteBuilderPage.
+# Falha se as screenshots divergirem além de maxDiffPixelRatio 0.02
+# e sobe o diff/report como artefato + comenta o PR com o link.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/quotes/QuoteBuilderPage.tsx'
+      - 'src/components/ui/label.tsx'
+      - 'src/components/ui/select.tsx'
+      - 'src/components/ui/currency-input.tsx'
+      - 'src/index.css'
+      - 'src/styles/brand-tokens.css'
+      - 'tailwind.config.ts'
+      - 'e2e/visual/quote-freight-block.spec.ts'
+      - 'e2e/visual/quote-freight-block.spec.ts-snapshots/**'
+      - 'e2e/helpers/nav.ts'
+      - '.github/workflows/e2e-quote-freight-block.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/pages/quotes/QuoteBuilderPage.tsx'
+      - 'src/components/ui/label.tsx'
+      - 'src/components/ui/select.tsx'
+      - 'src/components/ui/currency-input.tsx'
+      - 'src/index.css'
+      - 'src/styles/brand-tokens.css'
+      - 'tailwind.config.ts'
+      - 'e2e/visual/quote-freight-block.spec.ts'
+      - 'e2e/visual/quote-freight-block.spec.ts-snapshots/**'
+      - 'e2e/helpers/nav.ts'
+      - '.github/workflows/e2e-quote-freight-block.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  freight-block-visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium]
+    env:
+      CI: 'true'
+      FORCE_COLOR: '0'
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run freight block visual spec (${{ matrix.browser }})
+        id: run
+        run: |
+          npx playwright test \
+            e2e/visual/quote-freight-block.spec.ts \
+            --project=${{ matrix.browser }}-public \
+            --reporter=line,html
+
+      - name: Upload report + snapshots + diffs
+        if: always()
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-freight-block-${{ matrix.browser }}
+          path: |
+            playwright-report
+            test-results
+            e2e/visual/quote-freight-block.spec.ts-snapshots
+          retention-days: 14
+
+      - name: Comentar report/artefato no PR (sempre)
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const outcome = ${{ toJSON(steps.run.outcome) }};
+            const artifactUrl = ${{ toJSON(steps.upload.outputs.artifact-url) }} ||
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}#artifacts`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const icon = outcome === 'success' ? '✅' : '🖼️❌';
+            const status = outcome === 'success' ? 'passou' : 'falhou';
+            const body = [
+              `### ${icon} Regressão visual do bloco Frete ${status}`,
+              '',
+              `**Browser:** \`${{ matrix.browser }}\``,
+              `**Resultado:** \`${outcome}\``,
+              `**Run:** ${runUrl}`,
+              `**Playwright report + diffs + snapshots:** ${artifactUrl}`,
+              '',
+              outcome === 'success'
+                ? '_Nenhuma divergência visual detectada._'
+                : [
+                    'Passos para investigar:',
+                    `1. Baixe o artefato \`quote-freight-block-${{ matrix.browser }}\` em ${artifactUrl}`,
+                    '2. Abra `playwright-report/index.html` para ver **expected × actual × diff** pixel-a-pixel',
+                    '3. Se a mudança visual for intencional, dispare **E2E · Update Quote Freight snapshots** para regenerar os baselines',
+                  ].join('\n'),
+            ].join('\n');
+            const marker = '<!-- freight-block-visual-report -->';
+            const fullBody = `${marker}\n${body}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: fullBody,
+              });
+            }
+
+      - name: Resumo no summary do run
+        if: always()
+        run: |
+          {
+            echo "## 🖼️ Regressão visual do bloco Frete"
+            echo ""
+            echo "- Browser: \`${{ matrix.browser }}\`"
+            echo "- Resultado: **${{ steps.run.outcome }}**"
+            echo "- Artefato: [quote-freight-block-${{ matrix.browser }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifacts)"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { WEBHOOK_EVENTS_CATALOG } from '@/lib/webhook-events-catalog';
 import { getEventSamplePayload } from '@/lib/webhook-events-payload-samples';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface OutboundHookOption {
   id: string;
@@ -79,7 +80,13 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
     setBusy(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke('webhook-dispatcher', {
+      const { data, error } = await invokeEdge<{
+        success?: boolean;
+        status_code?: number | null;
+        latency_ms?: number;
+        response_body?: string;
+        error?: string;
+      }>('webhook-dispatcher', {
         body: {
           event,
           payload: parsed,

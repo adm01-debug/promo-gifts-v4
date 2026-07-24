@@ -19,10 +19,11 @@ import { logger } from '@/lib/logger';
 import { maskSensitiveText } from '@/lib/sensitive-masking';
 import { recordBridgeCall, estimatePayloadBytes } from '@/lib/telemetry/bridgeCallMetrics';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface CrmQuery {
   table: string;
-  operation: 'select' | 'search' | 'insert' | 'update' | 'delete';
+  operation: 'delete' | 'insert' | 'search' | 'select' | 'update';
   id?: string;
   filters?: Record<string, unknown>;
   select?: string;
@@ -58,6 +59,21 @@ function safeCrmErrorFields(error: unknown): Record<string, unknown> {
   return { message: safeCrmLogMessage(error) };
 }
 
+/**
+ * Guarda de sessão: evita chamar o crm-db-bridge sem access_token válido
+ * (o bridge retornaria 401 "Token invalido ou expirado" e travaria a UI).
+ * Lança erro tipado que os callers já tratam como "não autenticado".
+ */
+async function ensureCrmSession(): Promise<void> {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  if (!token) {
+    const err = new Error('CRM unauthenticated: no active session');
+    (err as Error & { code?: string }).code = 'UNAUTHENTICATED';
+    throw err;
+  }
+}
+
 // ============================================
 // CIRCUIT BREAKER para 429 / rate-limit
 // ============================================
@@ -78,7 +94,7 @@ function isRateLimited(): boolean {
 function activateRateLimitCooldown(): void {
   consecutiveRateLimitHits = Math.min(consecutiveRateLimitHits + 1, 4);
   const cooldownMs = Math.min(
-    RATE_LIMIT_COOLDOWN_BASE_MS * Math.pow(2, consecutiveRateLimitHits - 1),
+    RATE_LIMIT_COOLDOWN_BASE_MS * 2 ** (consecutiveRateLimitHits - 1),
     RATE_LIMIT_COOLDOWN_MAX_MS,
   );
   rateLimitedUntil = Date.now() + cooldownMs;
@@ -184,7 +200,7 @@ export interface CanonicalDbHealthResult {
 }
 
 /**
- * Health check passivo do banco canônico (pqpdolkaeqlyzpdpbizo).
+ * Health check passivo do banco canônico (doufsxqlfjyuvxuezpln).
  *
  * Usa SELECT limit 1 em system_kill_switches (tabela leve, sem dados de negócio)
  * para verificar conectividade e latência do PostgREST. A query é rápida,
@@ -202,19 +218,14 @@ export interface CanonicalDbHealthResult {
  *     await reportToGlitchTip({ error: health.error, latency: health.latencyMs });
  *   }
  */
-export async function detectCanonicalDbHealth(
-  timeoutMs = 5000,
-): Promise<CanonicalDbHealthResult> {
+export async function detectCanonicalDbHealth(timeoutMs = 5000): Promise<CanonicalDbHealthResult> {
   const checkedAt = Date.now();
   const t0 = performance.now();
   try {
     // Race entre a query e um timeout hard-coded
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error(`Health check timeout após ${timeoutMs}ms`)),
-        timeoutMs,
-      ),
-    );
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`Health check timeout após ${timeoutMs}ms`)), timeoutMs);
+    });
     // Usamos system_kill_switches: tabela sempre presente, sem dados sensíveis,
     // query leve (LIMIT 1). Alternativa: pg_stat_activity, mas requer permissão.
     const queryPromise = supabase
@@ -222,7 +233,9 @@ export async function detectCanonicalDbHealth(
       .select('switch_name')
       .limit(1);
 
-    const result = await Promise.race([queryPromise, timeoutPromise]) as Awaited<typeof queryPromise>;
+    const result = (await Promise.race([queryPromise, timeoutPromise])) as Awaited<
+      typeof queryPromise
+    >;
     const latencyMs = Math.round(performance.now() - t0);
 
     if (result.error) {
@@ -295,11 +308,17 @@ export async function invokeCrmBatch(queries: CrmBatchQuery[]): Promise<CrmBatch
       );
     }
 
+    await ensureCrmSession();
     const startedAt = performance.now();
     const body = { operation: 'batch', queries };
     const reqBytes = estimatePayloadBytes(body);
     const requestId = newRequestId();
-    const { data, error } = await supabase.functions.invoke('crm-db-bridge', {
+    const { data, error } = await invokeEdge<{
+      success?: boolean;
+      error?: string;
+      results?: unknown;
+      request_id?: string;
+    }>('crm-db-bridge', {
       body,
       headers: { [REQUEST_ID_HEADER]: requestId },
     });
@@ -357,11 +376,8 @@ const INITIAL_BACKOFF_MS = 600;
  * capturavam 429 e geravam loop de retries).
  */
 const RETRYABLE_PATTERNS = [
-  'statement timeout',
-  '57014',
   '502',
   '503',
-  '504',
   'bad gateway',
   'network',
   'fetch',
@@ -371,6 +387,13 @@ const RETRYABLE_PATTERNS = [
   'Failed to fetch',
   'boot',
 ];
+
+// statement_timeout (57014) NAO deve ser retriado — apenas amplifica a carga
+// no CRM e prolonga o 504 percebido pelo usuário. Tratado como degradação.
+function isStatementTimeout(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  return lower.includes('statement timeout') || lower.includes('57014') || lower.includes('504');
+}
 
 /**
  * Padroes que indicam erros DEFINITIVOS — nunca fazer retry.
@@ -460,6 +483,7 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
       );
     }
 
+    await ensureCrmSession();
     const startedAt = performance.now();
     const reqBytes = estimatePayloadBytes(query);
     const opLabel = query.operation || 'invoke';
@@ -485,18 +509,38 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
     };
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      const { data, error } = await supabase.functions.invoke('crm-db-bridge', {
-        body: query,
-        headers: { [REQUEST_ID_HEADER]: requestId },
-      });
+      const { data, error } = await invokeEdge<Record<string, unknown> & { error?: string }>(
+        'crm-db-bridge',
+        {
+          body: query,
+          headers: { [REQUEST_ID_HEADER]: requestId },
+        },
+      );
 
       if (!error && !data?.error) {
         record(true, data);
         consecutiveRateLimitHits = 0;
-        return data as CrmResponse<T>;
+        return data as unknown as CrmResponse<T>;
       }
 
       const msg = error ? await extractCrmErrorMessage(error) : data?.error || 'Unknown CRM error';
+
+      // statement_timeout: degrada graciosamente (evita blank screen). O usuário
+      // recebe lista vazia + flag `stale` — a UI pode mostrar toast/refinar filtros.
+      if (isStatementTimeout(msg)) {
+        record(false, null, msg);
+        logger.warn('[CRM-DB] statement_timeout — retornando resultado vazio', {
+          requestId,
+          table: query.table,
+          message: safeCrmLogMessage(msg),
+        });
+        return {
+          data: [],
+          count: 0,
+          stale: true,
+          error: 'statement_timeout',
+        } as unknown as CrmResponse<T>;
+      }
 
       // Rate-limit: ativa circuit breaker (que drena a fila) e nao faz retry
       if (isRateLimitError(msg)) {
@@ -510,12 +554,14 @@ export async function invokeCrmDb<T>(query: CrmQuery): Promise<CrmResponse<T>> {
       }
 
       if (attempt < MAX_RETRIES && isRetryableCrmError(msg)) {
-        const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        const delay = INITIAL_BACKOFF_MS * 2 ** attempt;
         logger.warn(`[CRM-DB] Retry ${attempt + 1}/${MAX_RETRIES} after ${delay}ms`, {
           requestId,
           message: safeCrmLogMessage(msg),
         });
-        await new Promise((r) => setTimeout(r, delay));
+        await new Promise((r) => {
+          setTimeout(r, delay);
+        });
         continue;
       }
 

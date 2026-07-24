@@ -20,16 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -370,7 +361,7 @@ export function ProductsManager() {
                         </TableCell>
                         <TableCell className="text-right">
                           <span className="text-sm font-semibold tabular-nums">
-                            R$ {product.price.toFixed(2)}
+                            R$ {product.price?.toFixed(2) ?? '—'}
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
@@ -489,27 +480,17 @@ export function ProductsManager() {
       </Card>
 
       {/* Delete Dialog */}
-      <AlertDialog open={s.isDeleteOpen} onOpenChange={s.setIsDeleteOpen}>
-        <AlertDialogContent data-testid="admin-confirm-delete-dialog">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Produto?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o produto "{s.selectedProduct?.name}" (
-              {s.selectedProduct?.sku})? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={s.handleDelete}
-              data-testid="admin-confirm-delete-btn"
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={s.isDeleteOpen}
+        onOpenChange={s.setIsDeleteOpen}
+        variant="destructive"
+        title="Excluir produto?"
+        description={`Tem certeza que deseja excluir o produto "${s.selectedProduct?.name ?? ''}" (${s.selectedProduct?.sku ?? ''})? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={s.handleDelete}
+        testId="admin-confirm-delete-dialog"
+      />
 
       {/* Import Dialog */}
       <BulkImportDialog

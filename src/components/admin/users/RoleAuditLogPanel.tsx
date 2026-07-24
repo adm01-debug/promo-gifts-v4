@@ -19,6 +19,7 @@ import { ptBR } from 'date-fns/locale';
 import { Loader2, History, ArrowRight, RefreshCw } from 'lucide-react';
 
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -70,7 +71,7 @@ interface ProfileLite {
 
 const ACTION_LABEL: Record<
   RoleAction,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+  { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary' }
 > = {
   'role.granted': { label: 'Concedido', variant: 'default' },
   'role.changed': { label: 'Alterado', variant: 'secondary' },
@@ -81,7 +82,7 @@ const ACTION_LABEL: Record<
 
 export function RoleAuditLogPanel() {
   const [search, setSearch] = useState('');
-  const [actionFilter, setActionFilter] = useState<'all' | RoleAction>('all');
+  const [actionFilter, setActionFilter] = useState<RoleAction | 'all'>('all');
 
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ['role-audit-log', actionFilter],
@@ -108,13 +109,19 @@ export function RoleAuditLogPanel() {
 
       const profilesMap = new Map<string, ProfileLite>();
       if (ids.size > 0) {
-        const { data: profiles } = await supabase
+        // BUG-ROLEAUDIT-PROFILES-SELECT-SILENT-FAIL FIX: error not checked — RLS failure
+        // silently left profilesMap empty, showing raw UUIDs instead of names/emails.
+        const { data: profiles, error: profErr } = await supabase
           .from('profiles')
           .select('user_id, full_name, email')
           .in('user_id', Array.from(ids));
-        (profiles ?? []).forEach((p) => {
-          if (p.user_id) profilesMap.set(p.user_id, { ...p, user_id: p.user_id });
-        });
+        if (profErr) {
+          logger.warn('[role-audit] profile enrichment failed — displaying user IDs:', profErr);
+        } else {
+          (profiles ?? []).forEach((p) => {
+            if (p.user_id) profilesMap.set(p.user_id, { ...p, user_id: p.user_id });
+          });
+        }
       }
 
       return { entries: (entries ?? []) as RoleAuditEntry[], profilesMap };

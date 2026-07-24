@@ -24,15 +24,78 @@ jobs:
       - name: Lint check
         run: npm run lint:check
         
-      - name: Type check
-        run: npm run qa:typecheck
+      - name: Type check (baseline — zero regressions vs .tsc-baseline.json)
+        run: node scripts/check-tsc-baseline.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
         
       - name: Build check
         run: npm run build
-        
+
+      - name: FAB accessibility static gate
+        run: npm run check:fab-a11y
+
+      - name: outline-none WCAG 2.4.7 gate (ratchet)
+        run: npm run check:outline-none
+
+      - name: Banned phrases gate
+        run: npm run check:removed-phrases
+
+      - name: "Draft label regression gate (Salvar Alterações → Salvar Rascunho)"
+        run: npm run check:no-salvar-alteracoes-draft
+
+      - name: 🗑️ Sem referências residuais a QuoteComments/quote_comments
+        run: node scripts/check-no-quote-comments.mjs
+
+      - name: 🚫 Sem follow-up no frontend (src/)
+        run: npm run check:no-followup-frontend
+
+      - name: 🖼️ Iframe sandbox gate (allow-scripts + allow-same-origin)
+        run: npm run check:iframe-sandbox
+
+      - name: 🛡️ Supabase lint 0029 drift gate (SECURITY DEFINER exec)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run check:lint-0029
+
+      - name: 🧪 Supabase lint 0011 drift gate (function_search_path_mutable)
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run check:lint-0011
+
+      - name: 🚨 SECURITY DEFINER anon exposure gate
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run check:secdef-anon
+
+      - name: 📚 Allowlist ↔ security-memory cross-check
+        run: npm run check:allowlist-memory
+
+      - name: ♿ A11y Clickable drift gate
+        run: npm run check:clickable
+
+      - name: 🚫 Invoke direct calls gate (functions.invoke → invokeEdgeSafe)
+        run: node scripts/check-invoke-direct-calls.mjs
+
+
+
+
+
+
+
+
+
+
       - name: Run Unit & Integration Tests
         run: npm run test:quality
         
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Run E2E Critical Tests
         run: npm run test:e2e:critical
         env:

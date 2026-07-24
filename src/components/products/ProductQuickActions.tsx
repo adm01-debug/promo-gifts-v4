@@ -41,10 +41,10 @@ interface ProductQuickActionsProps {
     variantImages?: string[] | null;
   } | null;
   onConfirmPrice?: () => void;
-  priceConfirmedAt?: string | Date | null;
+  priceConfirmedAt?: Date | string | null;
 }
 
-type ModalType = 'precos' | 'personalizacao' | 'indicacao' | 'nicho' | null;
+type ModalType = 'indicacao' | 'nicho' | 'personalizacao' | 'precos' | null;
 type ActionKey = Exclude<ModalType, null>;
 
 const actions = [
@@ -164,6 +164,9 @@ export function ProductQuickActions({
                   <button
                     type="button"
                     disabled={disabled}
+                    title={
+                      disabled ? `Sem dados de ${label.toLowerCase()} para este produto` : undefined
+                    }
                     onClick={() => handleClick(key)}
                     className={cn(
                       'group relative inline-flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-lg border px-4 py-3 text-xs font-bold',

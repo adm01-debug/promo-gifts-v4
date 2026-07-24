@@ -25,7 +25,7 @@ export interface SwitchState {
 
 export interface SwitchHitSummary {
   switch_name: string;
-  source: 'front' | 'back';
+  source: 'back' | 'front';
   operation: string | null;
   target: string | null;
   hits: number;

@@ -5,7 +5,7 @@
  * transformations, repositories, and services.
  */
 
-export * from './types';
+export type * from './types';
 export * from './calculators';
 export * from './validators';
 export * from './selectors';

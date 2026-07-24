@@ -28,7 +28,7 @@ const MODE_LABELS: Record<SortMode, string> = {
   internal: 'Receita Interna',
   market: 'Volume Mercado',
 };
-type ViewMode = 'list' | 'chart';
+type ViewMode = 'chart' | 'list';
 
 interface PieDatum {
   name: string;

@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
+import { logger } from '@/lib/logger';
 import {
   emptyKpis,
   type DailySalesPoint,
@@ -104,12 +105,18 @@ export function useSalesHistoryMacro(days = 30) {
       ];
       const sellerNames: Record<string, string> = {};
       if (allSellerIds.length > 0) {
-        const { data: profiles } = await supabase
+        // BUG-SALESHISTORYMACRO-PROFILES-SELECT-SILENT-FAIL FIX: { data: profiles } without
+        // error check — RLS failure silently left seller names as IDs in the chart legend.
+        const { data: profiles, error: profErr } = await supabase
           .from('profiles')
           .select('user_id, full_name')
           .in('user_id', allSellerIds);
-        for (const p of profiles || []) {
-          if (p.user_id) sellerNames[p.user_id] = p.full_name || 'Vendedor';
+        if (profErr) {
+          logger.warn('[useSalesHistoryMacro] profile enrichment failed — showing user IDs:', profErr);
+        } else {
+          for (const p of profiles || []) {
+            if (p.user_id) sellerNames[p.user_id] = p.full_name || 'Vendedor';
+          }
         }
       }
 

@@ -67,6 +67,11 @@ export function usePushNotifications() {
       if (!state.isEnabled) {
         return null;
       }
+      // Re-check live permission — state.isEnabled may be stale if the user
+      // revoked permission in browser settings after we last synced.
+      if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+        return null;
+      }
 
       try {
         const notificationOptions: ExtendedNotificationOptions = {
@@ -92,7 +97,7 @@ export function usePushNotifications() {
   );
 
   const showSecurityAlert = useCallback(
-    (title: string, message: string, type: 'info' | 'warning' | 'critical' = 'warning') => {
+    (title: string, message: string, type: 'critical' | 'info' | 'warning' = 'warning') => {
       return showNotification(`${SECURITY_ALERT_ICONS[type]} ${title}`, {
         body: message,
         tag: 'security-alert',
@@ -108,7 +113,10 @@ export function usePushNotifications() {
     if (!user || !state.isEnabled) return;
 
     const channel = supabase
-      .channel('security-notifications')
+      // BUG-RT-CHANNEL FIX: tópico único por montagem. O effect re-roda quando isEnabled vira
+      // true (permissão concedida) e o nome estático reaproveitava o canal ainda em teardown,
+      // aplicando .on('postgres_changes') após subscribe() → crash.
+      .channel(`security-notifications:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {
@@ -174,7 +182,11 @@ export function usePushNotifications() {
           }
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[usePushNotifications] security realtime channel error', { status, err });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

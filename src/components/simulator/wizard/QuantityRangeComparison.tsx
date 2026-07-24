@@ -80,12 +80,24 @@ export function QuantityRangeComparison({
 
         for (const pers of personalizations) {
           try {
+            // Mirror useWizardPricing: gate dimensions on usaDimensao and colors on
+            // cobraPorCor. Passing dimensions to a dimension-less technique (e.g.
+            // Serigrafia/UV em caneta) makes the RPC return NO price → a R$ 0,00 row.
+            // The flags live on the confirmed personalization's location techniques.
+            const tech = pers.location.availableTechniques.find(
+              (t) => t.printAreaId === pers.technique.id,
+            );
+            const usaDimensao = tech?.usaDimensao !== false;
+            const cobraPorCor = tech?.cobraPorCor !== false;
+            const effectiveColors =
+              !cobraPorCor || (tech?.maxColors ?? 0) <= 1 ? 1 : pers.specs.colors;
+
             const rpcParams: Record<string, unknown> = {
               p_area_id: pers.technique.id,
               p_quantidade: qty,
-              p_num_cores: pers.specs.colors,
+              p_num_cores: effectiveColors,
             };
-            if (pers.specs.width > 0 && pers.specs.height > 0) {
+            if (usaDimensao && pers.specs.width > 0 && pers.specs.height > 0) {
               rpcParams.p_largura_cm = pers.specs.width;
               rpcParams.p_altura_cm = pers.specs.height;
             }

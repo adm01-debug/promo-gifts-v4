@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,6 +15,12 @@ export function ItemNoteEditor({ initialNote, onSave, triggerClassName }: Props)
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState(initialNote ?? '');
   const [busy, setBusy] = useState(false);
+
+  // Re-sync when initialNote changes from a remote refetch, but only when
+  // the popover is closed so we don't overwrite the user's in-progress edit.
+  useEffect(() => {
+    if (!open) setNote(initialNote ?? '');
+  }, [initialNote, open]);
 
   const hasNote = !!initialNote?.trim();
   const remaining = 280 - note.length;

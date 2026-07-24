@@ -78,7 +78,7 @@ function adaptOption(raw: Raw): TechniqueOption {
       maxHeight,
     ),
 
-    shape: (pick<string>(raw, 'shape') ?? 'rectangle') as 'rectangle' | 'circle',
+    shape: (pick<string>(raw, 'shape') ?? 'rectangle') as 'circle' | 'rectangle',
     is_curved: toBool(pick(raw, 'is_curved', 'curved', 'curved_surface')),
 
     usa_dimensao: toBool(pick(raw, 'usa_dimensao', 'uses_dimension', 'price_by_area')),

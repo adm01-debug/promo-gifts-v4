@@ -10,6 +10,7 @@ import { InlineFilterBar } from '@/components/filters/StickyFilterBar';
 import type { Product } from '@/hooks/products';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
+import { useStockVelocityPrefetch } from '@/hooks/intelligence';
 
 interface VirtualizedProductGridProps {
   products: Product[];
@@ -17,7 +18,7 @@ interface VirtualizedProductGridProps {
   hasMore?: boolean;
   onLoadMore?: () => void;
   columns?: number;
-  onProductClick?: (productId: string) => void;
+  onProductClick?: (productId: string, colorName?: string) => void;
   isFavorited?: (productId: string) => boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: (productId: string) => boolean;
@@ -43,7 +44,7 @@ interface VirtualizedProductGridProps {
   selectedIds?: Set<string>;
   /** External toggle handler */
   onToggleSelect?: (id: string) => void;
-  onStatusClick?: (type: string, value?: string | number) => void;
+  onStatusClick?: (type: string, value?: number | string) => void;
   /**
    * BUG-SCROLL-01 FIX: Chave que muda SOMENTE em filter/sort — NUNCA em load-more.
    * Quando muda, o grid rola ao topo. Quando `undefined` (padrão legado), o scroll
@@ -103,6 +104,11 @@ function VirtualizedProductGridInner({
     [products],
   );
   const { data: colorsByProduct } = useProductsColorsBatch(idsNeedingColors);
+
+  // ANTI N+1: prefetch batch de mv_stock_velocity para todos os produtos visíveis.
+  // Popula React Query cache via setQueryData; hooks individuais nos cards usam o cache.
+  const _allProductIds = useMemo(() => products.map((p) => p.id), [products]);
+  useStockVelocityPrefetch(_allProductIds);
   const hydratedProducts = useMemo(() => {
     if (colorsByProduct.size === 0) return products;
     return products.map((p) => {
@@ -111,7 +117,15 @@ function VirtualizedProductGridInner({
       if (!batch || batch.length === 0) return p;
       return {
         ...p,
-        colors: batch.map((c) => ({ name: c.name, hex: c.hex || '', group: '' })),
+        // FIX-COLOR-SEL-01 (2026-06-21): image/stock do batch eram descartados — clique na bolinha
+        // nao trocava foto nem estoque. userSelectedColor?.image e resolveColorStock dependem desses campos.
+        colors: batch.map((c) => ({
+          name: c.name,
+          hex: c.hex || '',
+          group: '',
+          image: c.image || undefined,
+          stock: c.stockQty,
+        })),
       };
     });
   }, [products, colorsByProduct]);
@@ -370,10 +384,16 @@ function VirtualizedProductGridInner({
                       }),
                 }}
               >
-                {rowProducts.map((product) =>
-                  viewMode === 'list' ? (
+                {rowProducts.map((product) => {
+                  // FAN-OUT: key composta productId|colorId garante unicidade quando o
+                  // mesmo produto vira múltiplos cards (1 por cor). Sem fan-out
+                  // (_cardColorId undefined) cai no product.id puro.
+                  const cardKey = product._cardColorId
+                    ? `${product.id}|${product._cardColorId}`
+                    : product.id;
+                  return viewMode === 'list' ? (
                     <ProductListItem
-                      key={product.id}
+                      key={cardKey}
                       product={product}
                       onClick={() => onProductClick?.(product.id)}
                       isFavorited={isFavorited?.(product.id)}
@@ -387,7 +407,7 @@ function VirtualizedProductGridInner({
                     />
                   ) : (
                     <div
-                      key={product.id}
+                      key={cardKey}
                       className={cn(
                         'relative',
                         selectionMode &&
@@ -423,7 +443,14 @@ function VirtualizedProductGridInner({
                       )}
                       <ProductCard
                         product={product}
-                        onClick={() => onProductClick?.(product.id)}
+                        onClick={() =>
+                          onProductClick?.(
+                            product.id,
+                            product._cardColorId
+                              ? (product.colors?.[0]?.name ?? undefined)
+                              : undefined,
+                          )
+                        }
                         isFavorited={isFavorited?.(product.id)}
                         onToggleFavorite={onToggleFavorite}
                         isInCompare={isInCompare?.(product.id)}
@@ -434,8 +461,8 @@ function VirtualizedProductGridInner({
                         onStatusClick={onStatusClick}
                       />
                     </div>
-                  ),
-                )}
+                  );
+                })}
               </div>
             );
           })}

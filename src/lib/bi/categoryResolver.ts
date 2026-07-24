@@ -10,16 +10,16 @@
  */
 
 export type BICategorySlug =
-  | 'garrafas'
-  | 'canetas'
-  | 'mochilas'
   | 'agendas'
-  | 'eletronicos'
   | 'blocos'
-  | 'vestuario'
+  | 'canetas'
+  | 'eletronicos'
+  | 'garrafas'
   | 'kits'
+  | 'mochilas'
   | 'necessaires'
-  | 'outros';
+  | 'outros'
+  | 'vestuario';
 
 export interface BICategoryMeta {
   slug: BICategorySlug;

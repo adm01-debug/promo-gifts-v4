@@ -6,6 +6,7 @@ import type { UseFormGetValues, UseFormSetValue } from 'react-hook-form';
 import type { ProductFormData } from '@/components/admin/products/ProductFormSchema';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface SeoAIResult {
   meta_title: string;
   meta_description: string;
@@ -49,7 +50,7 @@ export function useProductSeoAI(
         sale_price: getValues('sale_price'),
       };
 
-      const { data, error } = await supabase.functions.invoke('generate-product-seo', {
+      const { data, error } = await invokeEdge<Partial<SeoAIResult> & { error?: string; slug?: string }>('generate-product-seo', {
         body: { product },
       });
 
@@ -57,13 +58,14 @@ export function useProductSeoAI(
       if (data?.error) throw new Error(data.error);
 
       for (const field of SEO_FIELDS) {
-        if (data[field]) {
-          setValue(field, data[field], { shouldDirty: true });
+        const value = data?.[field];
+        if (value !== undefined && value !== null) {
+          setValue(field, value, { shouldDirty: true });
         }
       }
 
       // Generate canonical_url from slug
-      if (data.slug) {
+      if (data?.slug) {
         setValue('canonical_url', `/produto/${data.slug}`, { shouldDirty: true });
       }
 

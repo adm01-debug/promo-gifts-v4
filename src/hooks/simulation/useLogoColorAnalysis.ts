@@ -9,6 +9,7 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { getBestPantoneMatch, type PantoneMatch } from '@/utils/color-matching';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface DetectedColor {
   name: string;
@@ -47,11 +48,9 @@ export function useLogoColorAnalysis() {
               height *= MAX_SIZE / width;
               width = MAX_SIZE;
             }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
+          } else if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
           }
 
           canvas.width = width;
@@ -81,7 +80,10 @@ export function useLogoColorAnalysis() {
     try {
       const resizedBase64 = await resizeImage(imageBase64);
 
-      const { data, error: fnError } = await supabase.functions.invoke('analyze-logo-colors', {
+      const { data, error: fnError } = await invokeEdge<{
+        error?: string;
+        colors?: Array<{ name: string; hex: string }>;
+      }>('analyze-logo-colors', {
         body: { imageBase64: resizedBase64 },
       });
 

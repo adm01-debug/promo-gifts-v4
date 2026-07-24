@@ -1,10 +1,11 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavoritesStore, type FavoriteVariantInfo } from '@/stores/useFavoritesStore';
 import { useFavoriteLists } from '@/hooks/favorites';
-import type { Product } from '@/types/product';
+import type { Json } from '@/integrations/supabase/types';
+import type { Product } from '@/types/product-catalog';
 import { toast } from 'sonner';
 
 import { logger } from '@/lib/logger';
@@ -21,31 +22,36 @@ const LAST_LIST_KEY = 'favorites-last-used-list-id';
 export function useFavoriteQuickAdd() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const { lists, defaultList, createList } = useFavoriteLists();
-  const { toggleFavorite, isFavorite } = useFavoritesStore();
+  const { lists, defaultList, createList, deleteList } = useFavoriteLists();
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
 
   // Index global de membership: produto X está em quais listas?
-  const { data: membership = new Map<string, Set<string>>() } = useQuery({
-    queryKey: ['favorite-membership', user?.id],
-    queryFn: async () => {
-      if (!user) return new Map<string, Set<string>>();
-      const { data, error } = await supabase
-        .from('favorite_items')
-        .select('product_id, list_id')
-        .eq('user_id', user.id);
-      if (error) throw error;
-      const map = new Map<string, Set<string>>();
-      (data ?? []).forEach((row: { product_id: string; list_id: string }) => {
-        if (!map.has(row.product_id)) map.set(row.product_id, new Set());
-        map.get(row.product_id)?.add(row.list_id);
-      });
-      return map;
-    },
-    enabled: !!user,
-    staleTime: 30_000,
-  });
+  const { data: membership = new Map<string, Set<string>>(), isFetched: membershipFetched } =
+    useQuery({
+      queryKey: ['favorite-membership', user?.id],
+      queryFn: async () => {
+        if (!user) return new Map<string, Set<string>>();
+        const { data, error } = await supabase
+          .from('favorite_items')
+          .select('product_id, list_id')
+          .eq('user_id', user.id);
+        if (error) throw error;
+        const map = new Map<string, Set<string>>();
+        (data ?? []).forEach((row: { product_id: string; list_id: string }) => {
+          if (!map.has(row.product_id)) map.set(row.product_id, new Set());
+          map.get(row.product_id)?.add(row.list_id);
+        });
+        return map;
+      },
+      enabled: !!user,
+      staleTime: 30_000,
+      refetchOnWindowFocus: true,
+    });
 
-  const lastUsedListId = useMemo(() => {
+  // Intentionally NOT memoised — must read fresh on every click so that
+  // a Shift+click immediately after a regular-click uses the updated list.
+  const getLastUsedListId = useCallback((): string | null => {
     try {
       return localStorage.getItem(LAST_LIST_KEY);
     } catch {
@@ -57,8 +63,8 @@ export function useFavoriteQuickAdd() {
 
   /** Adiciona produto remotamente em uma lista específica + registra no store legado (sync local). */
   const addToList = useCallback(
-    async (listId: string, product: Product, variant?: FavoriteVariantInfo) => {
-      if (!user) return;
+    async (listId: string, product: Product, variant?: FavoriteVariantInfo): Promise<boolean> => {
+      if (!user) return false;
       try {
         const { error } = await supabase.from('favorite_items').upsert(
           {
@@ -66,8 +72,14 @@ export function useFavoriteQuickAdd() {
             user_id: user.id,
             product_id: product.id,
             variant_id: variant?.variant_id ?? null,
-            variant_info: (variant ?? null) as never,
-            price_at_save: typeof product.price === 'number' ? product.price : null,
+            variant_info: (variant ?? null) as unknown as Json,
+            // Snapshot the effective selling price (sale_price when available, otherwise price)
+            price_at_save:
+              typeof (product as { sale_price?: number }).sale_price === 'number'
+                ? ((product as { sale_price?: number }).sale_price ?? null)
+                : typeof product.price === 'number'
+                  ? product.price
+                  : null,
           },
           { onConflict: 'list_id,product_id,variant_id', ignoreDuplicates: false },
         );
@@ -84,9 +96,11 @@ export function useFavoriteQuickAdd() {
         qc.invalidateQueries({ queryKey: ['favorite-lists'] });
         const listName = lists.find((l) => l.id === listId)?.name ?? 'lista';
         toast.success(`Adicionado em "${listName}"`);
+        return true;
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Erro ao salvar';
         toast.error(msg);
+        return false;
       }
     },
     [user, qc, lists, isFavorite, toggleFavorite],
@@ -96,32 +110,50 @@ export function useFavoriteQuickAdd() {
   const removeFromAll = useCallback(
     async (productId: string) => {
       if (!user) return;
+      const listCount = membership.get(productId)?.size ?? 0;
       try {
-        await supabase
+        const { error } = await supabase
           .from('favorite_items')
           .delete()
           .eq('user_id', user.id)
           .eq('product_id', productId);
+        if (error) throw error;
         if (isFavorite(productId)) toggleFavorite(productId);
         qc.invalidateQueries({ queryKey: ['favorite-membership'] });
         qc.invalidateQueries({ queryKey: ['favorite-items'] });
         qc.invalidateQueries({ queryKey: ['favorite-lists'] });
+        if (listCount > 1) {
+          toast.info(`Removido de ${listCount} listas simultaneamente`);
+        }
       } catch (e) {
         logger.warn('[favoriteQuickAdd] remove failed', e);
-        if (isFavorite(productId)) toggleFavorite(productId);
+        toast.error('Não foi possível remover dos favoritos');
+        // Do NOT toggle — deletion failed, keep local state consistent with DB
       }
     },
-    [user, qc, isFavorite, toggleFavorite],
+    [user, membership, qc, isFavorite, toggleFavorite],
   );
 
-  /** Cria lista nova e adiciona o produto nela. */
+  /** Cria lista nova e adiciona o produto nela. Faz rollback da lista se addToList falhar. */
   const createAndAdd = useCallback(
     async (name: string, product: Product, variant?: FavoriteVariantInfo) => {
       const list = await createList.mutateAsync({ name });
-      await addToList(list.id, product, variant);
+      // addToList resolves false (not throws) on failure — so check the result
+      // instead of relying on a catch that would never fire, otherwise the newly
+      // created list is left orphaned/empty when the item insert fails.
+      const added = await addToList(list.id, product, variant);
+      if (!added) {
+        // addToList already showed an error toast; clean up the orphan list silently
+        try {
+          await deleteList.mutateAsync(list.id);
+        } catch {
+          /* list cleanup is best-effort */
+        }
+        throw new Error('Falha ao adicionar produto à nova lista');
+      }
       return list.id;
     },
-    [createList, addToList],
+    [createList, addToList, deleteList],
   );
 
   /**
@@ -132,12 +164,19 @@ export function useFavoriteQuickAdd() {
     (
       product: Product,
       opts?: { shiftKey?: boolean; variant?: FavoriteVariantInfo; forceListId?: string },
-    ): { resolved: true } | { resolved: false; reason: 'picker-needed' } => {
+    ): { resolved: false; reason: 'picker-needed' } | { resolved: true } => {
       if (!user) {
         toggleFavorite(product.id, opts?.variant);
         return { resolved: true };
       }
-      const alreadyFav = isFavorite(product.id);
+      // BUG-FE-3 fix: use remote membership (not localStorage) when authenticated.
+      // localStorage is stale on new devices and after clearing site data.
+      // ...but only once the membership query has loaded — during the initial fetch the
+      // Map is empty, so fall back to the local store to avoid misclassifying an
+      // already-favorited product as "add" (toggle inversion) until the query resolves.
+      const alreadyFav = membershipFetched
+        ? membership.has(product.id) && (membership.get(product.id)?.size ?? 0) > 0
+        : isFavorite(product.id);
       if (alreadyFav) {
         // Toggle off: remove de tudo
         void removeFromAll(product.id);
@@ -150,6 +189,7 @@ export function useFavoriteQuickAdd() {
       }
       // Sem múltiplas listas OU shift pressionado → vai para a default
       if (!hasMultipleLists || opts?.shiftKey) {
+        const lastUsedListId = getLastUsedListId();
         const target =
           (lastUsedListId && lists.find((l) => l.id === lastUsedListId)) || defaultList;
         if (target) {
@@ -165,9 +205,11 @@ export function useFavoriteQuickAdd() {
     },
     [
       user,
+      membership,
+      membershipFetched,
       isFavorite,
       hasMultipleLists,
-      lastUsedListId,
+      getLastUsedListId,
       defaultList,
       lists,
       toggleFavorite,

@@ -72,7 +72,7 @@ describe('ProductGrid Skeleton', () => {
   it('renders skeletons when isLoading is true and products are empty', () => {
     render(
       <Wrapper>
-        <ProductGrid products={[]} isLoading={true} />
+        <ProductGrid products={[]} isLoading />
       </Wrapper>,
     );
 

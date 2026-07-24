@@ -87,7 +87,7 @@ export function MockupBeforeAfter({ beforeImage, afterImage, className }: Mockup
       >
         {/* Handle */}
         <div className="absolute left-1/2 top-1/2 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
-          <ArrowLeftRight className="h-5 w-5" />
+          <ArrowLeftRight aria-hidden="true" className="h-5 w-5" />
         </div>
       </div>
 

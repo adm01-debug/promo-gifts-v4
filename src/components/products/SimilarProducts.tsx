@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, forwardRef, useMemo } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Layers, Loader2, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { useSimilarProducts, type SimilarProductItem } from '@/hooks/products/us
 import type { Product } from '@/types/product-catalog';
 import { getCdnUrl } from '@/utils/image-utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface SimilarProductsProps {
   currentProduct: Product;
@@ -44,6 +46,7 @@ const SimilarProductCard = forwardRef<
       <div className="relative aspect-square overflow-hidden bg-muted">
         <OptimizedImage
           src={getCdnUrl(item.image_url, 'card')}
+          urlOriginal={getProxiedImageUrl(item.image_url) ?? null}
           alt={item.name}
           className="object-cover transition-transform duration-500 group-hover:scale-110"
           containerClassName="h-full w-full"
@@ -75,7 +78,10 @@ const SimilarProductCard = forwardRef<
         </h4>
         <div className="flex items-center justify-between gap-2 pt-0.5">
           <span className="truncate font-display text-sm font-bold text-foreground xl:text-base">
-            R$ {item.price.toFixed(2).replace('.', ',')}
+            R${' '}
+            {item.price !== null && item.price !== undefined
+              ? item.price.toFixed(2).replace('.', ',')
+              : '—'}
           </span>
           {item.colors_count && item.colors_count > 0 && (
             <span className="shrink-0 text-[10px] text-muted-foreground xl:text-xs">
@@ -99,6 +105,9 @@ export function SimilarProducts({
 }: SimilarProductsProps) {
   const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Scroll horizontal via mouse wheel (Melhoria UX: fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(scrollRef);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 

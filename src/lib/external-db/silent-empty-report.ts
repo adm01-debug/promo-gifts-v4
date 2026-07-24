@@ -22,14 +22,14 @@
 import { logger } from '@/lib/logger';
 
 export type SilentEmptyReason =
+  // (d) call site returned 410 Gone (migration/deprecation status)
+  | 'gone_410'
   // (b) eligible SELECT hit a deterministic/terminal REST error (bad column, type…)
   | 'rest_error'
   // (a) SELECT on a table without a REST-native path while the bridge is OFF
   | 'table_not_whitelisted'
   // (c) insert/update/delete/upsert while the bridge is OFF → silent no-op
-  | 'write_bridge_off'
-  // (d) call site returned 410 Gone (migration/deprecation status)
-  | 'gone_410';
+  | 'write_bridge_off';
 
 export interface SilentEmptyEvent {
   reason: SilentEmptyReason;

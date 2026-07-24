@@ -36,7 +36,7 @@ interface ColorSwatchProps {
   isSelected: boolean;
   onClick: () => void;
   label: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   showCheckmark?: boolean;
 }
 

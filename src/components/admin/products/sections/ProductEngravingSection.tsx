@@ -16,16 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   Paintbrush,
   MapPin,
@@ -302,13 +293,8 @@ export default function ProductEngravingSection({ productId, isEdit, engravingFl
   );
 
   const renderDetailsStep = () => {
-    const maxCores =
-      w.selectedTechnique !== null &&
-      w.selectedTechnique !== undefined &&
-      w.selectedTechnique.max_cores !== null &&
-      w.selectedTechnique.max_cores !== undefined
-        ? Number(w.selectedTechnique.max_cores)
-        : null;
+    const rawCores = w.selectedTechnique?.max_cores;
+    const maxCores = rawCores !== null && rawCores !== undefined ? Number(rawCores) : null;
     const custoSetup = w.selectedTechnique?.custo_setup ?? null;
     return (
       <div className="space-y-4">
@@ -568,34 +554,21 @@ export default function ProductEngravingSection({ productId, isEdit, engravingFl
         )}
       </SectionCard>
 
-      {/* BUG-05 FIX: AlertDialog for area delete confirmation (no more confirm()) */}
-      <AlertDialog
+      {/* BUG-05 FIX: state-driven confirm for area delete */}
+      <ConfirmDialog
         open={!!w.deleteAreaConfirm}
         onOpenChange={(open) => {
           if (!open) w.cancelDeleteArea();
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remover área de personalização</AlertDialogTitle>
-            <AlertDialogDescription>
-              Deseja remover a área{' '}
-              <strong>&quot;{w.deleteAreaConfirm?.location_name}&quot;</strong> com a técnica{' '}
-              <strong>&quot;{w.deleteAreaConfirm?.technique_name}&quot;</strong>?
-              {!isEdit && ' (A área só existe localmente e não foi salva no banco ainda.)'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={w.cancelDeleteArea}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={w.confirmDeleteArea}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Remover
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        variant="destructive"
+        title="Remover área de personalização?"
+        description={`Deseja remover a área "${w.deleteAreaConfirm?.location_name ?? ''}" com a técnica "${w.deleteAreaConfirm?.technique_name ?? ''}"?${!isEdit ? ' (A área só existe localmente e não foi salva no banco ainda.)' : ''}`}
+        confirmLabel="Remover"
+        cancelLabel="Cancelar"
+        onConfirm={w.confirmDeleteArea}
+        onCancel={w.cancelDeleteArea}
+        testId="product-engraving-delete-area"
+      />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { OverviewRow } from '@/hooks/intelligence';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface ConsecutiveFailureInfo {
   count: number;
@@ -33,7 +34,7 @@ export function useConsecutiveFailures(rows: OverviewRow[], pollMs = 30000) {
   const fetchOnce = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('connection-tester', {
+      const { data, error } = await invokeEdge<{ items?: ServerItem[] }>('connection-tester', {
         body: { action: 'consecutive_failures_overview', type: 'supabase' },
       });
       if (cancelRef.current) return;

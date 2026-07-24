@@ -4,9 +4,10 @@ import { Building2 } from 'lucide-react';
 interface AvatarLogoProps {
   name?: string | null;
   logoUrl?: string | null;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'lg' | 'md' | 'sm' | 'xl';
   className?: string;
   fallbackClassName?: string;
+  isLoading?: boolean;
 }
 
 const AVATAR_SIZE_CLASSES = {
@@ -22,8 +23,24 @@ export function AvatarLogo({
   size = 'md',
   className,
   fallbackClassName,
+  isLoading = false,
 }: AvatarLogoProps) {
   const dim = AVATAR_SIZE_CLASSES[size];
+
+  if (isLoading) {
+    return (
+      <div
+        data-testid="avatar-logo-skeleton"
+        aria-hidden="true"
+        className={cn(
+          dim,
+          'flex-shrink-0 animate-pulse rounded-full border border-border bg-muted',
+          className,
+        )}
+      />
+    );
+  }
+
 
   if (logoUrl) {
     return (

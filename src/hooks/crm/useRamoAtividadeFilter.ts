@@ -115,6 +115,15 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
     filterState.selectedRamos.length > 0 || filterState.selectedSegmentos.length > 0;
   const selectedCount = filterState.selectedRamos.length + filterState.selectedSegmentos.length;
 
+  const selectedRamosSet = useMemo(
+    () => new Set(filterState.selectedRamos),
+    [filterState.selectedRamos],
+  );
+  const selectedSegmentosSet = useMemo(
+    () => new Set(filterState.selectedSegmentos),
+    [filterState.selectedSegmentos],
+  );
+
   const getSegmentosForRamo = useCallback(
     (ramoSlug: string) => {
       return byRamo.get(ramoSlug) || [];
@@ -126,45 +135,38 @@ export function useRamoAtividadeFilter(): UseRamoAtividadeFilterReturn {
     (ramoSlug: string) => {
       const segmentosNoRamo = byRamo.get(ramoSlug) || [];
       return segmentosNoRamo.filter((s: SegmentoComplete) =>
-        filterState.selectedSegmentos.includes(s.segmento_slug),
+        selectedSegmentosSet.has(s.segmento_slug),
       );
     },
-    [byRamo, filterState.selectedSegmentos],
+    [byRamo, selectedSegmentosSet],
   );
 
   // Segmentos filtrados
   const filteredSegmentos = useMemo(() => {
-    let result = segmentos;
-    if (filterState.selectedRamos.length > 0) {
-      result = result.filter((s) => filterState.selectedRamos.includes(s.ramo_slug));
-    }
-    return result;
-  }, [segmentos, filterState.selectedRamos]);
+    if (selectedRamosSet.size === 0) return segmentos;
+    return segmentos.filter((s) => selectedRamosSet.has(s.ramo_slug));
+  }, [segmentos, selectedRamosSet]);
 
   const isRamoSelected = useCallback(
-    (ramoSlug: string) => {
-      return filterState.selectedRamos.includes(ramoSlug);
-    },
-    [filterState.selectedRamos],
+    (ramoSlug: string) => selectedRamosSet.has(ramoSlug),
+    [selectedRamosSet],
   );
 
   const isSegmentoSelected = useCallback(
-    (segmentoSlug: string) => {
-      return filterState.selectedSegmentos.includes(segmentoSlug);
-    },
-    [filterState.selectedSegmentos],
+    (segmentoSlug: string) => selectedSegmentosSet.has(segmentoSlug),
+    [selectedSegmentosSet],
   );
 
   const isRamoPartiallySelected = useCallback(
     (ramoSlug: string) => {
       const segmentosDoRamo = getSegmentosForRamo(ramoSlug);
       if (segmentosDoRamo.length === 0) return false;
-      const selectedCount = segmentosDoRamo.filter((s) =>
-        filterState.selectedSegmentos.includes(s.segmento_slug),
+      const ramoSelectedCount = segmentosDoRamo.filter((s) =>
+        selectedSegmentosSet.has(s.segmento_slug),
       ).length;
-      return selectedCount > 0 && selectedCount < segmentosDoRamo.length;
+      return ramoSelectedCount > 0 && ramoSelectedCount < segmentosDoRamo.length;
     },
-    [getSegmentosForRamo, filterState.selectedSegmentos],
+    [getSegmentosForRamo, selectedSegmentosSet],
   );
 
   return {

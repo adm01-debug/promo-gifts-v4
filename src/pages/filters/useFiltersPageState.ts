@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { type FilterState, defaultFilters } from '@/components/filters/FilterPanel';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
+import { useColorFanout } from '@/hooks/products/useColorFanout';
+import { useColorSystem } from '@/hooks/products/useColorSystem';
 import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
 import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
 import { useProductsByColor } from '@/hooks/products/useProductsByColor';
@@ -144,6 +146,21 @@ export function useFiltersPageState() {
   // é o fallback para compatibilidade com links externos que chegam com ?search= na URL
   // sem nunca passar por setFilters (first render). Com filters inicializados a partir da URL
   // no useState inicial, filters.search já contém o valor — o fallback é apenas garantia.
+  // FIX-GAP1 2026-06-21: nome REAL da cor (com acento/parenteses) para o chip da toolbar.
+  // slugToLabel naive perdia acentos em 18 cores (ex: "Azul Bebe" vs "Azul Bebe",
+  // "Verde Limao" vs "Verde Limao", "Azul Tiffany (Turquesa)").
+  const { data: colorSystemData } = useColorSystem();
+  const colorNameBySlug = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!colorSystemData) return m;
+    for (const g of colorSystemData.groups) {
+      m.set(g.slug, g.name);
+      for (const v of g.variations) m.set(v.slug, v.name);
+    }
+    for (const n of colorSystemData.nuances) m.set(n.slug, n.name);
+    return m;
+  }, [colorSystemData]);
+
   const effectiveSearch = filters.search || searchParams.get('search') || '';
   const serverSearchTerm = useDebounce(effectiveSearch, 400);
 
@@ -241,17 +258,41 @@ export function useFiltersPageState() {
     if (filters.onSale) params.set('onSale', '1');
     if (filters.hasCommercialPackaging) params.set('hasCommercialPackaging', '1');
     if (filters.sortBy && filters.sortBy !== 'newest') params.set('sortBy', filters.sortBy);
-    setSearchParams(params, { replace: true });
+    // FIX-13: use functional updater to preserve non-filter URL params (e.g. viewMode).
+    // Without this, switching filters wipes viewMode from the URL because the params
+    // object is built from scratch and setSearchParams(params) replaces the full URL.
+    // The standalone viewMode effect (below) does NOT re-run when only filters change.
+    setSearchParams(
+      (prev) => {
+        const vm = prev.get('viewMode');
+        if (vm && vm !== 'grid') params.set('viewMode', vm);
+        return params;
+      },
+      { replace: true },
+    );
   }, [filters, setSearchParams]);
 
   const {
     productIds: materialFilteredProductIds,
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
+    error: materialFilterError,
   } = useProductsByMaterial({
     materialGroupSlugs: filters.materialGroups || [],
     materialTypeSlugs: filters.materialTypes || [],
   });
+
+  const prevMaterialErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = materialFilterError ? String(materialFilterError) : null;
+    if (materialFilterError && msg !== prevMaterialErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de materiais', {
+        description: 'O filtro de Materiais falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevMaterialErrorRef.current = msg;
+  }, [materialFilterError]);
+
   const {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
@@ -278,24 +319,50 @@ export function useFiltersPageState() {
     ramos: filters.ramosAtividade || [],
     segmentos: filters.segmentosAtividade || [],
     publico: filters.publicoAlvo,
+    endomarketing: filters.endomarketing || [],
   });
-  // BUG-METADATA-SILENT-FAIL: notifica o usuário quando a RPC fn_super_filtro_product_ids
-  // falha (antes: grade zerava silenciosamente sem nenhum feedback).
-  const prevMetadataErrorRef = useRef<unknown>(null);
+  // FIX-8: notifica erros de todas as RPCs de filtro server-side.
+  // FIX-19: compara mensagem (string) em vez de identidade de objeto — o hook de RPC pode
+  // recriar o objeto de erro a cada render com o mesmo conteúdo, disparando toast infinito.
+  const prevMetadataErrorRef = useRef<string | null>(null);
   useEffect(() => {
-    if (metadataFilterError && metadataFilterError !== prevMetadataErrorRef.current) {
+    const msg = metadataFilterError ? String(metadataFilterError) : null;
+    if (metadataFilterError && msg !== prevMetadataErrorRef.current) {
       toast.error('Erro ao aplicar filtro de metadados', {
         description:
           'O filtro de Datas/Tags/Público/Nichos falhou temporariamente. Tente alterar o filtro.',
       });
     }
-    prevMetadataErrorRef.current = metadataFilterError;
+    prevMetadataErrorRef.current = msg;
   }, [metadataFilterError]);
+
+  const prevSizeErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = sizeFilterError ? String(sizeFilterError) : null;
+    if (sizeFilterError && msg !== prevSizeErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de tamanhos', {
+        description: 'O filtro de Tamanhos falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevSizeErrorRef.current = msg;
+  }, [sizeFilterError]);
+
+  const prevCategoryErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = categoryFilterError ? String(categoryFilterError) : null;
+    if (categoryFilterError && msg !== prevCategoryErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de categorias', {
+        description: 'O filtro de Categorias falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevCategoryErrorRef.current = msg;
+  }, [categoryFilterError]);
 
   const {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
     isLoading: isLoadingColorFilter,
+    error: colorFilterError,
   } = useProductsByColor({
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
@@ -303,8 +370,24 @@ export function useFiltersPageState() {
     colors: filters.colors,
   });
 
+  const prevColorErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = colorFilterError ? String(colorFilterError) : null;
+    if (colorFilterError && msg !== prevColorErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de cores', {
+        description: 'O filtro de Cores falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevColorErrorRef.current = msg;
+  }, [colorFilterError]);
+
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
+  // FIX-9: inicializa viewMode a partir da URL para preservar modo ao compartilhar link.
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>(() => {
+    const vm = searchParams.get('viewMode');
+    if (vm === 'list' || vm === 'table' || vm === 'grid') return vm;
+    return 'grid';
+  });
   const [selectionMode, setSelectionMode] = useState(false);
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
 
@@ -319,8 +402,20 @@ export function useFiltersPageState() {
     window.addEventListener('resize', handleResize, { passive: true });
     return () => window.removeEventListener('resize', handleResize);
   }, []); // empty deps — handler uses ref to avoid stale closure
-  const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
-  const [commandAction, setCommandAction] = useState<string | null>(null);
+
+  // FIX-9: sincroniza viewMode com URL para preservar modo ao atualizar ou compartilhar link.
+  // Efeito separado do bloco principal (filters) porque viewMode é declarado depois.
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (viewMode !== 'grid') next.set('viewMode', viewMode);
+        else next.delete('viewMode');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [viewMode, setSearchParams]);
   // FIX-12: removido estado 'appliedFilters' — declarado mas nunca consumido (dead code).
   // Era exportado no return mas nenhum consumer o utilizava, gerando re-renders desnecessários.
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -430,6 +525,7 @@ export function useFiltersPageState() {
         hasColorFilter,
         colorFilteredProductIds,
         isLoadingColorFilter,
+        colorFilterError,
         hasCategoryFilter,
         categoryFilteredProductIds,
         isLoadingCategoryFilter,
@@ -437,6 +533,7 @@ export function useFiltersPageState() {
         hasMaterialFilter,
         materialFilteredProductIds,
         isLoadingMaterialFilter,
+        materialFilterError,
         hasSizeFilter,
         sizeFilteredProductIds,
         isLoadingSizeFilter,
@@ -459,6 +556,7 @@ export function useFiltersPageState() {
       hasMaterialFilter,
       materialFilteredProductIds,
       isLoadingMaterialFilter,
+      materialFilterError,
       hasSizeFilter,
       sizeFilteredProductIds,
       isLoadingSizeFilter,
@@ -474,6 +572,7 @@ export function useFiltersPageState() {
       hasColorFilter,
       colorFilteredProductIds,
       isLoadingColorFilter,
+      colorFilterError,
       promoSalesMap,
       supplierSalesMap,
       promoSales90dMap,
@@ -482,10 +581,20 @@ export function useFiltersPageState() {
 
   // Color enrichment: fetch variant images/stock for filtered products when color filter is active
   const filteredProductIds = useMemo(() => filteredProducts.map((p) => p.id), [filteredProducts]);
+  // FIX-REGRESSAO 2026-06-21: productMinQuantities reintroduzido (havia sido removido
+  // por engano num push anterior). Sem o MOQ, getCatalogStockStatus nao marca
+  // "estoque zerado" para variantes com stock < min_quantity (532 variantes / 413
+  // produtos exibiam "em estoque" enganosamente).
+  const filteredProductMinQtys = useMemo(
+    () => new Map(filteredProducts.map((p) => [p.id, p.minQuantity])),
+    [filteredProducts],
+  );
   const { data: colorEnrichmentMap } = useColorEnrichment({
     productIds: filteredProductIds,
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
+    productMinQuantities: filteredProductMinQtys,
   });
 
   // Merge color enrichment data into products
@@ -527,6 +636,74 @@ export function useFiltersPageState() {
     });
   }, [filteredProducts, colorEnrichmentMap, filters.colorGroups, filters.colorVariations]);
 
+  // ============================================================
+  // FAN-OUT DE COR (FASE 2): expande produtos em "cards de cor".
+  // Filtro de cor ativo => cada produto vira N cards (1 por cor selecionada que
+  // possui), cards do mesmo produto adjacentes. Foto/estoque/cor por variante.
+  // Sem filtro de cor => displayCards = enrichedFilteredProducts (1-card-por-produto).
+  // ============================================================
+  const { data: colorFanoutMap } = useColorFanout({
+    productIds: filteredProductIds,
+    colorGroups: filters.colorGroups || [],
+    colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
+    productMinQuantities: filteredProductMinQtys,
+  });
+
+  const hasFanoutColorFilter =
+    (filters.colorGroups?.length || 0) > 0 ||
+    (filters.colorVariations?.length || 0) > 0 ||
+    (filters.colorNuances?.length || 0) > 0;
+
+  const displayCards = useMemo(() => {
+    // Sem filtro de cor (ou fan-out ainda carregando): 1 card por produto.
+    if (!hasFanoutColorFilter || !colorFanoutMap || colorFanoutMap.size === 0) {
+      return enrichedFilteredProducts;
+    }
+    // Fan-out: 1 card por (produto, cor). Mantém ordem de filteredProducts
+    // (cards do mesmo produto saem adjacentes pois iteramos produto a produto).
+    const cards: typeof filteredProducts = [];
+    for (const product of filteredProducts) {
+      const colorCards = colorFanoutMap.get(product.id);
+      if (!colorCards || colorCards.length === 0) {
+        // produto sem cor correspondente (não esperado pós-filtro) → 1 card neutro
+        cards.push(product);
+        continue;
+      }
+      for (const cc of colorCards) {
+        cards.push({
+          ...product,
+          _cardColorId: cc.colorId,
+          // foto da cor (fallback automático: mantém og/images do produto se cc.image nulo)
+          ...(cc.image
+            ? {
+                og_image_url: cc.image,
+                images: [cc.image, ...product.images.filter((img) => img !== cc.image)],
+              }
+            : {}),
+          stock: cc.stock,
+          stockStatus: cc.stockStatus,
+          // 1 cor por card → resolveColorImage/resolveColorStock casam direto
+          colors: [
+            {
+              name: cc.colorName || "",
+              hex: cc.colorHex || "#CCCCCC",
+              group: cc.colorName || "",
+              groupSlug: cc.groupSlug || undefined,
+              variationSlug: cc.variationSlug || undefined,
+              image: cc.image || undefined,
+              images: cc.image ? [cc.image] : undefined,
+            },
+          ],
+        });
+      }
+    }
+    return cards;
+  }, [hasFanoutColorFilter, colorFanoutMap, enrichedFilteredProducts, filteredProducts]);
+
+  /** Total de cards exibidos (>= nº de produtos quando há fan-out de cor). */
+  const cardCount = displayCards.length;
+
   // Search toast
   const prevSearchRef = useRef<string>('');
   useEffect(() => {
@@ -546,15 +723,28 @@ export function useFiltersPageState() {
   // Chips removíveis no cabeçalho não apareciam para esses filtros.
   const activeFiltersSummary = useMemo(() => {
     const summary: { label: string; value: string; key: keyof FilterState }[] = [];
+    // FAN-OUT 2026-06-21: seleção múltipla. Chip mostra o nome quando há 1 cor,
+    // ou "N selecionadas" quando múltiplas. colorNameBySlug dá o nome real
+    // (acentos/parênteses); slugToLabel é fallback ("azul-royal" → "Azul Royal").
+    const slugToLabel = (slug: string) =>
+      slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     const totalCores =
       (filters.colorGroups?.length || 0) +
       (filters.colorVariations?.length || 0) +
       (filters.colorNuances?.length || 0) +
       filters.colors.length;
+    const selectedColorSlug =
+      filters.colorGroups?.[0] ??
+      filters.colorVariations?.[0] ??
+      filters.colorNuances?.[0] ??
+      filters.colors?.[0] ??
+      null;
     if (totalCores > 0)
       summary.push({
-        label: 'Cores',
-        value: `${totalCores} selecionada${totalCores > 1 ? 's' : ''}`,
+        label: 'Cor',
+        value: totalCores === 1 && selectedColorSlug
+          ? (colorNameBySlug.get(selectedColorSlug) ?? slugToLabel(selectedColorSlug))
+          : `${totalCores} selecionada${totalCores > 1 ? 's' : ''}`,
         key: 'colors',
       });
     if (filters.categories.length > 0)
@@ -599,13 +789,22 @@ export function useFiltersPageState() {
         value: `${totalMateriais} selecionado${totalMateriais > 1 ? 's' : ''}`,
         key: 'materiais',
       });
-    const totalRamos =
-      (filters.ramosAtividade?.length || 0) + (filters.segmentosAtividade?.length || 0);
-    if (totalRamos > 0)
+    // BUG-SF-05 FIX 2026-06-21: chips separados para ramos e segmentos de atividade.
+    // Antes: chip único 'Nichos' com key='ramosAtividade' era exibido mesmo quando
+    // apenas segmentosAtividade estava ativo, causando label confuso e X que removia ambos.
+    // Agora: chip 'Ramos' (limpa ramos+segmentos via clearSingleFilter) e chip
+    // 'Segmentos' (limpa só segmentos via branch Array.isArray do clearSingleFilter).
+    if ((filters.ramosAtividade?.length || 0) > 0)
       summary.push({
-        label: 'Nichos',
-        value: `${totalRamos} selecionado${totalRamos > 1 ? 's' : ''}`,
+        label: 'Ramos',
+        value: `${filters.ramosAtividade!.length} selecionado${filters.ramosAtividade!.length > 1 ? 's' : ''}`,
         key: 'ramosAtividade',
+      });
+    if ((filters.segmentosAtividade?.length || 0) > 0)
+      summary.push({
+        label: 'Segmentos',
+        value: `${filters.segmentosAtividade!.length} selecionado${filters.segmentosAtividade!.length > 1 ? 's' : ''}`,
+        key: 'segmentosAtividade',
       });
     const genderArr = filters.gender || [];
     if (genderArr.length > 0)
@@ -633,8 +832,10 @@ export function useFiltersPageState() {
         key: 'tags',
       });
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
-      const min = filters.priceRange[0] > 0 ? `R$${filters.priceRange[0]}` : '';
-      const max = filters.priceRange[1] < 9999 ? `R$${filters.priceRange[1]}` : '';
+      const fmt = (n: number) =>
+        n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+      const min = filters.priceRange[0] > 0 ? fmt(filters.priceRange[0]) : '';
+      const max = filters.priceRange[1] < 9999 ? fmt(filters.priceRange[1]) : '';
       summary.push({
         label: 'Preço',
         value: min && max ? `${min}–${max}` : min || max,
@@ -667,7 +868,7 @@ export function useFiltersPageState() {
     if (filters.search)
       summary.push({ label: 'Busca', value: `"${filters.search}"`, key: 'search' });
     return summary;
-  }, [filters, techniquesDataAvailable]);
+  }, [filters, techniquesDataAvailable, colorNameBySlug]);
 
   const clearSingleFilter = (key: keyof FilterState) => {
     if (key === 'colors')
@@ -712,10 +913,6 @@ export function useFiltersPageState() {
     setGridColumns,
     selectionMode,
     setSelectionMode,
-    voiceOverlayOpen,
-    setVoiceOverlayOpen,
-    commandAction,
-    setCommandAction,
     // FIX-12: appliedFilters/setAppliedFilters removidos (dead code — nenhum consumer)
     mobileFiltersOpen,
     setMobileFiltersOpen,
@@ -723,6 +920,10 @@ export function useFiltersPageState() {
     sortBy,
     setSortBy,
     filteredProducts: enrichedFilteredProducts,
+    // FAN-OUT: lista expandida (1 card por cor quando filtro de cor ativo).
+    // Sem filtro de cor, === filteredProducts. O grid renderiza displayCards.
+    displayCards,
+    cardCount,
     activeFiltersCount,
     activeFiltersSummary,
     clearSingleFilter,

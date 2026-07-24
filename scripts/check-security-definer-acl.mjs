@@ -21,18 +21,55 @@
  *   2. Caso contrário, chama o RPC `audit_security_definer_acl()`
  *      (criado na migração) via REST. Cada linha retornada é uma
  *      violação. Falha com exit 1 e imprime tabela legível.
+ *   3. Se um arquivo baseline (--baseline <file>) for fornecido,
+ *      violações que correspondam a entradas no baseline são filtradas
+ *      e não causam falha — apenas violações NOVAS falham o gate.
+ *      Isso permite documentar concessões legítimas pré-existentes sem
+ *      alterar o banco de dados.
  *
  * Uso local:
  *   VITE_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
- *     node scripts/check-security-definer-acl.mjs
+ *     node scripts/check-security-definer-acl.mjs [--baseline .security-definer-acl-baseline.json]
  *
  * Uso CI:
  *   - name: SECURITY DEFINER ACL gate
  *     env:
  *       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
  *       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
- *     run: node scripts/check-security-definer-acl.mjs
+ *     run: node scripts/check-security-definer-acl.mjs --baseline .security-definer-acl-baseline.json
  */
+
+import { readFileSync } from "fs";
+import { resolve } from "path";
+
+// Parse --baseline flag
+let baselineFile = null;
+const args = process.argv.slice(2);
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--baseline" && args[i + 1]) {
+    baselineFile = resolve(args[i + 1]);
+    i++;
+  }
+}
+
+// Load baseline entries (known-OK violations to ignore)
+let baselineSet = new Set();
+if (baselineFile) {
+  try {
+    const raw = readFileSync(baselineFile, "utf8");
+    const parsed = JSON.parse(raw);
+    const accepted = Array.isArray(parsed.accepted) ? parsed.accepted : [];
+    for (const entry of accepted) {
+      // Key: function_name + "::" + arguments + "::" + granted_to
+      const key = `${entry.function_name}::${entry.arguments ?? ""}::${entry.granted_to}`;
+      baselineSet.add(key);
+    }
+    console.log(`ℹ️  Baseline carregado de ${baselineFile}: ${baselineSet.size} entrada(s) conhecida(s).`);
+  } catch (err) {
+    console.error(`❌  Não foi possível ler baseline ${baselineFile}: ${err.message}`);
+    process.exit(1);
+  }
+}
 
 const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const key =
@@ -78,13 +115,28 @@ if (!Array.isArray(rows)) {
   process.exit(1);
 }
 
+// Filter out known-OK violations from baseline
+const newViolations = rows.filter((r) => {
+  const rowKey = `${r.function_name}::${r.arguments ?? ""}::${r.granted_to}`;
+  if (baselineSet.has(rowKey)) {
+    console.log(`ℹ️  Violação conhecida (baseline): ${r.function_name}(${r.arguments ?? ""}) → ${r.granted_to} — ignorada.`);
+    return false;
+  }
+  return true;
+});
+
 if (rows.length === 0) {
   console.log("✅ SECURITY DEFINER ACL: 0 violações.");
   console.log("   Todas as funções SECURITY DEFINER em public estão restritas corretamente.");
   process.exit(0);
 }
 
-console.error(`\n❌ SECURITY DEFINER ACL: ${rows.length} violação(ões) encontrada(s)\n`);
+if (newViolations.length === 0) {
+  console.log(`✅ SECURITY DEFINER ACL: ${rows.length} violação(ões) encontrada(s), todas no baseline — 0 violações novas.`);
+  process.exit(0);
+}
+
+console.error(`\n❌ SECURITY DEFINER ACL: ${newViolations.length} violação(ões) NOVA(S) encontrada(s) (${rows.length - newViolations.length} no baseline)\n`);
 console.error("Funções SECURITY DEFINER ainda executáveis por papéis indevidos:\n");
 
 const pad = (s, n) => String(s ?? "").padEnd(n);
@@ -92,7 +144,7 @@ console.error(
   `  ${pad("FUNÇÃO", 40)} ${pad("ARGS", 30)} ${pad("PAPEL", 14)} PROBLEMA`,
 );
 console.error(`  ${"-".repeat(40)} ${"-".repeat(30)} ${"-".repeat(14)} ${"-".repeat(50)}`);
-for (const r of rows) {
+for (const r of newViolations) {
   console.error(
     `  ${pad(r.function_name, 40)} ${pad(r.arguments || "()", 30)} ${pad(r.granted_to, 14)} ${r.problem}`,
   );
@@ -110,7 +162,7 @@ console.error(
 // Annotation amigável no GitHub Actions
 if (process.env.GITHUB_ACTIONS === "true") {
   console.log(
-    `::error title=SECURITY DEFINER ACL gate failed::${rows.length} função(ões) SECURITY DEFINER acessível(eis) por papel indevido. Veja log completo.`,
+    `::error title=SECURITY DEFINER ACL gate failed::${newViolations.length} função(ões) SECURITY DEFINER acessível(eis) por papel indevido. Veja log completo.`,
   );
 }
 

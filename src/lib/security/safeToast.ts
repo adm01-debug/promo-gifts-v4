@@ -81,11 +81,11 @@ function sanitizeOptions(opts: unknown): unknown {
 
 type SonnerFn = (message: unknown, opts?: unknown) => unknown;
 
-function wrap(originalKey: 'error' | 'warning' | 'message'): void {
+function wrap(originalKey: 'error' | 'message' | 'warning'): void {
   const t = toast as unknown as Record<string, SonnerFn> & {
     __lov_safe_patched__?: Record<string, true>;
   };
-  t.__lov_safe_patched__ = t.__lov_safe_patched__ ?? {};
+  t.__lov_safe_patched__ ??= {};
   if (t.__lov_safe_patched__[originalKey]) return; // idempotente
   const original = t[originalKey];
   if (typeof original !== 'function') return;

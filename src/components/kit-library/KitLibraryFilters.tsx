@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
-export type SortOption = 'recent' | 'price-desc' | 'name-asc' | 'usage-desc' | 'last-used';
+export type SortOption = 'last-used' | 'name-asc' | 'price-desc' | 'recent' | 'usage-desc';
 
 export const SORT_LABELS: Record<SortOption, string> = {
   recent: 'Mais recentes',
@@ -115,7 +115,7 @@ export function KitLibraryFilters({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="recent">{SORT_LABELS['recent']}</SelectItem>
+            <SelectItem value="recent">{SORT_LABELS.recent}</SelectItem>
             {showLastUsedSort && (
               <SelectItem value="last-used">{SORT_LABELS['last-used']}</SelectItem>
             )}

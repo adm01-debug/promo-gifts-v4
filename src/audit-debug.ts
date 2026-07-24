@@ -33,13 +33,20 @@ async function performTechnicalAudit() {
   }
 
   // 2. Verificação de Tabelas Essenciais
-  // Audit checks a known list of base tables; cast bypasses Supabase's view-only from() overloads.
-  type AuditTable = Parameters<(typeof supabase)['from']>[0];
+  // Audit checks a known list of base tables; cast bypasses Supabase's strict from() overloads.
+  // Using `string` avoids TS2589 caused by the 585-table union type in Parameters<from>[0].
+  type AuditFrom = (t: string) => {
+    select: (
+      c: string,
+      o?: { count: string; head: boolean },
+    ) => PromiseLike<{ error: { code: string; message: string } | null }>;
+  };
+  const auditSupabase = supabase as unknown as { from: AuditFrom };
   const tables = ['profiles', 'user_roles', 'products', 'categories', 'suppliers'];
   for (const table of tables) {
     try {
-      const { error } = await supabase
-        .from(table as AuditTable)
+      const { error } = await auditSupabase
+        .from(table)
         .select('count', { count: 'exact', head: true });
       if (error) console.warn(`⚠️ Tabela ${table}: Erro ou Acesso Negado (${error.code})`);
       else console.log(`✅ Tabela ${table}: Acessível`);

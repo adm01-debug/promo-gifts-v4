@@ -6,7 +6,7 @@ const getFiniteNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 export const productService = {
-  async fetchProducts(filters?: ProductFilters) {
+  async fetchProducts(filters?: ProductFilters, opts?: { signal?: AbortSignal }) {
     const externalFilters: Record<string, unknown> = {};
     if (filters?.categoryId) externalFilters.main_category_id = filters.categoryId;
     if (filters?.inStock) externalFilters.stock_quantity = { op: 'gt', value: 0 };
@@ -50,6 +50,7 @@ export const productService = {
       limit: filters?.limit,
       orderBy,
       filters: Object.keys(externalFilters).length > 0 ? externalFilters : undefined,
+      signal: opts?.signal,
     });
 
     let result = products.map(mapPromobrindToProduct);

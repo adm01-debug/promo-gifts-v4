@@ -31,7 +31,6 @@ describe("MockupHistoryPanel", () => {
     mockupHistory: [],
     isLoading: false,
     clients: [],
-    techniques: [],
     onLoadFromHistory: vi.fn(),
     onDownload: vi.fn(),
     onDelete: vi.fn(),

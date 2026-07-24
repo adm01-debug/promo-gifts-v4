@@ -61,6 +61,7 @@ export type PageSlug =
   | "detalhe-produto"
   | "admin-produto"
   | "cadastros"
+  | "magazine-templates"
   | "termos"
   | "privacidade"
   | "404";
@@ -108,6 +109,22 @@ export const Sel = {
     sortItems: TID_PREFIX("catalog-sort-item-"),
   },
 
+  // ---------- Galeria de Templates de Revista ----------
+  magazineTemplates: {
+    /** Filtro por família: 'all' | 'editorial' | 'catalog' | 'corporate'. */
+    familyTab: (id: string) => TID(`template-family-${id}`),
+    /** Card do template pelo id do registry (prefix match para contar todos). */
+    card: (id: string) => TID(`template-card-${id}`),
+    cards: TID_PREFIX("template-card-"),
+    /** Botão da miniatura (abre dialog de preview). */
+    preview: (id: string) => TID(`template-preview-${id}`),
+    /** Botão principal "Usar este template" / "Criar revista". */
+    use: (id: string) => TID(`template-use-${id}`),
+    /** Botão estrela de favorito. */
+    favorite: (id: string) => TID(`template-favorite-${id}`),
+  },
+
+
   product: {
     card: TID("product-card"),
     /** Nome no card do catálogo (ProductCard / EnhancedProductCard). */
@@ -129,8 +146,10 @@ export const Sel = {
     stockTableThumb: TID("stock-table-row-thumb"),
     /** Nome no QuickView (ProductQuickView). */
     quickViewName: TID("product-quickview-name"),
-    /** Botões padronizados do ProductQuickView. */
+    /** Botões padronizados do ProductQuickView (ordem canônica fixa). */
     quickViewCart: TID("product-quickview-cart"),
+    quickViewQuote: TID("product-quickview-quote"),
+    quickViewCollection: TID("product-quickview-collection"),
     quickViewFavorite: TID("product-quickview-favorite"),
     quickViewCompare: TID("product-quickview-compare"),
     quickViewShare: TID("product-quickview-share"),
@@ -232,7 +251,47 @@ export const Sel = {
     /** Wizard nav. */
     next: TID("wizard-next-button"),
     prev: TID("wizard-prev-button"),
+    /**
+     * QuoteViewPage (desktop) — ÚNICO gatilho do fluxo de export de PDF.
+     * Abre o `PdfGenerationDialog` que contém o confirm.
+     */
+    pdfPreviewTrigger: TID("pdf-preview-trigger"),
+    /** Confirm dentro do `PdfGenerationDialog` que dispara o download. */
+    pdfGenerateConfirm: TID("pdf-generate-confirm"),
+    /** Mobile action bar — download direto sem dialog. */
+    pdfExportMobile: TID("pdf-export-mobile"),
   },
+
+  // ---------- Lista de orçamentos (QuotesConfigurableList) ----------
+  quotesList: {
+    /** Container scrollável (root do IntersectionObserver). */
+    scrollContainer: TID("quotes-scroll-container"),
+    /** Sentinel observado pelo IO — só existe quando há mais itens. */
+    infiniteSentinel: TID("quotes-infinite-sentinel"),
+    /** Footer com "Exibindo N de M …" (vazio quando chega ao fim). */
+    footerCount: TID("quotes-footer-count"),
+    /** Indicador "Carregando mais…" durante refetch em background. */
+    footerLoadingMore: TID("quotes-footer-loading-more"),
+    /** Banner de erro no rodapé + botão de retry. */
+    footerLoadError: TID("quotes-footer-load-error"),
+    footerRetry: TID("quotes-footer-retry"),
+    /** Estado vazio (sem orçamentos) + botão "Atualizar lista". */
+    emptyState: TID("quotes-empty-state"),
+    emptyRefresh: TID("quotes-empty-refresh"),
+    /** Linhas: cada `quote-row-more-<id>` é único por orçamento. */
+    rowMorePrefix: TID_PREFIX("quote-row-more-"),
+    /** Busca / ordenação / chips de status na header da página de orçamentos. */
+    searchInput: TID("quotes-search-input"),
+    sortTrigger: TID("quotes-sort-trigger"),
+    sortItem: (value: string) => TID(`quotes-sort-item-${value}`),
+    chip: (key: string) => TID(`quotes-chip-${key}`),
+    /** Tooltip Radix emitido ao hover/focus no chip de status. */
+    chipTooltip: (key: string) => TID(`quotes-chip-tooltip-${key}`),
+    /** Badge de status dentro da linha da tabela + seu tooltip. */
+    statusBadge: (key: string) => TID(`quote-status-badge-${key}`),
+    statusBadgeTooltip: (key: string) => TID(`quote-status-badge-tooltip-${key}`),
+  },
+
 
   // ---------- Estoque (Stock Dashboard) ----------
   stock: {
@@ -242,6 +301,14 @@ export const Sel = {
     futureStockSwitch: TID("future-stock-switch"),
     /** Pílulas de janela (7/15/30 dias). */
     futureStockWindow: (d: 7 | 15 | 30) => TID(`future-stock-window-${d}`),
+    /** Botão da toolbar "Risco de Ruptura" (PopoverTrigger). */
+    ruptureRiskToggleButton: TID("rupture-horizon-control"),
+    /** Switch on/off do filtro de Risco de Ruptura no popover. */
+    ruptureRiskSwitch: TID("rupture-risk-switch"),
+    /** Badge "Nd" no botão — visível só quando o filtro está ON. */
+    ruptureRiskHorizonBadge: TID("rupture-risk-horizon-badge"),
+    /** Pílulas de horizonte (3/7/15/30 dias). */
+    ruptureRiskHorizon: (d: 3 | 7 | 15 | 30) => TID(`rupture-horizon-${d}`),
     /** Grid de cards de estatística do dashboard de estoque. */
     statCard: TID("stock-stat-card"),
     statCardBySlug: (slug: string) => `[data-testid="stock-stat-card"][data-stat-slug="${slug}"]`,
@@ -250,6 +317,41 @@ export const Sel = {
     statCardSubtitle: TID("stock-stat-card-subtitle"),
     statCardTrend: TID("stock-stat-card-trend"),
   },
+
+  // ---------- Carrinhos (lista) ----------
+  carts: {
+    pageTitle: TID("page-title-carrinhos"),
+    // Header do carrinho ativo (substitui page-title-carrinhos como âncora
+    // de "cabeçalho do /carrinhos" após o header agregado ter sido removido).
+    activeHeader: TID("active-cart-header"),
+    activeCompanyName: TID("active-cart-company-name"),
+    activeMeta: TID("active-cart-meta"),
+    activeCnpj: TID("active-cart-cnpj"),
+    rowCnpj: (id: string) => TID(`cart-row-cnpj-${id}`),
+    selectToggle: TID("carts-select-toggle"),
+    selectAll: TID("carts-select-all"),
+    bulkDeleteTop: TID("carts-bulk-delete-top"),
+    bulkDeleteDialog: TID("carts-bulk-delete-dialog"),
+    bulkDeleteConfirm: TID("carts-bulk-delete-confirm"),
+    selectionLive: TID("carts-selection-live"),
+    rowCheckbox: (id: string) => TID(`cart-row-checkbox-${id}`),
+    row: (id: string) => TID(`cart-row-${id}`),
+    rows: TID_PREFIX("cart-row-"),
+    listNew: TID("carts-list-new"),
+    listSearch: TID("carts-list-search"),
+    listSort: TID("carts-list-sort"),
+    rowMore: (id: string) => TID(`cart-row-more-${id}`),
+    rowMenu: (id: string) => TID(`cart-row-menu-${id}`),
+    rowMenuEdit: (id: string) => TID(`cart-row-menu-edit-${id}`),
+    rowMenuDuplicate: (id: string) => TID(`cart-row-menu-duplicate-${id}`),
+    rowMenuDelete: (id: string) => TID(`cart-row-menu-delete-${id}`),
+    rowDeleteDialog: TID("cart-row-delete-dialog"),
+    rowDeleteConfirm: TID("cart-row-delete-confirm"),
+    emptyNone: TID("carts-empty-none"),
+    emptyFiltered: TID("carts-empty-filtered"),
+  },
+
+
 
 
   // ---------- App genérico ----------

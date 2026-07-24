@@ -89,6 +89,9 @@ export function useWizardDrafts() {
       queryClient.invalidateQueries({ queryKey: ['wizard-drafts'] });
       toast.success('Rascunho excluído');
     },
+    onError: () => {
+      toast.error('Erro ao excluir rascunho');
+    },
   });
 
   const saveDraft = useCallback(

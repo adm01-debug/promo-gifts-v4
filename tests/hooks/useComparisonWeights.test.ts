@@ -5,7 +5,12 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import "../components/render-helpers";
 import { act, waitFor } from "@testing-library/react";
 import { renderHookWithProviders } from "./_helpers/render-hook-providers";
-import { useComparisonWeights, DEFAULT_WEIGHTS } from "@/hooks/comparison/useComparisonWeights";
+import {
+  useComparisonWeights,
+  DEFAULT_WEIGHTS,
+  mapWeightsToScore,
+  mapScoreToWeights,
+} from "@/hooks/comparison/useComparisonWeights";
 import { supabase } from "@/integrations/supabase/client";
 
 beforeEach(() => {
@@ -48,5 +53,15 @@ describe("useComparisonWeights", () => {
     localStorage.setItem("comparison-weights", "{not-json");
     const { result } = renderHookWithProviders(() => useComparisonWeights());
     expect(result.current.weights).toEqual(DEFAULT_WEIGHTS);
+  });
+
+  it("mapWeightsToScore traduz o shape persistido para o shape do score", () => {
+    expect(mapWeightsToScore({ price: 30, stock: 25, minQty: 5, colors: 15, verified: 10, leadTime: 15 }))
+      .toEqual({ price: 30, stock: 25, minQuantity: 5, colorVariety: 15, verifiedSupplier: 10, leadTime: 15 });
+  });
+
+  it("mapScoreToWeights é o inverso de mapWeightsToScore (round-trip)", () => {
+    const persisted = { ...DEFAULT_WEIGHTS, price: 40, colors: 5 };
+    expect(mapScoreToWeights(mapWeightsToScore(persisted))).toEqual(persisted);
   });
 });

@@ -9,22 +9,17 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react';
-import { CheckCircle2, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ProductCustomizationOptions } from '@/components/products/ProductCustomizationOptions';
 import type { QuoteItemPersonalization } from '@/hooks/quotes';
 import type { PersonalizationItem, CustomizationPriceResponseV6 } from '@/types/customization';
 
-function fmt(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
 
 interface QuoteProductCustomizationProps {
   productId: string;
   quantity: number;
   existingPersonalizations?: QuoteItemPersonalization[];
   onPersonalizationsChange: (personalizations: QuoteItemPersonalization[]) => void;
+  layout?: 'auto' | 'stacked';
 }
 
 export function QuoteProductCustomization({
@@ -32,6 +27,7 @@ export function QuoteProductCustomization({
   quantity,
   existingPersonalizations = [],
   onPersonalizationsChange,
+  layout = 'auto',
 }: QuoteProductCustomizationProps) {
   // Use ref to hold current personalizations to avoid stale closures
   const personalizationsRef = useRef<QuoteItemPersonalization[]>(existingPersonalizations);
@@ -83,15 +79,6 @@ export function QuoteProductCustomization({
     [quantity, onPersonalizationsChange],
   );
 
-  const handleRemove = useCallback(
-    (idx: number) => {
-      const updated = personalizationsRef.current.filter((_, i) => i !== idx);
-      personalizationsRef.current = updated;
-      onPersonalizationsChange(updated);
-    },
-    [onPersonalizationsChange],
-  );
-
   if (!productId) {
     return (
       <div className="py-4 text-center text-sm text-muted-foreground">
@@ -101,7 +88,7 @@ export function QuoteProductCustomization({
   }
 
   const confirmed = existingPersonalizations;
-  const confirmedTotal = confirmed.reduce((s, p) => s + (p.total_cost || 0), 0);
+
 
   return (
     <div className="space-y-4">
@@ -109,6 +96,7 @@ export function QuoteProductCustomization({
       <ProductCustomizationOptions
         productId={productId}
         quantity={quantity}
+        layout={layout}
         initialPersonalizations={existingPersonalizations.map((p) => ({
           locationCode: p.location_code || '',
           locationName: p.location_name || '',
@@ -135,56 +123,7 @@ export function QuoteProductCustomization({
         onSelectionChange={handleSelectionChange}
       />
 
-      {/* 2) Gravações já confirmadas (aparecem ABAIXO, como resultado do passo) */}
-      {confirmed.length > 0 ? (
-        <div className="space-y-1.5 rounded-xl border border-primary/20 bg-primary/5 p-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wide text-primary">
-              ✓ Gravações no orçamento
-            </p>
-            <Badge variant="secondary" className="text-[10px]">
-              {confirmed.length} aplicada{confirmed.length !== 1 ? 's' : ''}
-            </Badge>
-          </div>
-          {confirmed.map((p, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between gap-2 rounded-lg border border-border/50 bg-background/60 p-2"
-            >
-              <div className="flex min-w-0 items-center gap-2">
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                <div className="min-w-0">
-                  <span className="block truncate text-xs font-semibold text-foreground">
-                    {p.technique_name}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {p.width_cm && p.height_cm ? `${p.width_cm}×${p.height_cm}cm · ` : ''}
-                    {p.colors_count || 1} cor{(p.colors_count || 1) > 1 ? 'es' : ''}
-                  </span>
-                </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <Badge variant="secondary" className="text-xs font-semibold">
-                  {fmt(p.total_cost || 0)}
-                </Badge>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Excluir"
-                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                  onClick={() => handleRemove(i)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          ))}
-          <div className="mt-1 flex justify-between border-t border-primary/15 px-1 pt-1 text-xs">
-            <span className="text-muted-foreground">Total gravação:</span>
-            <span className="font-bold text-primary">{fmt(confirmedTotal)}</span>
-          </div>
-        </div>
-      ) : (
+      {confirmed.length === 0 && (
         <p className="text-center text-[11px] text-muted-foreground/70">
           Configure a técnica acima — o preço será adicionado automaticamente ao orçamento.
         </p>

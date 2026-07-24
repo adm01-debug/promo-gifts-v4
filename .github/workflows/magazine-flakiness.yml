@@ -1,0 +1,120 @@
+name: Magazine Flakiness Guard
+
+# Roda a suíte tests/magazine/ + tests/utils/tailwindRings.interaction.test.tsx
+# N vezes seguidas e agrega flakiness.
+#
+# Escopo (auditoria 2026-07-14, promoção 2026-07-14):
+#  - tests/magazine/                                — fuzz de rings, breakpoints, layout.
+#  - tests/utils/tailwindRings.interaction.test.tsx — helpers SSOT ringsOf/focusRingsOf/
+#    hoverRingsOf/focusWithinRingsOf/dataStateRingsOf sob interação real (mouse+teclado).
+#    Promovido a gate obrigatório porque QUALQUER regressão nesses helpers invalida
+#    silenciosamente todos os testes de rings do Magazine e do CompareTableView.
+#
+# Estratégia:
+#  - PR: executa em modo STRICT quando arquivos relevantes mudam. Flaky OU fail-all
+#    bloqueia merge. Isso é intencional — os helpers de rings são SSOT e não podem
+#    ter comportamento não-determinístico.
+#  - Schedule diário: pega drift lento (deps, jsdom, runners novos), sem --strict
+#    para não spam-abrir issues por 1 flaky isolado.
+#  - Manual: workflow_dispatch permite ajustar `runs=N` e `strict=true|false`.
+#
+# Falha o job quando:
+#   - algum teste falha em 100% das rodadas (fail-all), OU
+#   - modo strict + qualquer teste flaky (1..N-1 falhas).
+
+on:
+  pull_request:
+    paths:
+      - 'tests/magazine/**'
+      - 'tests/utils/tailwindRings.ts'
+      - 'tests/utils/tailwindRings.interaction.test.tsx'
+      - 'src/pages/magazine/**'
+      - 'scripts/magazine-flakiness-report.mjs'
+      - '.github/workflows/magazine-flakiness.yml'
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC diário (03:00 BRT)
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Número de execuções consecutivas (1..50)'
+        required: false
+        default: '10'
+      strict:
+        description: 'Falhar em qualquer flakiness detectado'
+        required: false
+        default: 'true'
+
+concurrency:
+  group: magazine-flakiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flakiness:
+    name: Magazine + Rings Flakiness (repeat × N)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run flakiness report
+        env:
+          CI: 'true'
+          NODE_ENV: 'test'
+        run: |
+          RUNS="${{ github.event.inputs.runs || '10' }}"
+          # Modo strict:
+          #   - PR:                sempre strict (gate obrigatório).
+          #   - workflow_dispatch: respeita input (default true).
+          #   - schedule:          nunca strict (evita ruído em cron diário).
+          STRICT_FLAG=""
+          case "${{ github.event_name }}" in
+            pull_request)
+              STRICT_FLAG="--strict"
+              ;;
+            workflow_dispatch)
+              if [ "${{ github.event.inputs.strict }}" = "true" ]; then
+                STRICT_FLAG="--strict"
+              fi
+              ;;
+            schedule)
+              STRICT_FLAG=""
+              ;;
+          esac
+          node scripts/magazine-flakiness-report.mjs \
+            --runs="$RUNS" \
+            --pattern="tests/magazine/,tests/utils/tailwindRings.interaction.test.tsx" \
+            $STRICT_FLAG
+
+      - name: Upload flakiness report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: magazine-flakiness-report
+          path: reports/flakiness/
+          retention-days: 30
+
+  flakiness-ok:
+    name: Magazine Flakiness OK
+    needs: [flakiness]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check result
+        run: |
+          if [ '${{ needs.flakiness.result }}' = 'success' ]; then
+            echo '✅ Nenhum flaky/fail-all detectado em tests/magazine/ + tailwindRings.interaction'
+          else
+            echo '❌ Flakiness/fail-all detectado — ver artifact magazine-flakiness-report'
+            exit 1
+          fi

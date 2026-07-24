@@ -23,23 +23,30 @@ import { describe, it, expect, vi } from 'vitest';
 import { useAdvancedFilters } from '../useAdvancedFilters';
 import { defaultAdvancedFilters } from '@/constants/filters';
 
-// Mocks mínimos para os hooks externos usados no mount
-vi.mock('@/hooks/products/useExternalCategoriesQuery', () => ({
-  useExternalCategories: vi.fn(() => ({ data: [], fetchAll: vi.fn() })),
-}));
-vi.mock('@/hooks/products/useExternalDatabase', () => ({
-  useExternalDatabase: vi.fn(() => ({ data: [], fetchAll: vi.fn() })),
+// Mocks para os hooks externos — caminho correto: @/hooks/intelligence/useExternalDatabase
+vi.mock('@/hooks/intelligence/useExternalDatabase', () => ({
+  useExternalCategories: vi.fn(() => ({ data: [], fetchAll: vi.fn().mockResolvedValue([]) })),
+  useExternalTechniques: vi.fn(() => ({ data: [], fetchAll: vi.fn().mockResolvedValue([]) })),
+  useExternalSuppliers: vi.fn(() => ({ data: [], fetchAll: vi.fn().mockResolvedValue([]) })),
+  useExternalDatabase: vi.fn(() => ({ data: [], fetchAll: vi.fn().mockResolvedValue([]) })),
 }));
 
 vi.mock('@/hooks/products/useMaterialTypes', () => ({
   useMaterialTypes: vi.fn(() => ({ data: [], fetchAll: vi.fn() })),
 }));
 
+vi.mock('@/lib/logger', () => ({
+  logger: { warn: vi.fn(), log: vi.fn(), error: vi.fn(), info: vi.fn() },
+}));
+
 describe('useAdvancedFilters', () => {
   // ── Estado inicial ─────────────────────────────────────────────────────────
   describe('estado inicial', () => {
-    it('BUG-LOADING-01: isLoading inicia false (sem flash de skeleton)', () => {
+    it('BUG-LOADING-01: isLoading inicia false (sem flash de skeleton)', async () => {
       const { result } = renderHook(() => useAdvancedFilters());
+      // The initial fetch sets isLoading=true synchronously then resolves immediately.
+      // Flush all pending microtasks so the finally-block sets isLoading back to false.
+      await act(async () => {});
       expect(result.current.isLoading).toBe(false);
     });
 

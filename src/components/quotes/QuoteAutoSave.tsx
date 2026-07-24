@@ -13,7 +13,11 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { logger } from '@/lib/logger';
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error' | 'offline';
+import {
+  QUOTE_AUTOSAVE_STATUS_TEXT,
+  QUOTE_AUTOSAVE_ARIA_LABEL,
+  type SaveStatus,
+} from './quoteAutoSaveStatus';
 
 interface QuoteDraft {
   id: string;
@@ -28,6 +32,10 @@ interface QuoteAutoSaveProps {
   onChange?: (hasUnsavedChanges: boolean) => void;
   debounceMs?: number;
   className?: string;
+  /** Timestamp (Date.now()) set by the parent after a successful server save.
+   *  When it changes, the "unsaved changes" baseline is reset so the indicator
+   *  clears without needing to navigate away and back. */
+  serverSavedAt?: number;
 }
 
 const STORAGE_KEY_PREFIX = 'quote_draft_';
@@ -39,23 +47,78 @@ export function QuoteAutoSave({
   onChange,
   debounceMs = 2000,
   className,
+  serverSavedAt,
 }: QuoteAutoSaveProps) {
   const [status, setStatus] = useState<SaveStatus>('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
   const dataRef = useRef(data);
   const initialDataRef = useRef<string | null>(null);
 
   // Storage key único para este orçamento
   const storageKey = `${STORAGE_KEY_PREFIX}${quoteId || 'new'}`;
 
-  // Salvar estado inicial para comparação
+  // Cleanup timers on unmount
+  // BUG-H FIX: clear edit-mode localStorage entries on unmount to prevent orphan accumulation
   useEffect(() => {
-    initialDataRef.current = JSON.stringify(data);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      // Only clean up edit-mode drafts (quoteId is a real UUID, not 'new').
+      // New-quote drafts are intentionally kept so useAutoSaveQuote can restore them.
+      if (quoteId) {
+        try {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && (k === storageKey || k.startsWith(`${storageKey}_v`))) {
+              keysToRemove.push(k);
+            }
+          }
+          keysToRemove.forEach((k) => localStorage.removeItem(k));
+        } catch { /* ignore storage errors on unmount */ }
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteId, storageKey]);
+
+  // BUG-J FIX: snapshot initial data AFTER the first real render, not on storageKey change.
+  // Previously, the snapshot was taken synchronously when storageKey changed — before
+  // useAutoSaveQuote could restore state, so the component immediately showed "Alterações
+  // não salvas" even though the data was just restored from localStorage.
+  // Using a one-shot ref flag ensures the snapshot is taken on the second render,
+  // by which time restored state has propagated into props.
+  const initialSnapshottedRef = useRef(false);
+  useEffect(() => {
+    // Reset snapshot gate whenever storageKey changes (e.g. navigating between quotes)
+    initialSnapshottedRef.current = false;
+    initialDataRef.current = null;
   }, [storageKey]);
+
+  useEffect(() => {
+    if (!initialSnapshottedRef.current) {
+      initialSnapshottedRef.current = true;
+      initialDataRef.current = JSON.stringify(data);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+
+  // BUG-SERVER-SAVED-AT FIX: when the parent reports a successful server save,
+  // reset the "unsaved changes" baseline to the current snapshot so the badge
+  // clears immediately — previously serverSavedAt was passed but never consumed,
+  // leaving the "Não salvo" badge visible even after a successful save.
+  useEffect(() => {
+    if (!serverSavedAt) return;
+    initialDataRef.current = JSON.stringify(dataRef.current);
+    setHasUnsavedChanges(false);
+    onChange?.(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverSavedAt]);
 
   // Detectar mudanças
   useEffect(() => {
@@ -120,11 +183,16 @@ export function QuoteAutoSave({
       // Obter versões anteriores. Uma versão histórica corrompida (storage
       // truncado por quota, adulteração, drift de schema) NÃO deve abortar o
       // autosave inteiro — senão a cotação para de persistir silenciosamente.
-      // Parse defensivo por entrada: ignora e remove a chave inválida.
-      const existingDrafts: QuoteDraft[] = [];
+      // Snapshot de keys antes de qualquer remoção: removeItem durante iteração
+      // por índice desloca os índices e pula items subsequentes.
+      const allKeys: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key?.startsWith(storageKey + '_v')) {
+        const k = localStorage.key(i);
+        if (k) allKeys.push(k);
+      }
+      const existingDrafts: QuoteDraft[] = [];
+      for (const key of allKeys) {
+        if (key.startsWith(`${storageKey}_v`)) {
           try {
             existingDrafts.push(JSON.parse(localStorage.getItem(key) || '') as QuoteDraft);
           } catch {
@@ -148,21 +216,30 @@ export function QuoteAutoSave({
       const versionKey = `${storageKey}_v${newDraft.version}`;
       localStorage.setItem(versionKey, JSON.stringify(newDraft));
 
-      // Limpar versões antigas (manter apenas MAX_VERSIONS)
+      // Limpar versões antigas (manter apenas MAX_VERSIONS).
+      // existingDrafts não inclui o newDraft recém-salvo, então o total após
+      // o save é existingDrafts.length + 1. Para manter MAX_VERSIONS no total,
+      // devemos manter apenas MAX_VERSIONS - 1 dos existentes.
       const sortedDrafts = [...existingDrafts].sort((a, b) => b.version - a.version);
-      sortedDrafts.slice(MAX_VERSIONS).forEach((draft) => {
+      sortedDrafts.slice(MAX_VERSIONS - 1).forEach((draft) => {
         localStorage.removeItem(`${storageKey}_v${draft.version}`);
       });
 
+      if (!mountedRef.current) return;
       setLastSaved(new Date());
       setStatus('saved');
 
       // Reset para idle após 2s
-      setTimeout(() => {
-        setStatus('idle');
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        if (mountedRef.current) setStatus('idle');
       }, 2000);
     } catch (error) {
-      logger.error('Erro ao salvar draft:', error);
+      if (error instanceof Error && error.name === 'QuotaExceededError') {
+        logger.error('localStorage quota exceeded — draft não pôde ser salvo', error);
+      } else {
+        logger.error('Erro ao salvar draft:', error);
+      }
       setStatus('error');
     }
   }, [storageKey, quoteId]);
@@ -183,58 +260,80 @@ export function QuoteAutoSave({
   };
 
   const getStatusText = () => {
+    const T = QUOTE_AUTOSAVE_STATUS_TEXT;
     switch (status) {
       case 'saving':
-        return 'Salvando...';
+        return T.saving;
       case 'saved': {
         if (lastSaved) {
           const secsAgo = Math.round((Date.now() - lastSaved.getTime()) / 1000);
-          if (secsAgo < 60) return 'Salvo agora';
+          if (secsAgo < 60) return T.savedNow;
           const minsAgo = Math.round(secsAgo / 60);
-          return `Salvo há ${minsAgo} min`;
+          return T.savedMinutesAgo(minsAgo);
         }
-        return 'Salvo';
+        return T.savedGeneric;
       }
       case 'error':
-        return 'Erro ao salvar';
+        return T.error;
       case 'offline':
-        return 'Offline';
+        return T.offline;
       default:
         return hasUnsavedChanges
-          ? 'Alterações não salvas'
+          ? T.unsaved
           : lastSaved
-            ? `Salvo às ${format(lastSaved, 'HH:mm', { locale: ptBR })}`
-            : 'Salvo automaticamente';
+            ? T.savedAtTime(format(lastSaved, 'HH:mm', { locale: ptBR }))
+            : T.idle;
     }
   };
+
+  const statusText = getStatusText();
+  const showIcon = status !== 'idle' || statusText !== '';
+  // aria-live: 'polite' anuncia mudanças de status sem interromper o leitor.
+  // 'off' quando não há texto, para evitar anúncios vazios.
+  const ariaLive: 'off' | 'polite' = statusText ? 'polite' : 'off';
 
   return (
     <>
       {/* Indicador de status */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={cn('flex items-center gap-2', className)}>
+          <div
+            className={cn('flex items-center gap-2', className)}
+            role="status"
+            aria-label={QUOTE_AUTOSAVE_ARIA_LABEL}
+            aria-live={ariaLive}
+            aria-atomic="true"
+            data-testid="quote-autosave-indicator"
+            data-status={status}
+          >
             <AnimatePresence mode="wait">
-              <motion.div
-                key={status}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-              >
-                {getStatusIcon()}
-              </motion.div>
+              {showIcon && (
+                <motion.div
+                  key={status}
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  aria-hidden="true"
+                >
+                  {getStatusIcon()}
+                </motion.div>
+              )}
             </AnimatePresence>
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              {getStatusText()}
+            <span
+              className="hidden text-xs text-muted-foreground sm:inline"
+              data-testid="quote-autosave-text"
+            >
+              {statusText}
             </span>
             {hasUnsavedChanges && status !== 'saving' && (
               <Badge variant="outline" className="h-5 text-[10px]">
-                Não salvo
+                {QUOTE_AUTOSAVE_STATUS_TEXT.unsavedBadge}
               </Badge>
             )}
           </div>
         </TooltipTrigger>
+
         <TooltipContent>
           <div className="space-y-1 text-xs">
             <p className="font-medium">{getStatusText()}</p>
@@ -262,7 +361,11 @@ export function useQuoteAutoSave(quoteId?: string) {
         savedAt: new Date().toISOString(),
         version: Date.now(),
       };
-      localStorage.setItem(storageKey, JSON.stringify(draft));
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(draft));
+      } catch (err) {
+        logger.error('useQuoteAutoSave: failed to persist draft', err);
+      }
     },
     [storageKey, quoteId],
   );

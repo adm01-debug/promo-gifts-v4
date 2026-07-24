@@ -20,6 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ExportButton } from './ExportButton';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface FailedDelivery {
   id: string;
@@ -53,9 +54,9 @@ export function FailedDeliveriesPanel() {
         .order('delivered_at', { ascending: false })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
       if (eventFilter.trim()) q = q.ilike('event', `%${eventFilter.trim()}%`);
-      const { data, count, error } = await q;
+      const { data: rows, count, error } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as FailedDelivery[], count: count ?? 0 };
+      return { rows: (rows ?? []) as FailedDelivery[], count: count ?? 0 };
     },
     refetchInterval: 30_000,
   });
@@ -63,7 +64,9 @@ export function FailedDeliveriesPanel() {
   const replay = async (id: string) => {
     setReplayingId(id);
     try {
-      const { data: result, error } = await supabase.functions.invoke('webhook-dispatcher', {
+      const { data: result, error } = await invokeEdge<{
+        results?: Array<{ status: string; attempts?: number }>;
+      }>('webhook-dispatcher', {
         body: { event: '__replay__', replay_delivery_id: id },
       });
       if (error) throw error;

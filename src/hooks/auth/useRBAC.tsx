@@ -9,7 +9,7 @@ import { logger } from '@/lib/logger';
  * Os nomes legados admin/manager/seller permanecem na tabela `role_permissions`
  * por compatibilidade — mapeamos transparentemente abaixo.
  */
-export type RoleName = 'dev' | 'supervisor' | 'agente';
+export type RoleName = 'agente' | 'dev' | 'supervisor';
 
 export interface Role {
   id: string;

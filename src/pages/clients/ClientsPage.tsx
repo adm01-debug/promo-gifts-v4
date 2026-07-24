@@ -11,6 +11,21 @@ import { ClientCard } from '@/components/clients/ClientCard';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { useSearchHistory } from '@/hooks/common';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { usePrefetchOnHover } from '@/hooks/common/usePrefetchOnHover';
+
+// Prefetch do chunk lazy do ClientDetailPage ao hover/focus/touch.
+const prefetchClientDetailChunk = () => import('@/pages/clients/ClientDetailPage');
+
+function ClientRow({
+  client,
+  onClick,
+}: {
+  client: CrmCompany;
+  onClick: () => void;
+}) {
+  const handlers = usePrefetchOnHover(prefetchClientDetailChunk);
+  return <ClientCard client={client} onClick={onClick} prefetchHandlers={handlers} />;
+}
 
 export default function ClientsPage() {
   const navigate = useNavigate();
@@ -216,7 +231,7 @@ export default function ClientsPage() {
         ) : (
           <div className="grid gap-3">
             {filtered.map((client) => (
-              <ClientCard
+              <ClientRow
                 key={client.id}
                 client={client}
                 onClick={() => handleClientClick(client)}

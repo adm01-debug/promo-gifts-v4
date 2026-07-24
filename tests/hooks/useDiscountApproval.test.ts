@@ -502,15 +502,21 @@ describe("Database trigger: validate_status_fields", () => {
 // 14. Discount approval request DB trigger
 // ─────────────────────────────────────────────────────────────
 describe("Database trigger: validate_discount_approval_status", () => {
-  const validStatuses = ["pending", "approved", "rejected"];
+  // Domínio real do CHECK discount_approval_requests_status_check, agora também
+  // espelhado em quotes.discount_approval_status pelo trigger trg_sync_quote_dar.
+  const validStatuses = ["pending", "approved", "rejected", "expired"];
 
   it.each(validStatuses)("allows '%s'", (status) => {
     expect(validStatuses).toContain(status);
   });
 
+  it("includes 'expired' (desconto aprovado cuja validade expirou)", () => {
+    expect(validStatuses).toContain("expired");
+  });
+
   it("rejects invalid discount approval status", () => {
     expect(validStatuses).not.toContain("cancelled");
-    expect(validStatuses).not.toContain("expired");
+    expect(validStatuses).not.toContain("processing");
   });
 });
 

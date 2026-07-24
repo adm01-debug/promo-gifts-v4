@@ -167,5 +167,5 @@ export function useIndustryCategoryTrends(ramoAtividade?: string | null) {
     [query.data],
   ).categories.length === 0
     ? { ...(query.data ?? buildMockResult(ramoAtividade)), isLoading: query.isLoading }
-    : { ...(query.data as IndustryCategoryTrendsResult), isLoading: query.isLoading };
+    : { ...query.data!, isLoading: query.isLoading };
 }

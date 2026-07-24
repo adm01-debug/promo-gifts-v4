@@ -194,15 +194,15 @@ export interface CrmAddress {
 // ============================================
 
 export type SocialPlatform =
+  | 'facebook'
   | 'instagram'
   | 'linkedin'
-  | 'facebook'
-  | 'twitter'
-  | 'youtube'
-  | 'tiktok'
-  | 'whatsapp'
+  | 'outro'
   | 'telegram'
-  | 'outro';
+  | 'tiktok'
+  | 'twitter'
+  | 'whatsapp'
+  | 'youtube';
 
 export interface CrmSocialMedia {
   id: string;

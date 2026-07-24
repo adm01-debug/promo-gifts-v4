@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface Props {
-  status: 'active' | 'degraded' | 'error' | 'unconfigured' | 'disabled' | 'never_tested';
+  status: 'active' | 'degraded' | 'disabled' | 'error' | 'never_tested' | 'unconfigured';
   className?: string;
 }
 

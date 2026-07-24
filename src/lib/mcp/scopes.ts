@@ -31,7 +31,7 @@ export const FULL_SCOPE_DEFAULT_TTL_DAYS = 90;
 /** Descrição amigável de cada escopo para tooltips e UI. */
 export const SCOPE_DESCRIPTIONS: Record<
   McpScope,
-  { label: string; tools: string[]; severity: 'low' | 'medium' | 'high' | 'critical' }
+  { label: string; tools: string[]; severity: 'critical' | 'high' | 'low' | 'medium' }
 > = {
   'quotes:read': {
     label: 'Leitura de orçamentos',

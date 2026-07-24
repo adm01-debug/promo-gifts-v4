@@ -3,20 +3,21 @@ import { createPortal } from 'react-dom';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import { useToast } from '@/hooks/ui';
 import {
-  Package,
-  TrendingDown,
-  RefreshCw,
-  Truck,
-  CheckCircle2,
-  XCircle,
-  Palette,
-  Loader2,
   AlertCircle,
-  X,
+  BarChart3,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Clock,
-  BarChart3,
+  Loader2,
+  Package,
+  Palette,
+  RefreshCw,
+  ShieldCheck,
+  TrendingDown,
+  Truck,
+  X,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -25,6 +26,19 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVariantStock } from '@/hooks/products';
 import { VariantStockTable } from './VariantStockTable';
+import { buildStockKpiCards } from './stockKpiCards';
+import { useRuptureAlerts } from '@/hooks/stock/useRuptureAlerts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useListUrlState } from '@/hooks/common/useListUrlState';
+import { isFeatureEnabled } from '@/lib/feature-flags';
+
+const SupplierReliabilityTab = lazyWithRetry(() =>
+  import('./supplier-reliability/SupplierReliabilityTab').then((m) => ({
+    default: m.SupplierReliabilityTab,
+  })),
+);
+
+
 // #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
 const SupplierRiskPanel = lazyWithRetry(() =>
   import('./SupplierRiskPanel').then((m) => ({ default: m.SupplierRiskPanel })),
@@ -40,7 +54,10 @@ const StockHealthBreakdownDrawer = lazyWithRetry(() =>
 import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
 
 const RISK_PANEL_STORAGE_KEY = 'stock-dashboard:risk-panel-open:v1';
+const ACTIVE_TAB_STORAGE_KEY = 'stock-dashboard:active-tab:v1';
+type StockTabValue = 'overview' | 'reliability';
 
+/** Lê do localStorage se o painel de risco estava aberto na última sessão. */
 function readRiskPanelPref(): boolean {
   if (typeof window === 'undefined') return true;
   try {
@@ -49,6 +66,17 @@ function readRiskPanelPref(): boolean {
     return raw === '1';
   } catch {
     return true;
+  }
+}
+
+/** Lê do localStorage a aba ativa do dashboard. Default: 'overview'. */
+function readActiveTabPref(): StockTabValue {
+  if (typeof window === 'undefined') return 'overview';
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
+    return raw === 'reliability' ? 'reliability' : 'overview';
+  } catch {
+    return 'overview';
   }
 }
 
@@ -65,15 +93,31 @@ function formatRelativeTime(date: Date, now: number): string {
   return `há ${diffD} dia${diffD > 1 ? 's' : ''}`;
 }
 
+/**
+ * Portal que projeta controles no slot à direita da toolbar de Estoque
+ * (`#stock-toolbar-slot`). Se o slot da toolbar ainda não existir no DOM,
+ * faz fallback para o `#stock-header-slot` (compat com layouts antigos).
+ * Reavalia o alvo quando a árvore muda (toolbar é remontada em filtros).
+ */
 function HeaderSlotPortal({ children }: { children: ReactNode }) {
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    setSlot(document.getElementById('stock-header-slot'));
+    const resolve = () =>
+      document.getElementById('stock-toolbar-slot') ??
+      document.getElementById('stock-header-slot');
+    setSlot(resolve());
+    const mo = new MutationObserver(() => {
+      const next = resolve();
+      setSlot((prev) => (prev === next ? prev : next));
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
   }, []);
   if (!slot) return null;
   return createPortal(children, slot);
 }
 
+/** Dashboard completo de gestão de estoque: cards de KPI, tabela de variações e painel de risco. */
 export function StockDashboard() {
   const [outOfStockDialogOpen, setOutOfStockDialogOpen] = useState(false);
   const [lowStockDialogOpen, setLowStockDialogOpen] = useState(false);
@@ -81,6 +125,31 @@ export function StockDashboard() {
   const [healthDrawerOpen, setHealthDrawerOpen] = useState(false);
   // #14 — persiste preferência do painel de risco entre sessões.
   const [riskPanelOpen, setRiskPanelOpen] = useState<boolean>(readRiskPanelPref);
+  const reliabilityFlag = isFeatureEnabled('supplierReliability');
+  // Aba ativa: URL é a SSOT (deep-link + share), com fallback para o preferido
+  // salvo em localStorage na primeira visita. `useListUrlState` mantém o
+  // padrão das demais listagens (/orcamentos, /carrinhos) — status/sort/busca
+  // via query string.
+  const initialTab: StockTabValue = reliabilityFlag ? readActiveTabPref() : 'overview';
+  const stockUrlKeys = useMemo(() => ({ tab: initialTab }), [initialTab]);
+  const { values: stockUrlValues, setValue: setStockUrlValue } = useListUrlState({
+    keys: stockUrlKeys,
+  });
+  const activeTab: StockTabValue =
+    stockUrlValues.tab === 'reliability' ? 'reliability' : 'overview';
+  const setActiveTab = useCallback(
+    (v: StockTabValue) => setStockUrlValue('tab', v),
+    [setStockUrlValue],
+  );
+  // Persiste como preferência local (retenção entre sessões quando URL não traz `tab`).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, activeTab);
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [activeTab]);
   const { toast } = useToast();
   const prevCriticalCountRef = useRef<number | null>(null);
   // #11/#19 — lastRefresh como estado força re-render quando o tempo relativo
@@ -168,7 +237,77 @@ export function StockDashboard() {
   const warningAlerts = useMemo(() => alerts.filter((a) => a.severity === 'warning'), [alerts]);
   const infoAlerts = useMemo(() => alerts.filter((a) => a.severity === 'info'), [alerts]);
 
+  // Risco de Ruptura: variações com cobertura projetada (EMA) ≤ 30 dias.
+  // Quando o feature flag `useEmaRupture` estiver off, `alerts` vem vazio e
+  // passamos `null` para o helper cair no fallback `variantsCritical`.
+  const { alerts: ruptureAlerts, byVariantId: ruptureByVariantId } = useRuptureAlerts();
+
+  // SSOT do "Risco de Ruptura": set de variantId únicos com cobertura ≤ 30d.
+  // O MESMO set alimenta o número do card E o filtro da tabela, garantindo
+  // invariante card-count === linhas-filtradas (deduplica fornecedores por
+  // variante via `byVariantId`).
+  const ruptureRiskVariantIds = useMemo<ReadonlySet<string> | null>(() => {
+    if (ruptureByVariantId.size === 0) return null;
+    const ids = new Set<string>();
+    for (const a of ruptureByVariantId.values()) {
+      if (
+        typeof a.cobertura_dias === 'number' &&
+        Number.isFinite(a.cobertura_dias) &&
+        a.cobertura_dias <= 30
+      ) {
+        ids.add(a.variant_id);
+      }
+    }
+    return ids.size > 0 ? ids : null;
+  }, [ruptureByVariantId]);
+
+  const ruptureRisk30dCount = ruptureRiskVariantIds ? ruptureRiskVariantIds.size : null;
+  const isRuptureRiskActive = Boolean(filters.ruptureRiskVariantIds);
+  void ruptureAlerts; // mantido para upstream subscribers (cache warm)
+
+  // Toggle on/off do filtro de Risco de Ruptura — espelha o padrão do
+  // Estoque Futuro (Switch no popover do botão da toolbar). Persiste o
+  // estado em localStorage e reaplica quando o conjunto fica disponível
+  // após reload (re-hidratação assíncrona dos alertas EMA).
+  const RUPTURE_PREF_KEY = 'stock-filter:rupture-risk-active:v1';
+  const toggleRuptureRisk = useCallback(
+    (active: boolean) => {
+      if (active && ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+        updateFilter('status', 'all');
+        updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+      } else {
+        updateFilter('ruptureRiskVariantIds', undefined);
+      }
+      try {
+        window.localStorage.setItem(RUPTURE_PREF_KEY, active ? '1' : '0');
+      } catch {
+        /* quota/private mode */
+      }
+    },
+    [ruptureRiskVariantIds, updateFilter],
+  );
+
+  // Re-hidratação: quando os alertas EMA chegam após mount, se a pref
+  // estava ON, aplica o filtro automaticamente (uma única vez por sessão).
+  const ruptureHydratedRef = useRef(false);
+  useEffect(() => {
+    if (ruptureHydratedRef.current) return;
+    if (!ruptureRiskVariantIds || ruptureRiskVariantIds.size === 0) return;
+    let pref = '0';
+    try {
+      pref = window.localStorage.getItem(RUPTURE_PREF_KEY) ?? '0';
+    } catch {
+      /* ignore */
+    }
+    if (pref === '1' && !isRuptureRiskActive) {
+      updateFilter('status', 'all');
+      updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+    }
+    ruptureHydratedRef.current = true;
+  }, [ruptureRiskVariantIds, isRuptureRiskActive, updateFilter]);
+
   const activeFilterLabel = useMemo(() => {
+    if (isRuptureRiskActive) return 'Risco de Ruptura (≤30d)';
     switch (filters.status) {
       case 'in_stock':
         return 'Em Estoque';
@@ -180,18 +319,34 @@ export function StockDashboard() {
         return 'Sem Estoque';
       case 'incoming':
         return 'Estoque Futuro';
+      case 'overstocked':
+        return 'Excesso de Estoque';
       default:
         return null;
     }
-  }, [filters.status]);
+  }, [filters.status, isRuptureRiskActive]);
 
-  const isFiltered = filters.status !== 'all';
+  const isFiltered = filters.status !== 'all' || isRuptureRiskActive;
 
-  // Future stock total
-  const futureStockTotal = useMemo(
-    () => futureStock.reduce((sum, f) => sum + (f.expectedQuantity || 0), 0),
-    [futureStock],
-  );
+  // Estoque futuro — janela de 30 dias (regra de negócio).
+  // Contamos variações distintas com pelo menos uma reposição prevista nos
+  // próximos 30 dias; o total de unidades vira contexto secundário (trend).
+  const FUTURE_STOCK_WINDOW_DAYS = 30;
+  const { futureStock30dVariantCount, futureStock30dUnits } = useMemo(() => {
+    const now = Date.now();
+    const horizon = now + FUTURE_STOCK_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    const variantSet = new Set<string>();
+    let units = 0;
+    for (const f of futureStock) {
+      const t = f.expectedDate ? Date.parse(f.expectedDate) : NaN;
+      if (!Number.isFinite(t)) continue;
+      if (t < now || t > horizon) continue;
+      if (f.variantId) variantSet.add(f.variantId);
+      units += f.expectedQuantity || 0;
+    }
+    return { futureStock30dVariantCount: variantSet.size, futureStock30dUnits: units };
+  }, [futureStock]);
+
 
   if (isLoading) {
     const pct = loadingProgress
@@ -292,39 +447,71 @@ export function StockDashboard() {
         </Suspense>
       )}
 
-      {/* Advanced Filters (topo, logo após o título "Estoque") */}
+
+      {/* Título "Estoque" + Toolbar de filtros na mesma linha (padrão Super Filtro) */}
       <Card>
         <CardContent className="p-4">
-          <StockFilterToolbar
-            filters={filters}
-            onUpdateFilter={updateFilter}
-            onResetFilters={resetFilters}
-            categories={availableCategories}
-            suppliers={availableSuppliers}
-            colors={allColors}
-            colorGroups={availableColorGroups}
-            totalProducts={allProductStocks.length}
-            filteredCount={productStocks.length}
-          />
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
+            <h1
+              data-testid="page-title-estoque"
+              className="shrink-0 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:pt-1"
+            >
+              Estoque
+            </h1>
+            <div className="min-w-0 flex-1">
+              <StockFilterToolbar
+                filters={filters}
+                onUpdateFilter={updateFilter}
+                onResetFilters={resetFilters}
+                categories={availableCategories}
+                suppliers={availableSuppliers}
+                colors={allColors}
+                colorGroups={availableColorGroups}
+                totalProducts={allProductStocks.length}
+                filteredCount={productStocks.length}
+                isRuptureRiskActive={isRuptureRiskActive}
+                ruptureRiskCount={ruptureRisk30dCount ?? 0}
+                onToggleRuptureRisk={toggleRuptureRisk}
+              />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Header with Health Score */}
+      <Tabs
+        value={reliabilityFlag ? activeTab : 'overview'}
+        onValueChange={(v) => setActiveTab(v as StockTabValue)}
+        className="space-y-5"
+      >
+        {reliabilityFlag && (
+          <TabsList data-testid="stock-tabs">
+            <TabsTrigger value="overview" data-testid="stock-tab-overview">
+              Painel
+            </TabsTrigger>
+            <TabsTrigger
+              value="reliability"
+              data-testid="stock-tab-reliability"
+              className="gap-1.5"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Confiabilidade de Fornecedores
+            </TabsTrigger>
+          </TabsList>
+        )}
+
+        {reliabilityFlag && (
+          <TabsContent value="reliability" className="space-y-5">
+            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+              <SupplierReliabilityTab />
+            </Suspense>
+          </TabsContent>
+        )}
+
+        <TabsContent value="overview" className="space-y-5">
+          {/* Header with Health Score */}
 
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex flex-col gap-2">
-          {warningAlerts.length > 0 && (
-            <Badge
-              variant="secondary"
-              data-testid="warning-alerts-badge"
-              className="cursor-pointer gap-1 text-xs"
-              onClick={() => setLowStockDialogOpen(true)}
-            >
-              <AlertCircle className="h-3 w-3" />
-              {warningAlerts.length} aviso{warningAlerts.length > 1 ? 's' : ''} de esgotamento
-            </Badge>
-          )}
-        </div>
+        <div className="flex flex-col gap-2" />
 
         <HeaderSlotPortal>
           <div
@@ -356,105 +543,97 @@ export function StockDashboard() {
 
       {/* Summary Cards — clickable filters */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
+        {buildStockKpiCards(summary, ruptureRisk30dCount).map((card) => {
+          const ICONS: Record<typeof card.slug, React.ReactNode> = {
+            'total-de-variacoes': <Package className="h-6 w-6 text-primary" />,
+            'em-estoque': <CheckCircle2 className="h-6 w-6 text-success" />,
+            'risco-de-ruptura': <TrendingDown className="h-6 w-6 text-warning" />,
+            'sem-estoque': <XCircle className="h-6 w-6 text-destructive" />,
+          };
+
+          // "Risco de Ruptura" usa o filtro dimensional ruptureRiskVariantIds
+          // (set EMA ≤ 30d) ao invés de filters.status='critical' — assim a
+          // tabela mostra EXATAMENTE as variações sinalizadas, sem mistura.
+          const isRuptureCard = card.slug === 'risco-de-ruptura';
+          const isActive = isRuptureCard
+            ? isRuptureRiskActive
+            : !isRuptureRiskActive &&
+              (card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter);
+          return (
+            <StatCard
+              key={card.slug}
+              title={card.title}
+              value={card.value.toLocaleString('pt-BR')}
+              icon={ICONS[card.slug]}
+              variant={card.variant}
+              subtitle={card.subtitle}
+              tooltip={card.tooltip}
+              isActive={isActive}
+              onClick={() => {
+                if (isRuptureCard) {
+                  // toggle do filtro dimensional + zera status pra não competir
+                  if (isRuptureRiskActive) {
+                    updateFilter('ruptureRiskVariantIds', undefined);
+                  } else if (ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+                    updateFilter('status', 'all');
+                    updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+                  } else {
+                    // Sem dados EMA (flag off ou sem alertas) → fallback antigo
+                    updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
+                  }
+                  updateFilter('sortBy', 'name');
+                  updateFilter('sortDirection', 'asc');
+                  return;
+                }
+                if (!card.filter) return;
+                const next =
+                  card.filter === 'all'
+                    ? 'all'
+                    : filters.status === card.filter
+                      ? 'all'
+                      : card.filter;
+                // Qualquer outro card sai do modo "risco de ruptura"
+                if (isRuptureRiskActive) updateFilter('ruptureRiskVariantIds', undefined);
+                updateFilter('status', next);
+                // Restaura a abertura do OutOfStockDialog ao clicar em "Sem Estoque"
+                // com alertas críticos (trigger removido por engano em 98052925a, 2026-06-21).
+                if (card.filter === 'out_of_stock' && criticalAlerts.length > 0) {
+                  setOutOfStockDialogOpen(true);
+                }
+                updateFilter('sortBy', 'name');
+                updateFilter('sortDirection', 'asc');
+              }}
+            />
+          );
+        })}
+
+
         <StatCard
-          title="Total de Produtos"
-          value={summary.totalProducts.toLocaleString('pt-BR')}
-          icon={<Package className="h-6 w-6 text-primary" />}
-          isActive={filters.status === 'all'}
-          onClick={() => updateFilter('status', 'all')}
-          clickHint="Mostrar todos os produtos"
-          trend={{
-            value: summary.totalVariants,
-            label: `${summary.totalVariants.toLocaleString('pt-BR')} variações`,
+          title="Estoque Futuro (30 dias)"
+          // SSOT: valor primário = variações distintas com reposição prevista
+          // nos próximos 30 dias. Total de unidades vira trend secundário.
+          value={futureStock30dVariantCount}
+          icon={<Truck className="h-6 w-6 text-primary" />}
+          isActive={filters.status === 'incoming'}
+          onClick={() => {
+            updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
+            // Restaura a abertura do FutureStockDialog quando há reposição prevista
+            // (trigger removido por engano em 98052925a, 2026-06-21).
+            if (futureStock30dVariantCount > 0) setFutureStockDialogOpen(true);
+            updateFilter('sortBy', 'name');
+            updateFilter('sortDirection', 'asc');
           }}
-        />
-        <StatCard
-          title="Em Estoque"
-          value={summary.productsInStock.toLocaleString('pt-BR')}
-          icon={<CheckCircle2 className="h-6 w-6 text-success" />}
-          variant="success"
-          isActive={filters.status === 'in_stock'}
-          onClick={() => updateFilter('status', filters.status === 'in_stock' ? 'all' : 'in_stock')}
-          clickHint="Filtrar produtos em estoque"
+          tooltip="Variações com reposição prevista nos próximos 30 dias."
           trend={
-            summary.totalProducts > 0
+            futureStock30dUnits > 0
               ? {
                   value: 1,
-                  label: `${Math.round((summary.productsInStock / summary.totalProducts) * 100)}% do total`,
-                }
-              : undefined
-          }
-        />
-        <StatCard
-          title="Crítico"
-          // SSOT KPI ↔ filtro: o valor bate 1:1 com `filters.status ===
-          // 'critical'` (o que o clique aplica). "Crítico" = produtos
-          // parcialmente sem estoque (overallStatus==='critical'). A régua
-          // por `min` (low_stock) foi descontinuada e o KPI ficava sempre 0;
-          // este card agora expõe um número real e clicável.
-          // Testado em VariantStockTable.kpi-consistency.test.tsx.
-          value={summary.productsCritical.toLocaleString('pt-BR')}
-          icon={<TrendingDown className="h-6 w-6 text-warning" />}
-          variant="warning"
-          isActive={filters.status === 'critical'}
-          onClick={() => {
-            updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
-          }}
-          clickHint="Filtrar produtos em estado crítico (parcialmente sem estoque)"
-          trend={
-            summary.totalProducts > 0 && summary.productsCritical > 0
-              ? {
-                  value: -1,
-                  label: `${Math.round((summary.productsCritical / summary.totalProducts) * 100)}% do catálogo`,
+                  label: `${futureStock30dUnits.toLocaleString('pt-BR')} un. previstas`,
                 }
               : undefined
           }
         />
 
-        <StatCard
-          title="Sem Estoque"
-          value={summary.productsOutOfStock.toLocaleString('pt-BR')}
-          icon={<XCircle className="h-6 w-6 text-destructive" />}
-          variant="error"
-          isActive={filters.status === 'out_of_stock'}
-          onClick={() => {
-            updateFilter('status', filters.status === 'out_of_stock' ? 'all' : 'out_of_stock');
-            if (criticalAlerts.length > 0) setOutOfStockDialogOpen(true);
-          }}
-          clickHint="Filtrar produtos sem estoque"
-          trend={
-            summary.productsOutOfStock > 0
-              ? {
-                  value: -1,
-                  label: `${summary.productsOutOfStock.toLocaleString('pt-BR')} produtos sem estoque`,
-                }
-              : undefined
-          }
-        />
-        <StatCard
-          title="Estoque Futuro"
-          // SSOT: o valor primário é a contagem de reposições previstas (entidades
-          // contáveis). O total de unidades vinha da soma de next_quantity_{1..3}
-          // por variant_supplier_source — número correto pela schema, mas
-          // visualmente alarmante (dezenas de milhões) e incompatível com a
-          // narrativa "reposições". Unidades viram trend secundário.
-          value={futureStock.length}
-          icon={<Truck className="h-6 w-6 text-primary" />}
-          isActive={filters.status === 'incoming'}
-          onClick={() => {
-            updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
-            if (futureStock.length > 0) setFutureStockDialogOpen(true);
-          }}
-          clickHint="Ver previsões de reposição"
-          trend={
-            futureStockTotal > 0
-              ? {
-                  value: 1,
-                  label: `${futureStockTotal.toLocaleString('pt-BR')} un. previstas`,
-                }
-              : undefined
-          }
-        />
       </div>
 
       {/* Active Filter Badge */}
@@ -477,6 +656,7 @@ export function StockDashboard() {
           </span>
         </div>
       )}
+
 
       {/* Stock Table */}
       <Card>
@@ -515,6 +695,7 @@ export function StockDashboard() {
             products={productStocks}
             isLoading={isFetching}
             targetQuantity={filters.minQuantityNeeded}
+            ruptureFilterActive={isRuptureRiskActive}
           />
         </CardContent>
       </Card>
@@ -582,6 +763,8 @@ export function StockDashboard() {
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

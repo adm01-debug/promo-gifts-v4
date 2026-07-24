@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { untypedFrom } from '@/lib/supabase-untyped';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface DeviceInfo {
   fingerprint: string;
@@ -32,7 +33,7 @@ function generateDeviceFingerprint(): string {
   for (let i = 0; i < fingerprint.length; i++) {
     const char = fingerprint.charCodeAt(i);
     hash = (hash << 5) - hash + char;
-    hash = hash & hash;
+    hash &= hash;
   }
 
   return Math.abs(hash).toString(36);
@@ -93,13 +94,16 @@ export function useDeviceDetection(targetUserId?: string) {
     try {
       const deviceInfo = getDeviceInfo();
 
-      const { data, error } = await supabase.functions.invoke('detect-new-device', {
-        body: {
-          userId: user.id,
-          userEmail: user.email,
-          deviceInfo,
+      const { data, error } = await invokeEdge<{ isNewDevice: boolean; isNewIP: boolean }>(
+        'detect-new-device',
+        {
+          body: {
+            userId: user.id,
+            userEmail: user.email,
+            deviceInfo,
+          },
         },
-      });
+      );
 
       if (error) {
         logger.error('Error checking device:', error);
@@ -107,8 +111,8 @@ export function useDeviceDetection(targetUserId?: string) {
       }
 
       return {
-        isNewDevice: data.isNewDevice || false,
-        isNewIP: data.isNewIP || false,
+        isNewDevice: data?.isNewDevice || false,
+        isNewIP: data?.isNewIP || false,
       };
     } catch (error: unknown) {
       logger.error('Device detection error:', error);

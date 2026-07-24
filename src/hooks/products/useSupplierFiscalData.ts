@@ -138,22 +138,28 @@ export function useSupplierFiscalData(
       let matchedVariantId: string | null = null;
 
       if (variantsResult.data.length) {
-        // 2. Get variant_supplier_sources for this supplier + product's variants
+        // 2. Get variant_supplier_sources for this supplier + product's variants.
+        // Single batched .in() query replaces the old sequential loop (N+1 → 1 round-trip).
         const variantIds = variantsResult.data.map((v) => v.id);
+        const vssResult = await untypedFrom('variant_supplier_sources')
+          .select(
+            'id, cst, cfop, icms_rate, pis_rate, cofins_rate, cest, csosn, operation_nature, supplier_branch_id, variant_id',
+          )
+          .eq('supplier_id', supplierId)
+          .in('variant_id', variantIds);
 
-        for (const variantId of variantIds.slice(0, 5)) {
-          const vssResult = await untypedFrom('variant_supplier_sources')
-            .select(
-              'id, cst, cfop, icms_rate, pis_rate, cofins_rate, cest, csosn, operation_nature, supplier_branch_id, variant_id',
-            )
-            .eq('supplier_id', supplierId)
-            .eq('variant_id', variantId)
-            .limit(1);
-
-          if (vssResult.data?.length) {
-            vss = vssResult.data[0] as VSSRecord;
-            matchedVariantId = variantId;
-            break;
+        // BUG-FISCALDATA-VSS-SELECT-SILENT-FAIL FIX: untypedFrom returns { data, error }.
+        // A query failure would silently fall through to branch inheritance, giving wrong data.
+        if (vssResult.error) throw vssResult.error;
+        if (vssResult.data?.length) {
+          // Pick the VSS record whose variant appears earliest in the priority order
+          const vssByVariantId = new Map<string, VSSRecord>(
+            vssResult.data.map((r) => [(r as VSSRecord).variant_id!, r as VSSRecord]),
+          );
+          const matched = variantIds.find((vid) => vssByVariantId.has(vid));
+          if (matched) {
+            vss = vssByVariantId.get(matched)!;
+            matchedVariantId = matched;
           }
         }
 
@@ -172,7 +178,9 @@ export function useSupplierFiscalData(
               .select(BRANCH_SELECT)
               .eq('id', vss.supplier_branch_id)
               .limit(1);
-            if (branchResult.data?.length) {
+            // BUG-FISCALDATA-BRANCH-SELECT-SILENT-FAIL FIX: untypedFrom returns { data, error }.
+            if (branchResult.error) logger.warn('[useSupplierFiscalData] branch fetch failed (non-fatal):', branchResult.error);
+            else if (branchResult.data?.length) {
               branchData = branchResult.data[0];
             }
           } catch (err) {
@@ -202,25 +210,24 @@ export function useSupplierFiscalData(
         };
       }
 
-      // 4. INHERITANCE: No VSS found — fall back to supplier_branches defaults
-      try {
-        const branchesResult = await untypedFrom('supplier_branches')
-          .select(BRANCH_SELECT)
-          .eq('supplier_id', supplierId)
-          .eq('is_active', true)
-          .limit(5);
+      // 4. INHERITANCE: No VSS found — fall back to supplier_branches defaults.
+      // Errors here are NOT swallowed: this is the only data source when no override
+      // exists, so a fetch failure should surface to TanStack Query's retry logic.
+      const branchesResult = await untypedFrom('supplier_branches')
+        .select(BRANCH_SELECT)
+        .eq('supplier_id', supplierId)
+        .eq('is_active', true)
+        .limit(5);
 
-        if (branchesResult.data?.length) {
-          const branch = branchesResult.data[0] as BranchRecord;
-          const result = buildFromBranch(branch);
-          result._variantId = matchedVariantId || undefined;
-          return result;
-        }
-      } catch (err) {
-        logger.warn(
-          '[useSupplierFiscalData] Failed to fetch branch defaults for inheritance:',
-          err,
-        );
+      if (branchesResult.error) {
+        throw branchesResult.error;
+      }
+
+      if (branchesResult.data?.length) {
+        const branch = branchesResult.data[0] as BranchRecord;
+        const result = buildFromBranch(branch);
+        result._variantId = matchedVariantId || undefined;
+        return result;
       }
 
       return null;
@@ -247,26 +254,24 @@ export function useSupplierFiscalData(
             '[saveFiscalOverride] No variant found, creating default variant for product:',
             productId,
           );
-          try {
-            const createResult = await untypedFrom('product_variants')
-              .insert({
-                product_id: productId,
-                sku: `DEFAULT-${productId.substring(0, 8)}`,
-                is_active: true,
-                attributes: {},
-              })
-              .select('id');
-            if (createResult.data?.length) {
-              variantId = createResult.data[0].id;
-            }
-          } catch (err) {
-            logger.error('[saveFiscalOverride] Failed to create default variant:', err);
+          const createResult = await untypedFrom('product_variants')
+            .insert({
+              product_id: productId,
+              sku: `DEFAULT-${productId.substring(0, 8)}`,
+              is_active: true,
+              attributes: {},
+            })
+            .select('id');
+          if (createResult.error) {
+            throw new Error(
+              `Não foi possível criar variante padrão: ${createResult.error.message}`,
+            );
           }
+          variantId = createResult.data?.[0]?.id;
         }
 
         if (!variantId) {
-          logger.error('[saveFiscalOverride] No variant ID available even after creation attempt');
-          return false;
+          throw new Error('Nenhum ID de variante disponível para salvar dados fiscais');
         }
 
         // Check if VSS record already exists
@@ -275,6 +280,10 @@ export function useSupplierFiscalData(
           .eq('supplier_id', supplierId)
           .eq('variant_id', variantId)
           .limit(1);
+
+        // BUG-FISCAL-EXISTING-SELECT-SILENT-FAIL FIX: error not checked — could proceed to INSERT
+        // when VSS exists, causing a unique constraint violation.
+        if (existingResult.error) throw existingResult.error;
 
         const payload = {
           cst: input.cst || null,
@@ -288,10 +297,11 @@ export function useSupplierFiscalData(
         };
 
         if (existingResult.data?.length) {
-          // Update existing VSS
-          await untypedFrom('variant_supplier_sources')
+          // BUG-FISCAL-UPDATE-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+          const { error: updateErr } = await untypedFrom('variant_supplier_sources')
             .update(payload)
             .eq('id', existingResult.data[0].id);
+          if (updateErr) throw updateErr;
         } else {
           // Fetch organization_id from an existing VSS record for this supplier
           let organizationId: string | null = null;
@@ -300,21 +310,24 @@ export function useSupplierFiscalData(
               .select('organization_id')
               .eq('supplier_id', supplierId)
               .limit(1);
-            if (orgResult.data?.length) {
+            // BUG-FISCAL-ORG-SELECT-SILENT-FAIL FIX: untypedFrom returns { data, error }.
+            if (orgResult.error) logger.warn('[saveFiscalOverride] Could not fetch org_id from existing VSS:', orgResult.error);
+            else if (orgResult.data?.length) {
               organizationId = orgResult.data[0].organization_id;
             }
           } catch (e) {
             logger.warn('[saveFiscalOverride] Could not fetch org_id from existing VSS:', e);
           }
 
-          // Create new VSS with supplier_branch_id from inherited data
-          await untypedFrom('variant_supplier_sources').insert({
+          // BUG-FISCAL-INSERT-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+          const { error: insertErr } = await untypedFrom('variant_supplier_sources').insert({
             ...payload,
             supplier_id: supplierId,
             variant_id: variantId,
             supplier_branch_id: currentData?.supplier_branch_id || null,
             ...(organizationId ? { organization_id: organizationId } : {}),
           });
+          if (insertErr) throw insertErr;
         }
 
         // Invalidate and refetch
@@ -346,8 +359,15 @@ export function useSupplierFiscalData(
         .eq('variant_id', variantId)
         .limit(1);
 
+      // BUG-FISCAL-REVERT-SELECT-SILENT-FAIL FIX: error not checked — silent success on query failure
+      // would mislead callers into thinking the revert succeeded when VSS still exists.
+      if (vssResult.error) throw vssResult.error;
       if (vssResult.data?.length) {
-        await untypedFrom('variant_supplier_sources').delete().eq('id', vssResult.data[0].id);
+        // BUG-FISCAL-DELETE-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+        const { error: deleteErr } = await untypedFrom('variant_supplier_sources')
+          .delete()
+          .eq('id', vssResult.data[0].id);
+        if (deleteErr) throw deleteErr;
       }
 
       await queryClient.invalidateQueries({ queryKey });

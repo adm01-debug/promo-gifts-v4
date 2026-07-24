@@ -70,7 +70,7 @@ export interface SmokeTestsData {
 }
 
 type SmokeTestRpcClient = {
-  rpc(fn: 'fn_run_and_persist_smoke_tests'): Promise<{ error: { message?: string } | null }>;
+  rpc: (fn: 'fn_run_and_persist_smoke_tests') => Promise<{ error: { message?: string } | null }>;
 };
 
 export function useSmokeTests(): SmokeTestsData {

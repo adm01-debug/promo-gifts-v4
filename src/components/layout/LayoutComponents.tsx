@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 interface ContainerProps {
   children: React.ReactNode;
   className?: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'ultrawide' | 'full';
+  size?: '2xl' | '3xl' | 'full' | 'lg' | 'md' | 'sm' | 'ultrawide' | 'xl' | 'xs';
   centered?: boolean;
 }
 
@@ -71,7 +71,7 @@ interface GridProps {
   children: React.ReactNode;
   className?: string;
   cols?: 1 | 2 | 3 | 4 | 5 | 6;
-  gap?: 'none' | 'xs' | 'sm' | 'md' | 'lg';
+  gap?: 'lg' | 'md' | 'none' | 'sm' | 'xs';
   responsive?: boolean;
 }
 
@@ -112,10 +112,10 @@ export function Grid({ children, className, cols = 3, gap = 'md', responsive = t
 interface StackProps {
   children: React.ReactNode;
   className?: string;
-  direction?: 'vertical' | 'horizontal';
-  gap?: 'none' | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  align?: 'start' | 'center' | 'end' | 'stretch';
-  justify?: 'start' | 'center' | 'end' | 'between' | 'around';
+  direction?: 'horizontal' | 'vertical';
+  gap?: 'lg' | 'md' | 'none' | 'sm' | 'xl' | 'xs';
+  align?: 'center' | 'end' | 'start' | 'stretch';
+  justify?: 'around' | 'between' | 'center' | 'end' | 'start';
   wrap?: boolean;
 }
 
@@ -202,7 +202,7 @@ export function Divider({ className, orientation = 'horizontal', label }: Divide
 }
 
 interface SpacerProps {
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  size?: '2xl' | 'lg' | 'md' | 'sm' | 'xl' | 'xs';
   className?: string;
 }
 

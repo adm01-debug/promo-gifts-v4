@@ -128,7 +128,7 @@ interface MetricCardProps {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number | string;
-  color: 'blue' | 'amber' | 'green' | 'purple';
+  color: 'amber' | 'blue' | 'green' | 'purple';
 }
 
 function MetricCard({ icon: Icon, label, value, color }: MetricCardProps) {

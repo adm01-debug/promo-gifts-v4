@@ -17,7 +17,9 @@ export function CompareEmptyStateSmart() {
   const [loading, setLoading] = useState(true);
   const [usedFallback, setUsedFallback] = useState(false);
   const { getProductsByIds, products: allProducts } = useProductsContext();
-  const { addToCompare, isInCompare, canAddMore } = useComparisonStore();
+  const addToCompare = useComparisonStore((s) => s.addToCompare);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
   const navigate = useNavigate();
 
   useEffect(() => {

@@ -33,16 +33,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   useAiModels,
   useAiRouting,
@@ -236,7 +227,7 @@ export function AiRoutingTab() {
         <CardContent className="space-y-2">
           {isLoading && <p className="text-sm text-muted-foreground">Carregando roteamentos…</p>}
           {error && <p className="text-sm text-destructive">Erro ao carregar: {String(error)}</p>}
-          {!isLoading && routings && routings.length === 0 && (
+          {!isLoading && routings?.length === 0 && (
             <p className="text-sm text-muted-foreground">Nenhum roteamento cadastrado.</p>
           )}
 
@@ -541,26 +532,17 @@ export function AiRoutingTab() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletingId} onOpenChange={(o) => !o && setDeletingId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir roteamento</AlertDialogTitle>
-            <AlertDialogDescription>
-              A function_name correspondente passará a usar fallback global no router (Lovable
-              Gateway). Confirmar?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deletingId}
+        onOpenChange={(o) => !o && setDeletingId(null)}
+        variant="destructive"
+        title="Excluir roteamento?"
+        description="A function_name correspondente passará a usar fallback global no router (Lovable Gateway). Confirmar?"
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={confirmDelete}
+        testId="ai-routing-delete"
+      />
     </div>
   );
 }

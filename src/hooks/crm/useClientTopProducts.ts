@@ -16,44 +16,47 @@ export function useClientTopProducts(clientId?: string) {
     queryFn: async () => {
       if (!clientId) return [];
 
-      const { data: orders } = await supabase
+      // BUG-CLIENTTOPPRODUCTS-ORDERS-SELECT-SILENT-FAIL FIX: { data: orders } without error
+      // check — RLS failure silently returned [] causing queryFn to succeed with empty data.
+      const { data: orders, error: ordersErr } = await supabase
         // rls-allow: filtrado por client_id; RLS aplica seller scope
         .from('orders')
         .select('id')
         .eq('client_id', clientId);
+      if (ordersErr) throw ordersErr;
 
       if (!orders?.length) return [];
 
       const orderIds = orders.map((o) => o.id);
 
-      const { data: items } = await supabase
+      // BUG-CLIENTTOPPRODUCTS-ITEMS-SELECT-SILENT-FAIL FIX: { data: items } without error
+      // check — failure silently returned [] instead of letting TanStack Query retry.
+      const { data: items, error: itemsErr } = await supabase
         .from('order_items')
         .select('product_sku, product_name, product_image_url, quantity, unit_price')
         .in('order_id', orderIds);
+      if (itemsErr) throw itemsErr;
 
       if (!items?.length) return [];
 
-      const productStats = items.reduce(
-        (acc, item) => {
-          const key = item.product_sku || item.product_name;
-          if (!key) return acc;
-          if (!acc[key]) {
-            acc[key] = {
-              sku: item.product_sku,
-              name: item.product_name || '',
-              image: item.product_image_url,
-              totalQuantity: 0,
-              totalValue: 0,
-              orderCount: 0,
-            };
-          }
-          acc[key].totalQuantity += item.quantity ?? 0;
-          acc[key].totalValue += (item.quantity ?? 0) * (item.unit_price ?? 0);
-          acc[key].orderCount++;
-          return acc;
-        },
-        {} as Record<string, ProductStat>,
-      );
+      const productStats = items.reduce<Record<string, ProductStat>>((acc, item) => {
+        const key = item.product_sku || item.product_name;
+        if (!key) return acc;
+        if (!acc[key]) {
+          acc[key] = {
+            sku: item.product_sku,
+            name: item.product_name || '',
+            image: item.product_image_url,
+            totalQuantity: 0,
+            totalValue: 0,
+            orderCount: 0,
+          };
+        }
+        acc[key].totalQuantity += item.quantity ?? 0;
+        acc[key].totalValue += (item.quantity ?? 0) * (item.unit_price ?? 0);
+        acc[key].orderCount++;
+        return acc;
+      }, {});
 
       return Object.values(productStats)
         .sort((a, b) => b.totalValue - a.totalValue)

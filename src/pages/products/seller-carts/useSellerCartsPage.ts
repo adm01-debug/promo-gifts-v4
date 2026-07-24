@@ -5,17 +5,26 @@
 import { useState, useCallback, useMemo, useRef, useEffect, useContext } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
-import { useCartTemplates, type CartTemplateItem, type SellerCart } from '@/hooks/products';
+import { useCartTemplates, type CartTemplateItem, type SellerCart, type AddToCartInput } from '@/hooks/products';
 import { ProductsContext } from '@/contexts/ProductsContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
-  recordAction,
+  trackQuoteFinalizedFromCart,
+  trackCartCheckoutStarted,
+  trackCartCompanySwitched,
+} from '@/lib/analytics/cartAnalytics';
+import {
   exportCartToCSV,
   exportCartToPDF,
   shareCartLink,
 } from '@/components/cart/CartUtilComponents';
 import { toast } from 'sonner';
 import { showUndoToast } from '@/utils/undoToast';
+import {
+  UNDO_DURATION_MS,
+  UNDO_TOAST_DESCRIPTION,
+  itemRemovedToastTitle,
+} from '@/pages/products/seller-carts/undoCopy';
 import { differenceInDays } from 'date-fns';
 import {
   KeyboardSensor,
@@ -25,6 +34,13 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import {
+  shippingDeadlineSchema,
+  getShippingDeadlineStatus,
+  daysUntilDeadline,
+  getDeadlineLabel,
+  DEADLINE_BADGE_CLASSES,
+} from '@/lib/carts/shipping-deadline';
 
 export function useSellerCartsPage() {
   const navigate = useNavigate();
@@ -45,7 +61,9 @@ export function useSellerCartsPage() {
     updateItemNotes,
     updateItemSortOrder,
     updateCartNotes,
+    flushCartNotes,
     updateCartStatus,
+    updateCartShippingDeadline,
     duplicateCart,
     moveItemToCart,
     duplicateItemToCart,
@@ -68,6 +86,9 @@ export function useSellerCartsPage() {
   const [cartNotesOpen, setCartNotesOpen] = useState(false);
   const [localCartNotes, setLocalCartNotes] = useState('');
   const debounceNotesRef = useRef<ReturnType<typeof setTimeout>>();
+  // Always mirrors localCartNotes without stale-closure risk in effects/timers.
+  const localCartNotesRef = useRef(localCartNotes);
+  localCartNotesRef.current = localCartNotes;
 
   const stockMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -79,22 +100,25 @@ export function useSellerCartsPage() {
 
   const weightVolume = useMemo(() => {
     if (!activeCart) return null;
+    // O(n+m): build Map once — avoids O(n*m) repeated .find() per item
+    const dimMap = new Map(allProducts.map((p) => [p.id, p] as const));
     let totalWeightG = 0;
     let totalVolumeCm3 = 0;
     let hasData = false;
     activeCart.items.forEach((item) => {
-      const product = allProducts.find((p: { id: string }) => p.id === item.product_id) as
+      const product = dimMap.get(item.product_id) as
         | { dimensions?: { weight_g?: number }; boxVolumeCm3?: number }
         | undefined;
       if (!product) return;
       const weight = product.dimensions?.weight_g || 0;
       const volume = product.boxVolumeCm3 || 0;
-      if (weight > 0) {
-        totalWeightG += weight * item.quantity;
+      const qty = Number.isFinite(item.quantity) ? item.quantity : 0;
+      if (weight > 0 && qty > 0) {
+        totalWeightG += weight * qty;
         hasData = true;
       }
-      if (volume > 0) {
-        totalVolumeCm3 += volume * item.quantity;
+      if (volume > 0 && qty > 0) {
+        totalVolumeCm3 += volume * qty;
         hasData = true;
       }
     });
@@ -111,12 +135,35 @@ export function useSellerCartsPage() {
   // nesta sessao (existia e sumiu -> redireciona em silencio).
   const lastResolvedCartIdRef = useRef<string | null>(null);
 
+  // Ref do último cart id p/ o qual emitimos `cart.company_switched` a partir
+  // desta página. Guarda idempotência contra reruns do effect (mudanças em
+  // `carts` que não alteram o route id não devem re-emitir o evento).
+  const lastSwitchEmittedForRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!routeCartId || isLoading) return;
-    const found = carts.some((c) => c.id === routeCartId);
+    if (routeCartId === 'novo') return;
+    const found = carts.find((c) => c.id === routeCartId);
     if (found) {
+      const prev = lastResolvedCartIdRef.current;
       lastResolvedCartIdRef.current = routeCartId;
       setActiveCartId(routeCartId);
+      // Espelha o evento emitido pelo QuickAdd (source='quick_add_selector')
+      // quando a troca acontece pela navegação lateral (cards da lista de
+      // carrinhos ou entrada direta pela URL de outro carrinho). Só emite se:
+      //   - há um `prev` válido (evita ruído no mount inicial);
+      //   - a troca é entre carrinhos distintos;
+      //   - ainda não emitimos para este destino (idempotência inter-renders).
+      if (prev && prev !== routeCartId && lastSwitchEmittedForRef.current !== routeCartId) {
+        lastSwitchEmittedForRef.current = routeCartId;
+        trackCartCompanySwitched({
+          fromCartId: prev,
+          toCartId: routeCartId,
+          companyId: found.company_id ?? null,
+          companyName: found.company_name ?? null,
+          source: 'seller_carts_page',
+        });
+      }
       return;
     }
     // Nao encontrado: a RLS ja oculta carrinhos de outros vendedores, entao cair
@@ -129,18 +176,54 @@ export function useSellerCartsPage() {
     navigate('/carrinhos', { replace: true });
   }, [routeCartId, carts, isLoading, setActiveCartId, navigate]);
 
+  // Tracks previous cartId so we can flush notes to the OLD cart when switching.
+  const prevCartIdRef = useRef<string | undefined>(undefined);
+
+  // On cart switch: flush pending debounce to PREVIOUS cart, then reset local state.
+  // Early-return when notes-only change (same cart id) avoids double-flush with the
+  // server-sync effect below. activeCart?.notes is in the dep array to satisfy
+  // exhaustive-deps; the guard ensures the body only runs on actual cart switch.
   useEffect(() => {
+    if (activeCart?.id === prevCartIdRef.current) return;
+    if (debounceNotesRef.current && prevCartIdRef.current) {
+      clearTimeout(debounceNotesRef.current);
+      debounceNotesRef.current = undefined;
+      updateCartNotes(prevCartIdRef.current, localCartNotesRef.current);
+    }
+    prevCartIdRef.current = activeCart?.id;
     setLocalCartNotes(activeCart?.notes ?? '');
     setCartNotesOpen(!!activeCart?.notes);
-  }, [activeCart?.id, activeCart?.notes]);
+  }, [activeCart?.id, activeCart?.notes, updateCartNotes]);
 
-  // FIX: cleanup debounceNotesRef no unmount — sem isso, o timer dispara
-  // e chama updateCartNotes após a navegação para fora da página.
+  // On server-side notes update: sync local state only when user is not typing
+  // (debounce pending = user is mid-edit; overwriting would discard in-flight keystrokes).
+  useEffect(() => {
+    if (!debounceNotesRef.current) {
+      setLocalCartNotes(activeCart?.notes ?? '');
+    }
+  }, [activeCart?.notes]);
+
+  // Cleanup debounceNotesRef no unmount — evita disparo após navegar para outra página.
   useEffect(() => {
     return () => {
       if (debounceNotesRef.current) clearTimeout(debounceNotesRef.current);
     };
   }, []);
+
+  // Flush do debounce de notas quando o usuário fecha/recarrega a aba (beforeunload).
+  // Sem isso, notas editadas nos últimos 800ms antes do fechamento são perdidas.
+  const activeCartIdForFlush = activeCart?.id;
+  useEffect(() => {
+    const flush = () => {
+      if (debounceNotesRef.current && activeCartIdForFlush) {
+        clearTimeout(debounceNotesRef.current);
+        debounceNotesRef.current = undefined;
+        updateCartNotes(activeCartIdForFlush, localCartNotesRef.current);
+      }
+    };
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
+  }, [activeCartIdForFlush, updateCartNotes]);
 
   const handleCartNotesChange = (value: string) => {
     setLocalCartNotes(value);
@@ -149,6 +232,47 @@ export function useSellerCartsPage() {
       if (activeCart) updateCartNotes(activeCart.id, value);
     }, 800);
   };
+
+  // ============================================
+  // Prazo p/ envio (shipping_deadline)
+  // ============================================
+  const [shippingDeadlineDraft, setShippingDeadlineDraft] = useState<string | null>(
+    activeCart?.shipping_deadline ?? null,
+  );
+  const [shippingDeadlineError, setShippingDeadlineError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setShippingDeadlineDraft(activeCart?.shipping_deadline ?? null);
+    setShippingDeadlineError(null);
+  }, [activeCart?.id, activeCart?.shipping_deadline]);
+
+  const handleShippingDeadlineChange = useCallback(
+    (value: string | null) => {
+      setShippingDeadlineDraft(value);
+      if (!activeCart) return;
+      const parsed = shippingDeadlineSchema.safeParse(value);
+      if (!parsed.success) {
+        setShippingDeadlineError(parsed.error.errors[0]?.message ?? 'Data inválida.');
+        return;
+      }
+      setShippingDeadlineError(null);
+      updateCartShippingDeadline(activeCart.id, parsed.data);
+    },
+    [activeCart, updateCartShippingDeadline],
+  );
+
+  const shippingDeadlineBadge = useMemo(() => {
+    const status = getShippingDeadlineStatus(shippingDeadlineDraft);
+    if (status === 'none' || status === 'ok') return null;
+    const diff = daysUntilDeadline(shippingDeadlineDraft);
+    return {
+      status,
+      label: getDeadlineLabel(status, diff),
+      className: DEADLINE_BADGE_CLASSES[status],
+    };
+  }, [shippingDeadlineDraft]);
+
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -171,91 +295,73 @@ export function useSellerCartsPage() {
 
   const handleRemoveItem = useCallback(
     (itemId: string, itemName: string) => {
+      // Snapshot ANTES do remove: preserva sort_order, notes e todos os campos
+      // semânticos para restauração fiel (mesma posição, notas, cor, quantidade).
+      // Usa `restoreItems` (não `addToActiveCart`) porque este propaga sort_order,
+      // enquanto addToActiveCart cria com sort_order novo (perdendo a posição).
       const item = activeCart?.items.find((i) => i.id === itemId);
-      removeItem(itemId);
-      if (item && activeCart) {
-        const cartId = activeCart.id;
-        recordAction(cartId, { type: 'remove', itemName, time: new Date() });
-        showUndoToast({
-          title: `${itemName} removido`,
-          description: activeCart.company_name,
-          onUndo: () => {
-            addToActiveCart(
-              {
-                product_id: item.product_id,
-                product_name: item.product_name,
-                product_sku: item.product_sku || undefined,
-                product_image_url: item.product_image_url || undefined,
-                product_price: item.product_price,
-                quantity: item.quantity,
-                color_name: item.color_name || undefined,
-                color_hex: item.color_hex || undefined,
-                notes: item.notes ?? undefined,
-              },
-              cartId,
-            );
-          },
-        });
+      if (!item || !activeCart) {
+        removeItem(itemId);
+        return;
       }
+      const cartId = activeCart.id;
+      const snapshot: AddToCartInput = {
+        product_id: item.product_id,
+        product_name: item.product_name,
+        product_sku: item.product_sku || undefined,
+        product_image_url: item.product_image_url || undefined,
+        product_price: item.product_price,
+        quantity: item.quantity,
+        color_name: item.color_name || undefined,
+        color_hex: item.color_hex || undefined,
+        notes: item.notes ?? undefined,
+        sort_order: item.sort_order ?? undefined,
+      };
+      removeItem(itemId);
+      showUndoToast({
+        title: itemRemovedToastTitle(itemName),
+        description: UNDO_TOAST_DESCRIPTION,
+        duration: UNDO_DURATION_MS,
+        onUndo: () => {
+          // restoreItems preserva sort_order → item volta na MESMA posição.
+          restoreItems(cartId, [snapshot]);
+        },
+      });
     },
-    [removeItem, activeCart, addToActiveCart],
+    [removeItem, activeCart, restoreItems],
   );
 
   const handleUpdateQuantity = useCallback(
     (itemId: string, qty: number) => {
       updateItemQuantity(itemId, qty);
-      const item = activeCart?.items.find((i) => i.id === itemId);
-      if (item && activeCart) {
-        recordAction(activeCart.id, {
-          type: 'qty',
-          itemName: item.product_name,
-          detail: `${qty}`,
-          time: new Date(),
-        });
-      }
     },
-    [updateItemQuantity, activeCart],
+    [updateItemQuantity],
   );
 
   const handleMoveItem = useCallback(
     (itemId: string, targetCartId: string) => {
-      const item = activeCart?.items.find((i) => i.id === itemId);
-      const targetCart = carts.find((c) => c.id === targetCartId);
       moveItemToCart(itemId, targetCartId);
-      if (item && activeCart) {
-        recordAction(activeCart.id, {
-          type: 'move',
-          itemName: item.product_name,
-          detail: targetCart?.company_name,
-          time: new Date(),
-        });
-      }
     },
-    [moveItemToCart, activeCart, carts],
+    [moveItemToCart],
   );
 
   const handleDuplicateItem = useCallback(
     (itemId: string, targetCartId: string) => {
-      const item = activeCart?.items.find((i) => i.id === itemId);
-      const targetCart = carts.find((c) => c.id === targetCartId);
       duplicateItemToCart(itemId, targetCartId);
-      if (item && activeCart) {
-        recordAction(activeCart.id, {
-          type: 'duplicate',
-          itemName: item.product_name,
-          detail: targetCart?.company_name,
-          time: new Date(),
-        });
-      }
     },
-    [duplicateItemToCart, activeCart, carts],
+    [duplicateItemToCart],
   );
 
-  const handleClearCart = useCallback(() => {
+  const handleClearCart = useCallback(async () => {
     if (!activeCart) return;
     const itemsToRestore = [...activeCart.items];
-    clearCart(activeCart.id);
-    recordAction(activeCart.id, { type: 'clear', itemName: 'todos os itens', time: new Date() });
+    try {
+      await clearCart(activeCart.id);
+    } catch {
+      toast.error('Erro ao limpar carrinho. Tente novamente.');
+      return;
+    }
+
 
     showUndoToast({
       title: `Carrinho limpo`,
@@ -271,6 +377,10 @@ export function useSellerCartsPage() {
           color_name: item.color_name || undefined,
           color_hex: item.color_hex || undefined,
           notes: item.notes ?? undefined,
+          // Preserva a ordem original ao desfazer (espelha o snapshot do CartHeaderButton):
+          // sem sort_order, restoreItems insere com sort_order nulo e o trigger reatribui
+          // MAX+1 em ordem não-determinística (Promise.all), embaralhando os itens.
+          sort_order: item.sort_order ?? undefined,
         }));
         restoreItems(activeCart.id, addItems);
       },
@@ -297,6 +407,12 @@ export function useSellerCartsPage() {
 
   const handleLoadTemplate = useCallback(
     (items: CartTemplateItem[]) => {
+      if (items.length === 0) {
+        toast.warning('Template sem itens válidos', {
+          description: 'Nenhum item pôde ser carregado. Verifique se o template está correto.',
+        });
+        return;
+      }
       // silent: cada item entra sem toast individual; mostramos um único
       // toast agregado abaixo (evita empilhar N toasts ao aplicar template).
       items.forEach((item) => {
@@ -325,6 +441,23 @@ export function useSellerCartsPage() {
   const [confirmClearCart, setConfirmClearCart] = useState(false);
 
   const handleGenerateQuote = useCallback((cart: SellerCart) => {
+    if (!cart?.items?.length) {
+      toast.error('Carrinho vazio', {
+        description: 'Adicione ao menos um produto antes de gerar o orçamento.',
+      });
+      return;
+    }
+    // Emite o "start" do checkout ANTES de abrir o diálogo de confirmação —
+    // dá ordem determinística p/ specs de analytics (switched → started →
+    // finalized). Se o vendedor cancelar o diálogo, `finalized` simplesmente
+    // não sai; o `started` continua sendo o marcador de intenção.
+    trackCartCheckoutStarted({
+      cartId: cart.id,
+      companyId: cart.company_id ?? null,
+      companyName: cart.company_name ?? null,
+      itemCount: cart.items.length,
+      source: 'cart_detail_header',
+    });
     setConfirmQuoteCart(cart);
   }, []);
 
@@ -336,16 +469,24 @@ export function useSellerCartsPage() {
     // e TEXT sem FK e product_price e denormalizado). Valida no catalogo (fonte de
     // verdade) quais ids ainda existem, para nao gerar orcamento com produto fantasma.
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const ids = [...new Set(cart.items.map((i) => i.product_id))].filter((id) => uuidRe.test(id));
-    let validIds = new Set<string>();
-    if (ids.length > 0) {
+    const allIds = [...new Set(cart.items.map((i) => i.product_id))];
+    const uuidIds = allIds.filter((id) => uuidRe.test(id));
+    // Non-UUID IDs (legacy) bypass server validation — fail-open.
+    const nonUuidIds = allIds.filter((id) => !uuidRe.test(id));
+    const validIds = new Set<string>(nonUuidIds.map((id) => id.toLowerCase()));
+    if (uuidIds.length > 0) {
       try {
-        const { data, error } = await supabase.from('products').select('id').in('id', ids);
-        validIds = error
-          ? new Set(cart.items.map((i) => i.product_id.toLowerCase())) // fail-open: nao bloqueia em erro
-          : new Set((data ?? []).map((row) => String(row.id).toLowerCase()));
+        const { data, error } = await supabase.from('products').select('id').in('id', uuidIds);
+        if (error) {
+          // fail-open: don't block quote on DB error
+          uuidIds.forEach((id) => validIds.add(id.toLowerCase()));
+        } else {
+          (data ?? []).forEach((row) => {
+            if (row?.id) validIds.add(String(row.id).toLowerCase());
+          });
+        }
       } catch {
-        validIds = new Set(cart.items.map((i) => i.product_id.toLowerCase())); // fail-open
+        uuidIds.forEach((id) => validIds.add(id.toLowerCase())); // fail-open
       }
     }
     const validItems = cart.items.filter((i) => validIds.has(i.product_id.toLowerCase()));
@@ -358,15 +499,28 @@ export function useSellerCartsPage() {
       return;
     }
     if (staleCount > 0) {
-      toast.warning(staleCount + ' item(ns) fora do catalogo ignorado(s)', {
+      toast.warning(`${staleCount} item(ns) fora do catalogo ignorado(s)`, {
         description: 'Produtos descontinuados nao entram no orcamento.',
       });
     }
     setConfirmQuoteCart(null);
+    // Flush das notas em debounce antes de navegar — evita perda de notas editadas
+    // nos últimos 800ms (o cleanup do unmount cancela o timer sem disparar).
+    if (debounceNotesRef.current && activeCartIdForFlush) {
+      clearTimeout(debounceNotesRef.current);
+      debounceNotesRef.current = undefined;
+      await flushCartNotes(activeCartIdForFlush, localCartNotesRef.current);
+    }
     // Handoff para o módulo de orçamento: navega para /orcamentos/novo com cliente e
     // itens já pré-preenchidos via location.state (fromCart). NÃO persiste nada nem
     // consome número de orçamento — o orçamento só se torna real quando o vendedor
     // preenche gravação/pagamento/entrega e clica em Salvar. O carrinho é PRESERVADO.
+    trackQuoteFinalizedFromCart({
+      cartId: cart.id,
+      companyId: cart.company_id ?? null,
+      companyName: cart.company_name ?? null,
+      itemCount: validItems.length,
+    });
     navigate('/orcamentos/novo', {
       state: {
         fromCart: true,
@@ -385,7 +539,7 @@ export function useSellerCartsPage() {
         })),
       },
     });
-  }, [confirmQuoteCart, navigate]);
+  }, [confirmQuoteCart, navigate, activeCartIdForFlush, flushCartNotes]);
 
   const otherCarts = useMemo(
     () => carts.filter((c) => c.id !== activeCartId),
@@ -396,12 +550,6 @@ export function useSellerCartsPage() {
     ? activeCart.items.reduce((s, i) => s + i.product_price * i.quantity, 0)
     : 0;
   const cartTotalQty = activeCart ? activeCart.items.reduce((s, i) => s + i.quantity, 0) : 0;
-
-  const companyAccentColor = useMemo(() => {
-    if (!activeCart) return null;
-    const cart = activeCart as SellerCart & { company_primary_color?: string };
-    return cart.company_primary_color || null;
-  }, [activeCart]);
 
   return {
     navigate,
@@ -416,6 +564,7 @@ export function useSellerCartsPage() {
     removeItem,
     updateItemNotes,
     updateCartStatus,
+    updateCartShippingDeadline,
     duplicateCart,
     templates,
     deleteTemplate,
@@ -426,6 +575,10 @@ export function useSellerCartsPage() {
     setCartNotesOpen,
     localCartNotes,
     handleCartNotesChange,
+    shippingDeadlineDraft,
+    shippingDeadlineError,
+    shippingDeadlineBadge,
+    handleShippingDeadlineChange,
     stockMap,
     weightVolume,
     sensors,
@@ -449,7 +602,6 @@ export function useSellerCartsPage() {
     cartAge,
     cartSubtotal,
     cartTotalQty,
-    companyAccentColor,
     isLoadingProducts,
     exportCartToCSV,
     exportCartToPDF,

@@ -20,6 +20,7 @@ import {
 import { type ExternalImage, type VariantInfo, IMAGE_TYPES } from './types';
 import { ImageMetaEditor } from './ImageMetaEditor';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 const CF_STATUS_CONFIG = {
   verified: { icon: Cloud, className: 'text-emerald-500', label: 'Cloudflare: sincronizado' },
@@ -124,7 +125,12 @@ export function ImageGrid({
               <OptimizedImage
                 src={img}
                 alt={ext?.alt_text || `Imagem ${index + 1}`}
-                urlOriginal={ext?.url_original ?? ext?.url ?? null}
+                urlOriginal={
+                  // BUG-SPOT-CORS-ADMIN FIX (2026-06-23): url_original e url podem ser
+                  // URLs brutas de fornecedores (spotgifts.com.br, etc). Sem proxy,
+                  // o fallback dispara CORS error no console quando CF CDN falha.
+                  getProxiedImageUrl(ext?.url_original ?? ext?.url) ?? null
+                }
                 blurhash={ext?.blurhash}
                 className="object-contain"
                 containerClassName="h-full w-full"

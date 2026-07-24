@@ -4,9 +4,9 @@
  */
 import { useMemo, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -71,18 +71,21 @@ export function MockupPromptManager() {
   const fetchAll = async () => {
     setIsLoading(true);
     try {
+      type QB = {
+        select: (c: string) => QB;
+        order: (c: string) => QB;
+        eq: (c: string, v: unknown) => QB;
+        then: Promise<{ data: unknown[] | null; error: unknown }>['then'];
+      };
+      const db = supabase as unknown as { from: (t: string) => QB };
       const [cr, tr] = await Promise.all([
-        supabase.from('mockup_prompt_configs').select('*').order('config_key'),
-        // personalization_techniques existe no banco mas ainda não está no
-        // types.ts gerado — padrão do repo para esses casos é untypedFrom.
-        untypedFrom<Technique>('personalization_techniques')
-          .select('id, name, code')
-          .eq('is_active', true),
+        db.from('mockup_prompt_configs').select('*').order('config_key'),
+        db.from('personalization_techniques').select('id, name, code').eq('is_active', true),
       ]);
-      if (cr.error) throw cr.error;
-      if (tr.error) throw tr.error;
+      if (cr.error) throw new Error(String((cr.error as { message?: string }).message ?? cr.error));
+      if (tr.error) throw new Error(String((tr.error as { message?: string }).message ?? tr.error));
       setConfigs((cr.data || []) as PromptConfig[]);
-      setTechniques(tr.data || []);
+      setTechniques((tr.data || []) as Technique[]);
     } catch (err: unknown) {
       toast.error('Erro ao carregar configurações', {
         description: sanitizeError(err),
@@ -104,7 +107,9 @@ export function MockupPromptManager() {
     if (!hasChanges(config)) return;
     setSavingId(config.id);
     try {
-      await supabase.from('mockup_prompt_history').insert({
+      // BUG-MOCKUP-HISTORY-SILENT-FAIL FIX: bare await swallowed RLS/constraint errors.
+      // History insert is best-effort — log failure but let config update proceed.
+      const { error: histErr } = await supabase.from('mockup_prompt_history').insert({
         config_id: config.id,
         config_key: config.config_key,
         version: config.version,
@@ -114,6 +119,7 @@ export function MockupPromptManager() {
         changed_by: user?.id,
         change_notes: changeNotes[config.id] || null,
       });
+      if (histErr) logger.warn('[mockup-prompts] history insert failed:', histErr);
       const { error } = await supabase
         .from('mockup_prompt_configs')
         .update({
@@ -227,7 +233,7 @@ export function MockupPromptManager() {
   const setPromptField = (
     id: string,
     config: PromptConfig,
-    field: 'prompt_text' | 'ai_model',
+    field: 'ai_model' | 'prompt_text',
     val: string,
   ) => {
     setEditedPrompts((p) => ({ ...p, [id]: { ...getEdited(config), [field]: val } }));

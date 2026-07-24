@@ -1433,6 +1433,45 @@ export type Database = {
           },
         ]
       }
+      crm_callback_events: {
+        Row: {
+          created_at: string
+          crm_quote_id: string | null
+          error_message: string | null
+          event_type: string
+          external_quote_id: string
+          id: string
+          occurred_at: string
+          payload: Json
+          result: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          crm_quote_id?: string | null
+          error_message?: string | null
+          event_type: string
+          external_quote_id: string
+          id?: string
+          occurred_at: string
+          payload?: Json
+          result?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          crm_quote_id?: string | null
+          error_message?: string | null
+          event_type?: string
+          external_quote_id?: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          result?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       custom_kits: {
         Row: {
           box_data: Json | null
@@ -1513,6 +1552,62 @@ export type Database = {
           volume_usage_percent?: number
         }
         Relationships: []
+      }
+      discount_approval_audit: {
+        Row: {
+          actor_id: string | null
+          actor_role: string
+          admin_notes: string | null
+          created_at: string
+          event: string
+          id: string
+          max_allowed_percent: number | null
+          metadata: Json
+          quote_id: string
+          real_discount_percent: number | null
+          request_id: string
+          requested_discount_percent: number | null
+          seller_notes: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role: string
+          admin_notes?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          max_allowed_percent?: number | null
+          metadata?: Json
+          quote_id: string
+          real_discount_percent?: number | null
+          request_id: string
+          requested_discount_percent?: number | null
+          seller_notes?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string
+          admin_notes?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          max_allowed_percent?: number | null
+          metadata?: Json
+          quote_id?: string
+          real_discount_percent?: number | null
+          request_id?: string
+          requested_discount_percent?: number | null
+          seller_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discount_approval_audit_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "discount_approval_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       discount_approval_requests: {
         Row: {
@@ -2812,6 +2907,113 @@ export type Database = {
         }
         Relationships: []
       }
+      magazine_items: {
+        Row: {
+          created_at: string
+          id: string
+          magazine_id: string
+          overrides: Json | null
+          page_number: number | null
+          position: number
+          product_id: string
+          product_snapshot: Json
+          updated_at: string
+          variant_color_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          magazine_id: string
+          overrides?: Json | null
+          page_number?: number | null
+          position: number
+          product_id: string
+          product_snapshot: Json
+          updated_at?: string
+          variant_color_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          magazine_id?: string
+          overrides?: Json | null
+          page_number?: number | null
+          position?: number
+          product_id?: string
+          product_snapshot?: Json
+          updated_at?: string
+          variant_color_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magazine_items_magazine_id_fkey"
+            columns: ["magazine_id"]
+            isOneToOne: false
+            referencedRelation: "magazines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      magazines: {
+        Row: {
+          archived_at: string | null
+          branding: Json
+          content_settings: Json
+          created_at: string
+          deleted_at: string | null
+          id: string
+          organization_id: string | null
+          owner_id: string
+          page_order: Json | null
+          public_token: string | null
+          published_at: string | null
+          status: string
+          subtitle: string | null
+          template_id: string
+          title: string
+          updated_at: string
+          view_count: number | null
+        }
+        Insert: {
+          archived_at?: string | null
+          branding?: Json
+          content_settings?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          organization_id?: string | null
+          owner_id: string
+          page_order?: Json | null
+          public_token?: string | null
+          published_at?: string | null
+          status?: string
+          subtitle?: string | null
+          template_id: string
+          title: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Update: {
+          archived_at?: string | null
+          branding?: Json
+          content_settings?: Json
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          organization_id?: string | null
+          owner_id?: string
+          page_order?: Json | null
+          public_token?: string | null
+          published_at?: string | null
+          status?: string
+          subtitle?: string | null
+          template_id?: string
+          title?: string
+          updated_at?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
       magic_up_brand_kits: {
         Row: {
           client_id: string | null
@@ -3931,6 +4133,7 @@ export type Database = {
           auto_disabled_at: string | null
           auto_disabled_reason: string | null
           consecutive_failures: number
+          contract_version: string
           created_at: string
           created_by: string
           description: string | null
@@ -3940,6 +4143,7 @@ export type Database = {
           name: string
           retry_policy: Json
           secret_ref: string | null
+          signature_header: string
           total_failure: number
           total_success: number
           updated_at: string
@@ -3950,6 +4154,7 @@ export type Database = {
           auto_disabled_at?: string | null
           auto_disabled_reason?: string | null
           consecutive_failures?: number
+          contract_version?: string
           created_at?: string
           created_by: string
           description?: string | null
@@ -3959,6 +4164,7 @@ export type Database = {
           name: string
           retry_policy?: Json
           secret_ref?: string | null
+          signature_header?: string
           total_failure?: number
           total_success?: number
           updated_at?: string
@@ -3969,6 +4175,7 @@ export type Database = {
           auto_disabled_at?: string | null
           auto_disabled_reason?: string | null
           consecutive_failures?: number
+          contract_version?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -3978,6 +4185,7 @@ export type Database = {
           name?: string
           retry_policy?: Json
           secret_ref?: string | null
+          signature_header?: string
           total_failure?: number
           total_success?: number
           updated_at?: string
@@ -4837,36 +5045,6 @@ export type Database = {
         }
         Relationships: []
       }
-      quote_comments: {
-        Row: {
-          comment: string
-          created_at: string
-          id: string
-          is_internal: boolean
-          quote_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          comment: string
-          created_at?: string
-          id?: string
-          is_internal?: boolean
-          quote_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          comment?: string
-          created_at?: string
-          id?: string
-          is_internal?: boolean
-          quote_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       quote_drafts: {
         Row: {
           data: Json
@@ -5235,7 +5413,7 @@ export type Database = {
           status: string
           subtotal: number
           synced_at: string | null
-          synced_to_bitrix: boolean | null
+          synced_to_bitrix: boolean
           tags: Json | null
           tax_amount: number | null
           total: number
@@ -5294,7 +5472,7 @@ export type Database = {
           status?: string
           subtotal?: number
           synced_at?: string | null
-          synced_to_bitrix?: boolean | null
+          synced_to_bitrix?: boolean
           tags?: Json | null
           tax_amount?: number | null
           total?: number
@@ -5353,7 +5531,7 @@ export type Database = {
           status?: string
           subtotal?: number
           synced_at?: string | null
-          synced_to_bitrix?: boolean | null
+          synced_to_bitrix?: boolean
           tags?: Json | null
           tax_amount?: number | null
           total?: number
@@ -5859,6 +6037,7 @@ export type Database = {
           id: string
           notes: string | null
           seller_id: string
+          shipping_deadline: string | null
           status: string
           updated_at: string
         }
@@ -5871,6 +6050,7 @@ export type Database = {
           id?: string
           notes?: string | null
           seller_id: string
+          shipping_deadline?: string | null
           status?: string
           updated_at?: string
         }
@@ -5883,6 +6063,7 @@ export type Database = {
           id?: string
           notes?: string | null
           seller_id?: string
+          shipping_deadline?: string | null
           status?: string
           updated_at?: string
         }
@@ -6804,6 +6985,32 @@ export type Database = {
           },
         ]
       }
+      webhook_delivery_locks: {
+        Row: {
+          claimed_at: string
+          payload_hash: string
+          webhook_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          payload_hash: string
+          webhook_id: string
+        }
+        Update: {
+          claimed_at?: string
+          payload_hash?: string
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_delivery_locks_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "outbound_webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhook_delivery_metrics: {
         Row: {
           attempt: number | null
@@ -7007,6 +7214,31 @@ export type Database = {
       }
     }
     Views: {
+      mv_stock_velocity: {
+        Row: {
+          active_days_30d: number | null
+          active_days_7d: number | null
+          active_days_90d: number | null
+          avg_daily_depletion_30d: number | null
+          avg_daily_depletion_7d: number | null
+          avg_daily_depletion_90d: number | null
+          avg_days_between_restocks: number | null
+          current_stock: number | null
+          days_to_stockout: number | null
+          price_changes_30d: number | null
+          product_id: string | null
+          restock_events_30d: number | null
+          supplier_id: string | null
+          total_depleted_30d: number | null
+          total_depleted_7d: number | null
+          total_depleted_90d: number | null
+          total_restocked_30d: number | null
+          variant_id: string | null
+          variant_supplier_source_id: string | null
+          velocity_trend: number | null
+        }
+        Relationships: []
+      }
       product_popularity_30d: {
         Row: {
           category_name: string | null
@@ -7301,6 +7533,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_webhook_delivery: {
+        Args: { p_payload_hash: string; p_webhook_id: string }
+        Returns: boolean
+      }
       cleanup_discount_test_data: { Args: never; Returns: Json }
       cleanup_expired_collection_trash: { Args: never; Returns: number }
       cleanup_expired_edge_rate_limits: { Args: never; Returns: undefined }
@@ -7408,6 +7644,13 @@ export type Database = {
           _reason: string
         }
         Returns: string
+      }
+      fn_check_dead_letters: {
+        Args: { _window_hours?: number }
+        Returns: {
+          alert: string
+          unresolved_count: number
+        }[]
       }
       fn_check_geo_access: {
         Args: { p_country_code: string }
@@ -7636,7 +7879,9 @@ export type Database = {
         | { Args: { _user_id?: string }; Returns: boolean }
       is_admin_strict: { Args: { _user_id?: string }; Returns: boolean }
       is_dev: { Args: { _user_id?: string }; Returns: boolean }
-      is_dnd_active: { Args: never; Returns: boolean }
+      is_dnd_active:
+        | { Args: never; Returns: boolean }
+        | { Args: { p_user_id: string }; Returns: boolean }
       is_kit_collaborator: {
         Args: { _kit_id: string; _user_id: string }
         Returns: boolean
@@ -7802,6 +8047,10 @@ export type Database = {
         Returns: undefined
       }
       refresh_product_popularity: { Args: never; Returns: undefined }
+      release_webhook_delivery_lock: {
+        Args: { p_payload_hash: string; p_webhook_id: string }
+        Returns: undefined
+      }
       repair_ownership_orphans: {
         Args: {
           _dry_run?: boolean
@@ -7827,6 +8076,7 @@ export type Database = {
         Args: { _only_running?: boolean }
         Returns: number
       }
+      restore_seller_cart: { Args: { _snapshot: Json }; Returns: Json }
       retry_failed_webhook_deliveries: { Args: never; Returns: Json }
       revoke_all_user_tokens: { Args: { _user_id: string }; Returns: undefined }
       search_products_semantic: {

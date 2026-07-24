@@ -1,11 +1,26 @@
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl, deriveOriginalUrl } from '@/utils/imageProxy';
 
 interface GalleryThumbnailsProps {
   images: string[];
   currentIndex: number;
   onSelect: (index: number) => void;
   className?: string;
+}
+
+/**
+ * Deriva a URL de fallback para uma imagem da galeria.
+ * 1. Tenta derivar URL original SPOT a partir do CF ID
+ * 2. Cai de volta para a própria URL (que pode ser raw de fornecedor)
+ * 3. Proxia via edge function se for domínio de fornecedor
+ *
+ * BUG-GALLERY-CORS FIX (2026-06-23):
+ * GalleryThumbnails não tinha urlOriginal → sem fallback quando CF falha.
+ * Agora toda thumbnail tem fallback proxiado para supplier CDN.
+ */
+function getThumbFallback(image: string): string | null {
+  return getProxiedImageUrl(deriveOriginalUrl(image) ?? image) ?? null;
 }
 
 export function GalleryThumbnails({
@@ -32,6 +47,7 @@ export function GalleryThumbnails({
             alt={`Thumbnail ${index + 1}`}
             className="object-cover"
             containerClassName="h-full w-full"
+            urlOriginal={getThumbFallback(image)}
           />
         </button>
       ))}
@@ -58,6 +74,7 @@ export function FullscreenThumbnails({ images, currentIndex, onSelect }: Gallery
             alt={`Thumbnail ${index + 1}`}
             className="object-cover"
             containerClassName="h-full w-full"
+            urlOriginal={getThumbFallback(image)}
           />
         </button>
       ))}

@@ -35,6 +35,7 @@ import { StepImporting, StepComplete } from './bulk-import/StepComplete';
 import { logger } from '@/lib/logger';
 
 const NUMERIC_FIELDS = [
+  'sale_price',
   'cost_price',
   'stock_quantity',
   'min_quantity',
@@ -232,7 +233,7 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
               is_kit: mapped.is_kit ?? null,
               gender: mapped.gender || null,
               dimensions: mapped.dimensions || null,
-            } as ImportRow)
+            } as unknown as ImportRow)
           : undefined;
 
       results.push({

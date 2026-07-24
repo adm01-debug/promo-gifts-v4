@@ -1,13 +1,4 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface Props {
   open: boolean;
@@ -27,27 +18,22 @@ export function ConfirmDeleteDialog({
   count = 1,
 }: Props) {
   return (
-    <AlertDialog open={open} onOpenChange={(v) => !v && onCancel()}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {description ||
-              (count > 1
-                ? `Tem certeza que deseja remover ${count} item(ns)? Esta ação não pode ser desfeita.`
-                : 'Tem certeza que deseja remover este item? Esta ação não pode ser desfeita.')}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            Remover
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      open={open}
+      onOpenChange={(v) => !v && onCancel()}
+      variant="destructive"
+      title={title}
+      description={
+        description ||
+        (count > 1
+          ? `Tem certeza que deseja remover ${count} item(ns)? Esta ação não pode ser desfeita.`
+          : 'Tem certeza que deseja remover este item? Esta ação não pode ser desfeita.')
+      }
+      confirmLabel="Remover"
+      cancelLabel="Cancelar"
+      onConfirm={onConfirm}
+      onCancel={onCancel}
+      testId="image-gallery-confirm-delete"
+    />
   );
 }

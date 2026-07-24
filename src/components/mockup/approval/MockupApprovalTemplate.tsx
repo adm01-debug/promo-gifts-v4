@@ -6,6 +6,7 @@
 import { forwardRef } from 'react';
 import type { MockupApprovalData } from '@/types/mockup-approval';
 import { LogoWithTransparentBg } from '@/components/pdf/proposal/LogoWithTransparentBg';
+import { maskCnpj } from '@/utils/masks';
 
 const GREEN = '#00c853';
 const DARK = '#000000';
@@ -409,7 +410,7 @@ function ClientSection({ client }: { client: MockupApprovalData['client'] }) {
         </p>
         {client.cnpj && (
           <p style={{ fontSize: '11px', color: '#666', margin: '3px 0 0 0', fontWeight: 700 }}>
-            CNPJ: {client.cnpj}
+            CNPJ: {maskCnpj(client.cnpj)}
           </p>
         )}
         {client.phone && (
@@ -584,7 +585,7 @@ function ApprovalFooter({
           gap: '40px',
         }}
       >
-        <span></span>
+        <span />
         {seller.email && <span style={{ textAlign: 'left' }}>{seller.email}</span>}
         {seller.name && (
           <span>

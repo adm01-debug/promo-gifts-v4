@@ -21,7 +21,7 @@ const SKIP_CONFIRM_KEY = 'connections.global_refresh.skip_confirm';
 
 interface GlobalRefreshFromDbButtonProps {
   /** Callback executed in parallel with cache invalidation + secret list refresh. */
-  onRefreshed?: () => void | Promise<void>;
+  onRefreshed?: () => Promise<void> | void;
   cooldownMs?: number;
   /** Enable `R` keyboard shortcut (default: true). */
   enableShortcut?: boolean;
@@ -199,47 +199,63 @@ export function GlobalRefreshFromDbButton({
       </TooltipProvider>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Atualizar tudo do banco?</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p>Esta ação vai:</p>
-                <ul className="list-disc space-y-1 pl-5">
-                  <li>
-                    Invalidar o cache de 60s de <strong>todas</strong> as credenciais
-                  </li>
-                  <li>Reler o status de todas as credenciais do banco</li>
-                  <li>Recarregar o status persistido de todas as conexões</li>
-                </ul>
-                <p>
-                  Próximas chamadas a integrações vão pagar uma releitura do banco até o cache
-                  reaquecer. Use quando acabou de editar credenciais ou suspeita de valor
-                  desatualizado.
-                </p>
+        <AlertDialogContent className="!max-w-[440px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl" data-testid="global-refresh-confirm-dialog">
+          <div aria-hidden="true" className="h-[3px] w-full bg-gradient-to-r from-transparent via-warning to-transparent" />
+          <div className="px-4 pb-1.5 pt-4">
+            <AlertDialogHeader>
+              <div className="flex items-start gap-3">
+                <div className="relative flex-shrink-0">
+                  <span aria-hidden="true" className="absolute inset-0 -z-10 rounded-xl blur-lg opacity-60 bg-warning/30" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10 ring-1 ring-inset ring-warning/20">
+                    <DatabaseZap className="h-[18px] w-[18px] text-warning" strokeWidth={2.2} />
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                  <AlertDialogTitle className="text-sm font-semibold leading-tight tracking-tight text-foreground">
+                    Atualizar tudo do banco?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="space-y-2 text-xs leading-relaxed text-muted-foreground">
+                      <p>Esta ação vai:</p>
+                      <ul className="list-disc space-y-1 pl-4">
+                        <li>Invalidar o cache de 60s de <strong>todas</strong> as credenciais</li>
+                        <li>Reler o status de todas as credenciais do banco</li>
+                        <li>Recarregar o status persistido de todas as conexões</li>
+                      </ul>
+                      <p>
+                        Próximas chamadas a integrações vão pagar uma releitura do banco até o cache reaquecer.
+                      </p>
+                    </div>
+                  </AlertDialogDescription>
+                </div>
               </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="flex items-center gap-2 pt-1">
-            <Checkbox
-              id="global-refresh-skip-confirm"
-              checked={dontAskAgain}
-              onCheckedChange={(v) => setDontAskAgain(v === true)}
-            />
-            <Label
-              htmlFor="global-refresh-skip-confirm"
-              className="cursor-pointer text-xs font-normal"
-            >
-              Não perguntar novamente neste navegador
-            </Label>
+            </AlertDialogHeader>
+            <div className="mt-3 flex items-center gap-2">
+              <Checkbox
+                id="global-refresh-skip-confirm"
+                checked={dontAskAgain}
+                onCheckedChange={(v) => setDontAskAgain(v === true)}
+              />
+              <Label
+                htmlFor="global-refresh-skip-confirm"
+                className="cursor-pointer text-xs font-normal"
+              >
+                Não perguntar novamente neste navegador
+              </Label>
+            </div>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm}>
-              <DatabaseZap className="mr-1 h-4 w-4" />
-              Atualizar agora
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
+            <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
+              <AlertDialogCancel className="mt-0 h-[26px] min-h-[26px] rounded-md border-border/70 bg-transparent px-3 py-0 text-xs">Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirm}
+                className="inline-flex h-[26px] min-h-[26px] items-center rounded-md px-3.5 text-xs font-semibold shadow-sm"
+              >
+                <DatabaseZap className="mr-1 h-3.5 w-3.5" />
+                Atualizar agora
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </>

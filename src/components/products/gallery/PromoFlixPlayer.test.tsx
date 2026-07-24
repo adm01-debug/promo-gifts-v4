@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
 import {
@@ -177,6 +178,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     const video = document.querySelector('video');
     if (video) {
       // Simulate SRC_NOT_SUPPORTED (code 4) on native playback (no HLS.js attached for .mp4)
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         Object.defineProperty(video, 'error', {
           value: { code: 4, message: 'SRC_NOT_SUPPORTED' },
@@ -194,6 +196,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
     const retryButton = getByRole('button', { name: /Tentar Novamente/i });
     expect(retryButton).toBeDefined();
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       fireEvent.click(retryButton);
     });
@@ -217,6 +220,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
         configurable: true,
       });
 
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('progress'));
       });
@@ -233,6 +237,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     const video = document.querySelector('video');
     if (video) {
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('loadeddata'));
       });
@@ -248,6 +253,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     const video = document.querySelector('video');
     if (video) {
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('canplay'));
       });
@@ -266,16 +272,17 @@ describe('PromoFlixPlayer Automated Tests', () => {
         },
         { timeout: 2000 },
       );
-      return lastHlsInstance as MockHlsInstance;
+      return lastHlsInstance!;
     };
 
     it('should handle HLS.js fatal network errors with recovery attempts', async () => {
-      const { findByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      const { findByText } = render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const errorHandler = hlsInstance.on.mock.calls.find((call) => call[0] === 'hlsError')![1];
 
       // Simulate 1st fatal network error (should trigger startLoad)
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         errorHandler('hlsError', {
           fatal: true,
@@ -288,6 +295,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
       // Simulate 4 more fatal network errors (total 5, > 3 threshold)
       for (let i = 0; i < 4; i++) {
+        // eslint-disable-next-line @typescript-eslint/require-await
         await act(async () => {
           errorHandler('hlsError', {
             fatal: true,
@@ -304,12 +312,13 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
 
     it('should handle HLS.js fatal media errors with recovery', async () => {
-      render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const errorHandler = hlsInstance.on.mock.calls.find((call) => call[0] === 'hlsError')![1];
 
       // Simulate fatal media error
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         errorHandler('hlsError', {
           fatal: true,
@@ -322,13 +331,14 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
 
     it('should hide loading overlay when HLS.js MANIFEST_PARSED event fires', async () => {
-      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const manifestHandler = hlsInstance.on.mock.calls.find(
         (call) => call[0] === 'hlsManifestParsed',
       )![1];
 
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         manifestHandler('hlsManifestParsed', { levels: [] });
       });
@@ -339,13 +349,14 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
 
     it('should hide loading overlay when HLS.js FRAG_LOADED event fires', async () => {
-      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const fragLoadedHandler = hlsInstance.on.mock.calls.find(
         (call) => call[0] === 'hlsFragLoaded',
       )![1];
 
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fragLoadedHandler('hlsFragLoaded', {});
       });
@@ -364,11 +375,11 @@ describe('PromoFlixPlayer Automated Tests', () => {
         },
         { timeout: 2000 },
       );
-      return lastHlsInstance as MockHlsInstance;
+      return lastHlsInstance!;
     };
 
     it('should update quality state during multiple level changes with auto-level enabled', async () => {
-      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls={true} />);
+      const { queryByText } = render(<PromoFlixPlayer src="test.m3u8" isHls />);
 
       const hlsInstance = await waitForHlsInstance();
       const levelSwitchedHandler = hlsInstance.on.mock.calls.find(
@@ -382,6 +393,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       expect(hlsInstance.autoLevelEnabled).toBe(true);
 
       // Trigger manifest parsed to clear loading state
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         manifestHandler('hlsManifestParsed', { levels: [{ height: 720 }, { height: 1080 }] });
       });
@@ -389,6 +401,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       expect(queryByText(/Carregando/i)).toBeNull();
 
       // Simulate first level switch
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         levelSwitchedHandler('hlsLevelSwitched', { level: 1 });
       });
@@ -397,6 +410,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       expect(queryByText(/Carregando/i)).toBeNull();
 
       // Simulate second level switch
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         levelSwitchedHandler('hlsLevelSwitched', { level: 2 });
       });
@@ -406,7 +420,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     it('should show "Manual Load" button and re-initialize player on click', async () => {
       vi.useFakeTimers();
-      const { getByText, queryByText } = render(<PromoFlixPlayer src="stuck.m3u8" isHls={true} />);
+      const { getByText, queryByText } = render(<PromoFlixPlayer src="stuck.m3u8" isHls />);
 
       // Advance to trigger timeout
       await act(async () => {
@@ -417,6 +431,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
       expect(manualLoadBtn).toBeDefined();
 
       // Click the button
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent.click(manualLoadBtn);
       });
@@ -441,7 +456,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     it('should clean up src and load() the video element on unmount to prevent residual errors', () => {
       const { unmount } = render(<PromoFlixPlayer src="test.mp4" />);
-      const video = document.querySelector('video') as HTMLVideoElement;
+      const video = document.querySelector('video')!;
       const removeAttributeSpy = vi.spyOn(video, 'removeAttribute');
       const loadSpy = vi.spyOn(video, 'load');
 
@@ -454,7 +469,8 @@ describe('PromoFlixPlayer Automated Tests', () => {
     it('should reset error state when switching to a new video src', async () => {
       const { rerender, queryByText, getByText } = render(<PromoFlixPlayer src="error.mp4" />);
 
-      const video = document.querySelector('video') as HTMLVideoElement;
+      const video = document.querySelector('video')!;
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         Object.defineProperty(video, 'error', { value: { code: 2 }, configurable: true });
         fireEvent(video, new Event('error'));
@@ -488,7 +504,7 @@ describe('PromoFlixPlayer Automated Tests', () => {
         return Promise.resolve();
       });
 
-      render(<PromoFlixPlayer src="test.mp4" autoPlay={true} />);
+      render(<PromoFlixPlayer src="test.mp4" autoPlay />);
 
       await waitFor(
         () => {
@@ -503,8 +519,9 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     it('should correctly handle native error code 3 (DECODE)', async () => {
       const { findByText } = render(<PromoFlixPlayer src="corrupt.mp4" />);
-      const video = document.querySelector('video') as HTMLVideoElement;
+      const video = document.querySelector('video')!;
 
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         Object.defineProperty(video, 'error', { value: { code: 3 }, configurable: true });
         fireEvent(video, new Event('error'));
@@ -515,13 +532,13 @@ describe('PromoFlixPlayer Automated Tests', () => {
 
     it('should prevent race conditions using initTokenRef during fast src changes', async () => {
       // First render
-      const { rerender } = render(<PromoFlixPlayer src="first.m3u8" isHls={true} />);
+      const { rerender } = render(<PromoFlixPlayer src="first.m3u8" isHls />);
       await waitFor(() => expect(lastHlsInstance).not.toBeNull());
-      const firstHls = lastHlsInstance as MockHlsInstance;
+      const firstHls = lastHlsInstance!;
 
       // Quickly change src on the SAME instance — dispara o cleanup do useEffect
       // que destrói a instância HLS anterior antes de criar a nova.
-      rerender(<PromoFlixPlayer src="second.m3u8" isHls={true} />);
+      rerender(<PromoFlixPlayer src="second.m3u8" isHls />);
 
       // Wait for second instance
       await waitFor(() => {
@@ -553,11 +570,12 @@ describe('PromoFlixPlayer Automated Tests', () => {
     it('should NOT persist the autoplay-forced mute as a user preference', async () => {
       // localStorage limpo → usuário não escolheu mutar. O autoplay força o mute
       // (política do navegador), mas isso não pode virar preferência persistida.
-      const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay={true} />);
-      const video = container.querySelector('video') as HTMLVideoElement;
+      const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay />);
+      const video = container.querySelector('video')!;
 
       // O navegador dispara `volumechange` quando o componente faz video.muted = true;
       // jsdom não dispara sozinho, então simulamos.
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('volumechange'));
       });
@@ -567,16 +585,18 @@ describe('PromoFlixPlayer Automated Tests', () => {
     });
 
     it('should persist an explicit user mute/unmute after the autoplay-forced mute', async () => {
-      const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay={true} />);
-      const video = container.querySelector('video') as HTMLVideoElement;
+      const { container } = render(<PromoFlixPlayer src="test.mp4" autoPlay />);
+      const video = container.querySelector('video')!;
 
       // Consome o flag de supressão do mute forçado pelo autoplay (não persiste).
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         fireEvent(video, new Event('volumechange'));
       });
       expect(localStorage.getItem('promoflix_muted')).toBeNull();
 
       // Agora uma ação real do usuário (desmutar) deve persistir normalmente.
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         video.muted = false;
         fireEvent(video, new Event('volumechange'));

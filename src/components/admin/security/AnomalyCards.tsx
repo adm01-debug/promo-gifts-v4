@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { AlertTriangle, ShieldAlert, KeyRound, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BlockIpButton } from './BlockIpButton';
@@ -15,6 +16,8 @@ interface AnomalyStats {
 }
 
 export function AnomalyCards() {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 3 HEAD requests com setInterval=30s sem guard.
+  const { rolesLoaded, isAdmin } = useAuth();
   const [stats, setStats] = useState<AnomalyStats>({
     loginFailures24h: 0,
     botHits24h: 0,
@@ -24,6 +27,7 @@ export function AnomalyCards() {
   });
 
   useEffect(() => {
+    if (!rolesLoaded || !isAdmin) return;
     let cancelled = false;
 
     const load = async () => {
@@ -72,7 +76,7 @@ export function AnomalyCards() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [rolesLoaded, isAdmin]);  // BUG-HEAD-GUARD
 
   const cards = [
     {

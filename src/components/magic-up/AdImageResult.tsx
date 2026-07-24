@@ -59,7 +59,7 @@ interface AdImageResultProps {
   isLoading: boolean;
   productName?: string;
   sceneName?: string;
-  onDownload: (format?: 'png' | 'jpg') => void;
+  onDownload: (format?: 'jpg' | 'png') => void;
   onShare: () => void;
   onRegenerate: () => void;
   onToggleFavorite?: () => void;

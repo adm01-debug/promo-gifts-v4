@@ -1,1 +1,33 @@
+# Fail-fast (<1s): se o eslint.config.js nao parseia, o ESLint nao roda e o lint-staged
+# abaixo falha com uma stack de modulo ESM que ninguem associa a lint. Ja aconteceu:
+# um glob dentro de um comentario fechou o bloco e o repo ficou 6 dias sem lint.
+node scripts/check-eslint-config-parses.mjs || exit 1
+
+# Mesmo motivo: um lock fora de sincronia faz o `npm ci` do CI morrer no install e
+# TODOS os steps seguintes viram `skipped`. Falha cedo, aqui, com o comando do fix.
+node scripts/check-lockfile-sync.mjs || exit 1
+
+# SSOT Supabase — só roda se arquivos operacionais/docs foram staged (fast-path)
+ssot_changed=$(git diff --cached --name-only | grep -E '(\.md$|src/integrations/supabase/|scripts/(validate-supabase-config|guard-canonical-project|check-docs-supabase-hosts)\.mjs$)' || true)
+if [ -n "$ssot_changed" ]; then
+  node scripts/validate-supabase-config.mjs || exit 1
+  node scripts/guard-canonical-project.mjs || exit 1
+  node scripts/check-docs-supabase-hosts.mjs || exit 1
+fi
+
 npx lint-staged
+
+# Regeneração seletiva de fixtures de PDF quando arquivos de layout mudam.
+# Fast-path: nada é executado se nenhum arquivo relevante estiver no stage.
+changed=$(git diff --cached --name-only | grep -E '^(src/components/pdf/|src/lib/pdf/|src/lib/quotes/personalizationSummary\.ts)' || true)
+if [ -n "$changed" ]; then
+  echo "🎨 Layout do PDF alterado — regerando fixtures de proposta..."
+  bunx vitest run exportSampleProposal ProposalSections.snapshots -u --silent >/dev/null 2>&1 || {
+    echo "❌ Falha ao regerar snapshots do PDF. Rode manualmente:"
+    echo "   bunx vitest run exportSampleProposal ProposalSections.snapshots -u"
+    exit 1
+  }
+  git add qa/exports/proposal-*.html \
+          src/components/pdf/**/__snapshots__/*.snap 2>/dev/null || true
+  echo "✅ Snapshots do PDF atualizados e re-adicionados ao commit."
+fi

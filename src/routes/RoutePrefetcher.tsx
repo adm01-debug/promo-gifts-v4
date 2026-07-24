@@ -30,7 +30,7 @@ function shouldSkipPrefetch(): boolean {
  * Usa requestIdleCallback quando disponível, setTimeout(0) como fallback.
  */
 function idlePrefetch(imports: Array<() => Promise<unknown>>): () => void {
-  const ids: Array<number | ReturnType<typeof setTimeout>> = [];
+  const ids: Array<ReturnType<typeof setTimeout> | number> = [];
 
   imports.forEach((fn, i) => {
     if ('requestIdleCallback' in window) {
@@ -105,9 +105,7 @@ export function RoutePrefetcher() {
         () => import('@/pages/clients/ClientsPage'),
       );
     } else if (pathname === '/auth' || pathname === '/login') {
-      idleImports.push(
-        () => import('@/pages/products/FiltersPage'),
-      );
+      idleImports.push(() => import('@/pages/products/FiltersPage'));
     }
 
     // Prefetch genérico do QuoteBuilder se não na página de quotes

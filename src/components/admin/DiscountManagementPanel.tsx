@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 import {
   useDiscountApproval,
   useSellerDiscountLimits,
@@ -53,7 +54,7 @@ interface SellerProfile {
   role: string | null;
 }
 
-type ApprovalFilter = 'all' | 'pending' | 'approved' | 'rejected';
+type ApprovalFilter = 'all' | 'approved' | 'pending' | 'rejected';
 
 export function DiscountManagementPanel() {
   const navigate = useNavigate();
@@ -89,10 +90,16 @@ export function DiscountManagementPanel() {
   }>({ open: false, request: null, action: null, notes: '' });
 
   const fetchSellers = useCallback(async () => {
-    const { data } = await supabase
+    // BUG-DISCOUNTPANEL-SELLERS-SELECT-SILENT-FAIL FIX: { data } without error check —
+    // RLS failure silently kept sellers list empty, showing no vendedores in the panel.
+    const { data, error: sellersErr } = await supabase
       .from('profiles')
       .select('user_id, full_name, email, role')
       .order('full_name');
+    if (sellersErr) {
+      logger.warn('[DiscountManagementPanel] fetchSellers failed:', sellersErr);
+      return;
+    }
     setSellers((data || []) as SellerProfile[]);
   }, []);
 
@@ -601,8 +608,31 @@ export function DiscountManagementPanel() {
                               >
                                 <XCircle className="h-3.5 w-3.5" /> Rejeitar
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5"
+                                onClick={() => navigate(`/admin/aprovacoes-desconto/${req.id}`)}
+                                data-testid={`dmp-open-detail-${req.id}`}
+                              >
+                                <Eye className="h-3.5 w-3.5" /> Detalhes
+                              </Button>
                             </div>
                           )}
+                          {req.status !== 'pending' && (
+                            <div className="flex shrink-0">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5"
+                                onClick={() => navigate(`/admin/aprovacoes-desconto/${req.id}`)}
+                                data-testid={`dmp-open-detail-${req.id}`}
+                              >
+                                <Eye className="h-3.5 w-3.5" /> Detalhes
+                              </Button>
+                            </div>
+                          )}
+
                         </div>
                       </CardContent>
                     </Card>

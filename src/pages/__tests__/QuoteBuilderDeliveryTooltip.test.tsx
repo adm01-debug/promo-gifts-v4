@@ -13,8 +13,7 @@ vi.mock('@/hooks/quotes', () => ({
   useDiscountApproval: vi.fn(() => ({ requestApproval: vi.fn() })),
   useAutoSaveQuote: vi.fn(() => ({ saving: false })),
   useQuoteItems: vi.fn(() => ({ items: [], setItems: vi.fn() })),
-  useQuoteComments: vi.fn(() => ({ comments: [], addComment: vi.fn() })),
-  useQuoteTemplates: vi.fn(() => ({ templates: [], isLoading: false })),
+  
   useQuoteVersions: vi.fn(() => ({ versions: [], isLoading: false })),
   useProdutoPersonalizacao: vi.fn(() => ({})),
   useSellerDiscountLimits: vi.fn(() => ({ limit: 0, isLoading: false })),
@@ -67,8 +66,6 @@ vi.mock('@/hooks/quotes', () => ({
     setShippingType: vi.fn(),
     shippingCost: 0,
     setShippingCost: vi.fn(),
-    templates: [],
-    applyTemplate: vi.fn(),
     productSearchOpen: false,
     setProductSearchOpen: vi.fn(),
     productSearch: '',
@@ -85,11 +82,7 @@ vi.mock('@/hooks/quotes', () => ({
     setContactInfo: vi.fn(),
     notes: '',
     setNotes: vi.fn(),
-    internalNotes: '',
-    setInternalNotes: vi.fn(),
-    getTemplateItems: () => [],
     quoteNumber: '',
-    defaultTemplate: null,
   })),
 }));
 
@@ -117,13 +110,6 @@ vi.mock('@/components/quotes/CompanyContactSelector', () => ({
   CompanyContactSelector: () => <div data-testid="company-contact-selector" />,
 }));
 
-vi.mock('@/components/quotes/QuoteTemplateSelector', () => ({
-  QuoteTemplateSelector: () => <div data-testid="quote-template-selector" />,
-}));
-
-vi.mock('@/components/quotes/SaveAsTemplateButton', () => ({
-  SaveAsTemplateButton: () => <div data-testid="save-as-template-button" />,
-}));
 
 vi.mock('@/components/quotes/QuoteBuilderStepper', () => ({
   QuoteBuilderStepper: () => <div data-testid="quote-builder-stepper" />,
@@ -155,7 +141,7 @@ describe('QuoteBuilderPage Delivery Tooltip', () => {
     const container = screen.getByTestId('delivery-label-container');
     expect(container).toHaveClass('flex');
     expect(container).toHaveClass('items-center');
-    expect(container).toHaveClass('gap-1.5');
+    expect(container).toHaveClass('gap-2');
 
     // Check label and trigger are present
     const label = screen.getByTestId('delivery-label');

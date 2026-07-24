@@ -4,14 +4,16 @@
  * Loads ~10x faster than useProducts (no color/variant enrichment).
  */
 import { dbInvoke, shouldRetry } from '@/lib/db/postgrest';
-import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import {
   fetchPromobrindProductsLightweight,
   type LightweightProduct,
 } from '@/lib/external-db/products-lightweight';
 import { fetchPromobrindCategories } from '@/lib/external-db/products-detail';
+import type { ColorSwatch } from '@/types/colorSwatch';
 
 // Re-export type for consumers
 export type { ProductLightweight } from '@/types/product-catalog';
@@ -44,12 +46,19 @@ function mapLightweight(p: LightweightProduct): ProductLightweight {
   };
 }
 
-function getStockStatus(stock: number): 'in-stock' | 'low-stock' | 'out-of-stock' {
-  if (stock <= 0) return 'out-of-stock';
-  if (stock < 10) return 'low-stock';
-  return 'in-stock';
+// FIX BUG-STOCK-01 (2026-06-18) → CONSOLIDADO (2026-06-20): a regra de
+// min_quantity (estoque positivo mas abaixo do mínimo pedível = zerado) agora
+// pertence à SSOT `getCatalogStockStatus` (3º arg). Antes duplicada aqui,
+// divergia do product-mapper (que a ignorava) e do useNovelties. Delegamos para
+// manter um único ponto de verdade.
+function getStockStatus(
+  stock: number,
+  minQuantity?: number | null,
+): 'in-stock' | 'low-stock' | 'out-of-stock' {
+  return getCatalogStockStatus(stock, undefined, minQuantity);
 }
 
+/** Converte um `LightweightProduct` (DB) em `Product` (UI), resolvendo categoria-folha e imagens. */
 export function mapLightweightToProduct(
   p: LightweightProduct,
   categoriesById?: ReadonlyMap<string, string>,
@@ -58,11 +67,10 @@ export function mapLightweightToProduct(
   const price = p.sale_price ?? p.cost_price ?? 0;
   const stock = p.stock_quantity || 0;
   // FIX BUG-D (2026-06-18): preferir leaf_category_id (categoria mais profunda).
-  const resolvedCategoryId = (p.leaf_category_id as string | undefined)
-    || p.category_id
-    || p.main_category_id;
-  const resolvedCategoryName = (p.leaf_category_name as string | undefined)
-    || (resolvedCategoryId ? (categoriesById?.get(resolvedCategoryId) ?? null) : null);
+  const resolvedCategoryId = p.leaf_category_id || p.category_id || p.main_category_id;
+  const resolvedCategoryName =
+    p.leaf_category_name ||
+    (resolvedCategoryId ? (categoriesById?.get(resolvedCategoryId) ?? null) : null);
 
   // set_image_url: URL da imagem "set" (todas as cores juntas).
   // null = produto não tem set → card mostra imagem estática sem hover.
@@ -89,7 +97,7 @@ export function mapLightweightToProduct(
     brand: p.brand,
     is_active: p.is_active || p.active,
     minQuantity: p.min_quantity || 1,
-    stockStatus: getStockStatus(stock),
+    stockStatus: getStockStatus(stock, p.min_quantity),
     // Espelha product-mapper.ts: featured = is_featured OR is_bestseller.
     // Antes hardcoded false → toggle "Destaques" do Super Filtro retornava 0.
     featured: Boolean(p.is_featured || p.is_bestseller),
@@ -111,18 +119,29 @@ export function mapLightweightToProduct(
     aiSummary: p.ai_summary ?? null,
     aiVersion: typeof p.ai_version === 'number' ? p.ai_version : null,
     aiGeneratedAt: p.ai_generated_at ?? null,
+    // Color Swatches V2 (2026-06-22) — JSONB pré-computado via fn_rebuild_color_swatches.
+    // Hierarquia P1→P4, 7.153 produtos, 16.631 swatches, 97,4% CF CDN.
+    // Habilita ColorSwatchPicker quando useColorSwatchesV2=true e o array não estiver vazio.
+    color_swatches: (p.color_swatches as ColorSwatch[] | null | undefined) ?? undefined,
+    has_colors: p.has_colors ?? null,
   };
 }
 
+/** Número de produtos por página nas queries do catálogo. */
 export const CATALOG_PAGE_SIZE = 500;
+/** Número de páginas buscadas em paralelo no primeiro load (burst inicial). */
 export const CATALOG_BATCH_PAGES = 4;
 
 /**
  * SELECT do catálogo.
  *
- * ALTERAÇÃO (2026-06-02): adicionado set_image_url para suporte ao efeito de
+ * ALTERÂÇÃO (2026-06-02): adicionado set_image_url para suporte ao efeito de
  * hover na imagem do card (mostra foto com todas as cores ao passar o mouse).
  * Custo: +1 campo text por linha — impacto negligenciável (~8 bytes/produto).
+ *
+ * ALTERAÇÃO (2026-06-22): adicionado color_swatches + has_colors para ColorSwatchPicker V2.
+ * Custo: ~511 bytes/produto (JSONB com ~2.3 swatches média). ~250 KB/página de 500 produtos.
+ * Viabilizado por: v_products_public atualizada + fn_rebuild_color_swatches (7.153 produtos).
  */
 export const PRODUCT_SELECT_LIGHTWEIGHT =
   'id, name, sku, supplier_reference, short_description, ' +
@@ -141,7 +160,10 @@ export const PRODUCT_SELECT_LIGHTWEIGHT =
   'ai_title, ai_description, ai_summary, ai_version, ai_generated_at, ' +
   // FIX BUG-D (2026-06-18): leaf_category_id/name pré-computados em v_products_public
   // via mv_product_leaf_category. Elimina o round-trip de useProductLeafCategories.
-  'leaf_category_id, leaf_category_name, leaf_category_level';
+  'leaf_category_id, leaf_category_name, leaf_category_level, ' +
+  // COLOR SWATCHES V2 (2026-06-22): JSONB pré-computado para ColorSwatchPicker.
+  // v_products_public atualizada para incluir estes campos. 7.153 produtos.
+  'color_swatches, has_colors';
 // FIX 2026-06-14 (catalog-search-audit): incluídos supplier_reference e short_description.
 // Antes ausentes no SELECT -> mapLightweightToProduct gravava supplier_reference=null e
 // description='' em TODO produto da grade, neutralizando o re-rank/substring client-side por
@@ -157,7 +179,11 @@ async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
   try {
     const categories = await fetchPromobrindCategories();
     return new Map(categories.map((c) => [String(c.id), c.name]));
-  } catch {
+  } catch (err) {
+    logger.warn(
+      '[loadCategoriesMap] falhou ao buscar categorias; nomes de categoria ausentes',
+      err,
+    );
     return new Map();
   }
 }
@@ -173,20 +199,16 @@ async function loadCategoriesMap(): Promise<ReadonlyMap<string, string>> {
  * Usada apenas no caminho SEM busca/filtros; com filtros o ranking permanece
  * client-side sobre o conjunto (menor) filtrado.
  */
-async function fetchBestSellerCatalogPage(
-  offset: number,
-  sortBy: string,
-): Promise<CatalogPage> {
+async function fetchBestSellerCatalogPage(offset: number, sortBy: string): Promise<CatalogPage> {
   const isFirstLoad = offset === 0;
   const pagesToFetch = isFirstLoad ? CATALOG_BATCH_PAGES : 1;
   const span = CATALOG_PAGE_SIZE * pagesToFetch;
 
-  // RPC fora dos tipos gerados -> cast `as never` (padrão do projeto).
-  const { data, error } = await supabase.rpc('get_catalog_bestseller_page' as never, {
+  const { data, error } = await untypedRpc('get_catalog_bestseller_page', {
     p_sort: sortBy,
     p_limit: span,
     p_offset: offset,
-  } as never);
+  });
   if (error) throw error;
 
   const rows = (data as unknown as LightweightProduct[] | null) ?? [];
@@ -223,9 +245,7 @@ async function fetchCatalogPage(
   // Fallback gracioso: qualquer erro cai no fluxo padrão (name + re-sort client-side).
   const isBestSeller = sortBy === 'best-seller-supplier' || sortBy === 'best-seller-promo';
   const hasNoConstraints =
-    !search &&
-    (!categories || categories.length === 0) &&
-    (!suppliers || suppliers.length === 0);
+    !search && (!categories || categories.length === 0) && (!suppliers || suppliers.length === 0);
   if (isBestSeller && hasNoConstraints) {
     try {
       return await fetchBestSellerCatalogPage(offset, sortBy as string);
@@ -236,7 +256,10 @@ async function fetchCatalogPage(
 
   const filters: Record<string, unknown> = { active: true };
   if (search) filters._search = search;
-  if (categories && categories.length > 0) filters.category_id = categories;
+  // GAP-CAT-01: NÃO aplicar category_id server-side. Produtos ficam em sub-categorias
+  // (category_id = 'camisetas') mas o filtro selecionado pode ser o pai ('vestuario').
+  // O filtro correto (com includeDescendants) é feito client-side em useCatalogFiltering
+  // via categoryFilteredProductIds retornados por useProductsByCategory.
   if (suppliers && suppliers.length > 0) filters.supplier_id = suppliers;
 
   let orderBy: { column: string; ascending?: boolean; nullsFirst?: boolean } = {
@@ -356,6 +379,7 @@ async function fetchCatalogPage(
   };
 }
 
+/** Busca lista mínima de produtos (sem enriquecimento) para seletores e catálogo de seleção rápida. */
 export function useProductsLightweight() {
   return useQuery<ProductLightweight[]>({
     queryKey: ['promobrind-products-lightweight', 'v3-page-100'],
@@ -375,6 +399,7 @@ export function useProductsLightweight() {
   });
 }
 
+/** Hook de catálogo paginado infinito com busca, filtros de categoria/fornecedor e sort server-side. */
 export function useProductsCatalog(filters?: {
   search?: string;
   categories?: string[];
@@ -385,7 +410,7 @@ export function useProductsCatalog(filters?: {
   const categories = filters?.categories ?? [];
   const suppliers = filters?.suppliers ?? [];
   const sortBy = filters?.sortBy || 'newest';
-  return useInfiniteQuery<CatalogPage, Error>({
+  return useInfiniteQuery<CatalogPage>({
     queryKey: ['promobrind-products-catalog', search, categories, suppliers, sortBy],
     queryFn: ({ pageParam }) =>
       fetchCatalogPage(pageParam as number, search || undefined, categories, suppliers, sortBy),

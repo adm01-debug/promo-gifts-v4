@@ -13,6 +13,7 @@ import { selectCrm, searchCrm } from '@/lib/crm-db';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { CompanyAvatar, type CompanyOption } from './shared-types';
 import { useSearchHistory } from '@/hooks/common';
+import { maskCnpj } from '@/utils/masks';
 
 interface CompanyMeta {
   cnpj?: string | null;
@@ -223,22 +224,10 @@ export function CompanySearchDropdown({
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-sm font-medium">{selectedCompany.name}</span>
           <div className="flex items-center gap-2">
-            {selectedCompany.razao_social &&
-              selectedCompany.razao_social !== selectedCompany.name && (
-                <span className="truncate text-xs text-muted-foreground">
-                  {selectedCompany.razao_social}
-                </span>
-              )}
             {selectedCompany.cnpj && (
-              <>
-                {selectedCompany.razao_social &&
-                  selectedCompany.razao_social !== selectedCompany.name && (
-                    <span className="text-xs text-muted-foreground">·</span>
-                  )}
-                <span className="font-mono text-xs text-muted-foreground">
-                  {selectedCompany.cnpj}
-                </span>
-              </>
+              <span className="font-mono text-xs text-muted-foreground">
+                {maskCnpj(selectedCompany.cnpj)}
+              </span>
             )}
           </div>
         </div>
@@ -373,7 +362,7 @@ export function CompanySearchDropdown({
                               <span className="truncate text-sm font-medium">{item.label}</span>
                               {meta.cnpj && (
                                 <span className="truncate font-mono text-[11px] text-muted-foreground/70">
-                                  {meta.cnpj}
+                                  {maskCnpj(meta.cnpj)}
                                 </span>
                               )}
                             </div>
@@ -437,7 +426,7 @@ export function CompanySearchDropdown({
                                   <span className="text-xs text-muted-foreground/50">·</span>
                                 )}
                                 <span className="truncate font-mono text-[11px] text-muted-foreground/70">
-                                  {company.cnpj}
+                                  {maskCnpj(company.cnpj)}
                                 </span>
                               </>
                             )}

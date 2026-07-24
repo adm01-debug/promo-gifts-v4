@@ -60,6 +60,9 @@ describe('Módulo de Orçamentos: Teste de Integração de Cálculo (Fim-a-Fim)'
     expect(totals.total).toBe(2318.9);
 
     // realDiscountPercent: ((2075.50 - 2168.90) / 2075.50) * 100 = -4.50
+    // Valor negativo é válido e intencional: indica que o markup absorveu o desconto aparente,
+    // ou seja, o cliente paga acima do custo real. Não há clamp; o valor bruto preserva a
+    // informação para a alçada distinguir "desconto real" de "cobrança extra disfarçada de desconto".
     expect(totals.realDiscountPercent).toBe(-4.5);
   });
 

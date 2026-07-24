@@ -224,7 +224,7 @@ async function fetchAsBlob(url: string): Promise<Blob> {
   // For remote URLs, fetch with no-cors fallback
   try {
     const response = await fetch(url, { mode: 'cors' });
-    return response.blob();
+    return await response.blob();
   } catch {
     // Fallback: try without CORS mode (may lose some headers but works for same-origin)
     const response = await fetch(url);

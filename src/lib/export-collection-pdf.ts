@@ -12,7 +12,7 @@ interface ExportOptions {
   variantMap?: Map<string, { color_name?: string | null; color_hex?: string | null }>;
 }
 
-export async function exportCollectionPDF({
+export function exportCollectionPDF({
   collectionName,
   collectionDescription,
   products,
@@ -55,7 +55,7 @@ export async function exportCollectionPDF({
       p.brand || '-',
       p.category_name || '-',
       variant?.color_name || '-',
-      p.price ? `R$ ${p.price.toFixed(2)}` : '-',
+      p.price !== null && p.price !== undefined ? `R$ ${p.price.toFixed(2)}` : '-',
     ];
   });
 

@@ -37,7 +37,7 @@ export interface CategoryAggregate {
   /** Variação % entre janela recente e anterior (null se sem dados anteriores) */
   deltaPct: number | null;
   /** Tendência categórica baseada em deltaPct (limiar ±15%) */
-  trend: 'up' | 'down' | 'stable';
+  trend: 'down' | 'stable' | 'up';
   /** Top produtos REAIS dessa categoria (até 5) */
   topProducts: Array<{
     productId: string | null;

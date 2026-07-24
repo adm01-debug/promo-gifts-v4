@@ -21,8 +21,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateStockStatus, type StockStatus } from '@/types/stock';
+import { ColorSwatch } from '@/components/shared/ColorSwatch';
 
-const MIXED_COLOR_RE = /color(ido)?|sortido|multi/i;
 
 // ============================================
 // VariantThumb — imagem 44/56/72px com fallback elegante
@@ -33,7 +33,7 @@ interface VariantThumbProps {
   productName: string;
   colorName?: string;
   colorHex?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   /** Quando true, mostra um ring colorido com o hex da variação. */
   showColorRing?: boolean;
 }
@@ -44,6 +44,7 @@ const SIZE_MAP = {
   lg: 'h-[5.75rem] w-[5.75rem] rounded-xl',
 } as const;
 
+/** Miniatura da variação com fallback de iniciais, ring colorido e lazy-load. */
 export function VariantThumb({
   imageUrl,
   productName,
@@ -112,6 +113,8 @@ interface RichColorSwatchProps {
   isActive?: boolean;
 }
 
+/** Swatch de cor enriquecido: delega o visual ao primitivo compartilhado
+ *  `ColorSwatch` (SSOT entre Catálogo e Estoque) e adiciona Tooltip + a11y. */
 export function RichColorSwatch({
   hex,
   name,
@@ -119,38 +122,30 @@ export function RichColorSwatch({
   isActive = false,
 }: RichColorSwatchProps) {
   const label = name?.trim() || 'Sem cor';
-  // "Colorido"/"Sortido" — usa gradiente conic; "Padrao" — neutro.
-  const isMixed = MIXED_COLOR_RE.test(label);
-  const bg = hex
-    ? hex
-    : isMixed
-      ? 'conic-gradient(from 180deg, hsl(0 80% 60%), hsl(40 90% 55%), hsl(140 60% 50%), hsl(210 80% 55%), hsl(280 60% 55%), hsl(0 80% 60%))'
-      : undefined;
-
   return (
-    <span className="inline-flex items-center gap-2">
-      <span
-        className={cn(
-          'relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-opacity',
-          isActive ? 'border-primary ring-2 ring-primary/40' : 'border-border',
-          !bg && 'border-dashed border-muted-foreground/40',
-          isOutOfStock && 'opacity-50',
-        )}
-        style={bg ? { background: bg } : undefined}
-        aria-hidden="true"
-      />
-
-      <span
-        className={cn(
-          'truncate text-sm',
-          isOutOfStock ? 'text-muted-foreground line-through' : 'text-foreground',
-        )}
-      >
-        {label}
-      </span>
-    </span>
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <ColorSwatch
+            hex={hex}
+            name={label}
+            isActive={isActive}
+            isOutOfStock={isOutOfStock}
+            sizeClassName="h-[25px] w-[25px] cursor-help"
+            role="img"
+            aria-label={label}
+          />
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs font-medium">
+          {label}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
+
+
+
 
 // ============================================
 // StockStatusChip — chip único consolidado
@@ -190,6 +185,7 @@ const CHIP_CONFIG: Record<StockStatus, { label: string; classes: string; icon: R
     },
   };
 
+/** Chip colorido que exibe o status de estoque de uma variação com tooltip de detalhes. */
 export function StockStatusChip({
   status,
   current,
@@ -270,6 +266,7 @@ export function StockStatusChip({
 // StockProgressBar — barra de progresso com tooltip de detalhe
 // ============================================
 
+/** Barra de progresso de estoque com cor semântica e tooltip de percentual. */
 export function StockProgressBar({ current, min }: { current: number; min: number; max?: number }) {
   const percentage = min > 0 ? Math.min((current / min) * 100, 100) : current > 0 ? 100 : 0;
 

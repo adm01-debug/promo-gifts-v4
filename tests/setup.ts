@@ -11,11 +11,16 @@ vi.stubEnv('VITE_SUPABASE_URL', process.env.VITE_SUPABASE_URL || 'http://localho
 vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.signature');
 
 import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, expect } from 'vitest';
 import { toHaveNoViolations } from 'jest-axe';
 
 expect.extend(toHaveNoViolations);
+
+// RTL waitFor/findBy default é 1000ms — curto demais p/ portais Radix sob carga paralela
+// da suíte (2 vThreads). Eleva o teto de espera assíncrona globalmente; sem custo p/
+// asserções que já passam (o teto só conta enquanto o waitFor reexecuta).
+configure({ asyncUtilTimeout: 5000 });
 
 afterEach(() => {
   cleanup();
@@ -36,14 +41,37 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 });
 
-// Mock do IntersectionObserver
+// Mock do IntersectionObserver — auto-dispara isIntersecting:true no próximo
+// microtask para tornar componentes lazy (ex.: OptimizedImage) determinísticos
+// em jsdom. Sem isso, `isInView` fica eternamente false e placeholders/imagens
+// gateados por IO nunca renderizam.
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
+  private cb: IntersectionObserverCallback;
+  constructor(cb: IntersectionObserverCallback) {
+    this.cb = cb;
+  }
+  observe(target: Element) {
+    queueMicrotask(() => {
+      this.cb(
+        [
+          {
+            isIntersecting: true,
+            target,
+            intersectionRatio: 1,
+            boundingClientRect: {} as DOMRectReadOnly,
+            intersectionRect: {} as DOMRectReadOnly,
+            rootBounds: null,
+            time: 0,
+          },
+        ],
+        this as unknown as IntersectionObserver,
+      );
+    });
+  }
   disconnect() {}
-  observe() {}
-  takeRecords() { return []; }
   unobserve() {}
-} as any;
+  takeRecords() { return []; }
+} as unknown as typeof IntersectionObserver;
 
 // Mock do ResizeObserver
 global.ResizeObserver = class ResizeObserver {

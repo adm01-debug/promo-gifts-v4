@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -99,7 +100,7 @@ vi.mock('@/components/admin/connections/SecretField', () => ({
 }));
 
 describe('Admin Module Structural Comparison', () => {
-  it('Conexoes and Usuarios should share matching container hierarchy', async () => {
+  it('Conexoes and Usuarios should share matching container hierarchy', () => {
     const { container: conexoes } = render(<AdminConexoesPage />, { wrapper });
     const { container: usuarios } = render(<AdminUsuariosPage />, { wrapper });
 

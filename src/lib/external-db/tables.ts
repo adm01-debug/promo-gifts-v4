@@ -153,4 +153,4 @@ export type ProductTable = (typeof PRODUCT_TABLES)[number];
 export type BridgeAlias = (typeof BRIDGE_ALIASES)[number];
 export type ProductView = (typeof PRODUCT_VIEWS)[number];
 export type CompanyTable = (typeof COMPANY_TABLES)[number];
-export type ExternalTable = ProductTable | BridgeAlias | ProductView | CompanyTable;
+export type ExternalTable = BridgeAlias | CompanyTable | ProductTable | ProductView;

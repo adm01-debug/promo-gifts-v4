@@ -10,8 +10,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { PostgrestError } from '@supabase/supabase-js';
 
-export type RlsOperation = 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE';
+/** Tipo de operação SQL cujo acesso foi negado pela política RLS do Supabase. */
+export type RlsOperation = 'DELETE' | 'INSERT' | 'SELECT' | 'UPDATE';
 
+/** Contexto de rastreabilidade para registrar qual endpoint/tabela disparou a negação RLS. */
 export interface LogRlsDenialContext {
   table: string;
   op: RlsOperation;
@@ -46,7 +48,9 @@ export async function logRlsDenial(
 ): Promise<void> {
   if (!error || !isRlsDenialError(error)) return;
   try {
-    await supabase.rpc('log_rls_denial', {
+    // BUG-RLSLOGGER-SILENT-FAIL FIX: bare RPC await swallowed errors (incl. network failures).
+    // Cannot import logger here (would create a circular dependency). Using console.warn.
+    const { error: rpcErr } = await supabase.rpc('log_rls_denial', {
       p_table_name: ctx.table,
       p_operation: ctx.op,
       p_endpoint:
@@ -59,6 +63,7 @@ export async function logRlsDenial(
       p_error_message: error.message ?? undefined,
       p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
     });
+    if (rpcErr) console.warn('[rls-denial-logger] log_rls_denial RPC failed:', rpcErr);
   } catch {
     // Logging nunca deve quebrar o fluxo do usuário.
   }

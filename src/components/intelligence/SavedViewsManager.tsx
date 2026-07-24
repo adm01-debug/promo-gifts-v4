@@ -27,6 +27,15 @@ interface SavedView {
   created_at: string;
 }
 
+function isSavedView(obj: unknown): obj is SavedView {
+  if (typeof obj !== 'object' || obj === null) return false;
+  const row = obj as Record<string, unknown>;
+  if (typeof row.id !== 'string' || typeof row.name !== 'string') return false;
+  if (typeof row.created_at !== 'string') return false;
+  if (typeof row.filters !== 'object' || row.filters === null) return false;
+  return Object.values(row.filters as Record<string, unknown>).every((v) => typeof v === 'string');
+}
+
 export function SavedViewsManager() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -45,7 +54,7 @@ export function SavedViewsManager() {
         .select('id, name, filters, created_at')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as SavedView[];
+      return ((data ?? []) as unknown[]).filter(isSavedView);
     },
   });
 

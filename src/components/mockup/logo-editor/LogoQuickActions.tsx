@@ -48,7 +48,7 @@ export function LogoQuickActions({
               disabled={!logoPreview}
               className="flex-1"
             >
-              <Target className="mr-1 h-3.5 w-3.5" />
+              <Target aria-hidden="true" className="mr-1 h-3.5 w-3.5" />
               Centro V
             </Button>
           </TooltipTrigger>
@@ -63,7 +63,7 @@ export function LogoQuickActions({
               disabled={!logoPreview}
               className="flex-1"
             >
-              <Target className="mr-1 h-3.5 w-3.5" />
+              <Target aria-hidden="true" className="mr-1 h-3.5 w-3.5" />
               Centro
             </Button>
           </TooltipTrigger>
@@ -78,7 +78,7 @@ export function LogoQuickActions({
               disabled={!logoPreview}
               className="flex-1"
             >
-              <Target className="mr-1 h-3.5 w-3.5" />
+              <Target aria-hidden="true" className="mr-1 h-3.5 w-3.5" />
               Centro H
             </Button>
           </TooltipTrigger>
@@ -94,9 +94,9 @@ export function LogoQuickActions({
               className="flex-1"
             >
               {(logoRotation || 0) % 180 === 0 ? (
-                <FlipVertical2 className="mr-1 h-4 w-4" />
+                <FlipVertical2 aria-hidden="true" className="mr-1 h-4 w-4" />
               ) : (
-                <FlipHorizontal2 className="mr-1 h-4 w-4" />
+                <FlipHorizontal2 aria-hidden="true" className="mr-1 h-4 w-4" />
               )}
               {(logoRotation || 0) % 180 === 0 ? 'Vertical' : 'Horizontal'}
             </Button>
@@ -114,7 +114,7 @@ export function LogoQuickActions({
           disabled={!logoPreview}
           className="flex-1"
         >
-          <RotateCcw className="mr-1 h-4 w-4" />
+          <RotateCcw aria-hidden="true" className="mr-1 h-4 w-4" />
           -15°
         </Button>
         <Tooltip>
@@ -138,7 +138,7 @@ export function LogoQuickActions({
           disabled={!logoPreview}
           className="flex-1"
         >
-          <RotateCw className="mr-1 h-4 w-4" />
+          <RotateCw aria-hidden="true" className="mr-1 h-4 w-4" />
           +15°
         </Button>
       </div>

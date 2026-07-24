@@ -27,9 +27,14 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
       getSession: (...args: unknown[]) => mockGetSession(...args),
-      updateUser: (...args: unknown[]) => mockUpdateUser(...args),
       onAuthStateChange: (...args: unknown[]) => mockOnAuthStateChange(...args),
     },
+  },
+}));
+
+vi.mock('@/services/authService', () => ({
+  authService: {
+    updatePasswordSafe: (...args: unknown[]) => mockUpdateUser(...args),
   },
 }));
 
@@ -69,7 +74,7 @@ describe('ResetPassword page flow', () => {
 
   it('aceita hash de recovery, redefine senha e permite login posterior', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
-    mockUpdateUser.mockResolvedValue({ error: null });
+    mockUpdateUser.mockResolvedValue({ kind: 'ok', data: null, attempts: 1, elapsedMs: 5 });
     window.location.hash = '#access_token=abc123&type=recovery';
 
     renderPage();
@@ -86,7 +91,7 @@ describe('ResetPassword page flow', () => {
     fireEvent.click(screen.getByRole('button', { name: /Redefinir Senha/i }));
 
     await waitFor(() => {
-      expect(mockUpdateUser).toHaveBeenCalledWith({ password: 'SenhaForte@2026' });
+      expect(mockUpdateUser).toHaveBeenCalledWith('SenhaForte@2026');
     });
 
     expect(await screen.findByText('Senha redefinida!')).toBeInTheDocument();
@@ -103,7 +108,14 @@ describe('ResetPassword page flow', () => {
 
   it('mostra mensagem de erro quando token é rejeitado na redefinição', async () => {
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
-    mockUpdateUser.mockResolvedValue({ error: { message: 'Token expirado' } });
+    mockUpdateUser.mockResolvedValue({
+      kind: 'err',
+      errorKind: 'credential',
+      userMessage: 'Credenciais inválidas',
+      raw: null,
+      attempts: 1,
+      elapsedMs: 5,
+    });
 
     renderPage();
 
@@ -123,9 +135,7 @@ describe('ResetPassword page flow', () => {
         expect.objectContaining({
           variant: 'destructive',
           title: 'Erro ao redefinir senha',
-          // Hardening a0fd9de: mensagens de erro do fornecedor não vazam no toast;
-          // o componente exibe copy genérica fixa.
-          description: 'Não foi possível redefinir sua senha. O link pode ter expirado.',
+          description: expect.stringMatching(/link expirado/i),
         }),
       );
     });

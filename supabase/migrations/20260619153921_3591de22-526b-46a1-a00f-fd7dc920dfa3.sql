@@ -1,0 +1,10 @@
+REVOKE EXECUTE ON FUNCTION public.cleanup_inbound_webhook_events() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_old_notifications() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_rate_limits() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_security_logs() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_simulation_telemetry() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_webhook_logs() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cron_invoke_edge(text, jsonb, integer) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_hardening_regression() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.purge_old_audit_logs() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.snapshot_hardening_status() FROM PUBLIC, anon, authenticated;

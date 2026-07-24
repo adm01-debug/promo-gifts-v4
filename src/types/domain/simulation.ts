@@ -62,7 +62,7 @@ export interface SimulationOption {
   totalProductCost: number;
   grandTotal: number;
   grandTotalPerUnit: number;
-  priceSource: 'rpc' | 'legacy-fallback' | 'unavailable';
+  priceSource: 'legacy-fallback' | 'rpc' | 'unavailable';
   unavailableReason?: string;
   fallbackReason?: string;
   calculatedAt: string;
@@ -86,7 +86,7 @@ export interface SavedSimulation {
   updated_at?: string;
 }
 
-export type SimulatorStep = 'product' | 'techniques' | 'results';
+export type SimulatorStep = 'product' | 'results' | 'techniques';
 
 export interface SimulatorState {
   step: SimulatorStep;

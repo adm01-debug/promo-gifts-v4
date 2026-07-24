@@ -59,7 +59,7 @@ interface MergedRow {
   clientShare: number;
   industryShare: number;
   ratio: number; // clientShare / industryShare
-  status: 'super' | 'aligned' | 'underindex' | 'gap' | 'client-only';
+  status: 'aligned' | 'client-only' | 'gap' | 'super' | 'underindex';
   clientCat?: CategoryAggregate;
   industryCat?: IndustryCategoryAggregate;
 }

@@ -29,7 +29,7 @@ import {
   Search,
   Truck,
 } from 'lucide-react';
-import { maskCnpj, maskPhone, ESTADOS_BR } from '@/utils/masks';
+import { maskCnpj, maskPhone, ESTADOS_BR, normalizeCnpj, validateCnpj } from '@/utils/masks';
 import { applyPixMask, pixPlaceholder, validatePixKey } from '@/utils/pixMask';
 import { type Supplier, type SupplierContact, type PixKey, CONTACT_ROLES } from './types';
 import React from 'react';
@@ -39,6 +39,8 @@ interface SupplierFormDialogProps {
   setEditingSupplier: (s: Partial<Supplier> | null) => void;
   isNew: boolean;
   saving: boolean;
+  /** Erro CNPJ vindo do backend (SSOT: mapCnpjError) — exibido inline. */
+  cnpjError?: string;
   uploadingLogo: boolean;
   fetchingCnpj: boolean;
   contacts: SupplierContact[];
@@ -76,7 +78,7 @@ interface SupplierFormDialogProps {
   updateContact: (id: string, field: keyof SupplierContact, value: string) => void;
   addContact: () => void;
   removeContact: (id: string) => void;
-  updatePixKey: (id: string, field: keyof Omit<PixKey, 'id'>, value: string | boolean) => void;
+  updatePixKey: (id: string, field: keyof Omit<PixKey, 'id'>, value: boolean | string) => void;
   addPixKey: () => void;
   removePixKey: (id: string) => void;
 }
@@ -86,6 +88,7 @@ export function SupplierFormDialog({
   setEditingSupplier,
   isNew,
   saving,
+  cnpjError,
   uploadingLogo,
   fetchingCnpj,
   contacts,
@@ -261,10 +264,17 @@ export function SupplierFormDialog({
                 <Label className="text-xs font-semibold">CNPJ</Label>
                 <div className="flex gap-1.5">
                   <Input
-                    value={editingSupplier.cnpj || ''}
-                    onChange={(e) => updateField('cnpj', maskCnpj(e.target.value))}
+                    value={maskCnpj(editingSupplier.cnpj || '')}
+                    data-testid="admin-cnpj-input"
+                    onChange={(e) => updateField('cnpj', normalizeCnpj(e.target.value))}
                     className={`${fieldClass} flex-1 font-mono`}
                     maxLength={18}
+                    inputMode="numeric"
+                    aria-invalid={(() => {
+                      const d = (editingSupplier.cnpj ?? '').replace(/\D/g, '');
+                      return d.length > 0 && (d.length !== 14 || !validateCnpj(d));
+                    })()}
+                    aria-describedby="admin-cnpj-error"
                   />
                   <Button
                     type="button"
@@ -283,6 +293,42 @@ export function SupplierFormDialog({
                     )}
                   </Button>
                 </div>
+                {(() => {
+                  const d = (editingSupplier.cnpj ?? '').replace(/\D/g, '');
+                  if (d.length === 0) return null;
+                  if (d.length !== 14) {
+                    return (
+                      <p
+                        id="admin-cnpj-error"
+                        data-testid="admin-cnpj-error"
+                        className="mt-1 text-xs text-destructive"
+                      >
+                        CNPJ deve ter 14 dígitos (atual: {d.length}).
+                      </p>
+                    );
+                  }
+                  if (!validateCnpj(d)) {
+                    return (
+                      <p
+                        id="admin-cnpj-error"
+                        data-testid="admin-cnpj-error"
+                        className="mt-1 text-xs text-destructive"
+                      >
+                        CNPJ inválido — verifique os dígitos.
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+                {cnpjError ? (
+                  <p
+                    id="admin-cnpj-backend-error"
+                    data-testid="admin-cnpj-backend-error"
+                    className="mt-1 text-xs text-destructive"
+                  >
+                    {cnpjError}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <Label className="text-xs font-semibold">Inscrição Estadual</Label>
@@ -487,6 +533,7 @@ export function SupplierFormDialog({
                 <select
                   value={editingSupplier.tipo_logradouro || ''}
                   onChange={(e) => updateField('tipo_logradouro', e.target.value)}
+                  onBlur={(e) => updateField('tipo_logradouro', e.target.value)}
                   className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="">Selecione</option>
@@ -559,6 +606,7 @@ export function SupplierFormDialog({
                 <select
                   value={editingSupplier.estado || ''}
                   onChange={(e) => updateField('estado', e.target.value)}
+                  onBlur={(e) => updateField('estado', e.target.value)}
                   className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="">Selecione</option>

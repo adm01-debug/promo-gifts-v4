@@ -1,0 +1,315 @@
+name: E2E — Customization Collapse (LocationPanel)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/components/products/customization/**'
+      - 'e2e/flows/04d-customization-collapse.spec.ts'
+      - 'e2e/customization/**'
+      - '.github/workflows/e2e-customization-collapse.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/components/products/customization/**'
+      - 'e2e/flows/04d-customization-collapse.spec.ts'
+      - 'e2e/customization/**'
+      - '.github/workflows/e2e-customization-collapse.yml'
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: 'Atualizar baselines visuais (--update-snapshots)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: e2e-customization-collapse-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  FORCE_COLOR: "0"
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+  VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+  E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+  E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+
+jobs:
+  collapse-e2e:
+    name: LocationPanel collapse (authed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          missing=0
+          if [ -z "$E2E_USER_EMAIL" ]; then
+            echo "::error::Secret E2E_USER_EMAIL não configurado no repositório."
+            missing=1
+          fi
+          if [ -z "$E2E_USER_PASSWORD" ]; then
+            echo "::error::Secret E2E_USER_PASSWORD não configurado no repositório."
+            missing=1
+          fi
+          if [ "$missing" -eq 1 ]; then
+            echo "::error::Configure os secrets em Settings → Secrets and variables → Actions antes de rodar este workflow."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright (chromium + deps)
+        run: npx playwright install --with-deps chromium
+
+      - name: Start dev server
+        run: npm run dev &
+        env:
+          VITE_SUPABASE_URL: ${{ env.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ env.VITE_SUPABASE_PUBLISHABLE_KEY }}
+
+      - name: Wait for server
+        run: timeout 120 bash -c 'until curl -sf http://localhost:8080 > /dev/null 2>&1; do sleep 1; done'
+
+      - name: Setup auth state (fixture de sessão)
+        id: auth
+        run: |
+          if [ -n "$E2E_USER_EMAIL" ] && [ -n "$E2E_USER_PASSWORD" ]; then
+            npx playwright test --project=setup
+            echo "authed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::E2E_USER_EMAIL/E2E_USER_PASSWORD ausentes — spec autenticado será pulado."
+            echo "authed=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          E2E_BASE_URL: http://localhost:8080
+
+      - name: Check baselines exist (mobile/tablet/desktop)
+        if: steps.auth.outputs.authed == 'true' && inputs.update_snapshots != true
+        run: node scripts/qa/check-collapse-baselines.mjs
+
+      - name: Run collapse E2E (behavior + visual reflow)
+
+        if: steps.auth.outputs.authed == 'true'
+        run: |
+          UPDATE_FLAG=""
+          if [ "${{ inputs.update_snapshots }}" = "true" ]; then
+            UPDATE_FLAG="--update-snapshots"
+          fi
+          npx playwright test \
+            e2e/flows/04d-customization-collapse.spec.ts \
+            e2e/customization/collapse-reflow.spec.ts \
+            --project=chromium-authed \
+            --reporter=github,list,html,json \
+            --pass-with-no-tests \
+            $UPDATE_FLAG
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-collapse.json
+
+      - name: Commit updated baselines
+        if: inputs.update_snapshots == true && steps.auth.outputs.authed == 'true'
+        run: |
+          if [ -n "$(git status --porcelain 'e2e/customization/**-snapshots')" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add e2e/customization/**-snapshots
+            git commit -m "test(e2e): atualiza baselines visuais do colapso do LocationPanel"
+            git push
+          fi
+
+      - name: Build visual diff summary (pixel-a-pixel)
+        if: always()
+        run: |
+          mkdir -p visual-diff-report
+          node scripts/build-visual-diff-report.mjs \
+            --results test-results \
+            --out visual-diff-report/index.html \
+            --title 'Colapso do LocationPanel — diffs visuais' || true
+          # Também gera um resumo Markdown no Job Summary do PR.
+          if [ -d test-results ]; then
+            {
+              echo "## 🖼️ Diffs visuais — Colapso do LocationPanel"
+              echo ""
+              diffs=$(find test-results -name '*-diff.png' | wc -l | tr -d ' ')
+              actuals=$(find test-results -name '*-actual.png' | wc -l | tr -d ' ')
+              echo "- Diffs gerados: **$diffs**"
+              echo "- Screenshots atuais: **$actuals**"
+              echo ""
+              echo "Baixe o artifact **customization-collapse-e2e** e abra \`visual-diff-report/index.html\` para navegar os diffs lado a lado."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload artifacts (trace + vídeo + screenshots + diffs + report)
+        id: upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: customization-collapse-e2e
+          path: |
+            e2e-artifacts/
+            playwright-report/
+            test-results/
+            visual-diff-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Job Summary — links + falhas por viewport
+        if: always()
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          {
+            echo "## 🔗 Artifacts do run"
+            if [ -n "$ARTIFACT_URL" ]; then
+              echo "- 📦 [Baixar \`customization-collapse-e2e\` (visual-diff-report, traces, vídeos, screenshots)]($ARTIFACT_URL)"
+            else
+              echo "- 📦 Artifact \`customization-collapse-e2e\` disponível na aba Artifacts deste run."
+            fi
+            echo "- 🧭 Após baixar, abra \`visual-diff-report/index.html\` para os diffs lado a lado e \`playwright-report/index.html\` para o HTML report (traces/vídeos linkados por teste)."
+            echo ""
+            echo "## 🖼️ Diffs por viewport"
+            echo ""
+            echo "| Viewport | Diffs | Screenshots atuais |"
+            echo "| --- | ---: | ---: |"
+            for vp in mobile tablet desktop; do
+              d=$(find test-results -name "*${vp}*-diff.png" 2>/dev/null | wc -l | tr -d ' ')
+              a=$(find test-results -name "*${vp}*-actual.png" 2>/dev/null | wc -l | tr -d ' ')
+              echo "| \`$vp\` | $d | $a |"
+            done
+            echo ""
+            failed_json="playwright-report/results-collapse.json"
+            if [ -f "$failed_json" ]; then
+              echo "## ❌ Casos que falharam"
+              echo ""
+              node -e '
+                const r = require("./'"$failed_json"'");
+                const walk = (s, acc=[]) => {
+                  (s.suites||[]).forEach(x => walk(x, acc));
+                  (s.specs||[]).forEach(sp => sp.tests.forEach(t => t.results.forEach(res => {
+                    if (res.status !== "passed" && res.status !== "skipped") {
+                      acc.push({title: sp.title, status: res.status});
+                    }
+                  })));
+                  return acc;
+                };
+                const fails = walk(r);
+                if (!fails.length) { console.log("_(nenhum)_"); process.exit(0); }
+                console.log("| Teste | Status |");
+                console.log("| --- | --- |");
+                for (const f of fails) console.log(`| ${f.title} | ${f.status} |`);
+              ' || echo "_(não foi possível parsear resultados)_"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment PR with visual diff summary
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const marker = '<!-- collapse-visual-diff-report -->';
+
+            const countPngs = (dir, suffix, vp) => {
+              if (!fs.existsSync(dir)) return 0;
+              let n = 0;
+              for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+                const full = path.join(dir, e.name);
+                if (e.isDirectory()) n += countPngs(full, suffix, vp);
+                else if (e.name.endsWith(suffix) && (!vp || e.name.includes(vp))) n++;
+              }
+              return n;
+            };
+
+            const vps = ['mobile', 'tablet', 'desktop'];
+
+            // Config efetiva (thresholds/masks por viewport) publicada pelo spec.
+            let cfg = { thresholds: {}, masks: [] };
+            try {
+              cfg = JSON.parse(fs.readFileSync('visual-diff-report/collapse-config.json', 'utf8'));
+            } catch { /* opcional */ }
+
+            const rows = vps.map(vp => {
+              const d = countPngs('test-results', '-diff.png', vp);
+              const a = countPngs('test-results', '-actual.png', vp);
+              const t = cfg.thresholds?.[vp];
+              const th = t ? t.threshold : '—';
+              const ra = t ? t.maxDiffPixelRatio : '—';
+              return `| \`${vp}\` | ${d} | ${a} | ${th} | ${ra} |`;
+            });
+            const totalDiffs = vps.reduce((s, vp) => s + countPngs('test-results', '-diff.png', vp), 0);
+            const status = totalDiffs === 0 ? '✅ Nenhum diff visual detectado' : `⚠️ **${totalDiffs}** diff(s) visual(is) detectado(s)`;
+            const artifactLine = process.env.ARTIFACT_URL
+              ? `📦 [Baixar artifact \`customization-collapse-e2e\`](${process.env.ARTIFACT_URL})`
+              : `📦 Artifact \`customization-collapse-e2e\` disponível na aba Artifacts deste run.`;
+
+            const maskLine = cfg.masks?.length
+              ? `<sub>🎭 ${cfg.masks.length} região(ões) dinâmica(s) mascarada(s). Ajuste via \`COLLAPSE_MASK_EXTRA\` / \`COLLAPSE_MASK_DISABLE\` ou edite \`e2e/customization/mask-config.ts\`.</sub>`
+              : '';
+
+            // Lista arquivos do report que existirem, para linkar no corpo do PR.
+            const reportFiles = [
+              ['visual-diff-report/collapse-config.json', 'collapse-config.json (thresholds + máscaras efetivas)'],
+              ['visual-diff-report/calibration.md', 'calibration.md (relatório de calibragem)'],
+              ['visual-diff-report/calibration.json', 'calibration.json (dados brutos)'],
+              ['visual-diff-report/calibration-mobile.csv', 'calibration-mobile.csv'],
+              ['visual-diff-report/calibration-tablet.csv', 'calibration-tablet.csv'],
+              ['visual-diff-report/calibration-desktop.csv', 'calibration-desktop.csv'],
+            ];
+            const filesBlock = reportFiles
+              .filter(([p]) => fs.existsSync(p))
+              .map(([p, label]) => `- \`${p}\` — ${label}`)
+              .join('\n');
+            const filesSection = filesBlock
+              ? ['', '### 📄 Arquivos no artifact', filesBlock].join('\n')
+              : '';
+
+            const body = [
+              marker,
+              '## 🖼️ Colapso do LocationPanel — reflow visual',
+              '',
+              status,
+              '',
+              '| Viewport | Diffs | Screenshots | threshold | maxDiffPixelRatio |',
+              '| --- | ---: | ---: | ---: | ---: |',
+              ...rows,
+              '',
+              artifactLine,
+              filesSection,
+              '',
+              'Após baixar, abra `visual-diff-report/index.html` para os diffs lado a lado e `playwright-report/index.html` para traces/vídeos. Os CSVs `calibration-*.csv` e o `collapse-config.json` estão no mesmo artifact.',
+              '',
+              maskLine,
+              '<sub>Se os diffs forem intencionais, rode `npm run e2e:collapse:update:<viewport>` localmente e faça commit das baselines. Baseline ausente? `npm run e2e:collapse:check-baselines` mostra qual gerar.</sub>',
+            ].filter(Boolean).join('\n');
+
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+

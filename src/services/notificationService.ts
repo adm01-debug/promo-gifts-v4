@@ -98,11 +98,25 @@ export async function getNotifications(
  * Conta notificações não lidas do usuário autenticado.
  * Usa count agregado para não baixar os registros completos.
  * Retorna 0 em caso de erro (falha silenciosa — badge não bloqueia a UI).
+ *
+ * BUG-SVC-NOTIF-001 FIX (2026-06-22): adicionado filtro user_id explícito.
+ * Antes: confiava apenas na RLS (user_id = auth.uid()) para filtrar.
+ * Agora: filtro duplo — guard de sessão + user_id na query.
+ * Isso garante que o HEAD request gerado inclui user_id na URL,
+ * tornando o cache de React Query user-specific e evitando
+ * cross-user cache pollution em cenários de sign-in rápido.
+ *
+ * Nota: getUnreadCount() é dead code (sem chamadores em 2026-06-22).
+ * Fix aplicado preventivamente para quando for integrado.
  */
 export async function getUnreadCount(): Promise<number> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;  // sem sessão → sem notificações
+
   const { count, error } = await supabase
     .from('workspace_notifications')
     .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)  // filtro explícito além da RLS
     .eq('is_read', false);
 
   if (error) {
@@ -186,8 +200,13 @@ export function subscribeToNotifications(
   onInsert: (notification: WorkspaceNotification) => void,
   onUpdate?: (notification: WorkspaceNotification) => void,
 ): () => void {
+  // BUG-RT-CHANNEL FIX: tópico ÚNICO por inscrição (crypto.randomUUID()). Com nome
+  // estático, duas chamadas concorrentes de subscribeToNotifications() reaproveitavam
+  // o MESMO canal já inscrito no supabase-js e o .on('postgres_changes') era aplicado
+  // APÓS subscribe(), lançando "cannot add postgres_changes callbacks ... after
+  // subscribe()" — o mesmo crash do canal de quotes (QuoteViewPage).
   const channel = supabase
-    .channel('workspace_notifications_svc_realtime')
+    .channel(`workspace_notifications_svc_realtime:${crypto.randomUUID()}`)
     .on(
       'postgres_changes',
       {

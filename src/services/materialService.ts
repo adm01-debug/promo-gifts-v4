@@ -1,4 +1,5 @@
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 // DRY (audit 200-commits, P2-2): URL e anon key vem do client canonico
 // (com validateEnv + fallback). Removidas as constantes locais duplicadas e a
@@ -48,12 +49,13 @@ export interface MaterialComplete {
 
 // Service para chamadas à API de materiais
 class MaterialService {
-  private baseUrl: string;
-
-  constructor() {
-    // URL canonica resolvida (com fallback) — evita `undefined/functions/v1/...`
-    // em builds sem env (ex.: preview Lovable).
-    this.baseUrl = `${SUPABASE_URL}/functions/v1/materials-api`;
+  // GAP (auditoria 200-commits): resolvido sob demanda (lazy), NÃO no construtor.
+  // Ler SUPABASE_URL em tempo de import fazia `export const materialService =
+  // new MaterialService()` acessar o export no module-load, quebrando todo teste
+  // que mocka o client sem SUPABASE_URL. O getter preserva a URL canônica (com
+  // fallback) e remove o efeito colateral de import.
+  private get baseUrl(): string {
+    return `${SUPABASE_URL}/functions/v1/materials-api`;
   }
 
   private async getAuthHeaders(): Promise<HeadersInit> {
@@ -77,6 +79,29 @@ class MaterialService {
     });
 
     const result = await response.json().catch(() => ({}));
+
+    // PGRST002 = PostgREST do banco externo aquecendo schema cache (transitório,
+    // típico após auto-resume de projeto pausado). Pode chegar como 500 (edge
+    // antiga) ou 503 (edge nova). Em ambos os casos devolvemos payload vazio
+    // em vez de quebrar a UI com tela branca — o caller faz retry natural.
+    const errCode: string | undefined = result?.code;
+    const errMsg = String(result?.error ?? '');
+    const isSchemaWarmup =
+      errCode === 'PGRST002' || /schema cache/i.test(errMsg) || response.status === 503;
+    if (isSchemaWarmup) {
+      logger.warn('[materialService] external schema cache warming up — empty payload', {
+        status: response.status,
+        errCode,
+        errMsg,
+      });
+      return {
+        data: [],
+        records: [],
+        count: 0,
+        _unavailable: true,
+        _retryable: true,
+      } as unknown as T;
+    }
 
     if (!response.ok) {
       throw new Error(result?.error || 'Erro ao buscar materiais');

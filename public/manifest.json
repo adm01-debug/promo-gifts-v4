@@ -1,5 +1,5 @@
 {
-  "crossorigin": "use-credentials",
+  "id": "/",
   "name": "Promo Gifts",
   "short_name": "Promo Gifts",
   "description": "Plataforma de gestão de brindes corporativos personalizados — catálogo inteligente, orçamentos e mockups com IA.",
@@ -10,12 +10,18 @@
     "productivity",
     "shopping"
   ],
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#020617",
-  "theme_color": "#1e40af",
+  "theme_color": "#0a0a0a",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/favicon.svg",
@@ -49,13 +55,6 @@
       "type": "image/png",
       "form_factor": "wide",
       "label": "Catálogo de produtos e orçamentos — Promo Gifts"
-    },
-    {
-      "src": "/og-image.png",
-      "sizes": "1200x630",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Promo Gifts — Brindes corporativos com IA"
     }
   ],
   "shortcuts": [
@@ -63,7 +62,7 @@
       "name": "Catálogo",
       "short_name": "Catálogo",
       "description": "Ver catálogo de produtos",
-      "url": "/produtos",
+      "url": "/produtos?source=pwa-shortcut",
       "icons": [
         {
           "src": "/icons/icon-192.png",
@@ -75,7 +74,7 @@
       "name": "Orçamentos",
       "short_name": "Orçamentos",
       "description": "Gerenciar orçamentos",
-      "url": "/orcamentos",
+      "url": "/orcamentos?source=pwa-shortcut",
       "icons": [
         {
           "src": "/icons/icon-192.png",

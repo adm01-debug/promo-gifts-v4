@@ -66,12 +66,12 @@ export interface Technique {
 }
 
 export type TechniqueCategory =
-  | 'impression'
-  | 'engraving'
-  | 'textile'
-  | 'transfer'
   | 'digital'
-  | 'other';
+  | 'engraving'
+  | 'impression'
+  | 'other'
+  | 'textile'
+  | 'transfer';
 
 /**
  * Resumo de técnica para listas e seletores

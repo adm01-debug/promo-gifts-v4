@@ -17,7 +17,7 @@ export function useAdvancedPriceSearch() {
   const [isSearching, setIsSearching] = useState(false);
 
   const { data: products = [], isLoading: loadingProducts } = useProducts();
-  const { data: techniques = [], isLoading: loadingTechniques } = useExternalTechniques();
+  const { data: techniques, isLoading: loadingTechniques } = useExternalTechniques();
 
   const { data: priceTables = [], isLoading: loadingPriceTables } = useQuery({
     queryKey: ['price-tables', filters.technique],

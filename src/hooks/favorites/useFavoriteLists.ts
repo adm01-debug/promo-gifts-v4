@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { untypedRpc } from '@/lib/supabase-untyped';
 import type { TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
 import { logger } from '@/lib/logger';
+import { createRestoreLogger } from '@/lib/telemetry/restoreLogger';
+
+// Logger estruturado do fluxo restaurar-da-lixeira em favoritos.
+// Injeta `schema_version` e valida payload — SSOT em `restoreEventSchema`.
+const restoreFavoritesLog = createRestoreLogger('favorites.restore');
+
 export interface FavoriteList {
   id: string;
   user_id: string;
@@ -48,6 +56,14 @@ export interface FavoriteListItem {
 const LISTS_KEY = ['favorite-lists'];
 const ITEMS_KEY = (listId: string) => ['favorite-items', listId];
 
+type RestoreResult = {
+  ok: boolean;
+  list_id: string;
+  item_id: string | null;
+  original_list_changed: boolean;
+  error?: string;
+};
+
 /** Hook principal — gerencia listas do usuário autenticado (sync com Supabase). */
 export function useFavoriteLists() {
   const { user } = useAuth();
@@ -58,8 +74,12 @@ export function useFavoriteLists() {
     queryKey: LISTS_KEY,
     queryFn: async (): Promise<FavoriteList[]> => {
       if (!user) return [];
-      // Garante lista padrão
-      await supabase.rpc('ensure_default_favorite_list', { _user_id: user.id });
+      // BUG-FAVORITES-RPC-SILENT-FAIL FIX: bare RPC await swallowed DB errors.
+      // Ensures default list exists — non-fatal if it fails (user still gets their lists).
+      const { error: ensureErr } = await supabase.rpc('ensure_default_favorite_list', {
+        _user_id: user.id,
+      });
+      if (ensureErr) logger.warn('[favorite-lists] ensure_default_favorite_list failed:', ensureErr);
 
       const { data, error } = await supabase
         .from('favorite_lists')
@@ -72,21 +92,25 @@ export function useFavoriteLists() {
 
       if (error) throw error;
 
-      // Counts em paralelo
+      // Counts via RPC – single GROUP BY instead of fetching all rows (BUG-FE-4 fix)
       const ids = (data ?? []).map((l) => l.id);
       const counts: Record<string, number> = {};
       if (ids.length) {
-        const { data: rows } = await supabase
-          .from('favorite_items')
-          .select('list_id')
-          .in('list_id', ids);
-        (rows ?? []).forEach((r: { list_id: string }) => {
-          counts[r.list_id] = (counts[r.list_id] ?? 0) + 1;
+        const { data: countRows } = await untypedRpc('get_favorite_list_counts', {
+          _user_id: user.id,
         });
+        ((countRows as Array<{ list_id: string; item_count: number }> | null) ?? []).forEach(
+          (r) => {
+            counts[r.list_id] = Number(r.item_count);
+          },
+        );
       }
 
       setLastSyncedAt(new Date());
-      return (data ?? []).map((l) => ({ ...l, item_count: counts[l.id] ?? 0 })) as FavoriteList[];
+      return (data ?? []).map((l) => ({
+        ...l,
+        item_count: counts[l.id] ?? 0,
+      })) as unknown as FavoriteList[];
     },
     enabled: !!user,
     staleTime: 30_000,
@@ -142,13 +166,35 @@ export function useFavoriteLists() {
     mutationFn: async (id: string) => {
       const target = listsQuery.data?.find((l) => l.id === id);
       if (target?.is_default) throw new Error('Não é possível excluir a lista padrão');
+
+      // Move all items to trash before deleting the list (prevents data loss on CASCADE DELETE)
+      const { data: listItems } = await supabase
+        .from('favorite_items')
+        .select('id')
+        .eq('list_id', id);
+      const itemIds = (listItems ?? []).map((i: { id: string }) => i.id);
+      if (itemIds.length > 0) {
+        // Deleting via the same table triggers fn_favorite_items_soft_delete → trash
+        const { error: itemsErr } = await supabase
+          .from('favorite_items')
+          .delete()
+          .in('id', itemIds);
+        if (itemsErr) throw itemsErr;
+      }
+
       const { error } = await supabase.from('favorite_lists').delete().eq('id', id);
       if (error) throw error;
-      return id;
+      return { id, itemCount: itemIds.length };
     },
-    onSuccess: () => {
+    onSuccess: ({ itemCount }) => {
       qc.invalidateQueries({ queryKey: LISTS_KEY });
-      toast.success('Lista excluída');
+      qc.invalidateQueries({ queryKey: ['favorite-items'] });
+      qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+      const msg =
+        itemCount > 0
+          ? `Lista excluída. ${itemCount} ${itemCount === 1 ? 'item movido' : 'itens movidos'} para a Lixeira.`
+          : 'Lista excluída';
+      toast.success(msg);
     },
     onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
@@ -295,51 +341,69 @@ export function useFavoriteListItems(listId: string | null) {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('favorite_items').delete().eq('id', id);
       if (error) throw error;
-      return id;
+      return id; // original item id (used as original_id in trash)
     },
-    onSuccess: (_id, _vars, ctx) => {
+    onSuccess: (deletedId) => {
       qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-      // Toast com undo: restaura o último item da lixeira (que acabou de ser movido pelo trigger)
+      qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
       if (!user) return;
-      const productName = (ctx as { productName?: string } | undefined)?.productName ?? 'Item';
-      toast.success(`${productName} removido`, {
+      showUndoToast({
+        title: 'Item removido',
         description: 'Você tem 30 dias para restaurar pela Lixeira.',
-        action: {
-          label: 'Desfazer',
-          onClick: async () => {
-            // pega item mais recente da lixeira deste user e restaura
-            const { data: trashed } = await supabase
-              .from('favorite_items_trash')
-              .select('*')
-              .eq('user_id', user.id)
-              .order('deleted_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            if (!trashed) {
-              toast.error('Nada para desfazer');
-              return;
-            }
-            await supabase.from('favorite_items').insert({
-              list_id: trashed.list_id,
-              user_id: user.id,
-              product_id: trashed.product_id,
-              variant_id: trashed.variant_id,
-              variant_info: trashed.variant_info,
-              note: trashed.note,
-              price_at_save: trashed.price_at_save,
-            } as never);
-            await supabase.from('favorite_items_trash').delete().eq('id', trashed.id);
+        duration: 8000,
+        onUndo: async () => {
+          // Find the exact item by original_id before calling restore
+          const { data: trashed } = await supabase
+            .from('favorite_items_trash')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('original_id', deletedId)
+            .maybeSingle();
+          if (!trashed) {
+            toast.error('Item não encontrado na lixeira');
+            return;
+          }
+          const { data: rawRestored } = await untypedRpc('restore_favorite_from_trash', {
+            _trash_id: trashed.id,
+            _user_id: user.id,
+          });
+          const restored = rawRestored as RestoreResult | null;
+          if (restored?.ok) {
             qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
             qc.invalidateQueries({ queryKey: LISTS_KEY });
             qc.invalidateQueries({ queryKey: ['favorite-trash'] });
-            toast.success('Item restaurado');
-          },
+            const msg = restored.original_list_changed
+              ? 'Item restaurado na lista padrão (lista original foi excluída)'
+              : 'Item restaurado';
+            toast.success(msg);
+          } else {
+            toast.error('Não foi possível restaurar');
+          }
         },
-        duration: 8000,
       });
     },
+  });
+
+  /** Remove múltiplos itens em uma única query (evita N toasts e N round-trips). */
+  const removeItems = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (!ids.length) return ids;
+      const { error } = await supabase.from('favorite_items').delete().in('id', ids);
+      if (error) throw error;
+      return ids;
+    },
+    onSuccess: (ids) => {
+      qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
+      qc.invalidateQueries({ queryKey: LISTS_KEY });
+      qc.invalidateQueries({ queryKey: ['favorite-trash'] });
+      qc.invalidateQueries({ queryKey: ['favorite-membership', user?.id] });
+      toast.success(`${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`, {
+        description: 'Restaure pela Lixeira em até 30 dias.',
+      });
+    },
+    onError: (e: Error) => toast.error('Erro ao remover', { description: sanitizeError(e) }),
   });
 
   const moveItem = useMutation({
@@ -348,10 +412,14 @@ export function useFavoriteListItems(listId: string | null) {
         .from('favorite_items')
         .update({ list_id: toListId })
         .eq('id', id);
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') throw new Error('Este produto já está na lista de destino.');
+        throw error;
+      }
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['favorite-items'] });
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ITEMS_KEY(listId ?? 'none') });
+      qc.invalidateQueries({ queryKey: ITEMS_KEY(vars.toListId) });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       toast.success('Item movido');
     },
@@ -364,6 +432,7 @@ export function useFavoriteListItems(listId: string | null) {
     addItem,
     updateItem,
     removeItem,
+    removeItems,
     moveItem,
     refetch: itemsQuery.refetch,
   };
@@ -394,34 +463,75 @@ export function useFavoriteTrash() {
   const restoreItem = useMutation({
     mutationFn: async (trashId: string) => {
       if (!user) throw new Error('not-authenticated');
-      const trashed = trashQuery.data?.find((t) => t.id === trashId);
-      if (!trashed) throw new Error('Item não encontrado na lixeira');
-
-      const { error: insErr } = await supabase.from('favorite_items').insert({
-        list_id: trashed.list_id,
-        user_id: user.id,
-        product_id: trashed.product_id,
-        variant_id: trashed.variant_id,
-        variant_info: trashed.variant_info,
-        note: trashed.note,
-        price_at_save: trashed.price_at_save,
-      } as never);
-      if (insErr) throw insErr;
-
-      const { error: delErr } = await supabase
-        .from('favorite_items_trash')
-        .delete()
-        .eq('id', trashId);
-      if (delErr) throw delErr;
+      const correlationId = restoreFavoritesLog.generateCorrelationId();
+      const startedAt = (typeof performance !== 'undefined' ? performance : Date).now();
+      const elapsedMs = () =>
+        Math.round(
+          (typeof performance !== 'undefined' ? performance : Date).now() -
+            startedAt,
+        );
+      restoreFavoritesLog.emit('info', 'restore_start', {
+        correlation_id: correlationId,
+        snapshot_id: trashId,
+        items_total: 1,
+        hydrated: true,
+      });
+      try {
+        // Atomic RPC: handles missing original list by falling back to default list
+        const { data: rawData, error } = await untypedRpc('restore_favorite_from_trash', {
+          _trash_id: trashId,
+          _user_id: user.id,
+        });
+        if (error) throw error;
+        const data = rawData as RestoreResult | null;
+        if (!data?.ok) throw new Error(data?.error ?? 'Restauração falhou');
+        restoreFavoritesLog.emit('info', 'restore_ok', {
+          correlation_id: correlationId,
+          snapshot_id: trashId,
+          new_cart_id: data.list_id ?? null,
+          restore_result: 'success',
+          duration_ms: elapsedMs(),
+          items_total: 1,
+          items_inserted: 1,
+          items_resulting: 1,
+          items_mismatch: false,
+          has_dedup: false,
+          partial_insert: false,
+        });
+        return data as {
+          ok: boolean;
+          list_id: string;
+          item_id: string | null;
+          original_list_changed: boolean;
+        };
+      } catch (err) {
+        restoreFavoritesLog.emit('error', 'restore_failed', {
+          correlation_id: correlationId,
+          snapshot_id: trashId,
+          restore_result: 'failed',
+          duration_ms: elapsedMs(),
+          items_total: 1,
+          items_inserted: null,
+          items_resulting: 0,
+          items_mismatch: true,
+          reason: 'rpc_failed',
+          err,
+        });
+        throw err;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: KEY });
       qc.invalidateQueries({ queryKey: LISTS_KEY });
       qc.invalidateQueries({ queryKey: ['favorite-items'] });
-      toast.success('Item restaurado');
+      const msg = data.original_list_changed
+        ? 'Item restaurado na lista padrão (lista original foi excluída)'
+        : 'Item restaurado';
+      toast.success(msg);
     },
     onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
+
 
   const purgeItem = useMutation({
     mutationFn: async (trashId: string) => {

@@ -37,7 +37,7 @@ const fmtBRL = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
 export function ExecutiveSummaryButton({ clientId, clientName, ramoAtividade }: Props) {
-  const [busy, setBusy] = useState<null | 'copy' | 'pptx'>(null);
+  const [busy, setBusy] = useState<'copy' | 'pptx' | null>(null);
   const health = useClientHealthScore(clientId, ramoAtividade);
   const bi = useClientBI(clientId);
   const affinity = useClientAffinity(clientId);

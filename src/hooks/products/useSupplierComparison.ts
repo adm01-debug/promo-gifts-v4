@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { type Product, useProducts } from '@/hooks/products';
 
 /** Opções de ranking/filtragem para o comparador. */
-export type SupplierComparisonSort = 'score' | 'price' | 'stock' | 'leadTime' | 'commonColors';
+export type SupplierComparisonSort = 'commonColors' | 'leadTime' | 'price' | 'score' | 'stock';
 
 export interface SupplierComparisonOptions {
   /** Mostra apenas fornecedores com produto ativo (proxy de "verificado"). */
@@ -214,7 +214,7 @@ export function useSupplierComparison(
 
 export function getSupplierProductsInCategory(
   products: Product[],
-  categoryId: string | number,
+  categoryId: number | string,
 ): Map<string, Product[]> {
   const supplierMap = new Map<string, Product[]>();
   products.forEach((product) => {

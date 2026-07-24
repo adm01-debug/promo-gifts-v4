@@ -7,14 +7,11 @@ import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface WordMagicBadgeProps {
-  visible:    boolean;
+  visible: boolean;
   className?: string;
 }
 
-export const WordMagicBadge = memo(function WordMagicBadge({
-  visible,
-  className,
-}: WordMagicBadgeProps) {
+export const WordMagicBadge = memo(({ visible, className }: WordMagicBadgeProps) => {
   if (!visible) return null;
 
   return (

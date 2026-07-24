@@ -5,11 +5,28 @@ import { runBotProtection } from '../_shared/bot-protection.ts';
 import { getBreaker, circuitOpenResponse, getAllBreakerStatuses } from '../_shared/circuit-breaker.ts';
 import { AsyncLocalStorage } from "node:async_hooks";
 import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
-import { resolveCredential, buildCredentialsHealth } from "../_shared/credentials.ts";
+import { resolveCredentials, warmupCredentials, buildCredentialsHealth } from "../_shared/credentials.ts";
 import { assertSwitchEnabled } from "../_shared/kill_switch.ts";
 
 const breaker = getBreaker("crm-db");
 // redeploy marker: fix 429 - auth-first + rate-limit por userId + admin singleton (2026-05-26)
+
+// P1-05: lista canônica das credenciais CRM. Usada por warmup top-level e
+// pelos resolveCredentials() bulk em hot paths. Manter sincronizada com
+// crm-db-bridge:getCrmClient e com qualquer outro caller de creds CRM.
+const CRM_CRED_NAMES = [
+  "EXTERNAL_CRM_URL",
+  "EXTERNAL_CRM_SERVICE_ROLE_KEY",
+  "EXTERNAL_CRM_ANON_KEY",
+] as const;
+
+// Warmup top-level (executa 1x no boot do isolate). Bug P1-05: antes desta
+// chamada, cada cold start disparava 3 queries individuais em paralelo à
+// integration_credentials. Agora: 1 query bulk, cache preenchido, próximos
+// resolveCredential() viram cache hits.
+warmupCredentials(CRM_CRED_NAMES).catch((e) => {
+  console.warn("[crm-db-bridge] warmupCredentials failed (non-fatal):", e);
+});
 
 const requestCtx = new AsyncLocalStorage<{ requestId: string }>();
 function currentRequestId(): string | undefined {
@@ -57,11 +74,13 @@ function buildCrmClient(url: string, key: string): SupabaseClient {
 
 export async function getCrmClient(): Promise<SupabaseClient | null> {
   if (cachedCrmClient) return cachedCrmClient;
-  const [{ value: url }, { value: serviceKey }, { value: anonKey }] = await Promise.all([
-    resolveCredential("EXTERNAL_CRM_URL"),
-    resolveCredential("EXTERNAL_CRM_SERVICE_ROLE_KEY"),
-    resolveCredential("EXTERNAL_CRM_ANON_KEY"),
-  ]);
+  // P1-05: bulk fetch (1 query DB) em vez de Promise.all([3x resolveCredential])
+  // (3 queries paralelas). Em isolate aquecido por warmupCredentials, esses
+  // 3 nomes saem do cache instantaneamente.
+  const creds = await resolveCredentials([...CRM_CRED_NAMES]);
+  const url = creds["EXTERNAL_CRM_URL"]?.value;
+  const serviceKey = creds["EXTERNAL_CRM_SERVICE_ROLE_KEY"]?.value;
+  const anonKey = creds["EXTERNAL_CRM_ANON_KEY"]?.value;
   const key = serviceKey ?? anonKey;
   if (!url || !key) return null;
   cachedCrmClient = buildCrmClient(url, key);
@@ -613,14 +632,14 @@ Deno.serve((req) => {
   }
 
   try {
-    // ── AUTH PRIMEIRO ────────────────────────────────────────────────────────
+    // ── AUTH PRIMEIRO ────────────────────────────────────────────────────────────────────────────────
     // Bot-protection roda DEPOIS do auth para usar userId como chave de rate limit,
     // evitando falsos positivos quando multiplos usuarios compartilham o mesmo IP/NAT.
     //
     // BUG ANTERIOR: rate-limit por IP -> 1 usuario abrindo varias abas podia banir
     //   TODOS os colegas por 30 minutos (blockSeconds: 1800).
     // CORRECAO: rate-limit por userId -> cada usuario tem sua propria janela (300/min).
-    // ────────────────────────────────────────────────────────────────────────
+    // ───────────────────────────────────────────────────────────────────────────────────────────────────────
     const auth = await authenticateRequest(req);
     if (auth.error) return auth.error;
 
@@ -652,14 +671,14 @@ Deno.serve((req) => {
     }, corsHeaders);
     if (!protection.allowed) return protection.blockResponse!;
 
-    const [urlRes, svcRes, anonRes] = await Promise.all([
-      resolveCredential("EXTERNAL_CRM_URL"),
-      resolveCredential("EXTERNAL_CRM_SERVICE_ROLE_KEY"),
-      resolveCredential("EXTERNAL_CRM_ANON_KEY"),
-    ]);
-    const CRM_URL = urlRes.value;
-    const CRM_SERVICE_KEY = svcRes.value;
-    const CRM_ANON_VAL = anonRes.value;
+    // P1-05: bulk fetch em vez de Promise.all([3x resolveCredential]).
+    const credsMap = await resolveCredentials([...CRM_CRED_NAMES]);
+    const urlRes = credsMap["EXTERNAL_CRM_URL"];
+    const svcRes = credsMap["EXTERNAL_CRM_SERVICE_ROLE_KEY"];
+    const anonRes = credsMap["EXTERNAL_CRM_ANON_KEY"];
+    const CRM_URL = urlRes?.value;
+    const CRM_SERVICE_KEY = svcRes?.value;
+    const CRM_ANON_VAL = anonRes?.value;
     const CRM_KEY = CRM_SERVICE_KEY || CRM_ANON_VAL;
     if (!CRM_URL || !CRM_KEY) {
       return jsonResponse({ error: "CRM database credentials not configured" }, 500);
@@ -669,11 +688,11 @@ Deno.serve((req) => {
 
     if (wasCold || Deno.env.get("LOG_CRM_BRIDGE_VERBOSE") === "on") {
       const using = CRM_SERVICE_KEY ? "SERVICE_KEY" : "ANON_KEY";
-      const keySource = CRM_SERVICE_KEY ? svcRes.source : anonRes.source;
+      const keySource = CRM_SERVICE_KEY ? svcRes?.source : anonRes?.source;
       console.log(JSON.stringify({
         evt: "crm-creds-resolved",
-        url_source: urlRes.source,
-        url_via_alias: urlRes.resolved_name !== "EXTERNAL_CRM_URL",
+        url_source: urlRes?.source,
+        url_via_alias: urlRes?.resolved_name !== "EXTERNAL_CRM_URL",
         using, key_source: keySource,
         keys_match: CRM_SERVICE_KEY === CRM_ANON,
       }));
@@ -689,16 +708,23 @@ Deno.serve((req) => {
       return jsonResponse({ error: "Invalid JSON in request body" }, 400);
     }
 
+    const COLUMN_RE = /^[a-z_][a-z0-9_.]*$/i;
     const CrmRequestSchema = z.object({
       operation: z.enum(["select", "search", "insert", "update", "delete", "batch"]),
       table: z.string().trim().min(1).max(100).regex(/^[a-z_][a-z0-9_]*$/i).optional(),
       id: z.string().uuid().optional(),
-      filters: z.record(z.unknown()).optional(),
+      filters: z.record(z.unknown()).refine(
+        (f) => Object.keys(f).every((k) => COLUMN_RE.test(k)),
+        { message: "Filter keys must be valid column identifiers" },
+      ).optional(),
       select: z.string().max(2000).optional(),
-      orderBy: z.union([z.string(), z.object({ column: z.string(), ascending: z.boolean().optional() })]).optional(),
+      orderBy: z.union([
+        z.string().regex(/^[a-z_][a-z0-9_.]*(\s+(asc|desc))?$/i),
+        z.object({ column: z.string().regex(COLUMN_RE), ascending: z.boolean().optional() }),
+      ]).optional(),
       limit: z.number().int().min(1).max(1000).optional(),
       offset: z.number().int().min(0).optional(),
-      search: z.object({ column: z.string(), term: z.string() }).optional(),
+      search: z.object({ column: z.string().regex(COLUMN_RE), term: z.string().max(500) }).optional(),
       relations: z.string().max(2000).optional(),
       data: z.union([z.record(z.unknown()), z.array(z.record(z.unknown()))]).optional(),
       returning: z.string().max(2000).optional(),

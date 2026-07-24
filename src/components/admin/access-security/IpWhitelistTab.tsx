@@ -134,23 +134,39 @@ export function IpWhitelistTab({ ips, onAdd, onRemove, onToggle }: IpWhitelistTa
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remover IP?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            O IP <span className="font-mono font-bold">{ip.ip_address}</span> será
-                            removido da whitelist.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => onRemove(ip.id)}
-                            className="bg-destructive text-destructive-foreground"
-                          >
-                            Remover
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
+                      <AlertDialogContent className="!max-w-[358px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl" data-testid="ip-whitelist-remove-dialog">
+                        <div aria-hidden="true" className="h-[3px] w-full bg-gradient-to-r from-transparent via-destructive to-transparent" />
+                        <div className="px-4 pb-1.5 pt-4">
+                          <AlertDialogHeader>
+                            <div className="flex items-start gap-3">
+                              <div className="relative flex-shrink-0">
+                                <span aria-hidden="true" className="absolute inset-0 -z-10 rounded-xl blur-lg opacity-60 bg-destructive/30" />
+                                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive/10 ring-1 ring-inset ring-destructive/20">
+                                  <Trash2 className="h-[18px] w-[18px] text-destructive" strokeWidth={2.2} />
+                                </div>
+                              </div>
+                              <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                                <AlertDialogTitle className="text-sm font-semibold leading-tight tracking-tight text-foreground">
+                                  Remover IP?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-xs leading-relaxed text-muted-foreground">
+                                  O IP <span className="font-mono font-bold text-foreground">{ip.ip_address}</span> será removido da whitelist.
+                                </AlertDialogDescription>
+                              </div>
+                            </div>
+                          </AlertDialogHeader>
+                        </div>
+                        <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
+                          <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
+                            <AlertDialogCancel className="mt-0 h-[26px] min-h-[26px] rounded-md border-border/70 bg-transparent px-3 py-0 text-xs">Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => onRemove(ip.id)}
+                              className="inline-flex h-[26px] min-h-[26px] items-center rounded-md bg-destructive px-3.5 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Remover
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </div>
                       </AlertDialogContent>
                     </AlertDialog>
                   </TableCell>

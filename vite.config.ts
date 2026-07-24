@@ -164,7 +164,16 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 8080,
       host: '::',
+      // Evita CSS/JS cacheado no preview durante o dev: força revalidação a
+      // cada request, garantindo que mudanças de width/min-width (e qualquer
+      // outro estilo) sejam refletidas imediatamente após o save.
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
     },
+
 
     preview: {
       port: 4173,

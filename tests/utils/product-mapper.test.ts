@@ -72,7 +72,9 @@ describe("product-mapper", () => {
     });
 
     it("maps low stock correctly", () => {
-      const result = mapPromobrindToProduct({ ...baseProduct, stock: 5 } as any);
+      // min_quantity deve ser <= stock para não acionar a guarda 'can't fill min order'.
+      // Testamos o caminho qty < CATALOG_LOW_STOCK_THRESHOLD (10) → 'low-stock'.
+      const result = mapPromobrindToProduct({ ...baseProduct, stock: 5, min_quantity: 1 } as any);
       expect(result.stockStatus).toBe("low-stock");
     });
 
@@ -89,6 +91,28 @@ describe("product-mapper", () => {
     it("parses materials from string", () => {
       const result = mapPromobrindToProduct(baseProduct as any);
       expect(result.materials).toEqual(["Metal", "Plástico"]);
+    });
+
+    it("extracts descriptiveTags from a flat tags array (production shape)", () => {
+      const result = mapPromobrindToProduct({
+        ...baseProduct,
+        tags: ["caneta", "metal", "  Bambu  "],
+      } as any);
+      // Flat keyword arrays feed the Match module's descriptive-tag signal…
+      expect(result.descriptiveTags).toEqual(["caneta", "metal", "Bambu"]);
+      // …while the structured marketing tags stay empty for this shape.
+      expect(result.tags.publicoAlvo).toEqual([]);
+      expect(result.tags.nicho).toEqual([]);
+    });
+
+    it("leaves descriptiveTags empty when tags is a structured marketing object", () => {
+      const result = mapPromobrindToProduct({
+        ...baseProduct,
+        tags: { publicoAlvo: ["Executivo"], nicho: ["Escritório"] },
+      } as any);
+      expect(result.descriptiveTags).toEqual([]);
+      expect(result.tags.publicoAlvo).toEqual(["Executivo"]);
+      expect(result.tags.nicho).toEqual(["Escritório"]);
     });
 
     it("creates variations from colors", () => {

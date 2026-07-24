@@ -1,0 +1,179 @@
+name: E2E · Dialogs visual PR check
+# Roda os specs de AlertDialog, ConfirmDialog, Dialog e UndoToast em PRs para main.
+# NÃO atualiza baselines — falha se houver divergência visual. Atualização
+# fica exclusivamente nos workflows manuais:
+#   - E2E · Update Alert Dialog snapshots
+#   - E2E · Update Confirm Dialog snapshots
+#   - E2E · Update Dialog snapshots
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "e2e/ui/alert-dialog-visual.spec.ts"
+      - "e2e/ui/confirm-dialog-visual.spec.ts"
+      - "e2e/ui/dialog-visual.spec.ts"
+      - "e2e/ui/undo-toast-visual.spec.ts"
+      - "src/pages/dev/AlertDialogHarness.tsx"
+      - "src/pages/dev/ConfirmDialogHarness.tsx"
+      - "src/pages/dev/DialogHarness.tsx"
+      - "src/pages/dev/UndoToastHarness.tsx"
+      - "src/components/ui/alert-dialog.tsx"
+      - "src/components/ui/dialog.tsx"
+      - "src/components/common/ConfirmDialog.tsx"
+      - "src/utils/undoToast.tsx"
+      - "package.json"
+      - "playwright.config.ts"
+      - ".github/workflows/e2e-dialogs-pr-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: e2e-dialogs-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - name: Bootstrap (install deps + chromium)
+        run: npm run e2e:bootstrap
+      - name: Start Vite (background)
+        run: |
+          nohup bun run dev > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080 >/dev/null; then
+              echo "vite up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "vite não subiu em 60s" >&2
+          tail -n 100 /tmp/vite.log >&2
+          exit 1
+      - name: Run dialogs visual specs (fail-on-diff)
+        id: run_specs
+        run: |
+          # JSON reporter grava resumo estruturado para o passo de resumo.
+          PLAYWRIGHT_JSON_OUTPUT_NAME=playwright-report/results.json \
+          npx playwright test \
+            e2e/ui/confirm-dialog-visual.spec.ts \
+            e2e/ui/alert-dialog-visual.spec.ts \
+            e2e/ui/dialog-visual.spec.ts \
+            e2e/ui/undo-toast-visual.spec.ts \
+            --project=chromium-public \
+            --reporter=list,html,json
+
+      - name: Gerar resumo das divergências
+        if: failure()
+        id: summary
+        run: |
+          mkdir -p diff-artifacts
+          # Copia SOMENTE PNGs de diff/actual/expected para artifact enxuto.
+          if [ -d test-results ]; then
+            find test-results -type f \( -name "*-diff.png" -o -name "*-actual.png" -o -name "*-expected.png" \) \
+              -exec cp --parents {} diff-artifacts/ \; || true
+          fi
+          # Extrai lista de testes falhos do JSON do Playwright.
+          node <<'JS' > diff-artifacts/summary.md || true
+          const fs = require('fs');
+          const p = 'playwright-report/results.json';
+          if (!fs.existsSync(p)) { console.log('_(sem results.json)_'); process.exit(0); }
+          const r = JSON.parse(fs.readFileSync(p, 'utf8'));
+          const failed = [];
+          const walk = (s) => {
+            for (const spec of s.specs || []) {
+              for (const t of spec.tests || []) {
+                const ok = t.results?.every(x => x.status === 'passed' || x.status === 'skipped');
+                if (!ok) failed.push({ file: s.file || spec.file, title: spec.title });
+              }
+            }
+            for (const c of s.suites || []) walk(c);
+          };
+          for (const s of r.suites || []) walk(s);
+          console.log(`**${failed.length}** teste(s) divergiram:\n`);
+          for (const f of failed) console.log(`- \`${f.file}\` — ${f.title}`);
+          JS
+          echo "count=$(grep -c '^- ' diff-artifacts/summary.md || echo 0)" >> "$GITHUB_OUTPUT"
+          {
+            echo "## 🔍 Snapshots visuais dos dialogs — divergências"
+            cat diff-artifacts/summary.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Playwright HTML report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-dialogs-pr
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload diff PNGs (enxuto) on failure
+        if: failure()
+        id: upload_diff
+        uses: actions/upload-artifact@v4
+        with:
+          name: dialogs-visual-diffs
+          path: diff-artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Comentar no PR em caso de falha
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          DIFF_URL: ${{ steps.upload_diff.outputs.artifact-url }}
+          REPORT_ARTIFACT: playwright-report-dialogs-pr
+          DIFF_ARTIFACT: dialogs-visual-diffs
+        with:
+          script: |
+            const fs = require('fs');
+            let summary = '_(sem resumo — veja o report anexado)_';
+            try {
+              summary = fs.readFileSync('diff-artifacts/summary.md', 'utf8').trim() || summary;
+            } catch {}
+            const runUrl = process.env.RUN_URL;
+            const diffUrl = process.env.DIFF_URL || `${runUrl}#artifacts`;
+            const body = [
+              '❌ **Snapshots visuais dos dialogs divergiram.**',
+              '',
+              summary,
+              '',
+              `📎 **Artefatos**: [diff PNGs enxutos](${diffUrl}) · [Playwright HTML report](${runUrl}#artifacts)`,
+              `🔗 **Run**: ${runUrl}`,
+              '',
+              'Se a mudança é intencional, atualize os baselines:',
+              '```bash',
+              'npm run e2e:bootstrap',
+              'npm run e2e:dialogs:update',
+              '```',
+              '',
+              'Ou dispare um workflow manual:',
+              '- **E2E · Update Alert Dialog snapshots**',
+              '- **E2E · Update Confirm Dialog snapshots**',
+              '- **E2E · Update Dialog snapshots**',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });

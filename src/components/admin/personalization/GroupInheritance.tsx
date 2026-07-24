@@ -17,9 +17,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import type { ProductGroupMember, Technique } from './usePersonalizationData';
 
-import { logger } from '@/lib/logger';
 interface GroupInheritanceProps {
   productMembership: ProductGroupMember;
   selectedProduct: string;
@@ -40,16 +40,26 @@ export function GroupInheritance({
   const copyGroupRulesToProduct = async () => {
     setIsCopying(true);
     try {
-      const { data: groupComponents } = await untypedFrom('product_group_components')
+      // BUG-GROUPINHERITANCE-GROUPCOMPONENTS-SELECT-SILENT-FAIL FIX: error not checked —
+      // a failed SELECT would produce null, incorrectly showing "no components" toast
+      // instead of the actual error, leaving nothing to copy.
+      const { data: groupComponents, error: gcErr } = await untypedFrom('product_group_components')
         .select('*')
         .eq('product_group_id', productMembership.product_group_id);
+      if (gcErr) throw gcErr;
 
       if (!groupComponents?.length) {
         toast.error('Grupo não possui componentes configurados');
         return;
       }
 
-      await supabase.from('product_components').delete().eq('product_id', selectedProduct);
+      // BUG-GROUPINHERITANCE-DELETE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      // Must throw on failure — proceeding would create duplicate components.
+      const { error: deleteCompErr } = await supabase
+        .from('product_components')
+        .delete()
+        .eq('product_id', selectedProduct);
+      if (deleteCompErr) throw deleteCompErr;
 
       for (const gc of groupComponents) {
         const { data: newComp, error: compError } = await supabase
@@ -66,9 +76,12 @@ export function GroupInheritance({
           .single();
         if (compError) throw compError;
 
-        const { data: groupLocations } = await untypedFrom('product_group_locations')
+        // BUG-GROUPINHERITANCE-GROUPLOCATIONS-SELECT-SILENT-FAIL FIX: error not checked —
+        // a failed SELECT silently skipped location copy, producing components without areas.
+        const { data: groupLocations, error: glErr } = await untypedFrom('product_group_locations')
           .select('*')
           .eq('group_component_id', gc.id);
+        if (glErr) throw glErr;
         if (groupLocations?.length) {
           for (const gl of groupLocations) {
             const { data: newLoc, error: locError } = await untypedFrom(
@@ -88,13 +101,19 @@ export function GroupInheritance({
               .single();
             if (locError) throw locError;
 
-            const { data: groupTechs } = await untypedFrom('product_group_location_techniques')
+            // BUG-GROUPINHERITANCE-GROUPTECHS-SELECT-SILENT-FAIL FIX: error not checked —
+            // a failed SELECT silently skipped technique copy, creating locations without printing methods.
+            const { data: groupTechs, error: gtErr } = await untypedFrom('product_group_location_techniques')
               .select('*')
               .eq('group_location_id', gl.id);
+            if (gtErr) throw gtErr;
             if (groupTechs?.length) {
               for (const gt of groupTechs) {
                 const tech = techniques?.find((t) => t.id === gt.technique_id);
-                await untypedFrom('product_component_location_techniques').insert({
+                // BUG-GROUPINHERITANCE-TECH-INSERT-SILENT-FAIL FIX: bare await on untypedFrom.
+                const { error: techInsertErr } = await untypedFrom(
+                  'product_component_location_techniques',
+                ).insert({
                   component_location_id: newLoc.id,
                   technique_id: gt.technique_id,
                   composed_code: `${gc.component_code}-${gl.location_code}-${tech?.code ?? ''}`,
@@ -102,16 +121,22 @@ export function GroupInheritance({
                   is_default: gt.is_default,
                   is_active: gt.is_active,
                 });
+                if (techInsertErr) {
+                  logger.warn('[group-inheritance] technique insert failed:', techInsertErr);
+                  throw techInsertErr;
+                }
               }
             }
           }
         }
       }
 
-      await supabase
+      // BUG-GROUPINHERITANCE-MEMBER-UPDATE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: memberUpdateErr } = await supabase
         .from('product_group_members')
         .update({ use_group_rules: false })
         .eq('id', productMembership.id);
+      if (memberUpdateErr) logger.warn('[group-inheritance] member update failed:', memberUpdateErr);
       queryClient.invalidateQueries({ queryKey: ['product-components'] });
       queryClient.invalidateQueries({ queryKey: ['component-locations'] });
       queryClient.invalidateQueries({ queryKey: ['location-techniques'] });
@@ -162,20 +187,36 @@ export function GroupInheritance({
                       Customizar
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Customizar regras do produto?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Isso irá copiar todas as regras do grupo para este produto, permitindo que
-                        você as modifique individualmente.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={copyGroupRulesToProduct}>
-                        Copiar e Customizar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
+                  <AlertDialogContent className="!max-w-[400px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl" data-testid="group-inheritance-copy-dialog">
+                    <div aria-hidden="true" className="h-[3px] w-full bg-gradient-to-r from-transparent via-primary to-transparent" />
+                    <div className="px-4 pb-1.5 pt-4">
+                      <AlertDialogHeader>
+                        <div className="flex items-start gap-3">
+                          <div className="relative flex-shrink-0">
+                            <span aria-hidden="true" className="absolute inset-0 -z-10 rounded-xl blur-lg opacity-60 bg-primary/30" />
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-inset ring-primary/20">
+                              <Copy className="h-[18px] w-[18px] text-primary" strokeWidth={2.2} />
+                            </div>
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                            <AlertDialogTitle className="text-sm font-semibold leading-tight tracking-tight text-foreground">
+                              Customizar regras do produto?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-xs leading-relaxed text-muted-foreground">
+                              Isso irá copiar todas as regras do grupo para este produto, permitindo que você as modifique individualmente.
+                            </AlertDialogDescription>
+                          </div>
+                        </div>
+                      </AlertDialogHeader>
+                    </div>
+                    <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
+                      <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
+                        <AlertDialogCancel className="mt-0 h-[26px] min-h-[26px] rounded-md border-border/70 bg-transparent px-3 py-0 text-xs">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={copyGroupRulesToProduct} className="inline-flex h-[26px] min-h-[26px] items-center rounded-md px-3.5 text-xs font-semibold">
+                          Copiar e Customizar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </div>
                   </AlertDialogContent>
                 </AlertDialog>
               ) : (
@@ -186,23 +227,41 @@ export function GroupInheritance({
                       Voltar para Grupo
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Voltar a usar regras do grupo?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Isso irá descartar as regras customizadas. Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() =>
-                          toggleGroupRules({ id: productMembership.id, use_group_rules: true })
-                        }
-                      >
-                        Usar Regras do Grupo
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
+                  <AlertDialogContent className="!max-w-[400px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl">
+                    <div aria-hidden="true" className="h-[3px] w-full bg-gradient-to-r from-transparent via-warning to-transparent" />
+                    <div className="px-4 pb-1.5 pt-4">
+                      <AlertDialogHeader>
+                        <div className="flex items-start gap-3">
+                          <div className="relative flex-shrink-0">
+                            <span aria-hidden="true" className="absolute inset-0 -z-10 rounded-xl blur-lg opacity-60 bg-warning/30" />
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10 ring-1 ring-inset ring-warning/20">
+                              <Link className="h-[18px] w-[18px] text-warning" strokeWidth={2.2} />
+                            </div>
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                            <AlertDialogTitle className="text-sm font-semibold leading-tight tracking-tight text-foreground">
+                              Voltar a usar regras do grupo?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-xs leading-relaxed text-muted-foreground">
+                              Isso irá descartar as regras customizadas. Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </div>
+                        </div>
+                      </AlertDialogHeader>
+                    </div>
+                    <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
+                      <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
+                        <AlertDialogCancel className="mt-0 h-[26px] min-h-[26px] rounded-md border-border/70 bg-transparent px-3 py-0 text-xs">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() =>
+                            toggleGroupRules({ id: productMembership.id, use_group_rules: true })
+                          }
+                          className="inline-flex h-[26px] min-h-[26px] items-center rounded-md px-3.5 text-xs font-semibold"
+                        >
+                          Usar Regras do Grupo
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </div>
                   </AlertDialogContent>
                 </AlertDialog>
               )}

@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders, handleCorsPreflight } from "../_shared/cors.ts";
+import { createStructuredLogger } from '../_shared/structured-logger.ts';
+import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const getCorsHeaders = () => buildPublicCorsHeaders();
 
@@ -24,6 +26,9 @@ async function signInClient(email: string, password: string): Promise<SupabaseCl
 }
 
 Deno.serve(async (req) => {
+  const __reqId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'audit-suite', requestId: __reqId, req });
+  log.info('request_start');
   const preflight = handleCorsPreflight(req);
   if (preflight) return preflight;
 
@@ -36,7 +41,9 @@ Deno.serve(async (req) => {
     const tag = `audit-${Date.now().toString(36)}`;
     const seller1Email = `${tag}-s1@audit.local`;
     const seller2Email = `${tag}-s2@audit.local`;
-    const password = "AuditPassword123!";
+    const pwBytes = new Uint8Array(18);
+    crypto.getRandomValues(pwBytes);
+    const password = Array.from(pwBytes, b => b.toString(16).padStart(2, '0')).join('');
 
     // 1. Setup Users
     const createS1 = await admin.auth.admin.createUser({ email: seller1Email, password, email_confirm: true });
@@ -126,12 +133,12 @@ Deno.serve(async (req) => {
       status: results.every(r => r.passed) ? "PASSED" : "FAILED",
       timestamp: new Date().toISOString(),
       results
-    }), { status: 200, headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } });
+    }), { status: 200, headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "X-Request-Id": __reqId } });
 
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), { 
       status: 500, 
-      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" } 
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json", "X-Request-Id": __reqId } 
     });
   }
 });

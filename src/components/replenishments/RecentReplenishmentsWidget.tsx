@@ -10,17 +10,37 @@ import { useMemo, useCallback } from 'react';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
+// Noon-anchored to match daysSinceLocal() in useReplenishments.ts — prevents
+// UTC-midnight off-by-one when the user's local time crosses midnight in Brazil.
+function daysSinceNoon(dateStr: string): number {
+  const parts = dateStr.slice(0, 10).split('-').map(Number);
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return 0;
+  const [y, m, d] = parts;
+  const restockNoon = new Date(y, m - 1, d, 12, 0, 0, 0).getTime();
+  const now = new Date();
+  const todayNoon = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    12,
+    0,
+    0,
+    0,
+  ).getTime();
+  return Math.max(0, Math.round((todayNoon - restockNoon) / 86_400_000));
+}
+
 function formatDaysAgo(date: string): string {
-  const days = Math.floor((Date.now() - new Date(date).getTime()) / 86_400_000);
+  const days = daysSinceNoon(date);
   if (days === 0) return 'Hoje!';
   if (days === 1) return 'Ontem';
   return `${days}d atrás`;
 }
 
-type Recency = 'hot' | 'warm' | 'normal';
+type Recency = 'hot' | 'normal' | 'warm';
 
 function getRecencyVariant(date: string): Recency {
-  const days = Math.floor((Date.now() - new Date(date).getTime()) / 86_400_000);
+  const days = daysSinceNoon(date);
   if (days <= 2) return 'hot';
   if (days <= 5) return 'warm';
   return 'normal';
@@ -111,7 +131,7 @@ export function RecentReplenishmentsWidget() {
           ) : recentItems.length > 0 ? (
             <ScrollArea className="h-auto max-h-[280px]">
               <nav aria-label="Lista de produtos repostos recentemente">
-                <ul className="space-y-1" role="list">
+                <ul className="space-y-1">
                   {recentItems.map((item, idx) => {
                     const isVeryNew = idx < 3;
                     const variant = getRecencyVariant(item.replenished_at);

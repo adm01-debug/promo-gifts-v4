@@ -14,6 +14,7 @@ import type { FilterState } from '@/components/filters/FilterPanel';
 import type { ProductVariation } from '@/types/product-catalog';
 import { sortProducts } from '@/utils/product-sorting';
 import { isProductKit } from '@/lib/products/kit-detection';
+import { isProductInStock } from '@/lib/products/stock-status';
 
 export interface ProductFilterContext {
   hasFuzzySearch: boolean;
@@ -22,13 +23,15 @@ export interface ProductFilterContext {
   hasColorFilter: boolean;
   colorFilteredProductIds: Set<string>;
   isLoadingColorFilter: boolean;
+  colorFilterError?: unknown;
   hasCategoryFilter: boolean;
   categoryFilteredProductIds: Set<string>;
   isLoadingCategoryFilter: boolean;
-  categoryFilterError: unknown;
+  categoryFilterError?: unknown;
   hasMaterialFilter: boolean;
   materialFilteredProductIds: Set<string>;
   isLoadingMaterialFilter: boolean;
+  materialFilterError?: unknown;
   /**
    * SF-E (sizes server-side). Quando `hasSizeFilter` é true, a filtragem por
    * tamanho usa o Set de product IDs vindo de product_variants (em vez da
@@ -67,6 +70,7 @@ export function applyProductFilters(
     hasColorFilter,
     colorFilteredProductIds,
     isLoadingColorFilter,
+    colorFilterError,
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
@@ -74,6 +78,7 @@ export function applyProductFilters(
     hasMaterialFilter,
     materialFilteredProductIds,
     isLoadingMaterialFilter,
+    materialFilterError,
     hasSizeFilter,
     sizeFilteredProductIds,
     isLoadingSizeFilter,
@@ -95,13 +100,19 @@ export function applyProductFilters(
     result = result.filter(
       (p) =>
         p.name.toLowerCase().includes(s) ||
-        (p.sku && p.sku.toLowerCase().includes(s)) ||
-        (p.description && p.description.toLowerCase().includes(s)),
+        p.sku?.toLowerCase().includes(s) ||
+        p.description?.toLowerCase().includes(s),
     );
   }
   if (hasColorFilter && colorFilteredProductIds.size > 0)
     result = result.filter((p) => colorFilteredProductIds.has(p.id));
-  else if (hasColorFilter && colorFilteredProductIds.size === 0 && !isLoadingColorFilter)
+  // FIX-21: guard !colorFilterError mirrors category filter — RPC error must not zero the grid.
+  else if (
+    hasColorFilter &&
+    colorFilteredProductIds.size === 0 &&
+    !isLoadingColorFilter &&
+    !colorFilterError
+  )
     result = [];
   if (hasCategoryFilter && categoryFilteredProductIds.size > 0)
     result = result.filter((p) => categoryFilteredProductIds.has(p.id));
@@ -113,13 +124,19 @@ export function applyProductFilters(
   )
     result = [];
   if (filters.suppliers.length > 0) {
-    const supplierIdSet = new Set(filters.suppliers);
-    const supplierLowerArr = filters.suppliers.map((s) => s.toLowerCase());
+    // FIX-17: normaliza todas as 3 vias (id, reference, name) para lowercase.
+    // Original: id/reference eram case-sensitive; name era case-insensitive → inconsistente.
+    const supplierLowerSet = new Set(filters.suppliers.map((s) => s.toLowerCase()));
+    const supplierLowerArr = [...supplierLowerSet].filter((s) => s !== '');
     result = result.filter((product) => {
-      if (supplierIdSet.has(product.supplier?.id ?? '')) return true;
-      if (supplierIdSet.has(product.supplier_reference || '')) return true;
-      const sName = (product.supplier?.name || product.brand || '').toLowerCase();
-      return supplierLowerArr.some((s) => sName.includes(s));
+      const suppId = (product.supplier?.id ?? '').toLowerCase();
+      const suppRef = (product.supplier_reference ?? '').toLowerCase();
+      const suppName = (product.supplier?.name || product.brand || '').toLowerCase();
+      return (
+        (suppId !== '' && supplierLowerSet.has(suppId)) ||
+        (suppRef !== '' && supplierLowerSet.has(suppRef)) ||
+        supplierLowerArr.some((s) => suppName.includes(s))
+      );
     });
   }
   // BUG-DB-02: metadados server-side (datas/tags/ramos/segmentos/público) via RPC.
@@ -180,9 +197,28 @@ export function applyProductFilters(
   }
   if (hasMaterialFilter && materialFilteredProductIds.size > 0)
     result = result.filter((p) => materialFilteredProductIds.has(p.id));
-  else if (hasMaterialFilter && materialFilteredProductIds.size === 0 && !isLoadingMaterialFilter)
+  // FIX-22: guard !materialFilterError — RPC error must not zero the grid.
+  else if (
+    hasMaterialFilter &&
+    materialFilteredProductIds.size === 0 &&
+    !isLoadingMaterialFilter &&
+    !materialFilterError
+  )
     result = [];
-  if (!hasMaterialFilter && filters.materiais.length > 0) {
+  // BUG-MATERIAIS-INERT FIX: o catálogo leve do Super Filtro NÃO hidrata
+  // product.materials (sempre []). O bloco legado abaixo casa filters.materiais
+  // (texto livre que chega via voz, URL ?materiais= ou preset salvo) contra
+  // product.materials.join(' ') — com a lista vazia, QUALQUER materiais selecionado
+  // zerava a grade silenciosamente ('' .includes('metal') === false para todos os
+  // produtos). Espelha o gate de `techniquesDataAvailable`: o bloco client-side só
+  // roda quando os produtos carregados realmente trazem materiais. O filtro de
+  // materiais "real" (grupos/tipos) continua server-side via materialFilteredProductIds,
+  // intacto. Computado a partir de realProducts (entrada completa), não de `result`,
+  // para não depender de filtros anteriores terem ou não deixado produtos com materiais.
+  const materialsDataAvailable = realProducts.some(
+    (p) => Array.isArray(p.materials) && p.materials.length > 0,
+  );
+  if (!hasMaterialFilter && materialsDataAvailable && filters.materiais.length > 0) {
     const materiaisLower = filters.materiais.map((m) => m.toLowerCase());
     result = result.filter((product) => {
       const materialsStr = product.materials.join(' ').toLowerCase();
@@ -199,11 +235,15 @@ export function applyProductFilters(
       if (priceMax < 9999 && product.price > priceMax) return false;
       return true;
     });
+  // BUG-MINSTOCK-INF FIX: (stock||0)>=threshold era true para stock=Infinity.
+  // Number.isFinite garante apenas stocks fisicamente validos.
   if (filters.minStock > 0)
     result = result.filter((product) => {
       if (product.variations && product.variations.length > 0)
-        return product.variations.some((v: ProductVariation) => (v.stock ?? 0) >= filters.minStock);
-      return (product.stock || 0) >= filters.minStock;
+        return product.variations.some((v: ProductVariation) =>
+          Number.isFinite(v.stock) && (v.stock as number) >= filters.minStock,
+        );
+      return Number.isFinite(product.stock) && (product.stock as number) >= filters.minStock;
     });
   // Vendas Fornecedor (90d): usa a coluna REAL total_depleted_90d da MV (BUG-DB-06; ratio 90d/30d~1.0, x3 era chute).
   if (filters.minSupplierSales90d > 0 && supplierSalesMap && supplierSalesMap.size > 0) {
@@ -216,23 +256,25 @@ export function applyProductFilters(
     result = result.filter((p) => (promoSales90dMap.get(p.id) ?? 0) >= threshold);
   }
   // FIX-03: inStock considera variações além do estoque agregado.
-  if (filters.inStock)
-    result = result.filter((product) => {
-      if (product.variations && product.variations.length > 0)
-        return product.variations.some((v: ProductVariation) => (v.stock ?? 0) > 0);
-      return (product.stock || 0) > 0;
-    });
+  // BUG-APF-02 FIX: usa stockStatus pré-computado (inclui regra de min_quantity).
+  // Regra centralizada em isProductInStock (src/lib/products/stock-status.ts) —
+  // mesma lógica usada em useCatalogFiltering para evitar divergência futura.
+  if (filters.inStock) result = result.filter(isProductInStock);
   if (filters.hasCommercialPackaging)
     result = result.filter((product) => product.hasCommercialPackaging === true);
   if (filters.isKit) result = result.filter((product) => isProductKit(product));
-  if (filters.featured) result = result.filter((product) => product.featured === true);
-  if (filters.isNew) result = result.filter((product) => product.newArrival === true);
+  if (filters.featured) result = result.filter((product) => product.featured);
+  if (filters.isNew) result = result.filter((product) => product.newArrival);
   if (filters.hasPersonalization)
     result = result.filter((product) => product.hasPersonalization === true);
-  if (filters.onSale) result = result.filter((product) => product.onSale === true);
+  if (filters.onSale) result = result.filter((product) => product.onSale);
   if (filters.gender?.length) {
     const genderSet = new Set(filters.gender.map((g) => g.toLowerCase().trim()));
-    result = result.filter((product) => genderSet.has((product.gender || '').toLowerCase().trim()));
+    result = result.filter((product) => {
+      const g = (product.gender ?? '').toLowerCase().trim();
+      // FIX-16: produtos sem gênero definido (null/'') são neutros — incluídos em qualquer filtro.
+      return g === '' || genderSet.has(g);
+    });
   }
   // SF-E: filtragem de tamanho server-side (product_variants) quando disponível;
   // fallback legado client-side (product.variations) caso o contexto não traga o Set.
@@ -245,10 +287,12 @@ export function applyProductFilters(
       }
     } else {
       // Legado: BUG-17 — match por variações carregadas no produto.
-      const sizeSet = new Set(filters.sizes);
+      // FIX-15: normaliza para lowercase+trim para não depender de casing do catálogo.
+      const sizeSet = new Set(filters.sizes.map((s) => s.toLowerCase().trim()));
       result = result.filter((product) =>
         product.variations?.some(
-          (v: ProductVariation) => v.size_code !== null && sizeSet.has(String(v.size_code)),
+          (v: ProductVariation) =>
+            v.size_code !== null && sizeSet.has(String(v.size_code).toLowerCase().trim()),
         ),
       );
     }
@@ -282,6 +326,6 @@ export function applyProductFilters(
   }
   // BUG-SF-08 FIX: com fuzzy ativo e sort 'name', preserva a ordem de relevância.
   const skipSort = hasFuzzySearch && sortBy === 'name';
-  sortProducts(result, sortBy, { promoSalesMap, supplierSalesMap, skipSort });
+  result = sortProducts(result, sortBy, { promoSalesMap, supplierSalesMap, skipSort });
   return result;
 }

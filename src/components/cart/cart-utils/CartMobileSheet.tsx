@@ -31,7 +31,10 @@ export function MobileSummarySheet({
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
       >
         <button
+          type="button"
           onClick={() => setExpanded(!expanded)}
+          aria-expanded={expanded}
+          aria-label={expanded ? 'Recolher resumo do carrinho' : 'Expandir resumo do carrinho'}
           className="flex w-full items-center justify-between px-5 py-3"
         >
           <div className="flex items-center gap-3">
@@ -43,6 +46,7 @@ export function MobileSummarySheet({
             </span>
           </div>
           <ChevronUp
+            aria-hidden="true"
             className={cn(
               'h-4 w-4 text-muted-foreground transition-transform',
               expanded && 'rotate-180',
@@ -79,7 +83,7 @@ export function MobileSummarySheet({
             className="h-11 w-full gap-2 rounded-xl bg-success font-semibold text-success-foreground shadow-md shadow-success/20 transition-all duration-300 hover:scale-[1.02] hover:bg-success/90 hover:shadow-lg hover:shadow-success/30 active:scale-[0.98]"
             onClick={onGenerateQuote}
           >
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
             Gerar Orçamento
           </Button>
         </div>

@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface StorageFile {
   id: string | null;
   name: string;
@@ -86,7 +87,7 @@ export default function StorageTestPage() {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const filePath = fileName;
 
       const { error } = await supabase.storage.from(bucketName).upload(filePath, file);
 
@@ -157,10 +158,10 @@ export default function StorageTestPage() {
     }
     setSyncing(true);
     try {
-      const { error } = await supabase.functions.invoke('sync-external-db', {
+      const { error } = await invokeEdge('sync-external-db', {
         body: { table, direction: 'to-external' },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       toast({ title: 'Sucesso', description: 'Sincronização concluída.' });
     } catch {
       toast({

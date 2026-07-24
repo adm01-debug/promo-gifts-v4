@@ -51,6 +51,7 @@ import {
 import { Plus, Trash2, Loader2, Layers, MapPin, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import { InlineEditField } from './InlineEditField';
 import { ImageUploadButton } from './ImageUploadButton';
 import { SortableItem } from './SortableItem';
@@ -175,10 +176,18 @@ export function ProductPersonalizationManager() {
     const reordered = arrayMove(components, oldIndex, newIndex);
     for (let i = 0; i < reordered.length; i++) {
       if (reordered[i].sort_order !== i) {
-        await supabase
+        // BUG-REORDER-SORT-SILENT-FAIL FIX: bare await swallowed RLS errors and
+        // still showed toast.success to the user even when the DB update failed.
+        const { error: sortErr } = await supabase
           .from('product_components')
           .update({ sort_order: i })
           .eq('id', reordered[i].id);
+        if (sortErr) {
+          logger.warn('[product-reorder] sort_order update failed at index', i, ':', sortErr);
+          toast.error('Erro ao reordenar componentes');
+          queryClient.invalidateQueries({ queryKey: ['product-components'] });
+          return;
+        }
       }
     }
     queryClient.invalidateQueries({ queryKey: ['product-components'] });

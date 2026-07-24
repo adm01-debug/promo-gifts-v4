@@ -8,7 +8,6 @@
  * Ver: src/lib/external-db/kill-switch-client.ts e
  *      docs/PATCH_external_db_bridge_kill_switch.md.
  */
-import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { emitBridgeStatus, isColdStartSignal } from './bridge-status-events';
 import { ensureCloudReady, CloudNotReadyError, getCachedCloudStatus } from '@/lib/cloud-status';
@@ -24,6 +23,7 @@ import {
   KillSwitchActiveError,
 } from './kill-switch-client';
 import { recordKillSwitchHit } from './kill-switch-telemetry';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
@@ -232,7 +232,7 @@ export async function invokeWithRetry(
   }
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const { data, error } = await supabase.functions.invoke('external-db-bridge', {
+    const { data, error } = await invokeEdge('external-db-bridge', {
       body,
       headers: { [REQUEST_ID_HEADER]: requestId },
     });
@@ -276,7 +276,7 @@ export async function invokeWithRetry(
     }
 
     if (attempt < retries && isRetryableError(msg)) {
-      const base = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+      const base = INITIAL_BACKOFF_MS * 2 ** attempt;
       const jitter = Math.floor(Math.random() * 200);
       const delay = Math.min(base + jitter, 4000);
       logger.warn(
@@ -295,7 +295,9 @@ export async function invokeWithRetry(
           reason: msg,
         });
       }
-      await new Promise((r) => setTimeout(r, delay));
+      await new Promise((r) => {
+        setTimeout(r, delay);
+      });
       continue;
     }
 

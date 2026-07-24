@@ -10,6 +10,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
+          title="Preço próximo do limite de validade. Última atualização do fornecedor em 02 de abril de 2026, há 31 dias. Recomendamos confirmar antes de fechar o orçamento."
         >
           <svg
             aria-hidden="true"
@@ -29,8 +30,8 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               cy="12"
               r="10"
             />
-            <polyline
-              points="12 6 12 12 16 14"
+            <path
+              d="M12 6v6l4 2"
             />
           </svg>
           <span
@@ -107,10 +108,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
+          title="Atualizado em 03 de maio de 2026"
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-check-circle2 h-3 w-3"
+            class="lucide lucide-circle-check h-3 w-3"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -199,10 +201,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-300 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
+          title="Atenção: preço possivelmente defasado. Última atualização do fornecedor em 03 de março de 2026, há 61 dias. Confirme o valor antes de enviar o orçamento ao cliente."
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-alert-triangle h-3 w-3"
+            class="lucide lucide-triangle-alert h-3 w-3"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -214,7 +217,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
             />
             <path
               d="M12 9v4"
@@ -297,10 +300,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
+          title="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-help-circle h-3 w-3"
+            class="lucide lucide-circle-question-mark h-3 w-3"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -386,7 +390,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"
+              d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
             />
             <path
               d="m9 12 2 2 4-4"
@@ -473,6 +477,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center justify-center text-amber-700 dark:text-amber-300 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
+          title="Preço próximo do limite de validade. Última atualização do fornecedor em 02 de abril de 2026, há 31 dias. Recomendamos confirmar antes de fechar o orçamento."
         >
           <svg
             aria-hidden="true"
@@ -492,8 +497,8 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               cy="12"
               r="10"
             />
-            <polyline
-              points="12 6 12 12 16 14"
+            <path
+              d="M12 6v6l4 2"
             />
           </svg>
         </span>
@@ -560,10 +565,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center justify-center text-emerald-700 dark:text-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
+          title="Atualizado em 03 de maio de 2026"
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-check-circle2 h-3.5 w-3.5"
+            class="lucide lucide-circle-check h-3.5 w-3.5"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -642,10 +648,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center justify-center text-amber-700 dark:text-amber-300 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
+          title="Atenção: preço possivelmente defasado. Última atualização do fornecedor em 03 de março de 2026, há 61 dias. Confirme o valor antes de enviar o orçamento ao cliente."
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-alert-triangle h-3.5 w-3.5"
+            class="lucide lucide-triangle-alert h-3.5 w-3.5"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -657,7 +664,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
             />
             <path
               d="M12 9v4"
@@ -730,10 +737,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           class="inline-flex items-center justify-center text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           role="status"
           tabindex="0"
+          title="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-help-circle h-3.5 w-3.5"
+            class="lucide lucide-circle-question-mark h-3.5 w-3.5"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -799,6 +807,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Preço próximo do limite de validade. Última atualização do fornecedor em 02 de abril de 2026, há 31 dias. Recomendamos confirmar antes de fechar o orçamento."
           class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300"
           role="status"
+          title="Preço próximo do limite de validade. Última atualização do fornecedor em 02 de abril de 2026, há 31 dias. Recomendamos confirmar antes de fechar o orçamento."
         >
           <svg
             aria-hidden="true"
@@ -818,8 +827,8 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               cy="12"
               r="10"
             />
-            <polyline
-              points="12 6 12 12 16 14"
+            <path
+              d="M12 6v6l4 2"
             />
           </svg>
           <span
@@ -895,10 +904,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Preço atualizado pelo fornecedor em 03 de maio de 2026, há 0 dias."
           class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
           role="status"
+          title="Atualizado em 03 de maio de 2026"
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-check-circle2 h-3.5 w-3.5 shrink-0"
+            class="lucide lucide-circle-check h-3.5 w-3.5 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -986,10 +996,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Atenção: preço possivelmente defasado. Última atualização do fornecedor em 03 de março de 2026, há 61 dias. Confirme o valor antes de enviar o orçamento ao cliente."
           class="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300"
           role="status"
+          title="Atenção: preço possivelmente defasado. Última atualização do fornecedor em 03 de março de 2026, há 61 dias. Confirme o valor antes de enviar o orçamento ao cliente."
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-alert-triangle h-3.5 w-3.5 shrink-0"
+            class="lucide lucide-triangle-alert h-3.5 w-3.5 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -1001,7 +1012,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
             />
             <path
               d="M12 9v4"
@@ -1083,10 +1094,11 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
           aria-label="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
           class="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
           role="status"
+          title="Preço com data não informada. Confirme o valor antes de enviar o orçamento."
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-help-circle h-3.5 w-3.5 shrink-0"
+            class="lucide lucide-circle-question-mark h-3.5 w-3.5 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -1176,8 +1188,8 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
               cy="12"
               r="10"
             />
-            <polyline
-              points="12 6 12 12 16 14"
+            <path
+              d="M12 6v6l4 2"
             />
           </svg>
           <span
@@ -1256,7 +1268,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-check-circle2 h-3.5 w-3.5 shrink-0"
+            class="lucide lucide-circle-check h-3.5 w-3.5 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -1347,7 +1359,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-alert-triangle mt-0.5 h-3.5 w-3.5 shrink-0"
+            class="lucide lucide-triangle-alert mt-0.5 h-3.5 w-3.5 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"
@@ -1359,7 +1371,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
             />
             <path
               d="M12 9v4"
@@ -1451,7 +1463,7 @@ exports[`PriceFreshnessBadge Snapshots and A11y > Snapshots > matches snapshot f
         >
           <svg
             aria-hidden="true"
-            class="lucide lucide-help-circle h-3.5 w-3.5 shrink-0"
+            class="lucide lucide-circle-question-mark h-3.5 w-3.5 shrink-0"
             fill="none"
             height="24"
             stroke="currentColor"

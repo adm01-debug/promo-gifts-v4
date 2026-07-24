@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-export type ZoneId = 'health' | 'operation' | 'connections' | 'ai-router';
+export type ZoneId = 'ai-router' | 'connections' | 'health' | 'operation';
 
 const STORAGE_KEY = 'connections.zone-visibility.v1';
 const ALL_VISIBLE: Record<ZoneId, boolean> = {

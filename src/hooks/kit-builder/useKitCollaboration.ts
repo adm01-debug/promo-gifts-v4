@@ -7,12 +7,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { logger } from '@/lib/logger';
 
 export interface KitCollaboratorRow {
   id: string;
   kit_id: string;
   user_id: string;
-  permission: 'view' | 'edit';
+  permission: 'edit' | 'view';
   invited_email: string | null;
   created_at: string;
 }
@@ -47,7 +48,7 @@ export function useKitCollaborators(kitId: string | undefined) {
   });
 
   const invite = useMutation({
-    mutationFn: async ({ email, permission }: { email: string; permission: 'view' | 'edit' }) => {
+    mutationFn: async ({ email, permission }: { email: string; permission: 'edit' | 'view' }) => {
       if (!kitId) throw new Error('Kit não definido');
       // Resolve email -> user_id via profiles
       const { data: profile, error: pErr } = await supabase
@@ -109,13 +110,20 @@ export function useKitComments(kitId: string | undefined) {
   useEffect(() => {
     if (!kitId) return;
     const channel = supabase
-      .channel(`kit-comments-${kitId}`)
+      // BUG-RT-CHANNEL FIX: sufixo único por montagem (kitId sozinho colide se dois painéis
+      // do mesmo kit montarem em paralelo → .on() após subscribe() → crash de render).
+      .channel(`kit-comments-${kitId}-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'kit_comments', filter: `kit_id=eq.${kitId}` },
         () => qc.invalidateQueries({ queryKey: key }),
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[useKitCollaboration] realtime channel error', { status, err });
+          qc.invalidateQueries({ queryKey: key });
+        }
+      });
     return () => {
       supabase.removeChannel(channel);
     };

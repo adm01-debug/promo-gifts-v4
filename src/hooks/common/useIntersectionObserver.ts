@@ -12,9 +12,10 @@
  */
 import { useEffect, useRef, useState } from 'react';
 
-interface UseIntersectionObserverOptions {
+/** Opções de configuração do hook `useIntersectionObserver`. */
+export interface UseIntersectionObserverOptions {
   rootMargin?: string;
-  threshold?: number | number[];
+  threshold?: number[] | number;
   /** Quando true, para de observar após a primeira intersecção (one-shot) */
   once?: boolean;
   /** Quando true, considera visível antes de montar (útil para priority items) */
@@ -26,6 +27,12 @@ const observerCache = new Map<string, IntersectionObserver>();
 // Map de callbacks por elemento
 const callbackMap = new WeakMap<Element, (isIntersecting: boolean) => void>();
 
+/** @internal Limpa o cache singleton — use APENAS em testes (beforeEach/afterEach). */
+export function clearObserverCacheForTest(): void {
+  observerCache.forEach((o) => o.disconnect());
+  observerCache.clear();
+}
+
 // BUG-I FIX (2026-06-15): disconnect all shared observers on Vite HMR to prevent
 // module-level singletons from accumulating across hot-reloads in development.
 // In production import.meta.hot is undefined so this is a no-op.
@@ -36,13 +43,13 @@ if (import.meta.hot) {
   });
 }
 
-function getObserverKey(rootMargin: string, threshold: number | number[]): string {
+function getObserverKey(rootMargin: string, threshold: number[] | number): string {
   return `${rootMargin}|${JSON.stringify(threshold)}`;
 }
 
 function getSharedObserver(
   rootMargin: string,
-  threshold: number | number[],
+  threshold: number[] | number,
 ): IntersectionObserver | null {
   if (typeof IntersectionObserver === 'undefined') return null;
 
@@ -63,6 +70,10 @@ function getSharedObserver(
   return observer;
 }
 
+/**
+ * Detecta a visibilidade de um elemento DOM via IntersectionObserver compartilhado.
+ * @returns `true` quando o elemento entra no viewport; `false` caso contrário.
+ */
 export function useIntersectionObserver(
   ref: React.RefObject<Element | null>,
   {

@@ -6,6 +6,8 @@ import {
 } from "../_shared/contracts/schemas/simulation-orchestrator.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { getCredential } from "../_shared/credentials.ts";
+import { createStructuredLogger } from '../_shared/structured-logger.ts';
+import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const corsHeaders = buildPublicCorsHeaders();
 
@@ -43,6 +45,9 @@ function generateFuzzedPayload(type: string) {
 }
 
 Deno.serve(async (req) => {
+  const __reqId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'simulation-orchestrator', requestId: __reqId, req });
+  log.info('request_start');
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const startTime = performance.now();
@@ -224,13 +229,13 @@ Deno.serve(async (req) => {
     }
     
     return new Response(JSON.stringify(report), {
-      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json", "X-Request-Id": __reqId },
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json", "X-Request-Id": __reqId },
       status: 400,
     });
   }

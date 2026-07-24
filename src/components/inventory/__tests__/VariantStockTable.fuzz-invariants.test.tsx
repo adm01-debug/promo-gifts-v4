@@ -12,19 +12,18 @@
  *   I4. Conservação de SKU: nenhum SKU duplicado entre linhas projetadas.
  *   I5. Coerência de status: quando há `colorName`/`colorGroup`, toda
  *       variação visível casa com a cor pedida (normalize-insensitive).
- *   I6. Cardinalidade dos chips reconstrói os 4 buckets (in/low/crit/out)
- *       sem vazar para outros valores.
+ *   I6. Status de variação canônico: toda variação na saída tem status entre
+ *       os 6 valores válidos de StockStatus (in_stock, low_stock, critical,
+ *       out_of_stock, incoming, overstocked).
  *   I7. categoryId/supplierId estreitam: todo produto retornado tem o
  *       categoryName/supplierName batendo (normalize-insensitive).
  *   I8. status='critical' retorna SÓ produtos com pelo menos 1 variação
  *       crítica OU overallStatus='critical'.
+ *   I9. status='incoming' retorna SÓ produtos com pelo menos 1 variação
+ *       'incoming' (ou inTransitStock>0) OU overallStatus='incoming'.
  */
 import { describe, it, expect } from 'vitest';
-import {
-  applyStockFilters,
-  buildStockIndexes,
-  normalize,
-} from '@/lib/inventory/stock-filter';
+import { applyStockFilters, buildStockIndexes, normalize } from '@/lib/inventory/stock-filter';
 import {
   defaultStockFilters,
   type ProductStockSummary,
@@ -44,7 +43,14 @@ function mulberry32(seed: number) {
   };
 }
 
-const STATUSES: VariantStock['status'][] = ['in_stock', 'low_stock', 'critical', 'out_of_stock'];
+const STATUSES: VariantStock['status'][] = [
+  'in_stock',
+  'low_stock',
+  'critical',
+  'out_of_stock',
+  'incoming',
+  'overstocked',
+];
 const CATEGORIES = ['Canecas', 'Garrafas', 'Mochilas', 'Camisetas', 'Canetas'];
 const SUPPLIERS = ['Acme', 'Globex', 'Initech', 'Umbrella'];
 const COLORS = ['Azul', 'Verde', 'Vermelho', 'Preto', 'Amarelo'];
@@ -56,7 +62,17 @@ function mkWorld(rng: () => number, productCount: number): ProductStockSummary[]
     const nVariants = 1 + Math.floor(rng() * 5);
     for (let j = 0; j < nVariants; j++) {
       const status = STATUSES[Math.floor(rng() * STATUSES.length)];
-      const stock = status === 'out_of_stock' ? 0 : Math.floor(rng() * 500);
+      // Match calculateStockStatus semantics:
+      //   'incoming'    → currentStock=0, inTransitStock>0
+      //   'overstocked' → very high stock (>max*1.5)
+      //   'out_of_stock'→ stock=0
+      const stock =
+        status === 'out_of_stock' || status === 'incoming'
+          ? 0
+          : status === 'overstocked'
+            ? 1000 + Math.floor(rng() * 500)
+            : Math.floor(rng() * 500);
+      const inTransitStock = status === 'incoming' ? 10 + Math.floor(rng() * 50) : 0;
       variants.push({
         id: `p${i}-v${j}`,
         productId: `p${i}`,
@@ -67,19 +83,34 @@ function mkWorld(rng: () => number, productCount: number): ProductStockSummary[]
         currentStock: stock,
         minStock: 10,
         reservedStock: 0,
-        inTransitStock: 0,
+        inTransitStock,
         availableStock: stock,
         status,
         updatedAt: '2026-01-01',
       });
     }
-    const overall: ProductStockSummary['overallStatus'] = variants.some((x) => x.status === 'critical')
-      ? 'critical'
-      : variants.some((x) => x.status === 'out_of_stock')
-      ? 'out_of_stock'
-      : variants.some((x) => x.status === 'low_stock')
-      ? 'low_stock'
-      : 'in_stock';
+    // Mirror aggregateVariantsToProduct logic exactly (post BUG-A fix).
+    const totalCurrentStock = variants.reduce((s, x) => s + x.currentStock, 0);
+    const variantsIncoming = variants.filter(
+      (x) => x.status === 'incoming' || x.inTransitStock > 0,
+    ).length;
+    const variantsOutOfStockCount = variants.filter((x) => x.status === 'out_of_stock').length;
+    const variantsCriticalCount = variants.filter((x) => x.status === 'critical').length;
+    const variantsLowStockCount = variants.filter((x) => x.status === 'low_stock').length;
+
+    const overall: ProductStockSummary['overallStatus'] =
+      variants.length === 0
+        ? 'in_stock'
+        : variantsIncoming > 0 && (variantsOutOfStockCount > 0 || totalCurrentStock === 0)
+          ? 'incoming'
+          : variantsOutOfStockCount === variants.length
+            ? 'out_of_stock'
+            : variantsCriticalCount > 0 || variantsOutOfStockCount > 0
+              ? 'critical'
+              : variantsLowStockCount > 0
+                ? 'low_stock'
+                : 'in_stock';
+
     out.push({
       productId: `p${i}`,
       productName: `Produto ${i}`,
@@ -87,16 +118,19 @@ function mkWorld(rng: () => number, productCount: number): ProductStockSummary[]
       categoryName: CATEGORIES[Math.floor(rng() * CATEGORIES.length)],
       supplierName: SUPPLIERS[Math.floor(rng() * SUPPLIERS.length)],
       overallStatus: overall,
-      variantsInStock: variants.filter((x) => x.status === 'in_stock').length,
-      variantsLowStock: variants.filter((x) => x.status === 'low_stock').length,
-      variantsCritical: variants.filter((x) => x.status === 'critical').length,
-      variantsOutOfStock: variants.filter((x) => x.status === 'out_of_stock').length,
+      // 'in_stock'|'incoming'|'overstocked' → variantsInStock (mirrors BUG-A fix)
+      variantsInStock: variants.filter(
+        (x) => x.status === 'in_stock' || x.status === 'incoming' || x.status === 'overstocked',
+      ).length,
+      variantsLowStock: variantsLowStockCount,
+      variantsCritical: variantsCriticalCount,
+      variantsOutOfStock: variantsOutOfStockCount,
       availableColors: [],
       totalVariants: variants.length,
-      totalCurrentStock: variants.reduce((s, x) => s + x.currentStock, 0),
+      totalCurrentStock,
       totalMinStock: variants.length * 10,
       totalReservedStock: 0,
-      totalInTransitStock: 0,
+      totalInTransitStock: variants.reduce((s, x) => s + x.inTransitStock, 0),
       totalAvailableStock: variants.reduce((s, x) => s + x.availableStock, 0),
       variants,
     });
@@ -107,7 +141,15 @@ function mkWorld(rng: () => number, productCount: number): ProductStockSummary[]
 function mkFilters(rng: () => number): StockFilters {
   const pick = <T,>(arr: T[], pNone = 0.3): T | undefined =>
     rng() < pNone ? undefined : arr[Math.floor(rng() * arr.length)];
-  const statusOptions: (StockFilters['status'])[] = ['all', 'in_stock', 'low_stock', 'critical', 'out_of_stock'];
+  const statusOptions: StockFilters['status'][] = [
+    'all',
+    'in_stock',
+    'low_stock',
+    'critical',
+    'out_of_stock',
+    'incoming',
+    'overstocked',
+  ];
   return {
     ...defaultStockFilters,
     status: statusOptions[Math.floor(rng() * statusOptions.length)],
@@ -118,16 +160,16 @@ function mkFilters(rng: () => number): StockFilters {
 }
 
 describe('Fuzz — 500 combinações aleatórias respeitam invariantes do filtro', () => {
-  const rng = mulberry32(0xC0FFEE);
+  const rng = mulberry32(0xc0ffee);
   const products = mkWorld(rng, 80);
-  const idx = buildStockIndexes(products, []);
+  const idx = buildStockIndexes(products);
   const productById = new Map(products.map((p) => [p.productId, p]));
   const baseline = applyStockFilters(products, defaultStockFilters, [], idx);
   const baselineCount = baseline.length;
 
   for (let i = 0; i < 500; i++) {
     it(`cenário #${i}`, () => {
-      const rng2 = mulberry32(0xDEAD0000 + i);
+      const rng2 = mulberry32(0xdead0000 + i);
       const filters = mkFilters(rng2);
       const out1 = applyStockFilters(products, filters, [], idx);
       const out2 = applyStockFilters(products, filters, [], idx);
@@ -160,7 +202,7 @@ describe('Fuzz — 500 combinações aleatórias respeitam invariantes do filtro
         const origSkus = new Set(orig!.variants.map((x) => x.variantSku));
         for (const v of p.variants) {
           expect(origSkus.has(v.variantSku)).toBe(true);
-          // I6 status canônico
+          // I6 status canônico (6 valores válidos de StockStatus)
           expect(STATUSES).toContain(v.status);
           // I5 coerência de cor
           if (wantColorN) expect(normalize(v.colorName)).toBe(wantColorN);
@@ -170,8 +212,16 @@ describe('Fuzz — 500 combinações aleatórias respeitam invariantes do filtro
         if (wantSupN) expect(normalize(p.supplierName)).toBe(wantSupN);
         // I8 status=critical
         if (filters.status === 'critical') {
-          const hasCrit = p.variants.some((x) => x.status === 'critical') || p.overallStatus === 'critical';
+          const hasCrit =
+            p.variants.some((x) => x.status === 'critical') || p.overallStatus === 'critical';
           expect(hasCrit).toBe(true);
+        }
+        // I9 status=incoming
+        if (filters.status === 'incoming') {
+          const hasIncoming =
+            p.variants.some((x) => x.status === 'incoming' || x.inTransitStock > 0) ||
+            p.overallStatus === 'incoming';
+          expect(hasIncoming).toBe(true);
         }
       }
     });

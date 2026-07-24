@@ -1,7 +1,7 @@
 /**
  * useQuotes — Hook de orçamentos (Refatorado para usar React Query e quoteService)
  */
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
@@ -19,6 +19,7 @@ export type {
   QuoteItemPersonalization,
   PersonalizationTechnique,
 } from '@/hooks/quotes/quoteTypes';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 type QuoteHistoryOptions = {
   fieldChanged?: string;
@@ -29,7 +30,7 @@ type QuoteHistoryOptions = {
 
 type QuoteSyncResponse = {
   error?: string;
-  bitrix_deal_id?: string | number | null;
+  bitrix_deal_id?: number | string | null;
   success?: boolean;
 };
 
@@ -48,41 +49,73 @@ export function useQuotes() {
   // BUG-NEW-02: Adiciona assinatura Realtime para orçamentos.
   // Garante que mudanças feitas em outras abas ou por outros usuários (em escopos compartilhados)
   // reflitam imediatamente na lista sem necessidade de refresh manual.
+  //
+  // Aprovação/rejeição/expiração de desconto também chega por este canal: o trigger
+  // `trg_sync_quote_dar` espelha `discount_approval_requests` → colunas reais em `quotes`
+  // (`discount_approval_status` / `discount_approved_at`), de modo que cada mudança no DAR
+  // dispara um UPDATE em `quotes` e, com ele, este mesmo postgres_changes. Não é mais
+  // necessário assinar `discount_approval_requests` separadamente no FE.
   useEffect(() => {
     if (!userId) return;
 
+    // BUG-NEW-03 FIX: tópico Único por inscrição. O supabase-js reaproveita canais que
+    // compartilham o mesmo tópico; com o nome estático 'quotes-realtime', duas instâncias
+    // deste hook montadas em paralelo (ou um remount antes de removeChannel — assíncrono —
+    // concluir) recebiam o MESMO canal já inscrito, e o segundo .on('postgres_changes') era
+    // aplicado APÓS o subscribe(), lançando "cannot add postgres_changes callbacks ... after
+    // subscribe()" de forma síncrona dentro do useEffect e derrubando o render
+    // (GlobalErrorBoundary / ProtectedRoute). Um tópico único garante sempre um canal novo.
+    const channelTopic = `quotes-realtime-${userId}-${Math.random().toString(36).slice(2)}-${Date.now()}`;
+    const invalidateAll = () => {
+      queryClient.invalidateQueries({ queryKey: ['quotes'] });
+    };
     const channel = supabase
-      .channel('quotes-realtime')
+      .channel(channelTopic)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'quotes',
-          // O filtro simplificado garante que qualquer mudança no escopo do usuário invalide o cache
           filter: scope === 'self' ? `seller_id=eq.${userId}` : undefined,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['quotes'] });
+          invalidateAll();
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[useQuotes] realtime channel error — falling back to poll', { status, err });
+          invalidateAll();
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [userId, scope, queryClient]);
 
+  // `discount_approval_status` / `discount_approved_at` são colunas reais de `quotes`
+  // (materializadas pelo trigger trg_sync_quote_dar) e já vêm no SELECT * de fetchQuotes —
+  // sem necessidade da antiga 2ª query derivada em `discount_approval_requests`.
   const {
     data: quotes = [],
     isLoading,
+    isFetching,
     error,
     refetch: fetchQuotes,
-  } = useQuery({
+  } = useQuery<Quote[]>({
     queryKey: ['quotes', userId, scope],
-    queryFn: () => quoteService.fetchQuotes(userId ?? '', scope),
+    queryFn: () => {
+      if (!userId) return Promise.resolve([]);
+      return quoteService.fetchQuotes(userId, scope);
+    },
     enabled: !!userId,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
+    staleTime: 30_000,
   });
+
 
   const { data: techniques = [], refetch: fetchTechniques } = useQuery({
     queryKey: ['techniques'],
@@ -105,16 +138,23 @@ export function useQuotes() {
     },
   });
 
+  /**
+   * QBP-08 FIX: updateMutation agora aceita `expectedVersion` para ativar
+   * o optimistic lock server-side em update_quote_transactional.
+   * Sem expectedVersion (null), comportamento idêntico ao anterior.
+   */
   const updateMutation = useMutation({
     mutationFn: ({
       quoteId,
       quote,
       items,
+      expectedVersion,
     }: {
       quoteId: string;
       quote: Partial<Quote>;
       items: QuoteItem[];
-    }) => quoteService.updateQuote(quoteId, quote, items),
+      expectedVersion?: number | null;
+    }) => quoteService.updateQuote(quoteId, quote, items, expectedVersion),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
       toast.success('Orçamento atualizado!');
@@ -140,30 +180,43 @@ export function useQuotes() {
     mutationFn: (quoteId: string) => quoteService.deleteQuote(quoteId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quotes'] });
-      toast.success('Orçamento excluído');
+      // NÃO disparamos toast aqui — o caller (useQuotesListPage / QuoteViewPage)
+      // é responsável por exibir `showUndoToast` COM botão de Desfazer usando
+      // o snapshot capturado ANTES do DELETE. Emitir um `toast.success` aqui
+      // criava um segundo toast empilhado (com typo "exluído") que cobria
+      // visualmente o botão "Desfazer" do toast correto — ver screenshot do bug.
     },
     onError: () => {
       toast.error('Erro ao excluir orçamento');
     },
   });
 
-  const fetchQuote = async (quoteId: string) => {
+  const fetchQuote = useCallback(async (quoteId: string) => {
     try {
       return await quoteService.fetchQuote(quoteId);
     } catch (err: unknown) {
       toast.error('Erro ao carregar orçamento', { description: getErrorMessage(err) });
       return null;
     }
-  };
+  }, []);
 
   const createQuote = async (quote: Partial<Quote>, items: QuoteItem[]) => {
     if (!user) return null;
-    return await createMutation.mutateAsync({ quote, items });
+    return createMutation.mutateAsync({ quote, items });
   };
 
-  const updateQuote = async (quoteId: string, quote: Partial<Quote>, items: QuoteItem[]) => {
+  /**
+   * QBP-08 FIX: updateQuote agora aceita `expectedVersion`.
+   * useQuoteBuilderState passa a versão carregada do quote para ativar o lock.
+   */
+  const updateQuote = async (
+    quoteId: string,
+    quote: Partial<Quote>,
+    items: QuoteItem[],
+    expectedVersion?: number | null,
+  ) => {
     if (!user) return null;
-    return await updateMutation.mutateAsync({ quoteId, quote, items });
+    return updateMutation.mutateAsync({ quoteId, quote, items, expectedVersion });
   };
 
   const updateQuoteStatus = async (quoteId: string, status: Quote['status']) => {
@@ -200,10 +253,21 @@ export function useQuotes() {
           unit_price: item.unit_price,
           color_name: item.color_name,
           color_hex: item.color_hex,
+          size_code: item.size_code,
+          gender: item.gender,
           notes: item.notes,
+          kit_group_id: item.kit_group_id,
+          kit_name: item.kit_name,
+          bitrix_product_id: item.bitrix_product_id,
+          price_updated_at: item.price_updated_at,
+          price_freshness_threshold_days: item.price_freshness_threshold_days,
+          // price_confirmed_at omitted intentionally: seller must re-confirm for the new quote
           personalizations: item.personalizations?.map((p) => ({
             technique_id: p.technique_id,
             technique_name: p.technique_name,
+            location_code: p.location_code,
+            location_name: p.location_name,
+            personalized_quantity: p.personalized_quantity,
             colors_count: p.colors_count,
             positions_count: p.positions_count,
             area_cm2: p.area_cm2,
@@ -219,10 +283,12 @@ export function useQuotes() {
       const newQuote = await createQuote(
         {
           client_id: original.client_id,
+          contact_id: original.contact_id,
           client_name: original.client_name,
           client_email: original.client_email,
           client_phone: original.client_phone,
           client_company: original.client_company,
+          client_cnpj: original.client_cnpj ?? undefined,
           status: 'draft',
           discount_percent: original.discount_percent,
           discount_amount: original.discount_amount,
@@ -233,11 +299,8 @@ export function useQuotes() {
           shipping_type: original.shipping_type,
           shipping_cost: original.shipping_cost,
           // BUG-NEW-01 FIX: preserve negotiation_markup_percent when duplicating.
-          // Previously this field was omitted, causing the markup to be lost (reset
-          // to 0) on every duplication. The total would diverge from the original
-          // without any visible explanation, potentially sending wrong pricing to clients.
           negotiation_markup_percent: original.negotiation_markup_percent ?? 0,
-          internal_notes: `Duplicado de ${original.quote_number}`,
+          // internal_notes removido: campo descontinuado na UI (apenas observações vão na proposta).
           valid_until: original.valid_until,
         },
         items,
@@ -253,7 +316,7 @@ export function useQuotes() {
   const syncQuoteToBitrix = async (quoteId: string): Promise<boolean> => {
     const log = createClientLogger('quote.syncBitrix', { base: { quoteId } });
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('quote-sync', {
+      const { data, error: fnError } = await invokeEdge('quote-sync', {
         body: { action: 'sync_quote', data: { quoteId } },
         headers: log.headers(),
       });
@@ -273,7 +336,7 @@ export function useQuotes() {
 
   const testWebhookConnection = async (): Promise<boolean> => {
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('quote-sync', {
+      const { data, error: fnError } = await invokeEdge('quote-sync', {
         body: { action: 'test_webhook', data: {} },
       });
       if (fnError) throw new Error(fnError.message);
@@ -308,6 +371,7 @@ export function useQuotes() {
     quotes,
     techniques,
     isLoading: isLoading || createMutation.isPending || updateMutation.isPending,
+    isFetching,
     error: error ? getErrorMessage(error) : null,
     fetchQuotes,
     fetchQuote,

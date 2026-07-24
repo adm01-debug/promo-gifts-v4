@@ -12,7 +12,8 @@ describe('OrganizationContext Single-Tenant', () => {
     const { result } = renderHook(() => useOrganization(), { wrapper });
 
     expect(result.current.currentOrg?.name).toBe('Promo Brindes');
-    expect(result.current.currentOrg?.id).toBe('35c6a2a6-5d6d-4ddb-8dbd-8e842a0118e5');
+    // id canônico de produção (organizations.id) — deve bater com o banco para a RLS de quotes
+    expect(result.current.currentOrg?.id).toBe('5db5aee1-064b-4ef4-9193-345dcd8274ea');
     expect(result.current.organizations.length).toBe(1);
     expect(result.current.organizations[0].name).toBe('Promo Brindes');
   });

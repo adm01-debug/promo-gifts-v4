@@ -36,7 +36,7 @@ export function useProductsBySize(sizes: string[] = []): UseProductsBySizeReturn
         operation: 'select',
         select: 'product_id',
         filters: { is_active: true, size_code: sizeKey },
-        limit: 10000,
+        limit: 50000, // SF-E FIX: 10k truncaria se têxtil escalar (hoje: 674 vars/17 produtos × max futuro)
       });
       const set = new Set<string>();
       for (const r of result.records) if (r.product_id) set.add(r.product_id);

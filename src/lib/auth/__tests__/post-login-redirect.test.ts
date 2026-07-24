@@ -149,6 +149,7 @@ describe('savePostLoginRedirect — validacao de seguranca', () => {
     savePostLoginRedirect('//evil.com');
     expect(sessionStorage.getItem(EXPECTED_KEY)).toBeNull();
 
+    // eslint-disable-next-line no-script-url -- test fixture: verifying javascript: protocol is rejected
     savePostLoginRedirect('javascript:alert(1)');
     expect(sessionStorage.getItem(EXPECTED_KEY)).toBeNull();
   });
@@ -181,6 +182,7 @@ describe('isSafeRedirectPath', () => {
     '',
     '//evil.com',
     '/\\evil',
+    // eslint-disable-next-line no-script-url -- test fixture: verifying javascript: protocol is rejected
     'javascript:alert(1)',
     'data:text/html,<h1>hi</h1>',
     '/auth',

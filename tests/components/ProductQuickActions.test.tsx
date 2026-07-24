@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { ProductQuickActions } from '@/components/products/ProductQuickActions';
 import { BrowserRouter } from 'react-router-dom';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import '@testing-library/jest-dom';
 
 describe('ProductQuickActions', () => {
@@ -15,9 +16,11 @@ describe('ProductQuickActions', () => {
   describe('Botão Indicação', () => {
     it('should disable Indicação button when no tags are provided', () => {
       render(
-        <BrowserRouter>
-          <ProductQuickActions {...defaultProps} tags={{}} />
-        </BrowserRouter>
+        <TooltipProvider>
+          <BrowserRouter>
+            <ProductQuickActions {...defaultProps} tags={{}} />
+          </BrowserRouter>
+        </TooltipProvider>
       );
 
       const button = screen.getByRole('button', { name: /Indicação/i });
@@ -28,9 +31,11 @@ describe('ProductQuickActions', () => {
     it('should enable Indicação button when tags are provided', () => {
       const tags = { 'Público-Alvo': ['Jovens'] };
       render(
-        <BrowserRouter>
-          <ProductQuickActions {...defaultProps} tags={tags} />
-        </BrowserRouter>
+        <TooltipProvider>
+          <BrowserRouter>
+            <ProductQuickActions {...defaultProps} tags={tags} />
+          </BrowserRouter>
+        </TooltipProvider>
       );
 
       const button = screen.getByRole('button', { name: /Indicação/i });
@@ -40,9 +45,11 @@ describe('ProductQuickActions', () => {
     it('should show loading state in Indicação modal', () => {
       const tags = { 'Público-Alvo': ['Jovens'] };
       render(
-        <BrowserRouter>
-          <ProductQuickActions {...defaultProps} tags={tags} isLoadingTags={true} />
-        </BrowserRouter>
+        <TooltipProvider>
+          <BrowserRouter>
+            <ProductQuickActions {...defaultProps} tags={tags} isLoadingTags={true} />
+          </BrowserRouter>
+        </TooltipProvider>
       );
 
       fireEvent.click(screen.getByRole('button', { name: /Indicação/i }));
@@ -53,9 +60,11 @@ describe('ProductQuickActions', () => {
     it('should show error state in Indicação modal', () => {
       const tags = { 'Público-Alvo': ['Jovens'] };
       render(
-        <BrowserRouter>
-          <ProductQuickActions {...defaultProps} tags={tags} hasErrorTags={true} />
-        </BrowserRouter>
+        <TooltipProvider>
+          <BrowserRouter>
+            <ProductQuickActions {...defaultProps} tags={tags} hasErrorTags={true} />
+          </BrowserRouter>
+        </TooltipProvider>
       );
 
       fireEvent.click(screen.getByRole('button', { name: /Indicação/i }));
@@ -66,9 +75,11 @@ describe('ProductQuickActions', () => {
   describe('Botão Nicho', () => {
     it('should disable Nicho button when no niches are provided', () => {
       render(
-        <BrowserRouter>
-          <ProductQuickActions {...defaultProps} niches={[]} />
-        </BrowserRouter>
+        <TooltipProvider>
+          <BrowserRouter>
+            <ProductQuickActions {...defaultProps} niches={[]} />
+          </BrowserRouter>
+        </TooltipProvider>
       );
 
       const button = screen.getByRole('button', { name: /Nicho/i });
@@ -78,9 +89,11 @@ describe('ProductQuickActions', () => {
 
     it('should enable Nicho button when niches are provided', () => {
       render(
-        <BrowserRouter>
-          <ProductQuickActions {...defaultProps} niches={['Tecnologia']} />
-        </BrowserRouter>
+        <TooltipProvider>
+          <BrowserRouter>
+            <ProductQuickActions {...defaultProps} niches={['Tecnologia']} />
+          </BrowserRouter>
+        </TooltipProvider>
       );
 
       const button = screen.getByRole('button', { name: /Nicho/i });
@@ -89,9 +102,11 @@ describe('ProductQuickActions', () => {
 
     it('should show loading state in Nicho modal', () => {
       render(
-        <BrowserRouter>
-          <ProductQuickActions {...defaultProps} niches={['Tecnologia']} isLoadingNiches={true} />
-        </BrowserRouter>
+        <TooltipProvider>
+          <BrowserRouter>
+            <ProductQuickActions {...defaultProps} niches={['Tecnologia']} isLoadingNiches={true} />
+          </BrowserRouter>
+        </TooltipProvider>
       );
 
       fireEvent.click(screen.getByRole('button', { name: /Nicho/i }));
@@ -101,9 +116,11 @@ describe('ProductQuickActions', () => {
 
     it('should show error state in Nicho modal', () => {
       render(
-        <BrowserRouter>
-          <ProductQuickActions {...defaultProps} niches={['Tecnologia']} hasErrorNiches={true} />
-        </BrowserRouter>
+        <TooltipProvider>
+          <BrowserRouter>
+            <ProductQuickActions {...defaultProps} niches={['Tecnologia']} hasErrorNiches={true} />
+          </BrowserRouter>
+        </TooltipProvider>
       );
 
       fireEvent.click(screen.getByRole('button', { name: /Nicho/i }));
@@ -113,9 +130,11 @@ describe('ProductQuickActions', () => {
     it('should display niches correctly in modal', () => {
       const niches = ['Saúde', 'Educação', '  Tecnologia  ', 'Saúde']; // Includes duplicates and spaces
       render(
-        <BrowserRouter>
-          <ProductQuickActions {...defaultProps} niches={niches} />
-        </BrowserRouter>
+        <TooltipProvider>
+          <BrowserRouter>
+            <ProductQuickActions {...defaultProps} niches={niches} />
+          </BrowserRouter>
+        </TooltipProvider>
       );
 
       fireEvent.click(screen.getByRole('button', { name: /Nicho/i }));

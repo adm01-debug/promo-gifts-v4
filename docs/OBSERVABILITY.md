@@ -136,3 +136,53 @@ try {
 ### Recomendação operacional
 
 A prontidão atual (Sentry + structured logger + webhook metrics + request_id ponta-a-ponta) **é suficiente para redeploy 10/10**. Os gaps acima são melhorias incrementais — abrir issues separadas e priorizar conforme volume de tráfego pós-redeploy.
+
+## 9. Debug toggle: `window.__DEBUG_QUOTE_TABLE`
+
+Flag de runtime para diagnosticar alinhamento header/body do `QuoteItemsTable`
+(scrollbar gutter, padding dinâmico, larguras de colunas em ambientes com
+scrollbar overlay vs. clássica).
+
+### Habilitar
+
+No DevTools (console) da página `/orcamentos/...`:
+
+```js
+window.__DEBUG_QUOTE_TABLE = true;
+// para desligar:
+window.__DEBUG_QUOTE_TABLE = false;
+```
+
+A flag é lida em cada `measure()` (disparado por mount, resize do scroller e
+mudança de conteúdo via `ResizeObserver`). Não requer reload.
+
+### Logs emitidos
+
+`console.debug("[QuoteItemsTable]", payload)` com o seguinte shape:
+
+| Campo | Tipo | Significado |
+|---|---|---|
+| `tableUid` | string | id único do par de tabelas (header/body) |
+| `scrollerWidth` | number | `scroller.offsetWidth` |
+| `clientWidth` | number | `scroller.clientWidth` |
+| `scrollbarPad` | number | `offsetWidth - clientWidth` → padding-right aplicado no header wrapper |
+| `viewport` | `{w,h}` | viewport atual (px) |
+
+### Como interpretar
+
+- `scrollbarPad === 0` em desktop com conteúdo que rola → provável scrollbar
+  **overlay** (macOS, Chromium em alguns OSes). Alinhamento já está correto sem
+  padding.
+- `scrollbarPad` entre 12–17 → scrollbar **clássica** (Windows/Linux Chromium e
+  Firefox). Padding aplicado garante paridade com colunas do body.
+- `scrollbarPad` oscilando entre valores não-zero a cada resize → suspeitar de
+  loop de `ResizeObserver`. Verificar `dependencies` do `useLayoutEffect`.
+- Delta header↔body > 2px no E2E mesmo com `scrollbarPad` correto → conferir
+  `<colgroup>` (larguras devem ser idênticas) e `table-layout: fixed`.
+
+### Cobertura E2E
+
+`e2e/quotes/quote-items-table-header-radius.spec.ts` valida o toggle
+(`window.__DEBUG_QUOTE_TABLE = true` → espera `console.debug` com prefixo
+`[QuoteItemsTable]`) e roda no matrix cross-browser (`chromium-public`,
+`firefox-public`, `webkit-public`) via `.github/workflows/e2e-quote-items-table-header.yml`.

@@ -9,6 +9,7 @@ import {
   ChevronUp,
   ChevronDown,
   Box,
+  Info,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -24,6 +25,12 @@ import type { KitComponent } from '@/types/product-catalog';
 import { KitComponentCard } from './kit-composition/KitComponentCard';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
+
+// BUG-KIT-01 FIX (2026-06-21): formatWeight era recriada como arrow function dentro
+// do componente em cada render. Movida para módulo — é uma função pura sem deps.
+const formatWeight = (grams: number) =>
+  grams >= 1000 ? `${(grams / 1000).toFixed(1)} kg` : `${grams} g`;
 
 interface KitCompositionProps {
   items: KitComponent[];
@@ -43,9 +50,6 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
     const personalizableCount = items.filter((i) => i.allowsPersonalization).length;
     return { totalPieces, totalWeight, packagingCount, productCount, personalizableCount };
   }, [items]);
-
-  const formatWeight = (grams: number) =>
-    grams >= 1000 ? `${(grams / 1000).toFixed(1)} kg` : `${grams} g`;
 
   const packagingItems = items.filter((i) => i.isPackaging);
   const productItems = items.filter((i) => !i.isPackaging);
@@ -84,6 +88,7 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
                   {item.imageUrl ? (
                     <OptimizedImage
                       src={getCdnUrl(item.imageUrl, 'thumbnail')}
+                      urlOriginal={getProxiedImageUrl(item.imageUrl) ?? null}
                       alt=""
                       className="object-contain p-0.5"
                       containerClassName="h-full w-full"
@@ -153,6 +158,19 @@ export function KitComposition({ items, onViewProduct }: KitCompositionProps) {
 
           <ScrollArea className="max-h-[calc(72vh-160px)]">
             <div className="space-y-5 px-6 py-4">
+              {/* Nota informativa: kits nativos são vendidos como conjunto único. */}
+              <div
+                role="note"
+                className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground"
+              >
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                <span>
+                  Este kit é vendido como{' '}
+                  <strong className="text-foreground">conjunto único</strong> pelo fornecedor. Os
+                  componentes abaixo são informativos — não estão disponíveis para compra avulsa.
+                </span>
+              </div>
+
               {packagingItems.length > 0 && (
                 <Collapsible
                   open={expandedSections.packaging}

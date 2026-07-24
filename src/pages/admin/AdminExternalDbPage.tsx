@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageSEO } from '@/components/seo/PageSEO';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   ENGRAVING_TABLES,
@@ -40,6 +39,7 @@ import {
 import { ALL_CONTRACTS } from '@/lib/personalization/rpc-contracts';
 import { validateRpcPayload, type ValidationResult } from '@/lib/personalization/rpc-validator';
 import { invokeExternalRpc } from '@/lib/external-rpc';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export default function AdminExternalDbPage() {
   const { result, isLoading, listTables, describeTable } = useExternalDbInspect();
@@ -68,10 +68,10 @@ export default function AdminExternalDbPage() {
         contractName === 'fn_get_customization_price'
           ? { p_area_id: '00000000-0000-0000-0000-000000000000', p_quantidade: 100, p_num_cores: 1 }
           : { p_product_id: '00000000-0000-0000-0000-000000000000' };
-      const result = await invokeExternalRpc<Record<string, unknown>>(contractName, params);
-      const validation = validateRpcPayload(contract, result ?? {});
+      const rpcResult = await invokeExternalRpc<Record<string, unknown>>(contractName, params);
+      const validation = validateRpcPayload(contract, rpcResult ?? {});
       setLiveResults((prev) => ({ ...prev, [contractName]: validation }));
-      toast.success(`${contractName}`, {
+      toast.success(contractName, {
         description: validation.ok ? 'Contrato OK' : `${validation.missing.length} campos ausentes`,
       });
       refreshTelemetry();
@@ -90,7 +90,11 @@ export default function AdminExternalDbPage() {
     try {
       const results: TableDiff[] = [];
       for (const t of ENGRAVING_TABLES) {
-        const { data, error } = await supabase.functions.invoke('external-db-inspect', {
+        const { data, error } = await invokeEdge<{
+          success?: boolean;
+          error?: string;
+          columns?: string[];
+        }>('external-db-inspect', {
           body: { mode: 'columns', tableName: t.table },
         });
         if (error || !data?.success) {

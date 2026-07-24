@@ -3,15 +3,18 @@
  */
 import { useRef, useState } from 'react';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface Props {
   src: string;
   alt: string;
+  /** URL original do fornecedor para fallback quando CF CDN falha (BUG-ZOOM-CORS FIX) */
+  urlOriginal?: string | null;
   className?: string;
   zoomLevel?: number;
 }
 
-export function ImageZoomCell({ src, alt, className = '', zoomLevel = 2 }: Props) {
+export function ImageZoomCell({ src, alt, urlOriginal, className = '', zoomLevel = 2 }: Props) {
   const [show, setShow] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const ref = useRef<HTMLDivElement>(null);
@@ -37,6 +40,7 @@ export function ImageZoomCell({ src, alt, className = '', zoomLevel = 2 }: Props
         alt={alt}
         className="object-contain"
         containerClassName="h-full w-full"
+        urlOriginal={urlOriginal ?? getProxiedImageUrl(src) ?? null}
       />
       {show && (
         <div

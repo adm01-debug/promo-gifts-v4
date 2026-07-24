@@ -52,6 +52,7 @@ export const VERIFY_JWT_FALSE = new Set<string>([
   // Auth is enforced inline via x-cron-secret, so anon reaches the handler.
   "asia-ingestion",
   "backfill-image-dimensions",
+  "receive-crm-callback",
 ]);
 
 /**
@@ -125,6 +126,10 @@ export const DESTRUCTIVE = new Set<string>([
   "ownership-repair",
   // Secrets
   "secrets-manager",
+  // Utilitários de teste — criam e deletam registros no DB
+  "test-cart-concurrency",
+  "test-cart-limit",
+  "test-cart-rls",
 ]);
 
 /** Funções que suportam dry-run seguro (read-only quando dry_run=true). */

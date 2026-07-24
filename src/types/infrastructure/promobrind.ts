@@ -158,9 +158,9 @@ export interface CustomizationPriceTableRaw {
 // TECNICA_GRAVACAO (legacy - manter compatibilidade)
 // ============================================
 
-export type TipoSetup = 'nenhum' | 'fotolito' | 'cliche' | 'matriz' | 'arte_digital';
-export type FormatoVariante = 'plana' | 'cilindrica' | 'textil' | 'patch';
-export type TipoIntegracao = 'api_spot' | 'api_rest' | 'manual';
+export type TipoSetup = 'arte_digital' | 'cliche' | 'fotolito' | 'matriz' | 'nenhum';
+export type FormatoVariante = 'cilindrica' | 'patch' | 'plana' | 'textil';
+export type TipoIntegracao = 'api_rest' | 'api_spot' | 'manual';
 
 export interface TecnicaGravacaoRaw {
   id: string;
@@ -268,7 +268,7 @@ export interface HotStampingFitaOpcaoRaw {
   codigo: string;
   nome: string;
   cor_hex: string | null;
-  tipo: 'metalico' | 'holografico' | 'fosco';
+  tipo: 'fosco' | 'holografico' | 'metalico';
   multiplicador_preco: number;
   ordem_exibicao: number;
   ativo: boolean;

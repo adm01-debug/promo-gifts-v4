@@ -17,14 +17,40 @@ export interface StockSelectionRow {
   variant: VariantStock;
 }
 
+/**
+ * Constrói o payload canônico (single-row) usado pelo Quote Builder a partir
+ * de uma linha de estoque. SSOT — qualquer mudança de schema do payload
+ * deve passar por aqui para não dar drift entre bulk e single-row.
+ */
+export function buildQuoteItemPayload(r: StockSelectionRow) {
+  return {
+    product_id: r.product.productId,
+    product_name: r.product.productName,
+    product_sku: r.variant.variantSku,
+    variant_id: r.variant.variantId,
+    quantity: r.variant.minStock || 1,
+    color_name: r.variant.colorName ?? null,
+    color_hex: r.variant.colorHex ?? null,
+    size_code: r.variant.sizeCode ?? null,
+    product_image: r.variant.imageUrl ?? r.product.productImageUrl ?? '',
+  };
+}
+
+/** `items[]=<encoded-json>` para uma linha. */
+export function buildQuoteParam(r: StockSelectionRow): string {
+  return `items[]=${encodeURIComponent(JSON.stringify(buildQuoteItemPayload(r)))}`;
+}
+
 /** Chave estável por SKU (product+variant) usada no Set de seleção. */
 export const rowKey = (r: { productId: string; variantId: string }) =>
   `${r.productId}::${r.variantId}`;
 
 export function useStockSelection(rows: StockSelectionRow[]) {
   const navigate = useNavigate();
-  const favStore = useFavoritesStore();
-  const compStore = useComparisonStore();
+  const favIsFavorite = useFavoritesStore((s) => s.isFavorite);
+  const favAddFavorite = useFavoritesStore((s) => s.addFavorite);
+  const compCompareItems = useComparisonStore((s) => s.compareItems);
+  const compAddToCompare = useComparisonStore((s) => s.addToCompare);
 
   const [enabled, setEnabled] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -38,7 +64,10 @@ export function useStockSelection(rows: StockSelectionRow[]) {
   }, [rows]);
 
   const selectedRows = useMemo(
-    () => Array.from(selectedKeys).map((k) => rowByKey.get(k)).filter(Boolean) as StockSelectionRow[],
+    () =>
+      Array.from(selectedKeys)
+        .map((k) => rowByKey.get(k))
+        .filter(Boolean) as StockSelectionRow[],
     [selectedKeys, rowByKey],
   );
 
@@ -53,18 +82,15 @@ export function useStockSelection(rows: StockSelectionRow[]) {
     });
   }, []);
 
-  const selectAllVisible = useCallback(
-    (visibleRows: StockSelectionRow[]) => {
-      setSelectedKeys(
-        new Set(
-          visibleRows.map((r) =>
-            rowKey({ productId: r.product.productId, variantId: r.variant.variantId }),
-          ),
+  const selectAllVisible = useCallback((visibleRows: StockSelectionRow[]) => {
+    setSelectedKeys(
+      new Set(
+        visibleRows.map((r) =>
+          rowKey({ productId: r.product.productId, variantId: r.variant.variantId }),
         ),
-      );
-    },
-    [],
-  );
+      ),
+    );
+  }, []);
 
   const clear = useCallback(() => setSelectedKeys(new Set()), []);
 
@@ -88,8 +114,8 @@ export function useStockSelection(rows: StockSelectionRow[]) {
     let added = 0;
     try {
       for (const r of selectedRows) {
-        if (!favStore.isFavorite(r.product.productId)) {
-          favStore.addFavorite(r.product.productId, buildVariantInfo(r));
+        if (!favIsFavorite(r.product.productId)) {
+          favAddFavorite(r.product.productId, buildVariantInfo(r));
           added++;
         }
       }
@@ -98,11 +124,11 @@ export function useStockSelection(rows: StockSelectionRow[]) {
     } catch {
       toast.error('Não foi possível favoritar todos os itens. Tente novamente.');
     }
-  }, [selectedRows, favStore, clear]);
+  }, [selectedRows, favIsFavorite, favAddFavorite, clear]);
 
   const bulkCompare = useCallback(() => {
     if (selectedRows.length === 0) return;
-    const slots = Math.max(0, 4 - compStore.compareItems.length);
+    const slots = Math.max(0, 4 - compCompareItems.length);
     if (slots === 0) {
       toast.error('Limite de 4 itens para comparação já atingido');
       return;
@@ -111,39 +137,22 @@ export function useStockSelection(rows: StockSelectionRow[]) {
     try {
       let added = 0;
       for (const r of slice) {
-        if (compStore.addToCompare(r.product.productId, buildVariantInfo(r))) added++;
+        if (compAddToCompare(r.product.productId, buildVariantInfo(r))) added++;
       }
       const skipped = selectedRows.length - added;
       toast.success(
-        `${added} ${added === 1 ? 'item adicionado' : 'itens adicionados'} à comparação` +
-          (skipped > 0 ? ` (${skipped} ignorado${skipped > 1 ? 's' : ''} — limite de 4)` : ''),
+        `${added} ${added === 1 ? 'item adicionado' : 'itens adicionados'} à comparação${skipped > 0 ? ` (${skipped} ignorado${skipped > 1 ? 's' : ''} — limite de 4)` : ''}`,
       );
       clear();
     } catch {
       toast.error('Não foi possível atualizar a comparação. Tente novamente.');
     }
-  }, [selectedRows, compStore, clear]);
+  }, [selectedRows, compCompareItems, compAddToCompare, clear]);
 
   const bulkQuote = useCallback(() => {
     if (selectedRows.length === 0) return;
     try {
-      const params = selectedRows
-        .map((r) =>
-          `items[]=${encodeURIComponent(
-            JSON.stringify({
-              product_id: r.product.productId,
-              product_name: r.product.productName,
-              product_sku: r.variant.variantSku,
-              variant_id: r.variant.variantId,
-              quantity: r.variant.minStock || 1,
-              color_name: r.variant.colorName ?? null,
-              color_hex: r.variant.colorHex ?? null,
-              size_code: r.variant.sizeCode ?? null,
-              product_image: r.variant.imageUrl ?? r.product.productImageUrl ?? '',
-            }),
-          )}`,
-        )
-        .join('&');
+      const params = selectedRows.map((r) => buildQuoteParam(r)).join('&');
       navigate(`/orcamentos/novo?${params}`);
       toast.success(
         `${selectedRows.length} ${selectedRows.length === 1 ? 'item enviado' : 'itens enviados'} para orçamento`,

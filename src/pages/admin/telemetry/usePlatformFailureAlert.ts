@@ -57,7 +57,7 @@ export function saveAlertConfig(cfg: FailureAlertConfig): void {
   }
 }
 
-export type AlertLevel = 'ok' | 'breach_503' | 'breach_cold_start' | 'breach_both';
+export type AlertLevel = 'breach_503' | 'breach_both' | 'breach_cold_start' | 'ok';
 
 export interface AlertState {
   level: AlertLevel;

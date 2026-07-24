@@ -178,7 +178,6 @@ export function StarfieldCanvas({
     <canvas
       ref={canvasRef}
       className={className ?? 'pointer-events-none absolute inset-0'}
-      aria-hidden="true"
       data-testid="starfield-canvas"
     />
   );

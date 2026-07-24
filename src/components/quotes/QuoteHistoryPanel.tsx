@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TimelineDot, TimelineLine } from '@/components/ui/timeline';
 import { useQuoteHistory, type QuoteHistoryEntry } from '@/hooks/quotes';
 import { cn } from '@/lib/utils';
 
@@ -90,44 +91,53 @@ export function QuoteHistoryPanel({ quoteId }: QuoteHistoryPanelProps) {
   }
 
   return (
-    <ScrollArea className="h-[400px] pr-4">
+    <ScrollArea className="h-[calc(100vh-9rem)] pr-3">
       <div className="relative">
-        {/* Timeline line */}
-        <div className="absolute bottom-0 left-4 top-0 w-px bg-border" />
+        <TimelineLine leftClassName="left-[15px]" />
 
-        <div className="space-y-4">
+
+
+        <ol className="space-y-1.5">
           {history.map((entry, index) => (
             <HistoryEntry key={entry.id} entry={entry} isFirst={index === 0} />
           ))}
-        </div>
+        </ol>
       </div>
     </ScrollArea>
   );
 }
 
 function HistoryEntry({ entry, isFirst }: { entry: QuoteHistoryEntry; isFirst: boolean }) {
-  const icon = actionIcons[entry.action] || <Clock className="h-4 w-4" />;
-  const colorClass = actionColors[entry.action] || 'bg-muted text-muted-foreground';
+  const icon = actionIcons[entry.action] || <Clock className="h-3.5 w-3.5" />;
+  const colorClass =
+    actionColors[entry.action] || 'bg-muted/40 text-muted-foreground border-border/50';
 
   return (
-    <div className="relative pl-10">
-      {/* Timeline dot */}
-      <div
-        className={cn(
-          'absolute left-0 flex h-8 w-8 items-center justify-center rounded-full border',
-          colorClass,
-          isFirst && 'ring-2 ring-primary/20',
-        )}
+    <li className="group relative pl-11">
+      <TimelineDot
+        highlighted={isFirst}
+        toneClassName={colorClass}
+        className="absolute left-0 top-2 h-8 w-8"
       >
         {icon}
-      </div>
+      </TimelineDot>
 
-      <div className="pt-1">
-        <p className="text-sm font-medium text-foreground">{entry.description}</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {format(new Date(entry.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
+      <div
+        className={cn(
+          'rounded-lg border border-transparent px-3 py-2 transition-all duration-200',
+          'group-hover:border-border/40 group-hover:bg-card/40',
+        )}
+      >
+        <p className="text-[13px] font-medium leading-snug text-foreground">
+          {entry.description}
+        </p>
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
+          <Clock className="h-3 w-3" aria-hidden="true" />
+          <time dateTime={entry.created_at}>
+            {format(new Date(entry.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
+          </time>
         </p>
       </div>
-    </div>
+    </li>
   );
 }

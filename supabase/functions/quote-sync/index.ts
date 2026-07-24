@@ -67,6 +67,8 @@ interface QuoteData {
   seller_id?: string;
   seller_name?: string;
   status: string;
+  // BUG-O FIX: payment_method was missing — external systems never received this field
+  payment_method?: string;
   subtotal: number;
   discount_percent: number;
   discount_amount: number;
@@ -75,6 +77,7 @@ interface QuoteData {
   valid_until?: string;
   payment_terms?: string;
   delivery_time?: string;
+  delivery_time_formatted?: string;
   shipping_type?: string;
   shipping_cost?: number;
   items: QuoteItemData[];
@@ -133,14 +136,42 @@ Deno.serve(async (req) => {
         const quoteData = await fetchQuoteFromCRM(quoteId);
         if (!quoteData) throw new Error("Quote not found in CRM");
 
+        // FIX-E05: track N8N success separately.
+        // synced_to_bitrix is only set to true when N8N actually succeeds (or is not configured).
+        // A failed N8N call must NOT mark the quote as synced — the batch job will retry it.
         let n8nResponse: Record<string, unknown> = {};
+        let n8nSucceeded = !n8nWebhookUrl; // no webhook configured → treat as "not required"
+        let n8nError: string | null = null;
         if (n8nWebhookUrl) {
-          try { n8nResponse = await sendToN8N(quoteData, n8nWebhookUrl); }
-          catch (err) { console.error("N8N sync failed (non-blocking):", err); }
+          try {
+            n8nResponse = await sendToN8N(quoteData, n8nWebhookUrl);
+            n8nSucceeded = true;
+          } catch (err) {
+            const errMsg = err instanceof Error ? err.message : String(err);
+            const errType = err instanceof Error ? err.constructor.name : typeof err;
+            n8nError = errMsg;
+            console.error("N8N sync failed:", {
+              error: errMsg,
+              type: errType,
+              quoteId,
+              timestamp: new Date().toISOString(),
+            });
+          }
         }
 
         await sendToSalesPro(quoteData);
-        await updateCRMSyncStatus(quoteId, n8nResponse);
+
+        // Only mark synced when N8N either succeeded or was not required.
+        if (n8nSucceeded) {
+          await updateCRMSyncStatus(quoteId, n8nResponse);
+        }
+
+        if (!n8nSucceeded) {
+          return new Response(
+            JSON.stringify({ success: false, error: `N8N sync failed: ${n8nError}`, bitrix_deal_id: null }),
+            { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
 
         return new Response(
           JSON.stringify({ success: true, message: "Quote synced successfully", bitrix_deal_id: n8nResponse.bitrix_deal_id, bitrix_quote_id: n8nResponse.bitrix_quote_id }),
@@ -274,10 +305,15 @@ async function fetchQuoteFromCRM(quoteId: string): Promise<QuoteData | null> {
     client_email: quote.client_email, client_phone: quote.client_phone,
     client_company: quote.client_company, seller_id: quote.seller_id,
     seller_name: sellerName, status: quote.status,
+    // BUG-O FIX: include payment_method in payload
+    payment_method: quote.payment_method,
     subtotal: Number(quote.subtotal || 0), discount_percent: Number(quote.discount_percent || 0),
     discount_amount: Number(quote.discount_amount || 0), total: Number(quote.total || 0),
     notes: quote.notes, valid_until: quote.valid_until,
-    payment_terms: quote.payment_terms, delivery_time: quote.delivery_time,
+    payment_terms: quote.payment_terms,
+    delivery_time: quote.delivery_time,
+    // BUG-P FIX: human-readable delivery time for external systems
+    delivery_time_formatted: formatDeliveryTime(quote.delivery_time),
     shipping_type: quote.shipping_type, shipping_cost: Number(quote.shipping_cost || 0),
     items: formattedItems, created_at: quote.created_at,
     internal_real_subtotal: quote.real_subtotal != null ? Number(quote.real_subtotal) : undefined,
@@ -298,12 +334,41 @@ async function updateCRMSyncStatus(quoteId: string, n8nResponse: Record<string, 
   if (error) console.error("Error updating CRM sync status:", error);
 }
 
+// BUG-P FIX: convert raw DB delivery_time values to human-readable strings for external systems.
+// Raw format examples: "7_dias", "14_dias", "date:2026-07-01"
+function formatDeliveryTime(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  if (raw.startsWith("date:")) {
+    const iso = raw.slice(5);
+    try {
+      const d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch { return iso; }
+  }
+  const map: Record<string, string> = {
+    "7_dias": "7 dias após aprovação",
+    "14_dias": "14 dias após aprovação",
+    "21_dias": "21 dias após aprovação",
+    "28_dias": "28 dias após aprovação",
+    "45_dias": "45 dias após aprovação",
+  };
+  return map[raw] ?? raw;
+}
+
+// BUG-043 FIX: strip internal_* fields before sending to any external webhook.
+// negotiation_markup_percent must NEVER reach external systems — the prefix alone
+// provides no protection once the payload crosses the application boundary.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function toExternalPayload({ internal_real_subtotal, internal_real_discount_percent, internal_negotiation_markup_percent, ...safe }: QuoteData): Omit<QuoteData, "internal_real_subtotal" | "internal_real_discount_percent" | "internal_negotiation_markup_percent"> {
+  return safe;
+}
+
 // BUG-010 FIX: sendToN8N now receives webhookUrl as parameter (no more module-scope closure).
 async function sendToN8N(quoteData: QuoteData, webhookUrl: string): Promise<Record<string, unknown>> {
   const response = await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: "create_or_update_quote", quote: quoteData, timestamp: new Date().toISOString() }),
+    body: JSON.stringify({ action: "create_or_update_quote", quote: toExternalPayload(quoteData), timestamp: new Date().toISOString() }),
   });
   if (!response.ok) {
     await response.text();
@@ -322,7 +387,7 @@ async function sendToSalesPro(quoteData: QuoteData): Promise<void> {
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-api-key": apiKey },
-      body: JSON.stringify({ action: "create_or_update_quote", quote: quoteData, source: "gifts-store", timestamp: new Date().toISOString() }),
+      body: JSON.stringify({ action: "create_or_update_quote", quote: toExternalPayload(quoteData), source: "gifts-store", timestamp: new Date().toISOString() }),
     });
     if (!response.ok) {
       await response.text();

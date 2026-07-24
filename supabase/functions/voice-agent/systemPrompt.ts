@@ -11,6 +11,8 @@ CONTEXTO: O vendedor usa o sistema para buscar produtos, criar orçamentos, nave
 CATEGORIAS DISPONÍVEIS: Canetas, Mochilas, Garrafas, Copos/Canecas, Cadernos, Camisetas, Bonés, Chaveiros, Kits, Tecnologia (powerbanks, fones, etc.)
 CORES COMUNS: azul, vermelho, verde, amarelo, preto, branco, rosa, roxo, laranja, cinza, prata, dourado
 MATERIAIS: metal, plástico, bambu, silicone, couro, tecido, alumínio, inox, vidro, papel reciclado
+GÊNEROS: Unissex, Masculino, Feminino, Infantil
+PÚBLICO-ALVO: exemplos comuns — "corporativo", "jovem", "infantil", "executivo", "atleta"
 
 PÁGINAS DO SISTEMA:
 - / (catálogo de produtos)
@@ -36,7 +38,7 @@ Responda SEMPRE em JSON com esta estrutura:
   "data": {
     "query": "termo de busca (se action=search)",
     "route": "rota para navegar (se action=navigate)",
-    "sortBy": "price-asc|price-desc|name|stock (se action=sort)",
+    "sortBy": "price-asc|price-desc|name|stock|newest|popularity|best-seller-supplier|best-seller-promo (se action=sort)",
     "oracleMessage": "mensagem para enviar ao Flow (se action=open_oracle)",
     "filters": {
       "category": "categoria (se detectada)",
@@ -44,8 +46,16 @@ Responda SEMPRE em JSON com esta estrutura:
       "material": "material (se detectado)",
       "maxPrice": número (se detectado),
       "minPrice": número (se detectado),
-      "inStock": boolean (se mencionado),
-      "isKit": boolean (se mencionado)
+      "inStock": boolean (se mencionado 'em estoque'),
+      "isKit": boolean (se mencionado 'kit'),
+      "gender": "Unissex|Masculino|Feminino|Infantil (se mencionado)",
+      "featured": boolean (se mencionado 'destaque' ou 'em destaque'),
+      "isNew": boolean (se mencionado 'lançamento' ou 'novidade'),
+      "hasPersonalization": boolean (se mencionado 'personalizável' ou 'personalizado'),
+      "onSale": boolean (se mencionado 'em oferta' ou 'promoção' ou 'desconto'),
+      "minStock": número (se mencionado estoque mínimo, ex: 'pelo menos 100 em estoque'),
+      "publicoAlvo": "público-alvo detectado (ex: corporativo, jovem, infantil)",
+      "endomarketing": boolean (se mencionado 'endomarketing' ou 'motivacional' ou 'integração de equipe')
     }
   }
 }
@@ -72,7 +82,10 @@ export const VOICE_COMMAND_TOOL = {
           properties: {
             query: { type: 'string' },
             route: { type: 'string' },
-            sortBy: { type: 'string', enum: ['price-asc', 'price-desc', 'name', 'stock'] },
+            sortBy: {
+              type: 'string',
+              enum: ['price-asc', 'price-desc', 'name', 'stock', 'newest', 'popularity', 'best-seller-supplier', 'best-seller-promo'],
+            },
             oracleMessage: { type: 'string', description: 'Message to send to the Oracle AI consultant' },
             filters: {
               type: 'object',
@@ -84,6 +97,14 @@ export const VOICE_COMMAND_TOOL = {
                 minPrice: { type: 'number' },
                 inStock: { type: 'boolean' },
                 isKit: { type: 'boolean' },
+                gender: { type: 'string', enum: ['Unissex', 'Masculino', 'Feminino', 'Infantil'] },
+                featured: { type: 'boolean' },
+                isNew: { type: 'boolean' },
+                hasPersonalization: { type: 'boolean' },
+                onSale: { type: 'boolean' },
+                minStock: { type: 'number' },
+                publicoAlvo: { type: 'string' },
+                endomarketing: { type: 'boolean' },
               },
             },
           },

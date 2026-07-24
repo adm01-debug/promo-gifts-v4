@@ -1,0 +1,358 @@
+# Dry-run da migração `magazineService` → queries tipadas.
+#
+# Em PRs / pushes que tocam magazineService.ts, types.ts ou os artefatos
+# do PR armado, este workflow:
+#   1. Detecta se types.ts já contém as tabelas magazines/magazine_items.
+#   2. Se SIM  → executa apply-magazine-typed-queries.sh em cópia temporária,
+#      roda tsgo, lint-untyped-from e a suíte vitest do módulo. Bloqueia o
+#      merge se qualquer passo quebrar (isto é, "as queries tipadas quebraram
+#      algo" = red).
+#   3. Se NÃO → sai como neutro/skip com aviso (o PR de regeneração ainda
+#      precisa entrar antes; o dry-run não pode falhar por essa razão).
+#
+# Também roda automaticamente depois do workflow "Regenerate Supabase Types"
+# concluir com sucesso em main — assim a revalidação só dispara quando o
+# types.ts regenerado já está presente no repositório.
+#
+# Nunca commita mudanças — este é um dry-run puro de validação. Aplicação
+# real continua manual (bash docs/plans/apply-magazine-typed-queries.sh no
+# PR de migração).
+
+name: Magazine typed queries — dry-run
+
+on:
+  pull_request:
+    paths:
+      - 'src/services/magazineService.ts'
+      - 'src/integrations/supabase/types.ts'
+      - 'docs/plans/apply-magazine-typed-queries.sh'
+      - 'docs/plans/magazine-typed-queries-migration.patch'
+      - '.github/workflows/magazine-typed-queries.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/services/magazineService.ts'
+      - 'src/integrations/supabase/types.ts'
+  workflow_run:
+    workflows: ['Regenerate Supabase Types']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: magazine-typed-queries-${{ github.ref }}
+  cancel-in-progress: true
+
+# Contagens esperadas do padrão de substituição (SSOT do gate).
+# Alterar aqui se o magazineService.ts mudar de forma legítima.
+env:
+  EXPECTED_FROM_MAGAZINES: '16'
+  EXPECTED_FROM_MAGAZINE_ITEMS: '10'
+  EXPECTED_UNTYPEDFROM_AFTER: '0'
+
+jobs:
+  dry-run:
+    name: Aplica patch em cópia e valida
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # workflow_run só faz sentido quando a regeneração foi bem-sucedida.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Detecta se types.ts está pronto
+        id: gate
+        run: |
+          if grep -qE "magazines: \{" src/integrations/supabase/types.ts \
+             && grep -qE "magazine_items: \{" src/integrations/supabase/types.ts; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::types.ts contém magazines + magazine_items → executando dry-run completo"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::types.ts ainda não regenerado — dry-run em modo skip. Rode antes 'Regenerate Supabase Types'."
+          fi
+
+      - name: Prepara diretório do relatório
+        if: always()
+        run: mkdir -p qa/reports
+
+      - name: Snapshot ANTES do apply (para diff de auditoria)
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          cp src/services/magazineService.ts qa/reports/magazineService.before.ts
+
+      - name: Aplica script de migração (dry-run em worktree)
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          # Roda o script no próprio checkout (não commita — o job termina
+          # sem push). Se falhar, o workflow reprova o PR.
+          bash docs/plans/apply-magazine-typed-queries.sh
+
+      - name: Snapshot DEPOIS do apply + diff de auditoria
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          cp src/services/magazineService.ts qa/reports/magazineService.after.ts
+
+          # Diff unificado completo (referência bruta)
+          diff -u \
+            qa/reports/magazineService.before.ts \
+            qa/reports/magazineService.after.ts \
+            > qa/reports/magazineService.diff.patch || true
+
+          # Diff filtrado apenas às linhas que citam as tabelas alvo
+          # (facilita auditoria da substituição untypedFrom → .from tipado).
+          {
+            echo "# Diff filtrado — apenas linhas envolvendo magazines/magazine_items"
+            echo ""
+            echo '```diff'
+            grep -E '^[+-].*(magazines|magazine_items|untypedFrom|MagazineRow|MagazineItemRow)' \
+              qa/reports/magazineService.diff.patch || echo "(sem linhas de interesse)"
+            echo '```'
+          } > qa/reports/magazineService.diff.filtered.md
+
+      - name: Confirma que untypedFrom sumiu de magazineService
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          if grep -q "untypedFrom" src/services/magazineService.ts; then
+            echo "::error::apply-magazine-typed-queries.sh rodou mas 'untypedFrom' ainda aparece em magazineService.ts"
+            grep -n "untypedFrom" src/services/magazineService.ts
+            exit 1
+          fi
+
+      - name: Gate de contagens esperadas (falha se padrão divergir)
+        id: counts_gate
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -e
+          TS_MAG=$(grep -cE "magazines: \{" src/integrations/supabase/types.ts || true)
+          TS_MI=$(grep -cE "magazine_items: \{" src/integrations/supabase/types.ts || true)
+          UF_COUNT=$(grep -c "untypedFrom" src/services/magazineService.ts || true)
+          FROM_MAG=$(grep -cE "\.from\((\"|')magazines(\"|')" src/services/magazineService.ts || true)
+          FROM_MI=$(grep -cE "\.from\((\"|')magazine_items(\"|')" src/services/magazineService.ts || true)
+
+          echo "ts_magazines=$TS_MAG"           >> "$GITHUB_OUTPUT"
+          echo "ts_magazine_items=$TS_MI"       >> "$GITHUB_OUTPUT"
+          echo "untyped_from=$UF_COUNT"         >> "$GITHUB_OUTPUT"
+          echo "from_magazines=$FROM_MAG"       >> "$GITHUB_OUTPUT"
+          echo "from_magazine_items=$FROM_MI"   >> "$GITHUB_OUTPUT"
+
+          fail=0
+          if [[ "$TS_MAG" -lt 1 ]]; then
+            echo "::error::types.ts sem entrada 'magazines: {' (encontrado $TS_MAG)"; fail=1
+          fi
+          if [[ "$TS_MI" -lt 1 ]]; then
+            echo "::error::types.ts sem entrada 'magazine_items: {' (encontrado $TS_MI)"; fail=1
+          fi
+          if [[ "$UF_COUNT" -ne "$EXPECTED_UNTYPEDFROM_AFTER" ]]; then
+            echo "::error::untypedFrom em magazineService.ts = $UF_COUNT (esperado $EXPECTED_UNTYPEDFROM_AFTER)"; fail=1
+          fi
+          if [[ "$FROM_MAG" -ne "$EXPECTED_FROM_MAGAZINES" ]]; then
+            echo "::error::.from('magazines') = $FROM_MAG (esperado $EXPECTED_FROM_MAGAZINES) — padrão do relatório divergiu"; fail=1
+          fi
+          if [[ "$FROM_MI" -ne "$EXPECTED_FROM_MAGAZINE_ITEMS" ]]; then
+            echo "::error::.from('magazine_items') = $FROM_MI (esperado $EXPECTED_FROM_MAGAZINE_ITEMS) — padrão do relatório divergiu"; fail=1
+          fi
+
+          if [[ "$fail" -ne 0 ]]; then
+            echo "::error::Gate de contagens FALHOU — revise docs/plans/magazine-typed-queries-migration.md e ajuste EXPECTED_* no workflow se a mudança for legítima."
+            exit 1
+          fi
+          echo "::notice::Gate de contagens OK (magazines=$FROM_MAG, magazine_items=$FROM_MI, untypedFrom=$UF_COUNT)"
+
+      - name: Typecheck (tsc)
+        if: steps.gate.outputs.ready == 'true'
+        run: npx tsc --noEmit
+
+      - name: Lint untypedFrom × types.ts
+        if: steps.gate.outputs.ready == 'true'
+        run: bash scripts/lint-untyped-from.sh
+
+      - name: Vitest — módulo Magazine + service
+        if: steps.gate.outputs.ready == 'true'
+        run: |
+          set -o pipefail
+          npx vitest run \
+            src/services/__tests__/magazineAddProductsUnique.test.ts \
+            src/services/__tests__/magazineEdgeContract.test.ts \
+            src/pages/magazine/__tests__/publishAwait.regression.test.ts \
+            tests/integration/magazine-service-fuzz.test.ts \
+            --reporter=default 2>&1 | tee qa/reports/vitest.log
+
+      - name: Gera relatório de revalidação
+        if: always()
+        env:
+          READY: ${{ steps.gate.outputs.ready }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+          ACTOR: ${{ github.actor }}
+          REPO: ${{ github.repository }}
+          STATUS: ${{ job.status }}
+        run: |
+          set -e
+          REPORT="qa/reports/magazine-typed-queries-revalidation.md"
+          TS_MAG=$(grep -cE "magazines: \{" src/integrations/supabase/types.ts || true)
+          TS_MI=$(grep -cE "magazine_items: \{" src/integrations/supabase/types.ts || true)
+          UF_COUNT=$(grep -c "untypedFrom" src/services/magazineService.ts || true)
+          FROM_MAG=$(grep -cE "\.from\((\"|')magazines(\"|')" src/services/magazineService.ts || true)
+          FROM_MI=$(grep -cE "\.from\((\"|')magazine_items(\"|')" src/services/magazineService.ts || true)
+
+          ARTIFACT_URL="https://github.com/$REPO/actions/runs/$RUN_ID#artifacts"
+
+          {
+            echo "# Magazine Typed Queries — Revalidação"
+            echo ""
+            echo "- **Repo:** \`$REPO\`"
+            echo "- **Ref:** \`$REF\`"
+            echo "- **SHA:** \`$SHA\`"
+            echo "- **Run:** [#$RUN_NUMBER](https://github.com/$REPO/actions/runs/$RUN_ID)"
+            echo "- **Evento:** \`$EVENT\` por @\`$ACTOR\`"
+            echo "- **Status do job:** \`$STATUS\`"
+            echo "- **Gate types.ts pronto:** \`$READY\`"
+            echo "- **Artifact:** [magazine-typed-queries-revalidation-$RUN_NUMBER]($ARTIFACT_URL)"
+            echo ""
+            echo "## Contagens"
+            echo ""
+            echo "| Métrica | Valor | Esperado |"
+            echo "|---|---:|---:|"
+            echo "| \`magazines: {\` em types.ts | $TS_MAG | ≥ 1 |"
+            echo "| \`magazine_items: {\` em types.ts | $TS_MI | ≥ 1 |"
+            echo "| \`untypedFrom\` em magazineService.ts | $UF_COUNT | $EXPECTED_UNTYPEDFROM_AFTER |"
+            echo "| \`.from('magazines')\` tipado | $FROM_MAG | $EXPECTED_FROM_MAGAZINES |"
+            echo "| \`.from('magazine_items')\` tipado | $FROM_MI | $EXPECTED_FROM_MAGAZINE_ITEMS |"
+            echo ""
+            echo "## Etapas"
+            echo ""
+            if [[ "$READY" == "true" ]]; then
+              echo "- Apply script: executado"
+              echo "- Diff filtrado: \`magazineService.diff.filtered.md\`"
+              echo "- Diff completo: \`magazineService.diff.patch\`"
+              echo "- Snapshots: \`magazineService.before.ts\` / \`magazineService.after.ts\`"
+              echo "- Gate de contagens: ver job"
+              echo "- tsgo --noEmit: ver job"
+              echo "- lint-untyped-from: ver job"
+              echo "- vitest (4 suítes): \`vitest.log\`"
+            else
+              echo "- Skip: types.ts ainda não contém magazines/magazine_items. Rode 'Regenerate Supabase Types' antes."
+            fi
+            echo ""
+            echo "_Gerado automaticamente em $(date -u +'%Y-%m-%dT%H:%M:%SZ')._"
+          } > "$REPORT"
+
+          cat > qa/reports/magazine-typed-queries-revalidation.json <<JSON
+          {
+            "repo": "$REPO",
+            "ref": "$REF",
+            "sha": "$SHA",
+            "run_id": "$RUN_ID",
+            "run_number": "$RUN_NUMBER",
+            "event": "$EVENT",
+            "actor": "$ACTOR",
+            "job_status": "$STATUS",
+            "types_ready": "$READY",
+            "artifact_url": "$ARTIFACT_URL",
+            "expected": {
+              "from_magazines": $EXPECTED_FROM_MAGAZINES,
+              "from_magazine_items": $EXPECTED_FROM_MAGAZINE_ITEMS,
+              "untyped_from_after": $EXPECTED_UNTYPEDFROM_AFTER
+            },
+            "counts": {
+              "types_magazines": $TS_MAG,
+              "types_magazine_items": $TS_MI,
+              "untyped_from_remaining": $UF_COUNT,
+              "from_magazines": $FROM_MAG,
+              "from_magazine_items": $FROM_MI
+            },
+            "generated_at": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          }
+          JSON
+
+          echo "::notice::Relatório gerado em $REPORT"
+          cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publica artifact de auditoria
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: magazine-typed-queries-revalidation-${{ github.run_number }}
+          path: qa/reports/
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Comenta resumo no PR (upsert)
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          READY: ${{ steps.gate.outputs.ready }}
+          STATUS: ${{ job.status }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- magazine-typed-queries-revalidation -->';
+            const reportPath = 'qa/reports/magazine-typed-queries-revalidation.md';
+            let report = '';
+            try { report = fs.readFileSync(reportPath, 'utf8'); }
+            catch { report = '_Relatório não gerado (job abortou antes)._'; }
+
+            const artifactUrl =
+              `https://github.com/${context.repo.owner}/${context.repo.repo}` +
+              `/actions/runs/${process.env.RUN_ID}#artifacts`;
+
+            const body = [
+              marker,
+              `### 📘 Magazine typed queries — revalidação (run #${process.env.RUN_NUMBER})`,
+              '',
+              `- **Status:** \`${process.env.STATUS}\``,
+              `- **Gate types.ts pronto:** \`${process.env.READY}\``,
+              `- **Artifact:** [magazine-typed-queries-revalidation-${process.env.RUN_NUMBER}](${artifactUrl})`,
+              '',
+              '<details><summary>Resumo do relatório</summary>',
+              '',
+              report,
+              '',
+              '</details>',
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number, body,
+              });
+            }
+
+      - name: Resumo
+        if: always()
+        run: |
+          if [[ "${{ steps.gate.outputs.ready }}" == "true" ]]; then
+            echo "::notice::Dry-run completo — relatório publicado como artifact e comentado no PR (se houver)."
+          else
+            echo "::notice::Dry-run em modo skip — relatório publicado com gate=false para auditoria."
+          fi

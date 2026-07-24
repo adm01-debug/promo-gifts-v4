@@ -24,9 +24,10 @@ import { useIndustryTrends } from '@/hooks/bi/useIndustryTrends';
 import { useClientSeasonality } from '@/hooks/bi/useClientSeasonality';
 import { useClientVsIndustry } from '@/hooks/bi/useClientVsIndustry';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface Message {
-  role: 'user' | 'assistant';
+  role: 'assistant' | 'user';
   content: string;
 }
 
@@ -109,7 +110,7 @@ export function BIAiCopilot({ open, onOpenChange, clientId, clientName, ramoAtiv
         })),
       };
 
-      const { data, error } = await supabase.functions.invoke('bi-copilot', {
+      const { data, error } = await invokeEdge('bi-copilot', {
         body: {
           question,
           context,

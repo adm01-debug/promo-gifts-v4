@@ -75,7 +75,7 @@ export function TechniqueSLACard({
   className,
 }: TechniqueSLACardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [sortBy, setSortBy] = useState<'sla' | 'cost'>('sla');
+  const [sortBy, setSortBy] = useState<'cost' | 'sla'>('sla');
 
   const { data: techniques, isLoading } = useQuery({
     queryKey: ['techniques-sla-external', productId],
@@ -84,11 +84,13 @@ export function TechniqueSLACard({
         table: 'personalization_techniques',
         operation: 'select',
         filters: { is_active: true },
-        orderBy: { column: 'estimated_days', ascending: true },
+        // FIX 2026-06-26: 'estimated_days' nao existe em personalization_techniques (PostgREST 400/42703);
+        // ordena por 'name' (coluna real). SLA/custo continuam reordenados client-side abaixo.
+        orderBy: { column: 'name', ascending: true },
         limit: 100,
       });
       return result.records.map((t) => {
-        const ext = t as Technique & Pick<ExternalTechnique, 'setup_price' | 'handling_price'>;
+        const ext = t as Pick<ExternalTechnique, 'handling_price' | 'setup_price'> & Technique;
         return {
           ...t,
           setup_cost: ext.setup_price ?? t.setup_cost,

@@ -51,7 +51,7 @@ export const CollectionDetailPage = lazyWithRetry(
 // ─────────────────────────────────────────────────────────────────
 // Quotes
 // ─────────────────────────────────────────────────────────────────
-export const QuoteTemplatesPage = lazyWithRetry(() => import('@/pages/quotes/QuoteTemplatesPage'));
+
 export const QuotesListPage = lazyWithRetry(() => import('@/pages/quotes/QuotesListPage'));
 export const QuotesDashboardPage = lazyWithRetry(
   () => import('@/pages/quotes/QuotesDashboardPage'),
@@ -64,6 +64,10 @@ export const QuotesKanbanPage = lazyWithRetry(() => import('@/pages/quotes/Quote
 // Admin (supervisor + dev)
 // ─────────────────────────────────────────────────────────────────
 export const AdminUsuariosPage = lazyWithRetry(() => import('@/pages/admin/AdminUsuariosPage'));
+export const DiscountRequestDetailPage = lazyWithRetry(
+  () => import('@/pages/admin/DiscountRequestDetailPage'),
+);
+
 export const AdminPromoverUsuarioPage = lazyWithRetry(
   () => import('@/pages/admin/AdminPromoverUsuarioPage'),
 );
@@ -74,6 +78,11 @@ export const AdminProductFormPage = lazyWithRetry(
   () => import('@/pages/admin/AdminProductFormPage'),
 );
 export const AdminTelemetriaPage = lazyWithRetry(() => import('@/pages/admin/AdminTelemetriaPage'));
+export const EmaHealthPage = lazyWithRetry(() => import('@/pages/admin/EmaHealthPage'));
+export const AdminV4CallbacksPage = lazyWithRetry(
+  () => import('@/pages/admin/AdminV4CallbacksPage'),
+);
+
 export const AdminClientPerformancePage = lazyWithRetry(
   () => import('@/pages/admin/AdminClientPerformancePage'),
 );
@@ -164,6 +173,23 @@ export const CoverageInsightsDashboardPage = lazyWithRetry(
   () => import('@/pages/tools/CoverageInsightsDashboardPage'),
 );
 export const VisualSearchPage = lazyWithRetry(() => import('@/pages/tools/VisualSearchPage'));
+
+// ─────────────────────────────────────────────────────────────────
+// Magazine (revistas de produtos)
+// ─────────────────────────────────────────────────────────────────
+export const MagazineListPage = lazyWithRetry(() => import('@/pages/magazine/MagazineListPage'));
+export const MagazineEditorPage = lazyWithRetry(
+  () => import('@/pages/magazine/MagazineEditorPage'),
+);
+export const MagazinePrintPage = lazyWithRetry(
+  () => import('@/pages/magazine/MagazinePrintPage'),
+);
+export const PublicMagazineView = lazyWithRetry(
+  () => import('@/pages/magazine/PublicMagazineView'),
+);
+export const MagazineTemplatesGalleryPage = lazyWithRetry(
+  () => import('@/pages/magazine/templates-gallery/MagazineTemplatesGalleryPage'),
+);
 
 // ─────────────────────────────────────────────────────────────────
 // Clients (CRM)

@@ -1,14 +1,15 @@
 import { useNavigate } from 'react-router-dom';
-import { useCallback, useMemo, useState, useRef, lazy, Suspense } from 'react';
+import { useCallback, useMemo, useState, useRef } from 'react';
 import { SharePreviewDialog } from '@/components/products/share/SharePreviewDialog';
 import { VariantPickerDialog } from '@/components/products/VariantPickerDialog';
 import { type ExternalVariantStock, type Product } from '@/hooks/products';
 
 import { PageSEO } from '@/components/seo/PageSEO';
-import { FilterPanel, type FilterState, defaultFilters } from '@/components/filters/FilterPanel';
+import { FilterPanel } from '@/components/filters/FilterPanel';
 import { SORT_OPTIONS } from '@/constants/filters';
 import { PresetsBar } from '@/components/filters/PresetsBar';
 import { VirtualizedProductGrid } from '@/components/products/VirtualizedProductGrid';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
 import { ProductList } from '@/components/products/ProductList';
 import { ProductTableView } from '@/components/products/ProductTableView';
 import { ColumnSelector } from '@/components/products/ColumnSelector';
@@ -45,31 +46,14 @@ import { RecentlyViewedPopover } from '@/components/products/RecentlyViewedPopov
 import { useSearchHistory } from '@/hooks/common/useSearchHistory';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import type { VoiceAgentAction } from '@/hooks/voice/types';
-import { useOracleVoiceBridge } from '@/stores/oracleVoiceBridge';
-import { toast } from 'sonner';
 import { useFiltersPageState } from '@/pages/filters/useFiltersPageState';
 import { useFiltersSelectionMode } from '@/pages/filters/useFiltersSelectionMode';
 import { cn } from '@/lib/utils';
 import { m as motion, AnimatePresence } from 'framer-motion';
 
-const LazyVoiceOverlay = lazy(() => import('@/components/search/VoiceSearchOverlayConnected'));
-
 // DEFAULT_SORT_VALUE derivado do SSOT (SORT_OPTIONS) — evita hardcodar 'name'.
 // Consistente com o padrão do CatalogToolbar.tsx (BUG-G7 reference).
 const DEFAULT_SORT_VALUE = SORT_OPTIONS[0].value;
-
-// BUG-VOZ FIX: mapeamento canônico de sortBy da voz para valores aceitos pelo pipeline.
-const VOICE_SORT_MAP: Record<string, string> = {
-  'price-asc': 'price-asc',
-  'price-desc': 'price-desc',
-  name: 'name',
-  stock: 'stock',
-  newest: 'newest',
-  popularity: 'popularity',
-  'best-seller-supplier': 'best-seller-supplier',
-  'best-seller-promo': 'best-seller-promo',
-} as const;
 
 // GAP-1 FIX (PR #689 review): labels para valores internos de sortBy que são
 // válidos no pipeline (VALID_SORT_VALUES do useFiltersPageState) mas não
@@ -84,8 +68,11 @@ const INTERNAL_SORT_LABELS: Readonly<Record<string, string>> = {
 
 export default function FiltersPage() {
   const navigate = useNavigate();
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { isInCompare, toggleCompare, canAddMore } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const toggleCompare = useComparisonStore((s) => s.toggleCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
 
   const state = useFiltersPageState();
   // GAP-19 FIX: FiltersPage usa VirtualizedProductGrid SEM onLoadMore — todos os
@@ -99,12 +86,19 @@ export default function FiltersPage() {
     () => JSON.stringify([state.sortBy, state.viewMode, state.filters]),
     [state.sortBy, state.viewMode, state.filters],
   );
+
+  // FAN-OUT DE COR (FASE 5): quando o filtro de cor expande produtos em cards por
+  // cor, a contagem distingue produtos de variações ("X produtos · Y variações").
+  // Sem fan-out (cardCount === nº de produtos), hasFanout=false → contagem padrão.
+  const countDisplay = useMemo(() => {
+    const produtos = state.filteredProducts.length;
+    const variacoes = state.cardCount ?? produtos;
+    return { produtos, variacoes, hasFanout: variacoes > produtos };
+  }, [state.filteredProducts.length, state.cardCount]);
   const sel = useFiltersSelectionMode({
     selectionMode: state.selectionMode,
     filteredProducts: state.filteredProducts,
   });
-  const openOracle = useOracleVoiceBridge((s) => s.openOracle);
-
   // ========== SEARCH HISTORY ==========
   const [historyOpen, setHistoryOpen] = useState(false);
   const { history: rawSearchHistory, clearHistory } = useSearchHistory('general');
@@ -117,66 +111,6 @@ export default function FiltersPage() {
     undefined,
   );
   const variantSelectedRef = useRef(false);
-
-  // ========== VOICE ==========
-  const handleVoiceAction = useCallback(
-    (action: VoiceAgentAction) => {
-      if (action.action === 'open_oracle') {
-        openOracle(action.data?.oracleMessage || undefined);
-        toast.success(action.response);
-        return;
-      }
-      if (action.action === 'open_cart') {
-        // Trigger cart sidebar via keyboard shortcut event
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'o', altKey: true }));
-        toast.success(action.response);
-        return;
-      }
-
-      if (!action.data) return;
-
-      if (action.action === 'filter' && action.data.filters) {
-        const f = action.data.filters;
-        state.setFilters((prev: FilterState) => {
-          const next = { ...prev };
-          // Dedup ao acumular — voz pode repetir o mesmo termo entre comandos.
-          if (f.color) next.colors = [...new Set([...prev.colors, f.color])];
-          if (f.category) next.categories = [...new Set([...prev.categories, f.category])];
-          if (f.material) next.materiais = [...new Set([...prev.materiais, f.material])];
-          // BUG-VOZ-PRICE FIX: aplicar min E max de forma acumulativa. Antes, quando
-          // ambos vinham no mesmo comando, a segunda atribuição lia prev.priceRange e
-          // descartava o valor recém-definido pela primeira (ex.: "entre 10 e 50" perdia o 50).
-          const hasMin = typeof f.minPrice === 'number';
-          const hasMax = typeof f.maxPrice === 'number';
-          if (hasMin || hasMax) {
-            next.priceRange = [
-              hasMin ? (f.minPrice as number) : next.priceRange[0],
-              hasMax ? (f.maxPrice as number) : next.priceRange[1],
-            ];
-          }
-          if (f.inStock) next.inStock = true;
-          if (f.isKit) next.isKit = true;
-          return next;
-        });
-        toast.success(action.response);
-      } else if (action.action === 'search' && action.data.query) {
-        const query = action.data.query;
-        state.setFilters((prev: FilterState) => ({ ...prev, search: query }));
-        toast.success(action.response);
-      } else if (action.action === 'sort' && action.data.sortBy) {
-        const sortValue = VOICE_SORT_MAP[action.data.sortBy] || 'name';
-        state.setSortBy(sortValue);
-        toast.success(action.response);
-      } else if (action.action === 'clear') {
-        state.setFilters(defaultFilters);
-        toast.success(action.response);
-      } else if (action.action === 'navigate' && action.data.route) {
-        navigate(action.data.route);
-        toast.success(action.response);
-      }
-    },
-    [state, navigate, openOracle],
-  );
 
   const toggleSelectionMode = useCallback(() => {
     state.setSelectionMode((prev: boolean) => !prev);
@@ -250,10 +184,10 @@ export default function FiltersPage() {
           </aside>
 
           {/* Content */}
-          <div className="min-w-0 flex-1 space-y-6">
+          <div className="min-w-0 flex-1 space-y-6" style={swatchSizeStyle(state.viewMode, state.gridColumns)}>
             <div
               className="sticky z-20 flex flex-col gap-4 bg-background/90 pb-3 pt-1 backdrop-blur-sm"
-              style={{ top: 'calc(var(--header-h, 56px) + var(--breadcrumb-h, 40px))' }}
+              style={{ top: 'calc(var(--header-h, 56px) + var(--breadcrumb-h, 0px))' }}
             >
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex-shrink-0">
@@ -267,7 +201,9 @@ export default function FiltersPage() {
                       <span className="tabular-nums">
                         {state.isLoadingProducts && state.realProducts.length === 0
                           ? 'carregando...'
-                          : `${(state.activeFiltersCount > 0 ? state.filteredProducts.length : (state.totalEstimate ?? state.filteredProducts.length)).toLocaleString('pt-BR')}${!state.isFullyLoaded && state.activeFiltersCount === 0 ? '+' : ''} itens`}
+                          : countDisplay.hasFanout
+                            ? `${countDisplay.produtos.toLocaleString('pt-BR')} produtos · ${countDisplay.variacoes.toLocaleString('pt-BR')} variações`
+                            : `${(state.activeFiltersCount > 0 ? state.filteredProducts.length : (state.totalEstimate ?? state.filteredProducts.length)).toLocaleString('pt-BR')}${!state.isFullyLoaded && state.activeFiltersCount === 0 ? '+' : ''} itens`}
                       </span>
                       {!state.isFullyLoaded &&
                         state.loadingProgress > 0 &&
@@ -397,7 +333,9 @@ export default function FiltersPage() {
                     <Badge variant="secondary" className="shrink-0 whitespace-nowrap">
                       {state.isLoadingProducts && state.realProducts.length === 0
                         ? 'Carregando...'
-                        : `${state.filteredProducts.length.toLocaleString('pt-BR')} encontrado${state.filteredProducts.length !== 1 ? 's' : ''}`}
+                        : countDisplay.hasFanout
+                          ? `${countDisplay.produtos.toLocaleString('pt-BR')} produtos · ${countDisplay.variacoes.toLocaleString('pt-BR')} variações`
+                          : `${state.filteredProducts.length.toLocaleString('pt-BR')} encontrado${state.filteredProducts.length !== 1 ? 's' : ''}`}
                     </Badge>
                   )}
                   <Sheet open={state.mobileFiltersOpen} onOpenChange={state.setMobileFiltersOpen}>
@@ -473,7 +411,7 @@ export default function FiltersPage() {
                       </div>
                     </SheetContent>
                   </Sheet>
-                  <div className="flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap">
                     <Select value={state.sortBy} onValueChange={state.setSortBy}>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -540,67 +478,76 @@ export default function FiltersPage() {
                       </TooltipTrigger>
                       <TooltipContent>Presets de filtros salvos para acesso rápido</TooltipContent>
                     </Tooltip>
-                    {/* Selection toggle & Layout */}
-                    <div
-                      data-testid="superfiltro-toolbar-actions"
-                      className="ml-auto flex items-center gap-2"
-                    >
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={state.selectionMode ? 'default' : 'outline'}
-                            size="sm"
-                            className={cn(
-                              'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
-                              state.selectionMode
-                                ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
-                                : 'hover:border-primary/50',
-                            )}
-                            onClick={toggleSelectionMode}
-                            aria-label={
-                              state.selectionMode
-                                ? 'Cancelar seleção'
-                                : 'Ativar modo de seleção em massa'
-                            }
-                          >
-                            <CheckSquare className="h-3.5 w-3.5" />
-                            <span className="hidden text-xs sm:inline">
-                              {state.selectionMode ? 'Cancelar' : 'Selecionar'}
-                            </span>
-                            <AnimatePresence>
-                              {state.selectionMode && sel.selectedCount > 0 && (
-                                <motion.div
-                                  initial={{ scale: 0, opacity: 0 }}
-                                  animate={{ scale: 1, opacity: 1 }}
-                                  exit={{ scale: 0, opacity: 0 }}
-                                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                                  className="absolute -right-2 -top-2"
-                                >
-                                  <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
-                                    {sel.selectedCount}
-                                  </Badge>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {state.selectionMode
-                            ? 'Sair do modo de seleção'
-                            : 'Selecionar vários produtos para ações em massa'}
-                        </TooltipContent>
-                      </Tooltip>
+                  </div>
+                  {/* Selection toggle & Layout — ancorados na borda direita,
+                      separados visualmente do grupo de filtros/ordenação.
+                      ⚠️ NUNCA aplicar `flex-1` em grupos intermediários da toolbar:
+                      isso neutraliza o `ml-auto` deste bloco de ações e gruda os
+                      botões "Selecionar" e "Layout" no conteúdo à esquerda. */}
+                  <div
+                    data-testid="superfiltro-toolbar-actions"
+                    role="group"
+                    aria-label="Ações da listagem: seleção em massa e layout"
+                    className="order-last ml-auto flex shrink-0 items-center gap-2 pl-2 border-l border-border/60 sm:pl-3"
+                  >
 
-                      <div className="shrink-0">
-                        <LayoutPopover
-                          viewMode={state.viewMode}
-                          setViewMode={state.setViewMode}
-                          gridColumns={state.gridColumns}
-                          setGridColumns={state.setGridColumns}
-                        />
-                      </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={state.selectionMode ? 'default' : 'outline'}
+                          size="sm"
+                          className={cn(
+                            'relative h-8 gap-1.5 bg-card/40 backdrop-blur-sm transition-all sm:h-9',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                            state.selectionMode
+                              ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90'
+                              : 'hover:border-primary/50',
+                          )}
+                          onClick={toggleSelectionMode}
+                          aria-label={
+                            state.selectionMode
+                              ? 'Cancelar seleção'
+                              : 'Ativar modo de seleção em massa'
+                          }
+                        >
+                          <CheckSquare className="h-3.5 w-3.5" />
+                          <span className="hidden text-xs sm:inline">
+                            {state.selectionMode ? 'Cancelar' : 'Selecionar'}
+                          </span>
+                          <AnimatePresence>
+                            {state.selectionMode && sel.selectedCount > 0 && (
+                              <motion.div
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                                className="absolute -right-2 -top-2"
+                              >
+                                <Badge className="flex h-5 min-w-5 items-center justify-center bg-destructive px-1.5 py-0 text-[10px] font-bold tabular-nums text-destructive-foreground shadow-lg">
+                                  {sel.selectedCount}
+                                </Badge>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {state.selectionMode
+                          ? 'Sair do modo de seleção'
+                          : 'Selecionar vários produtos para ações em massa'}
+                      </TooltipContent>
+                    </Tooltip>
+
+                    <div className="shrink-0">
+                      <LayoutPopover
+                        viewMode={state.viewMode}
+                        setViewMode={state.setViewMode}
+                        gridColumns={state.gridColumns}
+                        setGridColumns={state.setGridColumns}
+                      />
                     </div>
                   </div>
+
                   {state.activeFiltersSummary.length > 0 && (
                     <div className="hidden w-full flex-wrap items-center gap-1.5 sm:flex">
                       {state.activeFiltersSummary.slice(0, 3).map((filter) => (
@@ -647,12 +594,18 @@ export default function FiltersPage() {
                     {state.viewMode === 'grid' ? (
                       <VirtualizedProductGrid
                         scrollResetKey={scrollResetKey}
-                        products={state.filteredProducts}
+                        /* FAN-OUT: grid renderiza displayCards (1 card por cor quando
+                           filtro de cor ativo). Sem filtro, === filteredProducts. */
+                        products={state.displayCards}
                         isLoading={state.isLoadingProducts}
-                        onProductClick={(productId) =>
+                        onProductClick={(productId, colorName) =>
                           state.selectionMode
                             ? sel.toggleSelect(productId)
-                            : navigate(`/produto/${productId}`)
+                            : navigate(
+                                colorName
+                                  ? `/produto/${productId}?cor=${encodeURIComponent(colorName)}&pid=${productId}`
+                                  : `/produto/${productId}`,
+                              )
                         }
                         isFavorited={isFavorite}
                         onToggleFavorite={toggleFavorite}
@@ -817,15 +770,6 @@ export default function FiltersPage() {
           </div>
         </div>
       </div>
-      {state.voiceOverlayOpen && (
-        <Suspense fallback={null}>
-          <LazyVoiceOverlay
-            isOpen={state.voiceOverlayOpen}
-            onClose={() => state.setVoiceOverlayOpen(false)}
-            onAction={handleVoiceAction}
-          />
-        </Suspense>
-      )}
 
       {/* Step 1: Variant picker for share */}
       {shareProduct && variantForShare === undefined && (

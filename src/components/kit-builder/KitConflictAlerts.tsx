@@ -16,7 +16,7 @@ interface KitConflictAlertsProps {
 
 interface Conflict {
   id: string;
-  severity: 'warning' | 'danger' | 'info';
+  severity: 'danger' | 'info' | 'warning';
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   suggestion: string;

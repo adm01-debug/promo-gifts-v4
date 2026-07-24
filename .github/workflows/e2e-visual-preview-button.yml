@@ -1,0 +1,162 @@
+name: E2E — Visual Regression (Preview button)
+
+# Snapshot visual + contraste do botão Preview da QuoteViewPage.
+#
+# Atualização de baselines:
+#  - Commit com `[update-visual-baselines]` na mensagem, OU
+#  - workflow_dispatch com input update_baselines=true
+# Quando aprovado, o job re-roda com --update-snapshots e commita
+# os PNGs sob e2e/visual/preview-button.spec.ts-snapshots/.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/__visual/**'
+      - 'src/pages/quotes/QuoteViewPage.tsx'
+      - 'src/routes/AppRoutes.tsx'
+      - 'tailwind.config.ts'
+      - 'src/index.css'
+      - 'e2e/visual/**'
+      - '.github/workflows/e2e-visual-preview-button.yml'
+      - 'scripts/check-visual-preview-suite.mjs'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/pages/__visual/**'
+      - 'src/pages/quotes/QuoteViewPage.tsx'
+      - 'src/routes/AppRoutes.tsx'
+      - 'tailwind.config.ts'
+      - 'src/index.css'
+      - 'e2e/visual/**'
+  workflow_dispatch:
+    inputs:
+      update_baselines:
+        description: 'Atualizar baselines (commit automático)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: e2e-visual-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TZ: America/Sao_Paulo
+  CI: 'true'
+  FORCE_COLOR: '0'
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+  VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+
+jobs:
+  visual:
+    name: Visual snapshots + axe contrast
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # Falha cedo se a suíte foi revertida (harness/spec/workflow/rota).
+      - name: 🛡️ Guarda de presença da suíte visual
+        run: node scripts/check-visual-preview-suite.mjs
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright (chromium)
+        run: npx playwright install --with-deps chromium
+
+      - name: Start dev server
+        run: npm run dev &
+
+      - name: Wait for server
+        run: timeout 120 bash -c 'until curl -sf http://localhost:8080 > /dev/null 2>&1; do sleep 1; done'
+
+      - name: Detectar pedido de atualização de baselines
+        id: detect
+        run: |
+          should_update="false"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.update_baselines }}" = "true" ]; then
+            should_update="true"
+          fi
+          if echo "${{ github.event.head_commit.message }}" | grep -qi '\[update-visual-baselines\]'; then
+            should_update="true"
+          fi
+          echo "should_update=$should_update" >> "$GITHUB_OUTPUT"
+
+      - name: Run visual + axe specs
+        if: steps.detect.outputs.should_update != 'true'
+        run: |
+          npx playwright test \
+            e2e/visual/preview-button.spec.ts \
+            --project=chromium-public \
+            --reporter=github,list,html
+        env:
+          E2E_BASE_URL: http://localhost:8080
+
+      - name: Update visual baselines
+        if: steps.detect.outputs.should_update == 'true'
+        run: |
+          npx playwright test \
+            e2e/visual/preview-button.spec.ts \
+            --project=chromium-public \
+            --update-snapshots \
+            --reporter=list
+        env:
+          E2E_BASE_URL: http://localhost:8080
+
+      - name: Commit updated baselines
+        if: steps.detect.outputs.should_update == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- e2e/visual; then
+            echo "Nenhuma mudança de baseline."
+            exit 0
+          fi
+          git add e2e/visual
+          git commit -m "chore(visual): atualiza baselines do botão Preview [skip ci]"
+          git push
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-preview-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload baseline diffs (screenshots actual/diff/expected)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-preview-diffs-${{ github.run_id }}
+          path: |
+            test-results/
+            !test-results/axe/
+          retention-days: 7
+
+      - name: Upload axe contrast logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-preview-axe-${{ github.run_id }}
+          path: test-results/axe/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -12,6 +12,8 @@ import { sanitizeError } from '@/lib/security/sanitize-error';
 import { useDevChallenge } from '@/contexts/DevChallengeContext';
 import { handleStepUpError } from '@/lib/auth/step-up-error';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface McpKeyRow {
   id: string;
@@ -32,7 +34,7 @@ export interface McpKeyRow {
   is_full: boolean;
 }
 
-export type StatusFilter = 'all' | 'active' | 'expired' | 'revoked';
+export type StatusFilter = 'active' | 'all' | 'expired' | 'revoked';
 export type SortKey = 'created_desc' | 'expires_asc' | 'last_used_desc';
 
 export interface CreatorOption {
@@ -97,20 +99,26 @@ export function useMcpKeys() {
     }
 
     const ids = [...new Set((keys ?? []).map((k) => k.created_by).filter(Boolean))];
-    let creators: Map<string, { email: string | null; name: string | null }> = new Map();
+    let creators = new Map<string, { email: string | null; name: string | null }>();
     if (ids.length > 0) {
-      const { data: profiles } = await supabase
+      // BUG-MCPKEYS-PROFILES-SELECT-SILENT-FAIL FIX: { data: profiles } without error check —
+      // RLS failure silently left creator_email/creator_name null on all keys.
+      const { data: profiles, error: profErr } = await supabase
         .from('profiles')
         .select('user_id, email, full_name')
         .in('user_id', ids);
-      creators = new Map(
-        (profiles ?? [])
-          .filter(
-            (p): p is { user_id: string; email: string | null; full_name: string | null } =>
-              p.user_id !== null,
-          )
-          .map((p) => [p.user_id, { email: p.email, name: p.full_name }]),
-      );
+      if (profErr) {
+        logger.warn('[useMcpKeys] profile enrichment failed — creator info unavailable:', profErr);
+      } else {
+        creators = new Map(
+          (profiles ?? [])
+            .filter(
+              (p): p is { user_id: string; email: string | null; full_name: string | null } =>
+                p.user_id !== null,
+            )
+            .map((p) => [p.user_id, { email: p.email, name: p.full_name }]),
+        );
+      }
     }
 
     const enriched: McpKeyRow[] = (keys ?? []).map((k) => {
@@ -243,7 +251,7 @@ export function useMcpKeys() {
       }
 
       const attempt = async (tk: string): Promise<boolean> => {
-        const { data, error } = await supabase.functions.invoke('mcp-keys-revoke', {
+        const { data, error } = await invokeEdge('mcp-keys-revoke', {
           body: { key_id: id, reason: reason ?? null, step_up_token: tk },
           headers: log.headers(),
         });

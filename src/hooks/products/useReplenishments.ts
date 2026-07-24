@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { untypedRpc } from '@/lib/supabase-untyped';
+import { shouldRetry } from '@/lib/db/postgrest';
+import { logger } from '@/lib/logger';
 
 /**
  * Módulo Reposição — FONTE ÚNICA DE VERDADE: RPC `fn_get_reposicao_listing`.
@@ -18,7 +20,7 @@ const FETCH_ALL_LIMIT = 2000;
 
 // ─── Types ───────────────────────────────────────────────────────
 
-export type ReplenishmentStatus = 'active' | 'expiring_soon' | 'expired';
+export type ReplenishmentStatus = 'active' | 'expired' | 'expiring_soon';
 export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock';
 
 export interface ReplenishmentWithDetails {
@@ -70,6 +72,7 @@ export interface ReplenishmentStatsDisplay {
   readonly restockedToday: number;
   readonly restockedThisWeek: number;
   readonly restockedLast15Days: number;
+  readonly restockedLast30Days: number;
   readonly topSupplierName: string | null;
   readonly topSupplierCount: number;
   readonly reorderedThisWeek: number;
@@ -99,6 +102,7 @@ interface ReposicaoRow {
   readonly category_names: string[] | null;
   readonly primary_category_id: string | null;
   readonly primary_category_name: string | null;
+  readonly is_low_stock: boolean | null;
 }
 
 // ─── Date Utilities ──────────────────────────────────────────────
@@ -120,23 +124,28 @@ function daysSinceLocal(dateStr: string | null): number {
     now.getFullYear(),
     now.getMonth(),
     now.getDate(),
-    12, 0, 0, 0,
+    12,
+    0,
+    0,
+    0,
   ).getTime();
   return Math.max(0, Math.round((todayNoon - restockNoon) / 86_400_000));
 }
 
 function addDaysISO(dateStr: string | null, days: number): string {
-  const base = dateStr
-    ? new Date(`${dateStr.slice(0, 10)}T12:00:00`)
-    : new Date();
+  const base = dateStr ? new Date(`${dateStr.slice(0, 10)}T12:00:00`) : new Date();
   return new Date(base.getTime() + days * 86_400_000).toISOString();
 }
 
 // ─── Data Logic ──────────────────────────────────────────────────
 
-function deriveStockStatus(totalStock: number, isStockout: boolean): StockStatus {
-  // Sem fabricar "low-stock": só temos estoque total e flag de esgotado.
+function deriveStockStatus(
+  totalStock: number,
+  isStockout: boolean,
+  isLowStock: boolean,
+): StockStatus {
   if (isStockout || totalStock <= 0) return 'out-of-stock';
+  if (isLowStock) return 'low-stock';
   return 'in-stock';
 }
 
@@ -179,7 +188,7 @@ function mapRow(r: ReposicaoRow): ReplenishmentWithDetails {
     is_active: true,
     stock_quantity: totalStock,
     min_quantity: 0,
-    stock_status: deriveStockStatus(totalStock, isStockout),
+    stock_status: deriveStockStatus(totalStock, isStockout, Boolean(r.is_low_stock)),
   };
 }
 
@@ -199,7 +208,13 @@ async function fetchReposicao(limit: number): Promise<ReplenishmentWithDetails[]
   });
 
   if (error) {
-    if (isGoneError(error)) return [];
+    if (isGoneError(error)) {
+      logger.warn(
+        '[Reposição] fn_get_reposicao_listing retornou 410 Gone — possível schema desatualizado. Retornando lista vazia.',
+        error.message,
+      );
+      return [];
+    }
     throw error;
   }
 
@@ -217,14 +232,13 @@ export interface UseReplenishmentsOptions {
 export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions = {}) {
   const { limit = FETCH_ALL_LIMIT, onlyHighlighted = false } = options;
 
-  return useQuery<ReplenishmentWithDetails[], Error>({
-    queryKey: ['replenishments-details', limit, onlyHighlighted],
-    queryFn: async () => {
-      const items = await fetchReposicao(limit);
-      return onlyHighlighted ? items.filter((n) => n.is_highlighted) : items;
-    },
+  return useQuery<ReplenishmentWithDetails[], Error, ReplenishmentWithDetails[]>({
+    queryKey: ['replenishments-details', limit],
+    queryFn: async () => fetchReposicao(limit),
+    // filter in select so toggling onlyHighlighted reuses cached data without re-fetch
+    select: (items) => (onlyHighlighted ? items.filter((n) => n.is_highlighted) : items),
     staleTime: 2 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }
 
@@ -235,26 +249,31 @@ export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions =
 // após rerun do types.ts.
 
 export function useReplenishmentStats() {
-  return useQuery<ReplenishmentStatsDisplay, Error>({
+  return useQuery<ReplenishmentStatsDisplay>({
     queryKey: ['replenishment-stats'],
     queryFn: async () => {
       const { data: rawData, error } = await untypedRpc('fn_get_replenishment_stats');
 
       if (error) {
         if (isGoneError(error)) {
+          logger.warn(
+            '[Reposição] fn_get_replenishment_stats retornou 410 Gone — retornando stats zeradas.',
+            error.message,
+          );
           return {
-            totalReplenishments:    0,
-            activeReplenishments:   0,
-            expiringSoon:           0,
-            totalProducts:          0,
-            replenishmentRate:      0,
-            restockedToday:         0,
-            restockedThisWeek:      0,
-            restockedLast15Days:    0,
-            topSupplierName:        null,
-            topSupplierCount:       0,
-            reorderedThisWeek:      0,
-            reorderedThisMonth:     0,
+            totalReplenishments: 0,
+            activeReplenishments: 0,
+            expiringSoon: 0,
+            totalProducts: 0,
+            replenishmentRate: 0,
+            restockedToday: 0,
+            restockedThisWeek: 0,
+            restockedLast15Days: 0,
+            restockedLast30Days: 0,
+            topSupplierName: null,
+            topSupplierCount: 0,
+            reorderedThisWeek: 0,
+            reorderedThisMonth: 0,
             upcomingRestockVariants: 0,
           };
         }
@@ -264,31 +283,34 @@ export function useReplenishmentStats() {
       const d = (rawData ?? {}) as Record<string, unknown>;
 
       return {
-        totalReplenishments:     Number(d.restockedThisWeek    ?? 0),
-        activeReplenishments:    Number(d.activeReplenishments ?? 0),
-        expiringSoon:            0,
-        totalProducts:           Number(d.totalVariants        ?? 0),
-        replenishmentRate:       Number(d.replenishmentRate    ?? 0),
-        restockedToday:          Number(d.restockedToday       ?? 0),
-        restockedThisWeek:       Number(d.restockedThisWeek    ?? 0),
-        restockedLast15Days:     Number(d.restockedLast15Days  ?? 0),
-        topSupplierName:         (d.topSupplierName as string) ?? null,
-        topSupplierCount:        Number(d.topSupplierCount     ?? 0),
-        reorderedThisWeek:       Number(d.reorderedThisWeek      ?? 0),
-        reorderedThisMonth:      Number(d.reorderedThisMonth     ?? 0),
+        totalReplenishments: Number(d.restockedLast30Days ?? 0),
+        activeReplenishments: Number(d.activeReplenishments ?? 0),
+        expiringSoon: Number(d.expiringSoon ?? 0),
+        totalProducts: Number(d.totalVariants ?? 0),
+        replenishmentRate: Number(d.replenishmentRate ?? 0),
+        restockedToday: Number(d.restockedToday ?? 0),
+        restockedThisWeek: Number(d.restockedThisWeek ?? 0),
+        restockedLast15Days: Number(d.restockedLast15Days ?? 0),
+        restockedLast30Days: Number(d.restockedLast30Days ?? 0),
+        topSupplierName: (d.topSupplierName as string) ?? null,
+        topSupplierCount: Number(d.topSupplierCount ?? 0),
+        reorderedThisWeek: Number(d.reorderedThisWeek ?? 0),
+        reorderedThisMonth: Number(d.reorderedThisMonth ?? 0),
         upcomingRestockVariants: Number(d.upcomingRestockVariants ?? 0),
       };
     },
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }
 
 export function useReplenishmentCount() {
-  return useQuery<number, Error>({
-    queryKey: ['replenishment-count'],
-    queryFn: async () => (await fetchReposicao(FETCH_ALL_LIMIT)).length,
+  // Must match useReplenishmentsWithDetails(default) queryKey — no duplicate fetch.
+  return useQuery<ReplenishmentWithDetails[], Error, number>({
+    queryKey: ['replenishments-details', FETCH_ALL_LIMIT],
+    queryFn: () => fetchReposicao(FETCH_ALL_LIMIT),
+    select: (data) => data.length,
     staleTime: 2 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }

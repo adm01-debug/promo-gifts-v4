@@ -117,8 +117,8 @@ export function AnimatedCounter({
 
 // Pulse dot (for notifications, status indicators)
 interface PulseDotProps {
-  color?: 'primary' | 'success' | 'warning' | 'error';
-  size?: 'sm' | 'md' | 'lg';
+  color?: 'error' | 'primary' | 'success' | 'warning';
+  size?: 'lg' | 'md' | 'sm';
   className?: string;
 }
 
@@ -218,7 +218,7 @@ export function BounceIn({ children, delay = 0 }: { children: ReactNode; delay?:
 // Slide in from direction
 interface SlideInProps {
   children: ReactNode;
-  direction?: 'left' | 'right' | 'up' | 'down';
+  direction?: 'down' | 'left' | 'right' | 'up';
   delay?: number;
   className?: string;
 }

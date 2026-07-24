@@ -2,23 +2,14 @@
  * ProductVariantsSection — CRUD de variações de cor de um produto
  * Refactored: logic in useProductVariants, form in VariantForm.
  */
-import { Palette, Package, AlertCircle, Plus, Pencil, Trash2, Check, Loader2 } from 'lucide-react';
+import { Palette, Package, AlertCircle, Plus, Pencil, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { VariantGridMatrix } from '@/components/products/VariantGridMatrix';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useProductVariants } from './useProductVariants';
 import { VariantForm } from './VariantForm';
 
@@ -341,30 +332,18 @@ export function ProductVariantsSection({
       </div>
 
       {/* Delete dialog */}
-      <AlertDialog
+      <ConfirmDialog
         open={!!m.deleteTarget}
         onOpenChange={(open) => !open && m.setDeleteTarget(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir variação?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A variação <strong>{m.deleteTarget?.color_name || m.deleteTarget?.name}</strong> (SKU:{' '}
-              {m.deleteTarget?.sku}) será desativada.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={m.isSaving}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={m.handleDelete}
-              disabled={m.isSaving}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {m.isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        variant="destructive"
+        title="Excluir variação?"
+        description={`A variação "${m.deleteTarget?.color_name || m.deleteTarget?.name || ''}" (SKU: ${m.deleteTarget?.sku ?? ''}) será desativada.`}
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={m.handleDelete}
+        loading={m.isSaving}
+        testId="product-variant-delete"
+      />
     </div>
   );
 }

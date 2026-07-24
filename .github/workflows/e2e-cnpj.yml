@@ -1,0 +1,55 @@
+name: E2E — CNPJ SSOT
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'src/utils/masks.ts'
+      - 'src/utils/cnpj-schema.ts'
+      - 'src/utils/__tests__/cnpj-*.ts'
+      - 'src/pages/dev/CnpjFormHarness.tsx'
+      - 'e2e/ui/cnpj-*.spec.ts'
+      - '.github/workflows/e2e-cnpj.yml'
+  pull_request:
+    paths:
+      - 'src/utils/masks.ts'
+      - 'src/utils/cnpj-schema.ts'
+      - 'src/utils/__tests__/cnpj-*.ts'
+      - 'src/pages/dev/CnpjFormHarness.tsx'
+      - 'e2e/ui/cnpj-*.spec.ts'
+      - '.github/workflows/e2e-cnpj.yml'
+
+jobs:
+  cnpj-unit-and-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install
+        run: npm ci
+      - name: Gate — render de CNPJ mascarado (B1/B6)
+        run: node scripts/check-cnpj-render.mjs
+      - name: Unit — CNPJ exhaustive + callsites audit + display contract + fuzz
+        run: npx vitest run src/utils/masks.test.ts src/utils/cnpj-schema.test.ts "src/utils/__tests__/cnpj-" src/components/__tests__/cnpj-render.test.tsx
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+      - name: E2E — CNPJ specs
+        run: npx playwright test e2e/ui/cnpj-*.spec.ts --workers=2 --retries=2
+        env:
+          E2E_BASE_URL: http://localhost:8080
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cnpj-e2e-report
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore

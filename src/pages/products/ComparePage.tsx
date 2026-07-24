@@ -6,9 +6,10 @@
  * C4: similar rail, presentation launcher.
  * C5: shortcuts, ARIA-live, smart empty state, recent sidebar.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { useListUrlState } from '@/hooks/common/useListUrlState';
 import { useComparisonStore, type CompareVariantInfo } from '@/stores/useComparisonStore';
 import type { Product, ProductColor } from '@/types/product-catalog';
 import { formatCurrency } from '@/lib/format';
@@ -55,13 +56,43 @@ const COMPARE_STATUS_COLORS: Record<string, string> = {
 export default function ComparePage() {
   useComparisonSync();
   const navigate = useNavigate();
-  const [differencesOnly, setDifferencesOnly] = useState(false);
-  const [duelMode, setDuelMode] = useState(true);
-  const [showRadar, setShowRadar] = useState(true);
+  // Toggles sincronizados com a URL (deep-link + share).
+  // Defaults: differencesOnly=0 (off), duelMode=1 (on), showRadar=1 (on).
+  // useListUrlState só grava não-defaults → URL fica limpa no estado padrão.
+  const { values, setValue } = useListUrlState({
+    keys: { differencesOnly: '0', duelMode: '1', showRadar: '1' },
+  });
+  const differencesOnly = values.differencesOnly === '1';
+  const duelMode = values.duelMode === '1';
+  const showRadar = values.showRadar === '1';
+  const setDifferencesOnly = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      const v = typeof next === 'function' ? next(differencesOnly) : next;
+      setValue('differencesOnly', v ? '1' : '0');
+    },
+    [differencesOnly, setValue],
+  );
+  const setDuelMode = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      const v = typeof next === 'function' ? next(duelMode) : next;
+      setValue('duelMode', v ? '1' : '0');
+    },
+    [duelMode, setValue],
+  );
+  const setShowRadar = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      const v = typeof next === 'function' ? next(showRadar) : next;
+      setValue('showRadar', v ? '1' : '0');
+    },
+    [showRadar, setValue],
+  );
   const [shareOpen, setShareOpen] = useState(false);
   const [client, setClient] = useState<{ id: string; name: string } | null>(null);
   const [ariaMessage, setAriaMessage] = useState('');
-  const { compareItems, removeByIndex, clearCompare, compareCount } = useComparisonStore();
+  const compareItems = useComparisonStore((s) => s.compareItems);
+  const removeByIndex = useComparisonStore((s) => s.removeByIndex);
+  const clearCompare = useComparisonStore((s) => s.clearCompare);
+  const compareCount = useComparisonStore((s) => s.compareCount);
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
 
   // Track previous count for ARIA-live announcements
@@ -99,7 +130,20 @@ export default function ComparePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [compareItems, getProductsByIds, _cacheSignal]);
 
-  const products: Product[] = compareEntries.map((e) => e.product);
+  const products: Product[] = useMemo(() => compareEntries.map((e) => e.product), [compareEntries]);
+
+  // Score, radar and AI advisor reason at the product level. Deduping by id
+  // prevents the same product (added under two variants) from colliding on
+  // chart dataKeys / winner lookup or emitting duplicate React keys.
+  const analyticsProducts: Product[] = useMemo(() => {
+    const seen = new Set<string>();
+    return products.filter((p) => {
+      const id = String(p.id);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }, [products]);
 
   // Rótulo vem da fonte única (catalog-stock-status); cor Tailwind é presentational, fica local.
   const getStockStatusLabel = (status: string) => ({
@@ -127,7 +171,7 @@ export default function ComparePage() {
             '@context': 'https://schema.org',
             '@type': 'WebPage',
             name: 'Comparar Produtos',
-            url: 'https://criar-together-now.lovable.app/comparar',
+            url: 'https://www.promogifts.com.br/comparar',
           }}
         />
         <CompareEmptyStateSmart />
@@ -199,6 +243,7 @@ export default function ComparePage() {
               onClick={() => setDifferencesOnly((v) => !v)}
               aria-pressed={differencesOnly}
               title="Atalho: D"
+              data-testid="compare-toggle-differences-only"
             >
               <Filter className="mr-2 h-4 w-4" />
               {differencesOnly ? 'Mostrando diferenças' : 'Só diferenças'}
@@ -238,10 +283,10 @@ export default function ComparePage() {
         <div className="hidden space-y-4 md:block">
           {/* Score + Radar */}
           <div className={cn('grid grid-cols-1 gap-4', showRadar && 'lg:grid-cols-2')}>
-            <ComparisonScoreCard products={products} />
-            {showRadar && <ComparisonRadarChart products={products} />}
+            <ComparisonScoreCard products={analyticsProducts} />
+            {showRadar && <ComparisonRadarChart products={analyticsProducts} />}
           </div>
-          <AIComparisonAdvisor products={products} />
+          <AIComparisonAdvisor products={analyticsProducts} />
 
           {/* Duel mode toggle (only visible when 2 products) */}
           {compareCount === 2 && (
@@ -250,6 +295,8 @@ export default function ComparePage() {
                 size="sm"
                 variant={duelMode ? 'default' : 'outline'}
                 onClick={() => setDuelMode((v) => !v)}
+                aria-pressed={duelMode}
+                data-testid="compare-toggle-duel-mode"
               >
                 <Swords className="mr-2 h-4 w-4" />
                 {duelMode ? 'Modo Duelo ativo' : 'Ativar Modo Duelo'}
@@ -339,15 +386,13 @@ export default function ComparePage() {
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Cores:</span>
                             <div className="flex gap-0.5">
-                              {entry.product.colors
-                                .slice(0, 4)
-                                .map((c: ProductColor, i: number) => (
-                                  <div
-                                    key={i}
-                                    className="h-4 w-4 rounded-full border border-border"
-                                    style={{ backgroundColor: c.hex }}
-                                  />
-                                ))}
+                              {entry.product.colors.slice(0, 4).map((c: ProductColor) => (
+                                <div
+                                  key={c.hex}
+                                  className="h-4 w-4 rounded-full border border-border"
+                                  style={{ backgroundColor: c.hex }}
+                                />
+                              ))}
                               {entry.product.colors.length > 4 && (
                                 <span className="ml-1 text-xs text-muted-foreground">
                                   +{entry.product.colors.length - 4}
@@ -383,7 +428,7 @@ export default function ComparePage() {
           )}
 
           {/* Bottom rail — Compare também com... */}
-          <SimilarProductsRail products={products} formatCurrency={formatCurrency} />
+          <SimilarProductsRail products={analyticsProducts} formatCurrency={formatCurrency} />
         </div>
       </div>
     </>

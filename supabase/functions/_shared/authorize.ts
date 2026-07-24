@@ -4,7 +4,7 @@
 // Authorization header e valida role via tabela `user_roles`
 // (RLS-safe — usa service_role só para a leitura de role).
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2.49.4";
 import { getCorsHeaders } from "./cors.ts";
 import { isTokenRevoked } from "./token-revocation.ts";
 

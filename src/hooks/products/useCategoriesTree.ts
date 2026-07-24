@@ -44,11 +44,11 @@ export function useCategoriesTree() {
 
   const fetchCategoryIcons = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error: iconsError } = await supabase
         .from('category_icons')
         .select('category_name, icon')
         .eq('is_active', true);
-      if (error) throw error;
+      if (iconsError) throw iconsError;
       const iconMap = new Map<string, string>();
       ((data as CategoryIcon[]) || []).forEach((item) => {
         iconMap.set(item.category_name.toUpperCase(), item.icon);
@@ -157,11 +157,15 @@ export function useCategoriesTree() {
   const getPath = useCallback(
     (categoryId: string): CategoryTreeItem[] => {
       const path: CategoryTreeItem[] = [];
+      const visited = new Set<string>();
       let current = categories.find((cat) => cat.id === categoryId);
       while (current) {
+        if (visited.has(current.id)) break; // cycle guard
+        visited.add(current.id);
         path.unshift(current);
         if (current.parent_id) {
-          current = categories.find((cat) => cat.id === current?.parent_id);
+          const parentId = current.parent_id;
+          current = categories.find((cat) => cat.id === parentId);
         } else {
           current = undefined;
         }

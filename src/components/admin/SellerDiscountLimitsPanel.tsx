@@ -36,10 +36,13 @@ export function SellerDiscountLimitsPanel() {
         (p): p is typeof p & { user_id: string } => p.user_id !== null,
       );
       const ids = sellers.map((p) => p.user_id);
-      const { data: limits } = await supabase
+      // BUG-DISCOUNTLIMITS-SELECT-SILENT-FAIL FIX: { data } without error check — a failed
+      // SELECT silently showed all sellers as 5% (the ?? default), hiding actual limits.
+      const { data: limits, error: limitsErr } = await supabase
         .from('seller_discount_limits')
         .select('user_id, max_discount_percent')
         .in('user_id', ids);
+      if (limitsErr) throw limitsErr;
 
       const byId = new Map<string, number>(
         ((limits ?? []) as Array<{ user_id: string; max_discount_percent: number }>).map((l) => [

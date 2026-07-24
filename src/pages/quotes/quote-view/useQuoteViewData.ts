@@ -15,15 +15,16 @@ import {
   calcPersTotal,
   formatCNPJ,
 } from '@/pages/quotes/quote-view/QuoteActionHandlers';
+import { applyNegotiationMarkup } from '@/hooks/quotes/quoteMarkup';
 
 type QuoteClientCompany = {
   cnpj?: string | null;
-  bitrix_company_id?: string | number | null;
-  bitrix_id?: string | number | null;
+  bitrix_company_id?: number | string | null;
+  bitrix_id?: number | string | null;
 };
 
 export function useQuoteViewData(id: string | undefined) {
-  const { fetchQuote, logQuoteHistory, duplicateQuote } = useQuotes();
+  const { fetchQuote, logQuoteHistory, duplicateQuote, deleteQuote } = useQuotes();
   const { user, profile } = useAuth();
 
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -31,8 +32,8 @@ export function useQuoteViewData(id: string | undefined) {
   const [clientCnpj, setClientCnpj] = useState<string | undefined>(undefined);
   const [bitrixCompanyId, setBitrixCompanyId] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [showPresentation, setShowPresentation] = useState(false);
+  const [syncingTarget, setSyncingTarget] = useState<'all' | 'bitrix' | 'pc' | null>(null);
+  const isSyncing = syncingTarget !== null;
 
   const loadQuote = useCallback(async () => {
     if (!id) return;
@@ -40,10 +41,14 @@ export function useQuoteViewData(id: string | undefined) {
     const data = await fetchQuote(id);
     setQuote(data);
     setIsLoadingQuote(false);
+    // Prefer CNPJ stored on the quote (snapshot at creation) over live company data.
+    if (data?.client_cnpj) setClientCnpj(formatCNPJ(data.client_cnpj));
     if (data?.client_id) {
       try {
         const company = await selectCrmById<QuoteClientCompany>('companies', data.client_id);
-        if (company?.cnpj) setClientCnpj(formatCNPJ(company.cnpj));
+        // Do NOT re-populate the CNPJ from the live company: the quote's client_cnpj is the
+        // source of truth and may have been intentionally cleared (clearable-CNPJ migrations
+        // 20260620120000/160000). Re-filling it here would resurrect a CNPJ the user removed.
         const bId = company?.bitrix_company_id ?? company?.bitrix_id;
         if (bId) setBitrixCompanyId(String(bId));
       } catch {
@@ -58,8 +63,11 @@ export function useQuoteViewData(id: string | undefined) {
 
   const proposalData: ProposalTemplateData | null = useMemo(() => {
     if (!quote) return null;
-    const prodSub = (quote.items || []).reduce((s, i) => s + i.quantity * i.unit_price, 0);
-    const persSub = (quote.items || []).reduce(
+    // Reaplica a margem de negociação aos valores apresentados ao cliente, para o
+    // PDF bater com o total persistido (lista/WhatsApp). No-op quando markup = 0.
+    const markedItems = applyNegotiationMarkup(quote.items || [], quote.negotiation_markup_percent);
+    const prodSub = markedItems.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+    const persSub = markedItems.reduce(
       (s, i) =>
         s +
         (i.personalizations || []).reduce(
@@ -76,6 +84,20 @@ export function useQuoteViewData(id: string | undefined) {
     // Apenas 'fob_pre' (FOB Pré-negociado) tem custo no total. 'fob' = cliente paga, sem cost.
     const shipValue = quote.shipping_type === 'fob_pre' ? quote.shipping_cost || 0 : 0;
     const computedTotal = fullSubtotal - discountValue + shipValue;
+
+    // Persisted subtotal/discount/total are the SSOT: calculateQuoteTotals scales the
+    // aggregate once, whereas the per-line markup above rounds each unit price, so
+    // re-summing diverges by a few cents from what the list/dashboard/WhatsApp show
+    // (quote.total). Prefer the persisted values so the PDF total matches; fall back to the
+    // computed values for legacy rows that never persisted them.
+    const hasPersistedTotals = typeof quote.subtotal === 'number' && quote.subtotal > 0;
+    const displaySubtotal = hasPersistedTotals ? quote.subtotal : fullSubtotal;
+    const displayDiscount =
+      hasPersistedTotals && typeof quote.discount_amount === 'number'
+        ? quote.discount_amount
+        : discountValue;
+    const displayTotal =
+      typeof quote.total === 'number' && quote.total > 0 ? quote.total : computedTotal;
 
     return {
       quoteNumber: (quote.quote_number || '').replace(/\s+/g, ''),
@@ -98,43 +120,41 @@ export function useQuoteViewData(id: string | undefined) {
         // Profile has no signature URL field; left undefined until one exists.
         signatureUrl: undefined,
       },
-      items:
-        quote.items?.map((item) => ({
-          name: item.product_name,
-          sku: item.product_sku || undefined,
-          supplier_sku: item.product_sku || undefined,
-          composedCode: item.product_sku
-            ? item.color_name
-              ? `${item.product_sku}-${item.color_name}`
-              : item.product_sku
-            : undefined,
-          colorHex: item.color_hex || undefined,
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          color: item.color_name || undefined,
-          imageUrl: item.product_image_url || undefined,
-          bitrix_product_id: item.bitrix_product_id ?? null,
-          kit_group_id: item.kit_group_id || null,
-          kit_name: item.kit_name || null,
+      items: markedItems.map((item) => ({
+        name: item.product_name,
+        sku: item.product_sku || undefined,
+        supplier_sku: item.product_sku || undefined,
+        // product_sku já contém o código composto da variante (ex.: "94297-7.1")
+        // quando o item foi adicionado com cor/variação selecionada.
+        composedCode: item.product_sku || undefined,
+        colorHex: item.color_hex || undefined,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        color: item.color_name || undefined,
+        imageUrl: item.product_image_url || undefined,
+        bitrix_product_id: item.bitrix_product_id ?? null,
+        kit_group_id: item.kit_group_id || null,
+        kit_name: item.kit_name || null,
 
-          personalizations:
-            item.personalizations?.map((p) => ({
-              technique_name: p.technique_name || 'Personalizacao',
-              colors_count: p.colors_count || 1,
-              width_cm: p.width_cm || undefined,
-              height_cm: p.height_cm || undefined,
-              area_cm2: p.area_cm2 || undefined,
-              unit_cost: p.unit_cost || 0,
-              setup_cost: p.setup_cost || 0,
-              total_cost: p.total_cost || 0,
-              notes: p.notes || undefined,
-            })) ?? [],
-        })) ?? [],
-      subtotal: fullSubtotal,
-      discount: discountValue || undefined,
+        personalizations:
+          item.personalizations?.map((p) => ({
+            technique_name: p.technique_name || 'Personalizacao',
+            location_name: p.location_name || undefined,
+            colors_count: p.colors_count || 1,
+            width_cm: p.width_cm || undefined,
+            height_cm: p.height_cm || undefined,
+            area_cm2: p.area_cm2 || undefined,
+            unit_cost: p.unit_cost || 0,
+            setup_cost: p.setup_cost || 0,
+            total_cost: p.total_cost || 0,
+            notes: p.notes || undefined,
+          })) ?? [],
+      })),
+      subtotal: displaySubtotal,
+      discount: displayDiscount || undefined,
       shippingCost: quote.shipping_cost || undefined,
       shippingType: quote.shipping_type || undefined,
-      total: computedTotal,
+      total: displayTotal,
       notes: quote.notes || undefined,
       paymentTerms: quote.payment_terms || undefined,
       deliveryTime: quote.delivery_time || undefined,
@@ -197,7 +217,7 @@ export function useQuoteViewData(id: string | undefined) {
 
   const handleSyncBitrix = async () => {
     if (!quote || !proposalData) return;
-    setIsSyncing(true);
+    setSyncingTarget((prev) => prev ?? 'bitrix');
     try {
       const { syncQuoteToBitrix } = await import('./QuoteBitrixSync');
       const result = await syncQuoteToBitrix({
@@ -213,9 +233,73 @@ export function useQuoteViewData(id: string | undefined) {
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'erro desconhecido';
-      toast.error('Erro ao sincronizar', { description: msg });
+      toast.error('Erro ao sincronizar com Bitrix24', { description: msg });
     } finally {
-      setIsSyncing(false);
+      setSyncingTarget(null);
+    }
+  };
+
+  const handleSyncPromoChampions = async () => {
+    if (!quote) return;
+    setSyncingTarget((prev) => prev ?? 'pc');
+    try {
+      const { syncQuoteToPromoChampions } = await import('./QuotePromoChampionsSync');
+      await syncQuoteToPromoChampions({
+        quote,
+        userEmail: user?.email,
+        logQuoteHistory,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'erro desconhecido';
+      toast.error('Erro ao sincronizar com Promo Champions', { description: msg });
+    } finally {
+      setSyncingTarget(null);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    if (!quote || !proposalData) return;
+    setSyncingTarget('all');
+    try {
+      // Bitrix primeiro (transiciona status→sent). PC em seguida, independente do
+      // resultado — falha em um destino não bloqueia o outro.
+      const results = await Promise.allSettled([
+        (async () => {
+          const { syncQuoteToBitrix } = await import('./QuoteBitrixSync');
+          const r = await syncQuoteToBitrix({
+            quote,
+            proposalData,
+            bitrixCompanyId,
+            userEmail: user?.email,
+            logQuoteHistory,
+            onBitrixCompanyIdFound: (newId) => setBitrixCompanyId(newId),
+          });
+          if (r.success && r.updatedQuote) {
+            setQuote((prev) => (prev ? { ...prev, ...r.updatedQuote } : prev));
+          }
+          return r;
+        })(),
+        (async () => {
+          const { syncQuoteToPromoChampions } = await import('./QuotePromoChampionsSync');
+          return syncQuoteToPromoChampions({
+            quote,
+            userEmail: user?.email,
+            logQuoteHistory,
+          });
+        })(),
+      ]);
+      const failed = results.filter((r) => r.status === 'rejected');
+      if (failed.length === results.length) {
+        toast.error('Falha ao sincronizar em ambos os destinos');
+      } else if (failed.length > 0) {
+        const rejected = failed[0] as PromiseRejectedResult;
+        const msg = rejected.reason instanceof Error
+          ? rejected.reason.message
+          : 'erro parcial';
+        toast.warning('Sincronização parcial', { description: msg });
+      }
+    } finally {
+      setSyncingTarget(null);
     }
   };
 
@@ -227,8 +311,7 @@ export function useQuoteViewData(id: string | undefined) {
     bitrixCompanyId,
     isGeneratingPDF,
     isSyncing,
-    showPresentation,
-    setShowPresentation,
+    syncingTarget,
     proposalData,
     approvalLink,
     // Actions
@@ -236,9 +319,13 @@ export function useQuoteViewData(id: string | undefined) {
     handleWhatsAppShare,
     handleShareLink,
     handleSyncBitrix,
+    handleSyncPromoChampions,
+    handleSyncAll,
     // Quotes
     fetchQuote,
     logQuoteHistory,
     duplicateQuote,
+    deleteQuote,
   };
 }
+

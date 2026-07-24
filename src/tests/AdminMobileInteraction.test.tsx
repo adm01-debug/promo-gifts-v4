@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -52,7 +53,7 @@ describe('Admin Mobile Interaction Pattern', () => {
     </QueryClientProvider>
   );
 
-  it('should toggle sidebar and manage main content accessibility correctly', async () => {
+  it('should toggle sidebar and manage main content accessibility correctly', () => {
     render(<TestMainLayout>Admin Content</TestMainLayout>, { wrapper });
 
     const sidebar = screen.getByTestId('sidebar-aside');

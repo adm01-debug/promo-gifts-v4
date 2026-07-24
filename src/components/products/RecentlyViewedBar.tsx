@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
 import { useNavigate } from 'react-router-dom';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { Clock, X, Trash2 } from 'lucide-react';
@@ -8,7 +9,11 @@ import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 import { getCdnUrl } from '@/utils/image-utils';
+
+// BUG-RVB-02 FIX (2026-06-21): Intl.NumberFormat construída dentro do map por produto/render.
+const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 interface RecentlyViewedBarProps {
   className?: string;
@@ -17,6 +22,9 @@ interface RecentlyViewedBarProps {
 
 export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedBarProps) {
   const navigate = useNavigate();
+  const recentScrollRef = useRef<HTMLDivElement>(null);
+  // Scroll horizontal via mouse wheel (fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(recentScrollRef);
   const { items, itemCount, removeFromRecentlyViewed, clearRecentlyViewed } =
     useRecentlyViewedStore();
   const { getProductsByIds } = useProductsContext();
@@ -47,7 +55,7 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
           </div>
 
           {/* Products */}
-          <div className="scrollbar-none flex flex-1 items-center gap-2 overflow-x-auto">
+          <div ref={recentScrollRef} className="scrollbar-none flex flex-1 items-center gap-2 overflow-x-auto">
             {products.map((product, idx) => (
               <motion.div
                 key={product.id}
@@ -68,7 +76,8 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                       )}
                     >
                       <OptimizedImage
-                        src={getCdnUrl(product.images[0], 'thumbnail')}
+                        src={getCdnUrl(product.images?.[0] ?? '', 'thumbnail')}
+                        urlOriginal={getProxiedImageUrl(product.images?.[0] ?? '') ?? null}
                         alt={product.name}
                         className="object-cover"
                         containerClassName="h-full w-full"
@@ -78,10 +87,7 @@ export function RecentlyViewedBar({ className, maxVisible = 6 }: RecentlyViewedB
                   <TooltipContent side="bottom">
                     <p className="truncate font-medium">{product.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(product.price)}
+                      {priceFormatter.format(product.price)}
                     </p>
                   </TooltipContent>
                 </Tooltip>

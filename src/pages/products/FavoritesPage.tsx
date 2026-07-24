@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useFavoritesStore, type FavoriteVariantInfo } from '@/stores/useFavoritesStore';
 import {
@@ -13,6 +13,7 @@ import { useProductsContext } from '@/contexts/ProductsContext';
 import { ProductCard } from '@/components/products/ProductCard';
 import { ProductListItem } from '@/components/products/ProductListItem';
 import { ProductTableView } from '@/components/products/ProductTableView';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { getGridColsClass, getGridGapClass } from '@/components/replenishments/grid-layout';
@@ -100,13 +101,17 @@ function loadSort(): FavoritesSort {
 
 export default function FavoritesPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useFavoritesGlobalShortcuts();
   useUndoStack();
   useLegacyFavoritesMigration();
 
-  const { favorites, clearFavorites, favoriteCount, toggleFavorite, isFavorite } =
-    useFavoritesStore();
+  const favorites = useFavoritesStore((s) => s.favorites);
+  const clearFavorites = useFavoritesStore((s) => s.clearFavorites);
+  const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
 
   const { lists, createList, updateList, deleteList, generateShareToken, revokeShareToken } =
     useFavoriteLists();
@@ -133,7 +138,16 @@ export default function FavoritesPage() {
     }
   }, [selectedListId]);
 
-  const { enriched, rawItems, removeItem, updateItem } = useEnrichedFavoriteItems(selectedListId);
+  // Auto-select the default list when none is selected (first visit or after list deletion)
+  useEffect(() => {
+    if (selectedListId === null && lists.length > 0) {
+      const def = lists.find((l) => l.is_default) ?? lists[0];
+      setSelectedListId(def.id);
+    }
+  }, [lists, selectedListId]);
+
+  const { enriched, rawItems, removeItem, removeItems, updateItem } =
+    useEnrichedFavoriteItems(selectedListId);
   const isRemoteListView = !!selectedListId && !showTrash;
 
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
@@ -145,6 +159,8 @@ export default function FavoritesPage() {
   const [clearAllDialogOpen, setClearAllDialogOpen] = useState(false);
   const [removeSelectedDialogOpen, setRemoveSelectedDialogOpen] = useState(false);
   const [onlyPriceDrops, setOnlyPriceDrops] = useState<boolean>(() => {
+    // URL ?filter=drops takes precedence (arrival from notification)
+    if (searchParams.get('filter') === 'drops') return true;
     try {
       return localStorage.getItem(PRICE_DROP_FILTER_KEY) === '1';
     } catch {
@@ -251,7 +267,10 @@ export default function FavoritesPage() {
     if (searchQuery.trim()) {
       // FIX 2026-06-15 (favorites-search-accent): NFD strip espelhando PR #755/#750.
       const norm = (s: string) =>
-        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        s
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
       const q = norm(searchQuery.trim());
       list = list.filter(
         (p) =>
@@ -263,9 +282,7 @@ export default function FavoritesPage() {
     if (onlyPriceDrops && isRemoteListView) {
       list = list.filter((p) => {
         const meta = enrichedMetaMap.get(p.id);
-        return (
-          meta?.priceDiffPct !== null && meta?.priceDiffPct !== undefined && meta.priceDiffPct < -2
-        );
+        return meta !== undefined && meta.priceDiffPct !== null && meta.priceDiffPct < -2;
       });
     }
     const sorted = [...list];
@@ -301,16 +318,19 @@ export default function FavoritesPage() {
   const selectedIds = sel.selectedIds;
 
   const stats = useMemo(() => {
-    const source = isRemoteListView ? productsWithVariant : legacyFavoriteProducts;
+    // Use filteredProducts so stats reflect what's visible (respects search + price-drop filter)
+    const source = filteredProducts;
     if (source.length === 0) return null;
     const prices = source.map((p) => p.price ?? 0).filter((v) => v > 0);
     return {
       total: source.length,
-      categories: new Set(source.map((p) => p.category?.id ?? p.category_id)).size,
+      categories: new Set(
+        source.map((p) => p.category?.id ?? p.category_id).filter((id): id is string => !!id),
+      ).size,
       minPrice: prices.length ? Math.min(...prices) : 0,
       maxPrice: prices.length ? Math.max(...prices) : 0,
     };
-  }, [productsWithVariant, legacyFavoriteProducts, isRemoteListView]);
+  }, [filteredProducts]);
 
   const fmt = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -319,7 +339,7 @@ export default function FavoritesPage() {
     () => lists.find((l) => l.id === selectedListId) ?? null,
     [lists, selectedListId],
   );
-  const headerTotalCount = isRemoteListView ? rawItems.length : favoriteCount;
+  const headerTotalCount = isRemoteListView ? (rawItems?.length ?? 0) : favoriteCount;
 
   const handleClearAll = () => {
     if (isRemoteListView) {
@@ -338,16 +358,16 @@ export default function FavoritesPage() {
   };
 
   const handleRemoveSelected = () => {
-    const ids = Array.from(selectedIds);
+    const pids = Array.from(selectedIds);
     if (isRemoteListView) {
-      ids.forEach((pid) => {
-        const meta = noteMap.get(pid);
-        if (meta) removeItem.mutate(meta.itemId);
-      });
+      const itemIds = pids
+        .map((pid) => noteMap.get(pid)?.itemId)
+        .filter((id): id is string => !!id);
+      removeItems.mutate(itemIds); // single DB query; toast fired by onSuccess
     } else {
-      ids.forEach((id) => toggleFavorite(id));
+      pids.forEach((id) => toggleFavorite(id));
+      toast.success(`${pids.length} ${pids.length === 1 ? 'item removido' : 'itens removidos'}`);
     }
-    toast.success(`${ids.length} ${ids.length === 1 ? 'item removido' : 'itens removidos'}`);
     sel.clearSelection();
     setSelectionMode(false);
   };
@@ -538,7 +558,7 @@ export default function FavoritesPage() {
         <div className="flex gap-4 lg:gap-6">
           <div className="hidden lg:block">{sidebarNode}</div>
 
-          <div className="min-w-0 flex-1 space-y-4">
+          <div className="min-w-0 flex-1 space-y-4" style={swatchSizeStyle(viewMode, gridColumns)}>
             {showTrash ? (
               <>
                 <div className="flex items-center gap-2 px-1">
@@ -551,7 +571,7 @@ export default function FavoritesPage() {
               <>
                 <FavoritesViewHeader
                   list={activeList}
-                  itemCount={isRemoteListView ? rawItems.length : favoriteCount}
+                  itemCount={isRemoteListView ? (rawItems?.length ?? 0) : favoriteCount}
                   sort={sort}
                   onSortChange={setSort}
                   fallbackTitle={!isRemoteListView ? 'Todos os favoritos' : undefined}

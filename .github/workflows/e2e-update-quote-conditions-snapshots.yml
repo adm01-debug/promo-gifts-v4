@@ -1,0 +1,109 @@
+name: E2E · Update Quote Conditions snapshots
+# Executa manualmente para regenerar os PNGs baseline do card "Condições"
+# nos viewports 375/768/1280. Comita as imagens de volta na branch alvo.
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch para comitar os baselines atualizados"
+        required: true
+        default: "main"
+      safe_mode:
+        description: "Só regenerar baselines se houver diff visual (evita rewrite acidental). Desmarque para forçar --update-snapshots."
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: e2e-update-quote-conditions-${{ github.event.inputs.branch }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - name: Bootstrap
+        run: npm run e2e:bootstrap
+      - name: Start Vite
+        run: |
+          nohup bun run dev > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          tail -n 100 /tmp/vite.log >&2; exit 1
+
+      # SAFE MODE (default): roda sem --update-snapshots. Só regenera se a falha
+      # for por diferença visual (toHaveScreenshot). Assim evitamos rewrite de
+      # baselines quando o spec quebrou por erro real (500, timeout, JS error).
+      - name: Dry-run (safe mode)
+        if: ${{ github.event.inputs.safe_mode != 'false' }}
+        id: dryrun
+        continue-on-error: true
+        run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=playwright-report/results.json \
+          npx playwright test e2e/ui/quote-conditions-visual.spec.ts \
+            --project=chromium-public \
+            --reporter=list,json
+
+      - name: Classificar falha (visual vs real)
+        if: ${{ github.event.inputs.safe_mode != 'false' && steps.dryrun.outcome == 'failure' }}
+        id: classify
+        run: |
+          # Considera "visual diff" quando houver PNGs -diff/-actual gerados pelo Playwright.
+          if find test-results -type f \( -name "*-diff.png" -o -name "*-actual.png" \) 2>/dev/null | grep -q .; then
+            echo "kind=visual" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=real"   >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Abortar (falha não-visual)
+        if: ${{ github.event.inputs.safe_mode != 'false' && steps.dryrun.outcome == 'failure' && steps.classify.outputs.kind == 'real' }}
+        run: |
+          echo "::error::Falha não é diferença visual — abortando rewrite de baselines. Rode o PR check e corrija o erro real antes de atualizar snapshots."
+          exit 1
+
+      - name: Nada a atualizar (safe mode passou)
+        if: ${{ github.event.inputs.safe_mode != 'false' && steps.dryrun.outcome == 'success' }}
+        run: |
+          echo "✅ Spec já passa contra baselines atuais — nenhuma atualização necessária."
+          exit 0
+
+      - name: Regenerar snapshots
+        if: ${{ github.event.inputs.safe_mode == 'false' || (steps.dryrun.outcome == 'failure' && steps.classify.outputs.kind == 'visual') }}
+        run: |
+          npx playwright test e2e/ui/quote-conditions-visual.spec.ts \
+            --project=chromium-public \
+            --update-snapshots \
+            --reporter=list
+
+      - name: Comitar baselines
+        if: ${{ github.event.inputs.safe_mode == 'false' || (steps.dryrun.outcome == 'failure' && steps.classify.outputs.kind == 'visual') }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add e2e/ui/__screenshots__/quote-conditions-visual.spec.ts || true
+          if git diff --cached --quiet; then
+            echo "Sem mudanças nos baselines."; exit 0
+          fi
+          MODE="${{ github.event.inputs.safe_mode != 'false' && 'safe' || 'force' }}"
+          git commit -m "chore(e2e): update quote-conditions visual baselines (${MODE})"
+          git push origin HEAD:${{ github.event.inputs.branch }}
+

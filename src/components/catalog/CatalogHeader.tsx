@@ -196,6 +196,7 @@ function CatalogHeaderInner({
           <Button
             variant="outline"
             size="icon"
+            aria-label="Histórico de buscas"
             className="relative h-11 w-11 shrink-0"
             onClick={() => setHistoryOpen(!historyOpen)}
           >

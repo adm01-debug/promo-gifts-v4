@@ -79,7 +79,7 @@ export function QuantityPriceCalculator({ className }: QuantityPriceCalculatorPr
   }, []);
 
   const handleAddQuantity = useCallback(() => {
-    const qty = parseInt(newQuantity);
+    const qty = parseInt(newQuantity, 10);
     if (qty > 0 && !customQuantities.includes(qty)) {
       setCustomQuantities((prev) => [...prev, qty].sort((a, b) => a - b));
       setNewQuantity('');

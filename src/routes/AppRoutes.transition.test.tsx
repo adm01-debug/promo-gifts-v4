@@ -23,10 +23,10 @@ vi.mock('./public-routes', () => ({
   publicRoutes: <Route path="/auth" element={<div>Auth</div>} />,
 }));
 
-vi.mock('./product-routes', () => ({ productRoutes: <></> }));
-vi.mock('./quote-routes', () => ({ quoteRoutes: <></> }));
-vi.mock('./admin-routes', () => ({ adminRoutes: <></> }));
-vi.mock('./tools-routes', () => ({ toolsRoutes: <></> }));
+vi.mock('./product-routes', () => ({ productRoutes: null }));
+vi.mock('./quote-routes', () => ({ quoteRoutes: null }));
+vi.mock('./admin-routes', () => ({ adminRoutes: null }));
+vi.mock('./tools-routes', () => ({ toolsRoutes: null }));
 
 vi.mock('./client-routes', () => ({
   homeAndClientRoutes: (

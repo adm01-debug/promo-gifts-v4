@@ -39,7 +39,7 @@ const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 // ─── Período ─────────────────────────────────────────────────────
 
-type DatePeriod = 'today' | '7d' | '30d' | 'all';
+type DatePeriod = '7d' | '30d' | 'all' | 'today';
 
 const PERIODS: { key: DatePeriod; label: string }[] = [
   { key: 'today', label: 'Hoje' },
@@ -81,7 +81,7 @@ function formatEventDate(dateStr: string | null | undefined): string {
 
 // ─── Tab config ──────────────────────────────────────────────────
 
-type TabKey = 'stockout' | 'low' | 'new' | 'restocked';
+type TabKey = 'low' | 'new' | 'restocked' | 'stockout';
 
 interface TabDef {
   key: TabKey;
@@ -257,6 +257,17 @@ export function StockAlertsIndicator() {
   const activeServerCount = tabCounts[activeTab];
   const activeRoute = TABS.find((t) => t.key === activeTab)?.route ?? '/estoque';
 
+  const activeQuery =
+    activeTab === 'stockout'
+      ? stockoutQuery
+      : activeTab === 'low'
+      ? lowQuery
+      : activeTab === 'new'
+      ? noveltyQuery
+      : restocksQuery;
+  const isListLoading = activeQuery.isLoading;
+  const listError = activeQuery.isError ? activeQuery.error : null;
+
   // ── Badge dominant color ──────────────────────────────────────
   const badgeColor = useMemo(() => {
     if (counts.stockout > 0) return 'bg-destructive';
@@ -285,7 +296,9 @@ export function StockAlertsIndicator() {
       </Tooltip>
 
       <PopoverContent
-        className="relative w-[420px] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl"
+        data-testid="stock-alerts-panel"
+        style={{ width: 'var(--stock-alerts-panel-width)' }}
+        className="relative max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border-border/50 p-0 shadow-xl sm:max-w-[calc(100vw-2rem)]"
         align="end"
         sideOffset={8}
       >
@@ -312,7 +325,7 @@ export function StockAlertsIndicator() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1.5 border-b border-border/30 px-4 py-2">
+        <div className="flex flex-nowrap gap-1 border-b border-border/30 px-3 py-2">
           {TABS.map((tab) => {
             const count = tabCounts[tab.key];
             const isActive = activeTab === tab.key;
@@ -320,18 +333,19 @@ export function StockAlertsIndicator() {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
+                data-testid={`stock-alerts-chip-${tab.key}`}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-all',
+                  'flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1.5 text-[11px] font-medium transition-all',
                   isActive
                     ? tab.activeColor
                     : 'border-transparent text-muted-foreground hover:bg-muted/40',
                 )}
               >
-                {tab.label}
+                <span className="whitespace-nowrap">{tab.label}</span>
                 {count > 0 && (
                   <span
                     className={cn(
-                      'flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold',
+                      'flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[9px] font-bold tabular-nums',
                       isActive ? 'bg-current/20' : 'bg-muted',
                     )}
                   >
@@ -342,6 +356,7 @@ export function StockAlertsIndicator() {
             );
           })}
         </div>
+
 
         {/* Filtro de período */}
         <div className="flex items-center gap-1.5 border-b border-border/20 bg-muted/20 px-4 py-1.5">
@@ -365,7 +380,27 @@ export function StockAlertsIndicator() {
         {/* List */}
         <ScrollArea className="h-[320px]">
           <div className="space-y-1.5 p-3">
-            {activeList.length === 0 ? (
+            {isListLoading ? (
+              <div
+                data-testid="stock-alerts-loading"
+                className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center text-muted-foreground"
+              >
+                <Loader2 className="h-6 w-6 animate-spin opacity-70" />
+                <p className="text-xs">Carregando alertas...</p>
+              </div>
+            ) : listError ? (
+              <div
+                data-testid="stock-alerts-error"
+                role="alert"
+                className="mx-1 flex flex-col items-center justify-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-6 text-center"
+              >
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                <p className="text-xs font-medium text-destructive">Erro ao carregar</p>
+                <p className="text-[11px] leading-snug text-muted-foreground">
+                  Tente novamente em instantes.
+                </p>
+              </div>
+            ) : activeList.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
                 <Package className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p className="text-sm">

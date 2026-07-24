@@ -20,7 +20,8 @@ export function useProdutoRamoAtividade(productId: string | null | undefined) {
       const result = await dbInvoke<ProdutoRamo>({
         operation: 'select',
         table: 'produto_ramo_atividade',
-        filters: { product_id: productId ?? '' },
+        // FIX 2026-06-26: a coluna real e 'produto_id' (PT), nao 'product_id' -> evitava PostgREST 400/42703.
+        filters: { produto_id: productId ?? '' },
       });
       return result.records || [];
     },

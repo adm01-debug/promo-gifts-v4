@@ -4,7 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 
 const authState = vi.hoisted(() => ({
-  user: null as null | { id: string },
+  user: null as { id: string } | null,
   roles: [],
   currentAAL: 'aal1',
   isLoading: false,

@@ -27,13 +27,67 @@ const AlertDialogOverlay = React.forwardRef<
 AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
 
 // ---------------------------------------------------------------------------
+// Title & Description — declarados ANTES de AlertDialogContent para que possam
+// ser referenciados diretamente em TITLE_TYPES / DESCRIPTION_TYPES.
+//
+// BUG-A11Y-2 ROOT CAUSE FIX (2026-06-25):
+// A versão anterior declarava AlertDialogTitle/Description APÓS AlertDialogContent,
+// impossibilitando referenciá-los em TITLE_TYPES/DESCRIPTION_TYPES. O fallback
+// de string 'AlertDialogTitle' também estava errado: o Radix define displayName
+// como 'AlertDialog.Title' (com ponto), não 'AlertDialogTitle'. Resultado:
+//   • childrenHaveType() sempre retornava false mesmo quando AlertDialogTitle
+//     já estava no tree → fallback sr-only era SEMPRE injetado.
+//   • Dois AlertDialogPrimitive.Title no DOM → IDs duplicados → console.error
+//     do Radix sobre Title obrigatório + console.warn sobre Description ausente.
+// Fix: mover as declarações para cima + adicionar referências diretas de componente
+// (match por identidade de objeto, 100% robusto, independe de displayName).
+// ---------------------------------------------------------------------------
+
+const AlertDialogTitle = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Title
+    ref={ref}
+    className={cn('text-lg font-semibold', className)}
+    {...props}
+  />
+));
+AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName;
+
+const AlertDialogDescription = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Description
+    ref={ref}
+    className={cn('text-sm text-muted-foreground', className)}
+    {...props}
+  />
+));
+AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName;
+
+// ---------------------------------------------------------------------------
 // A11y helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * BUG-A11Y-1 FIX (2026-06-25): Busca recursiva em profundidade arbitrária.
+ *
+ * BUG-A11Y-2 FIX (2026-06-25): TITLE_TYPES agora inclui referências diretas
+ * aos componentes AlertDialogTitle e AlertDialogDescription declarados acima.
+ * A match por identidade de objeto (match === t) é O(1) e 100% confiável —
+ * independe de displayName, que varia por versão do Radix e pode incluir
+ * ponto ('AlertDialog.Title') em vez do esperado ('AlertDialogTitle').
+ * Mantemos os fallbacks de string 'AlertDialogTitle' e 'AlertDialog.Title'
+ * para resistência a re-exports, wrappers externos e versões futuras do Radix.
+ */
 function childrenHaveType(
   children: React.ReactNode,
   types: Array<React.ElementType | string>,
+  maxDepth = 8,
 ): boolean {
+  if (maxDepth === 0) return false;
   let found = false;
   React.Children.forEach(children, (child) => {
     if (found) return;
@@ -46,27 +100,24 @@ function childrenHaveType(
       return;
     }
     const nested = (child.props as { children?: React.ReactNode }).children;
-    if (nested) {
-      React.Children.forEach(nested, (grandchild) => {
-        if (found) return;
-        if (!React.isValidElement(grandchild)) return;
-        const gt = grandchild.type as React.ElementType;
-        if (types.some((m) => m === gt || (gt as { displayName?: string }).displayName === m)) {
-          found = true;
-        }
-      });
+    if (nested && maxDepth > 1) {
+      found = childrenHaveType(nested, types, maxDepth - 1);
     }
   });
   return found;
 }
 
 const TITLE_TYPES: Array<React.ElementType | string> = [
-  AlertDialogPrimitive.Title,
-  'AlertDialogTitle',
+  AlertDialogPrimitive.Title, // Radix primitive diretamente
+  AlertDialogTitle,           // BUG-A11Y-2 FIX: referência ao wrapper exportado
+  'AlertDialogTitle',         // fallback legacy (re-exports, mocks)
+  'AlertDialog.Title',        // fallback: displayName real que o Radix define
 ];
 const DESCRIPTION_TYPES: Array<React.ElementType | string> = [
-  AlertDialogPrimitive.Description,
-  'AlertDialogDescription',
+  AlertDialogPrimitive.Description, // Radix primitive diretamente
+  AlertDialogDescription,            // BUG-A11Y-2 FIX: referência ao wrapper exportado
+  'AlertDialogDescription',          // fallback legacy
+  'AlertDialog.Description',         // fallback: displayName real que o Radix define
 ];
 
 // ---------------------------------------------------------------------------
@@ -123,30 +174,6 @@ const AlertDialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDiv
   />
 );
 AlertDialogFooter.displayName = 'AlertDialogFooter';
-
-const AlertDialogTitle = React.forwardRef<
-  React.ElementRef<typeof AlertDialogPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <AlertDialogPrimitive.Title
-    ref={ref}
-    className={cn('text-lg font-semibold', className)}
-    {...props}
-  />
-));
-AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName;
-
-const AlertDialogDescription = React.forwardRef<
-  React.ElementRef<typeof AlertDialogPrimitive.Description>,
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <AlertDialogPrimitive.Description
-    ref={ref}
-    className={cn('text-sm text-muted-foreground', className)}
-    {...props}
-  />
-));
-AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName;
 
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,

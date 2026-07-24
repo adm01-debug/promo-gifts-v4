@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 // =============================================================================
 // SKIPPED — Tracked by issue #151 (re-classificado em 2026-05-12, Fase 3 T24)
 // https://github.com/adm01-debug/Promo_Gifts/issues/151
@@ -145,12 +146,14 @@ function getChildLink(label: string): HTMLElement | null {
 }
 
 async function clickHeader() {
+  // eslint-disable-next-line @typescript-eslint/require-await
   await act(async () => {
     fireEvent.click(getGroupHeader());
   });
 }
 
 async function go(router: Router, delta: number) {
+  // eslint-disable-next-line @typescript-eslint/require-await
   await act(async () => {
     router.navigate(delta);
   });

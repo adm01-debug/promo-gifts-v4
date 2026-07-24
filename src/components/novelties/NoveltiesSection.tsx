@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,28 +18,50 @@ import {
 } from '@/hooks/products';
 import { NoveltyBadge } from '@/components/products/NoveltyBadge';
 import { cn } from '@/lib/utils';
+import { Clickable } from '@/components/shared/Clickable';
 import { useNavigate } from 'react-router-dom';
-
-function formatDaysAgo(createdAt: string): string {
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-  if (days === 0) return 'Hoje!';
-  if (days === 1) return 'Ontem';
-  return `${days}d atrás`;
-}
+import { useAuth } from '@/contexts/AuthContext';
+import { formatDaysAgoFromCount } from '@/lib/novelty-dates';
 
 export function NoveltiesSection() {
   const navigate = useNavigate();
   const [periodFilter, setPeriodFilter] = useState<string>('all');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
 
-  const { data: allNovelties, isLoading } = useNoveltiesWithDetails({ limit: 100 });
+  // ISSUE-34 FIX: tick a cada 60s — garante que recência recalculada ao passar
+  // do limite de 2 dias (hot→warm) ou 5 dias (warm→normal) enquanto a página
+  // está aberta (sem refresh).
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // BUG-HEAD-3 FIX (2026-06-25): guard de autenticação para evitar GETs abortados.
+  // enabled=false quando rolesLoaded=false previne AbortError no DevTools.
+  // isPending:isLoading alias garante que o skeleton seja exibido tanto durante
+  // rolesLoaded=false (isPending=true, isFetching=false) quanto durante o fetch real.
+  // ANTI-REGRESSÃO fix_version=v4.1443b: não remover isReadyToFetch nem o alias.
+  const { user, rolesLoaded } = useAuth();
+  const isReadyToFetch = rolesLoaded && !!user;
+
+  // ISSUE-22 FIX: sem limit → cache key ['novelties-details','all',false] compartilhada
+  // com ExpiringNoveltiesWidget e NoveltyProductGrid. Elimina round-trip redundante.
+  // A fatia de 8 cards acontece no useMemo de `novelties` via .slice(0, 8).
+  const { data: allNovelties, isPending: isLoading } = useNoveltiesWithDetails({ enabled: isReadyToFetch });
   const { data: stats } = useNoveltyStats() as { data: NoveltyStatsDisplay | undefined };
 
-  // Extract unique suppliers from data
+  // Extract unique suppliers from period-filtered data — faceted filtering:
+  // supplier counts must reflect only the products that match the current
+  // period filter so the count next to each supplier name is accurate.
   const suppliers = useMemo(() => {
     if (!allNovelties) return [];
+    const base =
+      periodFilter === 'all'
+        ? allNovelties
+        : allNovelties.filter((p) => p.days_as_novelty <= parseInt(periodFilter));
     const supMap = new Map<string, { id: string; name: string; count: number }>();
-    allNovelties.forEach((p) => {
+    base.forEach((p) => {
       if (p.supplier_id && p.supplier_name) {
         const existing = supMap.get(p.supplier_id);
         if (existing) existing.count++;
@@ -47,7 +69,7 @@ export function NoveltiesSection() {
       }
     });
     return [...supMap.values()].sort((a, b) => b.count - a.count);
-  }, [allNovelties]);
+  }, [allNovelties, periodFilter]);
 
   // Filter by period and supplier
   const novelties = useMemo(() => {
@@ -56,19 +78,19 @@ export function NoveltiesSection() {
 
     if (periodFilter !== 'all') {
       const maxDays = parseInt(periodFilter);
-      filtered = filtered.filter((p) => {
-        const elapsed = Math.floor((Date.now() - new Date(p.detected_at).getTime()) / 86400000);
-        return elapsed <= maxDays;
-      });
+      filtered = filtered.filter((p) => p.days_as_novelty <= maxDays);
     }
 
     if (selectedSupplier !== 'all') {
       filtered = filtered.filter((p) => p.supplier_id === selectedSupplier);
     }
 
+    // ISSUE-32 FIX: Schwartzian transform — pré-computa timestamps antes de ordenar.
     return filtered
-      .sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime())
-      .slice(0, 8);
+      .map((n) => [n, new Date(n.detected_at).getTime()] as const)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([n]) => n);
   }, [allNovelties, periodFilter, selectedSupplier]);
 
   const handleProductClick = (productId: string) => {
@@ -109,6 +131,8 @@ export function NoveltiesSection() {
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="7">Últimos 7 dias</SelectItem>
                 <SelectItem value="15">Últimos 15 dias</SelectItem>
+                {/* ISSUE-29 FIX: adiciona opção 30 dias para cobrir toda a janela de novidade */}
+                <SelectItem value="30">Últimos 30 dias</SelectItem>
               </SelectContent>
             </Select>
 
@@ -176,13 +200,15 @@ export function NoveltiesSection() {
           <>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {novelties.map((item, index) => {
-                const fresh =
-                  Math.floor((Date.now() - new Date(item.detected_at).getTime()) / 86400000) <= 2;
+                const fresh = item.days_as_novelty <= 2;
                 return (
-                  <Card
+                  <Clickable
+                    as={Card}
                     key={item.novelty_id}
+                    aria-label={`Ver produto ${item.product_name}`}
+                    showFocusRing={false}
                     className={cn(
-                      'group cursor-pointer overflow-hidden transition-all duration-300',
+                      'group overflow-hidden transition-all duration-300',
                       'border-border/50 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg',
                       fresh && 'border-success/30 shadow-[0_0_12px_hsl(var(--success)/0.08)]',
                       'stagger-item',
@@ -221,7 +247,7 @@ export function NoveltiesSection() {
                         </h4>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                           <span className={cn(fresh ? 'font-medium text-brand-primary' : '')}>
-                            {formatDaysAgo(item.detected_at)}
+                            {formatDaysAgoFromCount(item.days_as_novelty)}
                           </span>
                           {item.supplier_name && (
                             <span className="ml-1 max-w-[80px] truncate">{item.supplier_name}</span>
@@ -229,7 +255,7 @@ export function NoveltiesSection() {
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
+                  </Clickable>
                 );
               })}
             </div>

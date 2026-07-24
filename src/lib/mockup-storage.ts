@@ -22,7 +22,7 @@ export async function uploadLogoToStorage(
     const base64Content = base64Data.split(',')[1];
     if (!base64Content) return null;
 
-    const mimeMatch = base64Data.match(/data:([^;]+);/);
+    const mimeMatch = /data:([^;]+);/.exec(base64Data);
     const mimeType = mimeMatch?.[1] || 'image/png';
     const extension = mimeType.split('/')[1] || 'png';
 

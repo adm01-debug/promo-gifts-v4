@@ -33,7 +33,7 @@ export function ZoomableGallery({
 
   const g = useGalleryZoom(images, isFullscreen);
 
-  const handlePan = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+  const handlePan = (_event: MouseEvent | PointerEvent | TouchEvent, info: PanInfo) => {
     if (g.zoom > 1) {
       const maxOffset = (g.zoom - 1) * 100;
       g.x.set(Math.max(-maxOffset, Math.min(maxOffset, g.x.get() + info.delta.x)));

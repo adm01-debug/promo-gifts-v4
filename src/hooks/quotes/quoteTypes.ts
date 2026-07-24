@@ -36,11 +36,16 @@ export interface QuoteItem {
   color_hex?: string;
   notes?: string;
   sort_order?: number;
-  bitrix_product_id?: string | number | null;
+  bitrix_product_id?: number | string | null;
   kit_group_id?: string | null;
   kit_name?: string | null;
   size_code?: string | null;
   gender?: string | null;
+  /** Runtime-only (não persistido em quote_items). Hidratado via lookup em products
+   * no fetchQuote ou populado ao adicionar o item ao orçamento. Usado para
+   * "Agrupar por categoria" no card Resumo. */
+  product_category_id?: string | null;
+  product_category_name?: string | null;
   /** ISO timestamp da última atualização do preço no catálogo externo (SSOT). Usado pelo badge "preço pode estar defasado". */
   price_updated_at?: string | null;
   /** Janela (em dias) configurada por produto para alertar preço defasado. Default 60. */
@@ -54,6 +59,7 @@ export interface Quote {
   id?: string;
   quote_number?: string;
   client_id?: string;
+  contact_id?: string;
   client_name?: string;
   client_email?: string;
   client_phone?: string;
@@ -89,7 +95,17 @@ export interface Quote {
   client_response_notes?: string;
   created_at?: string;
   updated_at?: string;
+  /** Versão de concorrência — incrementado pelo trigger em cada UPDATE. Usado pelo optimistic lock server-side. */
+  version?: number;
   items?: QuoteItem[];
+  /**
+   * Espelho da última `discount_approval_requests` deste orçamento.
+   * Coluna real em `quotes`, mantida pelo trigger `trg_sync_quote_dar` (DAR → quotes).
+   * Domínio idêntico ao CHECK de `discount_approval_requests.status`.
+   */
+  discount_approval_status?: 'approved' | 'expired' | 'pending' | 'rejected' | null;
+  /** ISO timestamp da última resposta de aprovação de desconto (espelho do DAR). */
+  discount_approved_at?: string | null;
 }
 
 export interface PersonalizationTechnique {

@@ -50,43 +50,58 @@ export default function AdminTemasPage() {
 
   const updateConfig = (partial: Partial<ThemeConfig>) => {
     let next = { ...config, ...partial };
-    // Quando o usuário troca de preset, se o novo skin tem borderRadius
-    // próprio (ex.: GX = 4px), sincroniza o slider para refletir o efeito.
+    // Quando o usuário troca de preset, sincroniza o slider de raio de borda:
+    // · GX preset (borderRadius definido) → snap para o valor angular do preset
+    // · Saindo de GX para classic → restaura o raio padrão (não deixa 4px angular
+    //   travado num skin clássico que não exige bordas retas)  [BUG-THEME-13]
     if (partial.presetId && partial.presetId !== config.presetId) {
       const nextPreset = THEME_PRESETS.find((p) => p.id === partial.presetId);
+      const prevPreset = THEME_PRESETS.find((p) => p.id === config.presetId);
       if (nextPreset?.borderRadius !== undefined) {
         next = { ...next, radius: nextPreset.borderRadius };
+      } else if (prevPreset?.borderRadius !== undefined) {
+        next = { ...next, radius: getDefaultConfig().radius };
       }
     }
     setConfig(next);
-    // Auto-save on every change for instant feedback
-    saveThemeConfig(next);
+    // Auto-save on every change for instant feedback.
+    // Sync savedConfig only when save succeeds; if localStorage is unavailable
+    // (private browsing / quota exceeded) hasUnsavedChanges will remain true
+    // so the "Salvar" button stays active — the user can still try a manual save.
+    // (BUG-THEME-04: pulsating red dot was shown even when data was already saved).
+    const saved = saveThemeConfig(next);
+    if (saved) setSavedConfig(next);
   };
 
   const handleSave = () => {
-    saveThemeConfig(config);
-    setSavedConfig(config);
-    toast.success('Tema salvo com sucesso!', {
-      description: `Skin "${THEME_PRESETS.find((p) => p.id === config.presetId)?.name}" aplicada.`,
-    });
+    const saved = saveThemeConfig(config);
+    if (saved) {
+      setSavedConfig(config);
+      toast.success('Tema salvo com sucesso!', {
+        description: `Skin "${THEME_PRESETS.find((p) => p.id === config.presetId)?.name}" aplicada.`,
+      });
+    } else {
+      toast.error('Não foi possível salvar o tema', {
+        description:
+          'O armazenamento local está indisponível ou cheio. Tente em uma janela normal.',
+      });
+    }
   };
 
   const handleReset = () => {
     clearThemeOverrides();
     const def = getDefaultConfig();
     setConfig(def);
-    setSavedConfig(def);
-    saveThemeConfig(def);
-    // setAppTheme removed as theme is fixed
-    toast.success('Tema restaurado ao padrão');
-  };
-
-  // Reservado para uso futuro pelo botão de importação de tema
-  const _handleImport = (imported: ThemeConfig) => {
-    setConfig(imported);
-    saveThemeConfig(imported);
-    setSavedConfig(imported);
-    // setAppTheme removed as theme is fixed
+    const saved = saveThemeConfig(def);
+    if (saved) {
+      setSavedConfig(def);
+      toast.success('Tema restaurado ao padrão');
+    } else {
+      toast.error('Não foi possível salvar o tema restaurado', {
+        description:
+          'O armazenamento local está indisponível. O padrão será perdido ao recarregar.',
+      });
+    }
   };
 
   return (

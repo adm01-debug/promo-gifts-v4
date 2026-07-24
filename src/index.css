@@ -35,11 +35,12 @@
   animation-duration: 0.4s;
 }
 
-.theme-transitioning {
+html.theme-transitioning,
+html.theme-transitioning * {
   transition:
     background-color 0.3s ease,
     border-color 0.3s ease,
-    color 0.3s ease;
+    color 0.3s ease !important;
 }
 
 @keyframes brain-glow {
@@ -224,6 +225,11 @@ html[data-scroll-locked] body {
     --destructive-foreground: 0 0% 100%;
     --info: 210 100% 62%;
     --info-foreground: 210 100% 8%;
+    /* Neon highlights (chips de status e destaques vibrantes) */
+    --neon-blue: 205 100% 60%;
+    --neon-blue-foreground: 205 100% 8%;
+    --neon-green: 142 90% 55%;
+    --neon-green-foreground: 142 100% 8%;
 
     /* 6. Muted & Secondary States */
     --secondary: 24 28% 12%;
@@ -311,14 +317,19 @@ html[data-scroll-locked] body {
 
     /* 13. Product Swatches Tokens */
     /* 13. Product Swatches Design Tokens (SSOT) */
+    --swatch-size-xxs: 16px;
     --swatch-size-xs: 20px;
     --swatch-size-sm: 24.2px;
     --swatch-size-md: 28.6px;
+    --swatch-size-lg: 32px;
     --swatch-gap-x: 6px;
     --swatch-gap-y: 6px;
     --swatch-scale-hover: 1.1;
     --swatch-ring-width: 2px;
-    --swatch-container-py: 4px;
+    /* py do container acomoda ring (2px) + scale 1.1 (+~1.3px) + glow do ::after
+       quando o swatch está selecionado. Valores <6px causam clipping vertical
+       visível ("bolinha cortada como se estivesse dentro de algo"). */
+    --swatch-container-py: 6px;
     --swatch-selected-glow: 0 0 12px 2px hsl(var(--primary) / 0.5);
   }
 
@@ -354,6 +365,11 @@ html[data-scroll-locked] body {
     --destructive-foreground: 0 0% 100%;
     --info: 210 100% 62%;
     --info-foreground: 210 100% 8%;
+    /* Neon highlights — mais luminância no dark para efeito "glow" */
+    --neon-blue: 205 100% 66%;
+    --neon-blue-foreground: 205 100% 8%;
+    --neon-green: 142 90% 60%;
+    --neon-green-foreground: 142 100% 8%;
 
     /* Estados muted */
     --secondary: 24 28% 12%;
@@ -1636,6 +1652,16 @@ html[data-scroll-locked] body {
     background-color: hsl(0 0% 100%) !important;
   }
 
+  /*
+   * Status chip glow — SSOT do halo luminoso usado por todos os chips de status
+   * (Carrinhos, Orçamentos, etc). Cada chip define `--chip-glow` apontando para
+   * um token de cor (ex.: `[--chip-glow:var(--neon-blue)]`); esta classe aplica
+   * o box-shadow padrão. Alterar o raio/opacidade aqui propaga para tudo.
+   */
+  .status-chip-glow {
+    box-shadow: 0 0 6px hsl(var(--chip-glow, var(--primary)) / 0.18);
+  }
+
   /* Card Variants */
   .card-base {
     @apply rounded-xl border border-border bg-card p-[var(--spacing-card)] transition-all duration-200;
@@ -2597,3 +2623,32 @@ body[data-offline='true'] button[type='submit']::after {
 }
 
 /* NOTE: prefers-reduced-data block removed — hid ALL lazy images (= product catalog) */
+
+/* Hide Lovable badge (PRO plan) */
+#lovable-badge,
+#lovable-badge-v2,
+[id^="lovable-badge"],
+a[href*="lovable.dev"][target="_blank"] {
+  display: none !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Override determinístico do DropdownMenuContent das linhas de orçamento.
+ *
+ * O shadcn aplica `min-width: 8rem` via classe utilitária no próprio componente.
+ * Aqui forçamos width/min-width pelo seletor `[data-testid^="quote-row-menu-"]`,
+ * que é estável e independente de ordem/casamento de classes do tw-merge.
+ * `!important` garante precedência mesmo se a util `min-w-[8rem]` aparecer
+ * depois no bundle em algum cenário de cache HMR.
+ * Largura efetiva: 6.8rem (~15% menor que o baseline 8rem do shadcn; minimo a prova de corte incl. fallback system-ui em bold/FOUT). NAO reduzir para 6.4rem: corta "Visualizar" no fallback.
+ * ────────────────────────────────────────────────────────────────────────── */
+[data-testid^="quote-row-menu-"][role="menu"],
+[role="menu"][data-testid^="quote-row-menu-"] {
+  width: 6.8rem !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 1rem) !important;
+}
+[data-testid^="quote-row-menu-"] [role="menuitem"] {
+  white-space: nowrap;
+}
+

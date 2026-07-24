@@ -34,7 +34,8 @@ export function ExternalCategoryFilter({
   const [search, setSearch] = useState('');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-  const { data: categoryIcons = [] as CategoryIcon[] } = useCategoryIcons();
+  const { data: rawCategoryIcons } = useCategoryIcons();
+  const categoryIcons = (rawCategoryIcons ?? []) as CategoryIcon[];
   const { data: categories = [], isLoading, refetch, isFetching } = useExternalCategoriesQuery();
 
   // Construir árvore hierárquica
@@ -127,7 +128,7 @@ export function ExternalCategoryFilter({
     return own + node.children.reduce((sum, child) => sum + getTotalCount(child), 0);
   };
 
-  const renderCategoryNode = (node: CategoryNode, level: number = 0): React.ReactNode => {
+  const renderCategoryNode = (node: CategoryNode, level = 0): React.ReactNode => {
     const hasChildren = node.children.length > 0;
     const isExpanded = expandedIds.has(node.id);
     const isSelected = selectedCategories.includes(node.id);

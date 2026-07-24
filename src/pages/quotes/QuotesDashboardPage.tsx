@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { Clickable } from '@/components/shared/Clickable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +78,17 @@ export default function QuotesDashboardPage() {
           <Skeleton className="h-80" />
           <Skeleton className="h-80" />
         </div>
+      </div>
+    );
+  }
+
+  if (s.error) {
+    return (
+      <div className="mx-auto w-full max-w-[1920px] px-3 py-12 text-center sm:px-4 lg:px-6">
+        <p className="text-sm text-destructive">{s.error}</p>
+        <Button variant="outline" className="mt-4" onClick={() => navigate('/orcamentos')}>
+          Voltar para orçamentos
+        </Button>
       </div>
     );
   }
@@ -352,20 +364,13 @@ export default function QuotesDashboardPage() {
           <CardContent>
             <div className="space-y-3">
               {recentClientResponses.map((quote) => (
-                <div
+                <Clickable
                   key={quote.id}
-                  className="flex cursor-pointer items-center justify-between rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/50"
-                  role="button"
-                  tabIndex={0}
+                  className="flex items-center justify-between rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/50"
                   onClick={() => navigate(`/orcamentos/${quote.id}`)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      navigate(`/orcamentos/${quote.id}`);
-                    }
-                  }}
                   aria-label={`Ver orçamento ${quote.quote_number}`}
                 >
+
                   <div className="flex items-center gap-3">
                     {quote.status === 'approved' ? (
                       <CheckCircle className="h-5 w-5 text-success" />
@@ -390,7 +395,7 @@ export default function QuotesDashboardPage() {
                       {formatCurrency(quote.total || 0)}
                     </p>
                   </div>
-                </div>
+                </Clickable>
               ))}
               {s.quotes.filter((q) => q.client_response_at).length === 0 && (
                 <div className="py-8 text-center text-muted-foreground">

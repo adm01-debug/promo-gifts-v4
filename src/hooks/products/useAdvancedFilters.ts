@@ -134,7 +134,7 @@ export function useAdvancedFilters() {
       if (cat.parentId) {
         const parent = categoryMap.get(cat.parentId);
         if (parent) {
-          parent.children = parent.children || [];
+          parent.children ||= [];
           parent.children.push(cat);
         }
       } else {
@@ -219,10 +219,10 @@ export function useAdvancedFilters() {
   const toggleArrayFilter = useCallback(
     <K extends keyof AdvancedFilterState>(key: K, value: string) => {
       setFilters((prev) => {
-        const currentValues = prev[key] as string[];
-        const newValues = currentValues.includes(value)
-          ? currentValues.filter((v) => v !== value)
-          : [...currentValues, value];
+        const currentValues = prev[key];
+        if (!Array.isArray(currentValues)) return prev;
+        const arr = currentValues as string[];
+        const newValues = arr.includes(value) ? arr.filter((v) => v !== value) : arr.concat(value);
         return { ...prev, [key]: newValues };
       });
     },
@@ -235,11 +235,10 @@ export function useAdvancedFilters() {
 
   const resetFilterGroup = useCallback((keys: (keyof AdvancedFilterState)[]) => {
     setFilters((prev) => {
-      const updates: Partial<AdvancedFilterState> = {};
-      keys.forEach((key) => {
-        updates[key] = defaultAdvancedFilters[key] as never;
-      });
-      return { ...prev, ...updates };
+      const defaults = Object.fromEntries(
+        keys.map((key) => [key, defaultAdvancedFilters[key]]),
+      ) as Partial<AdvancedFilterState>;
+      return { ...prev, ...defaults };
     });
   }, []);
 

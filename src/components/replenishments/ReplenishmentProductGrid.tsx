@@ -1,15 +1,22 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Package, AlertTriangle } from 'lucide-react';
+import { Package, AlertTriangle, RefreshCw } from 'lucide-react';
 import {
   replenishmentToProduct,
   useReplenishmentsSelectionMode,
   useReplenishmentsWithDetails,
 } from '@/hooks/products';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
+import {
+  useReposicaoVariantsSummary,
+  normalizeColorKey,
+} from '@/hooks/products/useReposicaoVariantsSummary';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
+import type { ColorDotLike } from '@/components/products/ProductColorSwatches';
 import { BulkActionBar } from '@/components/products/BulkActionBar';
 import { BulkVariantWizard } from '@/components/catalog/BulkVariantWizard';
 import { BulkAddToCartModal } from '@/components/catalog/BulkAddToCartModal';
@@ -26,14 +33,27 @@ import { ReplenishmentCardSkeleton } from './ReplenishmentCardSkeleton';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 
 type ViewMode = 'grid' | 'list' | 'table';
-type SortMode = 'name' | 'price-asc' | 'price-desc' | 'newest' | 'stock';
+type SortMode = 'name' | 'newest' | 'price-asc' | 'price-desc' | 'stock';
 
 function useLoadingProgress(isLoading: boolean): number {
   const [progress, setProgress] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    const clearAll = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+
     if (isLoading) {
+      clearAll();
       setProgress(0);
       intervalRef.current = setInterval(() => {
         setProgress((prev) => {
@@ -45,14 +65,12 @@ function useLoadingProgress(isLoading: boolean): number {
         });
       }, 300);
     } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearAll();
       setProgress(100);
-      const t = setTimeout(() => setProgress(0), 800);
-      return () => clearTimeout(t);
+      timeoutRef.current = setTimeout(() => setProgress(0), 800);
     }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+
+    return clearAll;
   }, [isLoading]);
 
   return progress;
@@ -60,6 +78,7 @@ function useLoadingProgress(isLoading: boolean): number {
 
 export function ReplenishmentProductGrid() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
   const [sortMode, setSortMode] = useState<SortMode>('newest');
@@ -68,12 +87,7 @@ export function ReplenishmentProductGrid() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectionMode, setSelectionMode] = useState(false);
 
-  const {
-    data: replenishments,
-    isLoading,
-    isFetching,
-    error,
-  } = useReplenishmentsWithDetails();
+  const { data: replenishments, isLoading, isFetching, error } = useReplenishmentsWithDetails();
   const products = useMemo(() => replenishments ?? [], [replenishments]);
   const loadingProgress = useLoadingProgress(isLoading);
 
@@ -124,7 +138,10 @@ export function ReplenishmentProductGrid() {
         case 'stock':
           return b.stock_quantity - a.stock_quantity;
         default:
-          return new Date(b.replenished_at).getTime() - new Date(a.replenished_at).getTime();
+          return (
+            new Date(b.replenished_at).getTime() - new Date(a.replenished_at).getTime() ||
+            a.product_id.localeCompare(b.product_id)
+          );
       }
     });
     return filtered;
@@ -147,13 +164,12 @@ export function ReplenishmentProductGrid() {
     });
   }, [sel]);
 
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const {
-    isInCompare,
-    addToCompare,
-    removeFromCompare,
-    canAddMore: canAddToCompare,
-  } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const addToCompare = useComparisonStore((s) => s.addToCompare);
+  const removeFromCompare = useComparisonStore((s) => s.removeFromCompare);
+  const canAddToCompare = useComparisonStore((s) => s.canAddMore);
 
   const onToggleCompare = useCallback(
     (productId: string) => {
@@ -178,7 +194,40 @@ export function ReplenishmentProductGrid() {
     () => filteredProducts.map((p) => p.product_id),
     [filteredProducts],
   );
-  const { data: colorsByProduct } = useProductsColorsBatch(visibleProductIds);
+  const { data: rawColorsByProduct } = useProductsColorsBatch(visibleProductIds);
+  const { data: variantsSummary } = useReposicaoVariantsSummary(visibleProductIds);
+
+  // Onda 1: funde estoque por cor (RPC fn_get_reposicao_variants_summary) dentro
+  // do colorsByProduct existente. Quando a RPC ainda não chegou (loading) ou
+  // não tem entry para o produto, mantém os swatches sem overlay (comportamento
+  // do antes). Identidade preservada quando não há summary → não invalida memo
+  // a jusante (VirtualizedGrid/TableView).
+  const colorsByProduct = useMemo(() => {
+    if (!rawColorsByProduct || rawColorsByProduct.size === 0) return rawColorsByProduct;
+    if (!variantsSummary || variantsSummary.size === 0) return rawColorsByProduct;
+    const out = new Map<string, readonly ColorDotLike[]>();
+    for (const [pid, colors] of rawColorsByProduct) {
+      const perColor = variantsSummary.get(pid);
+      if (!perColor || perColor.size === 0) {
+        out.set(pid, colors);
+        continue;
+      }
+      out.set(
+        pid,
+        colors.map((c) => {
+          const entry = perColor.get(normalizeColorKey(c.name));
+          if (!entry) return c;
+          return {
+            ...c,
+            stockQty: entry.stockQty,
+            hasUpcomingRestock: entry.hasUpcomingRestock,
+            nextRestockDate: entry.nextRestockDate,
+          };
+        }),
+      );
+    }
+    return out;
+  }, [rawColorsByProduct, variantsSummary]);
 
   // Enriquece o productMap (usado pelo list-view via ProductListItem) com as cores carregadas
   const enrichedProductMap = useMemo(() => {
@@ -189,7 +238,14 @@ export function ReplenishmentProductGrid() {
       if (c && c.length > 0) {
         next.set(id, {
           ...prod,
-          colors: c.map((x) => ({ name: x.name, hex: x.hex || '', group: '' })),
+          colors: c.map((x) => ({
+            name: x.name,
+            hex: x.hex || '',
+            group: '',
+            image: x.image ?? undefined,
+            images: x.image ? [x.image] : undefined,
+            stock: x.stockQty,
+          })),
         });
       }
     }
@@ -245,7 +301,18 @@ export function ReplenishmentProductGrid() {
             <AlertTriangle className="h-7 w-7 text-destructive" />
           </div>
           <p className="text-sm font-medium text-destructive">Erro ao carregar reposições</p>
-          <p className="mt-1 text-xs text-muted-foreground/70">Tente recarregar a página</p>
+          <p className="mt-1 text-xs text-muted-foreground/70">
+            {(error as Error).message ?? 'Falha ao buscar dados do servidor'}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 gap-2 text-xs"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['replenishments-details'] })}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Tentar novamente
+          </Button>
         </div>
       );
     }
@@ -352,20 +419,21 @@ export function ReplenishmentProductGrid() {
         </p>
       )}
 
-      <div className="relative">
+      <div className="relative" style={swatchSizeStyle(viewMode, gridColumns)}>
         {renderContent()}
         <AnimatePresence>
-          {isFetching && products.length > 0 && (
+          {isFetching && !isLoading && products.length > 0 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
               role="status"
+              aria-label="Atualizando dados de reposição"
             >
               <div className="flex items-center gap-2 rounded-full border bg-background/90 px-4 py-2 shadow-sm">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span className="text-sm text-muted-foreground">Filtrando…</span>
+                <span className="text-sm text-muted-foreground">Atualizando…</span>
               </div>
             </motion.div>
           )}

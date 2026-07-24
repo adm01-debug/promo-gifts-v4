@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { ConnectionType } from '@/hooks/intelligence/useConnectionTester';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface TestHistoryItem {
   id: string;
@@ -11,13 +12,13 @@ export interface TestHistoryItem {
   message: string | null;
   /** Tipo semântico da falha (gravado pelo backend; null em sucessos ou registros antigos). */
   error_kind?: string | null;
-  triggered_by?: 'manual' | 'cron' | 'webhook';
+  triggered_by?: 'cron' | 'manual' | 'webhook';
   attempts?: number;
 }
 
 interface Options {
   type: ConnectionType;
-  envKey?: 'promobrind' | 'crm';
+  envKey?: 'crm' | 'promobrind';
   connectionId?: string;
   /** Bumped externally after a "Testar conexão" succeeds — triggers refetch. */
   refreshKey?: number | string;
@@ -44,7 +45,7 @@ export function useConnectionTestHistory({
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke('connection-tester', {
+      const { data, error: fnErr } = await invokeEdge<{ items?: TestHistoryItem[]; total?: number }>('connection-tester', {
         body: {
           action: 'test_history',
           type,

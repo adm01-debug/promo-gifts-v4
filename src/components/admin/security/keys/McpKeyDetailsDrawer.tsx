@@ -15,6 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { ShieldAlert, ClipboardList } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { McpKeyRow } from './useMcpKeys';
@@ -50,13 +51,18 @@ export function McpKeyDetailsDrawer({ source, open, onOpenChange }: Props) {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data } = await supabase
+      // BUG-MCPKEYDETAILS-AUDITLOG-SELECT-SILENT-FAIL FIX: { data } without error check —
+      // RLS failure silently showed "nenhum evento registrado" instead of actual error.
+      const { data, error: auditErr } = await supabase
         .from('admin_audit_log')
         .select('id, action, user_id, created_at, ip_address, user_agent, details')
         .eq('resource_type', 'mcp_api_key')
         .eq('resource_id', source.id)
         .order('created_at', { ascending: false })
         .limit(50);
+      if (auditErr) {
+        logger.error('[McpKeyDetailsDrawer] Failed to load audit log:', auditErr);
+      }
       if (!cancelled) {
         setEntries((data ?? []) as AuditEntry[]);
         setLoading(false);

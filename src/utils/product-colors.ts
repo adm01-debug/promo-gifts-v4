@@ -3,7 +3,7 @@
  *
  * Color detection, hex lookup, and normalization for product variants.
  */
-import type { ProductColor } from '@/types/product';
+import type { ProductColor } from '@/types/product-catalog';
 
 // Cores base para detecção de grupo
 const COLOR_GROUP_KEYWORDS: Record<string, string[]> = {

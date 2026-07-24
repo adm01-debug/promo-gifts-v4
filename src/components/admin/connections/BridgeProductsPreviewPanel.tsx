@@ -18,7 +18,7 @@ import type { ExternalProduct } from '@/lib/external-db/types';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
-type ActiveFilter = 'all' | 'active' | 'inactive';
+type ActiveFilter = 'active' | 'all' | 'inactive';
 
 const fmtCurrency = (n?: number) =>
   typeof n === 'number'
@@ -83,7 +83,9 @@ export function BridgeProductsPreviewPanel() {
       offset: (page - 1) * pageSize,
     }).then(() => {
       // ignora resposta de requisições obsoletas (race protection)
-      if (reqId !== lastReqRef.current) return;
+      if (reqId !== lastReqRef.current) {
+        /* no-op: obsolete request */
+      }
     });
   }, [buildFilters, fetchAll, page, pageSize]);
 
@@ -93,9 +95,9 @@ export function BridgeProductsPreviewPanel() {
     const min = minPriceInput.trim() === '' ? null : Number(minPriceInput);
     const max = maxPriceInput.trim() === '' ? null : Number(maxPriceInput);
     const stock = minStockInput.trim() === '' ? null : Number(minStockInput);
-    setAppliedMinPrice(Number.isFinite(min as number) ? (min as number) : null);
-    setAppliedMaxPrice(Number.isFinite(max as number) ? (max as number) : null);
-    setAppliedMinStock(Number.isFinite(stock as number) ? (stock as number) : null);
+    setAppliedMinPrice(Number.isFinite(min!) ? min! : null);
+    setAppliedMaxPrice(Number.isFinite(max!) ? max! : null);
+    setAppliedMinStock(Number.isFinite(stock!) ? stock! : null);
     setPage(1);
   }, [searchInput, activeInput, minPriceInput, maxPriceInput, minStockInput]);
 
@@ -258,20 +260,18 @@ export function BridgeProductsPreviewPanel() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {hasActiveFilters ? (
-                <>
-                  <Badge variant="secondary" className="text-[10px]">
-                    {
-                      [
-                        appliedSearch && 'busca',
-                        appliedActive !== 'all' && 'status',
-                        appliedMinPrice !== null && 'preço mín.',
-                        appliedMaxPrice !== null && 'preço máx.',
-                        appliedMinStock !== null && 'estoque',
-                      ].filter(Boolean).length
-                    }{' '}
-                    filtro(s) ativo(s)
-                  </Badge>
-                </>
+                <Badge variant="secondary" className="text-[10px]">
+                  {
+                    [
+                      appliedSearch && 'busca',
+                      appliedActive !== 'all' && 'status',
+                      appliedMinPrice !== null && 'preço mín.',
+                      appliedMaxPrice !== null && 'preço máx.',
+                      appliedMinStock !== null && 'estoque',
+                    ].filter(Boolean).length
+                  }{' '}
+                  filtro(s) ativo(s)
+                </Badge>
               ) : (
                 <span>Sem filtros aplicados</span>
               )}

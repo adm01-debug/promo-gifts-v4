@@ -414,9 +414,11 @@ describe('§6 applyRadius', () => {
     expect(document.documentElement.style.getPropertyValue('--radius')).toBe('0.25rem');
   });
 
-  it('aceita valores grandes', () => {
+  it('clamps valores acima do máximo do slider (20px = 1.25rem)', () => {
     applyRadius(24);
-    expect(document.documentElement.style.getPropertyValue('--radius')).toBe('1.5rem');
+    // BUG-THEME-16: applyRadius clamps to Math.max(0, Math.min(20, px))
+    // to guard against corrupted localStorage. 24px → 20px → 1.25rem.
+    expect(document.documentElement.style.getPropertyValue('--radius')).toBe('1.25rem');
   });
 });
 
@@ -496,6 +498,34 @@ describe('§8 Storage — saveThemeConfig + loadThemeConfig (round-trip)', () =>
       expect(loadThemeConfig().presetId).toBe(id);
     });
   });
+
+  it('loadThemeConfig corrige mode inválido (truthy) para "auto"', () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ presetId: 'corporate', radius: 8, mode: 'invalid-value' }),
+    );
+    const loaded = loadThemeConfig();
+    expect(loaded.mode).toBe('auto');
+    expect(loaded.presetId).toBe('corporate');
+  });
+
+  it('saveThemeConfig retorna true quando a gravação tem sucesso', () => {
+    const cfg: ThemeConfig = { presetId: 'corporate', radius: 4, mode: 'light' };
+    expect(saveThemeConfig(cfg)).toBe(true);
+  });
+
+  it('saveThemeConfig retorna false quando localStorage.setItem lança (QuotaExceededError)', () => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => {
+      throw new DOMException('QuotaExceededError', 'QuotaExceededError');
+    };
+    try {
+      const result = saveThemeConfig({ presetId: 'corporate', radius: 4, mode: 'auto' });
+      expect(result).toBe(false);
+    } finally {
+      Storage.prototype.setItem = original;
+    }
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -520,6 +550,12 @@ describe('§9 importThemeConfig / exportThemeConfig', () => {
 
   it('importThemeConfig backfilla mode quando ausente', () => {
     const json = JSON.stringify({ presetId: 'corporate', radius: 8 });
+    const parsed = importThemeConfig(json);
+    expect(parsed?.mode).toBe('auto');
+  });
+
+  it('importThemeConfig corrige mode inválido para "auto"', () => {
+    const json = JSON.stringify({ presetId: 'corporate', radius: 8, mode: 'invalid-value' });
     const parsed = importThemeConfig(json);
     expect(parsed?.mode).toBe('auto');
   });
@@ -824,15 +860,19 @@ describe('§12 Edge cases e robustez', () => {
     });
   });
 
-  it('skins GX têm o ÚLTIMO shadow-glow alpha boostado (boost atinge o glow colorido)', () => {
+  it('skins GX têm o PRIMEIRO shadow-glow-primary alpha boostado, ambient intacto (BUG-THEME-17)', () => {
     GX_IDS.forEach((id) => {
       const value = findPreset(id).dark['shadow-glow-primary'];
-      // boostGlowAlpha substitui APENAS a última ocorrência hsl(... / X)
-      // — preserva drop shadow neutro inicial e amplifica só o glow colorido.
+      // BUG-THEME-17 FIX: boostGlowAlpha substitui a PRIMEIRA ocorrência hsl(... / X)
+      // (core neon glow) — o segundo componente (ambient, menor alpha) permanece inalterado.
       const all = [...value.matchAll(/\/\s*([0-9.]+)\s*\)/g)];
       expect(all.length, `gx skin ${id} should have at least one alpha`).toBeGreaterThan(0);
-      const lastAlpha = parseFloat(all[all.length - 1][1]);
-      expect(lastAlpha, `gx skin ${id} last alpha should be boosted`).toBeGreaterThanOrEqual(0.5);
+      const firstAlpha = parseFloat(all[0][1]);
+      expect(firstAlpha, `gx skin ${id} first alpha (core neon) should be boosted`).toBeGreaterThanOrEqual(0.5);
+      if (all.length > 1) {
+        const lastAlpha = parseFloat(all[all.length - 1][1]);
+        expect(lastAlpha, `gx skin ${id} last alpha (ambient) must NOT be boosted`).toBeLessThan(0.3);
+      }
     });
   });
 

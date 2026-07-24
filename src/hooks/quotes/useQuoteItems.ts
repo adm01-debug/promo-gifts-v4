@@ -13,6 +13,8 @@ interface Product {
   minQuantity?: number;
   priceUpdatedAt?: string;
   priceFreshnessThresholdDays?: number;
+  categoryId?: string | null;
+  categoryName?: string | null;
 }
 
 export function useQuoteItems(initialItems: QuoteItem[] = []) {
@@ -69,7 +71,9 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
           {
             product_id: product.id,
             product_name: product.name,
-            product_sku: product.sku,
+            // Persistir o SKU composto da variante (ex.: "94297-7.1") quando
+            // houver variante selecionada. Cai no SKU base se não houver.
+            product_sku: variant?.sku || product.sku,
             product_image_url: imageUrl,
             quantity: initialQuantity,
             unit_price: product.price,
@@ -79,6 +83,8 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
             bitrix_product_id: variant?.bitrix_product_id ?? null,
             price_updated_at: product.priceUpdatedAt ?? null,
             price_freshness_threshold_days: product.priceFreshnessThresholdDays ?? null,
+            product_category_id: product.categoryId ?? null,
+            product_category_name: product.categoryName ?? null,
             personalizations: [],
           },
         ];

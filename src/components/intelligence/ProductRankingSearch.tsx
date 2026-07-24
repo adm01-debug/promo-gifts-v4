@@ -196,7 +196,7 @@ export function ProductRankingSearch() {
           <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
             <div className="hidden grid-cols-[2rem_2.5rem_1fr_4.5rem_5rem_5rem_4rem] gap-2 bg-muted/40 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:grid">
               <span>#</span>
-              <span></span>
+              <span />
               <span>Produto</span>
               <span className="text-right">Qtd</span>
               <span className="text-right">Receita</span>

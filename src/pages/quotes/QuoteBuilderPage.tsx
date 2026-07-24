@@ -3,15 +3,14 @@
  * Refatorado: lógica em useQuoteBuilderState, UI em sub-componentes.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { cn } from '@/lib/utils';
 
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CurrencyInput } from '@/components/ui/currency-input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -22,50 +21,144 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DeliveryModeToggle } from '@/pages/quotes/components/DeliveryModeToggle';
+
 import {
   FileText,
-  Plus,
   Package,
-  Loader2,
-  BookTemplate,
+  
   AlertTriangle,
   Calendar as CalendarIcon,
   Sparkles,
   ExternalLink,
   Info,
+  MessageSquare,
+  ChevronDown,
+  RotateCcw,
 } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+// FIX-C01: adicionado startOfDay para corrigir Calendar disabled — hoje sempre era bloqueado
+import { format, addDays, startOfDay } from 'date-fns';
 
-import { QuoteTemplateSelector } from '@/components/quotes/QuoteTemplateSelector';
-import { SaveAsTemplateButton } from '@/components/quotes/SaveAsTemplateButton';
-import { QuoteProductCustomization } from '@/components/quotes/QuoteProductCustomization';
+
+import { QuoteItemEditorSheet } from '@/components/quotes/QuoteItemEditorSheet';
 import { CompanyContactSelector } from '@/components/quotes/CompanyContactSelector';
 import { QuoteAutoSave } from '@/components/quotes/QuoteAutoSave';
 import { QuoteConcurrencyAlert } from '@/components/quotes/QuoteConcurrencyAlert';
-import { DraggableQuoteItems } from '@/components/quotes/DraggableQuoteItems';
 import { QuoteBuilderStepper } from '@/components/quotes/QuoteBuilderStepper';
 import { QuoteBuilderSummaryColumn } from '@/components/quotes/QuoteBuilderSummaryColumn';
+import { QuoteBuilderSkeleton } from '@/components/quotes/QuoteBuilderSkeleton';
+
 
 import { QuoteBuilderProductSearch } from '@/components/quotes/QuoteBuilderProductSearch';
 import { useQuoteBuilderState } from '@/hooks/quotes';
 import { useUnsavedChangesGuard } from '@/hooks/common';
 import { UnsavedChangesDialog } from '@/components/common/UnsavedChangesDialog';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { getQuoteStatusLabel } from '@/lib/quote-status-config';
+import { formatQuoteNumberLabel } from '@/utils/quote-number';
+import { useNextQuoteNumberPreview } from '@/hooks/quotes/useNextQuoteNumberPreview';
+
+/**
+ * Subtítulo dinâmico do quote_number.
+ * - Modo edição com número válido → "Nº NNNNN/YY · <status>"
+ * - Modo edição sem número (null/malformado) → fallback "Nº indisponível"
+ * - Modo criação → prévia "Próx. ~N/YY" (estimativa client-side)
+ */
+function QuoteNumberSubtitle({
+  rawQuoteNumber,
+  isEditMode,
+  currentStatus,
+}: {
+  rawQuoteNumber: string | null | undefined;
+  isEditMode: boolean;
+  currentStatus: string | null | undefined;
+}) {
+  const formatted = formatQuoteNumberLabel(rawQuoteNumber);
+  const preview = useNextQuoteNumberPreview(!isEditMode);
+  const statusLabel = currentStatus ? getQuoteStatusLabel(currentStatus) : null;
+
+  return (
+    <p
+      data-testid="quote-number-display"
+      className="truncate font-mono text-[11px] text-muted-foreground sm:text-xs"
+      title={formatted ? `Número do orçamento: ${formatted}` : undefined}
+    >
+      {isEditMode ? (
+        formatted ? (
+          <span data-testid="quote-number-display-valid">
+            Nº <span className="font-semibold text-foreground">{formatted}</span>
+            {statusLabel ? <span className="ml-1 opacity-70">· {statusLabel}</span> : null}
+          </span>
+        ) : rawQuoteNumber ? (
+          // Existe valor no banco mas fora do formato canônico NNNNN/YY.
+          <span data-testid="quote-number-display-malformed" className="italic">
+            Nº em formato inválido — contate o suporte
+          </span>
+        ) : (
+          <span data-testid="quote-number-display-missing" className="italic">
+            Nº indisponível
+          </span>
+        )
+      ) : preview ? (
+        <span data-testid="quote-number-display-preview">
+          Próx. <span className="font-semibold text-foreground">{preview}</span>{' '}
+          <span className="opacity-70">(gerado ao salvar)</span>
+        </span>
+      ) : (
+        <span data-testid="quote-number-display-fallback" className="italic">
+          Nº a ser gerado ao salvar
+        </span>
+      )}
+    </p>
+  );
+}
 
 export default function QuoteBuilderPage() {
   const s = useQuoteBuilderState();
   const { conflictInfo, dismissConflict, overwriteAndSave } = s;
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  // FIX-E04: tracks the last successful server save so QuoteAutoSave can reset its baseline.
+  const [serverSavedAt, setServerSavedAt] = useState<number | undefined>(undefined);
+  const conditionsStorageKey = `quote-builder:conditions-collapsed:${s.quoteId ?? 'new'}`;
+  const [conditionsCollapsed, setConditionsCollapsed] = useState<boolean>(false);
+  // Rehidrata o estado de colapso quando o ID do orçamento muda (incl. transição novo → salvo).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      setConditionsCollapsed(window.localStorage.getItem(conditionsStorageKey) === '1');
+    } catch {
+      setConditionsCollapsed(false);
+    }
+  }, [conditionsStorageKey]);
+  const toggleConditionsCollapsed = () => {
+    setConditionsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(conditionsStorageKey, next ? '1' : '0');
+      } catch {
+        /* noop */
+      }
+      return next;
+    });
+  };
   const { showDialog, confirmLeave, cancelLeave, message } = useUnsavedChangesGuard({
     hasUnsavedChanges,
   });
 
   if (s.loadingQuote) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <QuoteBuilderSkeleton />;
   }
+
+  // FIX-E04: wrap handleSaveQuote to signal QuoteAutoSave when a server save succeeds.
+  const handleSaveQuoteWithSignal = async (
+    ...args: Parameters<typeof s.handleSaveQuote>
+  ) => {
+    const result = await s.handleSaveQuote(...args);
+    // handleSaveQuote returns updated_at string on success, undefined on failure/early-return
+    if (result !== undefined) setServerSavedAt(Date.now());
+    return result;
+  };
 
   return (
     <>
@@ -93,17 +186,13 @@ export default function QuoteBuilderPage() {
           shippingType: s.shippingType,
           shippingCost: s.shippingCost,
           notes: s.notes,
-          internalNotes: s.internalNotes,
           items: s.items,
         }}
         onChange={setHasUnsavedChanges}
-        className="fixed right-4 top-20 z-40"
+        serverSavedAt={serverSavedAt}
+        className="sr-only pointer-events-none"
       />
 
-      {/* ── Banner de conflito de edição simultânea ──
-          Aparece quando outro usuário/sessão modificou o orçamento enquanto estava aberto.
-          onReload: descarta alterações locais e busca versão mais recente
-          onOverwrite: ignora conflito e salva (overwrite consciente) */}
       {conflictInfo && (
         <div className="px-4 pt-4 lg:px-6 xl:px-8">
           <QuoteConcurrencyAlert
@@ -117,116 +206,88 @@ export default function QuoteBuilderPage() {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 pb-6 pt-3 sm:space-y-4 sm:px-4 sm:pt-4 lg:px-6 xl:px-8">
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-2 px-3 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-2 sm:space-y-3 sm:px-4 sm:pb-24 sm:pt-3 lg:px-6 lg:pb-28 xl:px-8">
+        <div aria-live="polite" className="sr-only" role="status" id="quote-builder-announcer" />
+
+        {/* LAYOUT-FIX: header + stepper na MESMA linha (inline à direita do título)
+            e sticky no topo para preservar contexto sem consumir altura extra. */}
         <div
-          aria-live="polite"
-          className="sr-only"
-          role="status"
-          id="quote-builder-announcer"
-        ></div>
-        {/* Header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="shrink-0 rounded-xl bg-primary/10 p-2.5">
-              <FileText className="h-5 w-5 text-primary" />
+          className="sticky isolate z-40 -mx-3 bg-background px-3 py-2 sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8"
+          style={{ top: 'calc(var(--header-h, 56px) + var(--breadcrumb-h, 40px))' }}
+        >
+          <div className="flex flex-row items-center gap-2 sm:gap-4 lg:gap-6">
+            <div className="flex min-w-0 shrink items-center gap-2 sm:gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:h-10 sm:w-10">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1
+                  data-testid={
+                    s.isEditMode ? 'page-title-orcamento-editar' : 'page-title-orcamento-novo'
+                  }
+                  className="truncate font-display text-lg font-bold leading-tight tracking-tight sm:text-xl"
+                >
+                  {s.isEditMode
+                    ? s.currentStatus === 'draft'
+                      ? 'Editar Rascunho'
+                      : s.currentStatus
+                        ? `Editar Proposta · ${getQuoteStatusLabel(s.currentStatus)}`
+                        : 'Editar Orçamento'
+                    : 'Novo Orçamento'}
+                </h1>
+                <QuoteNumberSubtitle
+                  rawQuoteNumber={s.quoteNumber}
+                  isEditMode={s.isEditMode}
+                  currentStatus={s.currentStatus}
+                />
+              </div>
             </div>
-            <div>
-              <h1
-                data-testid={
-                  s.isEditMode ? 'page-title-orcamento-editar' : 'page-title-orcamento-novo'
-                }
-                className="font-display text-xl font-bold leading-tight sm:text-2xl"
-              >
-                {s.isEditMode ? 'Editar Orçamento' : 'Novo Orçamento'}
-              </h1>
-              <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-                Crie um orçamento com produtos e personalizações
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {!s.isEditMode && (
-              <QuoteTemplateSelector
-                onSelectTemplate={s.applyTemplate}
-                trigger={
-                  <Button variant="outline">
-                    <BookTemplate className="mr-2 h-4 w-4" />
-                    Usar Template
-                    {s.templates.length > 0 && (
-                      <Badge variant="secondary" className="ml-2">
-                        {s.templates.length}
-                      </Badge>
-                    )}
+
+            {/* RESET — descarta empresa, contato, itens e condições do orçamento
+                em construção. Em modo edição, redireciona para /orcamentos/novo
+                para não sobrescrever o orçamento persistido. */}
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    data-testid="quote-reset-button"
+                    onClick={() => setResetDialogOpen(true)}
+                    className="shrink-0 gap-1.5 text-muted-foreground hover:text-destructive"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Reset</span>
                   </Button>
-                }
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  Limpar empresa, contato, itens e condições do orçamento atual
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Stepper ocupa todo o espaço restante após o botão Reset,
+                estendendo a timeline até a borda direita da página. */}
+            <div className="min-w-0 w-full flex-1 lg:flex lg:justify-end">
+              <QuoteBuilderStepper
+                completedSteps={s.completedSteps}
+                activeStep={s.activeStep}
+                onStepClick={s.goToStep}
+                compact
               />
-            )}
-            {s.items.length > 0 && (
-              <SaveAsTemplateButton
-                items={s.getTemplateItems()}
-                discountPercent={s.discountType === 'percent' ? s.discountValue : 0}
-                discountAmount={s.discountType === 'amount' ? s.discountValue : 0}
-                notes={s.notes}
-                internalNotes={s.internalNotes}
-              />
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Stepper */}
-        <QuoteBuilderStepper
-          completedSteps={s.completedSteps}
-          activeStep={s.activeStep}
-          onStepClick={s.goToStep}
-        />
 
-        {/* Template notifications */}
-        {s.templateApplied && (
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-2">
-                <BookTemplate className="h-4 w-4 text-primary" />
-                <span className="text-sm">
-                  Template <strong>"{s.templateApplied}"</strong> aplicado
-                </span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => s.setTemplateApplied(null)}>
-                Fechar
-              </Button>
-            </CardContent>
-          </Card>
-        )}
 
-        {!s.isEditMode && s.defaultTemplate && s.items.length === 0 && !s.templateApplied && (
-          <Card className="border-dashed bg-muted/50">
-            <CardContent className="flex items-center justify-between py-4">
-              <div className="flex items-center gap-3">
-                <BookTemplate className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">Template padrão disponível</p>
-                  <p className="text-sm text-muted-foreground">
-                    Use "{s.defaultTemplate.name}" para começar rapidamente
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (s.defaultTemplate) s.applyTemplate(s.defaultTemplate);
-                }}
-              >
-                Aplicar Template
-              </Button>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* 3-column layout */}
-        <div className="grid gap-4 lg:grid-cols-12">
+
+        <div data-testid="quote-builder-grid" className="grid min-w-0 gap-4 lg:grid-cols-12">
           {/* COL 1 — Cliente + Condições */}
-          <div className="lg:col-span-3">
-            <div className="sticky top-24 max-h-[calc(100vh-7rem)] space-y-3 overflow-y-auto pr-1">
-              {/* Empresa + Contato */}
+          <div className="min-w-0 lg:col-span-5">
+            <div className="space-y-3 pr-1">
               <div
                 className={cn(
                   'space-y-4 rounded-2xl border bg-card p-4',
@@ -254,34 +315,7 @@ export default function QuoteBuilderPage() {
                 )}
               </div>
 
-              {/* Validade */}
-              <div className="space-y-3 rounded-2xl border border-border/50 bg-card p-4">
-                <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
-                  <span className="text-primary">📅</span>Validade | Proposta
-                </h3>
-                <Select
-                  value={s.validityDays}
-                  onValueChange={(val) => {
-                    s.setValidityDays(val);
-                    s.setValidUntil(
-                      format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'),
-                    );
-                  }}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 dia</SelectItem>
-                    <SelectItem value="3">3 dias</SelectItem>
-                    <SelectItem value="7">7 dias</SelectItem>
-                    <SelectItem value="15">15 dias</SelectItem>
-                    <SelectItem value="30">30 dias</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Condições Comerciais */}
+              {/* Condições Comerciais (inclui Validade + Forma + Prazo de Pagamento na mesma linha) */}
               <div
                 className={cn(
                   'space-y-3 rounded-2xl border bg-card p-4',
@@ -293,161 +327,196 @@ export default function QuoteBuilderPage() {
                     : 'border-border/50',
                 )}
               >
-                <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
-                  <Package className="h-4 w-4 text-primary" />
-                  Condições
-                </h3>
-
-                {/* Pagamento Form */}
-                <div className="space-y-1.5">
-                  <Label
-                    className={cn(
-                      'text-xs',
-                      s.validationErrors.includes('forma_pagamento')
-                        ? 'text-destructive'
-                        : 'text-muted-foreground',
-                    )}
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
+                    <Package className="h-4 w-4 text-primary" />
+                    Condições
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={toggleConditionsCollapsed}
+                    aria-expanded={!conditionsCollapsed}
+                    aria-controls="quote-conditions-body"
+                    aria-label={conditionsCollapsed ? 'Expandir condições' : 'Colapsar condições'}
+                    title={conditionsCollapsed ? 'Expandir' : 'Colapsar'}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    Forma | Pagamento{' '}
-                    {s.validationErrors.includes('forma_pagamento') && (
-                      <span className="ml-1">*</span>
-                    )}
-                  </Label>
-                  <Select
-                    data-testid="payment-method-select-root"
-                    value={s.paymentMethod}
-                    onValueChange={s.setPaymentMethod}
-                  >
-                    <SelectTrigger
-                      data-testid="payment-method-select"
+                    <ChevronDown
                       className={cn(
-                        'h-8 text-xs',
-                        s.validationErrors.includes('forma_pagamento') && 'border-destructive',
+                        'h-4 w-4 transition-transform duration-200',
+                        conditionsCollapsed && '-rotate-90',
                       )}
-                    >
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="boleto">Boleto Bancário</SelectItem>
-                      <SelectItem value="pix_transferencia">
-                        Transferência Bancária / Pix
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                    />
+                  </button>
                 </div>
+                {!conditionsCollapsed && (
+                  <div id="quote-conditions-body" className="space-y-3">
 
-                {/* Pagamento Terms */}
-                <div className="space-y-1.5">
-                  <Label
-                    className={cn(
-                      'text-xs',
-                      s.validationErrors.includes('prazo_pagamento')
-                        ? 'text-destructive'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    Prazo | Pagamento{' '}
-                    {s.validationErrors.includes('prazo_pagamento') && (
-                      <span className="ml-1">*</span>
-                    )}
-                  </Label>
-                  <Select
-                    data-testid="payment-terms-select-root"
-                    value={s.paymentTerms}
-                    onValueChange={s.setPaymentTerms}
-                  >
-                    <SelectTrigger
-                      data-testid="payment-terms-select"
-                      className={cn(
-                        'h-8 text-xs',
-                        s.validationErrors.includes('prazo_pagamento') && 'border-destructive',
-                      )}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Validade | Proposta */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">
+                      <span className="mr-1">📅</span>Validade | Proposta
+                    </Label>
+                    <Select
+                      value={s.validityDays}
+                      onValueChange={(val) => {
+                        s.setValidityDays(val);
+                        s.setValidUntil(
+                          format(addDays(new Date(), parseInt(val, 10) || 1), 'yyyy-MM-dd'),
+                        );
+                      }}
                     >
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7_dias">7 dias a partir da entrega</SelectItem>
-                      <SelectItem value="14_dias">14 dias a partir da entrega</SelectItem>
-                      <SelectItem value="21_dias">21 dias a partir da entrega</SelectItem>
-                      <SelectItem value="28_dias">28 dias a partir da entrega</SelectItem>
-                      <SelectItem value="7_14_dias">7 e 14 dias a partir da entrega</SelectItem>
-                      <SelectItem value="50_50">50/50 | 50% entrada / 50% após entrega</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                      <SelectTrigger className="h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 dia</SelectItem>
+                        <SelectItem value="3">3 dias</SelectItem>
+                        <SelectItem value="7">7 dias</SelectItem>
+                        <SelectItem value="15">15 dias</SelectItem>
+                        <SelectItem value="30">30 dias</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                {/* Entrega */}
-                <div className="mt-1 space-y-1.5 border-t border-border/30 pt-3">
-                  <div className="flex items-center gap-1.5" data-testid="delivery-label-container">
+                  {/* Forma | Pagamento */}
+                  <div className="space-y-1.5">
                     <Label
-                      data-testid="delivery-label"
                       className={cn(
                         'text-xs',
-                        s.validationErrors.includes('prazo_entrega')
+                        s.validationErrors.includes('forma_pagamento')
                           ? 'text-destructive'
                           : 'text-muted-foreground',
                       )}
                     >
-                      Prazo | Entrega{' '}
-                      {s.validationErrors.includes('prazo_entrega') && (
+                      Forma | Pagamento{' '}
+                      {s.validationErrors.includes('forma_pagamento') && (
                         <span className="ml-1">*</span>
                       )}
                     </Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span
-                            data-testid="delivery-info-tooltip-trigger"
-                            className="inline-flex cursor-help align-middle text-muted-foreground/60 transition-colors hover:text-primary"
-                          >
-                            <Info
-                              className="h-3 w-3"
-                              aria-label="Informação sobre prazo de entrega"
-                            />
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          data-testid="delivery-info-tooltip-content"
-                          side="top"
-                          className="max-w-xs text-[11px] leading-relaxed"
-                        >
-                          Antes de assumir o compromisso com seu Cliente, valide com todo o time
-                          (Fornecedores, Coordenador de Compras, Coordenador de Logística) a
-                          viabilidade do prazo.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Select
+                      data-testid="payment-method-select-root"
+                      value={s.paymentMethod}
+                      onValueChange={s.setPaymentMethod}
+                    >
+                      <SelectTrigger
+                        data-testid="payment-method-select"
+                        className={cn(
+                          'h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none',
+                          s.validationErrors.includes('forma_pagamento') && 'border-destructive',
+                        )}
+                      >
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="boleto">Boleto Bancário</SelectItem>
+                        <SelectItem value="pix_transferencia">
+                          Transferência Bancária / Pix
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <div className="flex flex-col gap-1.5 rounded-xl border border-border/40 bg-muted/30 p-1.5">
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => s.handleDeliveryModeChange('prazo')}
+                  {/* Prazo | Pagamento */}
+                  <div className="space-y-1.5">
+                    <Label
+                      className={cn(
+                        'text-xs',
+                        s.validationErrors.includes('prazo_pagamento')
+                          ? 'text-destructive'
+                          : 'text-muted-foreground',
+                      )}
+                    >
+                      Prazo | Pagamento{' '}
+                      {s.validationErrors.includes('prazo_pagamento') && (
+                        <span className="ml-1">*</span>
+                      )}
+                    </Label>
+                    <Select
+                      data-testid="payment-terms-select-root"
+                      value={s.paymentTerms}
+                      onValueChange={s.setPaymentTerms}
+                    >
+                      <SelectTrigger
+                        data-testid="payment-terms-select"
                         className={cn(
-                          'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
-                          s.deliveryMode === 'prazo'
-                            ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
-                            : 'text-muted-foreground hover:bg-muted/50',
+                          'h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none',
+                          s.validationErrors.includes('prazo_pagamento') && 'border-destructive',
                         )}
                       >
-                        Contar dias
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => s.handleDeliveryModeChange('data')}
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7_dias">7 dias a partir da entrega</SelectItem>
+                        <SelectItem value="14_dias">14 dias a partir da entrega</SelectItem>
+                        <SelectItem value="21_dias">21 dias a partir da entrega</SelectItem>
+                        <SelectItem value="28_dias">28 dias a partir da entrega</SelectItem>
+                        <SelectItem value="7_14_dias">7 e 14 dias a partir da entrega</SelectItem>
+                        <SelectItem value="50_50">50/50 | 50% entrada / 50% após entrega</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  </div>
+
+
+                {/* Entrega */}
+                <div className="mt-1 space-y-1.5 border-t border-border/30 pt-3">
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-2"
+                    data-testid="delivery-label-container"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Label
+                        data-testid="delivery-label"
                         className={cn(
-                          'flex-1 rounded-lg px-2 py-1 text-[11px] font-semibold transition-all',
-                          s.deliveryMode === 'data'
-                            ? 'bg-background text-primary shadow-sm ring-1 ring-border/50'
-                            : 'text-muted-foreground hover:bg-muted/50',
+                          'text-xs',
+                          s.validationErrors.includes('prazo_entrega')
+                            ? 'text-destructive'
+                            : 'text-muted-foreground',
                         )}
                       >
-                        Data fixa
-                      </button>
+                        Prazo | Entrega{' '}
+                        {s.validationErrors.includes('prazo_entrega') && (
+                          <span className="ml-1">*</span>
+                        )}
+                      </Label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span
+                              data-testid="delivery-info-tooltip-trigger"
+                              className="inline-flex cursor-help align-middle text-muted-foreground/60 transition-colors hover:text-primary"
+                            >
+                              <Info
+                                className="h-3 w-3"
+                                aria-label="Informação sobre prazo de entrega"
+                              />
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            data-testid="delivery-info-tooltip-content"
+                            side="top"
+                            className="max-w-xs text-[11px] leading-relaxed"
+                          >
+                            Antes de assumir o compromisso com seu Cliente, valide com todo o time
+                            (Fornecedores, Coordenador de Compras, Coordenador de Logística) a
+                            viabilidade do prazo.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <DeliveryModeToggle
+                        value={s.deliveryMode}
+                        onChange={s.handleDeliveryModeChange}
+                      />
+
                     </div>
                   </div>
-                  {s.deliveryMode === 'prazo' ? (
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+                    <div>
+                   {s.deliveryMode === 'prazo' ? (
                     <Select
                       data-testid="delivery-time-select-root"
                       value={s.deliveryTime}
@@ -456,7 +525,7 @@ export default function QuoteBuilderPage() {
                       <SelectTrigger
                         data-testid="delivery-time-select"
                         className={cn(
-                          'h-8 text-xs',
+                          'h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none',
                           s.validationErrors.includes('prazo_entrega') && 'border-destructive',
                         )}
                       >
@@ -488,90 +557,105 @@ export default function QuoteBuilderPage() {
                             : 'Selecione a data'}
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent
+                        className="w-[var(--radix-popover-trigger-width)] rounded-2xl border border-border/50 bg-card p-2 shadow-xl"
+                        align="start"
+                      >
                         <Calendar
                           mode="single"
                           selected={s.deliveryDate}
                           onSelect={s.handleDeliveryDateChange}
-                          disabled={(date) => date < new Date()}
+                          disabled={(date) => date < startOfDay(new Date())}
                           initialFocus
                         />
                       </PopoverContent>
                     </Popover>
-                  )}
+                   )}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Frete */}
-                <div className="mt-1 space-y-1.5 border-t border-border/30 pt-3">
-                  <Label
-                    className={cn(
-                      'text-xs',
-                      s.validationErrors.includes('frete')
-                        ? 'text-destructive'
-                        : 'text-muted-foreground',
-                    )}
-                  >
-                    Frete {s.validationErrors.includes('frete') && <span className="ml-1">*</span>}
-                  </Label>
-                  <Select
-                    data-testid="shipping-type-select-root"
-                    value={s.shippingType}
-                    onValueChange={s.setShippingType}
-                  >
-                    <SelectTrigger
-                      data-testid="shipping-type-select"
-                      className={cn(
-                        'h-8 text-xs',
-                        s.validationErrors.includes('frete') && 'border-destructive',
-                      )}
-                    >
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cif">CIF | Frete grátis</SelectItem>
-                      <SelectItem value="fob">FOB | Repassado ao cliente</SelectItem>
-                      <SelectItem value="fob_pre">FOB | Valor pré negociado</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {s.validationErrors.includes('frete') && (
-                    <p className="mt-0.5 flex items-center gap-1 text-[10px] text-destructive">
-                      <AlertTriangle className="h-3 w-3" />
-                      Selecione a modalidade de frete
-                    </p>
-                  )}
-                  {s.shippingType === 'fob_pre' && (
-                    <div className="mt-1.5 space-y-1">
+                <div className="mt-1 border-t border-border/30 pt-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end" data-testid="freight-grid">
+                    <div className="space-y-1" data-testid="freight-grid-col-1">
                       <Label
+                        htmlFor="freight-select"
                         className={cn(
                           'text-xs',
-                          s.validationErrors.includes('valor_frete')
+                          s.validationErrors.includes('frete')
                             ? 'text-destructive'
                             : 'text-muted-foreground',
                         )}
                       >
-                        Valor R${' '}
-                        {s.validationErrors.includes('valor_frete') && (
-                          <span className="ml-1">*</span>
-                        )}
+                        Frete {s.validationErrors.includes('frete') && <span className="ml-1">*</span>}
                       </Label>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">R$</span>
+                      <Select
+                        data-testid="shipping-type-select-root"
+                        value={s.shippingType}
+                        onValueChange={s.setShippingType}
+                      >
+                        <SelectTrigger
+                          id="freight-select"
+                          data-testid="shipping-type-select"
+                          aria-label="Modalidade de frete"
+                          className={cn(
+                            'h-8 text-xs [&>span]:flex-1 [&>span]:text-left [&>span]:leading-none',
+                            s.validationErrors.includes('frete') && 'border-destructive',
+                          )}
+                        >
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="cif">CIF | Frete grátis</SelectItem>
+                          <SelectItem value="fob">FOB | Repassado ao cliente</SelectItem>
+                          <SelectItem value="fob_pre">FOB | Valor pré negociado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {s.shippingType === 'fob_pre' && (
+                      <div className="space-y-1" data-testid="freight-grid-col-2">
+                        <Label
+                          htmlFor="freight-value"
+                          className={cn(
+                            'text-xs',
+                            s.validationErrors.includes('valor_frete')
+                              ? 'text-destructive'
+                              : 'text-muted-foreground',
+                          )}
+                        >
+                          Valor R${' '}
+                          {s.validationErrors.includes('valor_frete') && (
+                            <span className="ml-1">*</span>
+                          )}
+                        </Label>
                         <CurrencyInput
+                          id="freight-value"
                           data-testid="shipping-cost-input"
+                          aria-label="Valor do frete em reais"
                           value={s.shippingCost || 0}
-                          onChange={(n) => s.setShippingCost(n)}
+                          onChange={(n) => s.setShippingCost(Math.max(0, n))}
                           className={cn(
                             'h-8 text-xs',
                             s.validationErrors.includes('valor_frete') && 'border-destructive',
                           )}
                         />
                       </div>
-                    </div>
+                    )}
+                  </div>
+                  {s.validationErrors.includes('frete') && (
+                    <p className="mt-0.5 flex items-center gap-1 text-[10px] text-destructive">
+                      <AlertTriangle className="h-3 w-3" />
+                      Selecione a modalidade de frete
+                    </p>
                   )}
                 </div>
 
-                {/* Atalho para Business Analytics do cliente — substitui o antigo painel de Recomendações IA,
-                  consolidando inteligência comercial no módulo /ferramentas/bi (SSOT). */}
+
+
+
+
+
                 {s.companyInfo?.id && (
                   <a
                     href={`/ferramentas/bi?clientId=${s.companyInfo.id}`}
@@ -593,81 +677,39 @@ export default function QuoteBuilderPage() {
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
                   </a>
                 )}
-              </div>
-            </div>
-          </div>
-
-          {/* COL 2 — Item ativo + Personalização */}
-          <div className="lg:col-span-5">
-            <div className="sticky top-24 flex max-h-[calc(100vh-7rem)] flex-col">
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/50 bg-card">
-                <div className="flex shrink-0 items-center justify-between p-4 pb-3">
-                  <div>
-                    <h3 className="font-display text-sm font-semibold">Itens do Orçamento</h3>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {s.items.length} item(ns) adicionado(s)
-                    </p>
                   </div>
-                  <Button
-                    size="sm"
-                    data-testid="quote-add-product-button"
-                    onClick={() => s.setProductSearchOpen(true)}
-                  >
-                    <Plus className="mr-1.5 h-3.5 w-3.5" />
-                    Produto
-                  </Button>
-                </div>
-                <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-                  {s.items.length === 0 ? (
-                    <div className="py-12 text-center text-muted-foreground">
-                      <Package className="mx-auto mb-3 h-10 w-10 opacity-30" />
-                      <p className="text-sm font-medium">Nenhum item adicionado</p>
-                      <p className="mt-1 text-xs">Pesquise e adicione produtos ao orçamento</p>
-                    </div>
-                  ) : s.activeItemIndex !== null && s.items[s.activeItemIndex] ? (
-                    (() => {
-                      const item = s.items[s.activeItemIndex];
-                      const idx = s.activeItemIndex;
-                      return (
-                        <div className="space-y-3">
-                          <DraggableQuoteItems
-                            items={[item]}
-                            onReorder={() => {}}
-                            onUpdateQuantity={(_, qty) => s.updateItemQuantity(idx, qty)}
-                            onUpdatePrice={(_, price) => s.updateItemPrice(idx, price)}
-                            onRemove={() => {
-                              s.removeItem(idx);
-                              s.setActiveItemIndex(null);
-                            }}
-                            onConfirmPrice={() => s.confirmItemPrice(idx)}
-                            onTogglePersonalization={() => s.toggleExpanded(idx)}
-                            expandedItems={new Set(s.expandedItems.has(idx) ? [0] : [])}
-                            renderPersonalization={() => (
-                              <QuoteProductCustomization
-                                productId={item.product_id}
-                                quantity={item.quantity}
-                                existingPersonalizations={item.personalizations}
-                                onPersonalizationsChange={(p) =>
-                                  s.handlePersonalizationsChange(idx, p)
-                                }
-                              />
-                            )}
-                            formatCurrency={s.formatCurrency}
-                          />
-                        </div>
-                      );
-                    })()
-                  ) : (
-                    <div className="py-12 text-center text-muted-foreground">
-                      <Package className="mx-auto mb-3 h-10 w-10 opacity-30" />
-                      <p className="text-sm font-medium">Selecione um item no resumo</p>
-                      <p className="mt-1 text-xs">Ou adicione um novo produto</p>
-                    </div>
+                )}
+              </div>
+
+              {/* BUG-K FIX: Notes UI — previously only populated via templates */}
+              <div className="space-y-3 rounded-2xl border border-border/50 bg-card p-4">
+                <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  Observações
+                </h3>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Para o cliente</Label>
+                  <Textarea
+                    data-testid="quote-notes-input"
+                    value={s.notes || ''}
+                    onChange={(e) => s.setNotes(e.target.value)}
+                    placeholder="Observações visíveis na proposta..."
+                    rows={3}
+                    maxLength={2000}
+                    className="resize-none text-xs"
+                  />
+                  {s.notes && (
+                    <p className="text-right text-[10px] text-muted-foreground">
+                      {s.notes.length}/2000
+                    </p>
                   )}
                 </div>
               </div>
             </div>
           </div>
+
+          {/* COL 2 removida — agora migrada para QuoteItemEditorSheet (drawer lateral) */}
+
 
           {/* COL 3 — Resumo */}
           <QuoteBuilderSummaryColumn
@@ -691,7 +733,7 @@ export default function QuoteBuilderPage() {
             formatCurrency={s.formatCurrency}
             calculateItemPersonalizationTotal={s.calculateItemPersonalizationTotal}
             calculateItemTotal={s.calculateItemTotal}
-            onSave={s.handleSaveQuote}
+            onSave={handleSaveQuoteWithSignal}
             maxDiscountPercent={s.maxDiscountPercent}
             isDiscountExceeded={s.isDiscountExceeded}
             negotiationMarkup={s.negotiationMarkup}
@@ -700,11 +742,21 @@ export default function QuoteBuilderPage() {
             realDiscountPercent={s.realDiscountPercent}
             confirmItemPrice={s.confirmItemPrice}
             confirmAllStalePrices={s.confirmAllStalePrices}
+            onReorder={(newItems) => s.setItems(newItems)}
+            quoteId={s.quoteId ?? null}
+            setSkipAutosaveSortOrder={s.setSkipAutosaveSortOrder}
+            onAddProduct={() => s.setProductSearchOpen(true)}
+            onRestore={(item, index) =>
+              s.setItems((prev) => {
+                const next = [...prev];
+                next.splice(Math.min(index, next.length), 0, item);
+                return next;
+              })
+            }
           />
         </div>
       </div>
 
-      {/* Product Search Dialog */}
       <QuoteBuilderProductSearch
         open={s.productSearchOpen}
         onOpenChange={s.setProductSearchOpen}
@@ -718,11 +770,55 @@ export default function QuoteBuilderPage() {
         formatCurrency={s.formatCurrency}
       />
 
+      <QuoteItemEditorSheet
+        open={s.activeItemIndex !== null && !!s.items[s.activeItemIndex ?? -1]}
+        onOpenChange={(open) => {
+          if (!open) s.setActiveItemIndex(null);
+        }}
+        item={s.activeItemIndex !== null ? s.items[s.activeItemIndex] ?? null : null}
+        index={s.activeItemIndex}
+        onUpdateQuantity={s.updateItemQuantity}
+        onUpdatePrice={s.updateItemPrice}
+        onRemove={s.removeItem}
+        onRestore={(item, index) =>
+          s.setItems((prev) => {
+            const next = [...prev];
+            next.splice(Math.min(index, next.length), 0, item);
+            return next;
+          })
+        }
+        onConfirmPrice={s.confirmItemPrice}
+        onPersonalizationsChange={s.handlePersonalizationsChange}
+        formatCurrency={s.formatCurrency}
+        onAddProduct={() => s.setProductSearchOpen(true)}
+        hasUnsavedChanges={hasUnsavedChanges}
+      />
+
+
       <UnsavedChangesDialog
         open={showDialog}
         onConfirm={confirmLeave}
         onCancel={cancelLeave}
         message={message}
+      />
+
+      <ConfirmDialog
+        open={resetDialogOpen}
+        onOpenChange={setResetDialogOpen}
+        onConfirm={() => {
+          s.resetQuote();
+          setResetDialogOpen(false);
+          setHasUnsavedChanges(false);
+        }}
+        title={s.isEditMode ? 'Sair desta edição?' : 'Limpar orçamento atual?'}
+        description={
+          s.isEditMode
+            ? 'Você será redirecionado para um novo orçamento em branco. Alterações não salvas serão descartadas.'
+            : 'Empresa, contato, produtos e condições inseridos serão removidos. Esta ação não pode ser desfeita.'
+        }
+        confirmText={s.isEditMode ? 'Sair e começar do zero' : 'Sim, limpar tudo'}
+        cancelText="Cancelar"
+        variant="destructive"
       />
     </>
   );

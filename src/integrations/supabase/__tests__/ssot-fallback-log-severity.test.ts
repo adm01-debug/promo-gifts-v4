@@ -19,7 +19,7 @@ const CLIENT_SRC = readFileSync(resolve(ROOT, 'src/integrations/supabase/client.
 const CANONICAL = 'doufsxqlfjyuvxuezpln';
 const FORBIDDEN = 'pqpdolkaeqlyzpdpbizo';
 
-type LogCall = { level: 'info' | 'warn' | 'error'; event: string };
+type LogCall = { level: 'error' | 'info' | 'warn'; event: string };
 
 vi.mock('@/lib/telemetry/structuredLogger', () => {
   const calls: LogCall[] = [];

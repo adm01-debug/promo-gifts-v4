@@ -19,8 +19,8 @@ export interface TelemetryRow {
   created_at: string;
 }
 
-export type SeverityFilter = 'all' | 'slow' | 'very_slow' | 'error';
-export type TimeFilter = '1h' | '6h' | '24h' | '7d' | 'custom';
+export type SeverityFilter = 'all' | 'error' | 'slow' | 'very_slow';
+export type TimeFilter = '1h' | '6h' | '7d' | '24h' | 'custom';
 
 export interface TableStat {
   name: string;

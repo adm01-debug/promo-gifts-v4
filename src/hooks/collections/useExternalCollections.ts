@@ -23,7 +23,7 @@ import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 
-// Interface que reflete a estrutura do BD externo
+/** Coleção de produtos persistida no BD externo (tabela `collections`). */
 export interface ExternalCollection {
   id: string;
   user_id: string;

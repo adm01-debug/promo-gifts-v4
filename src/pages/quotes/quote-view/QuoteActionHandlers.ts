@@ -10,15 +10,18 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { logger } from '@/lib/logger';
+import { isValidQuoteTransition } from '@/lib/quote-status-config';
+import type { QuoteStatus } from '@/types/quote';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-export function calcPersTotal(totalCost: number, qty: number): number {
-  if (qty <= 0) return totalCost;
-  const roundedUnit = Math.round((totalCost / qty) * 100) / 100;
-  return Math.round(roundedUnit * qty * 100) / 100;
+// BUG-048c: use p.total_cost directly — it's pre-computed by the DB trigger.
+// round(round(x/n)*n) ≠ x for non-divisible values; qty param kept for compat.
+export function calcPersTotal(totalCost: number, _qty?: number): number {
+  return totalCost;
 }
 
 export function formatCNPJ(cnpj: string): string {
@@ -34,7 +37,9 @@ export async function handleDownloadPDF(
   quote: Quote | null,
 ): Promise<void> {
   if (!proposalData || !quote) return;
-  const blob = await generateProposalPDFv2(proposalData, { isDraft: quote.status === 'draft' });
+  const blob = await generateProposalPDFv2(proposalData, {
+    isDraft: (quote.status as string) === 'draft',
+  });
   downloadPDF(blob, `proposta-${(quote.quote_number || 'sem-numero').replace(/\s+/g, '')}.pdf`);
   toast.success('PDF gerado com sucesso!');
 }
@@ -77,6 +82,12 @@ export async function handleSyncBitrix(params: {
 
   if (!quote.id) {
     toast.error('Orçamento sem identificador válido');
+    return;
+  }
+  if (quote.status === 'draft') {
+    toast.error('Rascunho não pode ser sincronizado', {
+      description: 'Promova o orçamento a proposta antes de sincronizar com o CRM.',
+    });
     return;
   }
   const quoteId = quote.id;
@@ -128,7 +139,9 @@ export async function handleSyncBitrix(params: {
   let pdfStorageUrl: string | undefined;
   let filename: string | undefined;
   try {
-    const blob = await generateProposalPDFv2(proposalData, { isDraft: quote.status === 'draft' });
+    const blob = await generateProposalPDFv2(proposalData, {
+      isDraft: (quote.status as string) === 'draft',
+    });
     filename = `proposta-${(quote.quote_number || quoteId).replace(/\s+/g, '')}.pdf`;
     const storagePath = `quotes/${quoteId}/${filename}`;
     const { error: uploadError } = await supabase.storage
@@ -142,7 +155,11 @@ export async function handleSyncBitrix(params: {
     logger.warn('PDF generation failed:', pdfErr);
   }
 
-  const { data, error } = await supabase.functions.invoke('sync-quote-bitrix', {
+  const { data, error } = await invokeEdge<{
+    ok: boolean;
+    error?: string;
+    result?: { quote_id?: string; message?: string };
+  }>('sync-quote-bitrix', {
     body: {
       quote,
       proposalData,
@@ -155,22 +172,36 @@ export async function handleSyncBitrix(params: {
     },
   });
 
-  if (error || !data?.success)
-    throw new Error(data?.error || error?.message || 'Erro desconhecido');
+  if (error || !data?.ok) throw new Error(data?.error || error?.message || 'Erro desconhecido');
 
   const result = data.result;
   const parsedBitrixId = result?.quote_id ? Number(result.quote_id) : null;
   const bitrixQuoteIdFromResponse =
     parsedBitrixId && !isNaN(parsedBitrixId) ? String(parsedBitrixId) : null;
 
-  const crmUpdates: TablesUpdate<'quotes'> = { status: 'sent' };
+  // Only transition to 'sent' if the current status allows it — guard against
+  // silently resetting terminal states (converted, cancelled) via Bitrix sync.
+  const canTransitionToSent = isValidQuoteTransition(quote.status as QuoteStatus, 'sent');
+  const crmUpdates: TablesUpdate<'quotes'> = {};
+  if (canTransitionToSent) crmUpdates.status = 'sent';
   if (bitrixQuoteIdFromResponse) crmUpdates.bitrix_quote_id = bitrixQuoteIdFromResponse;
 
-  try {
-    // rls-allow: update por id; RLS valida ownership
-    await supabase.from('quotes').update(crmUpdates).eq('id', quoteId);
-  } catch {
-    /* ignore */
+  if (Object.keys(crmUpdates).length > 0) {
+    // BUG-SYNC-STATUS-SILENT-FAIL FIX: previously used try-catch which never
+    // catches Supabase errors (they resolve, not throw). Destructure { error }
+    // and log it — the sync is still considered successful (fail-open), but the
+    // failure is now visible in logs instead of silently reverting on next reload.
+    // rls-allow movido para a linha do .from (abaixo) para o checker creditar.
+    const { error: crmUpdateErr } = await supabase
+      .from('quotes') // rls-allow: update por id; RLS valida ownership
+      .update(crmUpdates)
+      .eq('id', quoteId);
+    if (crmUpdateErr) {
+      logger.warn(
+        '[QuoteActionHandlers] Non-fatal: CRM status/bitrix_id update failed after Bitrix sync:',
+        crmUpdateErr,
+      );
+    }
   }
 
   await logQuoteHistory(
@@ -184,7 +215,7 @@ export async function handleSyncBitrix(params: {
     prev
       ? {
           ...prev,
-          status: 'sent',
+          ...(canTransitionToSent ? { status: 'sent' as QuoteStatus } : {}),
           ...(bitrixQuoteIdFromResponse ? { bitrix_quote_id: bitrixQuoteIdFromResponse } : {}),
         }
       : prev,

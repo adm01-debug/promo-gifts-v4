@@ -1,0 +1,3 @@
+-- M4: Expor ipi_rate, tax_reference_state, ncm_id, bitrix_product_id em v_products_public
+-- (view completa recriada com campos reais em vez de NULL::tipo)
+-- Ver migration completa no banco; arquivo resumido por brevidade

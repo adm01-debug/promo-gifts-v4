@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 import { recordSecretsManagerCall } from '@/lib/telemetry/secretsManagerCallMetrics';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface SecretStatus {
   name: string;
@@ -33,7 +34,7 @@ export interface RotationHistoryEntry {
   previous_suffix: string | null;
   new_suffix: string | null;
   notes: string | null;
-  action_type?: 'set' | 'rotate';
+  action_type?: 'rotate' | 'set';
 }
 
 export interface SecretMutationResult {
@@ -98,7 +99,7 @@ async function invokeSecretsManager(body: InvokeBody): Promise<{
 }> {
   const requestId = newRequestId();
   const startedAt = performance.now();
-  const { data, error } = await supabase.functions.invoke('secrets-manager', {
+  const { data, error } = await invokeEdge('secrets-manager', {
     body,
     headers: { [REQUEST_ID_HEADER]: requestId },
   });
@@ -222,7 +223,7 @@ export function useSecretsManager() {
           error: normalizeError(payload ?? { message: error.message }, error.message),
         };
       }
-      if (data && data.ok === false) {
+      if (data?.ok === false) {
         return { ok: false, error: normalizeError(data) };
       }
       return {
@@ -255,7 +256,7 @@ export function useSecretsManager() {
           error: normalizeError(payload ?? { message: error.message }, error.message),
         };
       }
-      if (data && data.ok === false) {
+      if (data?.ok === false) {
         return { ok: false, error: normalizeError(data) };
       }
       return {
@@ -285,7 +286,7 @@ export function useSecretsManager() {
       if (error) {
         return { ok: false, error: normalizeError({ message: error.message }, error.message) };
       }
-      if (data && data.ok === false) {
+      if (data?.ok === false) {
         return { ok: false, error: normalizeError(data) };
       }
       return { ok: true, message: data?.message };

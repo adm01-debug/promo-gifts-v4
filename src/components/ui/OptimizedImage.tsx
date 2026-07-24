@@ -53,34 +53,38 @@ export function OptimizedImage({
   const { localPlaceholder, detectionRule } = useMemo(() => {
     if (lqip || !src) return { localPlaceholder: null, detectionRule: 'none' };
 
-    if (src.includes('imagedelivery.net')) {
-      let baseUrl = src.split('?')[0];
-      if (baseUrl.endsWith('/')) {
-        baseUrl = baseUrl.slice(0, -1);
+    try {
+      // Use URL parsing (not substring) to prevent host-bypass attacks
+      const parsedSrc = new URL(src);
+      if (parsedSrc.hostname === 'imagedelivery.net') {
+        let baseUrl = src.split('?')[0];
+        if (baseUrl.endsWith('/')) {
+          baseUrl = baseUrl.slice(0, -1);
+        }
+        const thumbUrl = baseUrl.replace(/\/[^/]+$/, '/thumbnail');
+        if (debug || process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.info(
+            `[OptimizedImage] Cloudflare Image detected. Rule: CF_VARIANT_REPLACEMENT. Generated thumbnail: ${thumbUrl}`,
+          );
+        }
+        return { localPlaceholder: thumbUrl, detectionRule: 'cloudflare' };
       }
-      const thumbUrl = baseUrl.replace(/\/[^/]+$/, '/thumbnail');
-      if (debug || process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.info(
-          `[OptimizedImage] Cloudflare Image detected. Rule: CF_VARIANT_REPLACEMENT. Generated thumbnail: ${thumbUrl}`,
-        );
+      if (parsedSrc.hostname === 'images.unsplash.com' || parsedSrc.hostname.endsWith('.unsplash.com')) {
+        parsedSrc.searchParams.set('w', '50');
+        parsedSrc.searchParams.set('q', '10');
+        parsedSrc.searchParams.set('blur', '10');
+        const thumbUrl = parsedSrc.toString();
+        if (debug || process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.info(
+            `[OptimizedImage] Unsplash Image detected. Rule: UNSPLASH_PARAMS. Generated thumbnail: ${thumbUrl}`,
+          );
+        }
+        return { localPlaceholder: thumbUrl, detectionRule: 'unsplash' };
       }
-      return { localPlaceholder: thumbUrl, detectionRule: 'cloudflare' };
-    }
-
-    if (src.includes('unsplash.com')) {
-      const url = new URL(src);
-      url.searchParams.set('w', '50');
-      url.searchParams.set('q', '10');
-      url.searchParams.set('blur', '10');
-      const thumbUrl = url.toString();
-      if (debug || process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.info(
-          `[OptimizedImage] Unsplash Image detected. Rule: UNSPLASH_PARAMS. Generated thumbnail: ${thumbUrl}`,
-        );
-      }
-      return { localPlaceholder: thumbUrl, detectionRule: 'unsplash' };
+    } catch {
+      // Invalid URL — fall through to generic handling
     }
 
     if (src.includes('/storage/v1/object/public/')) {
@@ -190,11 +194,25 @@ export function OptimizedImage({
         </div>
       ) : (
         <>
-          {(lqip || localPlaceholder) && !isLoaded && !error && (
+          {/*
+           * BUG-OI-1 FIX (2026-06-25): O localPlaceholder era renderizado SEM guard de
+           * isInView, causando N×thumbnails disparados simultaneamente para TODOS os cards
+           * na grid (incluindo os fora do viewport) → flood de centenas de GET requests.
+           *
+           * Fix: gateamos em `isInView` (mesmo IntersectionObserver do main image) +
+           * adicionamos loading={priority?'eager':'lazy'} como segunda camada de proteção
+           * para browsers que não suportam IntersectionObserver.
+           *
+           * UX trade-off: cards fora do viewport não terão o blur placeholder antecipado,
+           * mas isso é irrelevante pois o usuário não os vê ainda. Quando entram no viewport,
+           * placeholder e main image carregam quase simultaneamente.
+           */}
+          {(lqip || localPlaceholder) && !isLoaded && !error && isInView && (
             <img
               src={lqip ?? localPlaceholder ?? ''}
               alt=""
               aria-hidden="true"
+              loading={priority ? 'eager' : 'lazy'}
               className={cn(
                 'absolute inset-0 h-full w-full object-contain',
                 isLoaded ? 'opacity-0' : 'opacity-100',

@@ -19,7 +19,7 @@ export function lazyWithRetry<T extends ComponentType<any>>(
     for (let i = 0; i < retries; i++) {
       try {
         const component = await componentImport();
-        if (!component || !component.default) {
+        if (!component?.default) {
           throw new Error('Component import returned null or missing default export');
         }
         return component;
@@ -28,7 +28,9 @@ export function lazyWithRetry<T extends ComponentType<any>>(
 
         if (isChunkLoadError(error)) {
           logger.warn(`Chunk load failed (attempt ${i + 1}/${retries}), retrying...`);
-          await new Promise((resolve) => setTimeout(resolve, interval * (i + 1)));
+          await new Promise((resolve) => {
+            setTimeout(resolve, interval * (i + 1));
+          });
 
           // Última tentativa: aciona recovery agressivo (hard reload + cache bust).
           if (i === retries - 1) {
@@ -57,6 +59,8 @@ export function lazyWithRetry<T extends ComponentType<any>>(
       }
     }
 
-    throw lastError;
+    throw lastError instanceof Error
+      ? lastError
+      : new Error(String(lastError ?? 'lazyWithRetry: all attempts failed'));
   });
 }

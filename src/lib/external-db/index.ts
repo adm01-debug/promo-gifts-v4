@@ -16,7 +16,7 @@
  * ARQUITETURA (2026-06):
  * A edge function `external-db-bridge` foi desativada (kill-switch OFF).
  * Todo o acesso ao banco de catálogo (products, categories, variants) agora
- * usa PostgREST nativo via supabase.from() diretamente em pqpdolkaeqlyzpdpbizo.
+ * usa PostgREST nativo via supabase.from() diretamente em doufsxqlfjyuvxuezpln.
  *
  * O único DB externo restante é pgxfvjmuubtbowutlide (CRM), acessado via
  * crm-db-bridge — que é gerenciado por src/lib/crm-db.ts, NÃO por este módulo.

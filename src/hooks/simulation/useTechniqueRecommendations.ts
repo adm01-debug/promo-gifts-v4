@@ -238,12 +238,12 @@ export function useTechniqueRecommendations(
 }
 
 export type SortOption =
-  | 'recommended'
+  | 'popularity'
   | 'price_asc'
   | 'price_desc'
+  | 'recommended'
   | 'time_asc'
-  | 'time_desc'
-  | 'popularity';
+  | 'time_desc';
 
 /**
  * Ordena técnicas por critério

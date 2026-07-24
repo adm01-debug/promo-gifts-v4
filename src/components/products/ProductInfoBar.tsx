@@ -8,7 +8,7 @@ import { getSupplierColors } from '@/lib/supplier-colors';
 
 interface ProductInfoBarProps {
   sku: string;
-  supplierName: string;
+  supplierName?: string;
   supplierId?: string;
   onOpenFutureStock: () => void;
   onOpenSupplierComparison: () => void;
@@ -17,7 +17,7 @@ interface ProductInfoBarProps {
 
 export function ProductInfoBar({
   sku,
-  supplierName,
+  supplierName = '',
   supplierId,
   onOpenFutureStock,
   onOpenSupplierComparison,

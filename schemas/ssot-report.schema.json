@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://promogifts.com.br/schemas/ssot-report.schema.json",
+  "title": "SSOT Report",
+  "description": "Artefato agregador emitido por scripts/ssot-report.mjs. Contrato evolutivo via schemaVersion (SemVer). Bumps executados por scripts/ssot-report-bump.mjs — nunca editar schemaVersion à mão.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "timestamp", "canonical", "forbidden", "overallOk", "gates", "details"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "2.0.0",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Versão SemVer do contrato. Consumidores DEVEM ler este campo antes de qualquer outro. Mismatch = falha dura."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "canonical": { "type": "string", "const": "doufsxqlfjyuvxuezpln" },
+    "forbidden": { "type": "string", "const": "pqpdolkaeqlyzpdpbizo" },
+    "overallOk": { "type": "boolean" },
+    "gates": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "ok", "exitCode", "durationMs"],
+        "properties": {
+          "label": {
+            "type": "string",
+            "enum": [
+              "validate-supabase-config",
+              "guard-canonical-project",
+              "check-docs-supabase-hosts"
+            ]
+          },
+          "ok": { "type": "boolean" },
+          "exitCode": { "type": "integer" },
+          "durationMs": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "details": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["label", "cmd", "exitCode", "ok", "durationMs", "stdout", "stderr"],
+        "properties": {
+          "label": { "type": "string" },
+          "cmd": { "type": "string" },
+          "exitCode": { "type": "integer" },
+          "ok": { "type": "boolean" },
+          "durationMs": { "type": "integer", "minimum": 0 },
+          "stdout": { "type": "string" },
+          "stderr": { "type": "string" }
+        }
+      }
+    }
+  }
+}

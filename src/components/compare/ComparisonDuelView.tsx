@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Crown, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useComparisonScore } from '@/hooks/comparison';
+import { leadTimeProxy, leadTimeLabel } from '@/lib/comparison-utils';
 import type { Product } from '@/types/product-catalog';
 
 interface Props {
@@ -20,15 +21,15 @@ interface Props {
 const ROWS: Array<{
   key: string;
   label: string;
-  format: (p: Product) => string | number;
+  format: (p: Product) => number | string;
   raw: (p: Product) => number;
-  better: 'lower' | 'higher';
+  better: 'higher' | 'lower';
 }> = [
   {
     key: 'price',
     label: 'Preço unitário',
-    format: (p) => p.price,
-    raw: (p) => p.price,
+    format: (p) => Number(p.price ?? 0),
+    raw: (p) => Number(p.price ?? 0),
     better: 'lower',
   },
   {
@@ -54,9 +55,9 @@ const ROWS: Array<{
   },
   {
     key: 'leadTime',
-    label: 'Lead time (dias)',
-    format: (p) => (p.leadTimeDays ? `${p.leadTimeDays}d` : '—'),
-    raw: (p) => p.leadTimeDays ?? 999,
+    label: 'Lead time',
+    format: (p) => leadTimeLabel(p.stockStatus),
+    raw: (p) => leadTimeProxy(p.stockStatus),
     better: 'lower',
   },
 ];
@@ -148,7 +149,9 @@ export function ComparisonDuelView({ products, formatCurrency, onRemove, onProdu
       >
         {p.name}
       </h3>
-      <p className="text-2xl font-bold tabular-nums text-primary">{formatCurrency(p.price)}</p>
+      <p className="text-2xl font-bold tabular-nums text-primary">
+        {formatCurrency(Number(p.price ?? 0))}
+      </p>
       {p.supplier?.name && <p className="text-xs text-muted-foreground">por {p.supplier.name}</p>}
     </div>
   );

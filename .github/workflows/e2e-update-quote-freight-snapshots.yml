@@ -1,0 +1,95 @@
+name: E2E · Update Quote Freight snapshots
+# Regenera os PNGs baseline de e2e/visual/quote-freight-block.spec.ts
+# (cif/fob/fob_pre × mobile/md/xl) e comita de volta.
+# Execução: manual via workflow_dispatch.
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch para comitar os baselines atualizados"
+        required: true
+        default: "main"
+      safe_mode:
+        description: "Só regenerar se falha for visual (recomendado)."
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: e2e-update-quote-freight-${{ github.event.inputs.branch }}
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+      - run: npx playwright install --with-deps chromium
+
+      - name: Dry-run (safe mode)
+        if: ${{ github.event.inputs.safe_mode != 'false' }}
+        id: dryrun
+        continue-on-error: true
+        run: |
+          npx playwright test e2e/visual/quote-freight-block.spec.ts \
+            --project=chromium-public --reporter=list
+
+      - name: Classificar falha (visual vs real)
+        if: ${{ github.event.inputs.safe_mode != 'false' && steps.dryrun.outcome == 'failure' }}
+        id: classify
+        run: |
+          if find test-results -type f \( -name "*-diff.png" -o -name "*-actual.png" \) 2>/dev/null | grep -q .; then
+            echo "kind=visual" >> "$GITHUB_OUTPUT"
+          else
+            echo "kind=real"   >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Abortar (falha não-visual)
+        if: ${{ github.event.inputs.safe_mode != 'false' && steps.dryrun.outcome == 'failure' && steps.classify.outputs.kind == 'real' }}
+        run: |
+          echo "::error::Falha não é diferença visual — abortando rewrite. Corrija o erro real antes."
+          exit 1
+
+      - name: Nada a atualizar
+        if: ${{ github.event.inputs.safe_mode != 'false' && steps.dryrun.outcome == 'success' }}
+        run: |
+          echo "✅ Spec já passa contra baselines atuais — nada a fazer."
+          exit 0
+
+      - name: Regenerar snapshots
+        if: ${{ github.event.inputs.safe_mode == 'false' || (steps.dryrun.outcome == 'failure' && steps.classify.outputs.kind == 'visual') }}
+        run: |
+          npx playwright test e2e/visual/quote-freight-block.spec.ts \
+            --project=chromium-public --update-snapshots --reporter=list
+
+      - name: Comitar baselines
+        if: ${{ github.event.inputs.safe_mode == 'false' || (steps.dryrun.outcome == 'failure' && steps.classify.outputs.kind == 'visual') }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add e2e/visual/quote-freight-block.spec.ts-snapshots || true
+          if git diff --cached --quiet; then
+            echo "Sem mudanças nos baselines."; exit 0
+          fi
+          MODE="${{ github.event.inputs.safe_mode != 'false' && 'safe' || 'force' }}"
+          git commit -m "chore(e2e): update quote-freight-block visual baselines (${MODE})"
+          git push origin HEAD:${{ github.event.inputs.branch }}

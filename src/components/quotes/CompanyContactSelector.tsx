@@ -2,7 +2,7 @@
  * CompanyContactSelector — Orchestrator (refactored)
  * Sub-components in ./company-contact/
  */
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Building2, User, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
@@ -87,35 +87,44 @@ export function CompanyContactSelector({
         orderBy: { column: 'first_name', ascending: true },
         limit: 50,
       });
-      return Promise.all(
-        contactsData.map(async (ct) => {
-          let email: string | null = null;
-          let phone: string | null = null;
-          try {
-            const [emails, phones] = await Promise.all([
-              selectCrm<CrmContactEmail>('contact_emails', {
-                filters: { contact_id: ct.id },
-                limit: 1,
-              }),
-              selectCrm<CrmContactPhone>('contact_phones', {
-                filters: { contact_id: ct.id },
-                limit: 1,
-              }),
-            ]);
-            if (emails.length > 0) email = emails[0].email;
-            if (phones.length > 0) phone = phones[0].numero;
-          } catch {
-            /* silently fail */
-          }
-          return {
-            id: ct.id,
-            name: ct.full_name || [ct.first_name, ct.last_name].filter(Boolean).join(' '),
-            cargo: ct.cargo,
-            email,
-            phone,
-          };
-        }),
-      );
+      const contactIds = contactsData.map((ct) => ct.id);
+      const [allEmails, allPhones] = await Promise.all([
+        contactIds.length > 0
+          ? selectCrm<CrmContactEmail>('contact_emails', {
+              filters: { contact_id: { in: contactIds } },
+              select: 'contact_id, email',
+              limit: contactIds.length,
+            }).catch(() => [] as CrmContactEmail[])
+          : Promise.resolve([] as CrmContactEmail[]),
+        contactIds.length > 0
+          ? selectCrm<CrmContactPhone>('contact_phones', {
+              filters: { contact_id: { in: contactIds } },
+              select: 'contact_id, numero',
+              limit: contactIds.length,
+            }).catch(() => [] as CrmContactPhone[])
+          : Promise.resolve([] as CrmContactPhone[]),
+      ]);
+
+      const emailByContact = new Map<string, string>();
+      for (const e of allEmails) {
+        if (e.contact_id && !emailByContact.has(e.contact_id)) {
+          emailByContact.set(e.contact_id, e.email);
+        }
+      }
+      const phoneByContact = new Map<string, string>();
+      for (const p of allPhones) {
+        if (p.contact_id && !phoneByContact.has(p.contact_id)) {
+          phoneByContact.set(p.contact_id, p.numero);
+        }
+      }
+
+      return contactsData.map((ct) => ({
+        id: ct.id,
+        name: ct.full_name || [ct.first_name, ct.last_name].filter(Boolean).join(' '),
+        cargo: ct.cargo,
+        email: emailByContact.get(ct.id) ?? null,
+        phone: phoneByContact.get(ct.id) ?? null,
+      }));
     },
     enabled: !!companyId,
     staleTime: 5 * 60 * 1000,
@@ -123,20 +132,29 @@ export function CompanyContactSelector({
 
   const selectedCompany = useMemo(() => fetchedCompany || null, [fetchedCompany]);
 
+  // Propagate company info once the React Query result resolves (covers the case where
+  // fetchedCompany still held the previous company when handleSelectCompany fired).
+  useEffect(() => {
+    if (!fetchedCompany || !companyId) return;
+    if (fetchedCompany.id !== companyId) return;
+    onCompanyInfoChange?.({
+      id: fetchedCompany.id,
+      name: fetchedCompany.name,
+      cnpj: fetchedCompany.cnpj || undefined,
+      ramo_atividade: fetchedCompany.ramo_atividade || undefined,
+    });
+    // Only re-run when the resolved company data changes, not every render of onCompanyInfoChange
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchedCompany]);
+
   const handleSelectCompany = (id: string) => {
     onCompanyChange(id);
     onContactChange?.('');
     onContactInfoChange?.(null);
-    if (id && fetchedCompany?.id === id) {
-      onCompanyInfoChange?.({
-        id: fetchedCompany.id,
-        name: fetchedCompany.name,
-        cnpj: fetchedCompany.cnpj || undefined,
-        ramo_atividade: fetchedCompany.ramo_atividade || undefined,
-      });
-    } else if (!id) {
+    if (!id) {
       onCompanyInfoChange?.(null);
     }
+    // onCompanyInfoChange for a valid id is handled by the useEffect above
   };
 
   const handleClearCompany = () => {
@@ -147,7 +165,7 @@ export function CompanyContactSelector({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
           <Building2 className="h-4 w-4" />

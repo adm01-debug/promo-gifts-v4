@@ -102,7 +102,7 @@ export function SupabaseConnectionsTab() {
 
   const get = (n: string) => secrets.find((s) => s.name === n);
 
-  const handleTest = async (envKey: 'promobrind' | 'crm', localKey: string) => {
+  const handleTest = async (envKey: 'crm' | 'promobrind', localKey: string) => {
     setPhaseByEnv((cur) => ({ ...cur, [localKey]: 'running' }));
     setPendingByEnv((cur) => ({ ...cur, [localKey]: new Date().toISOString() }));
     const r = await test('supabase', { env_key: envKey });

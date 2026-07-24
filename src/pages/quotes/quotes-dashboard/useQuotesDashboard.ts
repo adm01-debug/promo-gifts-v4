@@ -36,7 +36,7 @@ export function formatResponseTime(hours: number) {
 }
 
 export function useQuotesDashboard() {
-  const { quotes, isLoading } = useQuotes();
+  const { quotes, isLoading, error } = useQuotes();
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'quarter' | 'year'>('month');
   const [selectedClientId, setSelectedClientId] = useState<string>('all');
   const [clients, setClients] = useState<Client[]>([]);
@@ -48,9 +48,11 @@ export function useQuotesDashboard() {
       try {
         const data = await selectCrm<Client>('companies', {
           select: 'id,nome_fantasia',
+          filters: { is_customer: true },
           orderBy: 'nome_fantasia',
-          limit: 500,
+          limit: 200,
         });
+
         setClients(data.map((c: Client) => ({ id: c.id, name: c.nome_fantasia || c.id })));
       } catch (err) {
         logger.error('Error fetching clients:', err);
@@ -138,36 +140,32 @@ export function useQuotesDashboard() {
         }, 0) / withResponse.length;
     }
 
-    const statusCounts = filtered.reduce(
-      (a, q) => {
-        a[q.status] = (a[q.status] || 0) + 1;
-        return a;
-      },
-      {} as Record<string, number>,
-    );
+    const statusCounts = filtered.reduce<Record<string, number>>((a, q) => {
+      a[q.status] = (a[q.status] || 0) + 1;
+      return a;
+    }, {});
     const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
       name: statusConfig[status]?.label || status,
       value: count,
       color: statusConfig[status]?.color || 'hsl(var(--muted))',
     }));
 
-    const monthlyGroups = filtered.reduce(
-      (a, q) => {
-        const m = format(new Date(q.created_at ?? 0), 'MMM', { locale: ptBR });
-        if (!a[m]) a[m] = { month: m, total: 0, approved: 0, rejected: 0, value: 0 };
-        a[m].total++;
-        if (q.status === 'approved') {
-          a[m].approved++;
-          a[m].value += q.total || 0;
-        }
-        if (q.status === 'rejected') a[m].rejected++;
-        return a;
-      },
-      {} as Record<
+    const monthlyGroups = filtered.reduce<
+      Record<
         string,
         { month: string; total: number; approved: number; rejected: number; value: number }
-      >,
-    );
+      >
+    >((a, q) => {
+      const m = format(new Date(q.created_at ?? 0), 'MMM', { locale: ptBR });
+      if (!a[m]) a[m] = { month: m, total: 0, approved: 0, rejected: 0, value: 0 };
+      a[m].total++;
+      if (q.status === 'approved') {
+        a[m].approved++;
+        a[m].value += q.total || 0;
+      }
+      if (q.status === 'rejected') a[m].rejected++;
+      return a;
+    }, {});
 
     const conversionFunnel = [
       { stage: 'Criados', count: totalQuotes, fill: 'hsl(var(--primary))' },
@@ -299,6 +297,7 @@ export function useQuotesDashboard() {
   return {
     quotes,
     isLoading,
+    error,
     selectedPeriod,
     setSelectedPeriod,
     selectedClientId,

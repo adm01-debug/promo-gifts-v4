@@ -1,0 +1,30 @@
+{
+  "$schema": "./REVIEWS.schema.md",
+  "_doc": "Registro de revisão dos rascunhos 🟡 'não promovido'. Cada entrada declara que o PO/DBA já revisou o draft e está ciente de que ele ainda NÃO virou migration canônica. Sem entrada aqui, o gate `npm run drafts:status:check` no CI falha a PR. Ao promover o draft (npm run draft:promote -- --apply), remova a entrada correspondente.",
+  "acknowledged_not_promoted": [
+    {
+      "draft": "2026-06-18_security_definer_acl.sql",
+      "reviewer": "PO",
+      "date": "2026-07-01",
+      "reason": "Aguardando lista final de funções via audit_security_definer_acl() no canônico antes de promover."
+    },
+    {
+      "draft": "2026-06-19_kit_dimensions_backfill.sql",
+      "reviewer": "PO",
+      "date": "2026-07-01",
+      "reason": "Backfill idempotente; será promovido junto com a próxima janela de manutenção."
+    },
+    {
+      "draft": "2026-06-19_reposicao_variants_summary.sql",
+      "reviewer": "PO",
+      "date": "2026-07-01",
+      "reason": "RPC aditiva pronta; aguardando validação em staging antes de promover."
+    },
+    {
+      "draft": "2026-06-27_quotes_status_allow_cancelled.sql",
+      "reviewer": "PO",
+      "date": "2026-07-01",
+      "reason": "Requer .VALIDATION.md antes de promover (bloqueado por draft:promote)."
+    }
+  ]
+}

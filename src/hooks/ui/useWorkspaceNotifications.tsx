@@ -11,7 +11,7 @@ export interface WorkspaceNotification {
   user_id: string;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'success' | 'error';
+  type: 'error' | 'info' | 'success' | 'warning';
   category: string;
   is_read: boolean;
   action_url: string | null;
@@ -66,7 +66,12 @@ function debugLog(event: string, payload: Record<string, unknown>) {
 }
 
 export function useWorkspaceNotifications() {
-  const { user } = useAuth();
+  // BUG-NOTIF-403 FIX: importar rolesLoaded para evitar race condition.
+  // Sem rolesLoaded, o hook disparava HEAD requests em workspace_notifications
+  // antes do JWT estar validado, causando "Falha ao carregar Buscar: HEAD ...".
+  // rolesLoaded=true garante que fetchUserData() completou e o JWT está válido.
+  // Espelha o fix de BUG-DAR-401 em DiscountApprovalHeaderBadge (2026-06-18).
+  const { user, rolesLoaded } = useAuth();
   const [notifications, setNotifications] = useState<WorkspaceNotification[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,10 +92,33 @@ export function useWorkspaceNotifications() {
   const mountAtRef = useRef<number>(
     typeof performance !== 'undefined' ? performance.now() : Date.now(),
   );
-  const badgeSourceRef = useRef<'pending' | 'cache' | 'network'>('pending');
+  const badgeSourceRef = useRef<'cache' | 'network' | 'pending'>('pending');
   const markAllInFlightRef = useRef(false);
   const clearAllInFlightRef = useRef(false);
   const didInitialFetchRef = useRef(false);
+
+  // BUG-NOTIF-HEAD-GENERATION FIX (2026-06-23 v2): Substituído AbortController por
+  // contador de geração. AbortController.abort() causava "Falha ao carregar Buscar: HEAD"
+  // no console mesmo quando o cancelamento era intencional — idêntico ao BUG-DAR-ABORT
+  // corrigido em DiscountApprovalHeaderBadge. Com contador de geração, a HEAD completa
+  // silenciosamente; resultados de chamadas concorrentes anteriores são descartados
+  // sem nenhum console error.
+  const headGenerationRef = useRef(0);
+
+  // BUG-REALTIME-DEBOUNCE FIX (2026-06-22): coalesce rapid Realtime events into a
+  // single fetch. n8n bulk-imports (e.g., 50 notifications in < 1s) fire 50 Realtime
+  // callbacks which previously triggered 50 simultaneous HEAD requests visible in
+  // the browser console as "Falha ao carregar Buscar: HEAD ..." flood.
+  // A 500ms debounce window collapses all events into 1 fetch without perceptible delay.
+  const realtimeDebouncerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // BUG-NOTIF-403 FIX: ref para acessar rolesLoaded dentro de fetchNotifications
+  // sem adicioná-lo ao useCallback dep array (evita recriar fetchNotifications
+  // e re-introduzir BUG-08). O ref é mantido sincronizado via useEffect abaixo.
+  const rolesLoadedRef = useRef(rolesLoaded);
+  useEffect(() => {
+    rolesLoadedRef.current = rolesLoaded;
+  }, [rolesLoaded]);
 
   /**
    * BUG-08 FIX: remover notifications.length das deps de fetchNotifications.
@@ -149,6 +177,7 @@ export function useWorkspaceNotifications() {
   }, [user]);
 
   // BUG-08 FIX: deps agora so [user] - sem notifications.length
+  // BUG-NOTIF-403: rolesLoadedRef.current guardeia o fetch interno
   const fetchNotifications = useCallback(
     async (
       opts: {
@@ -162,7 +191,9 @@ export function useWorkspaceNotifications() {
         endDate?: string;
       } = {},
     ) => {
-      if (!user) return;
+      // BUG-NOTIF-403 FIX: usar ref para acessar rolesLoaded sem adicioná-lo
+      // ao dep array (preserva fix BUG-08 que removeu notifications.length).
+      if (!user || !rolesLoadedRef.current) return;
 
       const targetPage = opts.page ?? page;
       const targetSearch = opts.search ?? search;
@@ -214,13 +245,31 @@ export function useWorkspaceNotifications() {
         setNotifications(items);
         setTotalCount(count ?? 0);
 
-        // Also fetch unread count separately to keep badge sync
-        const { count: unread } = await untypedFrom('workspace_notifications')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('is_read', false);
+        // BUG-NOTIF-HEAD-GENERATION FIX (2026-06-23 v2): Usa contador de geração
+        // em vez de AbortController. AbortController.abort() disparava console error
+        // "Falha ao carregar Buscar: HEAD" mesmo quando intencional — mesmo padrão
+        // anti-pattern corrigido em DiscountApprovalHeaderBadge (BUG-DAR-ABORT).
+        // Com geração, resultados de HEAD concorrentes anteriores são descartados
+        // silenciosamente, sem nenhum erro no console.
+        const thisGen = ++headGenerationRef.current;
 
-        setUnreadCount(unread ?? 0);
+        try {
+          const { count: unread, error: unreadErr } = await untypedFrom('workspace_notifications')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('is_read', false);
+          // Descarta resultado se uma chamada mais nova já iniciou
+          if (headGenerationRef.current === thisGen) {
+            setUnreadCount(unreadErr ? items.filter((n) => !n.is_read).length : (unread ?? 0));
+          }
+        } catch {
+          // Qualquer erro na HEAD: fallback para contagem local dos items carregados.
+          // Geração previne que um catch obsoleto sobrescreva um resultado mais recente.
+          if (headGenerationRef.current === thisGen) {
+            setUnreadCount(items.filter((n) => !n.is_read).length);
+          }
+        }
+
         lastFetchAtRef.current = Date.now();
         writeCache(user.id, items);
         if (badgeSourceRef.current !== 'cache') {
@@ -231,13 +280,13 @@ export function useWorkspaceNotifications() {
           const networkMs = Number(
             ((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0).toFixed(2),
           );
-          const unread = items.filter((n) => !n.is_read).length;
+          const unreadFiltered = items.filter((n) => !n.is_read).length;
           debugLog('badge-render', {
             source: 'network',
             elapsedMs: Number(elapsedMs.toFixed(2)),
             target: '<16ms',
             hit: elapsedMs < 16,
-            unreadCount: unread,
+            unreadCount: unreadFiltered,
             networkMs,
           });
           notificationsMetrics.recordBadgeRender({
@@ -245,7 +294,7 @@ export function useWorkspaceNotifications() {
             elapsedMs: Number(elapsedMs.toFixed(2)),
             cacheAgeMs: null,
             networkMs,
-            unreadCount: unread,
+            unreadCount: unreadFiltered,
             hit: elapsedMs < 16,
           });
         } else {
@@ -267,35 +316,63 @@ export function useWorkspaceNotifications() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user], // FIX: removido notifications.length - agora usa notificationsLengthRef
+    [user], // FIX BUG-08: removido notifications.length — usa notificationsLengthRef
+    // FIX BUG-NOTIF-403: rolesLoaded acessado via rolesLoadedRef — não nas deps
   );
 
   // Fetch notifications when filters or page changes
+  // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
+  // Sem rolesLoaded, o effect disparava com JWT inválido antes de
+  // onAuthStateChange(INITIAL_SESSION) ser validado por getUser().
   useEffect(() => {
-    if (!user) return;
+    if (!user || !rolesLoaded) return;
 
     // Use a small delay for search to avoid too many requests if not handled by caller
     // but the Drawer already has a 400ms debounce.
     const source: FetchSource = didInitialFetchRef.current ? 'filter-change' : 'initial';
     didInitialFetchRef.current = true;
     fetchNotifications({ source });
-  }, [user, page, search, category, unreadOnly, dateRange.from, dateRange.to, fetchNotifications]);
+  }, [
+    user,
+    rolesLoaded,
+    page,
+    search,
+    category,
+    unreadOnly,
+    dateRange.from,
+    dateRange.to,
+    fetchNotifications,
+  ]);
 
-  // Polling every 30s - agora estavel: fetchNotifications nao recria com notifications.length
+  // Polling every 60s - estavel: fetchNotifications nao recria com notifications.length.
+  // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
+  // POLL-INTERVAL FIX (2026-06-22): aumentado de 30s → 60s.
+  // Justificativa: Realtime subscription já cobre atualizações em tempo real.
+  // O polling é fallback apenas para quando o canal Realtime cai (CHANNEL_ERROR /
+  // TIMED_OUT). 60s é suficiente para o fallback sem dobrar a carga no DB.
+  // Benefício: com 2 instâncias do hook (Header + Drawer), reduz de 4 para 2
+  // requisições HEAD por minuto por sessão autenticada.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !rolesLoaded) return;
     const interval = setInterval(() => {
       fetchNotifications({ silent: true, source: 'polling' });
-    }, 30_000);
+    }, 60_000);
     return () => clearInterval(interval);
-  }, [user, fetchNotifications]);
+  }, [user, rolesLoaded, fetchNotifications]);
 
   // Real-time synchronization
+  // BUG-NOTIF-403 FIX: adicionado rolesLoaded ao guard e às deps.
+  // BUG-REALTIME-DEBOUNCE FIX (2026-06-22): adicionado debounce de 500ms ao callback.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !rolesLoaded) return;
 
     const channel = supabase
-      .channel('workspace_notifications_realtime')
+      // BUG-RT-CHANNEL FIX: topico unico por montagem. O sino monta em TODA pagina (Header)
+      // e coexiste com o Drawer de notificacoes -> 2 instancias simultaneas do hook. Com nome
+      // estatico, supabase.channel('workspace_notifications_realtime') devolvia o canal JA
+      // inscrito e o .on('postgres_changes') caia APOS subscribe() -> "cannot add postgres_changes
+      // callbacks ... after subscribe()" (mesmo crash de render do canal de quotes na QuoteViewPage).
+      .channel(`workspace_notifications_realtime:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {
@@ -307,21 +384,50 @@ export function useWorkspaceNotifications() {
         (payload) => {
           debugLog('realtime-event', { event: payload.eventType, payload });
 
-          // Re-fetch everything to ensure consistent state (including badge)
-          // Use silent fetch to avoid UI flicker
-          fetchNotifications({ silent: true, source: 'mutation' });
+          // BUG-REALTIME-DEBOUNCE FIX: debounce 500ms to coalesce rapid burst events.
+          // n8n bulk-imports (e.g., 50 notifications in < 1s) previously triggered 50
+          // simultaneous HEAD requests, flooding the console. With debounce, all events
+          // within the 500ms window collapse into a single fetch. The 500ms delay is
+          // imperceptible to the user but eliminates the request flood completely.
+          if (realtimeDebouncerRef.current) {
+            clearTimeout(realtimeDebouncerRef.current);
+          }
+          realtimeDebouncerRef.current = setTimeout(() => {
+            fetchNotifications({ silent: true, source: 'mutation' });
+            realtimeDebouncerRef.current = null;
+          }, 500);
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn(
+            '[useWorkspaceNotifications] realtime channel error — polling interval maintains freshness',
+            { status, err },
+          );
+          fetchNotifications({ silent: true, source: 'mutation' });
+        }
+      });
 
     return () => {
+      // Cancel any pending debounced fetch to avoid state update after unmount
+      // (would trigger "Can't perform a React state update on an unmounted component").
+      if (realtimeDebouncerRef.current) {
+        clearTimeout(realtimeDebouncerRef.current);
+        realtimeDebouncerRef.current = null;
+      }
       supabase.removeChannel(channel);
     };
-  }, [user, fetchNotifications]);
+  }, [user, rolesLoaded, fetchNotifications]);
 
-  // Final summary on unmount
+  // Cleanup on unmount: emitir métricas + incrementar geração para descartar
+  // silenciosamente qualquer HEAD em voo.
+  // BUG-NOTIF-HEAD-GENERATION FIX: sem AbortController → sem console error.
+  // headGenerationRef++ descarta o resultado da HEAD em voo caso ela complete
+  // após o unmount, sem throw e sem log de erro no console.
   useEffect(() => {
+    const genRef = headGenerationRef;
     return () => {
+      genRef.current++;
       notificationsMetrics.logBadgeBudgetSummary('hook-unmount');
     };
   }, []);

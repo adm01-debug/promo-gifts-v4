@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from 'react';
 
-export function useBulkSelection<T extends { id: string }>(items: T[]) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+export function useBulkSelection<T extends { id: string }>(items: T[], initialIds?: string[]) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(initialIds ?? []));
 
   const toggleItem = useCallback((id: string) => {
     setSelectedIds((prev) => {

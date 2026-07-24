@@ -1,0 +1,31 @@
+name: URL State — Unit & Fuzz
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  url-state-unit:
+    name: useListUrlState (unit + fuzz) & useQuotesListPage URL state
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      # Executa exclusivamente as suítes que garantem o contrato do useListUrlState
+      # (sync com URL, debounce, clearAll) e o teste de "Limpar filtros" do
+      # useQuotesListPage. Ficam isoladas do restante do CI para que uma regressão
+      # de URL state falhe rápido e apareça como check dedicado no PR.
+      - name: Run URL state unit + fuzz suites
+        run: |
+          npx vitest run \
+            src/hooks/common/__tests__/useListUrlState.test.tsx \
+            src/hooks/common/__tests__/useListUrlState.fuzz.test.tsx \
+            src/pages/quotes/__tests__/useQuotesListPage.urlState.test.tsx

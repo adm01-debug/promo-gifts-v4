@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Behavioural tests for mockupGenerationService.
  *
@@ -11,12 +12,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Supabase client mock (chainable, thenable query builder) ────────────────
 const calls: Array<{ table: string; method: string; args: unknown[] }> = [];
-let tableResults: Record<string, { data: unknown; error: unknown }> = {};
+let tableResults: Record<
+  string,
+  { data: unknown; error: unknown }[] | { data: unknown; error: unknown }
+> = {};
 const captured: { insert?: Record<string, unknown> } = {};
 
 vi.mock('@/integrations/supabase/client', () => {
   const makeBuilder = (table: string) => {
-    const result = () => tableResults[table] ?? { data: null, error: null };
+    // result(): se tableResults[table] for um array, consome em fila (1ª chamada => [0],
+    // 2ª => [1], ...) — permite simular retry-on-FK. Objeto único = comportamento legado.
+    const result = () => {
+      const r = tableResults[table];
+      if (Array.isArray(r)) {
+        return r.length > 1 ? (r.shift() as { data: unknown; error: unknown }) : r[0];
+      }
+      return r ?? { data: null, error: null };
+    };
     const q: Record<string, unknown> = {};
     const chain = (method: string) =>
       vi.fn((...args: unknown[]) => {
@@ -44,7 +56,7 @@ vi.mock('@/integrations/supabase/client', () => {
 });
 
 vi.mock('@/lib/mockup-storage', () => ({
-  uploadLogoToStorage: vi.fn(async () => 'https://storage/uploaded-logo.png'),
+  uploadLogoToStorage: vi.fn(() => 'https://storage/uploaded-logo.png'),
   downloadImageAsPdfFromUrl: vi.fn(async () => {}),
 }));
 
@@ -61,6 +73,9 @@ import {
   fetchMockupHistory,
   deleteMockupFromDb,
   generateMockupApi,
+  validateSvgLogo,
+  buildTechniqueList,
+  buildMockupToastMessage,
   type Technique,
 } from '@/hooks/mockup/mockupGenerationService';
 import type { PersonalizationArea } from '@/components/mockup/MultiAreaManager';
@@ -131,8 +146,8 @@ describe('getTechniquePrompt', () => {
 // ─── saveMockupToDb ───────────────────────────────────────────────
 describe('saveMockupToDb', () => {
   it('persists rotation/scale in area_config and thumbnail_url = mockupUrl (G5/T10)', async () => {
-    tableResults['products'] = { data: { id: 'prod-1' }, error: null };
-    tableResults['generated_mockups'] = { data: { id: 'rec-1' }, error: null };
+    tableResults.products = { data: { id: 'prod-1' }, error: null };
+    tableResults.generated_mockups = { data: { id: 'rec-1' }, error: null };
 
     const recordId = await saveMockupToDb({
       userId: 'user-1',
@@ -153,9 +168,36 @@ describe('saveMockupToDb', () => {
     expect(cfg.logoScale).toBe(150);
   });
 
+  // BUG-10 regression: technique_id has a FK to personalization_techniques but the UI
+  // loads techniques from tabela_preco_gravacao_oficial — zero UUID overlap. Sending a
+  // tabela_preco UUID causes a FK violation and silently prevents every save.
+  // The fix: always send null for technique_id; technique_name (text) carries the name.
+  it('always sends technique_id: null to avoid FK violation (BUG-10)', async () => {
+    tableResults.products = { data: { id: 'prod-1' }, error: null };
+    tableResults.generated_mockups = { data: { id: 'rec-1' }, error: null };
+
+    await saveMockupToDb({
+      userId: 'user-1',
+      product: { id: 'prod-1', name: 'Caneca', sku: 'CAN-001' },
+      technique: silk,
+      client: null,
+      area: area(),
+      mockupUrl: 'https://cdn.example.com/mockup.png',
+    });
+
+    expect(captured.insert!.technique_id).toBeNull();
+    expect(captured.insert!.technique_name).toBe('Serigrafia');
+  });
+
   it('uploads data: logos and nulls product_id when the product is unknown', async () => {
-    tableResults['products'] = { data: null, error: null };
-    tableResults['generated_mockups'] = { data: { id: 'rec-2' }, error: null };
+    // Nova estratégia (BUG-PRODUCT-EXTRA-SELECT): sem SELECT prévio em products.
+    // O 1º insert com product_id:'ghost' (UUID inexistente) recebe FK violation 23503,
+    // e o código faz retry com product_id:null. Simulamos a fila: erro depois sucesso.
+    tableResults.products = { data: null, error: null };
+    tableResults.generated_mockups = [
+      { data: null, error: { code: '23503', message: 'FK violation on product_id' } },
+      { data: { id: 'rec-2' }, error: null },
+    ];
 
     const recordId = await saveMockupToDb({
       userId: 'user-1',
@@ -173,8 +215,8 @@ describe('saveMockupToDb', () => {
   });
 
   it('returns null (does not throw) when the insert fails', async () => {
-    tableResults['products'] = { data: { id: 'prod-1' }, error: null };
-    tableResults['generated_mockups'] = { data: null, error: new Error('insert boom') };
+    tableResults.products = { data: { id: 'prod-1' }, error: null };
+    tableResults.generated_mockups = { data: null, error: new Error('insert boom') };
     const recordId = await saveMockupToDb({
       userId: 'user-1',
       product: { id: 'prod-1', name: 'Caneca' },
@@ -190,7 +232,7 @@ describe('saveMockupToDb', () => {
 // ─── fetchMockupHistory ───────────────────────────────────────────
 describe('fetchMockupHistory', () => {
   it('selects layout_url + area_config, limits to 200, and scopes by owner', async () => {
-    tableResults['generated_mockups'] = {
+    tableResults.generated_mockups = {
       data: [{ id: 'm1', mockup_url: 'https://cdn.example.com/m.png' }],
       error: null,
     };
@@ -207,13 +249,13 @@ describe('fetchMockupHistory', () => {
   });
 
   it('omits the owner filter when no userId is given', async () => {
-    tableResults['generated_mockups'] = { data: [], error: null };
+    tableResults.generated_mockups = { data: [], error: null };
     await fetchMockupHistory();
     expect(calls.some((c) => c.method === 'eq' && c.args[0] === 'user_id')).toBe(false);
   });
 
   it('throws when the query errors', async () => {
-    tableResults['generated_mockups'] = { data: null, error: new Error('select boom') };
+    tableResults.generated_mockups = { data: null, error: new Error('select boom') };
     await expect(fetchMockupHistory('user-1')).rejects.toThrow('select boom');
   });
 });
@@ -221,7 +263,7 @@ describe('fetchMockupHistory', () => {
 // ─── deleteMockupFromDb ───────────────────────────────────────────
 describe('deleteMockupFromDb', () => {
   it('applies an owner-scoped filter when userId is provided (T6)', async () => {
-    tableResults['generated_mockups'] = { data: null, error: null };
+    tableResults.generated_mockups = { data: null, error: null };
     await deleteMockupFromDb('m1', 'user-1');
     expect(calls.some((c) => c.method === 'eq' && c.args[0] === 'id' && c.args[1] === 'm1')).toBe(
       true,
@@ -232,13 +274,13 @@ describe('deleteMockupFromDb', () => {
   });
 
   it('does not scope by user_id when userId is absent', async () => {
-    tableResults['generated_mockups'] = { data: null, error: null };
+    tableResults.generated_mockups = { data: null, error: null };
     await deleteMockupFromDb('m2');
     expect(calls.some((c) => c.method === 'eq' && c.args[0] === 'user_id')).toBe(false);
   });
 
   it('throws on delete error', async () => {
-    tableResults['generated_mockups'] = { data: null, error: new Error('delete boom') };
+    tableResults.generated_mockups = { data: null, error: new Error('delete boom') };
     await expect(deleteMockupFromDb('m3', 'user-1')).rejects.toThrow('delete boom');
   });
 });
@@ -390,6 +432,120 @@ describe('generateMockupApi', () => {
         areas: [area({ name: 'Frente' }), area({ name: 'Costas' })],
       }),
     ).rejects.toThrow(/Nenhum mockup gerado/);
+  });
+});
+
+// ─── validateSvgLogo (pure) ───────────────────────────────────────
+describe('validateSvgLogo', () => {
+  it('accepts a non-SVG data URL', () => {
+    expect(validateSvgLogo('data:image/png;base64,AAAA').valid).toBe(true);
+  });
+
+  it('accepts a plain SVG with no scripts', () => {
+    const svgText = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="10"/></svg>';
+    const b64 = btoa(svgText);
+    const result = validateSvgLogo(`data:image/svg+xml;base64,${b64}`);
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects an SVG that contains <script>', () => {
+    const svgText = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
+    const b64 = btoa(svgText);
+    const result = validateSvgLogo(`data:image/svg+xml;base64,${b64}`);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toMatch(/script/i);
+  });
+
+  it('rejects an SVG that contains javascript: URLs', () => {
+    const svgText = '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)"/></svg>';
+    const b64 = btoa(svgText);
+    const result = validateSvgLogo(`data:image/svg+xml;base64,${b64}`);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toMatch(/script/i);
+  });
+
+  it('rejects a data URL that claims to be SVG but has no <svg> element', () => {
+    const b64 = btoa('not an svg at all');
+    const result = validateSvgLogo(`data:image/svg+xml;base64,${b64}`);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toMatch(/<svg>/i);
+  });
+
+  it('returns invalid (not throw) when the base64 is undecodeable', () => {
+    const result = validateSvgLogo('data:image/svg+xml;base64,!!!not-valid-base64!!!');
+    expect(result.valid).toBe(false);
+  });
+});
+
+// ─── buildTechniqueList (pure) ────────────────────────────────────
+describe('buildTechniqueList', () => {
+  it('filters out items without id or name', () => {
+    const raw = [
+      { id: '1', name: 'Silk', code: 'silk' },
+      { id: '2' }, // no name
+      { name: 'Laser' }, // no id
+      null,
+      undefined,
+      42,
+    ];
+    const list = buildTechniqueList(raw as unknown[]);
+    expect(list).toHaveLength(1);
+    expect(list[0].id).toBe('1');
+    expect(list[0].name).toBe('Silk');
+  });
+
+  it('coerces id/name to strings', () => {
+    const list = buildTechniqueList([{ id: 99, name: 'Bordado', code: null }]);
+    expect(typeof list[0].id).toBe('string');
+    expect(list[0].id).toBe('99');
+  });
+
+  it('sets code to null when absent', () => {
+    const list = buildTechniqueList([{ id: '1', name: 'X' }]);
+    expect(list[0].code).toBeNull();
+  });
+
+  it('preserves extra properties via spread', () => {
+    const list = buildTechniqueList([{ id: '1', name: 'X', price: 9.99 }]);
+    expect((list[0] as Record<string, unknown>).price).toBe(9.99);
+  });
+});
+
+// ─── buildMockupToastMessage (pure) ──────────────────────────────
+describe('buildMockupToastMessage', () => {
+  it('returns the technique name in the title', () => {
+    const { title } = buildMockupToastMessage('Bordado');
+    expect(title).toContain('Bordado');
+  });
+
+  it('reports revisions remaining when revisionsLeft > 0', () => {
+    const { description } = buildMockupToastMessage('Silk', 3);
+    expect(description).toMatch(/3 revisões/);
+  });
+
+  it('reports "Resultado final" when revisionsLeft is 0', () => {
+    const { description } = buildMockupToastMessage('Silk', 0);
+    expect(description).toMatch(/final/i);
+  });
+
+  it('reports "Resultado final" when revisionsLeft is absent', () => {
+    const { description } = buildMockupToastMessage('Silk');
+    expect(description).toMatch(/final/i);
+  });
+});
+
+// ─── generateMockupApi SVG pre-validation (BUG-E) ────────────────
+describe('generateMockupApi SVG pre-validation', () => {
+  it('throws before calling the edge function when a logo is a data:image/svg URL', async () => {
+    await expect(
+      generateMockupApi({
+        productImage: 'https://cdn.example.com/product.png',
+        productName: 'Caneca',
+        technique: silk,
+        areas: [area({ logoPreview: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz...' })],
+      }),
+    ).rejects.toThrow(/SVG não são suportados/i);
+    expect(invoke).not.toHaveBeenCalled();
   });
 });
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 
@@ -96,25 +97,29 @@ vi.mock('@/hooks/products', () => ({
     }
     return arr;
   },
+  // NoveltyProductGrid imports noveltyToProduct as a module-level export (ISSUE-35), so the
+  // mock must expose it at the top level — not only inside useNoveltiesSelectionMode.
   useNoveltiesSelectionMode: vi.fn(() => ({
     selectedIds: new Set(),
     toggleSelect: vi.fn(),
     clearSelection: vi.fn(),
-    noveltyToProduct: (n: NoveltyWithDetails) => ({
-      id: n.product_id,
-      name: n.product_name || '',
-      product_name: n.product_name || '',
-      price: n.base_price,
-      sku: n.product_sku || '',
-      stock: n.stock_quantity,
-      supplier: { id: n.supplier_id, name: n.supplier_name },
-      category: { id: n.category_id, name: n.category_name },
-      images: [n.product_image],
-      colors: [],
-      materials: [],
-      tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
-    }),
   })),
+  // NoveltyProductGrid imports noveltyToProduct as a named module export (not from hook return)
+  noveltyToProduct: (n: NoveltyWithDetails) => ({
+    id: n.product_id,
+    name: n.product_name || '',
+    product_name: n.product_name || '',
+    shortDescription: '',
+    price: n.base_price ?? 0,
+    sku: n.product_sku || '',
+    stock: n.stock_quantity,
+    supplier: { id: n.supplier_id || '', name: n.supplier_name || '' },
+    category: { id: n.category_id || '', name: n.category_name || '' },
+    images: n.product_image ? [n.product_image] : [],
+    colors: [],
+    materials: [],
+    tags: { publicoAlvo: [], datasComemorativas: [], endomarketing: [], ramo: [], nicho: [] },
+  }),
 }));
 
 vi.mock('@/stores/useFavoritesStore', () => ({
@@ -209,7 +214,7 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     });
   });
 
-  it('sorts locally by price-asc', async () => {
+  it('sorts locally by price-asc', () => {
     render(<NoveltyProductGrid />, { wrapper });
 
     // Find sort select and change to price-asc
@@ -224,7 +229,7 @@ describe('NoveltyProductGrid Integration - Sort and Counters', () => {
     // Actually, newest was B then A. So order didn't change for B, but B is cheaper.
   });
 
-  it('resets page to 1 when filters change', async () => {
+  it('resets page to 1 when filters change', () => {
     // This is hard to test without many products, but we can verify the useEffect dependency
     render(<NoveltyProductGrid />, { wrapper });
     // If it didn't crash and we see the products, initial state is ok

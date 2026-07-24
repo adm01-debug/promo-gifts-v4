@@ -22,11 +22,11 @@ import type { Quote } from '../quoteTypes';
 
 // ── Mock Supabase (vi.hoisted para evitar problema de inicialização) ──────────
 const { mockSingle, mockEq, mockSelect, mockFrom } = vi.hoisted(() => {
-  const mockSingle = vi.fn();
-  const mockEq = vi.fn(() => ({ single: mockSingle }));
-  const mockSelect = vi.fn(() => ({ eq: mockEq }));
-  const mockFrom = vi.fn(() => ({ select: mockSelect }));
-  return { mockSingle, mockEq, mockSelect, mockFrom };
+  const _mockSingle = vi.fn();
+  const _mockEq = vi.fn(() => ({ single: _mockSingle }));
+  const _mockSelect = vi.fn(() => ({ eq: _mockEq }));
+  const _mockFrom = vi.fn(() => ({ select: _mockSelect }));
+  return { mockSingle: _mockSingle, mockEq: _mockEq, mockSelect: _mockSelect, mockFrom: _mockFrom };
 });
 
 vi.mock('@/integrations/supabase/client', () => ({

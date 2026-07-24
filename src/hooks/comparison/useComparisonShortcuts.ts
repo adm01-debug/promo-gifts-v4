@@ -16,7 +16,7 @@ interface Options {
 
 export function useComparisonShortcuts(options: Options = {}) {
   const navigate = useNavigate();
-  const { clearCompare } = useComparisonStore();
+  const clearCompare = useComparisonStore((s) => s.clearCompare);
   const lastKeyRef = useRef<{ key: string; at: number } | null>(null);
   const optsRef = useRef(options);
 

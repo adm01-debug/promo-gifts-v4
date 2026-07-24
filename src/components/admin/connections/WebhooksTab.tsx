@@ -65,7 +65,7 @@ export function WebhooksTab() {
         .order('created_at', { ascending: false }),
     ]);
     setOutbound((o ?? []) as OutboundHook[]);
-    setInbound(i ?? []);
+    setInbound((i ?? []) as InboundEp[]);
   };
   useEffect(() => {
     load();
@@ -106,10 +106,7 @@ export function WebhooksTab() {
     }
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
-    const slug =
-      formIn.source_system.toLowerCase().replace(/[^a-z0-9]+/g, '-') +
-      '-' +
-      Math.random().toString(36).slice(2, 8);
+    const slug = `${formIn.source_system.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).slice(2, 8)}`;
     const secretRef = `INBOUND_WEBHOOK_HMAC_${slug.toUpperCase().replace(/-/g, '_')}`;
     const { error } = await supabase.from('inbound_webhook_endpoints').insert({
       slug,
@@ -130,7 +127,7 @@ export function WebhooksTab() {
     load();
   };
 
-  const remove = async (table: 'outbound_webhooks' | 'inbound_webhook_endpoints', id: string) => {
+  const remove = async (table: 'inbound_webhook_endpoints' | 'outbound_webhooks', id: string) => {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) toast.error('Erro ao remover webhook', { description: sanitizeError(error) });
     else {

@@ -8,6 +8,7 @@
  *   - Expõe as 14 funções/propriedades esperadas
  *   - user=null: disabled queries, sem Realtime subscription
  *   - BUG-NEW-02: cancela Realtime channel ao desmontar
+ *   - BUG-NEW-03: tópico de canal ÚNICO por inscrição (não estático)
  *   - createQuote: lança quando user=null
  *   - isLoading: true quando mutation pendente
  *   - error: null quando sem erro
@@ -41,7 +42,7 @@ vi.mock('@/contexts/OrganizationContext', () => ({
   useOrganization: vi.fn(() => ({ currentOrg: { id: 'org-001' } })),
 }));
 
-vi.mock('@/hooks/common/useSalesScope', () => ({
+vi.mock('@/lib/auth/visibility-scope', () => ({
   useSalesScope: vi.fn(() => 'self'),
 }));
 
@@ -74,7 +75,11 @@ function makeWrapper() {
     React.createElement(QueryClientProvider, { client: qc }, children);
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Restore default user after tests that override with null (clearAllMocks keeps mockReturnValue overrides)
+  vi.mocked(useAuth).mockReturnValue({ user: mockUser });
+});
 
 // ── Estado inicial ────────────────────────────────────────────────────────────
 describe('estado inicial com usuario autenticado', () => {
@@ -113,12 +118,14 @@ describe('estado inicial com usuario autenticado', () => {
 // ── user=null ─────────────────────────────────────────────────────────────────
 describe('user=null — queries desabilitadas', () => {
   it('nao inicia Realtime subscription quando user=null', async () => {
-    const { useAuth } = await import('@/contexts/AuthContext');
-    vi.mocked(useAuth).mockReturnValue({ user: null } as never);
+    const { useAuth: mockedUseAuth } = await import('@/contexts/AuthContext');
+    vi.mocked(mockedUseAuth).mockReturnValue({ user: null } as never);
     const { supabase } = await import('@/integrations/supabase/client');
 
     renderHook(() => useQuotes(), { wrapper: makeWrapper() });
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => {
+      setTimeout(r, 50);
+    });
 
     expect(supabase.channel).not.toHaveBeenCalled();
   });
@@ -132,19 +139,50 @@ describe('user=null — queries desabilitadas', () => {
   });
 });
 
-// ── BUG-NEW-02: Realtime ──────────────────────────────────────────────────────
-describe('BUG-NEW-02 — Realtime subscription', () => {
-  it('cria channel supabase quando user autenticado', async () => {
+// ── BUG-NEW-02 / BUG-NEW-03: Realtime ─────────────────────────────────────────
+describe('BUG-NEW-02/03 — Realtime subscription', () => {
+  it('cria channel com tópico que começa com "quotes-realtime-" (BUG-NEW-03: tópico único, não estático)', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
     renderHook(() => useQuotes(), { wrapper: makeWrapper() });
-    await new Promise((r) => setTimeout(r, 50));
-    expect(supabase.channel).toHaveBeenCalledWith('quotes-realtime');
+    await new Promise((r) => {
+      setTimeout(r, 50);
+    });
+    // BUG-NEW-03: o tópico passou a ser dinâmico (`quotes-realtime-${userId}-${random}-${Date.now()}`)
+    // para impedir o reuso de canal já inscrito ("cannot add postgres_changes ... after subscribe()").
+    // A asserção antiga (=== 'quotes-realtime') codificava justamente o bug e falhava.
+    expect(supabase.channel).toHaveBeenCalledTimes(1);
+    expect(supabase.channel).toHaveBeenCalledWith(
+      expect.stringMatching(/^quotes-realtime-user-sel-001-.+/),
+    );
+  });
+
+  it('BUG-NEW-03: dois mounts geram tópicos DISTINTOS (canal novo por inscrição)', async () => {
+    const { supabase } = await import('@/integrations/supabase/client');
+    const h1 = renderHook(() => useQuotes(), { wrapper: makeWrapper() });
+    await new Promise((r) => {
+      setTimeout(r, 20);
+    });
+    const h2 = renderHook(() => useQuotes(), { wrapper: makeWrapper() });
+    await new Promise((r) => {
+      setTimeout(r, 20);
+    });
+
+    const topics = vi.mocked(supabase.channel).mock.calls.map((c) => c[0] as string);
+    expect(topics.length).toBeGreaterThanOrEqual(2);
+    // Todos os tópicos devem ser únicos — se colidirem, supabase-js reaproveita o
+    // canal já inscrito e o .on('postgres_changes') após subscribe() derruba o render.
+    expect(new Set(topics).size).toBe(topics.length);
+
+    h1.unmount();
+    h2.unmount();
   });
 
   it('cancela channel ao desmontar (cleanup BUG-NEW-02)', async () => {
     const { supabase } = await import('@/integrations/supabase/client');
     const { unmount } = renderHook(() => useQuotes(), { wrapper: makeWrapper() });
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => {
+      setTimeout(r, 50);
+    });
     unmount();
     expect(supabase.removeChannel).toHaveBeenCalled();
   });

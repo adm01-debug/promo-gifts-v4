@@ -6,6 +6,7 @@
 import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
+import { dbQueryRetry } from '@/lib/db-retry';
 
 // ---------- Types ----------
 
@@ -131,11 +132,11 @@ export function useStockVelocity(productId: string | undefined) {
     },
     enabled: !!productId,
     staleTime: 30 * 60 * 1000,
-    retry: (failureCount, error: unknown) => {
-      const msg = error instanceof Error ? error.message : '';
-      if (msg.includes('not been populated')) return false;
-      return failureCount < 3;
-    },
+    // FIX 2026-07-17: 'not been populated' era a UNICA parada. Um 403
+    // (permission denied) nao casa e era retentado 3x — com ~96 produtos x 2
+    // hooks isso gerou ~768 requests condenados. dbQueryRetry so retenta
+    // falha transitoria (rede/timeout/5xx).
+    retry: dbQueryRetry,
   });
 }
 
@@ -166,23 +167,23 @@ export function useProductIntelligenceData(productId: string | undefined) {
     },
     enabled: !!productId,
     staleTime: 30 * 60 * 1000,
-    retry: (failureCount, error: unknown) => {
-      const msg = error instanceof Error ? error.message : '';
-      if (msg.includes('not been populated')) return false;
-      return failureCount < 3;
-    },
+    // FIX 2026-07-17: 'not been populated' era a UNICA parada. Um 403
+    // (permission denied) nao casa e era retentado 3x — com ~96 produtos x 2
+    // hooks isso gerou ~768 requests condenados. dbQueryRetry so retenta
+    // falha transitoria (rede/timeout/5xx).
+    retry: dbQueryRetry,
   });
 }
 
 // ---------- Helpers ----------
 
 export type IntelligenceFlag =
-  | 'hot-product'
-  | 'stockout-risk'
-  | 'stagnant'
-  | 'negotiation-opportunity'
+  | 'class-a'
   | 'frequent-restock'
-  | 'class-a';
+  | 'hot-product'
+  | 'negotiation-opportunity'
+  | 'stagnant'
+  | 'stockout-risk';
 
 export function getActiveFlags(data: ProductIntelligenceData | null): IntelligenceFlag[] {
   if (!data) return [];

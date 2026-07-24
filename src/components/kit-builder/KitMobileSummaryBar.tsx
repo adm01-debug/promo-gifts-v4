@@ -62,7 +62,7 @@ export function KitMobileSummaryBar({ kitState, kitQuantity, children }: KitMobi
                   {volume}%
                 </Badge>
               )}
-              <Button variant="ghost" size="icon" className="h-8 w-8" tabIndex={-1}>
+              <Button variant="ghost" size="icon" aria-label="Expandir resumo do kit" className="h-8 w-8" tabIndex={-1}>
                 <ChevronUp className="h-4 w-4" />
               </Button>
             </div>

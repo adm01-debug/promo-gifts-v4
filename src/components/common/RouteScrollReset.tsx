@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { useLocation, useNavigationType } from 'react-router-dom';
+import { NavigationType, useLocation, useNavigationType } from 'react-router-dom';
 import { forceReleaseScrollLock } from '@/lib/dom/scroll-lock';
+import { notifyRouteChange } from '@/lib/telemetry/navigationMetrics';
 
 /**
  * RouteScrollReset
@@ -26,15 +27,17 @@ export function RouteScrollReset() {
   const isFirstMount = useRef(true);
 
   useEffect(() => {
+    // Instrumentação leve — mede duração de troca de rota (Sentry tag `route_change`).
+    notifyRouteChange(pathname);
+
     // Libera scroll-lock residual do Radix em toda troca de rota.
     forceReleaseScrollLock();
-
 
     if (isFirstMount.current) {
       isFirstMount.current = false;
       return;
     }
-    if (navType === 'POP') return;
+    if (navType === NavigationType.Pop) return;
     if (hash) return;
 
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

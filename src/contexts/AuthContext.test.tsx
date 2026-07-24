@@ -69,7 +69,9 @@ describe('AuthContext', () => {
 
       // Wait for initialization
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => {
+          setTimeout(resolve, 0);
+        });
       });
 
       // Verify initial state (mocked)
@@ -101,7 +103,9 @@ describe('AuthContext', () => {
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => {
+          setTimeout(resolve, 0);
+        });
       });
 
       await act(async () => {

@@ -45,7 +45,14 @@ export function DevAccessAuditAlert() {
             <Badge variant="outline" className="text-xs">
               {results.length}/{results.length} OK
             </Badge>
-            <Button size="sm" variant="ghost" onClick={() => void run()} disabled={loading}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                run();
+              }}
+              disabled={loading}
+            >
               <RefreshCcw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setDismissed(true)}>
@@ -70,7 +77,14 @@ export function DevAccessAuditAlert() {
           <Badge variant="destructive" className="text-xs">
             {blocked.length} de {results.length} bloqueadas
           </Badge>
-          <Button size="sm" variant="outline" onClick={() => void run()} disabled={loading}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              run();
+            }}
+            disabled={loading}
+          >
             <RefreshCcw className={cn('mr-1 h-3.5 w-3.5', loading && 'animate-spin')} />
             Reexecutar
           </Button>

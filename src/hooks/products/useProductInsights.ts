@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
+import { logger } from '@/lib/logger';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProductInsight {
   totalViews: number;
@@ -13,13 +15,18 @@ interface ProductInsight {
     count: number;
   }>;
   recentActivity: Array<{
-    type: 'view' | 'quote' | 'order';
+    type: 'order' | 'quote' | 'view';
     date: string;
     details: string;
   }>;
 }
 
 export function useProductInsights(productId?: string, productSku?: string) {
+  // BUG-HEAD-2 FIX (2026-06-25): guard rolesLoaded para evitar HEAD request em
+  // product_views antes do JWT estar pronto (RLS bloqueia → 401/abort →
+  // "Falha ao carregar Buscar: HEAD" no DevTools).
+  const { rolesLoaded } = useAuth();
+
   return useQuery({
     queryKey: ['product-insights', productSku],
     queryFn: async (): Promise<ProductInsight> => {
@@ -35,10 +42,13 @@ export function useProductInsights(productId?: string, productSku?: string) {
         };
       }
 
+      // BUG-PRODUCTINSIGHTS-PRIMARY-PARALLEL-SILENT-FAIL FIX: all three destructures
+      // omitted error — RLS failure produced 0 counts across the board, making every
+      // product appear with zero views, quotes, and orders.
       const [
-        { count: viewsCount },
-        { data: quoteItems, count: quotesCount },
-        { data: orderItems, count: ordersCount },
+        { count: viewsCount, error: e1 },
+        { data: quoteItems, count: quotesCount, error: e2 },
+        { data: orderItems, count: ordersCount, error: e3 },
       ] = await Promise.all([
         untypedFrom('product_views')
           .select('*', { count: 'exact', head: true })
@@ -50,6 +60,8 @@ export function useProductInsights(productId?: string, productSku?: string) {
           .select('quantity, order_id', { count: 'exact' })
           .eq('product_sku', productSku),
       ]);
+      const primaryErr = e1 ?? e2 ?? e3;
+      if (primaryErr) throw primaryErr;
 
       const allQuantities = [
         ...(quoteItems || []).map((q) => q.quantity),
@@ -69,11 +81,14 @@ export function useProductInsights(productId?: string, productSku?: string) {
       let topSegments: ProductInsight['topSegments'] = [];
 
       if (orderIds.length > 0) {
-        const { data: orders } = await supabase
+        // BUG-PRODUCTINSIGHTS-ORDERS-SELECT-SILENT-FAIL FIX: { data: orders } without error —
+        // RLS failure silently returned null, producing empty topSegments without diagnostic.
+        const { data: orders, error: ordersErr } = await supabase
           // rls-allow: seller-scope enforced by RLS policy; orderIds filtered from seller's own items
           .from('orders')
           .select('client_id')
           .in('id', orderIds);
+        if (ordersErr) logger.warn('[useProductInsights] orders fetch for segments failed:', ordersErr);
 
         const clientIds = [...new Set((orders || []).map((o) => o.client_id).filter(Boolean))];
 
@@ -86,7 +101,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
 
           const clientSegmentMap: Record<string, string> = {};
           (clients || []).forEach((c: { id?: string; ramo_atividade?: string }) => {
-            if (c.ramo_atividade) clientSegmentMap[c.id as string] = c.ramo_atividade;
+            if (c.id && c.ramo_atividade) clientSegmentMap[c.id] = c.ramo_atividade;
           });
 
           const segmentCounts: Record<string, number> = {};
@@ -106,7 +121,9 @@ export function useProductInsights(productId?: string, productSku?: string) {
 
       const recentActivity: ProductInsight['recentActivity'] = [];
 
-      const [{ data: recentViews }, { data: recentQuotes }] = await Promise.all([
+      // BUG-PRODUCTINSIGHTS-RECENT-PARALLEL-SILENT-FAIL FIX: both destructures omitted error —
+      // RLS failure silently produced empty recentActivity without any diagnostic.
+      const [{ data: recentViews, error: e4 }, { data: recentQuotes, error: e5 }] = await Promise.all([
         untypedFrom('product_views')
           .select('created_at, seller_id')
           .eq('product_sku', productSku)
@@ -118,6 +135,8 @@ export function useProductInsights(productId?: string, productSku?: string) {
           .order('created_at', { ascending: false })
           .limit(3),
       ]);
+      const recentErr = e4 ?? e5;
+      if (recentErr) logger.warn('[useProductInsights] recent activity fetch failed:', recentErr);
 
       (recentViews || []).forEach((v) => {
         recentActivity.push({
@@ -147,7 +166,7 @@ export function useProductInsights(productId?: string, productSku?: string) {
         recentActivity: recentActivity.slice(0, 5),
       };
     },
-    enabled: !!productSku,
+    enabled: !!productSku && rolesLoaded, // BUG-HEAD-2 FIX: guard JWT
     staleTime: 5 * 60 * 1000,
   });
 }

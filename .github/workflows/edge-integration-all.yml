@@ -24,9 +24,9 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -37,6 +37,19 @@ jobs:
       # Gate bloqueante: toda edge function deployada precisa de teste LIVE.
       - name: Gate — cobertura LIVE de edge functions
         run: npm run check:edge-live-coverage
+
+      # Gate estático: log-login-attempt NUNCA pode retornar 5xx.
+      - name: Gate — log-login-attempt contrato nunca-5xx
+        run: npm run check:log-login-contract
+
+      # Handler-direct Deno tests para log-login-attempt (fecha gap G1).
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Run Deno handler-direct tests (log-login-attempt)
+        run: deno test --allow-env --allow-net --allow-read supabase/functions/log-login-attempt/index_test.ts
 
       # Roda todos os 18+ testes de integração de edge functions (mocked).
       # Cada teste valida: status codes, shapes de resposta, CORS, auth, inputs adversariais.
@@ -71,7 +84,7 @@ jobs:
 
       - name: Upload edge integration coverage
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: edge-integration-coverage-${{ github.run_id }}
           path: coverage/
@@ -85,9 +98,9 @@ jobs:
     needs: edge-integration
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -116,9 +129,9 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: npm

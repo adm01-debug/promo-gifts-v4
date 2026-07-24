@@ -38,9 +38,11 @@ export default function QuotesKanbanPage() {
           nome_fantasia: string;
         }>('companies', {
           select: 'id, razao_social, nome_fantasia',
+          filters: { is_customer: true },
           orderBy: { column: 'nome_fantasia', ascending: true },
-          limit: 500,
+          limit: 200,
         });
+
         if (!cancelled) {
           setClients(
             companies.map((c) => ({ id: c.id, name: c.nome_fantasia || c.razao_social || '' })),

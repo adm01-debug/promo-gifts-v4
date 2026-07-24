@@ -11,6 +11,8 @@ on:
       - "scripts/**"
       - ".github/workflows/freight-quality-gates.yml"
       - "package.json"
+      - ".tsc-baseline.json"
+      - ".eslint-baseline.json"
   pull_request:
     branches: [main, master]
 
@@ -393,7 +395,6 @@ jobs:
 
       - name: Security definer ACL check
         run: npm run check:security-definer-acl
-        continue-on-error: true
 
   # ─── GATE 9: Suíte de regressão completa ─────────────────────────────────
   regression-suite:

@@ -67,9 +67,13 @@ export function ProductSearchCombobox({
   }, [search, debouncedSearch]);
 
   const getProductImage = (product: Product): string | null => {
-    // Prioridade: og_image_url > primary_image_url > images[0]
-    if (product.og_image_url) return product.og_image_url;
+    // Prioridade: primary_image_url (CF) > og_image_url > images[0]
+    // @fix_version cors-bounds-xbz-2026-07
+    // ANTI-REGRESSÃO: primary_image_url deve vir ANTES de og_image_url.
+    // og_image_url pode ser URL XBZ (cdn.xbzbrindes.com.br) para 48 produtos ativos,
+    // causando CORS error + CSP violation no bounds detector do mockup generator.
     if (product.primary_image_url) return product.primary_image_url;
+    if (product.og_image_url) return product.og_image_url;
     if (!product.images) return null;
     const images = Array.isArray(product.images) ? product.images : [];
     return images.length > 0 ? String(images[0]) : null;
@@ -120,7 +124,7 @@ export function ProductSearchCombobox({
                   }
                   return (
                     <div className="flex h-full w-full items-center justify-center">
-                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <Package aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
                     </div>
                   );
                 })()}
@@ -140,18 +144,18 @@ export function ProductSearchCombobox({
                 variant="ghost"
                 className="h-6 w-6 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
                 onClick={handleClear}
-                aria-label="Fechar"
+                aria-label="Remover produto selecionado"
               >
-                <X className="h-3.5 w-3.5" />
+                <X aria-hidden="true" className="h-3.5 w-3.5" />
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
+              <Search aria-hidden="true" className="h-4 w-4" />
               <span>{placeholder}</span>
             </div>
           )}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown aria-hidden="true" className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
 
@@ -171,14 +175,20 @@ export function ProductSearchCombobox({
           <CommandList className="max-h-[400px]">
             {isSearching ? (
               <div className="py-6 text-center">
-                <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-primary" />
+                <Loader2
+                  aria-hidden="true"
+                  className="mx-auto mb-2 h-6 w-6 animate-spin text-primary"
+                />
                 <p className="text-sm text-muted-foreground">Buscando...</p>
               </div>
             ) : (
               <>
                 <CommandEmpty>
                   <div className="py-6 text-center">
-                    <Package className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-50" />
+                    <Package
+                      aria-hidden="true"
+                      className="mx-auto mb-2 h-8 w-8 text-muted-foreground opacity-50"
+                    />
                     <p className="text-sm text-muted-foreground">Nenhum produto encontrado</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Tente buscar por nome ou SKU
@@ -211,7 +221,7 @@ export function ProductSearchCombobox({
                         )}
                       >
                         {selectedProduct?.id === product.id && (
-                          <Check className="h-3 w-3 text-primary-foreground" />
+                          <Check aria-hidden="true" className="h-3 w-3 text-primary-foreground" />
                         )}
                       </div>
 
@@ -231,7 +241,10 @@ export function ProductSearchCombobox({
                           }
                           return (
                             <div className="flex h-full w-full items-center justify-center">
-                              <Package className="h-5 w-5 text-muted-foreground" />
+                              <Package
+                                aria-hidden="true"
+                                className="h-5 w-5 text-muted-foreground"
+                              />
                             </div>
                           );
                         })()}

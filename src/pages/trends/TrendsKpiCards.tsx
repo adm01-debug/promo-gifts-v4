@@ -65,7 +65,7 @@ const ITEMS: KpiItem[] = [
 
 function DeltaBadge({ current, previous }: { current: number; previous: number }) {
   const delta = calculateDelta(current, previous);
-  if (!delta || !delta.isSignificant) {
+  if (!delta?.isSignificant) {
     return (
       <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
         <Minus className="h-3 w-3" />

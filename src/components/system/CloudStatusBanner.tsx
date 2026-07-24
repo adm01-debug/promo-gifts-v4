@@ -10,7 +10,7 @@ import {
   XCircle,
   type LucideIcon,
 } from 'lucide-react';
-import { useCloudStatus } from '@/hooks/ui/useCloudStatus';
+import { useCloudStatusContext } from '@/contexts/CloudStatusContext';
 import { useDevGate } from '@/hooks/admin/useDevGate';
 import { DevOnly } from '@/components/dev/DevOnly';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ type BannerVariant = {
   message: string;
 };
 
-const STATUS_CONFIG: Partial<Record<'down' | 'degraded' | 'warming', BannerVariant>> = {
+const STATUS_CONFIG: Partial<Record<'degraded' | 'down' | 'warming', BannerVariant>> = {
   down: {
     message: 'Backend indisponível. Verifique sua conexão e tente novamente.',
     icon: WifiOff,
@@ -48,8 +48,8 @@ const STATUS_CONFIG: Partial<Record<'down' | 'degraded' | 'warming', BannerVaria
   },
 };
 
-const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
-  const { status, snapshot, retry, isChecking } = useCloudStatus();
+const CloudStatusBannerInner = memo(() => {
+  const { status, snapshot, retry, isChecking } = useCloudStatusContext();
   const { isAllowed } = useDevGate();
   const [showDebug, setShowDebug] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
@@ -134,7 +134,9 @@ const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
             {status === 'down' && (
               <button
                 type="button"
-                onClick={() => void retry()}
+                onClick={() => {
+                  retry();
+                }}
                 disabled={isChecking}
                 className="inline-flex h-7 items-center justify-center gap-1.5 rounded-lg border border-divider bg-secondary px-3 text-sm font-bold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary/80 disabled:pointer-events-none disabled:opacity-50"
               >
@@ -211,7 +213,7 @@ const CloudStatusBannerInner = memo(function CloudStatusBannerInner() {
   );
 });
 
-export const CloudStatusBanner = memo(function CloudStatusBanner() {
+export const CloudStatusBanner = memo(() => {
   // Gating de visibilidade (crítico vs técnico) é feito dentro do Inner para
   // permitir que falhas críticas alcancem TODOS os usuários, não só devs.
   return <CloudStatusBannerInner />;

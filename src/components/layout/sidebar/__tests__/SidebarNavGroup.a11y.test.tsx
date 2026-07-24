@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Testes de acessibilidade do grupo de navegação que contém "Novo Orçamento".
  *
@@ -112,6 +113,7 @@ async function pushTo(router: Router, path: string) {
 }
 
 async function go(router: Router, delta: number) {
+  // eslint-disable-next-line @typescript-eslint/require-await
   await act(async () => {
     router.navigate(delta);
   });
@@ -138,6 +140,7 @@ describe('SidebarNavGroup — atributos ARIA do Collapsible (header e content)',
     expect(labelOpen).toMatch(/recolher/i);
     expect(labelOpen).toMatch(/orçamentos/i);
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getHeaderButton().click();
     });
@@ -158,6 +161,7 @@ describe('SidebarNavGroup — atributos ARIA do Collapsible (header e content)',
 
     expect(header.getAttribute('aria-expanded')).toBe('true');
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       header.click();
     });
@@ -198,6 +202,7 @@ describe('SidebarNavGroup — atributos ARIA do Collapsible (header e content)',
     expect(getHeaderButton().getAttribute('aria-expanded')).toBe('true');
 
     // Colapsa manualmente em /orcamentos/novo
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       getHeaderButton().click();
     });

@@ -35,8 +35,9 @@ import { untypedFrom } from '@/lib/supabase-untyped';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
-type CfSyncStatus = 'pending' | 'syncing' | 'verified' | 'failed' | 'skipped';
+type CfSyncStatus = 'failed' | 'pending' | 'skipped' | 'syncing' | 'verified';
 
 interface CfImage {
   id: string;
@@ -47,6 +48,7 @@ interface CfImage {
   alt_text?: string | null;
   is_primary?: boolean | null;
   display_order?: number | null;
+  url_original?: string | null;
 }
 
 interface CfStats {
@@ -168,7 +170,7 @@ const PAGE_SIZE = 100;
 
 export default function AdminCloudflareImagesPage() {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | CfSyncStatus | 'none'>('all');
+  const [statusFilter, setStatusFilter] = useState<CfSyncStatus | 'all' | 'none'>('all');
   const [page, setPage] = useState(0);
 
   const {
@@ -373,6 +375,7 @@ export default function AdminCloudflareImagesPage() {
                             <div className="h-10 w-10 overflow-hidden rounded-md border border-border/50 bg-muted/30">
                               <OptimizedImage
                                 src={getCdnUrl(img.url_cdn, 'thumbnail')}
+                                urlOriginal={getProxiedImageUrl(img.url_original) ?? null}
                                 alt={img.alt_text ?? ''}
                                 className="object-contain"
                                 containerClassName="h-full w-full"

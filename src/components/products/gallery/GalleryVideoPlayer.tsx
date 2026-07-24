@@ -15,6 +15,20 @@ import {
 } from '@/utils/cloudflare-stream';
 import { PromoFlixPlayer } from './PromoFlixPlayer';
 
+/**
+ * True só quando o HOST da URL é (sub)domínio de vimeo.com — valida o hostname
+ * parseado em vez de `includes(...)`, que aceitaria `https://evil.com/vimeo.com`.
+ */
+function isVimeoUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    const { hostname } = new URL(url);
+    return hostname === 'vimeo.com' || hostname.endsWith('.vimeo.com');
+  } catch {
+    return false;
+  }
+}
+
 interface ProductVideo {
   id: string;
   url_stream: string | null;
@@ -70,7 +84,7 @@ export function GalleryVideoPlayer({
 
   // Fallback embed: usa source_youtube_id quando Cloudflare falha.
   // Detecta Vimeo pelo url_original para montar embed correto.
-  const isVimeoSource = Boolean(v?.url_original?.includes('vimeo.com'));
+  const isVimeoSource = isVimeoUrl(v?.url_original);
   const fallbackEmbedSrc = youtubeId
     ? isVimeoSource
       ? `https://player.vimeo.com/video/${youtubeId}?autoplay=1&title=0&byline=0&portrait=0`
@@ -118,6 +132,7 @@ export function GalleryVideoPlayer({
                   className="h-full w-full"
                   allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                   allowFullScreen
+                  sandbox="allow-scripts allow-presentation allow-popups"
                 />
               </div>
             ) : playerSrc && !useFallback ? (
@@ -133,9 +148,7 @@ export function GalleryVideoPlayer({
                 productSku={productSku}
                 productMinQuantity={productMinQuantity}
                 shareUrl={shareUrl}
-                onUnrecoverableError={
-                  fallbackEmbedSrc ? () => setUseFallback(true) : undefined
-                }
+                onUnrecoverableError={fallbackEmbedSrc ? () => setUseFallback(true) : undefined}
               />
             ) : fallbackEmbedSrc ? (
               <div className="aspect-video w-full">
@@ -145,6 +158,7 @@ export function GalleryVideoPlayer({
                   className="h-full w-full"
                   allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                   allowFullScreen
+                  sandbox="allow-scripts allow-presentation allow-popups"
                 />
               </div>
             ) : (

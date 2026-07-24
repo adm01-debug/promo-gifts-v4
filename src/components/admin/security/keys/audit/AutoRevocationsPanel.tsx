@@ -21,7 +21,7 @@ import { useAutoRevocations, type AutoRevocationRow } from './useAutoRevocations
 
 const SOURCE_META: Record<
   AutoRevocationRow['source'],
-  { label: string; Icon: typeof Zap; variant: 'default' | 'secondary' | 'outline' }
+  { label: string; Icon: typeof Zap; variant: 'default' | 'outline' | 'secondary' }
 > = {
   trigger: { label: 'Trigger (instantâneo)', Icon: Zap, variant: 'default' },
   cron: { label: 'Varredura periódica', Icon: Clock, variant: 'secondary' },

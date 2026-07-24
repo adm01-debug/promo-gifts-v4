@@ -16,9 +16,7 @@ export interface ReplenishmentCardSkeletonProps {
   readonly className?: string;
 }
 
-export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton({
-  className,
-}: ReplenishmentCardSkeletonProps) {
+export const ReplenishmentCardSkeleton = memo(({ className }: ReplenishmentCardSkeletonProps) => {
   return (
     <Card
       className={cn(
@@ -72,7 +70,7 @@ export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton
           {/* Swatches */}
           <div className="flex items-center gap-1.5">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-4 w-4 rounded-full" />
+              <Skeleton key={i} className="h-[var(--swatch-size-sm)] w-[var(--swatch-size-sm)] rounded-full" />
             ))}
           </div>
 
@@ -81,7 +79,6 @@ export const ReplenishmentCardSkeleton = memo(function ReplenishmentCardSkeleton
             <Skeleton className="mb-1 h-2 w-20" />
             <Skeleton className="h-8 w-full" />
           </div>
-
         </div>
       </CardContent>
     </Card>

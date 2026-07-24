@@ -118,6 +118,18 @@ export function resolveColorStock(
     }
   }
 
+  // Fallback p/ módulos sem variations carregadas (Novidades/Reposição): o estoque
+  // por cor pode vir direto em colors[].stock (preenchido a partir do batch de cores
+  // useProductsColorsBatch.stockQty). Mantém a lista coerente com grid/tabela.
+  if (specificColorName && product.colors?.length) {
+    const c = product.colors.find(
+      (col) => col.name?.toLowerCase() === specificColorName.toLowerCase(),
+    );
+    if (c && typeof c.stock === 'number') {
+      return { stock: c.stock, stockStatus: getCatalogStockStatus(c.stock) };
+    }
+  }
+
   if (!activeColors) return undefined;
   if (!activeColors.groups.length && !activeColors.variations.length) return undefined;
   if (!product.variations?.length) return undefined;
@@ -154,7 +166,7 @@ export function resolveColorStock(
     if (groupColors.length > 0) {
       let totalStock = 0;
       for (const gc of groupColors) {
-        const v = variations.find((v: ProductVariation) => v.color?.name === gc.name);
+        const v = variations.find((vr: ProductVariation) => vr.color?.name === gc.name);
         if (v) totalStock += v.stock ?? 0;
       }
       return { stock: totalStock };

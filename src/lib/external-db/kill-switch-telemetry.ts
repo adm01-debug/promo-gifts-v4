@@ -19,13 +19,13 @@ export interface KillSwitchHit {
   operation?: string | null;
   target?: string | null;
   origin?: string | null;
-  user_role?: 'anon' | 'authenticated' | 'admin';
+  user_role?: 'admin' | 'anon' | 'authenticated';
 }
 
 type QueuedHit = KillSwitchHit & { source: 'front'; occurred_at: string };
 type KillSwitchHitsClient = {
-  from(table: 'kill_switch_hits'): {
-    insert(rows: QueuedHit[]): Promise<{ error: { message?: string } | null }>;
+  from: (table: 'kill_switch_hits') => {
+    insert: (rows: QueuedHit[]) => Promise<{ error: { message?: string } | null }>;
   };
 };
 

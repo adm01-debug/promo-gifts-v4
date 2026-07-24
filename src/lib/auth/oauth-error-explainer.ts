@@ -24,7 +24,7 @@ export interface OAuthErrorExplanation {
   /** Próximo passo recomendado (ação do usuário ou admin). */
   hint: string;
   /** Categoria — controla cor/ícone na UI. */
-  severity: 'config' | 'user' | 'transient' | 'unknown';
+  severity: 'config' | 'transient' | 'unknown' | 'user';
 }
 
 interface RawErrorInput {

@@ -1,3 +1,4 @@
+import { PDF_TOKENS } from '../ProposalStyles';
 import type { ProposalTemplateData } from '../ProposalHtmlTemplate';
 
 interface Props {
@@ -19,6 +20,7 @@ export function ProposalFooter({
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'America/Sao_Paulo',
   });
 
   return (
@@ -41,7 +43,24 @@ export function ProposalFooter({
       </div>
 
       {/* Green bar */}
-      <div style={{ width: '794px', height: '40px', backgroundColor: '#00c853' }} />
+      <div
+        style={{
+          width: '794px',
+          height: '40px',
+          backgroundColor: '#00c853',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          padding: '0 36px',
+          boxSizing: 'border-box',
+          fontSize: '13px',
+          fontWeight: 600,
+          color: PDF_TOKENS.textOnGreen,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        Pág. {pageNumber}/{totalPages}
+      </div>
     </div>
   );
 }

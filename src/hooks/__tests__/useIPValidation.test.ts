@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useIPValidation } from '@/hooks/admin/useIPValidation';
@@ -24,6 +25,7 @@ describe('useIPValidation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default mock: successful get-visitor-info
+    // eslint-disable-next-line @typescript-eslint/require-await
     vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
       if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
       return { data: null, error: null };
@@ -47,6 +49,7 @@ describe('useIPValidation', () => {
         error: { message: 'Failed' },
       });
       mockFetch.mockResolvedValueOnce({
+        // eslint-disable-next-line @typescript-eslint/require-await
         json: async () => ({ ip: '5.6.7.8' }),
       });
 
@@ -54,7 +57,10 @@ describe('useIPValidation', () => {
       const ip = await result.current.fetchCurrentIP();
 
       expect(ip).toBe('5.6.7.8');
-      expect(mockFetch).toHaveBeenCalledWith('https://api.ipify.org?format=json');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.ipify.org?format=json',
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      );
     });
 
     it('returns null when both methods fail', async () => {
@@ -73,6 +79,7 @@ describe('useIPValidation', () => {
 
   describe('validateIPForAuthenticatedUser', () => {
     it('returns isAllowed true when IP is whitelisted', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
         if (fnName === 'validate-access')
@@ -95,6 +102,7 @@ describe('useIPValidation', () => {
     });
 
     it('returns isAllowed false when IP is blocked', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
         if (fnName === 'validate-access')
@@ -118,6 +126,7 @@ describe('useIPValidation', () => {
     });
 
     it('fails open when edge function errors', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
         if (fnName === 'validate-access')
@@ -158,6 +167,7 @@ describe('useIPValidation', () => {
     });
 
     it('handles city_not_whitelisted reason correctly', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
         if (fnName === 'validate-access')
@@ -184,6 +194,7 @@ describe('useIPValidation', () => {
     });
 
     it('handles too_many_attempts reason correctly', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
         if (fnName === 'validate-access')
@@ -218,7 +229,7 @@ describe('useIPValidation', () => {
 
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
-        return await invokePromise;
+        return invokePromise;
       });
 
       const { result } = renderHook(() => useIPValidation());
@@ -226,6 +237,7 @@ describe('useIPValidation', () => {
       expect(result.current.isValidating).toBe(false);
 
       let validationPromise: Promise<ValidationResult> | undefined;
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         validationPromise = result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -248,6 +260,7 @@ describe('useIPValidation', () => {
 
   describe('logLoginAttempt', () => {
     it('calls log-login-attempt even if fetchCurrentIP fails', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: null, error: { message: 'Failed' } };
         return { data: { success: true }, error: null };

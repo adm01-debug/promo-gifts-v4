@@ -42,9 +42,9 @@ jobs:
       E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
       ARTIFACT_RETENTION_DAYS: "14"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: "npm"
@@ -396,7 +396,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report
@@ -413,7 +413,7 @@ jobs:
 
       - name: Upload smoke summary (markdown + json)
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-smoke-summary
           path: |
@@ -424,7 +424,7 @@ jobs:
 
       - name: Upload feature summary (markdown)
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-feature-summary
           path: playwright-report/feature-summary.md
@@ -433,7 +433,7 @@ jobs:
 
       - name: Upload evidence artifacts (Videos, Screenshots & Network Logs)
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: e2e-evidence
           path: |

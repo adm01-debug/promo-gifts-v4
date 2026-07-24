@@ -23,7 +23,7 @@ export interface FilterPreset {
  * Hook para gerenciar presets de filtros persistidos no banco de dados.
  * Cada vendedor tem seus próprios presets isolados por RLS.
  */
-export function useFilterPresets(context: string = 'catalog') {
+export function useFilterPresets(context = 'catalog') {
   const { user } = useAuth();
   const [presets, setPresets] = useState<FilterPreset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +76,7 @@ export function useFilterPresets(context: string = 'catalog') {
 
   const savePreset = useCallback(
     async (
-      preset: Omit<FilterPreset, 'id' | 'created_at' | 'updated_at' | 'context' | 'is_default'>,
+      preset: Omit<FilterPreset, 'context' | 'created_at' | 'id' | 'is_default' | 'updated_at'>,
     ): Promise<FilterPreset | null> => {
       if (!user) {
         toast.error('Faça login para salvar presets');
@@ -129,7 +129,7 @@ export function useFilterPresets(context: string = 'catalog') {
   const updatePreset = useCallback(
     async (
       id: string,
-      updates: Partial<Pick<FilterPreset, 'name' | 'description' | 'icon' | 'color' | 'filters'>>,
+      updates: Partial<Pick<FilterPreset, 'color' | 'description' | 'filters' | 'icon' | 'name'>>,
     ): Promise<FilterPreset | null> => {
       try {
         const { filters: filterState, ...restUpdates } = updates;

@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Json } from '@/integrations/supabase/types';
+import type { ComparisonScoreWeights } from './useComparisonScore';
 
 import { logger } from '@/lib/logger';
 export interface ComparisonWeights {
@@ -24,6 +25,35 @@ export const DEFAULT_WEIGHTS: ComparisonWeights = {
   verified: 10,
   leadTime: 10,
 };
+
+/**
+ * Bridges the two weight shapes. The persisted/DB contract uses
+ * `{minQty,colors,verified}` (see `user_preferences.comparison_weights`
+ * default), while `useComparisonScore` expects
+ * `{minQuantity,colorVariety,verifiedSupplier}`. Feeding one shape into the
+ * other silently produced `NaN` scores, so all conversions go through here.
+ */
+export function mapWeightsToScore(w: ComparisonWeights): ComparisonScoreWeights {
+  return {
+    price: w.price,
+    stock: w.stock,
+    minQuantity: w.minQty,
+    colorVariety: w.colors,
+    verifiedSupplier: w.verified,
+    leadTime: w.leadTime,
+  };
+}
+
+export function mapScoreToWeights(s: ComparisonScoreWeights): ComparisonWeights {
+  return {
+    price: s.price,
+    stock: s.stock,
+    minQty: s.minQuantity,
+    colors: s.colorVariety,
+    verified: s.verifiedSupplier,
+    leadTime: s.leadTime,
+  };
+}
 
 const LS_KEY = 'comparison-weights';
 

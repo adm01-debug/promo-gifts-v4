@@ -3,7 +3,7 @@
  */
 import { type StockStatus, type ProductStockSummary } from '@/types/stock';
 
-export type RiskSeverity = 'critical' | 'warning' | 'ok';
+export type RiskSeverity = 'critical' | 'ok' | 'warning';
 
 export interface RiskProduct {
   id: string;

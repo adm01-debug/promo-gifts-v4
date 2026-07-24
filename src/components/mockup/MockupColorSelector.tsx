@@ -1,7 +1,7 @@
 /**
  * ProductLoaderAndColorSelector — extracted from MockupProductSelector
  */
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { ArrowLeft, AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,6 +38,23 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
     () => sortedVariants.reduce((sum, v) => sum + (v.stock_quantity ?? 0), 0),
     [sortedVariants],
   );
+
+  // BUG-24 FIX: was `setTimeout(() => onSelect(null, fullProduct), 0)` directly in
+  // the render body — a side-effect inside render fires on every re-render and
+  // double-fires under React 18 StrictMode, causing onSelect to be called multiple
+  // times before setPendingProductId(null) could unmount this component.
+  // Hook placed BEFORE all early returns to satisfy Rules of Hooks.
+  useEffect(() => {
+    if (
+      !isLoadingProduct &&
+      !isLoadingVariants &&
+      fullProduct &&
+      (!variants || variants.length === 0)
+    ) {
+      onSelect(null, fullProduct);
+    }
+  }, [isLoadingProduct, isLoadingVariants, fullProduct, variants, onSelect]);
+
   const formatStock = (qty: number) =>
     qty >= 1000 ? `${(qty / 1000).toFixed(1)}k` : qty.toString();
 
@@ -46,10 +63,10 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
       <div className="space-y-4 rounded-lg border border-border/30 p-4">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+            <ArrowLeft aria-hidden="true" className="mr-1 h-4 w-4" /> Voltar
           </Button>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
             Carregando detalhes...
           </div>
         </div>
@@ -67,11 +84,11 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
       <div className="space-y-4 rounded-lg border border-border/30 p-4">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+            <ArrowLeft aria-hidden="true" className="mr-1 h-4 w-4" /> Voltar
           </Button>
         </div>
-        <div className="py-6 text-center text-muted-foreground">
-          <AlertTriangle className="mx-auto mb-2 h-8 w-8 opacity-50" />
+        <div role="alert" className="py-6 text-center text-muted-foreground">
+          <AlertTriangle className="mx-auto mb-2 h-8 w-8 opacity-50" aria-hidden="true" />
           <p>Produto não encontrado</p>
         </div>
       </div>
@@ -79,7 +96,6 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
   }
 
   if (!variants || variants.length === 0) {
-    setTimeout(() => onSelect(null, fullProduct), 0);
     return (
       <div className="flex animate-pulse items-center gap-3 rounded-lg border border-border/30 bg-card p-3">
         <Skeleton className="h-11 w-11 rounded-lg" />
@@ -92,7 +108,7 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
     <div className="space-y-4 rounded-lg border border-border/30 p-4">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={onBack}>
-          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+          <ArrowLeft aria-hidden="true" className="mr-1 h-4 w-4" /> Voltar
         </Button>
         <div className="min-w-0 flex-1">
           <h4 className="truncate text-sm font-medium">{fullProduct.name}</h4>
@@ -112,6 +128,7 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
           return (
             <button
               key={variant.id}
+              type="button"
               onClick={() => onSelect(variant, fullProduct)}
               className={cn(
                 'group relative flex flex-col items-center gap-1.5 rounded-lg border p-2 text-left transition-all duration-200',
@@ -132,7 +149,7 @@ export function ProductLoaderAndColorSelector({ productId, onSelect, onBack }: P
                 />
                 {outOfStock && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/60">
-                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                    <AlertTriangle aria-hidden="true" className="h-4 w-4 text-destructive" />
                   </div>
                 )}
               </div>

@@ -23,6 +23,7 @@ import { useProfileRoles } from '@/hooks/auth/useProfileRoles';
 import { useAuthMFA } from '@/hooks/auth/useAuthMFA';
 import { setSafeToastRoles } from '@/lib/security/safeToast';
 import { clearPostLoginRedirect } from '@/lib/auth/post-login-redirect';
+import { clearColorsCache } from '@/hooks/products/useProductsColorsBatch';
 import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import {
   attachSessionRevalidation,
@@ -33,12 +34,12 @@ import {
 import { logger } from '@/lib/logger';
 // Tipos de role conforme app_role enum no banco.
 export type AppRole =
-  | 'dev'
-  | 'supervisor'
+  | 'admin'
   | 'agente'
   | 'coordenador'
-  | 'admin'
+  | 'dev'
   | 'manager'
+  | 'supervisor'
   | 'vendedor';
 
 export interface Profile {
@@ -107,6 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     setIsLoading,
     rolesLoaded,
+    setRolesLoaded, // BUG-WATCHDOG-ROLES FIX (2026-06-23)
     fetchUserData,
     clearProfileRoles,
     fetchPromiseRef,
@@ -123,18 +125,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     log.info('start');
     try {
       const supabase = await getSupabaseClient();
-      const { data, error } = await supabase.auth.refreshSession();
+      // Onda 13 — refreshSession via wrapper Safe (timeout + retry + breaker).
+      const res = await authService.refreshSessionSafe();
 
       // BUG-CRÍTICO FIX: kid rotacionado / bad_jwt → recovery agressiva.
-      // Antes, o erro era descartado silenciosamente e o usuário ficava
-      // logado no client mas deslogado no server até reabrir a aba.
-      if (error && isBadJwtError(error)) {
-        log.warn('bad_jwt_detected', { err: error.message });
+      if (res.kind === 'err' && isBadJwtError(res.raw)) {
+        log.warn('bad_jwt_detected', { err: res.userMessage });
         await recoverSession('refreshSession:bad_jwt');
         return;
       }
 
-      const nextSession = data?.session ?? (await supabase.auth.getSession()).data.session;
+      const refreshed =
+        res.kind === 'ok' ? ((res.data ?? null) as { session?: Session | null } | null) : null;
+      const nextSession =
+        refreshed?.session ?? (await supabase.auth.getSession()).data.session;
       if (mountedRef.current) {
         setSession(nextSession);
         setUser(nextSession?.user ?? null);
@@ -182,20 +186,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const {
         data: { subscription },
-      } = supabase.auth.onAuthStateChange((event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      } = supabase.auth.onAuthStateChange((event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
 
-        if (session?.user) {
+        if (newSession?.user) {
           if (event === 'SIGNED_IN') {
-            const name = session.user.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
+            const name = newSession.user.user_metadata?.full_name?.split(' ')[0] || 'Usuário';
             toast.success(`🤖 Flow`, { description: getRandomGreeting(name), duration: 3000 });
           }
 
           // BUG-3 FIX: só rebuscar perfil/roles em eventos que efetivamente
           // alteram os dados do usuário. TOKEN_REFRESHED ocorre a cada ~5min e
           // troca apenas o JWT — não precisa rebater no banco toda vez.
-          const uid = session.user.id;
+          const uid = newSession.user.id;
           if (EVENTS_THAT_NEED_PROFILE_FETCH.has(event)) {
             initialFetchScheduled = true;
             // Use Promise.resolve().then to avoid potential issues with immediate state updates in event handler
@@ -226,32 +230,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       unsubscribe = () => subscription.unsubscribe();
 
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
+      supabase.auth.getSession().then(({ data: { session: authSession } }) => {
         if (cancelled) return;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          // BUG-CRÍTICO FIX: revalida o token no boot. Se o kid foi rotacionado
-          // enquanto a aba estava fechada, getUser() retorna bad_jwt e disparamos
-          // recovery antes de hidratar dados/papéis com um token quebrado.
-          try {
-            const { error: getUserError } = await supabase.auth.getUser();
-            if (isBadJwtError(getUserError)) {
-              await recoverSession('boot:getUser');
-              return;
-            }
-          } catch {
-            /* getUser falhou por rede — segue fluxo normal */
-          }
-
-          // BUG-2 FIX: onAuthStateChange(INITIAL_SESSION) já agendou
-          // fetchUserData via Promise.resolve().then acima. Só buscar aqui
-          // se o listener ainda não disparou (ex.: Supabase não emitiu
-          // INITIAL_SESSION antes de getSession() resolver).
+        setSession(authSession);
+        setUser(authSession?.user ?? null);
+        if (authSession?.user) {
+          // BUG-AUTH-STALL FIX (2026-06-28): hidrata perfil/roles IMEDIATAMENTE,
+          // sem bloquear no await getUser(). Antes, o getUser() (round-trip a
+          // /auth/v1/user, que segura o lock interno do GoTrue) serializava toda a
+          // hidratação atrás de si; em qualquer round-trip lento/instável o
+          // isLoading congelava até o watchdog de 8s forçar false, e esse flip
+          // tardio re-disparava as queries de badge (HEAD count) que abortavam na
+          // camada de rede → os erros "Falha ao carregar" no console.
+          //
+          // BUG-2 FIX: onAuthStateChange(INITIAL_SESSION) já agendou fetchUserData
+          // via Promise.resolve().then acima. Só buscar aqui se o listener ainda
+          // não disparou (ex.: Supabase não emitiu INITIAL_SESSION antes de
+          // getSession() resolver).
           if (!initialFetchScheduled) {
-            fetchUserData(session.user.id);
+            fetchUserData(authSession.user.id);
             fetchAAL();
           }
+
+          // Revalidação bad_jwt agora roda em BACKGROUND (não-bloqueante). Se o kid
+          // foi rotacionado enquanto a aba estava fechada, getUser() retorna bad_jwt
+          // e a recovery dispara de forma reativa — uma rotação rara de kid passa a
+          // se auto-corrigir via um único 401-then-recover, em vez de um stall de 8s
+          // em TODO carregamento lento. attachSessionRevalidation() + recoverSession
+          // reativo continuam cobrindo a rotação de signing keys.
+          void supabase.auth
+            .getUser()
+            .then(({ error: getUserError }) => {
+              if (!cancelled && isBadJwtError(getUserError)) {
+                void recoverSession('boot:getUser');
+              }
+            })
+            .catch(() => {
+              /* getUser falhou por rede — segue fluxo normal */
+            });
         } else {
           setIsLoading(false);
         }
@@ -311,12 +327,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const log = createClientLogger('auth.watchdog');
       log.warn('isLoading_stalled_forcing_false', { duration: '8s' });
       setIsLoading(false);
+      // BUG-WATCHDOG-ROLES FIX (2026-06-23): forçar rolesLoaded=true para desbloquear
+      // queries guardadas por `enabled: rolesLoaded && ...`. Sem isso, após stall de 8s
+      // a UI permanece congelada mesmo com sessão ativa — hooks ficam eternamente
+      // desabilitados. Roles ficam [] (menor privilégio): isAdmin/isDev=false → seguro;
+      // RLS bloqueia qualquer acesso indevido no servidor.
+      setRolesLoaded(true);
       toast.error(
         'O carregamento está demorando mais que o esperado. Algumas funcionalidades podem estar indisponíveis.',
       );
     }, 8000);
     return () => window.clearTimeout(timer);
-  }, [isLoading, setIsLoading]);
+  }, [isLoading, setIsLoading, setRolesLoaded]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const log = createClientLogger('auth.signIn', { base: { email_domain: email.split('@')[1] } });
@@ -338,9 +360,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearLoginAttempts(email);
     }
 
-    getSupabaseClient()
-      .then(async (supabase) => {
-        const { error: invokeError } = await supabase.functions.invoke('log-login-attempt', {
+    import('@/lib/edge/safeInvokeCall')
+      .then(async ({ invokeEdge }) => {
+        const { error: invokeError } = await invokeEdge('log-login-attempt', {
           body: {
             email,
             user_id: data?.user?.id,
@@ -387,6 +409,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearProfileRoles();
       clearMFA();
       clearPostLoginRedirect();
+      clearColorsCache();
       try {
         window.sessionStorage.removeItem('catalog:sortBy');
       } catch {
@@ -475,7 +498,7 @@ const FALLBACK_AUTH: AuthContextType = {
   mfaRequired: false,
   rolesLoaded: false,
   refreshAAL: async () => {},
-  signIn: async () => ({ error: { message: 'AuthProvider indisponível' }, data: null }),
+  signIn: () => Promise.resolve({ error: { message: 'AuthProvider indisponível' }, data: null }),
   signOut: async () => {},
   refreshProfile: async () => {},
   refreshSession: async () => {},

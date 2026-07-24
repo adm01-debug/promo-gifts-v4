@@ -28,6 +28,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-modules-
 
+      # Zero-dep (so node:fs), roda ANTES do install. Se o lock estiver fora de sincronia
+      # o `npm ci` morre no install e typecheck/lint/testes viram `skipped` — o job fica
+      # vermelho sem nunca ter checado nada. Aqui a falha vem em 2s, dizendo o que rodar.
+      - name: Guard — package-lock em sincronia
+        run: node scripts/check-lockfile-sync.mjs
+
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci

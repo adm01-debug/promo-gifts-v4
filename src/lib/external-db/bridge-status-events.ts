@@ -10,7 +10,7 @@
  */
 
 // ── Types (preserved for compatibility) ──────────────────────────────────────
-export type BridgeStatusType = 'degraded' | 'unavailable' | 'recovered';
+export type BridgeStatusType = 'degraded' | 'recovered' | 'unavailable';
 
 export interface BridgeStatusEventBase {
   type: BridgeStatusType;
@@ -37,7 +37,7 @@ export interface BridgeRecoveredEvent extends BridgeStatusEventBase {
   type: 'recovered';
 }
 
-export type BridgeStatusEvent = BridgeDegradedEvent | BridgeUnavailableEvent | BridgeRecoveredEvent;
+export type BridgeStatusEvent = BridgeDegradedEvent | BridgeRecoveredEvent | BridgeUnavailableEvent;
 
 type BridgeStatusEventInput = BridgeStatusEvent extends infer Event
   ? Event extends BridgeStatusEvent

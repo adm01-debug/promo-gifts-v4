@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
 import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
 import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
+import { useStockVelocityPrefetch } from '@/hooks/intelligence';
 
 import { logger } from '@/lib/logger';
 export interface ProductGridProps {
@@ -34,133 +35,135 @@ export interface ProductGridProps {
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
-  onStatusClick?: (type: string, value?: string | number) => void;
+  onStatusClick?: (type: string, value?: number | string) => void;
 }
 
-const ProductCardWrapper = memo(function ProductCardWrapper({
-  product,
-  index,
-  isVisible: _isVisible,
-  hideCategoryBadges,
-  selectionMode,
-  selectedIds,
-  onToggleSelect,
-  priority,
-  ...restProps
-}: {
-  product: Product;
-  index: number;
-  isVisible: boolean;
-  hideCategoryBadges?: boolean;
-  selectionMode?: boolean;
-  selectedIds?: Set<string>;
-  onToggleSelect?: (id: string) => void;
-  priority?: boolean;
-} & Omit<React.ComponentProps<typeof ProductCard>, 'product' | 'priority'>) {
-  const reducedMotion = useReducedMotion();
-  const [hasAnimated, setHasAnimated] = useState(reducedMotion);
-  const ref = useRef<HTMLDivElement>(null);
+const ProductCardWrapper = memo(
+  ({
+    product,
+    index,
+    isVisible: _isVisible,
+    hideCategoryBadges,
+    selectionMode,
+    selectedIds,
+    onToggleSelect,
+    priority,
+    ...restProps
+  }: Omit<React.ComponentProps<typeof ProductCard>, 'priority' | 'product'> & {
+    product: Product;
+    index: number;
+    isVisible: boolean;
+    hideCategoryBadges?: boolean;
+    selectionMode?: boolean;
+    selectedIds?: Set<string>;
+    onToggleSelect?: (id: string) => void;
+    priority?: boolean;
+  }) => {
+    const reducedMotion = useReducedMotion();
+    const [hasAnimated, setHasAnimated] = useState(reducedMotion);
+    const ref = useRef<HTMLDivElement>(null);
 
-  // Bug P2-06: lazy mount via IntersectionObserver para reduzir custo de DOM
-  // quando o grid tem 200+ produtos. Cards fora da viewport (com margem de
-  // 800px = ~2 viewports antes/depois) ficam como placeholder vazio mantendo
-  // altura. priority=true (primeiros 8 cards above-the-fold) montam sempre.
-  const [inView, setInView] = useState(priority === true);
-  useEffect(() => {
-    if (inView) return; // já está montado, IO desliga
-    if (!ref.current) return;
-    const el = ref.current;
-    if (typeof IntersectionObserver === 'undefined') {
-      // SSR/jsdom: monta direto
-      setInView(true);
-      return;
-    }
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setInView(true);
-            io.disconnect();
-            break;
-          }
-        }
-      },
-      { rootMargin: '800px 0px', threshold: 0 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [inView, priority]);
-
-  useEffect(() => {
-    if (reducedMotion) {
-      setHasAnimated(true);
-      return;
-    }
-    if (!hasAnimated) {
-      const timer = setTimeout(() => setHasAnimated(true), Math.min(index * 80, 800));
-      return () => clearTimeout(timer);
-    }
-  }, [hasAnimated, index, reducedMotion]);
-
-  const isSelected = selectionMode && selectedIds?.has(product.id);
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        reducedMotion
-          ? ''
-          : `transition-all duration-500 ease-out ${
-              hasAnimated
-                ? 'translate-y-0 scale-100 opacity-100'
-                : 'translate-y-8 scale-95 opacity-0'
-            }`,
-        'product-card-cv relative',
-        !inView && 'min-h-[480px] sm:min-h-[520px]',
-        isSelected && 'rounded-xl ring-2 ring-primary/40',
-      )}
-      style={
-        reducedMotion
-          ? undefined
-          : {
-              transitionDelay: hasAnimated ? '0ms' : `${Math.min(index * 80, 800)}ms`,
-            }
+    // Bug P2-06: lazy mount via IntersectionObserver para reduzir custo de DOM
+    // quando o grid tem 200+ produtos. Cards fora da viewport (com margem de
+    // 800px = ~2 viewports antes/depois) ficam como placeholder vazio mantendo
+    // altura. priority=true (primeiros 8 cards above-the-fold) montam sempre.
+    const [inView, setInView] = useState(priority === true);
+    useEffect(() => {
+      if (inView) return; // já está montado, IO desliga
+      if (!ref.current) return;
+      const el = ref.current;
+      if (typeof IntersectionObserver === 'undefined') {
+        // SSR/jsdom: monta direto
+        setInView(true);
+        return;
       }
-    >
-      {inView && selectionMode && onToggleSelect && (
-        <div
-          className="absolute left-2 top-2 z-20"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSelect(product.id);
-          }}
-        >
-          <SelectionCheckbox
-            checked={!!isSelected}
-            onChange={() => onToggleSelect(product.id)}
-            size="md"
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              setInView(true);
+              io.disconnect();
+              break;
+            }
+          }
+        },
+        { rootMargin: '800px 0px', threshold: 0 },
+      );
+      io.observe(el);
+      return () => io.disconnect();
+    }, [inView, priority]);
+
+    useEffect(() => {
+      if (reducedMotion) {
+        setHasAnimated(true);
+        return;
+      }
+      if (!hasAnimated) {
+        const timer = setTimeout(() => setHasAnimated(true), Math.min(index * 80, 800));
+        return () => clearTimeout(timer);
+      }
+    }, [hasAnimated, index, reducedMotion]);
+
+    const isSelected = selectionMode && selectedIds?.has(product.id);
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          reducedMotion
+            ? ''
+            : `transition-all duration-500 ease-out ${
+                hasAnimated
+                  ? 'translate-y-0 scale-100 opacity-100'
+                  : 'translate-y-8 scale-95 opacity-0'
+              }`,
+          'product-card-cv relative',
+          !inView && 'min-h-[480px] sm:min-h-[520px]',
+          isSelected && 'rounded-xl ring-2 ring-primary/40',
+        )}
+        style={
+          reducedMotion
+            ? undefined
+            : {
+                transitionDelay: hasAnimated ? '0ms' : `${Math.min(index * 80, 800)}ms`,
+              }
+        }
+      >
+        {inView && selectionMode && onToggleSelect && (
+          <div
+            className="absolute left-2 top-2 z-20"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSelect(product.id);
+            }}
+          >
+            <SelectionCheckbox
+              checked={!!isSelected}
+              onChange={() => onToggleSelect(product.id)}
+              size="md"
+            />
+          </div>
+        )}
+        {inView ? (
+          <ProductCard
+            product={product}
+            hideCategoryBadges={hideCategoryBadges}
+            {...restProps}
+            priority={priority}
+            onClick={selectionMode ? () => onToggleSelect?.(product.id) : restProps.onClick}
           />
-        </div>
-      )}
-      {inView ? (
-        <ProductCard
-          product={product}
-          hideCategoryBadges={hideCategoryBadges}
-          {...restProps}
-          priority={priority}
-          onClick={selectionMode ? () => onToggleSelect?.(product.id) : restProps.onClick}
-        />
-      ) : (
-        /* Placeholder leve que espelha exatamente a estrutura do card real para evitar saltos (CLS) */
-        <ProductCardSkeleton
-          variant="default"
-          animate={false}
-          hideCategoryBadges={hideCategoryBadges}
-        />
-      )}
-    </div>
-  );
-});
+        ) : (
+          /* Placeholder leve que espelha exatamente a estrutura do card real para evitar saltos (CLS) */
+          <ProductCardSkeleton
+            variant="default"
+            animate={false}
+            hideCategoryBadges={hideCategoryBadges}
+          />
+        )}
+      </div>
+    );
+  },
+);
 
 const columnClasses: Record<number, string> = {
   3: 'grid-cols-2 sm:grid-cols-3',
@@ -170,6 +173,7 @@ const columnClasses: Record<number, string> = {
   8: 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8',
 };
 
+// eslint-disable-next-line prefer-arrow-callback
 export const ProductGrid = memo(function ProductGrid({
   products,
   isLoading,
@@ -228,10 +232,20 @@ export const ProductGrid = memo(function ProductGrid({
     () => (hasActiveColorFilter ? products.map((p) => p.id) : []),
     [products, hasActiveColorFilter],
   );
+  // ANTI N+1: um único batch query para mv_stock_velocity em vez de 1 por card.
+  // Popula o React Query cache individual via setQueryData.
+  const _velocityPrefetch = useMemo(() => products.map((p) => p.id), [products]);
+  useStockVelocityPrefetch(_velocityPrefetch);
+
+  const productMinQuantities = useMemo(
+    () => new Map(products.map((p) => [p.id, p.minQuantity])),
+    [products],
+  );
   const { data: colorEnrichmentMap } = useColorEnrichment({
     productIds: allProductIds,
     colorGroups: activeColorFilter?.groups ?? [],
     colorVariations: activeColorFilter?.variations ?? [],
+    productMinQuantities,
   });
 
   useEffect(() => {

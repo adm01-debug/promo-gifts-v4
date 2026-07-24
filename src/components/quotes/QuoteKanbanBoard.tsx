@@ -44,6 +44,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { formatBRL, formatBRLShort } from '@/utils/currency';
+import { isValidQuoteTransition } from '@/lib/quote-status-config';
 
 type QuoteStatus = Quote['status'];
 
@@ -54,16 +55,6 @@ interface Column {
   color: string;
   bgColor: string;
 }
-
-const QUOTE_VALID_TRANSITIONS: Record<string, QuoteStatus[]> = {
-  draft: ['pending', 'sent'],
-  pending_approval: ['draft'],
-  pending: ['draft', 'sent', 'expired'],
-  sent: ['approved', 'rejected', 'pending', 'expired'],
-  approved: ['sent'],
-  rejected: ['sent'],
-  expired: ['pending', 'sent'],
-} as const;
 
 const columns: Column[] = [
   {
@@ -346,8 +337,8 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
     const { active, over } = event;
     if (!over) return;
 
-    const activeQuote = quotes.find((q) => q.id === active.id);
-    if (!activeQuote) return;
+    const draggedQuote = quotes.find((q) => q.id === active.id);
+    if (!draggedQuote) return;
 
     // Find target column - check if dropped on column or another card
     let targetStatus: QuoteStatus | null = null;
@@ -364,18 +355,18 @@ export function QuoteKanbanBoard({ quotes }: QuoteKanbanBoardProps) {
       }
     }
 
-    if (targetStatus && targetStatus !== activeQuote.status) {
-      if (!QUOTE_VALID_TRANSITIONS[activeQuote.status]?.includes(targetStatus)) {
+    if (targetStatus && targetStatus !== draggedQuote.status) {
+      if (!isValidQuoteTransition(draggedQuote.status, targetStatus)) {
         toast.error('Transição inválida', {
-          description: `Não é possível mover de "${columns.find((c) => c.id === activeQuote.status)?.title}" para "${columns.find((c) => c.id === targetStatus)?.title}"`,
+          description: `Não é possível mover de "${columns.find((c) => c.id === draggedQuote.status)?.title}" para "${columns.find((c) => c.id === targetStatus)?.title}"`,
         });
         return;
       }
 
-      if (!activeQuote.id) return;
+      if (!draggedQuote.id) return;
 
       // Marca o card como "salvando" para feedback visual imediato (animate-pulse)
-      const cardId = activeQuote.id;
+      const cardId = draggedQuote.id;
       setSavingIds((prev) => new Set([...prev, cardId]));
 
       try {

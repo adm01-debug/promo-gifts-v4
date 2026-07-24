@@ -64,3 +64,38 @@ Deno.test("ProductWebhookV1 rejects metadata com array gigante", () => {
   const result = ProductWebhookV1.safeParse(payload);
   assertEquals(result.success, false);
 });
+
+Deno.test("ProductWebhookV1 rejects variation com keys demais", () => {
+  const manyKeys = Object.fromEntries(Array.from({ length: 31 }, (_, i) => [`k${i}`, i]));
+  const payload = {
+    action: "upsert",
+    product: {
+      sku: "SKU-1",
+      name: "Produto",
+      price: 10,
+      variations: [{ sku: "VAR-1", ...manyKeys }],
+    },
+  };
+
+  const result = ProductWebhookV1.safeParse(payload);
+  assertEquals(result.success, false);
+});
+
+Deno.test("ProductWebhookV1 rejects tags massivas", () => {
+  const tags = Object.fromEntries(
+    Array.from({ length: 101 }, (_, i) => [`tag${i}`, ["promo"]]),
+  );
+
+  const payload = {
+    action: "upsert",
+    product: {
+      sku: "SKU-1",
+      name: "Produto",
+      price: 10,
+      tags,
+    },
+  };
+
+  const result = ProductWebhookV1.safeParse(payload);
+  assertEquals(result.success, false);
+});

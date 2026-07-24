@@ -42,7 +42,9 @@ export function usePhotoDownload() {
 
             // Small delay between downloads to avoid browser blocking
             if (i < images.length - 1) {
-              await new Promise((r) => setTimeout(r, 300));
+              await new Promise((r) => {
+                setTimeout(r, 300);
+              });
             }
           } catch {
             // Fallback: open in new tab

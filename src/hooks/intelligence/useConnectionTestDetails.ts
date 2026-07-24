@@ -2,12 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { ConnectionType, ErrorKind } from '@/hooks/intelligence/useConnectionTester';
 import { inferErrorKind } from '@/lib/error-kind-inference';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export interface TestDetails {
   id: string;
   tested_at: string;
   ok: boolean;
-  triggered_by: 'manual' | 'cron' | 'webhook';
+  triggered_by: 'cron' | 'manual' | 'webhook';
   triggered_by_user_email?: string | null;
   request: { method: string | null; url: string | null };
   response: {
@@ -30,7 +31,7 @@ export interface TestDetails {
 interface Args {
   open: boolean;
   type: ConnectionType;
-  envKey?: 'promobrind' | 'crm';
+  envKey?: 'crm' | 'promobrind';
   connectionId?: string;
   /** Quando presente, busca este registro específico em vez do mais recente. */
   historyId?: string;
@@ -51,15 +52,18 @@ export function useConnectionTestDetails({ open, type, envKey, connectionId, his
     setLoading(true);
     setError(null);
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('connection-tester', {
-        body: {
-          action: 'last_test_full',
-          type,
-          env_key: envKey,
-          connection_id: connectionId,
-          id: historyId,
+      const { data, error: invokeError } = await invokeEdge<{ details?: TestDetails | null }>(
+        'connection-tester',
+        {
+          body: {
+            action: 'last_test_full',
+            type,
+            env_key: envKey,
+            connection_id: connectionId,
+            id: historyId,
+          },
         },
-      });
+      );
       if (invokeError) throw invokeError;
       const raw = (data?.details ?? null) as TestDetails | null;
       // Fallback: registros antigos podem ter `error.kind = null`. Inferimos o

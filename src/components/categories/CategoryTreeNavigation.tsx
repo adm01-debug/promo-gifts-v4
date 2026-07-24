@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Clickable } from '@/components/shared/Clickable';
 
 interface CategoryTreeNavigationProps {
   onSelectCategory?: (category: CategoryTreeItem) => void;
@@ -38,9 +39,12 @@ function TreeNode({
 
   return (
     <div>
-      <div
+      <Clickable
+        isSelected={isSelected}
+        isExpanded={hasChildren ? isExpanded : undefined}
+        showFocusRing
         className={cn(
-          'flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 transition-colors',
+          'flex items-center gap-1 rounded-md px-2 py-1.5 transition-colors',
           'hover:bg-accent/50',
           isSelected && 'bg-primary/10 font-medium text-primary',
         )}
@@ -88,7 +92,7 @@ function TreeNode({
             {node.children.length}
           </Badge>
         )}
-      </div>
+      </Clickable>
 
       {/* Filhos */}
       {hasChildren && isExpanded && (
@@ -121,9 +125,10 @@ function SearchResult({
   onSelect: () => void;
 }) {
   return (
-    <div
+    <Clickable
+      isSelected={isSelected}
       className={cn(
-        'flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 transition-colors',
+        'flex items-center gap-2 rounded-md px-3 py-2 transition-colors',
         'hover:bg-accent/50',
         isSelected && 'bg-primary/10 text-primary',
       )}
@@ -139,7 +144,7 @@ function SearchResult({
       <Badge variant="outline" className="text-xs">
         Nível {category.level}
       </Badge>
-    </div>
+    </Clickable>
   );
 }
 

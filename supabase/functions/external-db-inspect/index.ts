@@ -86,12 +86,12 @@ Deno.serve(async (req) => {
 
     const externalSupabase = createClient(externalUrl, externalKey);
 
-    // Inspect specific table columns
+    // Inspect specific table columns + row count (service-role bypassa RLS — só leitura)
     if (mode === 'columns' && tableName) {
       try {
-        const { data, error } = await externalSupabase
+        const { data, error, count } = await externalSupabase
           .from(tableName)
-          .select('*')
+          .select('*', { count: 'exact', head: false })
           .limit(1);
 
         if (error) {
@@ -102,6 +102,8 @@ Deno.serve(async (req) => {
         return jsonResponse({
           success: true,
           table: tableName,
+          rowCount: count ?? 0,
+          sampleRow: data?.[0] ?? null,
           columns,
           columnTypes: columns.map(col => ({
             name: col,
@@ -135,6 +137,10 @@ Deno.serve(async (req) => {
       'ramo_atividade', 'ramo_atividade_filho', 'produto_ramo_atividade',
       'bitrix_clients', 'organizations', 'client_contacts', 'business_sectors',
       'mockup_drafts', 'generated_mockups',
+      // Arquitetura de Gravação (auditoria do vínculo product↔técnica)
+      'print_area_techniques', 'v_print_area_techniques_public',
+      'tabela_preco_gravacao_oficial', 'tabela_preco_gravacao_oficial_faixa',
+      'tecnicas_gravacao', 'v_audit_paradoxos_gravacao',
     ];
 
     const results: Array<{ name: string; exists: boolean; columns: string[]; rowCount: number; error?: string }> = [];

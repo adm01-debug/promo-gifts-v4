@@ -4,7 +4,7 @@
  * Converts raw PromobrindProduct to the internal Product format.
  */
 import { getCatalogStockStatus, type CatalogStockStatus } from '@/lib/catalog-stock-status';
-import type { Product } from '@/types/product-catalog';
+import type { Product, ProductVariation } from '@/types/product-catalog';
 import {
   type PromobrindProduct,
   getProductImageUrl,
@@ -13,8 +13,10 @@ import {
 } from '@/lib/external-db';
 import { normalizeColors } from '@/utils/product-colors';
 
-function getStockStatus(stock: number): CatalogStockStatus {
-  return getCatalogStockStatus(stock);
+function getStockStatus(stock: number, minQuantity?: number | null): CatalogStockStatus {
+  // Passa min_quantity para a SSOT: estoque positivo abaixo do mínimo pedível
+  // do fornecedor é tratado como zerado (paridade com o catálogo lightweight).
+  return getCatalogStockStatus(stock, undefined, minQuantity);
 }
 
 // Janela de novidade alinhada ao módulo Novidades (useNovelties.NOVELTY_WINDOW_DAYS = 30)
@@ -62,6 +64,30 @@ function normalizeMarketingTags(rawTags: unknown): Product['tags'] {
   };
 }
 
+/**
+ * Extrai tags descritivas planas da coluna `products.tags`.
+ *
+ * No catálogo de produção a coluna `tags` é frequentemente um array plano de
+ * palavras-chave (["caneta", "metal"]). Esse formato não casa com a estrutura
+ * de marketing esperada por `normalizeMarketingTags`, então preservamos os
+ * termos aqui para que o Match de Produtos possa usá-los como sinal de
+ * similaridade. Suporta também o formato objeto `{ descritivas: [...] }`.
+ */
+function extractDescriptiveTags(rawTags: unknown): string[] {
+  let list: string[];
+  if (Array.isArray(rawTags)) {
+    list = parseTagList(rawTags);
+  } else if (rawTags && typeof rawTags === 'object') {
+    const t = rawTags as Record<string, unknown>;
+    list = parseTagList(t.descritivas ?? t.descriptive ?? t.keywords ?? t.palavrasChave);
+  } else if (typeof rawTags === 'string') {
+    list = parseTagList(rawTags);
+  } else {
+    return [];
+  }
+  return list.map((t) => t.trim()).filter(Boolean);
+}
+
 /** Converte produto Promobrind para formato interno */
 export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   const imageUrl = getProductImageUrl(p);
@@ -71,7 +97,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   // Extrair imagens
   let images: string[] = [];
   if (p.images && Array.isArray(p.images)) {
-    images = (p.images as (string | Record<string, string>)[])
+    images = (p.images as (Record<string, string> | string)[])
       .map((img) => {
         if (typeof img === 'string') return img;
         return img.url || img.src || img.image_url || '';
@@ -81,18 +107,8 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   if (images.length === 0 && imageUrl) images = [imageUrl];
   if (images.length === 0) images = ['/placeholder.svg'];
 
-  type InternalVariation = {
-    id: string;
-    sku: string;
-    color: { name: string; hex: string };
-    stock: number;
-    image: string | null;
-    images: string[];
-    videos: unknown[];
-    size_code: string | null;
-  };
   // Mapear variações
-  const variations: InternalVariation[] = [];
+  const variations: ProductVariation[] = [];
   if (p.colors && Array.isArray(p.colors)) {
     p.colors.forEach((c, index: number) => {
       if (typeof c === 'object' && c !== null && 'name' in c) {
@@ -122,11 +138,16 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   return {
     id: p.id,
     name: p.name,
-    description: p.description || p.short_description || p.meta_description || null,
+    description:
+      (p.description?.trim() || null) ??
+      (p.short_description?.trim() || null) ??
+      (p.meta_description?.trim() || null) ??
+      null,
     shortDescription: p.short_description ?? '',
     category_id: p.category_id || p.main_category_id || null,
     category_name: p.category_name || null,
     price: getProductPrice(p),
+    sale_price: typeof p.sale_price === 'number' ? p.sale_price : undefined,
     image_url: images[0],
     primary_image_url: p.primary_image_url || null,
     primary_image_fallback_url: p.primary_image_fallback_url || null,
@@ -135,13 +156,13 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     images,
     sku: p.sku,
     stock,
-    colors: colors as never,
+    colors,
     materials: parseMaterials(p.materials),
     supplier_reference: p.supplier_reference,
     brand: p.brand,
-    is_active: p.is_active || p.active,
+    is_active: p.is_active ?? p.active,
     minQuantity: p.min_quantity || 1,
-    stockStatus: getStockStatus(stock),
+    stockStatus: getStockStatus(stock, p.min_quantity),
     featured: Boolean(p.is_featured || p.is_bestseller),
     newArrival:
       Boolean(p.is_new) || isWithinNoveltyWindow((p as { created_at?: unknown }).created_at),
@@ -157,6 +178,7 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
       name: p.supplier_name || p.brand || 'Fornecedor',
     },
     tags: normalizeMarketingTags(p.tags),
+    descriptiveTags: extractDescriptiveTags(p.tags),
     dimensions: {
       height_cm: p.height_cm,
       width_cm: p.width_cm,
@@ -192,27 +214,50 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
         : null) ??
       (typeof p.updated_at === 'string' && p.updated_at.trim() !== '' ? p.updated_at : null),
     priceFreshnessThresholdDays: p.price_freshness_threshold_days ?? null,
-    variations: variations.length > 0 ? (variations as never) : undefined,
+    variations: variations.length > 0 ? variations : undefined,
     productVideos: p.product_videos?.length ? p.product_videos : undefined,
     kitItems:
       p.kit_components?.map((c) => {
         const ck = c as Record<string, unknown>;
+        // Normaliza galeria: aceita string[], {url}[] ou {primary_image_url}[]
+        const rawImages = ck.images;
+        const gallery: string[] = Array.isArray(rawImages)
+          ? rawImages
+              .map((img) => {
+                if (typeof img === 'string') return img;
+                if (img && typeof img === 'object') {
+                  const o = img as Record<string, unknown>;
+                  return (o.url ?? o.image_url ?? o.primary_image_url ?? null) as string | null;
+                }
+                return null;
+              })
+              .filter((u): u is string => typeof u === 'string' && u.length > 0)
+          : [];
+        // Garantir que a capa esteja na galeria
+        const primaryImage = c.primary_image_url || null;
+        if (primaryImage && !gallery.includes(primaryImage)) {
+          gallery.unshift(primaryImage);
+        }
         return {
           id: c.id,
           productId: c.component_product_id || c.id,
           productName: c.component_name || 'Componente',
           quantity: c.quantity || 1,
           sku: c.component_sku || c.component_code || '',
-          imageUrl: c.primary_image_url || null,
-          isOptional: c.is_optional || false,
-          isPackaging: c.is_packaging || false,
-          isReplaceable: c.is_replaceable || false,
-          allowsPersonalization: c.allows_personalization || false,
-          material: c.material || null,
-          weightG: c.weight_g || null,
+          imageUrl: primaryImage,
+          images: gallery.length > 0 ? gallery : null,
+          isOptional: c.is_optional ?? false,
+          isPackaging: c.is_packaging ?? false,
+          isReplaceable: c.is_replaceable ?? false,
+          allowsPersonalization: c.allows_personalization ?? false,
+          material: c.material ?? null,
+          weightG: c.weight_g ?? null,
           heightMm: c.height_mm ?? null,
           widthMm: c.width_mm ?? null,
           lengthMm: c.length_mm ?? null,
+          diameterMm: (ck.diameter_mm as number | null | undefined) ?? null,
+          circumferenceMm: (ck.circumference_mm as number | null | undefined) ?? null,
+          volumeMl: (ck.capacity_ml as number | null | undefined) ?? null,
           componentTypeCode: (ck.component_type_code ?? null) as string | null,
           supplierComponentCode: (ck.supplier_component_code ?? null) as string | null,
           description: (ck.component_description ?? null) as string | null,
@@ -226,5 +271,10 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     aiSummary: p.ai_summary ?? null,
     aiVersion: typeof p.ai_version === 'number' ? p.ai_version : null,
     aiGeneratedAt: p.ai_generated_at ?? null,
+    // V2 — passthrough do JSONB populado por fn_rebuild_color_swatches (trigger no BD externo).
+    color_swatches: (Array.isArray(p.color_swatches)
+      ? (p.color_swatches as Product['color_swatches'])
+      : null),
+    has_colors: typeof p.has_colors === 'boolean' ? p.has_colors : null,
   };
 }

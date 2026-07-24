@@ -29,7 +29,7 @@ export interface IndustryTrendItem {
   unitsSold: number;
   ordersCount: number;
   avgPrice: number;
-  trend: 'up' | 'stable' | 'down';
+  trend: 'down' | 'stable' | 'up';
 }
 
 export interface IndustryTrendsResult {
@@ -45,8 +45,8 @@ function deriveCategory(name: string): string {
   if (/mochila|bolsa/.test(lower)) return 'Mochilas';
   if (/agenda|planner/.test(lower)) return 'Agendas';
   if (/power\s*bank|carregador|fone|bluetooth/.test(lower)) return 'Eletrônicos';
-  if (/bloco/.test(lower)) return 'Blocos';
-  if (/kit/.test(lower)) return 'Kits';
+  if (lower.includes('bloco')) return 'Blocos';
+  if (lower.includes('kit')) return 'Kits';
   return 'Outros';
 }
 

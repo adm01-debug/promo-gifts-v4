@@ -126,6 +126,7 @@ function assertInvariants(
 
 describe('useProductIntelligenceBadges — 500 simulações PRNG', () => {
   for (let seed = 1; seed <= 500; seed++) {
+    // eslint-disable-next-line @typescript-eslint/no-loop-func
     it(`simulação #${seed} mantém invariantes`, () => {
       const rng = makePrng(seed);
       const threshold = Math.max(1, Math.floor(rng() * 100));
@@ -247,6 +248,7 @@ describe('useProductIntelligenceBadges — fuzz nos thresholds do admin', () => 
   ];
 
   for (const c of cases) {
+    // eslint-disable-next-line @typescript-eslint/no-loop-func
     it(`${c.name} → ${c.expected ? 'qualifica' : 'não qualifica'}`, () => {
       velMock = [{ avg_daily_depletion_7d: c.avg }];
       settingsMock = {

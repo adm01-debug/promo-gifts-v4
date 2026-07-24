@@ -42,6 +42,9 @@ export function QuoteVersionHistory({
     setIsCreating(false);
     if (newQuote?.id) {
       onCreateVersion?.();
+      // Refresh version list so it includes the new version when the user
+      // navigates back to the parent quote (avoids stale list).
+      await fetchVersions();
       navigate(`/orcamentos/${newQuote.id}`);
     }
   };
@@ -150,10 +153,10 @@ export function QuoteVersionHistory({
                         <Badge
                           variant={
                             (statusCfg?.badgeVariant as
-                              | 'secondary'
                               | 'default'
                               | 'destructive'
-                              | 'outline') || 'secondary'
+                              | 'outline'
+                              | 'secondary') || 'secondary'
                           }
                           className="h-4 flex-shrink-0 px-1 text-[10px]"
                         >

@@ -38,7 +38,7 @@ export interface TrendingProduct {
   totalRevenue: number;
   quoteCount: number;
   conversionRate: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: 'down' | 'stable' | 'up';
 }
 
 export interface SegmentData {
@@ -341,14 +341,16 @@ export function useTrendingProducts(
           ...p,
           conversionRate: p.quoteCount > 0 ? Math.round((p.orderCount / p.quoteCount) * 100) : 100,
           trend: (p.totalRevenue > 1000 ? 'up' : p.totalRevenue > 200 ? 'stable' : 'down') as
-            | 'up'
             | 'down'
-            | 'stable',
+            | 'stable'
+            | 'up',
         }))
         .sort((a, b) => b.totalRevenue - a.totalRevenue)
         .slice(0, limit);
     },
     staleTime: 1000 * 60 * 5,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
     enabled: !!user && (!hasFilter || productIds !== undefined),
   });
 }
@@ -373,27 +375,35 @@ export function useSegmentAnalysis(
       if (hasFilter && productIds) {
         const pids = Array.from(productIds).slice(0, 200);
         if (!pids.length) return [];
-        const { data: oi } = await supabase
+        // BUG-COMMERCIALINTEL-SEGMENTS-OI-SELECT-SILENT-FAIL FIX: { data: oi } without error
+        // check — RLS failure silently returned [] making queryFn succeed with empty segments.
+        const { data: oi, error: oiErr } = await supabase
           .from('order_items')
           .select('order_id')
           .gte('created_at', since)
           .in('product_id', pids);
+        if (oiErr) throw oiErr;
         const orderIds = [
           ...new Set((oi || []).map((o) => o.order_id).filter(Boolean)),
         ] as string[];
         if (!orderIds.length) return [];
-        const { data: orders } = await supabase
+        // BUG-COMMERCIALINTEL-SEGMENTS-ORDERS-SELECT-SILENT-FAIL FIX: { data: orders } without
+        // error check — failure silently produced empty segments instead of triggering retry.
+        const { data: orders, error: ordersErr } = await supabase
           // rls-allow: respeita can_view_all_sales server-side
           .from('orders')
           .select('id, client_company, total')
           .in('id', orderIds.slice(0, 200));
+        if (ordersErr) throw ordersErr;
         return aggregateSegments(orders || []);
       }
-      const { data: orders } = await supabase
+      // BUG-COMMERCIALINTEL-SEGMENTS-ALLORDERS-SELECT-SILENT-FAIL FIX
+      const { data: orders, error: ordersErr } = await supabase
         // rls-allow: respeita can_view_all_sales server-side
         .from('orders')
         .select('client_company, total')
         .gte('created_at', since);
+      if (ordersErr) throw ordersErr;
       return aggregateSegments(orders || []);
     },
     staleTime: 1000 * 60 * 5,
@@ -522,27 +532,34 @@ export function useTopClients(
       if (hasFilter && productIds) {
         const pids = Array.from(productIds).slice(0, 200);
         if (!pids.length) return [];
-        const { data: oi } = await supabase
+        // BUG-TOPCLIENTS-OI-SELECT-SILENT-FAIL FIX: { data: oi } without error check —
+        // RLS failure silently returned [] making queryFn succeed with empty client list.
+        const { data: oi, error: oiErr } = await supabase
           .from('order_items')
           .select('order_id, quantity, unit_price')
           .gte('created_at', since)
           .in('product_id', pids);
+        if (oiErr) throw oiErr;
         const orderIds = [
           ...new Set((oi || []).map((o) => o.order_id).filter(Boolean)),
         ] as string[];
         if (!orderIds.length) return [];
-        const { data: orders } = await supabase
+        // BUG-TOPCLIENTS-ORDERS-FILTERED-SELECT-SILENT-FAIL FIX
+        const { data: orders, error: ordersFilteredErr } = await supabase
           // rls-allow: respeita can_view_all_sales server-side
           .from('orders')
           .select('id, client_name, client_company, total')
           .in('id', orderIds.slice(0, 200));
+        if (ordersFilteredErr) throw ordersFilteredErr;
         return aggregateClients(orders || []);
       }
-      const { data: orders } = await supabase
+      // BUG-TOPCLIENTS-ALLORDERS-SELECT-SILENT-FAIL FIX
+      const { data: orders, error: ordersErr } = await supabase
         // rls-allow: respeita can_view_all_sales server-side
         .from('orders')
         .select('client_name, client_company, total')
         .gte('created_at', since);
+      if (ordersErr) throw ordersErr;
       return aggregateClients(orders || []);
     },
     staleTime: 1000 * 60 * 5,
@@ -568,7 +585,9 @@ export function useCategoryRanking(
     queryKey: ['commercial-category-ranking', user?.id, days, categoryId, supplierId, productId],
     queryFn: async (): Promise<CategoryRankingItem[]> => {
       const pids = productIds ? Array.from(productIds).slice(0, 200) : undefined;
-      const { data: orderItems } = pids
+      // BUG-COMMERCIAL-CATRANK-SILENT-FAIL FIX: { data } without error check silently returned
+      // empty results on RLS denial — now throws so TanStack Query retries/surfaces the error.
+      const { data: orderItems, error: orderErr } = pids
         ? await supabase
             .from('order_items')
             .select('product_id, quantity, unit_price')
@@ -578,6 +597,7 @@ export function useCategoryRanking(
             .from('order_items')
             .select('product_id, quantity, unit_price')
             .gte('created_at', since);
+      if (orderErr) throw orderErr;
 
       const { fetchPromobrindProducts } = await import('@/lib/external-db');
       const products = await fetchPromobrindProducts({ limit: 5000 });
@@ -667,7 +687,8 @@ export function useSupplierSales(
     queryKey: ['commercial-supplier-sales', user?.id, days, categoryId, supplierId],
     queryFn: async () => {
       const pids = productIds ? Array.from(productIds).slice(0, 200) : undefined;
-      const { data: orderItems } = pids
+      // BUG-COMMERCIAL-SUPPLIERSALES-SILENT-FAIL FIX: { data } without error check.
+      const { data: orderItems, error: orderErr } = pids
         ? await supabase
             .from('order_items')
             .select('product_id, product_name, quantity, unit_price')
@@ -677,6 +698,7 @@ export function useSupplierSales(
             .from('order_items')
             .select('product_id, product_name, quantity, unit_price')
             .gte('created_at', since);
+      if (orderErr) throw orderErr;
       if (!orderItems?.length) return [];
 
       const { fetchPromobrindProducts } = await import('@/lib/external-db');

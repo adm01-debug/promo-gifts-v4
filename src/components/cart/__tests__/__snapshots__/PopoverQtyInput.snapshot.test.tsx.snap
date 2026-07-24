@@ -1,0 +1,26 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PopoverQtyInput — snapshot de feedback visual > clamped: 9999999 → ring âmbar + mensagem "Valor limitado a 999.999" > clamped 1`] = `
+"INPUT: <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Quantidade de Item snap" data-testid="cart-item-qty-snap-clamp" data-feedback="clamped" class="m-0 flex h-6 w-10 appearance-none border-x border-border/30 text-center text-[11px] font-bold tabular-nums text-foreground transition-shadow duration-200 [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/30 [&amp;::-webkit-inner-spin-button]:appearance-none [&amp;::-webkit-outer-spin-button]:appearance-none ring-1 ring-warning/60 bg-warning/10" value="999999" aria-describedby="cart-item-qty-fb-snap-clamp">
+LIVE : <span id="cart-item-qty-fb-snap-clamp" role="status" aria-live="polite" class="sr-only">Valor limitado a 999.999</span>"
+`;
+
+exports[`PopoverQtyInput — snapshot de feedback visual > committed (Enter): valor válido persiste e feedback fica idle > committed 1`] = `
+"INPUT: <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Quantidade de Item snap" data-testid="cart-item-qty-snap-cmt" data-feedback="idle" class="m-0 flex h-6 w-10 appearance-none border-x border-border/30 bg-muted/20 text-center text-[11px] font-bold tabular-nums text-foreground transition-shadow duration-200 [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/30 [&amp;::-webkit-inner-spin-button]:appearance-none [&amp;::-webkit-outer-spin-button]:appearance-none" value="80">
+LIVE : <none>"
+`;
+
+exports[`PopoverQtyInput — snapshot de feedback visual > invalid: vazio → ring vermelho + aria-invalid + mensagem "Valor inválido" > invalid 1`] = `
+"INPUT: <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Quantidade de Item snap" data-testid="cart-item-qty-snap-inv" data-feedback="invalid" class="m-0 flex h-6 w-10 appearance-none border-x border-border/30 text-center text-[11px] font-bold tabular-nums text-foreground transition-shadow duration-200 [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/30 [&amp;::-webkit-inner-spin-button]:appearance-none [&amp;::-webkit-outer-spin-button]:appearance-none ring-1 ring-destructive/70 bg-destructive/10" value="10" aria-invalid="true" aria-describedby="cart-item-qty-fb-snap-inv">
+LIVE : <span id="cart-item-qty-fb-snap-inv" role="status" aria-live="polite" class="sr-only">Valor inválido — quantidade restaurada</span>"
+`;
+
+exports[`PopoverQtyInput — snapshot de feedback visual > reverted (Esc): valor volta ao último válido e feedback fica idle > reverted 1`] = `
+"INPUT: <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Quantidade de Item snap" data-testid="cart-item-qty-snap-rev" data-feedback="idle" class="m-0 flex h-6 w-10 appearance-none border-x border-border/30 bg-muted/20 text-center text-[11px] font-bold tabular-nums text-foreground transition-shadow duration-200 [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/30 [&amp;::-webkit-inner-spin-button]:appearance-none [&amp;::-webkit-outer-spin-button]:appearance-none" value="42">
+LIVE : <none>"
+`;
+
+exports[`PopoverQtyInput — snapshot de feedback visual > sanitized: vírgula → ring âmbar + mensagem "Apenas dígitos" > sanitized 1`] = `
+"INPUT: <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Quantidade de Item snap" data-testid="cart-item-qty-snap-san" data-feedback="sanitized" class="m-0 flex h-6 w-10 appearance-none border-x border-border/30 text-center text-[11px] font-bold tabular-nums text-foreground transition-shadow duration-200 [appearance:textfield] focus:bg-primary/5 focus:outline-none focus:ring-1 focus:ring-primary/30 [&amp;::-webkit-inner-spin-button]:appearance-none [&amp;::-webkit-outer-spin-button]:appearance-none ring-1 ring-warning/60 bg-warning/10" value="10" aria-describedby="cart-item-qty-fb-snap-san">
+LIVE : <span id="cart-item-qty-fb-snap-san" role="status" aria-live="polite" class="sr-only">Apenas dígitos são aceitos</span>"
+`;

@@ -19,7 +19,7 @@
 //     retornado por `.rpc()` em `Promise<T>` real, preservando o genérico.
 // ----------------------------------------------------------------------------
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2.49.4";
 
 /** Alias canônico do client default (schema "public"). */
 export type ServiceClient = SupabaseClient;

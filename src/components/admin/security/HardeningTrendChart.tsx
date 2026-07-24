@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -22,11 +23,16 @@ export function HardeningTrendChart() {
   useEffect(() => {
     const load = async () => {
       const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: rows } = await supabase
+      // BUG-HARDENINGTRENDCHART-SNAPSHOTS-SELECT-SILENT-FAIL FIX: { data: rows } without
+      // error check — RLS failure silently showed "ainda sem snapshots" empty state.
+      const { data: rows, error: snapshotsErr } = await supabase
         .from('hardening_health_snapshots')
         .select('id, snapshot_at, score, max_score, failures')
         .gte('snapshot_at', since)
         .order('snapshot_at', { ascending: true });
+      if (snapshotsErr) {
+        logger.error('[HardeningTrendChart] Failed to load snapshots:', snapshotsErr);
+      }
       setData((rows || []) as Snapshot[]);
       setLoading(false);
     };

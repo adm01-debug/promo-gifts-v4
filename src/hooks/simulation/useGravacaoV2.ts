@@ -138,7 +138,7 @@ export function useCustomizationPriceLegacy() {
     async (
       areaId: string,
       quantidade: number,
-      numCores: number = 1,
+      numCores = 1,
       larguraCm?: number | null,
       alturaCm?: number | null,
     ): Promise<CustomizationPriceV2 | null> => {
@@ -192,7 +192,7 @@ export function useCustomizationPriceLegacy() {
           p_altura_cm: alturaCm ?? null,
         });
 
-        if (rpcError) throw rpcError;
+        if (rpcError) throw new Error(String(rpcError));
         const rawResult = rawResultRaw as RpcCustomizationPriceResult | null;
         if (!rawResult?.success) {
           setLoading(false);

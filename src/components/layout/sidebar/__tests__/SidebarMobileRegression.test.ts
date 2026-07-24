@@ -31,6 +31,7 @@ describe('Global UI Regression — Zero Glow Policy', () => {
     'design-policy.ts',
     'index.css',
     'theme-presets.ts',
+    'theme-presets.test.ts', // test file that legitimately references shadow-glow to verify the property
     'design-polish.css',
     'animations.css',
   ];

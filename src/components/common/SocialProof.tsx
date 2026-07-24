@@ -1,4 +1,7 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Star,
@@ -18,7 +21,7 @@ import { cn } from '@/lib/utils';
 interface PopularityBadgeProps {
   views?: number;
   sales?: number;
-  variant?: 'views' | 'sales' | 'trending' | 'bestseller';
+  variant?: 'bestseller' | 'sales' | 'trending' | 'views';
   className?: string;
 }
 
@@ -70,23 +73,18 @@ export function PopularityBadge({
 
 // Trust badges
 type TrustBadgeType =
-  | 'verified'
-  | 'fast'
-  | 'quality'
-  | 'secure'
-  | 'popular'
-  | 'new'
-  | 'sale'
   | 'bestseller'
-  | 'freeShipping';
+  | 'fast'
+  | 'freeShipping'
+  | 'new'
+  | 'popular'
+  | 'quality'
+  | 'sale'
+  | 'secure'
+  | 'verified';
 
 // Highlighted badges get colored backgrounds; others stay text-only
-const HIGHLIGHTED_BADGES: Set<TrustBadgeType> = new Set([
-  'new',
-  'sale',
-  'bestseller',
-  'freeShipping',
-]);
+const HIGHLIGHTED_BADGES = new Set<TrustBadgeType>(['new', 'sale', 'bestseller', 'freeShipping']);
 
 interface TrustBadgeProps {
   type: TrustBadgeType;
@@ -154,50 +152,49 @@ const trustBadges: Record<
   },
 };
 
-export const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(function TrustBadge(
-  { type, tooltip, className },
-  ref,
-) {
-  const { icon: Icon, label, color, bg } = trustBadges[type];
-  const isHighlighted = HIGHLIGHTED_BADGES.has(type);
+export const TrustBadge = React.forwardRef<HTMLDivElement, TrustBadgeProps>(
+  ({ type, tooltip, className }, ref) => {
+    const { icon: Icon, label, color, bg } = trustBadges[type];
+    const isHighlighted = HIGHLIGHTED_BADGES.has(type);
 
-  const content = (
-    <div
-      ref={!tooltip ? ref : undefined}
-      className={cn(
-        'flex cursor-default items-center gap-1.5 transition-all duration-300',
-        isHighlighted && 'animate-scale-in',
-        isHighlighted
-          ? cn(
-              'rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm hover:scale-105 hover:shadow-md hover:brightness-110',
-              bg,
-            )
-          : 'text-sm text-muted-foreground hover:text-foreground',
-        className,
-      )}
-    >
-      <Icon className={cn('h-3.5 w-3.5 shrink-0', !isHighlighted && color)} />
-      <span>{label}</span>
-    </div>
-  );
+    const content = (
+      <div
+        ref={!tooltip ? ref : undefined}
+        className={cn(
+          'flex cursor-default items-center gap-1.5 transition-all duration-300',
+          isHighlighted && 'animate-scale-in',
+          isHighlighted
+            ? cn(
+                'rounded-full px-2.5 py-1 text-xs font-semibold shadow-sm hover:scale-105 hover:shadow-md hover:brightness-110',
+                bg,
+              )
+            : 'text-sm text-muted-foreground hover:text-foreground',
+          className,
+        )}
+      >
+        <Icon className={cn('h-3.5 w-3.5 shrink-0', !isHighlighted && color)} />
+        <span>{label}</span>
+      </div>
+    );
 
-  if (!tooltip) return content;
+    if (!tooltip) return content;
 
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div ref={ref} className="inline-flex">
-          {content}
-        </div>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">{tooltip}</TooltipContent>
-    </Tooltip>
-  );
-});
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div ref={ref} className="inline-flex">
+            {content}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">{tooltip}</TooltipContent>
+      </Tooltip>
+    );
+  },
+);
 
 // Trust badges row
 export const TrustBadgesRow = React.forwardRef<HTMLDivElement, { className?: string }>(
-  function TrustBadgesRow({ className }, ref) {
+  ({ className }, ref) => {
     return (
       <div ref={ref} className={cn('flex flex-wrap gap-4', className)}>
         <TrustBadge type="verified" />
@@ -248,19 +245,30 @@ interface DynamicTrustBadgesProps {
 }
 
 export function DynamicTrustBadges({ trust, productFlags, className }: DynamicTrustBadgesProps) {
+  // Respeita o toggle "Etiquetas dos Produtos" para badges de marketing.
+  // Badges de confiança do fornecedor (verified, fast, rating) são sempre exibidos.
+  // fix_version: badge-toggle-v2 — DynamicTrustBadges agora controlado pelo toggle
+  const location = useLocation();
+  const { actualTheme } = useTheme();
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) return actualTheme === 'dark' ? settings.dark : settings.light;
+    return s.badgesEnabled;
+  });
+
   const badges: React.ReactNode[] = [];
 
-  if (productFlags?.newArrival) {
+  if (badgesEnabled && productFlags?.newArrival) {
     badges.push(
       <TrustBadge key="new" type="new" tooltip="Produto adicionado recentemente ao catálogo" />,
     );
   }
-  if (productFlags?.onSale) {
+  if (badgesEnabled && productFlags?.onSale) {
     badges.push(
       <TrustBadge key="sale" type="sale" tooltip="Este produto está com preço promocional" />,
     );
   }
-  if (productFlags?.featured) {
+  if (badgesEnabled && productFlags?.featured) {
     badges.push(
       <TrustBadge
         key="bestseller"
@@ -319,7 +327,7 @@ export function DynamicTrustBadges({ trust, productFlags, className }: DynamicTr
 interface StarRatingProps {
   rating: number; // 0-5
   totalReviews?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   showCount?: boolean;
   className?: string;
 }

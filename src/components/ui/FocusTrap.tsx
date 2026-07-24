@@ -84,12 +84,10 @@ export function FocusTrap({
           e.preventDefault();
           lastElement.focus();
         }
-      } else {
+      } else if (document.activeElement === lastElement) {
         // Tab
-        if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement.focus();
-        }
+        e.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -133,7 +131,7 @@ export function FocusTrap({
         tabIndex={active ? 0 : -1}
         onFocus={focusLast}
         style={SENTINEL_STYLE}
-        aria-hidden="true"
+        aria-hidden={active ? undefined : true}
       />
 
       {children}
@@ -143,14 +141,14 @@ export function FocusTrap({
         tabIndex={active ? 0 : -1}
         onFocus={focusFirst}
         style={SENTINEL_STYLE}
-        aria-hidden="true"
+        aria-hidden={active ? undefined : true}
       />
     </div>
   );
 }
 
 // Hook for managing focus trap
-export function useFocusTrap(active: boolean = true) {
+export function useFocusTrap(active = true) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -194,11 +192,9 @@ export function useFocusTrap(active: boolean = true) {
           e.preventDefault();
           lastElement.focus();
         }
-      } else {
-        if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement.focus();
-        }
+      } else if (document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
       }
     };
 

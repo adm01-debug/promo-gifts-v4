@@ -100,4 +100,29 @@ describe("NoveltyGridCard", () => {
     const checkPath = document.querySelector("path[d='M2 6L5 9L10 3']");
     expect(checkPath).toBeInTheDocument();
   });
+
+  it("has aria-label containing product name for screen readers", async () => {
+    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
+    const article = document.querySelector("article")!;
+    expect(article.getAttribute("aria-label")).toContain("Copo Personalizado");
+  });
+
+  it("calls onSelect via Enter keydown for keyboard navigation", async () => {
+    const onSelect = vi.fn();
+    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} onSelect={onSelect} />);
+    const article = document.querySelector("article")!;
+    fireEvent.keyDown(article, { key: "Enter" });
+    expect(onSelect).toHaveBeenCalledWith("np-1");
+  });
+
+  it("calls onSelect via Space keydown for keyboard navigation", async () => {
+    const onSelect = vi.fn();
+    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} onSelect={onSelect} />);
+    const article = document.querySelector("article")!;
+    fireEvent.keyDown(article, { key: " " });
+    expect(onSelect).toHaveBeenCalledWith("np-1");
+  });
 });

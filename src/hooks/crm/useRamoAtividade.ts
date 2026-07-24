@@ -21,6 +21,9 @@ export function useRamosAtividade(apenasAtivos = true) {
       const { ramos } = await ramoAtividadeService.getRamos(apenasAtivos);
       return ramos;
     },
+    staleTime: 60 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 
@@ -36,6 +39,9 @@ export function useRamosAtividadeGroups() {
         totalSegmentos: groups.reduce((acc, g) => acc + g.total_segmentos, 0),
       };
     },
+    staleTime: 60 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 
@@ -50,6 +56,9 @@ export function useRamoAtividade(id: string | undefined) {
       return ramoAtividadeService.getRamoById(id);
     },
     enabled: !!id,
+    staleTime: 30 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 

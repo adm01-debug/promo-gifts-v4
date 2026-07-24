@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Fuzz da camada de sanitização do useIntelligenceBadgeSettings.
  *
@@ -22,9 +23,11 @@ vi.mock('@/integrations/supabase/client', () => ({
     from: () => ({
       select: () => ({
         eq: () => ({
+          // eslint-disable-next-line @typescript-eslint/require-await
           maybeSingle: async () => ({ data: { value: fetchValue }, error: null }),
         }),
       }),
+      // eslint-disable-next-line @typescript-eslint/require-await
       upsert: async () => ({ error: null }),
     }),
   },
@@ -58,8 +61,20 @@ describe('useIntelligenceBadgeSettings — fuzz na sanitização', () => {
     expectHot: boolean;
     expectBest: boolean;
   }> = [
-    { name: 'valor null → defaults', value: null, expectMin: 15, expectHot: true, expectBest: true },
-    { name: 'objeto vazio → defaults', value: {}, expectMin: 15, expectHot: true, expectBest: true },
+    {
+      name: 'valor null → defaults',
+      value: null,
+      expectMin: 15,
+      expectHot: true,
+      expectBest: true,
+    },
+    {
+      name: 'objeto vazio → defaults',
+      value: {},
+      expectMin: 15,
+      expectHot: true,
+      expectBest: true,
+    },
     {
       name: 'min negativo → fallback 15',
       value: { bestSeller: { minAvgDailyDepletion7d: -5 } },
@@ -126,6 +141,7 @@ describe('useIntelligenceBadgeSettings — fuzz na sanitização', () => {
   ];
 
   for (const c of cases) {
+    // eslint-disable-next-line @typescript-eslint/no-loop-func
     it(c.name, async () => {
       fetchValue = c.value;
       const { useIntelligenceBadgeSettingsValue } = await freshHook();

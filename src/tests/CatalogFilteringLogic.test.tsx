@@ -221,7 +221,14 @@ describe('useCatalogFiltering Performance & Deep Logic Audit', () => {
       }),
     );
 
-    expect(result.current.every((p) => (p.gender || '').toLowerCase() === 'masculino')).toBe(true);
+    // FIX-16 parity: produtos sem gênero (neutros) são incluídos em qualquer filtro de gênero.
+    // A asserção anterior verificava strict === 'masculino' — errado. Neutros ('' / null) passam.
+    expect(
+      result.current.every((p) => {
+        const g = (p.gender || '').toLowerCase();
+        return g === 'masculino' || g === '';
+      }),
+    ).toBe(true);
     expect(result.current.some((p) => p.id === '4')).toBe(true);
     expect(result.current.some((p) => p.id === '5')).toBe(false);
   });

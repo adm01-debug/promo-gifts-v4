@@ -28,7 +28,7 @@ import { loginViaUI } from "../helpers/auth";
 import { gotoAndSettle } from "../helpers/nav";
 
 const SUPABASE_URL =
-  process.env.VITE_SUPABASE_URL ?? "https://pqpdolkaeqlyzpdpbizo.supabase.co";
+  process.env.VITE_SUPABASE_URL ?? "https://doufsxqlfjyuvxuezpln.supabase.co";
 const PROJECT_REF = new URL(SUPABASE_URL).hostname.split(".")[0];
 const STORAGE_KEY = `sb-${PROJECT_REF}-auth-token`;
 const REFRESH_ENDPOINT_RE = new RegExp(

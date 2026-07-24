@@ -22,7 +22,7 @@ import { logger } from '@/lib/logger';
 import { pingHealth } from '@/lib/external-db/health-check';
 import { KillSwitchActiveError } from '@/lib/external-db/kill-switch-client';
 
-export type CloudStatus = 'healthy' | 'warming' | 'degraded' | 'down' | 'unknown';
+export type CloudStatus = 'degraded' | 'down' | 'healthy' | 'unknown' | 'warming';
 
 export interface CloudStatusSnapshot {
   status: CloudStatus;
@@ -113,7 +113,7 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
       },
       (e) => {
         clearTimeout(t);
-        reject(e);
+        reject(e instanceof Error ? e : new Error(String(e)));
       },
     );
   });
@@ -273,9 +273,11 @@ export async function ensureCloudReady(
 
   while (!isReady(snap.status) && performance.now() - start < totalTimeoutMs) {
     attempt++;
-    const delay = Math.min(1500, 200 * Math.pow(2, attempt - 1));
+    const delay = Math.min(1500, 200 * 2 ** (attempt - 1));
     if (performance.now() - start + delay >= totalTimeoutMs) break;
-    await new Promise((r) => setTimeout(r, delay));
+    await new Promise((r) => {
+      setTimeout(r, delay);
+    });
     snap = await probeCloudStatus(true);
   }
 

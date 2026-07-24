@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   getCdnUrl,
+  getProposalImageUrl,
   getSrcSet,
   getImageSizes,
   getOgImageUrl,
@@ -27,11 +28,11 @@ function rng(seed: number) {
     seed |= 0;
     seed = (seed + 0x6d2b79f5) | 0;
     let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    t ^= t + Math.imul(t ^ (t >>> 7), 61 | t);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-const pick = <T,>(r: () => number, arr: readonly T[]) => arr[Math.floor(r() * arr.length)];
+const pick = <T>(r: () => number, arr: readonly T[]) => arr[Math.floor(r() * arr.length)];
 
 const CDN_BASES = [
   'https://imagedelivery.net/AbC123xYz/0f1e2d3c-4b5a-6789-abcd-ef0123456789',
@@ -90,6 +91,45 @@ describe('getCdnUrl — fuzz (variantes × formas de URL)', () => {
   });
 });
 
+describe('getProposalImageUrl — variant quadrado p/ proposta (#8)', () => {
+  const H = 'vKMs9Ow8bA_enuhLXZ2HAw';
+  it('CF: troca qualquer variant por /small preservando host e id', () => {
+    for (const v of ['public', 'card', 'large', 'medium', 'thumbnail', 'small'] as const) {
+      expect(getProposalImageUrl(`https://imagedelivery.net/${H}/abc123/${v}`)).toBe(
+        `https://imagedelivery.net/${H}/abc123/small`,
+      );
+    }
+  });
+  it('CF sem variant: anexa /small (nao corta o id)', () => {
+    expect(getProposalImageUrl(`https://imagedelivery.net/${H}/abc123`)).toBe(
+      `https://imagedelivery.net/${H}/abc123/small`,
+    );
+  });
+  it('idempotente: aplicar 2x = 1x', () => {
+    const u = `https://imagedelivery.net/${H}/zzz/public`;
+    expect(getProposalImageUrl(getProposalImageUrl(u))).toBe(getProposalImageUrl(u));
+  });
+  it('URLs externas (fornecedores) ficam intactas', () => {
+    for (const u of [
+      'https://media.asiaimport.com.br/fotos/PROD123.jpg',
+      'https://www.spotgifts.com.br/imagens/55555.png',
+      'https://xbz.com.br/img/p-05054.jpg',
+    ]) {
+      expect(getProposalImageUrl(u)).toBe(u);
+    }
+  });
+  it('hosts falsos nao sao tratados como CDN (seguranca)', () => {
+    expect(getProposalImageUrl(`https://imagedelivery.net.evil.com/${H}/id/public`)).toBe(
+      `https://imagedelivery.net.evil.com/${H}/id/public`,
+    );
+  });
+  it('vazio/nulo retorna string vazia', () => {
+    expect(getProposalImageUrl(null)).toBe('');
+    expect(getProposalImageUrl(undefined)).toBe('');
+    expect(getProposalImageUrl('')).toBe('');
+  });
+});
+
 describe('getSrcSet — consistência com getCdnUrl', () => {
   const WIDTHS: Array<[CdnVariant, number]> = [
     ['thumbnail', 150],
@@ -129,7 +169,20 @@ describe('getImageSizes', () => {
 });
 
 // ───────────────── Geração aleatória de ProductImageMeta ─────────────────
-const TYPES = ['main', 'gallery', 'logo', 'ambient', 'box', 'pouch', 'location', 'area', 'component', 'detail', 'product', 'set'] as const;
+const TYPES = [
+  'main',
+  'gallery',
+  'logo',
+  'ambient',
+  'box',
+  'pouch',
+  'location',
+  'area',
+  'component',
+  'detail',
+  'product',
+  'set',
+] as const;
 function randomImage(r: () => number, idx: number): ProductImageMeta {
   const applies = r() < 0.5;
   return {
@@ -175,8 +228,12 @@ describe('groupImages — partição correta sob 100 conjuntos aleatórios', () 
       const g = groupImages(imgs);
       expect(g.hero).toBe(imgs.find((i) => i.is_primary) ?? null);
       expect(g.main.every((i) => i.image_type === 'main')).toBe(true);
-      expect(g.packaging.every((i) => i.image_type === 'box' || i.image_type === 'pouch')).toBe(true);
-      expect(g.technical.every((i) => ['location', 'area', 'component'].includes(i.image_type))).toBe(true);
+      expect(g.packaging.every((i) => i.image_type === 'box' || i.image_type === 'pouch')).toBe(
+        true,
+      );
+      expect(
+        g.technical.every((i) => ['location', 'area', 'component'].includes(i.image_type)),
+      ).toBe(true);
       // contagem bate com filtro independente
       expect(g.gallery.length).toBe(imgs.filter((i) => i.image_type === 'gallery').length);
       expect(g.logo.length).toBe(imgs.filter((i) => i.image_type === 'logo').length);

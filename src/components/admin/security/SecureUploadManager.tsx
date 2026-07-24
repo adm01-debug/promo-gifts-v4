@@ -22,6 +22,7 @@ import { ptBR } from 'date-fns/locale';
 
 import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface FileScanLog {
   id: string;
   created_at: string;
@@ -71,7 +72,7 @@ export function SecureUploadManager() {
     formData.append('folder', 'dev-test');
 
     try {
-      const { error } = await supabase.functions.invoke('secure-upload', {
+      const { error } = await invokeEdge('secure-upload', {
         body: formData,
       });
 

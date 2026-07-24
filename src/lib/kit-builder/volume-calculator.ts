@@ -60,7 +60,7 @@ export function checkItemFits(
   item: KitItem,
   box: KitBox,
   existingItems: KitItem[],
-  quantity: number = 1,
+  quantity = 1,
 ): CompatibilityResult {
   const currentVolume = calculateTotalItemsVolume(existingItems);
   const itemVolume = item.volume * quantity;
@@ -139,7 +139,7 @@ export function formatDimensions(width: number, height: number, depth: number): 
 /**
  * Retorna cor baseada na porcentagem de uso
  */
-export function getVolumeStatusColor(percent: number): 'success' | 'warning' | 'destructive' {
+export function getVolumeStatusColor(percent: number): 'destructive' | 'success' | 'warning' {
   if (percent >= 100) return 'destructive';
   if (percent >= 85) return 'warning';
   return 'success';
@@ -178,7 +178,7 @@ export function parseDimensionsString(
     .replace(/cm/g, '');
 
   // Tenta match com padrão NxNxN
-  const match = normalized.match(/(\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)/);
+  const match = /(\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)[x\u00d7](\d+(?:\.\d+)?)/.exec(normalized);
 
   if (match) {
     return {

@@ -33,10 +33,10 @@ interface HistoryReducerState {
 }
 
 type HistoryAction =
+  | { type: 'CLEAR' }
   | { type: 'PUSH'; payload: PositionState; maxHistory: number }
-  | { type: 'UNDO' }
   | { type: 'REDO' }
-  | { type: 'CLEAR' };
+  | { type: 'UNDO' };
 
 function historyReducer(state: HistoryReducerState, action: HistoryAction): HistoryReducerState {
   switch (action.type) {
@@ -139,7 +139,6 @@ export function usePositionHistory(options: UsePositionHistoryOptions = {}) {
         if (state && onUndoRedoRef.current) {
           onUndoRedoRef.current.onApply(state);
         }
-        return;
       }
     };
 

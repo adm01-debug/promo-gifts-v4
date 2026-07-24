@@ -74,3 +74,9 @@ theme-validation-output/
 # settings locais tambem nunca devem ser versionados. Ver hardening 2026-06-18.
 .claude/worktrees/
 .claude/settings.local.json
+qa/migrations-draft/PR_COMMENT.md
+
+# Magazine flakiness report (gerado pelo CI)
+reports/flakiness/
+.tmp/flakiness/
+reports/mutation/

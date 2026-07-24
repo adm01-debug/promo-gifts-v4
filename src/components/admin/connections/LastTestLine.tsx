@@ -54,7 +54,7 @@ export function LastTestLine({
 
   useEffect(() => {
     if (!autoFocusOnFailure) return;
-    if (!info || info.ok !== false || !info.tested_at) return;
+    if (info?.ok !== false || !info.tested_at) return;
     const key = `${info.tested_at}:${info.status ?? ''}:${info.message ?? ''}`;
     if (lastFailureKeyRef.current === key) return;
     lastFailureKeyRef.current = key;
@@ -78,7 +78,7 @@ export function LastTestLine({
       content
     );
 
-  if (!info || !info.tested_at) {
+  if (!info?.tested_at) {
     return wrap(
       <p
         className={cn(

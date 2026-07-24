@@ -15,12 +15,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/ui';
 import { supabase } from '@/integrations/supabase/client';
 import { Ban, Loader2 } from 'lucide-react';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface BlockIpButtonProps {
   defaultIp?: string;
   defaultReason?: string;
-  size?: 'sm' | 'default';
-  variant?: 'outline' | 'destructive' | 'ghost';
+  size?: 'default' | 'sm';
+  variant?: 'destructive' | 'ghost' | 'outline';
   onBlocked?: () => void;
 }
 
@@ -45,7 +46,7 @@ export function BlockIpButton({
     }
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('block-ip-temporarily', {
+      const { data, error } = await invokeEdge('block-ip-temporarily', {
         body: { ip: ip.trim(), reason: reason.trim() || undefined, hours },
       });
       if (error) throw error;

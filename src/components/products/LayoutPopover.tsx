@@ -21,7 +21,7 @@ interface LayoutPopoverProps {
 }
 
 export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps>(
-  function LayoutPopover({ viewMode, setViewMode, gridColumns, setGridColumns }, ref) {
+  ({ viewMode, setViewMode, gridColumns, setGridColumns }, ref) => {
     return (
       <div ref={ref}>
         <Popover>
@@ -32,7 +32,7 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 bg-card/40 backdrop-blur-sm sm:h-9"
+                    className="h-8 gap-1.5 bg-card/40 backdrop-blur-sm sm:h-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     aria-label="Alterar layout"
                     data-testid="layout-popover-trigger"
                   >
@@ -46,7 +46,11 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
               Alterar visualização (grid, lista, tabela) e densidade de colunas
             </TooltipContent>
           </Tooltip>
-          <PopoverContent align="end" className="w-60 p-4 shadow-2xl border-primary/10" sideOffset={8}>
+          <PopoverContent
+            align="end"
+            className="w-60 border-primary/10 p-4 shadow-2xl"
+            sideOffset={8}
+          >
             <div className="space-y-4">
               {/* View Mode */}
               <div>
@@ -62,6 +66,7 @@ export const LayoutPopover = React.forwardRef<HTMLDivElement, LayoutPopoverProps
                         key={mode.value}
                         type="button"
                         aria-pressed={isActive}
+                        data-testid={`view-mode-${mode.value}`}
                         className={cn(
                           'relative flex h-9 flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-lg text-xs font-medium transition-all duration-200',
                           isActive

@@ -12,8 +12,8 @@
  *  - notes:    observações operacionais (histórico, escopo).
  */
 
-export type RouteRole = 'public' | 'authenticated' | 'admin' | 'dev';
-export type RouteGuard = 'public' | 'ProtectedRoute' | 'AdminRoute' | 'DevRoute';
+export type RouteRole = 'admin' | 'authenticated' | 'dev' | 'public';
+export type RouteGuard = 'AdminRoute' | 'DevRoute' | 'ProtectedRoute' | 'public';
 
 export interface RbacRouteEntry {
   path: string;
@@ -24,16 +24,16 @@ export interface RbacRouteEntry {
   rlsHelper?: string;
   notes?: string;
   category:
-    | 'telemetry'
-    | 'connections'
-    | 'secrets'
-    | 'audit'
-    | 'ai'
-    | 'ops'
     | 'admin'
-    | 'user'
+    | 'ai'
+    | 'audit'
+    | 'catalog'
+    | 'connections'
+    | 'ops'
     | 'public'
-    | 'catalog';
+    | 'secrets'
+    | 'telemetry'
+    | 'user';
 }
 
 /** Lista canônica e ordenada das rotas do app. */

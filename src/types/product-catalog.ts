@@ -4,7 +4,10 @@
  * These are the runtime types used throughout the UI.
  * Distinct from src/types/product.ts which holds DB-oriented types.
  */
+import type { ColorSwatch } from './colorSwatch';
 
+
+/** Variação de cor de um produto com hex real, grupo cromático e imagem da variação. */
 export interface ProductColor {
   name: string;
   hex: string;
@@ -18,6 +21,7 @@ export interface ProductColor {
   stock?: number;
 }
 
+/** Tipo canônico de produto no catálogo B2B — usado em UI, cart, kit-builder e filtros. */
 export interface Product {
   id: string;
   name: string;
@@ -89,7 +93,7 @@ export interface Product {
   onSale: boolean;
   isKit: boolean;
   gender?: string | null;
-  category: { id: string | number; name: string };
+  category: { id: number | string; name: string };
   supplier: { id: string; name: string };
   tags: {
     publicoAlvo: string[];
@@ -98,6 +102,13 @@ export interface Product {
     ramo: string[];
     nicho: string[];
   };
+  /**
+   * Tags descritivas planas vindas da coluna `products.tags` quando ela é um
+   * array (ex.: ["caneta", "metal", "bambu"]). Sinal de similaridade primário
+   * usado pelo Match de Produtos — preservado separadamente das tags de
+   * marketing estruturadas (que ficam vazias quando a fonte é um array plano).
+   */
+  descriptiveTags?: string[];
 
   subcategory?: string;
   groups?: Array<{ id: number; name: string }>;
@@ -133,15 +144,38 @@ export interface Product {
   aiVersion?: number | null;
   /** Timestamp da última geração IA (ISO 8601). */
   aiGeneratedAt?: string | null;
+
+  /**
+   * Color Swatches V2 — JSONB do BD externo (products.color_swatches), populado por trigger.
+   * Cada item já agrega image_url (P1→P4 fallback) + stock_quantity (SUM por color_id).
+   * Consumido por useProductColorSwatch + ColorSwatchPicker quando a flag
+   * useColorSwatchesV2 estiver habilitada. null = produto sem variações de cor.
+   */
+  color_swatches?: ColorSwatch[] | null;
+  has_colors?: boolean | null;
+
+  /**
+   * FAN-OUT DE COR: quando o filtro de cor está ativo, um produto pode aparecer
+   * como múltiplos cards (1 por cor selecionada que possui). Este campo carrega
+   * o color_id daquele card específico, usado para compor a key única
+   * `${id}|${_cardColorId}` no grid e para deep-link na PDP (?cor=).
+   * undefined = card normal (1 por produto, sem fan-out).
+   */
+  _cardColorId?: string;
 }
 
+/** Componente individual de um kit de brindes (kit nativo do fornecedor ou kit montado). */
 export interface KitComponent {
   id: string;
+  /** UUID do produto-componente. NULL para kits nativos (componente não vendável avulso). */
   productId: string;
   productName: string;
   quantity: number;
   sku: string;
+  /** Imagem principal (capa). */
   imageUrl?: string | null;
+  /** Galeria completa de fotos do componente (kits nativos). */
+  images?: string[] | null;
   isOptional?: boolean;
   isPackaging?: boolean;
   isReplaceable?: boolean;
@@ -151,6 +185,10 @@ export interface KitComponent {
   heightMm?: number | null;
   widthMm?: number | null;
   lengthMm?: number | null;
+  /** Diâmetro em mm (peças cilíndricas: copos, garrafas, canecas). */
+  diameterMm?: number | null;
+  /** Circunferência em mm (alternativa ao diâmetro). */
+  circumferenceMm?: number | null;
   volumeMl?: number | null;
   componentTypeCode?: string | null;
   supplierComponentCode?: string | null;
@@ -172,6 +210,7 @@ export interface KitComponent {
   }>;
 }
 
+/** Variação de produto (SKU) com cor, estoque, imagens e dimensões específicas. */
 export interface ProductVariation {
   id: string;
   sku: string;
@@ -180,6 +219,12 @@ export interface ProductVariation {
     hex: string;
   };
   stock: number;
+  /**
+   * Status de estoque pré-computado da variação (opcional).
+   * Quando presente, tem prioridade sobre o raw stock na decisão de pedibilidade.
+   * Mesmo tipo que Product.stockStatus (catálogo com hífen).
+   */
+  stockStatus?: 'in-stock' | 'low-stock' | 'out-of-stock' | null;
   image?: string | null;
   images?: string[];
   videos?: Array<{
@@ -197,9 +242,10 @@ export interface ProductVariation {
   size_code?: string | null;
 }
 
+/** Parâmetros de consulta para filtrar e ordenar produtos no catálogo. */
 export interface ProductFilters {
   category?: string;
-  categoryId?: string | number;
+  categoryId?: number | string;
   search?: string;
   minPrice?: number;
   maxPrice?: number;
@@ -208,18 +254,19 @@ export interface ProductFilters {
   // União das opções de ambos os lados do merge (main + PR) — `| string` mantém
   // permissivo, mas preservamos todos os literais para autocomplete/intenção.
   sortBy?:
-    | 'price-asc'
-    | 'price-desc'
-    | 'newest'
-    | 'stock'
-    | 'best-seller-supplier'
+    | string
     | 'best-seller-promo'
-    | 'name'
+    | 'best-seller-supplier'
     | 'name-asc'
     | 'name-desc'
-    | string;
+    | 'name'
+    | 'newest'
+    | 'price-asc'
+    | 'price-desc'
+    | 'stock';
 }
 
+/** Representação mínima de produto para seletores e catálogo (~10× menor que `Product`). */
 export interface ProductLightweight {
   id: string;
   name: string;

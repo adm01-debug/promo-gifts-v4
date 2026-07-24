@@ -23,7 +23,6 @@ import {
   AlertCircle,
   History,
   Trash2,
-  TrendingUp,
   Mic,
   MicOff,
   Eye
@@ -39,6 +38,7 @@ import { useExternalCategoriesQuery, useColorSystem } from '@/hooks/products';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface VisualSearchResult {
   analysis: {
@@ -72,7 +72,7 @@ interface VisualSearchResult {
     relevance: number;
     matchRationale?: string;
     stock?: number;
-    totalFound?: number;
+    colors?: string[];
   }>;
   searchTerms: string;
 }
@@ -182,16 +182,57 @@ export default function VisualSearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategoryIds, colorSelection]);
 
-  const saveToHistory = (imageUrl: string, productType: string) => {
-    const newItem: SearchHistoryItem = {
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      imageUrl,
-      productType
-    };
-    const updatedHistory = [newItem, ...history.slice(0, 9)];
-    setHistory(updatedHistory);
-    localStorage.setItem('visual-search-history', JSON.stringify(updatedHistory));
+  // Histórico guarda apenas miniaturas (não o base64 full) — uma imagem de 5MB
+  // estourava a cota do localStorage e derrubava o fluxo de sucesso.
+  const createThumbnail = (dataUrl: string, max = 256): Promise<string> =>
+    new Promise((resolve) => {
+      try {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * scale));
+          const h = Math.max(1, Math.round(img.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(dataUrl);
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.onerror = () => resolve(dataUrl);
+        img.src = dataUrl;
+      } catch {
+        resolve(dataUrl);
+      }
+    });
+
+  const saveToHistory = async (imageUrl: string, productType: string) => {
+    try {
+      const thumb = await createThumbnail(imageUrl);
+      const newItem: SearchHistoryItem = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        imageUrl: thumb,
+        productType,
+      };
+      const updatedHistory = [newItem, ...history.slice(0, 9)];
+      setHistory(updatedHistory);
+      try {
+        localStorage.setItem('visual-search-history', JSON.stringify(updatedHistory));
+      } catch {
+        // Cota estourada: mantém só os mais recentes e tenta de novo.
+        const trimmed = updatedHistory.slice(0, 3);
+        try {
+          localStorage.setItem('visual-search-history', JSON.stringify(trimmed));
+          setHistory(trimmed);
+        } catch {
+          /* desiste silenciosamente — histórico é best-effort */
+        }
+      }
+    } catch (e) {
+      logger.warn('Falha ao salvar histórico de busca visual', e);
+    }
   };
 
 
@@ -256,7 +297,7 @@ export default function VisualSearchPage() {
     if (!results) setResults(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('visual-search', {
+      const { data, error } = await invokeEdge<VisualSearchResult>('visual-search', {
         body: {
           imageBase64: base64.split(',')[1],
           category: selectedCategoryNames.length ? selectedCategoryNames.join(', ') : undefined,
@@ -265,9 +306,9 @@ export default function VisualSearchPage() {
         }
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       setResults(data);
-      saveToHistory(base64, data.analysis.productType);
+      void saveToHistory(base64, data?.analysis?.productType ?? 'Produto');
       toast.success('Análise concluída com sucesso!');
     } catch (rawErr: unknown) {
       logger.error('Visual search error:', rawErr);
@@ -311,6 +352,13 @@ export default function VisualSearchPage() {
           friendlyMessage = 'Nossos servidores de IA estão temporariamente ocupados.';
           tip = 'Dica: Aguarde alguns segundos e clique em "Tentar Novamente". Verifique se o produto está bem centralizado.';
         }
+      } else if (err.message?.includes('503') || (err as { status?: number }).status === 503) {
+        // BUG-VS-CREDS FIX (2026-06-23): 503 = serviço/credencial não configurados
+        // O backend retorna errorData.error com msg específica; só entra aqui no fallback
+        if (friendlyMessage === 'Ocorreu um problema na análise da imagem.') {
+          friendlyMessage = 'Serviço de análise visual temporariamente indisponível.';
+          tip = 'Dica: O administrador deve configurar as credenciais de IA (HF_ACCESS_TOKEN ou LOVABLE_API_KEY) no dashboard do Supabase.';
+        }
       } else if (err.message?.includes('network') || err.name === 'TypeError') {
         friendlyMessage = 'Houve uma falha de conexão.';
         tip = 'Dica: Verifique seu sinal de internet e tente reenviar a foto.';
@@ -343,7 +391,9 @@ export default function VisualSearchPage() {
       const { error } = await supabase
         .from('visual_search_feedback')
         .insert({
-          image_url: previewUrl,
+          // Não persistimos o data URL base64 (poderia ter MBs por linha);
+          // a análise + termos já identificam o contexto do feedback.
+          image_url: null,
           original_analysis: results.analysis,
           is_correct: isCorrect,
           feedback_notes: notes,
@@ -356,6 +406,7 @@ export default function VisualSearchPage() {
       toast.success(isCorrect ? 'Obrigado pelo feedback!' : 'Feedback registrado. Isso ajudará a melhorar a IA.');
     } catch (err) {
       logger.error('Feedback error:', err);
+      toast.error('Não foi possível registrar seu feedback agora.');
     }
   };
 
@@ -470,7 +521,7 @@ export default function VisualSearchPage() {
                               animate={{ top: ['0%', '100%'] }}
                               transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
                             />
-                            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay" />
+                            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%20200%20200%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cfilter%20id%3D%22n%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.65%22%20numOctaves%3D%223%22%20stitchTiles%3D%22stitch%22%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23n)%22%2F%3E%3C%2Fsvg%3E')] opacity-[0.15] mix-blend-overlay" />
                           </div>
                         )}
                         
@@ -637,7 +688,8 @@ export default function VisualSearchPage() {
                           "flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm",
                           getConfidenceLabel(results.analysis.confidence).bg,
                           getConfidenceLabel(results.analysis.confidence).color
-                        )}>
+                        )}
+                        >
                           {Math.round(results.analysis.confidence * 100)}% Confiança
                         </div>
                       )}
@@ -697,7 +749,7 @@ export default function VisualSearchPage() {
                     )}
 
                     <div className="flex flex-wrap gap-1.5">
-                      {results.analysis.keywords.map((kw, i) => (
+                      {(results.analysis.keywords ?? []).map((kw, i) => (
                         <motion.div
                           key={`${kw}-${i}`}
                           initial={{ opacity: 0, scale: 0.9 }}
@@ -1061,7 +1113,8 @@ export default function VisualSearchPage() {
                               <div className={cn(
                                 "flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black shadow-lg backdrop-blur-md transition-all group-hover:scale-110",
                                 product.relevance >= 0.9 ? "bg-emerald-500 text-white" : "bg-white/95 text-foreground border border-border"
-                              )}>
+                              )}
+                              >
                                 {product.relevance >= 0.9 && <CheckCircle2 className="h-3 w-3" />}
                                 {Math.round(product.relevance * 100)}% Match
                               </div>
@@ -1154,12 +1207,6 @@ export default function VisualSearchPage() {
                               </div>
                             )}
 
-                            {product.totalFound && product.totalFound > 10 && (
-                              <div className="mt-2 flex items-center gap-1.5 text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
-                                <TrendingUp className="h-3 w-3" /> Tendência: Encontrado {product.totalFound} vezes esta semana
-                              </div>
-                            )}
-                            
                             <div className="flex items-center justify-between border-t border-border/50 pt-4 mt-auto">
                               <div className="flex flex-col flex-1 gap-1">
                                 <div className="flex items-center justify-between pr-4">

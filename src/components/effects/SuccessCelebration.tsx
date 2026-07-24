@@ -3,7 +3,7 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 import { Check, Sparkles, PartyPopper } from 'lucide-react';
 import { MiniConfetti } from './MiniConfetti';
 
-type CelebrationType = 'success' | 'achievement' | 'level-up' | 'milestone';
+type CelebrationType = 'achievement' | 'level-up' | 'milestone' | 'success';
 
 interface SuccessCelebrationProps {
   show: boolean;

@@ -22,15 +22,15 @@ import { generateMockVelocities, generateMockIntelligence } from '@/lib/stock-ch
 import { useIntelligenceBadgeSettingsValue } from '@/hooks/admin/useIntelligenceBadgeSettings';
 
 type BadgeType =
-  | 'featured'
-  | 'new-arrival'
-  | 'hot-item'
-  | 'emerging'
-  | 'declining'
-  | 'frequent-restock'
-  | 'last-units'
   | 'best-seller'
-  | 'class-a';
+  | 'class-a'
+  | 'declining'
+  | 'emerging'
+  | 'featured'
+  | 'frequent-restock'
+  | 'hot-item'
+  | 'last-units'
+  | 'new-arrival';
 
 export interface IntelligenceBadge {
   type: BadgeType;

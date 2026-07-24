@@ -48,7 +48,7 @@ const ROLE_LABEL: Record<RouteRole, string> = {
   dev: 'Dev',
 };
 
-const ROLE_VARIANT: Record<RouteRole, 'secondary' | 'default' | 'destructive' | 'outline'> = {
+const ROLE_VARIANT: Record<RouteRole, 'default' | 'destructive' | 'outline' | 'secondary'> = {
   public: 'outline',
   authenticated: 'secondary',
   admin: 'default',

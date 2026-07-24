@@ -99,7 +99,7 @@ function MetricTile({
   icon: typeof Activity;
   label: string;
   value: string;
-  tone?: 'default' | 'success' | 'warning' | 'destructive';
+  tone?: 'default' | 'destructive' | 'success' | 'warning';
   hint?: string;
 }) {
   const cls = METRIC_TILE_CLASSES[tone];

@@ -12,8 +12,8 @@ interface ChatHistoryPanelProps {
   isLoading: boolean;
   historySearch: string;
   onSearchChange: (s: string) => void;
-  historyDateFilter: 'all' | 'today' | 'week' | 'month';
-  onDateFilterChange: (f: 'all' | 'today' | 'week' | 'month') => void;
+  historyDateFilter: 'all' | 'month' | 'today' | 'week';
+  onDateFilterChange: (f: 'all' | 'month' | 'today' | 'week') => void;
   currentConversationId: string | null;
   onLoadConversation: (c: ExpertConversation) => void;
   onDeleteConversation: (e: React.MouseEvent, id: string) => void;

@@ -237,7 +237,7 @@ function getColorGroup(colorName: string): number {
  * Calcula luminosidade a partir de um hex color (0 = escuro, 1 = claro)
  * Retorna 0.5 (médio) se hex inválido
  */
-function getLuminanceFromHex(hex: string | undefined | null): number {
+function getLuminanceFromHex(hex: string | null | undefined): number {
   if (!hex) return 0.5;
 
   // Remove # se existir e limpa espaços

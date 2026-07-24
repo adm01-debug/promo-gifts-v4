@@ -20,24 +20,27 @@ import { useSlashCommands } from '@/hooks/ui/useSlashCommands';
 import type { VoiceAgentAction } from '@/hooks/voice/types';
 
 import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
+import { useWordMagicStore } from '@/stores/useWordMagicStore'; // fix_version: word-magic-search-2026-07-03
 import type { PromobrindProduct } from '@/lib/external-db';
+import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 export type SearchResultType =
-  | 'product'
-  | 'client'
-  | 'quote'
-  | 'collection'
-  | 'kit'
-  | 'mockup'
   | 'art_file'
   | 'cart_template'
-  | 'reminder'
-  | 'conversation'
-  | 'magic_up'
   | 'category'
+  | 'client'
+  | 'collection'
+  | 'command'
   | 'component'
+  | 'conversation'
+  | 'kit'
+  | 'magic_up'
   | 'media'
-  | 'command';
+  | 'mockup'
+  | 'product'
+  | 'quote'
+  | 'reminder';
 
 export interface SearchResult {
   id: string;
@@ -55,10 +58,10 @@ export interface SearchIntent {
     category?: string;
     color?: string;
     material?: string;
-    priceRange?: 'low' | 'medium' | 'high';
+    priceRange?: 'high' | 'low' | 'medium';
     status?: string;
     clientName?: string;
-    dateRange?: 'today' | 'week' | 'month' | 'year';
+    dateRange?: 'month' | 'today' | 'week' | 'year';
   };
   keywords: string[];
   originalQuery: string;
@@ -74,7 +77,7 @@ export interface PopularProduct {
 }
 
 export interface AppliedFilter {
-  type: 'category' | 'color' | 'price' | 'material' | 'stock' | 'featured' | 'kit';
+  type: 'category' | 'color' | 'featured' | 'kit' | 'material' | 'price' | 'stock';
   label: string;
 }
 
@@ -101,6 +104,9 @@ function redactPii(query: string): string {
 export function useGlobalSearch() {
   const { open, setOpen, voiceOverlayOpen, setVoiceOverlayOpen } = useSearchStore();
   const [query, setQuery] = useState('');
+  // fix_version: word-magic-search-2026-07-03
+  // ANTI-REGRESSÃO: isGlobalAIMode aplica ai_title nos resultados de busca quando Word Magic está ON
+  const isGlobalAIMode = useWordMagicStore((s) => s.isGlobalAIMode);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isAIProcessing, setIsAIProcessing] = useState(false);
@@ -126,7 +132,19 @@ export function useGlobalSearch() {
   const { suggestions: contextualSuggestions, routeContext } = useContextualSuggestions({
     searchQuery: query,
   });
-  const { commands } = useSlashCommands(() => setOpen(false));
+  // FIX (invocation storm): stabilize the onClose callback so useSlashCommands
+  // does not produce a new `commands` array identity on every render.
+  const closeSearch = useCallback(() => setOpen(false), [setOpen]);
+  const { commands } = useSlashCommands(closeSearch);
+
+  // Keep latest commands in a ref so the semantic-search trigger effect reads
+  // them WITHOUT depending on `commands` identity (root cause of the request
+  // storm: the effect re-fired on every render and started a new, uncancellable
+  // semantic-search invoke before the previous one resolved).
+  const commandsRef = useRef(commands);
+  useEffect(() => {
+    commandsRef.current = commands;
+  }, [commands]);
 
   // ── Voice Agent (ElevenLabs + AI) ──
   const handleVoiceAction = useCallback(
@@ -192,7 +210,9 @@ export function useGlobalSearch() {
         case 'open_cart':
           setTimeout(() => {
             setVoiceOverlayOpen(false);
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'o', altKey: true }));
+            // BUG-9 FIX: substituído KeyboardEvent Alt+O (conflitava com Alt+O=Orçamentos)
+            // pelo mecanismo correto: evento customizado 'open-seller-cart'.
+            window.dispatchEvent(new CustomEvent('open-seller-cart'));
           }, 500);
           break;
       }
@@ -259,6 +279,9 @@ export function useGlobalSearch() {
 
   // ── Semantic search ──
   const abortRef = useRef<AbortController | null>(null);
+  // De-dupe guard: tracks the query currently in-flight so re-renders cannot
+  // start a second identical semantic-search request before the first resolves.
+  const inFlightQueryRef = useRef<string | null>(null);
   const performSemanticSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim() || searchQuery.length < 3) {
       setResults([]);
@@ -277,6 +300,10 @@ export function useGlobalSearch() {
       return;
     }
 
+    // De-dupe identical in-flight query: prevents the semantic-search storm.
+    if (inFlightQueryRef.current === searchQuery) return;
+    inFlightQueryRef.current = searchQuery;
+
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -285,9 +312,19 @@ export function useGlobalSearch() {
     setIsSearching(true);
     setIsAIProcessing(true);
     try {
-      const { data: aiResponse } = await supabase.functions.invoke('semantic-search', {
+      // BUG-SEARCH-SEMANTIC-SILENT-FAIL FIX: { data } without error check — AI search
+      // failures were invisible; fallback to keyword intent is intentional (/* silent */).
+      const { data: aiResponse, error: aiErr } = await invokeEdge<{
+        success: boolean;
+        intent: SearchIntent;
+      }>('semantic-search', {
         body: { query: searchQuery },
       });
+      if (aiErr)
+        logger.warn(
+          '[global-search] semantic-search invoke failed — falling back to keyword intent:',
+          aiErr,
+        );
       if (controller.signal.aborted) return;
       setIsAIProcessing(false);
 
@@ -352,9 +389,11 @@ export function useGlobalSearch() {
 
           const fuse = new Fuse(filteredProducts, createProductFuseOptions<PromobrindProduct>());
           rankProductSearchResults(filteredProducts, productQuery, fuse).forEach((p) => {
+            // Word Magic: usa ai_title quando toggle está ON e produto tem título IA
+            const displayTitle = isGlobalAIMode && p.ai_title ? p.ai_title : p.name;
             allResults.push({
               id: p.id,
-              title: p.name,
+              title: displayTitle,
               subtitle: `SKU: ${p.sku} • ${p.category_name || 'Sem categoria'} • ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.sale_price || p.base_price || 0)}`,
               type: 'product',
               href: `/produto/${p.id}`,
@@ -603,7 +642,7 @@ export function useGlobalSearch() {
             allResults.push({
               id: m.id,
               title: m.scene_title || m.product_name || 'Magic Up',
-              subtitle: `${m.client_name || 'Sem cliente'} • ${m.product_name || ''}${m.scene_category ? ' • ' + m.scene_category : ''}`,
+              subtitle: `${m.client_name || 'Sem cliente'} • ${m.product_name || ''}${m.scene_category ? ` • ${m.scene_category}` : ''}`,
               type: 'magic_up',
               href: '/magic-up',
               metadata: { image_url: m.generated_image_url },
@@ -662,7 +701,7 @@ export function useGlobalSearch() {
       // Include matching slash commands in general results if they match keywords
       if (searchQuery.length >= 3) {
         const lowerQuery = searchQuery.toLowerCase();
-        const matchedCmds = commands
+        const matchedCmds = commandsRef.current
           .filter(
             (c) =>
               c.command.toLowerCase().includes(lowerQuery) ||
@@ -737,6 +776,9 @@ export function useGlobalSearch() {
       setIsAIProcessing(false);
       if (!abortRef.current?.signal.aborted) setSearchError(true);
     } finally {
+      // Release the in-flight lock only if this call still owns it (a newer
+      // query may have replaced it).
+      if (inFlightQueryRef.current === searchQuery) inFlightQueryRef.current = null;
       if (!controller.signal.aborted) setIsSearching(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -745,7 +787,7 @@ export function useGlobalSearch() {
   useEffect(() => {
     if (debouncedQuery.startsWith('/')) {
       const lowerQuery = debouncedQuery.toLowerCase();
-      const matchedCommands = commands
+      const matchedCommands = commandsRef.current
         .filter(
           (c) =>
             c.command.toLowerCase().includes(lowerQuery) ||
@@ -766,7 +808,10 @@ export function useGlobalSearch() {
       return;
     }
     performSemanticSearch(debouncedQuery);
-  }, [commands, debouncedQuery, performSemanticSearch]);
+    // NOTE: commands intentionally NOT a dependency here. It changed identity
+    // every render and re-fired this effect, causing the semantic-search request
+    // storm. Slash-command matches read the latest commands via commandsRef.
+  }, [debouncedQuery, performSemanticSearch]);
 
   const handleSelect = useCallback(
     (href: string, saveToHistory = true) => {
@@ -814,14 +859,11 @@ export function useGlobalSearch() {
     [removeFromHistory],
   );
 
-  const groupedResults = results.reduce(
-    (acc, result) => {
-      if (!acc[result.type]) acc[result.type] = [];
-      acc[result.type].push(result);
-      return acc;
-    },
-    {} as Record<string, SearchResult[]>,
-  );
+  const groupedResults = results.reduce<Record<string, SearchResult[]>>((acc, result) => {
+    if (!acc[result.type]) acc[result.type] = [];
+    acc[result.type].push(result);
+    return acc;
+  }, {});
 
   return {
     open,

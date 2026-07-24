@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plug, Copy, Trash2, Plus, Github, ShieldAlert } from 'lucide-react';
+import { Plug, Copy, Trash2, Plus, Plug2, ShieldAlert } from 'lucide-react';
 import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -23,6 +23,7 @@ import { IssueMcpKeyForm } from './IssueMcpKeyForm';
 import { isFullAccess } from '@/lib/mcp/scopes';
 import { useDevChallenge } from '@/contexts/DevChallengeContext';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface McpKey {
   id: string;
@@ -87,7 +88,7 @@ export function McpTab() {
     });
     if (!token) return; // cancelado pelo usuário
 
-    const { data, error } = await supabase.functions.invoke('mcp-keys-revoke', {
+    const { data, error } = await invokeEdge('mcp-keys-revoke', {
       body: { key_id: id, step_up_token: token },
     });
     if (error || (data && (data as { error?: string }).error)) {
@@ -137,7 +138,7 @@ export function McpTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Github className="h-5 w-5 text-primary" />
+            <Plug2 className="h-5 w-5 text-primary" />
             <CardTitle>GitHub — código-fonte do app</CardTitle>
           </div>
           <CardDescription>

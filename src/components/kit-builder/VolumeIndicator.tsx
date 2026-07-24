@@ -12,7 +12,7 @@ interface VolumeIndicatorProps {
   totalVolume: number;
   usagePercent: number;
   className?: string;
-  variant?: 'default' | 'compact';
+  variant?: 'compact' | 'default';
 }
 
 const VOLUME_STATUS_TEXT_COLORS = {

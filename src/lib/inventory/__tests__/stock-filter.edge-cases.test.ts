@@ -11,11 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { applyStockFilters, buildStockIndexes, normalize } from '@/lib/inventory/stock-filter';
-import {
-  defaultStockFilters,
-  type ProductStockSummary,
-  type VariantStock,
-} from '@/types/stock';
+import { defaultStockFilters, type ProductStockSummary, type VariantStock } from '@/types/stock';
 
 const v = (id: string, color: string | undefined, stock = 100): VariantStock => ({
   id,
@@ -81,7 +77,7 @@ describe('regressão — categoria', () => {
     p('p3', 'Agenda', 'Agêndas', 'C', [v('p3-1', 'Rosa')]),
     p('p4', 'Mochila', undefined, 'D', [v('p4-1', 'Preto')]),
   ];
-  const idx = buildStockIndexes(universe, []);
+  const idx = buildStockIndexes(universe);
 
   it.each([
     ['canetas', ['p1']],
@@ -109,7 +105,7 @@ describe('regressão — fornecedor', () => {
     p('p2', 'Y', 'Cat', 'fornecedor acai', [v('p2-1', 'Verde')]),
     p('p3', 'Z', 'Cat', 'Outro Fornecedor', [v('p3-1', 'Rosa')]),
   ];
-  const idx = buildStockIndexes(universe, []);
+  const idx = buildStockIndexes(universe);
 
   it('acento + case combinados', () => {
     const out = applyStockFilters(
@@ -138,15 +134,10 @@ describe('regressão — cor', () => {
     p('p2', 'B', 'C', 'F', [v('p2-1', 'Azul Marinho')]),
     p('p3', 'C', 'C', 'F', [v('p3-1', undefined)]),
   ];
-  const idx = buildStockIndexes(universe, []);
+  const idx = buildStockIndexes(universe);
 
   it('colorName exata NÃO casa por substring (Azul ≠ Azul Marinho)', () => {
-    const out = applyStockFilters(
-      universe,
-      { ...defaultStockFilters, colorName: 'Azul' },
-      [],
-      idx,
-    );
+    const out = applyStockFilters(universe, { ...defaultStockFilters, colorName: 'Azul' }, [], idx);
     expect(out.map((x) => x.productId)).toEqual(['p1']);
   });
 
@@ -182,7 +173,7 @@ describe('regressão — listas vazias / borda', () => {
       universe,
       { ...defaultStockFilters, categoryId: 'nada' },
       [],
-      buildStockIndexes(universe, []),
+      buildStockIndexes(universe),
     );
     expect(out).toEqual([]);
   });
@@ -192,7 +183,7 @@ describe('regressão — listas vazias / borda', () => {
       p('p1', 'A', 'C', 'F', [v('p1-1', 'Azul')]),
       p('p2', 'B', 'C', 'F', [v('p2-1', 'Verde')]),
     ];
-    const out = applyStockFilters(universe, defaultStockFilters, [], buildStockIndexes(universe, []));
+    const out = applyStockFilters(universe, defaultStockFilters, [], buildStockIndexes(universe));
     expect(out).toHaveLength(2);
     // sem filtro de cor → variants é a MESMA referência (identidade preservada)
     expect(out[0].variants).toBe(universe.find((x) => x.productId === out[0].productId)!.variants);
@@ -207,10 +198,9 @@ describe('regressão — listas vazias / borda', () => {
       universe,
       { ...defaultStockFilters, search: 'CANE' },
       [],
-      buildStockIndexes(universe, []),
+      buildStockIndexes(universe),
     );
     expect(out.map((x) => x.productId)).toEqual(['p1']);
-
   });
 });
 
@@ -222,7 +212,7 @@ describe('regressão — projeção: linha só mostra variantes do filtro', () =
       v('p1-3', 'Vermelho', 200),
     ]),
   ];
-  const idx = buildStockIndexes(universe, []);
+  const idx = buildStockIndexes(universe);
 
   it('filtro "Azul" → row.totalVariants = 1 e availableColors só tem Azul', () => {
     const [row] = applyStockFilters(

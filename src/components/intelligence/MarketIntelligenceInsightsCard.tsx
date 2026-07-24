@@ -18,6 +18,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/ui';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface Props {
   days: number;
@@ -54,17 +55,20 @@ export function MarketIntelligenceInsightsCard({
   const { data, isLoading, isError } = useQuery({
     queryKey: ['market-intelligence-insights', days, categoryId, supplierId, productId],
     queryFn: async (): Promise<InsightResponse> => {
-      const { data, error } = await supabase.functions.invoke('market-intelligence-insights', {
-        body: {
-          days,
-          categoryId,
-          supplierId,
-          productId,
-          categoryName,
-          supplierName,
-          productName,
+      const { data: queryRows, error } = await invokeEdge(
+        'market-intelligence-insights',
+        {
+          body: {
+            days,
+            categoryId,
+            supplierId,
+            productId,
+            categoryName,
+            supplierName,
+            productName,
+          },
         },
-      });
+      );
       if (error) {
         if (error.message?.includes('429')) {
           toast({
@@ -81,7 +85,7 @@ export function MarketIntelligenceInsightsCard({
         }
         throw error;
       }
-      return data as InsightResponse;
+      return queryRows as InsightResponse;
     },
     staleTime: 1000 * 60 * 5,
     retry: false,

@@ -1,0 +1,75 @@
+/**
+ * E2E — Paginação cursorada da fila de aprovações de desconto.
+ * Valida:
+ *   - Botão "Carregar mais" existe quando há > PAGE_SIZE itens
+ *   - Ao clicar, novos cards são anexados sem duplicar IDs
+ *   - Ordem por `data-created-at` desc é estritamente monotônica
+ *   - Cursor entre páginas é estável (último created_at da página N >= primeiro da página N+1)
+ *
+ * Seed idempotente: tenta garantir > PAGE_SIZE pending via
+ * seedDiscountApprovalRequestsFromPage; se RLS impedir, faz skip claro.
+ */
+import { test, expect, requireAdmin } from "../fixtures/test-base";
+import { setupDiscountAdmin } from "../helpers/setup-discount-admin";
+import { assertCursorPagination, type PageRow } from "../helpers/pagination-asserts";
+import { DiscountApprovalPO } from "../helpers/discount-approval-po";
+
+
+test.describe.configure({ mode: "parallel" });
+test.use({ trace: "retain-on-failure", screenshot: "only-on-failure" });
+
+const PAGE_SIZE = 50;
+
+test.describe("Discount approval — paginação cursorada da fila", () => {
+  test("carregar mais anexa itens sem duplicar e mantém ordem", async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
+    requireAdmin();
+    const { seed } = await setupDiscountAdmin(page, testInfo, {
+      minPending: PAGE_SIZE + 5,
+    });
+    if (seed.skipped) {
+      // eslint-disable-next-line no-console
+      console.warn(`[04c5] seed skipped: ${seed.skipped}`);
+    }
+
+    const po = new DiscountApprovalPO(page);
+    await po.openQueue();
+
+    const cards = page.locator('[data-testid^="discount-request-card-"]');
+    await expect(async () => {
+      expect(await cards.count()).toBeGreaterThan(0);
+    }).toPass({ timeout: 10_000 });
+
+    const initialCount = await cards.count();
+    test.skip(
+      initialCount < PAGE_SIZE,
+      `Fila tem ${initialCount} item(ns); seed: ${seed.skipped ?? "ok"}`,
+    );
+
+    const readRows = async (): Promise<PageRow[]> =>
+      cards.evaluateAll((els) =>
+        els.map((e) => ({
+          id: (e.getAttribute("data-testid") ?? "").replace("discount-request-card-", ""),
+          created_at: e.getAttribute("data-created-at") ?? "",
+        })),
+      );
+
+    const before = await readRows();
+    const cursor = before[before.length - 1].created_at;
+
+    await expect(po.loadMore).toBeVisible({ timeout: 5_000 });
+    await po.loadMore.click();
+
+    await expect(async () => {
+      expect(await cards.count()).toBeGreaterThan(before.length);
+    }).toPass({ timeout: 10_000 });
+
+    const after = await readRows();
+    const page2 = after.slice(before.length);
+
+    expect(after.slice(0, before.length)).toEqual(before);
+    assertCursorPagination(before, page2, cursor, "desc");
+  });
+});
+
+

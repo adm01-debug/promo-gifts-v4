@@ -43,3 +43,40 @@ scripts/sentinel-check.sh
 scripts/check-tsc-baseline.mjs
 scripts/check-eslint-baseline.mjs
 scripts/seo-sanity-check.mjs
+# ============================================================
+# Resumo do Orçamento — botão "Recolher / Expandir" + invariantes a11y
+# Lovable já reverteu (2026-06) tooltip dinâmico, aria-expanded,
+# data-open-count, focus-visible:ring-primary e motion-reduce.
+# Alterações destes arquivos exigem revisão manual.
+# ============================================================
+src/components/quotes/QuoteBuilderSummaryColumn.tsx
+src/components/quotes/__tests__/QuoteBuilderSummaryCollapseAll.fuzz.test.ts
+e2e/quotes/quote-summary-collapse-all.spec.ts
+
+# ============================================================
+# Magazine module — arquivos com fixes críticos anti-regressão
+# Lovable reverteu: prefer-object-has-own, state-in-constructor,
+# prefer-readonly, sort-type-constituents (2026-07-16).
+# Qualquer alteração nestes arquivos exige revisão manual.
+# ============================================================
+src/pages/magazine/MagazineEditorPage.tsx
+src/pages/magazine/components/MagazineErrorBoundary.tsx
+src/pages/magazine/components/PublicMagazineToc.tsx
+src/pages/magazine/components/MagazineMiniMap.tsx
+src/pages/magazine/templates-gallery/MagazineTemplatesGalleryPage.tsx
+src/pages/magazine/templates-gallery/TemplatePreviewBoundary.tsx
+src/pages/magazine/templates-gallery/TemplatePreviewDialog.tsx
+src/pages/magazine/templates-gallery/safeReturn.ts
+src/pages/magazine/templates-gallery/__tests__/safeReturn.test.ts
+src/pages/magazine/templates-gallery/__tests__/gallery.test.tsx
+src/pages/magazine/components/__tests__/EditorHero.test.tsx
+src/pages/magazine/__tests__/applyTemplateGuard.test.ts
+src/pages/magazine/__tests__/useMagazineEditor.staleRef.test.ts
+src/pages/magazine/__tests__/publishAwait.regression.test.ts
+src/pages/magazine/hooks/__tests__/useMagazineReaderState.test.ts
+src/pages/magazine/hooks/__tests__/useMagazineGoldImport.test.ts
+src/pages/magazine/hooks/useMagazineReaderState.ts
+src/pages/magazine/hooks/useMagazineGoldImport.ts
+src/pages/magazine/useMagazinePublish.ts
+src/pages/magazine/useMagazineEditor.ts
+src/pages/magazine/PublicMagazineView.tsx

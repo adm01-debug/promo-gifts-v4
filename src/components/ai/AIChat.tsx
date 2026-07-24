@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'assistant' | 'user';
   content: string;
   createdAt: number;
 }

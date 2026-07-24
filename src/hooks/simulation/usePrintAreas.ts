@@ -142,6 +142,14 @@ export function useTechniques() {
 }
 
 /**
+ * @deprecated v_technique_stats is a view that only exists in the external bridge DB,
+ * not in the local Supabase (Fase 3 decision). Returns empty data without hitting the DB.
+ */
+export function useTechniqueStats() {
+  return { data: [] as unknown[], isLoading: false, error: null };
+}
+
+/**
  * Hook: Verifica se um produto tem areas de gravacao
  * BUG-14 FIX: era via external-db-bridge. Substituido por PostgREST nativo.
  */

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from 'react-router-dom';
+import { logger } from '@/lib/logger';
 
 /**
  * useNavigationAnalytics — tracks navigation button clicks.
@@ -22,7 +23,8 @@ export function useNavigationAnalytics() {
       if (!user?.id) return;
 
       try {
-        await untypedFrom('navigation_analytics').insert({
+        // BUG-NAVANALYTICS-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+        const { error: navErr } = await untypedFrom('navigation_analytics').insert({
           user_id: user.id,
           event_type: 'navigation_click',
           event_data: {
@@ -31,6 +33,7 @@ export function useNavigationAnalytics() {
             ...(destination !== undefined && { destination_path: destination }),
           },
         });
+        if (navErr) logger.warn('[navigation-analytics] insert failed:', navErr);
       } catch {
         // Silently ignore tracking errors — analytics must never break the UI
       }

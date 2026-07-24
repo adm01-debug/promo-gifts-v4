@@ -48,6 +48,17 @@ jobs:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
 
+      # GATE 2.3: `as any` gate — freeze baseline, prevent regressions
+      - name: Gate 2.3 — as any baseline (zero regressions)
+        run: node scripts/check-any-type-baseline.mjs
+
+      # GATE 2.4: Migration path references — bloqueia referências novas a arquivos
+      # inexistentes sob supabase/migrations{,-snapshot}/ e qa/migrations-draft/.
+      # Baseline em .migration-refs-baseline.json congela o legado.
+      - name: Gate 2.4 — Migration path references (bloqueante)
+        run: node scripts/check-migration-path-references.mjs
+
+
       # GATE 2.5: Product type fields — campos críticos nunca podem ser removidos
       # Previne: remoção de price/shortDescription/category_id durante merge (gap C2)
       # Previne: renomeação silenciosa pelo Lovable como price→sale_price (gap L3)
@@ -56,6 +67,22 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+      # GATE 2.6: QuotesConfigurableList — invariantes de layout + a11y + unit (expiração)
+      # Previne regressão de ordem/alinhamento/testids/aria-label e da lógica determinística de expiração.
+      - name: Gate 2.6 — Quotes list validation (bloqueante)
+        run: node scripts/validate-quotes-list.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # GATE 2.7: overflow-x: clip em MainLayout/html/body (bloqueante)
+      # Previne regressão silenciosa do sticky da sidebar: `overflow-x: hidden`
+      # promove overflow-y para auto (CSS spec) e anula `position: sticky`.
+      - name: Gate 2.7 — overflow-x-clip (bloqueante)
+        run: node scripts/check-overflow-x-clip.mjs
+
+
+
 
       # GATE 3: Build (zero build errors)
       - name: Build check
@@ -63,6 +90,14 @@ jobs:
         env:
           VITE_SUPABASE_URL: https://placeholder.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # GATE 3.5: Bundle size (bloqueante — regressões vazam antes de virar débito)
+      # Enforça 3 camadas: (1) limite global por chunk, (2) limite total,
+      # (3) limites por chunk crítico + regressão >15% vs snapshot em
+      # bundle-size-baseline.json.
+      # Para atualizar após refactor intencional: node scripts/check-bundle-size.mjs --update-baseline
+      - name: Gate 3.5 — Bundle size check (per-chunk + regression)
+        run: node scripts/check-bundle-size.mjs
 
   # GATE 4: Unit tests (fast — no network)
   unit-tests:

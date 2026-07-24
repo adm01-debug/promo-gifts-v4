@@ -96,7 +96,7 @@ function mapTechniqueFields(t: TechniqueRawRow): PromobrindTechnique {
     name: t.nome ?? t.name ?? '',
     description: t.descricao ?? t.description ?? null,
     requires_color_count: t.permite_cores ?? t.requires_color_count ?? null,
-    max_colors: Number.isFinite(maxCores as number) ? (maxCores as number) : null,
+    max_colors: Number.isFinite(maxCores!) ? maxCores! : null,
     price_by_color: t.cobra_por_cor ?? t.price_by_color ?? null,
     price_by_area: t.cobra_por_area ?? t.price_by_area ?? null,
     is_active: t.ativo ?? t.is_active ?? true,

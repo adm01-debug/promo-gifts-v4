@@ -34,7 +34,7 @@ export function formatMaskedSuffix(raw: string | null | undefined): string {
  * - `short`: sufixo presente mas com <4 chars — credencial muito curta ou
  *   truncada; recomenda-se re-salvar com um valor mais robusto.
  */
-export type MaskedSuffixStatus = 'valid' | 'missing' | 'short';
+export type MaskedSuffixStatus = 'missing' | 'short' | 'valid';
 
 export interface MaskedSuffixDiagnosis {
   status: MaskedSuffixStatus;

@@ -12,6 +12,7 @@ import type { IndustryTrendsResult } from '@/hooks/bi/useIndustryTrends';
 import type { SeasonalityResult } from '@/hooks/bi/useClientSeasonality';
 import type { IndustryRecommendation } from '@/lib/bi/industryRecommendations';
 import type { CategorySection } from '@/lib/bi/executive-summary';
+import { maskCnpj } from '@/utils/masks';
 
 export interface DossierClient {
   name: string;
@@ -119,7 +120,7 @@ export function generateBIDossierPDF(data: DossierData): Blob {
 
   const meta: string[] = [];
   if (data.client.ramo) meta.push(`Ramo: ${data.client.ramo}`);
-  if (data.client.cnpj) meta.push(`CNPJ: ${data.client.cnpj}`);
+  if (data.client.cnpj) meta.push(`CNPJ: ${maskCnpj(data.client.cnpj)}`);
   if (data.client.cidade) {
     meta.push(
       `Localidade: ${data.client.cidade}${data.client.estado ? `/${data.client.estado}` : ''}`,
@@ -389,7 +390,7 @@ export function generateBIDossierPDF(data: DossierData): Blob {
 
   // ============ PÁGINA 5 — Mapa de Categorias ============
   const cat = data.categorySection;
-  if (cat && cat.hasData) {
+  if (cat?.hasData) {
     doc.addPage();
     y = 22;
     y = addSectionTitle(doc, 'Mapa de Categorias', y);

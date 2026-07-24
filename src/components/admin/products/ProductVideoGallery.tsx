@@ -215,9 +215,11 @@ export function ProductVideoGallery({ productId }: ProductVideoGalleryProps) {
                   return embedUrl ? (
                     <iframe
                       src={embedUrl}
+                      title="Video player"
                       className="h-full w-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
+                      sandbox="allow-scripts allow-presentation allow-popups"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-muted-foreground">

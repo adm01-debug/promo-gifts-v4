@@ -40,11 +40,12 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
-type CheckStatus = 'pass' | 'fail' | 'skipped' | 'error';
+type CheckStatus = 'error' | 'fail' | 'pass' | 'skipped';
 
 interface CheckResult {
-  id: 'is_dev' | 'can_grant_mcp_full' | 'validate_mcp_key' | 'consume_step_up_token';
+  id: 'can_grant_mcp_full' | 'consume_step_up_token' | 'is_dev' | 'validate_mcp_key';
   label: string;
   status: CheckStatus;
   detail: string;
@@ -66,7 +67,7 @@ const STATUS_META: Record<
     label: string;
     icon: typeof CheckCircle2;
     className: string;
-    badgeVariant: 'default' | 'destructive' | 'secondary' | 'outline';
+    badgeVariant: 'default' | 'destructive' | 'outline' | 'secondary';
   }
 > = {
   pass: {
@@ -115,7 +116,7 @@ export function FullOpDiagnosticsPanel() {
         body.step_up_action = action.trim() || 'mcp_full_issue';
         if (targetRef.trim()) body.step_up_target_ref = targetRef.trim();
       }
-      const { data, error } = await supabase.functions.invoke('full-op-diagnostics', { body });
+      const { data, error } = await invokeEdge('full-op-diagnostics', { body });
       if (error) {
         toast.error('Falha ao executar diagnóstico', {
           description: 'Não foi possível conectar ao serviço.',

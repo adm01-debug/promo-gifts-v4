@@ -2,19 +2,19 @@ import { type LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-type TrendDirection = 'up' | 'down' | 'neutral';
+type TrendDirection = 'down' | 'neutral' | 'up';
 
 interface DataCardProps {
   icon: LucideIcon;
-  value: string | number;
+  value: number | string;
   label: string;
   trend?: {
     value: number;
     direction?: TrendDirection;
     label?: string;
   };
-  variant?: 'default' | 'primary' | 'success' | 'warning' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'danger' | 'default' | 'primary' | 'success' | 'warning';
+  size?: 'lg' | 'md' | 'sm';
   className?: string;
   onClick?: () => void;
 }
@@ -167,9 +167,9 @@ export function DataCardGrid({ children, columns = 4, className }: DataCardGridP
 // Mini Stat Card for compact displays
 interface MiniStatCardProps {
   label: string;
-  value: string | number;
+  value: number | string;
   icon?: React.ReactNode;
-  color?: 'default' | 'primary' | 'success' | 'warning' | 'destructive';
+  color?: 'default' | 'destructive' | 'primary' | 'success' | 'warning';
   className?: string;
 }
 

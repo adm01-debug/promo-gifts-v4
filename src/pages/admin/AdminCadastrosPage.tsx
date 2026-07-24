@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Palette, FolderOpen, Truck } from 'lucide-react';
+import { Package, Palette, FolderOpen, Truck, Tags } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
@@ -18,6 +18,10 @@ const EngravingRegistrationContent = lazyWithRetry(() =>
   })),
 );
 
+const BadgesManager = lazyWithRetry(() =>
+  import('@/components/admin/badges-manager').then((m) => ({ default: m.BadgesManager })),
+);
+
 function TabFallback() {
   return (
     <div className="space-y-4 p-4">
@@ -27,7 +31,7 @@ function TabFallback() {
   );
 }
 
-const VALID_TABS = ['products', 'suppliers', 'personalizacao'] as const;
+const VALID_TABS = ['products', 'suppliers', 'personalizacao', 'badges'] as const;
 
 export default function AdminCadastrosPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -80,6 +84,10 @@ export default function AdminCadastrosPage() {
               <Palette className="h-4 w-4" />
               Personalização
             </TabsTrigger>
+            <TabsTrigger value="badges" className="gap-2">
+              <Tags className="h-4 w-4" />
+              Badges
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="products">
@@ -97,6 +105,12 @@ export default function AdminCadastrosPage() {
           <TabsContent value="personalizacao">
             <Suspense fallback={<TabFallback />}>
               <EngravingRegistrationContent />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="badges">
+            <Suspense fallback={<TabFallback />}>
+              <BadgesManager />
             </Suspense>
           </TabsContent>
         </Tabs>

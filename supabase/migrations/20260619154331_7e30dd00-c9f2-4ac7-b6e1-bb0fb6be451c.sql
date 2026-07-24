@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.e2e_cleanup_check_rate_limit(text, integer, integer) FROM PUBLIC, anon, authenticated;

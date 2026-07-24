@@ -13,7 +13,7 @@
 import { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type SalesScope = 'all' | 'team' | 'self';
+export type SalesScope = 'all' | 'self' | 'team';
 
 export function useSalesScope(): SalesScope {
   const { role, isDev, isSupervisorOrAbove } = useAuth();

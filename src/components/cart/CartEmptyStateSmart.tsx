@@ -1,41 +1,30 @@
 /**
- * CartEmptyStateSmart - Empty state com 3 CTAs inteligentes:
- * Aplicar template, Duplicar último carrinho desta empresa, Explorar catálogo.
+ * CartEmptyStateSmart - Empty state com 2 CTAs inteligentes:
+ * Duplicar último carrinho desta empresa e Explorar catálogo.
  */
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LayoutTemplate, Copy, Package, Sparkles, ArrowRight } from 'lucide-react';
-import { type CartTemplateItem, type SellerCart } from '@/hooks/products';
+import { Copy, Package, Sparkles, ArrowRight } from 'lucide-react';
+import { type SellerCart } from '@/hooks/products';
 import { cn } from '@/lib/utils';
-
-interface SmartTemplate {
-  id: string;
-  name: string;
-  description?: string;
-  items: CartTemplateItem[];
-}
 
 interface CartEmptyStateSmartProps {
   activeCart: SellerCart;
-  templates: SmartTemplate[];
   otherCarts: SellerCart[];
-  onApplyTemplate: (items: CartTemplateItem[]) => void;
   onDuplicateLast: (sourceCart: SellerCart) => void;
   onNavigateProducts: () => void;
 }
 
 export function CartEmptyStateSmart({
   activeCart,
-  templates,
   otherCarts,
-  onApplyTemplate,
   onDuplicateLast,
   onNavigateProducts,
 }: CartEmptyStateSmartProps) {
-  const topTemplates = templates.slice(0, 3);
   const lastCartSameCompany = otherCarts
     .filter((c) => c.company_id === activeCart.company_id && c.items.length > 0)
     .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
+
 
   return (
     <div className="mx-auto max-w-4xl space-y-4 duration-500 animate-in fade-in zoom-in">
@@ -54,53 +43,8 @@ export function CartEmptyStateSmart({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 px-2 md:grid-cols-3">
-        {/* Template */}
-        <Card
-          className={cn(
-            'group flex flex-col gap-4 border-border/40 p-5 shadow-sm transition-all duration-300 hover:border-primary/40 hover:bg-primary/[0.02] hover:shadow-md',
-            topTemplates.length === 0 && 'opacity-50 grayscale-[0.5]',
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 transition-transform group-hover:scale-110">
-              <LayoutTemplate className="h-5 w-5 text-primary" />
-            </div>
-            <h4 className="text-sm font-bold tracking-tight">Aplicar template</h4>
-          </div>
-          {topTemplates.length > 0 ? (
-            <>
-              <ul className="flex-1 space-y-2 text-xs text-muted-foreground">
-                {topTemplates.map((t) => (
-                  <li
-                    key={t.id}
-                    className="flex items-center justify-between gap-3 rounded-lg bg-muted/30 p-2 transition-colors hover:bg-muted/50"
-                  >
-                    <span className="truncate font-medium">{t.name}</span>
-                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] tabular-nums text-primary">
-                      {t.items.length} itens
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 w-full gap-2 text-xs font-semibold transition-all group-hover:border-primary/50 group-hover:text-primary"
-                onClick={() => onApplyTemplate(topTemplates[0].items)}
-              >
-                Aplicar "{topTemplates[0].name}"{' '}
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </>
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/20 py-4">
-              <p className="px-4 text-center text-[11px] text-muted-foreground">
-                Crie templates a partir de carrinhos existentes para acelerar seu fluxo.
-              </p>
-            </div>
-          )}
-        </Card>
+      <div className="grid grid-cols-1 gap-4 px-2 md:grid-cols-2">
+
 
         {/* Duplicate last */}
         <Card
@@ -141,7 +85,10 @@ export function CartEmptyStateSmart({
                 onClick={() => onDuplicateLast(lastCartSameCompany)}
               >
                 Copiar itens{' '}
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                <ArrowRight
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
+                />
               </Button>
             </>
           ) : (

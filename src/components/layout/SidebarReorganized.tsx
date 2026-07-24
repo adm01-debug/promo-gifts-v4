@@ -35,6 +35,7 @@ import {
   Plug,
   ChevronsDownUp,
   Cloud,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -200,6 +201,12 @@ const navGroups: NavGroup[] = [
         label: 'Busca por Preço',
         href: '/busca-preco',
         tooltip: 'Tem um orçamento? Encontre rapidamente produtos que cabem no bolso do cliente.',
+      },
+      {
+        icon: BookOpen,
+        label: 'Magazine',
+        href: '/magazine',
+        tooltip: 'Monte revistas e catálogos personalizados com os produtos do catálogo.',
       },
     ],
   },
@@ -376,11 +383,9 @@ function computeOpenGroups(pathname: string): Record<string, boolean> {
   return next;
 }
 
+// eslint-disable-next-line react/require-optimization
 export const SidebarReorganized = React.memo(
-  React.forwardRef<HTMLElement, SidebarProps>(function SidebarReorganized(
-    { isOpen, onToggle },
-    ref,
-  ) {
+  React.forwardRef<HTMLElement, SidebarProps>(({ isOpen, onToggle }, ref) => {
     const location = useLocation();
     const navigate = useNavigate();
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -407,6 +412,11 @@ export const SidebarReorganized = React.memo(
     const { isAdmin, isDev, rolesLoaded } = useAuth();
     const isMobile = useMediaQuery('(max-width: 1023px)');
 
+    // BUG-SIDEBAR-ABORT FIX (2026-06-23):
+    // refetchOnWindowFocus e refetchOnReconnect=false evitam aborts extra quando
+    // enabled (rolesLoaded && isAdmin) vai true→false durante race de auth no
+    // page load. Sem esses flags, React Query v5 aborta o fetch em voo quando
+    // enabled transita, e o browser loga "Falha ao carregar Buscar: HEAD".
     const { data: pendingApprovalCount } = useQuery({
       queryKey: ['pending-discount-approvals-count'],
       queryFn: async () => {
@@ -425,6 +435,8 @@ export const SidebarReorganized = React.memo(
       staleTime: 15_000,
       retry: 0,
       retryOnMount: false,
+      refetchOnWindowFocus: false,  // BUG-SIDEBAR-ABORT: evita abort extra ao focar aba
+      refetchOnReconnect: false,    // BUG-SIDEBAR-ABORT: evita abort extra ao reconectar
     });
 
     const enrichedNavGroups = useMemo(() => {
@@ -541,7 +553,7 @@ export const SidebarReorganized = React.memo(
           className={cn(
             'theme-transitioning fixed left-0 top-0 z-50 h-full border-r border-sidebar-border/20 bg-sidebar/80 backdrop-blur-3xl transition-all duration-500',
             isCollapsed ? 'overflow-visible' : 'overflow-hidden',
-            'lg:sticky lg:top-0 lg:z-40 lg:h-screen',
+            'lg:sticky lg:top-0 lg:z-40 lg:h-[100dvh] lg:max-h-[100dvh]',
             isOpen
               ? 'translate-x-0 shadow-[40px_0_100px_rgba(0,0,0,0.4)]'
               : '-translate-x-full lg:translate-x-0',

@@ -28,7 +28,9 @@ describe('useUndoStack', () => {
   it('popAndUndo retorna false quando pilha vazia', async () => {
     const { result } = renderHook(() => useUndoStack());
     let ok: boolean | undefined;
-    await act(async () => { ok = await result.current.popAndUndo(); });
+    await act(async () => {
+      ok = await result.current.popAndUndo();
+    });
     expect(ok).toBe(false);
   });
 
@@ -36,10 +38,14 @@ describe('useUndoStack', () => {
     const undo = vi.fn();
     const { result } = renderHook(() => useUndoStack());
 
-    act(() => { result.current.push({ id: 'e1', label: 'Ação A', undo }); });
+    act(() => {
+      result.current.push({ id: 'e1', label: 'Ação A', undo });
+    });
 
     let ok: boolean | undefined;
-    await act(async () => { ok = await result.current.popAndUndo(); });
+    await act(async () => {
+      ok = await result.current.popAndUndo();
+    });
 
     expect(ok).toBe(true);
     expect(undo).toHaveBeenCalledTimes(1);
@@ -50,11 +56,25 @@ describe('useUndoStack', () => {
     const { result } = renderHook(() => useUndoStack());
 
     act(() => {
-      result.current.push({ id: 'e1', label: 'A', undo: () => { order.push('A'); } });
-      result.current.push({ id: 'e2', label: 'B', undo: () => { order.push('B'); } });
+      result.current.push({
+        id: 'e1',
+        label: 'A',
+        undo: () => {
+          order.push('A');
+        },
+      });
+      result.current.push({
+        id: 'e2',
+        label: 'B',
+        undo: () => {
+          order.push('B');
+        },
+      });
     });
 
-    await act(async () => { await result.current.popAndUndo(); });
+    await act(async () => {
+      await result.current.popAndUndo();
+    });
     expect(order).toEqual(['B']); // B é o mais recente
   });
 
@@ -62,11 +82,17 @@ describe('useUndoStack', () => {
     const undo = vi.fn();
     const { result } = renderHook(() => useUndoStack());
 
-    act(() => { result.current.push({ id: 'old', label: 'Antiga', undo }); });
-    act(() => { vi.advanceTimersByTime(31_000); }); // 31s depois → expirado
+    act(() => {
+      result.current.push({ id: 'old', label: 'Antiga', undo });
+    });
+    act(() => {
+      vi.advanceTimersByTime(31_000);
+    }); // 31s depois → expirado
 
     let ok: boolean | undefined;
-    await act(async () => { ok = await result.current.popAndUndo(); });
+    await act(async () => {
+      ok = await result.current.popAndUndo();
+    });
 
     expect(ok).toBe(false); // TTL expirado → descartado
     expect(undo).not.toHaveBeenCalled();
@@ -86,13 +112,17 @@ describe('useUndoStack', () => {
     const run = async () => {
       while (true) {
         let ok = false;
-        await act(async () => { ok = await result.current.popAndUndo(); });
+        await act(async () => {
+          ok = await result.current.popAndUndo();
+        });
         if (!ok) break;
         count++;
       }
     };
 
-    return run().then(() => { expect(count).toBe(10); });
+    return run().then(() => {
+      expect(count).toBe(10);
+    });
   });
 
   it('clear: esvazia a pilha completamente', async () => {
@@ -106,45 +136,47 @@ describe('useUndoStack', () => {
     });
 
     let ok: boolean | undefined;
-    await act(async () => { ok = await result.current.popAndUndo(); });
+    await act(async () => {
+      ok = await result.current.popAndUndo();
+    });
     expect(ok).toBe(false);
     expect(undo).not.toHaveBeenCalled();
   });
 
-  it('Ctrl+Z: chama popAndUndo', () => {
+  it('Ctrl+Z: chama popAndUndo', async () => {
     const undo = vi.fn();
     const { result } = renderHook(() => useUndoStack());
-    act(() => { result.current.push({ id: '1', label: 'A', undo }); });
+    act(() => {
+      result.current.push({ id: '1', label: 'A', undo });
+    });
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'z', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { ctrlKey: true, key: 'z', bubbles: true }),
+      );
     });
 
-    // Após tick assíncrono
-    return new Promise<void>(resolve => {
-      setTimeout(() => {
-        expect(undo).toHaveBeenCalledTimes(1);
-        resolve();
-      }, 10);
-    });
+    // flush microtasks so async popAndUndo resolves without needing real timers
+    await act(async () => {});
+    expect(undo).toHaveBeenCalledTimes(1);
   });
 
-  it('cleanup: remove listener ao desmontar', () => {
+  it('cleanup: remove listener ao desmontar', async () => {
     const undo = vi.fn();
     const { result, unmount } = renderHook(() => useUndoStack());
-    act(() => { result.current.push({ id: '1', label: 'A', undo }); });
+    act(() => {
+      result.current.push({ id: '1', label: 'A', undo });
+    });
 
     unmount();
 
     act(() => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { ctrlKey: true, key: 'z', bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { ctrlKey: true, key: 'z', bubbles: true }),
+      );
     });
 
-    return new Promise<void>(resolve => {
-      setTimeout(() => {
-        expect(undo).not.toHaveBeenCalled(); // listener removido
-        resolve();
-      }, 10);
-    });
+    await act(async () => {});
+    expect(undo).not.toHaveBeenCalled(); // listener removido
   });
 });

@@ -18,7 +18,7 @@ import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
 import { reportSilentEmpty } from '@/lib/external-db/silent-empty-report';
 
-export type Operation = 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch_insert';
+export type Operation = 'batch_insert' | 'delete' | 'insert' | 'select' | 'update' | 'upsert';
 
 export interface InvokeOptions<T = Record<string, unknown>> {
   table: string;
@@ -34,7 +34,11 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   secondaryOrderBy?: { column: string; ascending?: boolean };
   limit?: number;
   offset?: number;
-  countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  countMode?: 'estimated' | 'exact' | 'none' | 'planned';
+  /** Conflict target column(s) for upsert (PostgREST onConflict). Defaults to the PK. */
+  onConflict?: string;
+  /** AbortSignal — when aborted, the underlying HTTP request is cancelled. */
+  signal?: AbortSignal;
 }
 
 export interface InvokeResult<T> {
@@ -86,6 +90,12 @@ const COLUMN_MAP: Record<string, Record<string, string>> = {
     usa_faixa_dimensional: 'usa_faixa_dimensional',
     nome: 'nome',
     id: 'id',
+    // ANTI-REGRESSION (fix 2026-06-26, migration 20260626120000): ordem_exibicao now exists on
+    // tabela_preco_gravacao_oficial. Callers reach this table via the 'tecnica_gravacao' bridge
+    // alias and ORDER BY ordem_exibicao (useTecnicasList / fetchPromobrindTechniques). Before the
+    // column existed only on tecnicas_gravacao -> PostgREST 400 (42703). Keep this passthrough.
+    ordem_exibicao: 'ordem_exibicao',
+    display_order: 'ordem_exibicao',
     // EN -> PT translations (what callers send)
     is_active: 'ativo',
     active: 'ativo',
@@ -203,6 +213,8 @@ function mapRows<T>(resolvedTable: string, rows: T[]): T[] {
         price_by_color: row.cobra_por_cor,
         price_by_area: row.usa_faixa_dimensional,
         name: row.nome,
+        // fix 2026-06-26: mirror tecnicas_gravacao mapRows so EN-named callers also get display_order.
+        display_order: row.ordem_exibicao,
       } as T;
     });
   }
@@ -211,7 +223,7 @@ function mapRows<T>(resolvedTable: string, rows: T[]): T[] {
 
 // FIX 2026-06-14 (catalog-search-audit): _search agora aceita MÚLTIPLAS colunas.
 // Valor string[] => OR de ILIKE (name OU sku OU supplier_reference); string => 1 coluna (legado, inalterado).
-const SEARCH_COLUMNS: Record<string, string | string[]> = {
+const SEARCH_COLUMNS: Record<string, string[] | string> = {
   v_products_public: ['name', 'sku', 'supplier_reference'],
   products: ['name', 'sku', 'supplier_reference'],
   categories: 'name',
@@ -265,7 +277,125 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
   return true;
 }
 
+// ── WRITE support ─────────────────────────────────────────────────────────────
+// Writes target the REAL base table, never the Gold read-views (which expose no
+// DML grant). Only BRIDGE_ALIASES apply — mirrors dbInvokeDelete's resolution.
+type WriteResult = { data: unknown; error: { message?: string } | null };
+type WriteBuilder = PromiseLike<WriteResult> & {
+  insert: (values: unknown) => WriteBuilder;
+  update: (values: unknown) => WriteBuilder;
+  upsert: (
+    values: unknown,
+    options?: { onConflict?: string; ignoreDuplicates?: boolean },
+  ) => WriteBuilder;
+  delete: () => WriteBuilder;
+  select: (columns?: string) => WriteBuilder;
+  eq: (column: string, value: unknown) => WriteBuilder;
+  in: (column: string, values: readonly unknown[]) => WriteBuilder;
+  is: (column: string, value: null) => WriteBuilder;
+};
+
+function remapWriteData(resolvedTable: string, data: unknown): unknown {
+  const map = COLUMN_MAP[resolvedTable];
+  const remapRow = (row: Record<string, unknown>): Record<string, unknown> => {
+    if (!map) return row;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(row)) out[map[k] ?? k] = v;
+    return out;
+  };
+  if (Array.isArray(data)) return (data as Record<string, unknown>[]).map(remapRow);
+  return remapRow((data ?? {}) as Record<string, unknown>);
+}
+
+/**
+ * Executes insert/update/upsert/delete/batch_insert via PostgREST.
+ *
+ * CRITICAL BUGFIX (cadastro-de-produtos audit): dbInvoke historically only ever
+ * built `untypedFrom(table).select(...)`, so EVERY caller passing a write
+ * `operation` (product create/edit, bulk activate/deactivate, new category, new
+ * supplier, técnicas, …) performed a silent no-op read that returned an unrelated
+ * row and reported success — no data was ever persisted. This executor issues the
+ * real DML, returning the affected row(s) via `.select()` so callers receive a
+ * genuine inserted/updated record (e.g. the new product id used for navigation).
+ */
+async function dbInvokeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
+  const table = BRIDGE_ALIASES[options.table] ?? options.table;
+  const op = options.operation;
+
+  // Mass-mutation guard: update/delete MUST be scoped by id or filters.
+  const hasScope = !!options.id || (!!options.filters && Object.keys(options.filters).length > 0);
+  if ((op === 'update' || op === 'delete') && !hasScope) {
+    throw new Error(
+      `[postgrest] ${op} on '${table}' without id/filter is forbidden (mass-mutation guard).`,
+    );
+  }
+  // Empty-array filter would silently match zero rows → fail loud (Issue #537 parity).
+  if (options.filters) {
+    for (const [k, v] of Object.entries(options.filters)) {
+      if (Array.isArray(v) && v.length === 0) {
+        throw new Error(
+          `[postgrest] ${op} on '${table}' with empty-array filter '${k}' would affect zero rows; fix the call site.`,
+        );
+      }
+    }
+  }
+
+  const applyScope = (builder: WriteBuilder): WriteBuilder => {
+    let scoped = builder;
+    if (options.id) scoped = scoped.eq('id', options.id);
+    if (options.filters) {
+      for (const [key, value] of Object.entries(remapFilters(table, options.filters))) {
+        if (Array.isArray(value)) scoped = scoped.in(key, value);
+        else if (value === null) scoped = scoped.is(key, null);
+        else scoped = scoped.eq(key, value);
+      }
+    }
+    return scoped;
+  };
+
+  const base = untypedFrom(table) as unknown as WriteBuilder;
+  const payload = remapWriteData(table, options.data);
+  let builder: WriteBuilder;
+  switch (op) {
+    case 'insert':
+    case 'batch_insert':
+      builder = base.insert(payload).select();
+      break;
+    case 'upsert':
+      builder = base
+        .upsert(payload, options.onConflict ? { onConflict: options.onConflict } : undefined)
+        .select();
+      break;
+    case 'update':
+      builder = applyScope(base.update(payload)).select();
+      break;
+    case 'delete':
+      builder = applyScope(base.delete()).select();
+      break;
+    default:
+      throw new Error(`[postgrest] unsupported write operation '${String(op)}'`);
+  }
+
+  const { data, error } = await builder;
+  if (error) {
+    logger.warn(
+      `[postgrest] write error on table='${table}' (original='${options.table}') op='${op}': ${error.message ?? 'unknown'}`,
+    );
+    throw Object.assign(new Error(error.message ?? 'postgrest write error'), error);
+  }
+  const records = mapRows<T>(table, (data as T[]) ?? []);
+  return { records, count: records.length };
+}
+
 export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
+  // WRITE operations are delegated to the dedicated DML executor. Historically
+  // dbInvoke only ever issued SELECTs, so callers passing a write operation
+  // (insert/update/upsert/delete/batch_insert) silently performed a no-op read
+  // and reported a false success — see dbInvokeWrite for the full bug writeup.
+  if (options.operation && options.operation !== 'select') {
+    return dbInvokeWrite<T>(options);
+  }
+
   const table = TABLE_ALIASES[options.table] ?? options.table;
 
   // Extract _search before remapping (it's a meta-filter, not a column name)
@@ -275,6 +405,14 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     const raw = rawFilters._search;
     if (typeof raw === 'string' && raw.trim() !== '') searchTerm = raw.trim();
     delete rawFilters._search;
+  }
+
+  // Extract _name_prefix (prefix-search meta-filter — must never leak into an .eq()).
+  let namePrefix: string | undefined;
+  if (rawFilters && '_name_prefix' in rawFilters) {
+    const rawPrefix = rawFilters._name_prefix;
+    if (typeof rawPrefix === 'string' && rawPrefix.trim() !== '') namePrefix = rawPrefix.trim();
+    delete rawFilters._name_prefix;
   }
 
   const remappedFilters = rawFilters ? remapFilters(table, rawFilters) : undefined;
@@ -361,6 +499,17 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     }
   }
 
+  // _name_prefix → prefix ILIKE across the configured search columns. Restores the
+  // catalog-search "0 produtos" fix (commit 57fc30a4b) reverted upstream by the bot.
+  if (namePrefix) {
+    const prefixCfg = SEARCH_COLUMNS[table] ?? SEARCH_COLUMNS[options.table];
+    const prefixCols = prefixCfg ? (Array.isArray(prefixCfg) ? prefixCfg : [prefixCfg]) : ['name'];
+    const safePrefix = namePrefix.replace(/[,()*%]/g, ' ').trim();
+    if (safePrefix.length > 0) {
+      query = query.or(prefixCols.map((c) => `${c}.ilike.${safePrefix}*`).join(','));
+    }
+  }
+
   if (remappedFilters) {
     for (const [key, value] of Object.entries(remappedFilters)) {
       if (Array.isArray(value)) {
@@ -407,7 +556,15 @@ export async function dbInvoke<T>(options: InvokeOptions): Promise<InvokeResult<
     query = query.range(from, from + options.limit - 1);
   }
 
-  const { data, error, count: dbCount } = await query;
+  const {
+    data,
+    error,
+    count: dbCount,
+  } = await (options.signal
+    ? (query as unknown as { abortSignal: (s: AbortSignal) => typeof query }).abortSignal(
+        options.signal,
+      )
+    : query);
 
   if (error) {
     if (error.message?.includes('410') || error.message?.includes('Gone')) {

@@ -44,7 +44,7 @@ import { toast as sonnerToast } from 'sonner';
  */
 export type ToastActionElement = React.ReactElement;
 
-type Variant = 'default' | 'destructive' | 'success' | 'warning' | 'info';
+type Variant = 'default' | 'destructive' | 'info' | 'success' | 'warning';
 
 interface ToastInput {
   title?: React.ReactNode;
@@ -52,13 +52,13 @@ interface ToastInput {
   variant?: Variant;
   action?: ToastActionElement;
   duration?: number;
-  id?: string | number;
+  id?: number | string;
   // Permite passar qualquer outra prop do Sonner sem quebrar o tipo
   [extra: string]: unknown;
 }
 
 interface ToastReturn {
-  id: string | number;
+  id: number | string;
   dismiss: () => void;
   update: (next: ToastInput) => void;
 }
@@ -108,7 +108,7 @@ function toast(input: ToastInput): ToastReturn {
     options.id = explicitId;
   }
 
-  let id: string | number;
+  let id: number | string;
   switch (variant) {
     case 'destructive':
       id = sonnerToast.error(message, options);
@@ -151,7 +151,7 @@ function useToast() {
   return React.useMemo(
     () => ({
       toast,
-      dismiss: (toastId?: string | number) => sonnerToast.dismiss(toastId),
+      dismiss: (toastId?: number | string) => sonnerToast.dismiss(toastId),
       toasts: [] as Array<never>,
     }),
     [],

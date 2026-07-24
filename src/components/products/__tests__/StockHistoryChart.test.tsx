@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StockHistoryChart } from '../StockHistoryChart';
@@ -66,7 +67,7 @@ describe('StockHistoryChart Tooltips', () => {
     expect(potencialBadge).toBeInTheDocument();
   });
 
-  it('shows tooltip content on hover (KpiCard)', async () => {
+  it('shows tooltip content on hover (KpiCard)', () => {
     render(<StockHistoryChart productId="test-prod" />);
 
     const firstInfoButton = screen.getAllByRole('button', { name: /Sobre/i })[0];

@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { formatCurrency } from '@/lib/format';
+import { getQuoteStatusLabel, QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 
 interface QuoteApprovalCardProps {
   quoteNumber: string;
@@ -36,16 +37,8 @@ export function QuoteApprovalCard({
             <CardTitle>Orçamento {quoteNumber}</CardTitle>
             {clientName && <p className="mt-1 text-sm text-muted-foreground">Para: {clientName}</p>}
           </div>
-          <Badge
-            variant={
-              status === 'approved'
-                ? 'default'
-                : status === 'rejected'
-                  ? 'destructive'
-                  : 'secondary'
-            }
-          >
-            {status}
+          <Badge variant={QUOTE_STATUS_CONFIG[status]?.badgeVariant ?? 'secondary'}>
+            {getQuoteStatusLabel(status)}
           </Badge>
         </div>
       </CardHeader>

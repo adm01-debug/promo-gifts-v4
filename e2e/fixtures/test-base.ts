@@ -161,8 +161,24 @@ function authStorageHasCookies(): boolean {
 }
 
 /** Marca o teste como skip se as credenciais E2E_USER_* não foram fornecidas
- *  OU se o auth.setup falhou (login inválido, Supabase indisponível, etc.). */
+ *  OU se o auth.setup falhou (login inválido, Supabase indisponível, etc.).
+ *
+ *  BYPASS: quando `E2E_MOCK_AUTH=1`, aceitamos o storageState sintético
+ *  gerado por `scripts/e2e-mock-auth-setup.mjs` — que grava um cookie
+ *  sentinela `e2e-mock-auth`. Nesse modo, os specs precisam chamar
+ *  `installMockAuth(page)` (em `e2e/helpers/mock-auth.ts`) para interceptar
+ *  as chamadas a `/auth/v1/**`. */
 export function requireAuth(reason = "E2E_USER_EMAIL/PASSWORD não configurados") {
+  const mockMode = process.env.E2E_MOCK_AUTH === "1" || process.env.E2E_MOCK_AUTH === "true";
+  if (mockMode) {
+    // Em modo mock só exigimos que o storageState exista com cookies (o
+    // script mock-auth-setup grava a sentinela).
+    test.skip(
+      !authStorageHasCookies(),
+      "E2E_MOCK_AUTH=1 mas storageState mock não foi gerado. Rode `node scripts/e2e-mock-auth-setup.mjs` antes.",
+    );
+    return;
+  }
   const hasCredentials = !!(process.env.E2E_USER_EMAIL && process.env.E2E_USER_PASSWORD);
   if (!hasCredentials) {
     test.skip(true, reason);

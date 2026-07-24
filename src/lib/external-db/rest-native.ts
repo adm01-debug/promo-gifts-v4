@@ -32,6 +32,7 @@ const REST_NATIVE_SAFE_TABLES = new Set<string>([
   'product_images',
   'product_videos',
   'product_kit_components',
+  'v_kit_component_complete', // 2026-06-19: view enriquecida — fonte primária para PDP de kits
   'kit_component_print_areas',
   'component_media', // FIX 2026-06-11: nome real no SSOT (kit_component_media nunca existiu)
   'product_materials',
@@ -377,7 +378,10 @@ function isRetryableError(msg: string): boolean {
     lower.includes('504')
   );
 }
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 // ── Concurrency limiter ───────────────────────────────────────────────────────────
 export async function runWithConcurrency<T>(
@@ -403,30 +407,30 @@ export async function runWithConcurrency<T>(
 // ── Types ─────────────────────────────────────────────────────────────────────
 const OFFSET_WITHOUT_LIMIT_FALLBACK_UPPER = 999;
 type RestError = { message: string };
-type RestCountMode = 'exact' | 'planned' | 'estimated';
+type RestCountMode = 'estimated' | 'exact' | 'planned';
 type RestQueryResult = {
   data: Record<string, unknown>[] | null;
   error: RestError | null;
   count: number | null;
 };
 type RestQuery = PromiseLike<RestQueryResult> & {
-  eq(column: string, value: unknown): RestQuery;
-  in(column: string, values: readonly unknown[]): RestQuery;
-  is(column: string, value: null): RestQuery;
-  gte(column: string, value: unknown): RestQuery;
-  lte(column: string, value: unknown): RestQuery;
-  gt(column: string, value: unknown): RestQuery;
-  lt(column: string, value: unknown): RestQuery;
-  like(column: string, value: unknown): RestQuery;
-  ilike(column: string, value: unknown): RestQuery;
-  neq(column: string, value: unknown): RestQuery;
-  not(column: string, operator: string, value: unknown): RestQuery;
-  order(column: string, options: { ascending: boolean }): RestQuery;
-  range(from: number, to: number): RestQuery;
+  eq: (column: string, value: unknown) => RestQuery;
+  in: (column: string, values: readonly unknown[]) => RestQuery;
+  is: (column: string, value: null) => RestQuery;
+  gte: (column: string, value: unknown) => RestQuery;
+  lte: (column: string, value: unknown) => RestQuery;
+  gt: (column: string, value: unknown) => RestQuery;
+  lt: (column: string, value: unknown) => RestQuery;
+  like: (column: string, value: unknown) => RestQuery;
+  ilike: (column: string, value: unknown) => RestQuery;
+  neq: (column: string, value: unknown) => RestQuery;
+  not: (column: string, operator: string, value: unknown) => RestQuery;
+  order: (column: string, options: { ascending: boolean }) => RestQuery;
+  range: (from: number, to: number) => RestQuery;
 };
 type RestNativeClient = {
-  from(table: string): {
-    select(columns: string, options?: { count?: RestCountMode; head?: boolean }): RestQuery;
+  from: (table: string) => {
+    select: (columns: string, options?: { count?: RestCountMode; head?: boolean }) => RestQuery;
   };
 };
 
@@ -440,7 +444,7 @@ export function isRestNativeEligible(options: InvokeOptions): boolean {
 // ── PostgREST operator parsing ────────────────────────────────────────────────
 const POSTGREST_OP_REGEX = /^(eq|neq|gt|gte|lt|lte|like|ilike|is|in|not)\.(.+)$/;
 function parsePostgrestString(query: RestQuery, col: string, raw: string): RestQuery {
-  const match = raw.match(POSTGREST_OP_REGEX);
+  const match = POSTGREST_OP_REGEX.exec(raw);
   if (!match) return query.eq(col, raw);
   const [, op, rest] = match;
   switch (op) {
@@ -694,17 +698,20 @@ function remapData(table: string, data: Record<string, unknown>): Record<string,
   return out;
 }
 type RestWriteBuilder = PromiseLike<RestQueryResult> & {
-  eq(column: string, value: unknown): RestWriteBuilder;
-  in(column: string, values: readonly unknown[]): RestWriteBuilder;
-  is(column: string, value: null): RestWriteBuilder;
-  select(columns?: string): RestWriteBuilder;
+  eq: (column: string, value: unknown) => RestWriteBuilder;
+  in: (column: string, values: readonly unknown[]) => RestWriteBuilder;
+  is: (column: string, value: null) => RestWriteBuilder;
+  select: (columns?: string) => RestWriteBuilder;
 };
 type RestWriteClient = {
-  from(table: string): {
-    insert(values: unknown): RestWriteBuilder;
-    update(values: unknown): RestWriteBuilder;
-    delete(): RestWriteBuilder;
-    upsert(values: unknown): RestWriteBuilder;
+  from: (table: string) => {
+    insert: (values: unknown) => RestWriteBuilder;
+    update: (values: unknown) => RestWriteBuilder;
+    delete: () => RestWriteBuilder;
+    upsert: (
+      values: unknown,
+      options?: { onConflict?: string; ignoreDuplicates?: boolean },
+    ) => RestWriteBuilder;
   };
 };
 export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise<InvokeResult<T>> {
@@ -748,7 +755,14 @@ export async function executeRestNativeWrite<T>(options: InvokeOptions): Promise
       builder = tbl.insert(payloadOf(options.data)).select();
       break;
     case 'upsert':
-      builder = tbl.upsert(payloadOf(options.data)).select();
+      // Forward onConflict so bulk "update by SKU" targets the unique sku index instead of
+      // the PK (otherwise existing rows 23505-conflict on the PK and fail).
+      builder = tbl
+        .upsert(
+          payloadOf(options.data),
+          options.onConflict ? { onConflict: options.onConflict } : undefined,
+        )
+        .select();
       break;
     case 'update':
       builder = scoped(tbl.update(payloadOf(options.data))).select();

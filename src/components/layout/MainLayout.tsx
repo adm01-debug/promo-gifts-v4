@@ -45,7 +45,13 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   useScrollLockFix();
   useMobileSidebarFix(() => setSidebarOpen(false), sidebarOpen);
-  useGlobalShortcuts();
+  // BUG-9 FIX: passa onToggleCart → ativa Ctrl+Shift+C para abrir o carrinho.
+  // CartHeaderButton escuta 'open-seller-cart' via window.addEventListener.
+  // Antes era undefined (MainLayout chamava useGlobalShortcuts sem handlers),
+  // tornando Ctrl+Shift+C dead code.
+  useGlobalShortcuts({
+    onToggleCart: () => window.dispatchEvent(new CustomEvent('open-seller-cart')),
+  });
 
   useEffect(() => {
     performanceTracker.mark('main-layout-mounted');
@@ -76,9 +82,12 @@ export function MainLayout({ children }: MainLayoutProps) {
   }, [location.pathname]);
 
   const layoutContent = (
-    // overflow-x-hidden previne bleed horizontal de elementos internos
-    // sem quebrar posicionamentos fixed/sticky que usam transform proprio
-    <div className="min-h-screen overflow-x-hidden bg-background print:min-h-0" role="document">
+    // CRÍTICO: usar `overflow-x: clip` (não `hidden`). `overflow-x: hidden`
+    // promove `overflow-y` para `auto` (CSS spec), criando um scroll container
+    // intermediário que ANULA o `lg:sticky lg:top-0` da `<aside>`. `clip` evita
+    // o vazamento horizontal SEM criar scroll container, preservando o viewport
+    // como scrollport único — pré-requisito do sticky da sidebar.
+    <div className="min-h-screen overflow-x-clip bg-background print:min-h-0 print:overflow-visible" role="document">
       <div className="fixed inset-0 z-[-1]">
         <Suspense fallback={null}>
           <StarBackground />

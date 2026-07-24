@@ -39,7 +39,7 @@ export function useUserManagement() {
       // do PostgREST recurra no embed `user_roles(role)` — relacionamento não
       // reconhecido pelos tipos gerados — que causava TS2589 (instanciação
       // profunda). `.returns<T>()` fornece a forma final do resultado.
-      const selectCols: string =
+      const selectCols =
         'id, user_id, full_name, email, avatar_url, is_active, created_at, user_roles(role)';
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -223,8 +223,13 @@ export function useUserManagement() {
         .upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      const publicUrl = urlData.publicUrl + `?t=${Date.now()}`;
-      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('user_id', userId);
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      // BUG-AVATAR-UPDATE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', userId);
+      if (profileErr) logger.warn('[useUserManagement] avatar update failed:', profileErr);
       setUsers((prev) =>
         prev.map((u) => (u.user_id === userId ? { ...u, avatar_url: publicUrl } : u)),
       );
@@ -241,7 +246,16 @@ export function useUserManagement() {
 
   const handleRemoveAvatar = async (userId: string) => {
     try {
-      await supabase.from('profiles').update({ avatar_url: null }).eq('user_id', userId);
+      // BUG-AVATAR-REMOVE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: removeErr } = await supabase
+        .from('profiles')
+        .update({ avatar_url: null })
+        .eq('user_id', userId);
+      if (removeErr) {
+        logger.warn('[useUserManagement] avatar remove failed:', removeErr);
+        toast.error('Erro ao remover foto');
+        return false;
+      }
       setUsers((prev) => prev.map((u) => (u.user_id === userId ? { ...u, avatar_url: null } : u)));
       toast.success('Foto removida');
       return true;

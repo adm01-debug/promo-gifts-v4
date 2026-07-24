@@ -1,14 +1,10 @@
 /**
- * QuoteTotalsSummary — Totals breakdown card for QuoteViewPage
+ * QuoteTotalsSummary — Totals breakdown card for QuoteViewPage.
+ * Tipografia via SSOT `quote-view-typography` (consistência com cliente/itens).
  */
 import { formatCurrency } from '@/lib/format';
 import type { QuoteItem } from './QuoteItemsTable';
-
-function calcPersTotal(totalCost: number, qty: number): number {
-  if (qty <= 0) return totalCost;
-  const roundedUnit = Math.round((totalCost / qty) * 100) / 100;
-  return Math.round(roundedUnit * qty * 100) / 100;
-}
+import { qvSpacing, qvType } from './quote-view-typography';
 
 interface QuoteTotalsSummaryProps {
   items: QuoteItem[];
@@ -27,13 +23,7 @@ export function QuoteTotalsSummary({
 }: QuoteTotalsSummaryProps) {
   const productSubtotal = items.reduce((acc, item) => acc + item.quantity * item.unit_price, 0);
   const personalizationTotal = items.reduce((acc, item) => {
-    return (
-      acc +
-      (item.personalizations ?? []).reduce(
-        (pAcc, p) => pAcc + calcPersTotal(p.total_cost ?? 0, item.quantity),
-        0,
-      )
-    );
+    return acc + (item.personalizations ?? []).reduce((pAcc, p) => pAcc + (p.total_cost ?? 0), 0);
   }, 0);
   const fullSubtotal = productSubtotal + personalizationTotal;
   const discountValue = discountPercent
@@ -46,31 +36,29 @@ export function QuoteTotalsSummary({
   const hasPersonalizations = personalizationTotal > 0;
 
   return (
-    <div className="flex justify-end">
+    <aside aria-label="Resumo de totais" className="flex justify-end">
       <div className="w-full max-w-sm overflow-hidden rounded-lg border border-border">
-        <div className="space-y-2 p-4">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal produtos:</span>
-            <span data-testid="summary-subtotal-products">{formatCurrency(productSubtotal)}</span>
+        <dl className={`space-y-1.5 ${qvSpacing.summaryBody}`}>
+          <div className={`flex justify-between ${qvType.summaryRow}`}>
+            <dt className="text-muted-foreground">Subtotal produtos:</dt>
+            <dd data-testid="summary-subtotal-products">{formatCurrency(productSubtotal)}</dd>
           </div>
           {hasPersonalizations && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Personalização:</span>
-              <span data-testid="summary-personalization">
-                {formatCurrency(personalizationTotal)}
-              </span>
+            <div className={`flex justify-between ${qvType.summaryRow}`}>
+              <dt className="text-muted-foreground">Personalização:</dt>
+              <dd data-testid="summary-personalization">{formatCurrency(personalizationTotal)}</dd>
             </div>
           )}
           {discountValue > 0 && (
-            <div className="flex justify-between text-sm text-destructive">
-              <span>Desconto{discountPercent ? ` (${discountPercent}%)` : ''}:</span>
-              <span data-testid="summary-discount">-{formatCurrency(discountValue)}</span>
+            <div className={`flex justify-between text-destructive ${qvType.summaryRow}`}>
+              <dt>Desconto{discountPercent ? ` (${discountPercent}%)` : ''}:</dt>
+              <dd data-testid="summary-discount">-{formatCurrency(discountValue)}</dd>
             </div>
           )}
           {shippingType && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Frete:</span>
-              <span>
+            <div className={`flex justify-between ${qvType.summaryRow}`}>
+              <dt className="text-muted-foreground">Frete:</dt>
+              <dd>
                 {shippingType === 'cif'
                   ? 'CIF — Cortesia'
                   : shippingType === 'fob'
@@ -78,19 +66,20 @@ export function QuoteTotalsSummary({
                     : shippingType === 'fob_pre'
                       ? `FOB Pré-negociado (${formatCurrency(shippingCost || 0)})`
                       : formatCurrency(shippingCost || 0)}
-              </span>
+              </dd>
             </div>
           )}
-        </div>
-        <div className="border-t border-border bg-muted/50 px-4 py-3">
+        </dl>
+        <div className={`border-t border-border bg-muted/50 ${qvSpacing.summaryTotalBar}`}>
           <div className="flex items-baseline justify-between">
-            <span className="text-lg font-bold">Total:</span>
-            <span data-testid="summary-total" className="text-2xl font-bold text-primary">
+            <span className={qvType.totalLabel}>Total:</span>
+            <span data-testid="summary-total" className={qvType.totalValue}>
               {formatCurrency(computedTotal)}
             </span>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
+

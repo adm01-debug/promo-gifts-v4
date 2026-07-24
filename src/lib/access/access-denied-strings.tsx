@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 
-export type Role = 'dev' | 'supervisor' | 'agente' | 'desconhecido';
+export type Role = 'agente' | 'desconhecido' | 'dev' | 'supervisor';
 
 export interface RoleCopy {
   badge: string;

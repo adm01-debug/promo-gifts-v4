@@ -1,10 +1,13 @@
 /**
- * QuotesConfigurableList - Lista de orçamentos com colunas reordenáveis, paginação e seleção em massa
+ * QuotesConfigurableList - Lista de orçamentos com colunas fixas, paginação e seleção em massa.
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, type HTMLAttributes } from 'react';
 import { renderQuoteCell } from './QuoteListCellRenderer';
+import { useQuoteClientLogos } from '@/hooks/quotes/useQuoteClientLogos';
+import { useQuoteItemCounts } from '@/hooks/quotes/useQuoteItemCounts';
 import { useNavigate } from 'react-router-dom';
+import { usePrefetchOnHover } from '@/hooks/common/usePrefetchOnHover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -14,98 +17,73 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
 import {
   MoreVertical,
   Eye,
   Trash2,
   Copy,
   Edit,
-  Settings2,
-  GripVertical,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Download,
+  Inbox,
   RefreshCw,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
+
 import type { Quote } from '@/hooks/quotes';
-import { BulkActionsBar } from '@/components/common/BulkActionsBar';
+
 import { useBulkSelection } from '@/hooks/common';
-import { QuoteRowQuickActions } from './QuoteRowQuickActions';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  horizontalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+
 import { cn } from '@/lib/utils';
+import {
+  QUOTES_ROW_H,
+  QUOTES_MIN_VISIBLE_ROWS,
+  QUOTES_MAX_VISIBLE_ROWS,
+  QUOTES_CHROME_BY_BREAKPOINT,
+} from '@/lib/quotes/quotesLayout';
+
+// ── Prefetch do bundle do QuoteBuilder/QuoteView ──
+// Dispara em hover/focus/touch de uma linha para eliminar o "flash" do lazy
+// chunk quando o usuário clicar. Idempotente — dynamic import resolve uma vez
+// e o resultado fica cacheado pelo browser + Vite.
+function prefetchQuoteRoutes(): void {
+  void import('@/pages/quotes/QuoteViewPage');
+  void import('@/pages/quotes/QuoteBuilderPage');
+}
+
+/** Wrapper que aplica `usePrefetchOnHover` no <div> da linha do orçamento. */
+interface PrefetchRowProps extends HTMLAttributes<HTMLDivElement> {
+  prefetch: () => void;
+}
+function PrefetchRow({ prefetch, children, ...rest }: PrefetchRowProps) {
+  const handlers = usePrefetchOnHover(prefetch);
+  return (
+    <div {...rest} {...handlers}>
+      {children}
+    </div>
+  );
+}
 
 // ── Column definitions ──
 export interface ColumnDef {
   id: string;
   label: string;
   width: string;
-  align?: 'left' | 'right' | 'center';
+  align?: 'center' | 'left' | 'right';
   required?: boolean;
 }
 
 const ALL_COLUMNS: ColumnDef[] = [
-  { id: 'status', label: 'Status', width: '110px' },
-  { id: 'client', label: 'Empresa', width: 'minmax(120px, 0.7fr)', required: true },
-  { id: 'contact', label: 'Contato', width: '120px' },
-  { id: 'date', label: 'Data', width: '110px' },
-  { id: 'value', label: 'Valor', width: '140px', align: 'right' },
-  { id: 'delivery', label: 'Entrega', width: '150px' },
-  { id: 'quote_number', label: 'Nº Orçamento', width: '200px' },
+  { id: 'client', label: 'Empresa', width: 'minmax(220px, 1.4fr)', required: true },
+  { id: 'contact', label: 'Contato', width: 'minmax(140px, 0.9fr)' },
+  { id: 'date', label: 'Data', width: '120px' },
+  { id: 'delivery', label: 'Entrega', width: '90px' },
+  { id: 'items', label: 'Itens', width: '80px', align: 'center' },
+  { id: 'value', label: 'Valor', width: '140px' },
+  { id: 'status', label: 'Status', width: '150px' },
+  { id: 'expiration', label: 'Expiração', width: '110px', align: 'center' },
+  { id: 'quote_number', label: 'Nº Orçamento', width: '120px' },
 ];
-
-// ── Sortable Header Cell ──
-function SortableHeaderCell({ column }: { column: ColumnDef }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: column.id,
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`flex cursor-grab select-none items-center gap-1 active:cursor-grabbing ${
-        column.align === 'right' ? 'justify-end' : ''
-      }`}
-      {...attributes}
-      {...listeners}
-    >
-      <GripVertical className="h-3 w-3 shrink-0 opacity-50" />
-      <span>{column.label}</span>
-    </div>
-  );
-}
 
 // ── Props ──
 interface QuotesConfigurableListProps {
@@ -115,39 +93,109 @@ interface QuotesConfigurableListProps {
   onBulkStatusChange?: (ids: string[], status: string) => void;
   onBulkExport?: (ids: string[]) => void;
   onDuplicate: (id: string) => void;
-  onMarkApproved?: (id: string) => void;
+  /** Background refetch em andamento — usado para "Carregando mais..." */
+  isFetching?: boolean;
+  /** Mensagem de erro vinda do hook pai; renderiza banner com retry */
+  loadError?: string | null;
+  /** Callback do botão "Tentar novamente" */
+  onRetry?: () => void;
 }
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const PAGE_SIZE = 25;
 
 export function QuotesConfigurableList({
   quotes,
   onDelete,
   onBulkDelete,
-  onBulkStatusChange,
-  onBulkExport,
+  onBulkStatusChange: _onBulkStatusChange,
+  onBulkExport: _onBulkExport,
   onDuplicate,
-  onMarkApproved,
+  isFetching = false,
+  loadError = null,
+  onRetry,
 }: QuotesConfigurableListProps) {
   const navigate = useNavigate();
 
-  // ── Pagination ──
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  // ── Infinite scroll via IntersectionObserver ──
+  // Sentinel logo após a última linha; quando entra no viewport do container,
+  // incrementamos `visibleCount`. Substitui o handler de scroll (mais eficiente
+  // pois o browser despacha apenas em mudanças de intersecção).
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
-  const totalPages = Math.max(1, Math.ceil(quotes.length / pageSize));
-  const safePage = Math.min(currentPage, totalPages);
+  // Identidade da lista (referência) — usada para resetar quando o array
+  // mudar (filtro/busca/ordenação produzem novo array do hook pai).
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [quotes]);
 
-  const paginatedQuotes = useMemo(() => {
-    const start = (safePage - 1) * pageSize;
-    return quotes.slice(start, start + pageSize);
-  }, [quotes, safePage, pageSize]);
+  // Dedup defensivo por id — garante que combinar páginas nunca cause
+  // chaves duplicadas no React mesmo se o backend devolver repetidos.
+  const uniqueQuotes = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Quote[] = [];
+    for (const q of quotes) {
+      const key = q.id ?? q.quote_number ?? '';
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(q);
+    }
+    return out;
+  }, [quotes]);
+
+  const paginatedQuotes = useMemo(
+    () => uniqueQuotes.slice(0, visibleCount),
+    [uniqueQuotes, visibleCount],
+  );
+
+  const hasMore = paginatedQuotes.length < uniqueQuotes.length;
+
+  // IntersectionObserver: dispara quando o sentinel encosta no viewport
+  // do container scrollável. `rootMargin` antecipa em 200px o gatilho.
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const root = scrollRef.current;
+    if (!sentinel || !root) return;
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry?.isIntersecting) {
+          setVisibleCount((c) =>
+            c < uniqueQuotes.length ? Math.min(c + PAGE_SIZE, uniqueQuotes.length) : c,
+          );
+        }
+      },
+      { root, rootMargin: '200px 0px', threshold: 0 },
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, [uniqueQuotes.length, hasMore]);
 
   // ── Visualizações pelo cliente (apenas página atual, performance) ──
   const selectablePaginatedQuotes = useMemo(
     () => paginatedQuotes.filter((q): q is Quote & { id: string } => Boolean(q.id)),
     [paginatedQuotes],
   );
+
+  // ── Persistência (sessionStorage) ──
+  // Mantém modo de seleção + IDs marcados ao trocar de página/rota dentro
+  // do app. Limpa-se ao fechar a aba (sessionStorage por design).
+  const STORAGE_KEY = 'quotes:selection-state:v1';
+  const persisted = useMemo(() => {
+    if (typeof window === 'undefined') return { mode: false, ids: [] as string[] };
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return { mode: false, ids: [] as string[] };
+      const parsed = JSON.parse(raw) as { mode?: boolean; ids?: string[] };
+      return { mode: Boolean(parsed.mode), ids: Array.isArray(parsed.ids) ? parsed.ids : [] };
+    } catch {
+      return { mode: false, ids: [] as string[] };
+    }
+  }, []);
 
   // ── Bulk selection (operates on paginated items) ──
   const {
@@ -158,348 +206,411 @@ export function QuotesConfigurableList({
     clearSelection,
     isSelected,
     isAllSelected,
-  } = useBulkSelection(selectablePaginatedQuotes);
+  } = useBulkSelection(selectablePaginatedQuotes, persisted.ids);
+
+  // Modo de seleção: quando OFF, checkboxes ficam ocultos e nada está marcado.
+  // Ligado pelo botão "Selecionar" da barra de chips (evento global).
+  const [selectionMode, setSelectionMode] = useState(persisted.mode);
 
   // "Select ALL across all pages" state
   const [allPagesSelected, setAllPagesSelected] = useState(false);
-  const showSelectAllBanner = isAllSelected && quotes.length > 0 && !allPagesSelected;
+  const showSelectAllBanner =
+    selectionMode && isAllSelected && quotes.length > 0 && !allPagesSelected;
 
   const handleSelectAllPages = () => {
     setAllPagesSelected(true);
   };
 
-  const handleClearSelection = () => {
+  const handleClearSelection = useCallback(() => {
     clearSelection();
     setAllPagesSelected(false);
-  };
+  }, [clearSelection]);
 
   const effectiveSelectedCount = allPagesSelected ? quotes.length : selectedCount;
   const effectiveSelectedIds = allPagesSelected
     ? quotes.map((q) => q.id).filter((id): id is string => Boolean(id))
     : selectedIds;
 
-  // Reset allPagesSelected when page/selection changes
+  // Toggle do header (select-all visível) — não confundir com o botão da barra de chips.
   const handleToggleAll = () => {
     setAllPagesSelected(false);
     toggleAll();
   };
 
+  // Botão "Selecionar" da barra de chips: alterna o MODO de seleção.
+  // Liga = mostra os checkboxes (nenhum marcado). Desliga = limpa e oculta.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ enabled?: boolean }>).detail;
+      const next = typeof detail?.enabled === 'boolean' ? detail.enabled : !selectionMode;
+      setSelectionMode(next);
+      if (!next) handleClearSelection();
+    };
+    window.addEventListener('quotes:toggle-select-all', handler);
+    return () => window.removeEventListener('quotes:toggle-select-all', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionMode, handleClearSelection]);
+
+  // Notifica a página (botão "Selecionar"/"Cancelar seleção") quando o modo
+  // ou a contagem efetiva muda — mantém o label/estado visual em sincronia.
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('quotes:selection-changed', {
+        detail: { count: effectiveSelectedCount, mode: selectionMode },
+      }),
+    );
+  }, [effectiveSelectedCount, selectionMode]);
+
+  // Persiste modo + IDs ao mudarem.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ mode: selectionMode, ids: selectedIds }),
+      );
+    } catch {
+      /* quota/SSR — ignora */
+    }
+  }, [selectionMode, selectedIds]);
+
+  // Listener: botão "Excluir" no topo (rightSlot dos chips) dispara este evento.
+  // ATENÇÃO: NÃO limpa a seleção aqui — o dialog de confirmação pode ser
+  // cancelado pelo usuário e ele espera reencontrar os itens marcados.
+  // A limpeza acontece apenas após `quotes:bulk-delete-confirmed`.
+  useEffect(() => {
+    const handler = () => {
+      if (effectiveSelectedCount === 0) return;
+      onBulkDelete([...effectiveSelectedIds]);
+    };
+    window.addEventListener('quotes:bulk-delete-request', handler);
+    return () => window.removeEventListener('quotes:bulk-delete-request', handler);
+  }, [effectiveSelectedCount, effectiveSelectedIds, onBulkDelete]);
+
+  // Limpa a seleção visual apenas DEPOIS que a página confirma a exclusão.
+  useEffect(() => {
+    const handler = () => handleClearSelection();
+    window.addEventListener('quotes:bulk-delete-confirmed', handler);
+    return () => window.removeEventListener('quotes:bulk-delete-confirmed', handler);
+  }, [handleClearSelection]);
+
   // ── Column state ──
-  const [columnOrder, setColumnOrder] = useState<string[]>(ALL_COLUMNS.map((c) => c.id));
-  const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
+  // Ordem das colunas é FIXA (sem DnD): definida em ALL_COLUMNS.
+  const visibleColumns = ALL_COLUMNS;
 
-  const visibleColumns = useMemo(
-    () =>
-      columnOrder
-        .filter((id) => !hiddenColumns.has(id))
-        .map((id) => ALL_COLUMNS.find((c) => c.id === id))
-        .filter((column): column is ColumnDef => Boolean(column)),
-    [columnOrder, hiddenColumns],
-  );
-
-  const gridTemplate = useMemo(
-    () => ['40px', ...visibleColumns.map((c) => c.width), '180px'].join(' '),
-    [visibleColumns],
-  );
-
-  // DnD sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setColumnOrder((prev) => {
-        const oldIndex = prev.indexOf(active.id as string);
-        const newIndex = prev.indexOf(over.id as string);
-        return arrayMove(prev, oldIndex, newIndex);
-      });
+  // Migração defensiva: limpa chaves legadas de visibilidade/ordem de colunas.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.removeItem('quotes-hidden-columns');
+      localStorage.removeItem('quotes-column-visibility');
+      localStorage.removeItem('quotes:hidden-columns');
+      localStorage.removeItem('quotes:column-order');
+      sessionStorage.removeItem('quotes-hidden-columns');
+    } catch {
+      /* ignora */
     }
   }, []);
 
-  const toggleColumn = useCallback((colId: string) => {
-    setHiddenColumns((prev) => {
-      const next = new Set(prev);
-      if (next.has(colId)) next.delete(colId);
-      else next.add(colId);
-      return next;
-    });
-  }, []);
+  const gridTemplate = useMemo(
+    () =>
+      [...(selectionMode ? ['40px'] : []), ...visibleColumns.map((c) => c.width), '56px'].join(' '),
+    [visibleColumns, selectionMode],
+  );
 
-  // Reset page when pageSize changes
-  const handlePageSizeChange = (value: string) => {
-    setPageSize(Number(value));
-    setCurrentPage(1);
-    handleClearSelection();
-  };
+  const { data: logoByCnpj, isLoading: isLogosLoading } = useQuoteClientLogos(
+    paginatedQuotes.map((q) => q.client_cnpj),
+  );
+  const { data: itemCountById, isLoading: isItemCountsLoading } = useQuoteItemCounts(
+    paginatedQuotes.map((q) => q.id),
+  );
 
-  const renderCell = (quote: Quote, columnId: string) => renderQuoteCell(quote, columnId, navigate);
+  const renderCell = (quote: Quote, columnId: string) =>
+    renderQuoteCell(
+      quote,
+      columnId,
+      navigate,
+      logoByCnpj,
+      isLogosLoading,
+      itemCountById,
+      isItemCountsLoading,
+    );
 
   return (
-    <div className="space-y-2">
-      {/* Bulk action bar */}
-      <BulkActionsBar
-        selectedCount={effectiveSelectedCount}
-        selectedIds={effectiveSelectedIds}
-        entityLabel="orçamento"
-        onClear={handleClearSelection}
-        showSelectAllBanner={showSelectAllBanner}
-        totalCount={quotes.length}
-        onSelectAll={handleSelectAllPages}
-        actions={[
-          ...(onBulkStatusChange
-            ? [
-                {
-                  id: 'mark-pending',
-                  label: 'Marcar Pendente',
-                  icon: <RefreshCw className="h-3.5 w-3.5" />,
-                  variant: 'outline' as const,
-                  onClick: (ids: string[]) => {
-                    onBulkStatusChange(ids, 'pending');
-                    handleClearSelection();
-                  },
-                },
-              ]
-            : []),
-          ...(onBulkExport
-            ? [
-                {
-                  id: 'export',
-                  label: 'Exportar',
-                  icon: <Download className="h-3.5 w-3.5" />,
-                  variant: 'outline' as const,
-                  onClick: (ids: string[]) => {
-                    onBulkExport(ids);
-                  },
-                },
-              ]
-            : []),
-          {
-            id: 'delete',
-            label: 'Excluir',
-            icon: <Trash2 className="h-3.5 w-3.5" />,
-            variant: 'destructive' as const,
-            onClick: (ids: string[]) => {
-              onBulkDelete([...ids]);
-              handleClearSelection();
-            },
-          },
-        ]}
-      />
+    <div className="flex h-full min-h-0 flex-1 flex-col space-y-2">
+      {/* Dica visível apenas no modo Selecionar quando nenhum item está marcado */}
 
-      {/* Column settings button */}
-      <div className="flex justify-end">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-muted-foreground">
-              <Settings2 className="h-3.5 w-3.5" />
-              Colunas
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-56 p-3">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Exibir colunas</p>
-            <div className="space-y-2">
-              {ALL_COLUMNS.map((col) => (
-                <label key={col.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={!hiddenColumns.has(col.id)}
-                    onCheckedChange={() => toggleColumn(col.id)}
-                    disabled={col.required}
-                  />
-                  <span className={col.required ? 'text-muted-foreground' : ''}>{col.label}</span>
-                </label>
-              ))}
-            </div>
-            <p className="mt-3 text-[10px] text-muted-foreground">
-              Arraste os cabeçalhos para reordenar
-            </p>
-          </PopoverContent>
-        </Popover>
-      </div>
+      {/* Banner "Selecionar todos das próximas páginas" — ações em massa ficam no topo (rightSlot dos chips) */}
+      {showSelectAllBanner && (
+        <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground">
+          <span>Todos desta página estão selecionados.</span>
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs"
+            onClick={handleSelectAllPages}
+          >
+            Selecionar todos os {quotes.length}
+          </Button>
+        </div>
+      )}
 
       {/* Table */}
-      <div className="max-h-[calc(100vh-420px)] overflow-y-auto overflow-x-hidden rounded-lg border border-border pb-16">
-        {/* Header */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <div
-            className="sticky top-0 z-10 grid gap-4 border-b border-primary/80 bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
-            style={{ gridTemplateColumns: gridTemplate }}
-          >
-            <div className="flex items-center justify-center">
-              <Checkbox
-                checked={isAllSelected}
-                onCheckedChange={handleToggleAll}
-                className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
-              />
-            </div>
-            <SortableContext
-              items={visibleColumns.map((c) => c.id)}
-              strategy={horizontalListSortingStrategy}
-            >
-              {visibleColumns.map((col) => (
-                <SortableHeaderCell key={col.id} column={col} />
-              ))}
-            </SortableContext>
-            <span />
-          </div>
-        </DndContext>
-
-        {/* Rows */}
-        {paginatedQuotes.map((quote) => {
-          const quoteId = quote.id;
-          const selected = Boolean(quoteId && isSelected(quoteId)) || allPagesSelected;
-
-          return (
+      <div
+        data-testid="quotes-table-shell"
+        className="overflow-hidden rounded-lg border border-border"
+      >
+        <div data-testid="quotes-table-hscroll" className="overflow-x-auto overflow-y-hidden">
+          <div className="w-max min-w-[1100px]" style={{ minWidth: 'max(100%, 1100px)' }}>
+            {/* Header — fica fora do scroll vertical (sticky efetivo) */}
             <div
-              key={quoteId ?? quote.quote_number}
-              className={`group grid cursor-pointer items-center gap-4 border-b border-border/40 px-4 py-3 transition-all duration-150 hover:border-l-2 hover:border-l-primary/60 hover:bg-muted/40 ${
-                selected ? 'border-l-2 border-l-primary bg-primary/5' : ''
-              }`}
+              data-testid="quotes-table-banner"
+              className="grid gap-5 overflow-hidden border-b border-primary/80 bg-primary px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-primary-foreground/90"
               style={{ gridTemplateColumns: gridTemplate }}
-              onClick={() => navigate(`/orcamentos/${quote.id}`)}
             >
-              <div
-                className="flex items-center justify-center"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Checkbox
-                  checked={selected}
-                  disabled={!quoteId}
-                  onCheckedChange={() => {
-                    if (!quoteId) return;
-                    if (allPagesSelected) {
-                      setAllPagesSelected(false);
-                      toggleAll();
-                      toggleItem(quoteId);
-                    } else {
-                      toggleItem(quoteId);
-                    }
-                  }}
-                />
-              </div>
+              {selectionMode && (
+                <div className="flex items-center justify-center">
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={handleToggleAll}
+                    aria-label="Selecionar todos da página"
+                    className="border-primary-foreground/50 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
+                  />
+                </div>
+              )}
               {visibleColumns.map((col) => (
-                <div key={col.id} className={cn('min-w-0', col.align === 'right' && 'text-right')}>
-                  {col.id === 'client' ? (
-                    <div className="flex min-w-0 items-center gap-2">
-                      <div className="min-w-0 flex-1">{renderCell(quote, col.id)}</div>
-                    </div>
-                  ) : (
-                    renderCell(quote, col.id)
+                <div
+                  key={col.id}
+                  data-testid={`quotes-col-header-${col.id}`}
+                  data-col-id={col.id}
+                  role="columnheader"
+                  aria-label={`Coluna ${col.label}`}
+                  className={cn(
+                    'select-none truncate',
+                    col.align === 'right' && 'text-right',
+                    col.align === 'center' && 'text-center',
+                    col.id === 'items' && 'pr-4',
                   )}
+                >
+                  {col.label}
                 </div>
               ))}
-              <div className="flex items-center justify-end gap-0.5">
-                <QuoteRowQuickActions
-                  quote={quote}
-                  onDuplicate={onDuplicate}
-                  onMarkApproved={(id) => onMarkApproved?.(id)}
-                />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      aria-label="Mais opções"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={() => navigate(`/orcamentos/${quote.id}`)}>
-                      <Eye className="mr-2 h-4 w-4" /> Visualizar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate(`/orcamentos/${quote.id}/editar`)}>
-                      <Edit className="mr-2 h-4 w-4" /> Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={!quoteId}
-                      onClick={() => quoteId && onDuplicate(quoteId)}
-                    >
-                      <Copy className="mr-2 h-4 w-4" /> Duplicar
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      disabled={!quoteId}
-                      onClick={() => quoteId && onDelete(quoteId)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              <span />
             </div>
-          );
-        })}
+
+            <div
+              ref={scrollRef}
+              data-testid="quotes-scroll-container"
+              style={{
+                // SSOT: src/lib/quotes/quotesLayout.ts
+                ['--quotes-row-h' as string]: `${QUOTES_ROW_H}px`,
+                maxHeight: `min(calc(100dvh - var(--quotes-chrome-h, ${QUOTES_CHROME_BY_BREAKPOINT.desktop}px)), calc(${QUOTES_MAX_VISIBLE_ROWS} * var(--quotes-row-h)))`,
+                minHeight: `calc(${QUOTES_MIN_VISIBLE_ROWS} * var(--quotes-row-h))`,
+              }}
+              // Classes literais (Tailwind JIT só detecta strings estáticas) —
+              // valores em sync com QUOTES_CHROME_BY_BREAKPOINT na SSOT.
+              className="overflow-y-auto [--quotes-chrome-h:420px] sm:[--quotes-chrome-h:360px] lg:[--quotes-chrome-h:320px]"
+            >
+              {/* Empty state */}
+
+              {uniqueQuotes.length === 0 ? (
+                <div
+                  data-testid="quotes-empty-state"
+                  className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center"
+                >
+                  <Inbox className="h-10 w-10 text-muted-foreground/60" aria-hidden="true" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">Nenhum orçamento por aqui</p>
+                    <p className="text-xs text-muted-foreground">
+                      Ajuste os filtros ou atualize a lista para sincronizar com o servidor.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    data-testid="quotes-empty-refresh"
+                    onClick={() => window.dispatchEvent(new CustomEvent('quotes:refresh-request'))}
+                  >
+                    <RefreshCw className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
+                    Atualizar lista
+                  </Button>
+                </div>
+              ) : (
+                paginatedQuotes.map((quote) => {
+                  const quoteId = quote.id;
+                  const selected = Boolean(quoteId && isSelected(quoteId)) || allPagesSelected;
+
+                  return (
+                    <PrefetchRow
+                      key={quoteId ?? quote.quote_number}
+                      prefetch={prefetchQuoteRoutes}
+                      data-testid={quoteId ? `quote-row-${quoteId}` : undefined}
+                      className={cn(
+                        'group grid cursor-pointer items-center gap-5 border-b border-border/30 px-5 py-3.5 transition-colors duration-150 hover:bg-muted/30',
+                        selected && 'bg-primary/5',
+                      )}
+                      style={{ gridTemplateColumns: gridTemplate }}
+                      onClick={() => navigate(`/orcamentos/${quote.id}`)}
+                    >
+                      {selectionMode && (
+                        <div
+                          className="flex items-center justify-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Checkbox
+                            checked={selected}
+                            disabled={!quoteId}
+                            aria-label="Selecionar orçamento"
+                            onCheckedChange={() => {
+                              if (!quoteId) return;
+                              if (allPagesSelected) {
+                                setAllPagesSelected(false);
+                                toggleAll();
+                                toggleItem(quoteId);
+                              } else {
+                                toggleItem(quoteId);
+                              }
+                            }}
+                          />
+                        </div>
+                      )}
+                      {visibleColumns.map((col) => (
+                        <div
+                          key={col.id}
+                          data-testid={`quotes-col-cell-${col.id}`}
+                          data-col-id={col.id}
+                          role="cell"
+                          aria-label={col.label}
+                          className={cn(
+                            'min-w-0',
+                            col.align === 'right' && 'text-right',
+                            col.align === 'center' && 'text-center',
+                          )}
+                        >
+                          {col.id === 'client' ? (
+                            <div className="flex min-w-0 items-center gap-2">
+                              <div className="min-w-0 flex-1">{renderCell(quote, col.id)}</div>
+                            </div>
+                          ) : (
+                            renderCell(quote, col.id)
+                          )}
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 text-muted-foreground/60 hover:bg-muted/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                              aria-label={`Mais opções para o orçamento ${quote.quote_number ?? ''}`.trim()}
+                              data-testid={`quote-row-more-${quote.id}`}
+                            >
+                              <MoreVertical className="h-3.5 w-3.5" aria-hidden="true" />
+                            </Button>
+                          </DropdownMenuTrigger>
+
+                          {/* Largura 6.8rem: minimo a prova de corte de "Visualizar" sob focus:font-bold incl. fallback system-ui/FOUT. NAO reduzir p/ 6.4rem (reforcado em src/index.css). */}
+
+                          <DropdownMenuContent
+                            align="end"
+                            onClick={(e) => e.stopPropagation()}
+                            data-testid={`quote-row-menu-${quote.id}`}
+                            className="w-[6.8rem] !min-w-0 max-w-[calc(100vw-1rem)] p-1 [&_[role=menuitem]]:whitespace-nowrap [&_[role=menuitem]]:px-1.5 [&_[role=menuitem]]:text-[0.8rem] [&_[role=menuitem]_svg]:mr-1.5 [&_[role=menuitem]_svg]:h-3.5 [&_[role=menuitem]_svg]:w-3.5"
+                          >
+                            <DropdownMenuItem
+                              data-testid={`quote-row-menu-view-${quote.id}`}
+                              onClick={() => navigate(`/orcamentos/${quote.id}`)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" /> Visualizar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              data-testid={`quote-row-menu-edit-${quote.id}`}
+                              onClick={() => navigate(`/orcamentos/${quote.id}/editar`)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" /> Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              data-testid={`quote-row-menu-duplicate-${quote.id}`}
+                              disabled={!quoteId}
+                              onClick={() => quoteId && onDuplicate(quoteId)}
+                            >
+                              <Copy className="mr-2 h-4 w-4" /> Duplicar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              data-testid={`quote-row-menu-delete-${quote.id}`}
+                              className="text-destructive"
+                              disabled={!quoteId}
+                              onClick={() => quoteId && onDelete(quoteId)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </PrefetchRow>
+                  );
+                })
+              )}
+
+              {/* Sentinel para IntersectionObserver — invisível, mas observável */}
+              {hasMore && (
+                <div
+                  ref={sentinelRef}
+                  data-testid="quotes-infinite-sentinel"
+                  aria-hidden="true"
+                  className="h-4 w-full"
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Pagination Footer */}
-      <div className="flex items-center justify-between px-2 py-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Exibindo</span>
-          <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-            <SelectTrigger className="h-8 w-[70px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PAGE_SIZE_OPTIONS.map((size) => (
-                <SelectItem key={size} value={String(size)}>
-                  {size}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span>de {quotes.length} resultado(s)</span>
+      {/* Footer: contagem, loading mais, erro com retry */}
+      <div className="flex items-center justify-between gap-3 px-2 py-2">
+        <div className="text-sm text-muted-foreground" data-testid="quotes-footer-count">
+          {uniqueQuotes.length === 0
+            ? 'Nenhum resultado'
+            : hasMore
+              ? `Exibindo ${paginatedQuotes.length} de ${uniqueQuotes.length} — role para carregar mais`
+              : null}
         </div>
 
-        <div className="flex items-center gap-1">
-          <span className="mr-2 text-sm text-muted-foreground">
-            Página {safePage} de {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="ChevronsLeft"
-            className="h-8 w-8"
-            disabled={safePage <= 1}
-            onClick={() => setCurrentPage(1)}
+        {/* Indicador de "carregando mais" durante refetch em background */}
+        {isFetching && uniqueQuotes.length > 0 && !loadError && (
+          <div
+            data-testid="quotes-footer-loading-more"
+            className="flex items-center gap-1.5 text-xs text-muted-foreground"
           >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Voltar"
-            className="h-8 w-8"
-            disabled={safePage <= 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+            Carregando mais…
+          </div>
+        )}
+
+        {/* Erro de carregamento com botão de retry */}
+        {loadError && (
+          <div
+            data-testid="quotes-footer-load-error"
+            className="flex items-center gap-2 text-xs text-destructive"
           >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="Avançar"
-            className="h-8 w-8"
-            disabled={safePage >= totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label="ChevronsRight"
-            className="h-8 w-8"
-            disabled={safePage >= totalPages}
-            onClick={() => setCurrentPage(totalPages)}
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
-        </div>
+            <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Falha ao carregar.</span>
+            {onRetry && (
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs"
+                data-testid="quotes-footer-retry"
+                onClick={onRetry}
+              >
+                Tentar novamente
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

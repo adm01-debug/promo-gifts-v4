@@ -7,7 +7,6 @@ import {
   X,
   Building2,
   Palette,
-  Package,
   ShoppingCart,
   AlertTriangle,
   SlidersHorizontal,
@@ -17,7 +16,10 @@ import {
   Truck,
   RotateCcw,
   Loader2,
+  TrendingDown,
 } from 'lucide-react';
+import { useRuptureHorizon } from '@/hooks/stock/useRuptureHorizon';
+import { RUPTURE_HORIZON_OPTIONS } from '@/lib/inventory/rupture-risk';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +37,6 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { InlineColorGroupFilter } from '@/components/filters/InlineColorGroupFilter';
 import { ExternalCategoryFilter } from '@/components/filters/ExternalCategoryFilter';
-import { DebouncedPriceInput } from '@/components/filters/DebouncedPriceInput';
 import { FilterSection } from '@/components/filters/filter-panel/FilterSection';
 import { StockHelpTooltip } from '@/components/inventory/StockHelpTooltip';
 import type { StockFilters } from '@/types/stock';
@@ -62,6 +63,16 @@ interface StockFilterToolbarProps {
   colorGroups: FilterOption[];
   totalProducts: number;
   filteredCount: number;
+  /**
+   * Estado do filtro dimensional "Risco de Ruptura" — controlado pelo
+   * StockDashboard. Quando true, a tabela mostra só SKUs em risco e o
+   * botão exibe o badge "Nd" + estilo ativo (mesma UX do Estoque Futuro).
+   */
+  isRuptureRiskActive?: boolean;
+  /** Quantidade de SKUs em risco (≤30d) — usada para habilitar o Switch e o badge. */
+  ruptureRiskCount?: number;
+  /** Callback de toggle on/off do filtro de Risco de Ruptura. */
+  onToggleRuptureRisk?: (active: boolean) => void;
 }
 
 export function StockFilterToolbar({
@@ -74,10 +85,14 @@ export function StockFilterToolbar({
   colorGroups: _colorGroups,
   totalProducts,
   filteredCount,
+  isRuptureRiskActive = false,
+  ruptureRiskCount = 0,
+  onToggleRuptureRisk,
 }: StockFilterToolbarProps) {
   const [localSearch, setLocalSearch] = useState(filters.search);
   const [quantityInput, setQuantityInput] = useState(filters.minQuantityNeeded?.toString() ?? '');
   const [openSections, setOpenSections] = useState<string[]>([]);
+  const [ruptureHorizon, setRuptureHorizon] = useRuptureHorizon();
 
   // Persistência da preferência "Estoque Futuro" (toggle + janela) em localStorage.
   useFutureStockPreference(
@@ -91,9 +106,37 @@ export function StockFilterToolbar({
     },
   );
 
+  // ============================================================
+  // SSOT — Sincronização "Estoque Futuro" ↔ régua de quantidade
+  // ============================================================
+  // Em /estoque a seção "Estoque" do popover foi REMOVIDA (redundante com
+  // o toggle do toolbar). Para evitar regressão de UX entre /estoque e o
+  // Super Filtro (/filtros), o toggle do toolbar passa a controlar duas
+  // flags ao mesmo tempo:
+  //
+  //   • filters.includeFutureStock         → liga/desliga "Estoque Futuro"
+  //   • filters.minQtyIncludesFutureStock  → faz a régua "Preciso de X un"
+  //                                          considerar também o estoque
+  //                                          futuro (em vez de só o atual).
+  //
+  // Sem esse espelhamento, o usuário ligava "Estoque Futuro" mas a régua
+  // continuava estrita (filtrando só pelo on-hand) — provocando o hint
+  // "régua estrita" testado em stock-filters-no-text.spec.ts.
+  //
+  // ⚠️ O Super Filtro (/filtros) mantém a seção "Estoque" no sidebar
+  //    (FilterPanel.tsx → renderer 'estoque') porque lá o toggle global
+  //    de Estoque Futuro não existe — o controle é feito dentro da seção.
+  //    NÃO remover a seção 'estoque' do Super Filtro: ver
+  //    src/components/filters/filter-panel/types.ts (SECTION_GROUPS) e o
+  //    spec super-filtro-estoque-section.spec.ts.
+  const setIncludeFutureStock = (v: boolean) => {
+    onUpdateFilter('includeFutureStock', v);
+    onUpdateFilter('minQtyIncludesFutureStock', v);
+  };
+
   // Atalho: Shift+F alterna inclusão do Estoque Futuro.
   useFutureStockShortcut(() => {
-    onUpdateFilter('includeFutureStock', !filters.includeFutureStock);
+    setIncludeFutureStock(!filters.includeFutureStock);
   });
 
   // Accordion behavior: only one section open at a time
@@ -106,7 +149,7 @@ export function StockFilterToolbar({
     () => ({
       cores: (filters.colorGroup ? 1 : 0) + (filters.colorName ? 1 : 0),
       categorias: filters.categoryId ? 1 : 0,
-      estoque: filters.minQuantityNeeded && filters.minQuantityNeeded > 0 ? 1 : 0,
+      // estoque: removido — minQuantityNeeded agora vive só no input do toolbar
       fornecedores: filters.supplierId ? 1 : 0,
       ordenacao: filters.sortBy !== 'stock_quantity' ? 1 : 0,
     }),
@@ -137,8 +180,6 @@ export function StockFilterToolbar({
     const t = setTimeout(() => setIsSearching(false), 600);
     return () => clearTimeout(t);
   }, [isSearching, filters.search, localSearch]);
-
-
 
   // Debounce quantity
   useEffect(() => {
@@ -175,10 +216,10 @@ export function StockFilterToolbar({
         {/* 1. Advanced Filters Popover */}
         <Popover>
           <StockHelpTooltip
-            title="Filtros avançados"
-            description="Refine o dashboard por Categoria, Fornecedor, Grupo de cor, Status, Faixa de cobertura e mais. Combinam em AND entre seções e OR dentro da mesma seção."
-            example="Categoria = Canecas + Cor = Azul + Status = Crítico"
-            emptyHint="Tente remover uma seção por vez (Reset limpa tudo)."
+            title="Filtros"
+            description="Refine por categoria, fornecedor, cor ou status."
+            example="Canecas + Azul = só canecas azuis."
+            emptyHint="Sem resultado? Remova um filtro por vez."
           >
             <PopoverTrigger asChild>
               <Button
@@ -281,71 +322,10 @@ export function StockFilterToolbar({
                 />
               </FilterSection>
 
-              {/* FilterSection: Estoque */}
-              <FilterSection
-                id="estoque"
-                title="Estoque"
-                icon={<Package className="h-4 w-4" />}
-                openSections={openSections}
-                onToggle={toggleSection}
-                activeCount={sectionCounts.estoque}
-                activeSummary={
-                  filters.minQuantityNeeded ? `≥${filters.minQuantityNeeded}` : undefined
-                }
-              >
-                <div className="space-y-2 px-1">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="whitespace-nowrap text-xs text-muted-foreground">
-                      Mínimo por cor
-                    </span>
-                    <DebouncedPriceInput
-                      value={filters.minQuantityNeeded || ''}
-                      onChange={(v) => onUpdateFilter('minQuantityNeeded', v > 0 ? v : undefined)}
-                      fallback={0}
-                      placeholder="Ex: 500"
-                      min={0}
-                      className={
-                        filters.minQuantityNeeded && filters.minQuantityNeeded > 0
-                          ? 'border-brand-primary/60'
-                          : ''
-                      }
-                    />
-                    <span className="text-xs text-muted-foreground">un.</span>
-                  </div>
-
-                  {/* Sub-toggle: incluir Estoque Futuro no cálculo da régua */}
-                  <div className="flex items-start justify-between gap-2 rounded-md border border-border/40 bg-muted/30 px-2 py-1.5">
-                    <Label
-                      htmlFor="min-qty-include-future-switch"
-                      className="flex cursor-pointer flex-col gap-0.5"
-                    >
-                      <span className="flex items-center gap-1 text-[11px] font-medium text-foreground">
-                        <Sparkles className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
-                        Incluir Estoque Futuro no cálculo
-                      </span>
-                      <span className="text-[10px] leading-tight text-muted-foreground">
-                        {filters.minQtyIncludesFutureStock
-                          ? 'Somando reposições previstas ao pool da régua.'
-                          : 'Régua estrita: usa apenas disponível agora.'}
-                      </span>
-                    </Label>
-                    <Switch
-                      id="min-qty-include-future-switch"
-                      data-testid="min-qty-include-future-switch"
-                      checked={!!filters.minQtyIncludesFutureStock}
-                      disabled={!filters.includeFutureStock}
-                      onCheckedChange={(v) => onUpdateFilter('minQtyIncludesFutureStock', v)}
-                      aria-label="Incluir Estoque Futuro no cálculo da régua de quantidade"
-                    />
-                  </div>
-                  {!filters.includeFutureStock && (
-                    <p className="px-0.5 text-[10px] leading-tight text-muted-foreground">
-                      Ative primeiro o botão <strong>Estoque Futuro</strong> (na barra) para poder
-                      incluir reposições no cálculo.
-                    </p>
-                  )}
-                </div>
-              </FilterSection>
+              {/* Seção "Estoque" removida: o input "Preciso de X un..." no toolbar
+                  já controla minQuantityNeeded e o toggle "Em Estoque / Estoque Futuro"
+                  cobre includeFutureStock. minQtyIncludesFutureStock é derivado
+                  automaticamente do toggle do toolbar (ver normalização abaixo). */}
 
               {/* FilterSection: Fornecedores */}
               <FilterSection
@@ -421,12 +401,11 @@ export function StockFilterToolbar({
         {/* Botão dedicado: Estoque Futuro */}
         <Popover>
           <StockHelpTooltip
-            title="Estoque Futuro"
-            description="Inclui no cálculo da régua de quantidade o que está chegando dentro da janela escolhida (7, 15 ou 30 dias). Quando desligado, considera apenas o que está disponível agora. Esta janela é independente da janela 'Projetar risco em Nd' da tabela (que controla apenas o cálculo do Risco de Ruptura)."
-            example="Janela 15 dias: soma reposições confirmadas com chegada até daqui a 15 dias."
-            emptyHint="Sem reposições previstas? Aumente a janela para 30 dias."
+            title="Em Estoque / Estoque Futuro"
+            description="Mostre só o que tem agora, ou inclua o que está chegando em 7, 15 ou 30 dias."
+            example="Janela 15 dias: vende o que chega até lá."
+            emptyHint="Sem chegadas? Aumente para 30 dias."
           >
-
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -473,7 +452,7 @@ export function StockFilterToolbar({
                   id="future-stock-switch"
                   data-testid="future-stock-switch"
                   checked={!!filters.includeFutureStock}
-                  onCheckedChange={(v) => onUpdateFilter('includeFutureStock', v)}
+                  onCheckedChange={(v) => setIncludeFutureStock(v)}
                   aria-label="Incluir Estoque Futuro no cálculo"
                 />
               </div>
@@ -524,22 +503,119 @@ export function StockFilterToolbar({
           </PopoverContent>
         </Popover>
 
+        {/* Risco de Ruptura — horizonte de projeção (3/7/15/30 dias).
+            Promovido da tabela para a toolbar logo após "Estoque Futuro",
+            seguindo o mesmo design dos demais botões da barra. */}
+        <Popover>
+          <StockHelpTooltip
+            title="Risco de Ruptura"
+            description="Ligue para filtrar só SKUs que podem zerar dentro da janela escolhida (3/7/15/30d)."
+            example="3 dias = só o que esgota agora. 30 dias = visão ampla."
+            emptyHint="Sem SKUs em risco no momento — Switch fica indisponível."
+          >
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="default"
+                data-testid="rupture-horizon-control"
+                aria-pressed={isRuptureRiskActive}
+                aria-label={
+                  isRuptureRiskActive
+                    ? `Risco de Ruptura ativo, janela ${ruptureHorizon} dias`
+                    : 'Filtro de Risco de Ruptura desligado'
+                }
+                className={cn(
+                  'relative gap-2 font-normal text-muted-foreground hover:text-foreground',
+                  isRuptureRiskActive &&
+                    'border-border/60 text-foreground [&_svg]:text-primary',
+                )}
+              >
+                <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Risco</span>
+                {isRuptureRiskActive && ruptureRiskCount > 0 && (
+                  <span
+                    data-testid="rupture-risk-horizon-badge"
+                    aria-hidden="true"
+                    className="ml-0.5 rounded-sm border border-border/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                  >
+                    {ruptureHorizon}d
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+          </StockHelpTooltip>
+          <PopoverContent className="w-72 p-0" align="start">
+            <div className="space-y-2 px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label
+                  htmlFor="rupture-risk-switch"
+                  className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-foreground"
+                >
+                  <TrendingDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                  Mostrar só Risco de Ruptura
+                </Label>
+                <Switch
+                  id="rupture-risk-switch"
+                  data-testid="rupture-risk-switch"
+                  checked={isRuptureRiskActive}
+                  disabled={!onToggleRuptureRisk || ruptureRiskCount === 0}
+                  onCheckedChange={(v) => onToggleRuptureRisk?.(v)}
+                  aria-label="Filtrar somente SKUs em risco de ruptura"
+                />
+              </div>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                {ruptureRiskCount === 0
+                  ? 'Nenhum SKU em risco detectado no momento.'
+                  : isRuptureRiskActive
+                    ? `Mostrando apenas SKUs que podem zerar em ${ruptureHorizon} dias.`
+                    : `${ruptureRiskCount} SKU${ruptureRiskCount === 1 ? '' : 's'} em risco — ligue o Switch para filtrar.`}
+              </p>
+            </div>
+            <div className="space-y-1.5 border-t border-border/40 px-3 py-2.5">
+              <span
+                id="rupture-horizon-label"
+                className="text-[10px] uppercase tracking-wide text-muted-foreground"
+              >
+                Horizonte de projeção
+              </span>
+              <div
+                role="radiogroup"
+                aria-labelledby="rupture-horizon-label"
+                className="grid grid-cols-4 gap-1"
+              >
+                {RUPTURE_HORIZON_OPTIONS.map((d) => {
+                  const active = ruptureHorizon === d;
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      data-testid={`rupture-horizon-${d}`}
+                      onClick={() => setRuptureHorizon(d)}
+                      className={cn(
+                        'h-7 rounded-md border text-xs transition-colors',
+                        active
+                          ? 'border-foreground/30 bg-muted/60 font-medium text-foreground'
+                          : 'border-border/40 text-muted-foreground hover:border-border hover:text-foreground',
+                      )}
+                    >
+                      {d}d
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+
         {/* 2. Smart Quantity Filter (Tiragem) */}
         <StockHelpTooltip
-          title='Calculadora "Preciso de X un…"'
-          description={
-            <>
-              Compara a quantidade pedida com estoque atual + em trânsito:
-              <br />
-              🟢 <strong>Atende agora</strong>: estoque ≥ X.
-              <br />
-              🟡 <strong>Atende com reposição</strong>: estoque + chegando ≥ X.
-              <br />
-              🔴 <strong>Não atende</strong>: nem com o que está chegando dá conta.
-            </>
-          }
-          example="Digite 500 para ver quais produtos cobrem um pedido de 500 unidades."
-          emptyHint="Reduza a quantidade ou combine com filtro de fornecedor para alternativas."
+          title="Preciso de X unidades"
+          description="Digite a quantidade do pedido. Mostra quem atende agora (🟢), com reposição (🟡) ou não atende (🔴)."
+          example="500 → veja quem cobre o pedido."
+          emptyHint="Reduza a quantidade ou troque o fornecedor."
         >
           <div className="relative w-full sm:w-48">
             <ShoppingCart className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -563,7 +639,7 @@ export function StockFilterToolbar({
               data-testid="min-qty-strict-hint"
               role="status"
               className="inline-flex items-center gap-1 rounded-md border border-warning/30 bg-warning/10 px-2 py-1 text-[11px] text-warning"
-              title="A régua de quantidade está usando apenas estoque atual. Ative o sub-toggle dentro de Filtros → Estoque para incluir reposições."
+              title="Estamos olhando só o estoque atual. Para contar o que está chegando, abra Filtros → Estoque."
             >
               <AlertTriangle className="h-3 w-3" aria-hidden="true" />
               Régua estrita: ignora Estoque Futuro
@@ -572,10 +648,10 @@ export function StockFilterToolbar({
 
         {/* 3. Search — commit on Enter / botão "Busca" (sem lupa interna) */}
         <StockHelpTooltip
-          title="Busca no Estoque"
-          description='Preencha filtros, "Em Estoque", quantidade e o texto desejado, depois pressione Enter ou clique em "Busca" para aplicar. Case-insensitive, ignora acentos. Quebra o texto em tokens (separados por espaço) e casa cada um em Nome, SKU ou Cor (OR entre campos, AND entre tokens).'
-          example='"caneca azul" casa "Caneca cerâmica azul royal" e SKU CANECA-AZ-01.'
-          emptyHint="Use menos palavras, verifique a grafia ou limpe outros filtros ativos."
+          title="Buscar produto"
+          description="Digite nome, SKU ou cor e pressione Enter. Ignora acentos e maiúsculas."
+          example='"caneca azul" acha "Caneca cerâmica azul royal".'
+          emptyHint="Use menos palavras ou limpe os filtros."
         >
           <div className="relative flex max-w-md flex-1 items-center gap-2">
             <div className="relative flex-1">
@@ -616,29 +692,37 @@ export function StockFilterToolbar({
               // Habilitado quando há algo a buscar: texto digitado OU
               // pelo menos um filtro ativo (status, categoria, fornecedor,
               // cor, quantidade mínima). Loading desabilita.
-              disabled={
-                isSearching ||
-                (localSearch.trim() === '' && activeFiltersCount === 0)
-              }
+              disabled={isSearching || (localSearch.trim() === '' && activeFiltersCount === 0)}
               aria-label="Aplicar busca no estoque"
               aria-busy={isSearching}
               title="Aplicar busca (Enter)"
             >
-              {isSearching ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : null}
+              {isSearching ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
               <span>{isSearching ? 'Buscando…' : 'Busca'}</span>
             </Button>
-
           </div>
         </StockHelpTooltip>
 
         {activeFiltersCount > 0 && (
-          <Button variant="ghost" onClick={handleReset} size="icon" className="shrink-0">
+          <Button
+            variant="ghost"
+            onClick={handleReset}
+            size="icon"
+            aria-label="Limpar filtros"
+            className="shrink-0"
+          >
             <X className="h-4 w-4" />
           </Button>
         )}
 
+        {/* Slot à direita da toolbar — recebe o badge "Atualizado há…" via
+            portal do StockDashboard (#stock-toolbar-slot). `ml-auto` empurra
+            para o canto direito da barra. */}
+        <div
+          id="stock-toolbar-slot"
+          data-testid="stock-toolbar-slot"
+          className="order-last ml-auto flex w-full items-center justify-end sm:w-auto"
+        />
       </div>
 
       {/* Status chips removed — StatCards above handle status filtering */}

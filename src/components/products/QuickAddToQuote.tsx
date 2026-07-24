@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useId } from 'react';
 import { Plus, Check, ShoppingCart, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,12 @@ import { SingleVariantPicker } from '@/components/products/SingleVariantPicker';
 import type { ExternalVariantStock } from '@/hooks/products';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
+import {
+  trackCartCompanySwitched,
+  trackCartCompanySwitchFailed,
+  type CartCompanySwitchFailedPayload,
+} from '@/lib/analytics/cartAnalytics';
 
 interface QuickAddToQuoteProps {
   productId: string;
@@ -22,11 +29,11 @@ interface QuickAddToQuoteProps {
   productPrice?: number;
   minQuantity?: number;
   className?: string;
-  variant?: 'icon' | 'button' | 'badge';
+  variant?: 'badge' | 'button' | 'icon';
   disabled?: boolean;
   labelOverride?: string;
   iconOverride?: 'cart' | 'plus';
-  buttonSize?: 'default' | 'sm' | 'lg' | 'xl' | 'icon';
+  buttonSize?: 'default' | 'icon' | 'lg' | 'sm' | 'xl';
   onSuccess?: (variant: ExternalVariantStock | null) => void;
 }
 
@@ -56,19 +63,43 @@ export function QuickAddToQuote({
     undefined,
   );
   const { activeCart, carts, addToActiveCart, canCreateCart } = useSellerCartContext();
+  // BUG-QAQ-01 FIX (2026-06-21): label sem htmlFor e Input sem id quebravam acessibilidade
+  // (clicar no label não focava o input). useId garante unicidade mesmo com múltiplas instâncias.
+  const qtyInputId = useId();
 
   const handleVariantSelect = (v: ExternalVariantStock | null) => {
     setSelectedVariant(v);
   };
 
-  const handleAddToQuote = (cartId?: string) => {
-    // Se temos múltiplos carrinhos e nenhum foi explicitamente passado, mostramos o seletor
-    if (!cartId && carts.length > 1 && !showSelector) {
+  const handleAddToQuote = async (cartId?: string) => {
+    // Só mostramos o seletor quando NÃO há carrinho ativo. Se já existe activeCart
+    // (por exemplo após o usuário ter clicado em "Trocar" e escolhido um carrinho),
+    // adicionamos direto — do contrário o botão "Adicionar ao Carrinho" reabriria
+    // o seletor indefinidamente (loop) quando o vendedor tem 2+ carrinhos.
+    if (!cartId && !activeCart && carts.length > 1 && !showSelector) {
       setShowSelector(true);
       return;
     }
 
-    addToActiveCart(
+    // Se o insert virá para um cartId específico E ele difere do activeCart,
+    // registramos a "troca de empresa" ANTES do insert — a UI segue com o
+    // fluxo mesmo que a mutation falhe (o toast de erro é emitido em outro
+    // ponto). Assim analytics reflete a intenção do vendedor.
+    const isSwitch = Boolean(cartId && cartId !== activeCart?.id);
+    let switchContext: Omit<CartCompanySwitchFailedPayload, 'reason' | 'status'> | null = null;
+    if (isSwitch && cartId) {
+      const target = carts.find((c) => c.id === cartId) ?? null;
+      switchContext = {
+        fromCartId: activeCart?.id ?? null,
+        toCartId: cartId,
+        companyId: target?.company_id ?? null,
+        companyName: target?.company_name ?? null,
+        source: 'quick_add_selector',
+      };
+      trackCartCompanySwitched(switchContext);
+    }
+
+    const ok = await addToActiveCart(
       {
         product_id: productId,
         product_name: productName,
@@ -81,6 +112,38 @@ export function QuickAddToQuote({
       },
       cartId,
     );
+
+    // Falha na troca de empresa: emitimos EXATAMENTE UM `cart.company_switch_failed`,
+    // sempre APÓS o `cart.company_switched` correspondente. O consumidor de analytics
+    // pareia os dois eventos pelo `toCartId` para medir taxa de sucesso da troca.
+    // Nota: o toast de erro é emitido pelo onError do useSellerCarts (SSOT); aqui
+    // apenas registramos telemetria — sem toast duplicado.
+    if (isSwitch && !ok && switchContext) {
+      trackCartCompanySwitchFailed({
+        ...switchContext,
+        reason: 'mutation_failed',
+        status: null,
+      });
+      // Não avança o feedback visual de sucesso: sai cedo mantendo o popover
+      // aberto para o vendedor tentar novamente.
+      return;
+    }
+
+    // Feedback visual confirmando o carrinho de destino. Damos destaque
+    // especial ao caso "troca de empresa" (cartId veio do CartSelectorDialog)
+    // para o vendedor confirmar que o item entrou no carrinho correto antes
+    // de finalizar. Se o cartId não bater com a lista (edge case), caímos no
+    // fallback do activeCart.
+    const destinationCart =
+      (cartId ? carts.find((c) => c.id === cartId) : null) ?? activeCart ?? null;
+    const destinationName = destinationCart?.company_name ?? 'carrinho ativo';
+    if (cartId) {
+      toast.success(`Adicionado ao carrinho de ${destinationName}`, {
+        description: `${quantity} un. de "${productName}" — confira antes de finalizar.`,
+      });
+    } else {
+      toast.success(`Adicionado ao carrinho de ${destinationName}`);
+    }
 
     setIsAdded(true);
     setShowSelector(false);
@@ -245,6 +308,7 @@ export function QuickAddToQuote({
                 {selectedVariant.selected_thumbnail ? (
                   <OptimizedImage
                     src={getCdnUrl(selectedVariant.selected_thumbnail, 'thumbnail')}
+                    urlOriginal={getProxiedImageUrl(selectedVariant.selected_thumbnail) ?? null}
                     alt={selectedVariant.color_name ?? ''}
                     className="rounded-md border border-border/50 object-cover"
                     containerClassName="h-7 w-7"
@@ -269,7 +333,9 @@ export function QuickAddToQuote({
             )}
 
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Quantidade</label>
+              <label htmlFor={qtyInputId} className="text-sm text-muted-foreground">
+                Quantidade
+              </label>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -281,6 +347,7 @@ export function QuickAddToQuote({
                   -
                 </Button>
                 <Input
+                  id={qtyInputId}
                   type="number"
                   min={minQuantity}
                   value={quantity}

@@ -34,6 +34,7 @@ export interface ThemeModeColors {
 
   // === BORDAS & INPUTS ===
   border: string;
+  'border-strong': string;
   input: string;
   ring: string;
 
@@ -118,6 +119,7 @@ export const CSS_VARS_TO_APPLY: (keyof ThemeModeColors)[] = [
   'accent',
   'accent-foreground',
   'border',
+  'border-strong',
   'input',
   'ring',
   'surface',
@@ -195,7 +197,7 @@ export interface ThemePreset {
 export interface ThemeConfig {
   presetId: string;
   radius: number;
-  mode: 'light' | 'dark';
+  mode: 'auto' | 'dark' | 'light';
 }
 
 // =====================================================
@@ -255,6 +257,7 @@ function buildPreset(p: PresetParams): ThemePreset {
     accent: `${h} 14% 92%`,
     'accent-foreground': '222 25% 13%',
     border: `${h} 14% 86%`,
+    'border-strong': `${h} ${s}% ${l}% / 0.45`,
     input: `${h} 14% 90%`,
     ring: primary,
     surface: `${h} 14% 98%`,
@@ -325,6 +328,7 @@ function buildPreset(p: PresetParams): ThemePreset {
     accent: '240 5% 16%',
     'accent-foreground': '210 40% 98%',
     border: '240 4% 18%',
+    'border-strong': `${h} ${s}% ${l}% / 0.55`,
     input: '240 5% 14%',
     ring: primary,
     surface: '240 5% 9%',
@@ -576,17 +580,14 @@ function applyGxDarkSurfaces(preset: ThemePreset): ThemePreset {
   return preset;
 }
 
-// Substitui o alpha da última ocorrência hsl(... / X) de uma string
-// `box-shadow`, preservando offset/blur/spread e a cor base. Trabalhar
-// com a última ocorrência permite manter drop shadows neutros antes do
-// glow colorido (caso comum nas sombras dark do Promo Gifts).
-//   '0 0 30px hsl(347 96% 54% / 0.4)' → '0 0 30px hsl(347 96% 54% / 0.7)'
+// Substitui o alpha da PRIMEIRA ocorrência hsl(... / X) em uma string
+// `box-shadow`. Para sombras com dois componentes (core neon + ambient),
+// a primeira ocorrência é sempre o glow principal — a segunda (ambient,
+// menor alpha) permanece inalterada para não estourar o halo de fundo.
+//   '0 0 30px hsl(347 96% 54% / 0.4), 0 0 60px hsl(347 96% 54% / 0.15)'
+//   → '0 0 30px hsl(347 96% 54% / 0.7), 0 0 60px hsl(347 96% 54% / 0.15)'
 function boostGlowAlpha(shadow: string, alpha: number): string {
-  const matches = shadow.match(/\/\s*[0-9.]+\s*\)/g);
-  if (!matches || matches.length === 0) return shadow;
-  const last = matches[matches.length - 1];
-  const idx = shadow.lastIndexOf(last);
-  return shadow.slice(0, idx) + `/ ${alpha})` + shadow.slice(idx + last.length);
+  return shadow.replace(/\/\s*[0-9.]+\s*\)/, `/ ${alpha})`);
 }
 
 // Aplica o "neon glow" característico do Opera GX, aumentando a opacidade
@@ -945,14 +946,14 @@ export const THEME_PRESETS: ThemePreset[] = [
 // STORAGE & APPLICATION
 // =====================================================
 
-const STORAGE_KEY = 'gifts-store-theme-config';
+export const STORAGE_KEY = 'gifts-store-theme-config';
 
 /** Valor padrão das variáveis de fonte do projeto (igual ao index.css). */
 export const DEFAULT_FONT_SANS = "'Plus Jakarta Sans', system-ui, sans-serif";
 export const DEFAULT_FONT_DISPLAY = "'Outfit', system-ui, sans-serif";
 
 export function getDefaultConfig(): ThemeConfig {
-  return { presetId: 'corporate', radius: 14, mode: 'dark' };
+  return { presetId: 'corporate', radius: 14, mode: 'auto' };
 }
 
 export function loadThemeConfig(): ThemeConfig {
@@ -960,10 +961,21 @@ export function loadThemeConfig(): ThemeConfig {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = { ...getDefaultConfig(), ...JSON.parse(stored) };
-      // Support both light/dark if ever expanded, but default to dark for now
-      parsed.mode = parsed.mode || 'dark';
+      // Guard against corrupted/invalid mode values (e.g. mode:"hack" from
+      // manual localStorage edits). ||= only catches falsy; use includes() to
+      // also catch truthy-but-invalid strings.
+      if (!(['light', 'dark', 'auto'] as string[]).includes(parsed.mode)) {
+        parsed.mode = 'auto';
+      }
       if (!THEME_PRESETS.find((p) => p.id === parsed.presetId)) {
         parsed.presetId = 'corporate';
+      }
+      // Clamp radius to the slider's valid range; guard against NaN/Infinity
+      // from corrupted localStorage (BUG-THEME-16).
+      if (typeof parsed.radius !== 'number' || !isFinite(parsed.radius)) {
+        parsed.radius = getDefaultConfig().radius;
+      } else {
+        parsed.radius = Math.max(0, Math.min(20, parsed.radius));
       }
       return parsed;
     }
@@ -973,9 +985,20 @@ export function loadThemeConfig(): ThemeConfig {
   return getDefaultConfig();
 }
 
-export function saveThemeConfig(config: ThemeConfig): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+export function saveThemeConfig(config: ThemeConfig): boolean {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+    return true;
+  } catch (err) {
+    // QuotaExceededError — localStorage full or unavailable (private browsing)
+    console.error('[ThemePresets] saveThemeConfig failed (storage unavailable):', err);
+    return false;
+  }
 }
+
+// Module-level timer to prevent orphaned setTimeout handles when the user
+// switches presets rapidly (BUG-THEME-03).
+let _transitionTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Aplica todos os tokens visuais de um preset:
@@ -985,24 +1008,15 @@ export function saveThemeConfig(config: ThemeConfig): void {
  * Quando o preset não define radius/font, restaura os defaults para que
  * voltar de uma skin GX para uma clássica desfaça os overrides.
  */
-export function applyThemePreset(presetId: string, mode: 'light' | 'dark' = 'dark'): void {
-  const actualMode = mode === 'light' ? 'light' : 'dark';
+export function applyThemePreset(presetId: string, mode: 'auto' | 'dark' | 'light' = 'auto'): void {
+  const actualMode =
+    mode === 'auto'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light'
+      : mode;
   const preset = THEME_PRESETS.find((p) => p.id === presetId);
   if (!preset) {
-    if (import.meta.env.DEV) {
-      console.warn(`[applyThemePreset] Preset '${presetId}' not found, falling back to corporate.`);
-    }
-    const fallback = THEME_PRESETS.find((p) => p.id === 'corporate');
-    if (!fallback) return;
-
-    const root = document.documentElement;
-    root.classList.add('theme-transitioning');
-    const colors = fallback[mode];
-    CSS_VARS_TO_APPLY.forEach((key) => {
-      const value = colors[key];
-      if (value !== undefined) root.style.setProperty(`--${key}`, value);
-    });
-    setTimeout(() => root.classList.remove('theme-transitioning'), 500);
     return;
   }
 
@@ -1034,19 +1048,25 @@ export function applyThemePreset(presetId: string, mode: 'light' | 'dark' = 'dar
     root.style.setProperty('--font-display', DEFAULT_FONT_DISPLAY);
   }
 
-  // Per-preset radius override (Opera GX skins → 4px angular).
-  // Quando definido, vence sobre o slider global do usuário enquanto a
-  // skin estiver ativa.
+  // Per-preset radius override (Opera GX skins → 10px, menos angular que classic).
+  // Aplica o valor do preset quando applyThemePreset é chamado; o slider de raio em
+  // AdminTemasPage sincroniza config.radius com este valor ao trocar de skin, mas
+  // o usuário pode ajustar livremente depois (snap na troca, não lock permanente).
   if (preset.borderRadius !== undefined) {
     root.style.setProperty('--radius', `${preset.borderRadius / 16}rem`);
   }
 
-  // Remove transition class after animation completes
-  setTimeout(() => root.classList.remove('theme-transitioning'), 500);
+  // Cancel any pending transition cleanup before scheduling a new one (BUG-THEME-03).
+  if (_transitionTimer !== null) clearTimeout(_transitionTimer);
+  _transitionTimer = setTimeout(() => {
+    root.classList.remove('theme-transitioning');
+    _transitionTimer = null;
+  }, 500);
 }
 
 export function applyRadius(px: number): void {
-  document.documentElement.style.setProperty('--radius', `${px / 16}rem`);
+  const safe = isFinite(px) ? Math.max(0, Math.min(20, px)) : 14;
+  document.documentElement.style.setProperty('--radius', `${safe / 16}rem`);
 }
 
 export function clearThemeOverrides(): void {
@@ -1055,6 +1075,9 @@ export function clearThemeOverrides(): void {
   root.style.removeProperty('--radius');
   root.style.removeProperty('--font-sans');
   root.style.removeProperty('--font-display');
+  // Clear data-preset-id so CSS selectors (e.g. diversity-overrides.css) and
+  // MutationObserver listeners (AppLogo) react correctly (BUG-THEME-02).
+  delete root.dataset.presetId;
 }
 
 export function exportThemeConfig(config: ThemeConfig): string {
@@ -1064,9 +1087,17 @@ export function exportThemeConfig(config: ThemeConfig): string {
 export function importThemeConfig(json: string): ThemeConfig | null {
   try {
     const parsed = JSON.parse(json);
-    if (parsed.presetId && typeof parsed.radius === 'number') {
-      // Backfill defaults para configs antigas sem mode (compat retroativa)
-      return { ...getDefaultConfig(), ...parsed } as ThemeConfig;
+    if (
+      parsed.presetId &&
+      typeof parsed.radius === 'number' &&
+      THEME_PRESETS.some((p) => p.id === parsed.presetId)
+    ) {
+      const result = { ...getDefaultConfig(), ...parsed } as ThemeConfig;
+      // Guard against corrupted/malicious mode values (e.g. mode:"hack")
+      if (!(['light', 'dark', 'auto'] as string[]).includes(result.mode)) {
+        result.mode = 'auto';
+      }
+      return result;
     }
   } catch {
     // JSON inválido: import falha silenciosamente

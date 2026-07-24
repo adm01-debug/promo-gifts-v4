@@ -5,6 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { type Product } from '@/hooks/products';
 
 import { logger } from '@/lib/logger';
+import { createRestoreLogger } from '@/lib/telemetry/restoreLogger';
+
+// Logger estruturado do fluxo restaurar-da-lixeira em coleções. Injeta
+// `schema_version` e valida o payload — ver `restoreEventSchema.ts`.
+const restoreCollectionLog = createRestoreLogger('collections.restore');
+
 const LEGACY_STORAGE_KEY = 'product-collections';
 
 export interface CollectionVariantInfo {
@@ -122,7 +128,8 @@ function dbToCollection(row: DbCollectionRow, items: DbCollectionItemRow[]): Col
 export function useCollections() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
-  const { user } = useAuth();
+  // BUG-HEAD-GUARD FIX (2026-06-23): HEAD em collections sem guard.
+  const { user, rolesLoaded } = useAuth();
 
   // Load collections from DB
   const loadCollections = useCallback(async () => {
@@ -148,11 +155,18 @@ export function useCollections() {
 
     // Load all items for user's collections
     const colIds = colRows.map((c) => c.id);
-    const { data: itemRows } = await supabase
+    // BUG-COLLECTIONS-ITEMROWS-SELECT-SILENT-FAIL FIX: { data: itemRows } without error
+    // check — RLS failure silently showed all collections as empty (no items loaded).
+    const { data: itemRows, error: itemRowsErr } = await supabase
       .from('collection_items')
       .select('*')
       .in('collection_id', colIds)
       .order('sort_order', { ascending: true });
+    if (itemRowsErr) {
+      logger.error('[useCollections] failed to load collection items:', itemRowsErr);
+      setIsLoaded(true);
+      return;
+    }
 
     const itemsByCollection = new Map<string, DbCollectionItemRow[]>();
     (itemRows || []).forEach((item) => {
@@ -169,7 +183,7 @@ export function useCollections() {
 
   // Migrate localStorage data on first load
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !rolesLoaded) return; // BUG-HEAD-GUARD
 
     const migrateAndLoad = async () => {
       try {
@@ -178,15 +192,21 @@ export function useCollections() {
           const legacyCollections = JSON.parse(stored);
           if (Array.isArray(legacyCollections) && legacyCollections.length > 0) {
             // Check if user already has DB collections
-            const { count } = await supabase
+            // BUG-COLLECTIONS-MIGRATE-COUNT-SILENT-FAIL FIX: { count } without error check
+            // — RLS failure returned undefined count; `count === 0` (false) skipped migration
+            // silently, but undefined also reads as 0 in loose comparisons on some paths.
+            const { count, error: countErr } = await supabase
               .from('collections')
               .select('*', { count: 'exact', head: true })
               .eq('user_id', user.id);
+            if (countErr) throw countErr;
 
             if (count === 0) {
               // Migrate each collection
               for (const col of legacyCollections) {
-                const { data: newCol } = await supabase
+                // BUG-COLLECTIONS-MIGRATE-INSERT-SILENT-FAIL FIX: { data: newCol } without
+                // error check — failed insert silently skipped item migration (newCol=null).
+                const { data: newCol, error: newColErr } = await supabase
                   .from('collections')
                   .insert({
                     user_id: user.id,
@@ -197,6 +217,7 @@ export function useCollections() {
                   })
                   .select()
                   .single();
+                if (newColErr) throw newColErr;
 
                 if (newCol) {
                   const items =
@@ -204,24 +225,29 @@ export function useCollections() {
                     col.productIds?.map((id: string) => ({ productId: id })) ||
                     [];
                   if (items.length > 0) {
-                    await supabase.from('collection_items').insert(
-                      items.map(
-                        (
-                          item: { productId?: string; variant?: CollectionVariantInfo } | string,
-                          idx: number,
-                        ) => {
-                          const isObj = typeof item === 'object';
-                          return {
-                            collection_id: newCol.id,
-                            product_id: isObj ? item.productId : item,
-                            color_name: isObj ? (item.variant?.color_name ?? null) : null,
-                            color_hex: isObj ? (item.variant?.color_hex ?? null) : null,
-                            thumbnail_url: isObj ? (item.variant?.thumbnail ?? null) : null,
-                            sort_order: idx,
-                          };
-                        },
-                      ),
-                    );
+                    // BUG-COLLECTION-MIGRATE-INSERT-SILENT-FAIL FIX: bare await swallowed errors.
+                    const { error: migrateInsertErr } = await supabase
+                      .from('collection_items')
+                      .insert(
+                        items.map(
+                          (
+                            item: string | { productId?: string; variant?: CollectionVariantInfo },
+                            idx: number,
+                          ) => {
+                            const isObj = typeof item === 'object';
+                            return {
+                              collection_id: newCol.id,
+                              product_id: isObj ? item.productId : item,
+                              color_name: isObj ? (item.variant?.color_name ?? null) : null,
+                              color_hex: isObj ? (item.variant?.color_hex ?? null) : null,
+                              thumbnail_url: isObj ? (item.variant?.thumbnail ?? null) : null,
+                              sort_order: idx,
+                            };
+                          },
+                        ),
+                      );
+                    if (migrateInsertErr)
+                      logger.warn('Migration: collection_items insert failed:', migrateInsertErr);
                   }
                 }
               }
@@ -241,7 +267,7 @@ export function useCollections() {
     };
 
     migrateAndLoad();
-  }, [user?.id, loadCollections]);
+  }, [user?.id, rolesLoaded, loadCollections]);
 
   const createCollection = useCallback(
     (
@@ -309,7 +335,7 @@ export function useCollections() {
   );
 
   const updateCollection = useCallback(
-    (id: string, updates: Partial<Omit<Collection, 'id' | 'createdAt'>>) => {
+    (id: string, updates: Partial<Omit<Collection, 'createdAt' | 'id'>>) => {
       setCollections((prev) =>
         prev.map((col) =>
           col.id === id ? { ...col, ...updates, updatedAt: new Date().toISOString() } : col,
@@ -330,7 +356,14 @@ export function useCollections() {
       if (updates.isPublic !== undefined) dbUpdates.is_public = updates.isPublic;
 
       if (Object.keys(dbUpdates).length > 0) {
-        supabase.from('collections').update(dbUpdates).eq('id', id).then();
+        // BUG-COLLECTION-UPDATE-SILENT-FAIL FIX: .then() with no args swallowed all errors.
+        supabase
+          .from('collections')
+          .update(dbUpdates)
+          .eq('id', id)
+          .then(({ error: upErr }) => {
+            if (upErr) logger.warn('[collections] update failed:', upErr);
+          });
       }
     },
     [],
@@ -338,7 +371,14 @@ export function useCollections() {
 
   const deleteCollection = useCallback((id: string) => {
     setCollections((prev) => prev.filter((col) => col.id !== id));
-    supabase.from('collections').delete().eq('id', id).then();
+    // BUG-COLLECTION-DELETE-SILENT-FAIL FIX: .then() with no args swallowed all errors.
+    supabase
+      .from('collections')
+      .delete()
+      .eq('id', id)
+      .then(({ error: delErr }) => {
+        if (delErr) logger.warn('[collections] delete failed:', delErr);
+      });
   }, []);
 
   const addProductToCollection = useCallback(
@@ -355,12 +395,16 @@ export function useCollections() {
           return {
             ...col,
             productIds: [...col.productIds, productId],
-            productItems: [...col.productItems, { productId, variant }],
+            productItems: [
+              ...col.productItems,
+              { productId, variant, priceAtSave: priceAtSave ?? null },
+            ],
             updatedAt: new Date().toISOString(),
           };
         }),
       );
 
+      // BUG-COLLECTION-ADD-PRODUCT-SILENT-FAIL FIX: .then() with no args swallowed errors.
       supabase
         .from('collection_items')
         .insert({
@@ -371,39 +415,97 @@ export function useCollections() {
           thumbnail_url: variant?.thumbnail || null,
           price_at_save: priceAtSave ?? null,
           sort_order: 0,
-        } as never)
-        .then();
+        })
+        .then(({ error: insErr }) => {
+          if (insErr) logger.warn('[collections] add product failed:', insErr);
+        });
     },
     [],
   );
 
   const restoreFromTrash = useCallback(
     async (collectionId: string, productId: string) => {
+      // Correlação delete→undo estruturada (schema em `restoreEventSchema`).
+      const correlationId = restoreCollectionLog.generateCorrelationId();
+      const startedAt = (typeof performance !== 'undefined' ? performance : Date).now();
+      const elapsedMs = () =>
+        Math.round((typeof performance !== 'undefined' ? performance : Date).now() - startedAt);
+
       const { data: trashed } = await supabase
-        .from('collection_items_trash' as never)
+        .from('collection_items_trash')
         .select('*')
         .eq('collection_id', collectionId)
         .eq('product_id', productId)
         .order('deleted_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (!trashed) return false;
-      const t = trashed as Record<string, unknown>;
-      await supabase.from('collection_items').insert({
+      if (!trashed) {
+        restoreCollectionLog.emit('warn', 'restore_skipped_empty_snapshot', {
+          correlation_id: correlationId,
+          snapshot_id: `${collectionId}:${productId}`,
+          restore_result: 'skipped_empty',
+          duration_ms: 0,
+          reason: 'trash_entry_not_found',
+        });
+        return false;
+      }
+      restoreCollectionLog.emit('info', 'restore_start', {
+        correlation_id: correlationId,
+        snapshot_id: `${collectionId}:${productId}`,
         collection_id: collectionId,
         product_id: productId,
-        color_name: t.color_name ?? null,
-        color_hex: t.color_hex ?? null,
-        thumbnail_url: t.thumbnail_url ?? null,
-        notes: t.notes ?? null,
-        price_at_save: t.price_at_save ?? null,
-        sort_order: t.sort_order ?? 0,
-      } as never);
-      await supabase
-        .from('collection_items_trash' as never)
+        items_total: 1,
+        hydrated: true,
+      });
+
+      // BUG-COLLECTION-RESTORE-INSERT-SILENT-FAIL FIX: bare awaits swallowed errors —
+      // if either fails, state is corrupted (item restored in UI but not in DB, or
+      // deleted from trash but never re-inserted).
+      const { error: restoreInsertErr } = await supabase.from('collection_items').insert({
+        collection_id: collectionId,
+        product_id: productId,
+        color_name: trashed.color_name ?? null,
+        color_hex: trashed.color_hex ?? null,
+        thumbnail_url: trashed.thumbnail_url ?? null,
+        notes: trashed.notes ?? null,
+        price_at_save: trashed.price_at_save ?? null,
+        sort_order: trashed.sort_order ?? 0,
+      });
+      if (restoreInsertErr) {
+        logger.warn('[collections] restoreFromTrash insert failed:', restoreInsertErr);
+        restoreCollectionLog.emit('error', 'restore_failed', {
+          correlation_id: correlationId,
+          snapshot_id: `${collectionId}:${productId}`,
+          restore_result: 'failed',
+          duration_ms: elapsedMs(),
+          items_total: 1,
+          items_inserted: null,
+          items_resulting: 0,
+          items_mismatch: true,
+          reason: 'insert_failed',
+          err: restoreInsertErr,
+        });
+        return false;
+      }
+      const { error: trashDeleteErr } = await supabase
+        .from('collection_items_trash')
         .delete()
-        .eq('id', t.id as string);
+        .eq('id', trashed.id);
+      if (trashDeleteErr)
+        logger.warn('[collections] restoreFromTrash trash delete failed:', trashDeleteErr);
       await loadCollections();
+      restoreCollectionLog.emit('info', 'restore_ok', {
+        correlation_id: correlationId,
+        snapshot_id: `${collectionId}:${productId}`,
+        restore_result: 'success',
+        duration_ms: elapsedMs(),
+        items_total: 1,
+        items_inserted: 1,
+        items_resulting: 1,
+        items_mismatch: false,
+        has_dedup: false,
+        partial_insert: false,
+      });
       return true;
     },
     [loadCollections],
@@ -423,23 +525,34 @@ export function useCollections() {
       ),
     );
 
+    // BUG-COLLECTION-REMOVE-PRODUCT-SILENT-FAIL FIX: .then() with no args swallowed errors.
     supabase
       .from('collection_items')
       .delete()
       .eq('collection_id', collectionId)
       .eq('product_id', productId)
-      .then();
+      .then(({ error: remErr }) => {
+        if (remErr) logger.warn('[collections] remove product failed:', remErr);
+      });
   }, []);
 
   const addProductToMultipleCollections = useCallback(
-    (productId: string, collectionIds: string[], variant?: CollectionVariantInfo) => {
+    (
+      productId: string,
+      collectionIds: string[],
+      variant?: CollectionVariantInfo,
+      priceAtSave?: number | null,
+    ) => {
       setCollections((prev) =>
         prev.map((col) => {
           if (collectionIds.includes(col.id) && !col.productIds.includes(productId)) {
             return {
               ...col,
               productIds: [...col.productIds, productId],
-              productItems: [...col.productItems, { productId, variant }],
+              productItems: [
+                ...col.productItems,
+                { productId, variant, priceAtSave: priceAtSave ?? null },
+              ],
               updatedAt: new Date().toISOString(),
             };
           }
@@ -454,15 +567,19 @@ export function useCollections() {
         color_name: variant?.color_name || null,
         color_hex: variant?.color_hex || null,
         thumbnail_url: variant?.thumbnail || null,
+        price_at_save: priceAtSave ?? null,
         sort_order: 0,
       }));
 
+      // BUG-COLLECTION-ADD-MULTI-SILENT-FAIL FIX: .then() with no args swallowed errors.
       supabase
         .from('collection_items')
         .upsert(inserts, {
           onConflict: 'collection_id,product_id,color_name',
         })
-        .then();
+        .then(({ error: upsErr }) => {
+          if (upsErr) logger.warn('[collections] addToMultiple upsert failed:', upsErr);
+        });
     },
     [],
   );
@@ -526,13 +643,16 @@ export function useCollections() {
     );
 
     // Persist sort_order to DB
+    // BUG-COLLECTION-REORDER-SILENT-FAIL FIX: .then() with no args swallowed errors.
     orderedProductIds.forEach((pid, idx) => {
       supabase
         .from('collection_items')
         .update({ sort_order: idx })
         .eq('collection_id', collectionId)
         .eq('product_id', pid)
-        .then();
+        .then(({ error: reorderErr }) => {
+          if (reorderErr) logger.warn('[collections] reorder failed:', reorderErr);
+        });
     });
   }, []);
 
@@ -550,12 +670,15 @@ export function useCollections() {
         }),
       );
 
+      // BUG-COLLECTION-NOTES-SILENT-FAIL FIX: .then() with no args swallowed errors.
       supabase
         .from('collection_items')
         .update({ notes })
         .eq('collection_id', collectionId)
         .eq('product_id', productId)
-        .then();
+        .then(({ error: notesErr }) => {
+          if (notesErr) logger.warn('[collections] updateProductNotes failed:', notesErr);
+        });
     },
     [],
   );

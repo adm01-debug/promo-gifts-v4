@@ -10,7 +10,7 @@ interface InlineEditFieldProps {
   className?: string;
   inputClassName?: string;
   placeholder?: string;
-  type?: 'text' | 'number';
+  type?: 'number' | 'text';
   disabled?: boolean;
 }
 

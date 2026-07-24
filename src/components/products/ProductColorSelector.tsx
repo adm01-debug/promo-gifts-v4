@@ -25,7 +25,7 @@ interface ProductColorSelectorProps {
   selectedColorId?: string | null;
   onColorSelect?: (color: ProductColor) => void;
   maxVisible?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   showLabel?: boolean;
   className?: string;
 }
@@ -51,6 +51,18 @@ const COMPACT_DOT_SIZE_CLASSES = {
   sm: 'w-4 h-4',
 } as const;
 
+// BUG-PCS-03 FIX (2026-06-21): formatColorName definida dentro do componente era
+// recriada a cada render. Função pura sem closure — pertence ao escopo do módulo.
+const formatColorName = (color: ProductColor) => {
+  if (color.variationName && color.nuanceName) {
+    return `${color.variationName} ${color.nuanceName}`;
+  }
+  if (color.variationName) {
+    return color.variationName;
+  }
+  return color.name;
+};
+
 export function ProductColorSelector({
   colors,
   selectedColorId,
@@ -67,16 +79,6 @@ export function ProductColorSelector({
 
   const selectedColor = colors.find((c) => c.id === selectedColorId);
   const displayColor = hoveredColor || selectedColor;
-
-  const formatColorName = (color: ProductColor) => {
-    if (color.variationName && color.nuanceName) {
-      return `${color.variationName} ${color.nuanceName}`;
-    }
-    if (color.variationName) {
-      return color.variationName;
-    }
-    return color.name;
-  };
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -107,14 +109,16 @@ export function ProductColorSelector({
 
       {/* Swatches */}
       <div className="flex flex-wrap gap-2">
-        {visibleColors.map((color, idx) => {
+        {visibleColors.map((color) => {
           const isSelected = selectedColorId === color.id;
           const colorHex = color.hex || color.groupHex || '#CCCCCC';
           const isLight = isLightColor(colorHex);
           const isWhite = colorHex.toUpperCase() === '#FFFFFF' || colorHex.toUpperCase() === '#FFF';
 
           return (
-            <Tooltip key={color.id || idx}>
+            // BUG-PCS-04 FIX (2026-06-21): key={color.id || idx} é instável quando
+            // color.id é undefined (chave vira idx e muda ao reordenar). Usar id ?? composite estável.
+            <Tooltip key={color.id ?? `${color.name}-${color.hex}`}>
               <TooltipTrigger asChild>
                 <motion.button
                   onClick={() => onColorSelect?.(color)}
@@ -250,7 +254,7 @@ export function ProductColorSelector({
 interface CompactColorDotsProps {
   colors: ProductColor[];
   maxVisible?: number;
-  size?: 'xs' | 'sm';
+  size?: 'sm' | 'xs';
 }
 
 export function CompactColorDots({ colors, maxVisible = 5, size = 'sm' }: CompactColorDotsProps) {
@@ -259,8 +263,8 @@ export function CompactColorDots({ colors, maxVisible = 5, size = 'sm' }: Compac
 
   return (
     <div className="flex items-center gap-1">
-      {visibleColors.map((color, idx) => (
-        <Tooltip key={color.id || idx}>
+      {visibleColors.map((color) => (
+        <Tooltip key={color.id ?? `${color.name}-${color.hex}`}>
           <TooltipTrigger asChild>
             <span
               className={cn(

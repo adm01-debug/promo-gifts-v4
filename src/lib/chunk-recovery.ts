@@ -28,6 +28,34 @@ const STORAGE_KEY = '__chunk_recovery__';
 const WINDOW_MS = 30_000;
 const MAX_HARD_RELOADS = 2;
 
+/**
+ * URLs confirmadas pelo Service Worker como HTTP 404 pós-deploy.
+ * Populado por sw-register.ts ao receber mensagens SW_STALE_CHUNK,
+ * e também populado localmente por probeAsset() quando detecta 404.
+ *
+ * probeAsset() verifica este set antes de emitir o request HEAD.
+ * Se a URL estiver aqui, retorna false imediatamente sem rede —
+ * eliminando as mensagens "Falha ao carregar Buscar: HEAD" no DevTools.
+ *
+ * BUG-CR-2 FIX: elimina HEAD failures visíveis no console do browser.
+ */
+export const swConfirmedStaleUrls = new Set<string>();
+
+/**
+ * Regex que detecta assets content-addressed gerados pelo Vite/Rollup.
+ *
+ * BUG-CR-3 FIX (2026-06-27): hashes do Vite/Rollup usam o alfabeto BASE64URL
+ * [A-Za-z0-9_-], NÃO base62. O charset anterior [a-zA-Z0-9] (e antes dele hex)
+ * ignorava '_' e '-', então qualquer hash com esses chars não casava e o probe
+ * HEAD era emitido à toa (exatamente o BUG-CR-2 que se queria evitar).
+ * Exemplo real do console: CloudStatusBanner-Dkobv_wg.js — o '_' na posição 6
+ * fazia [a-zA-Z0-9]{8} falhar. Outros: index-JOKOWKMb.js, ui-vendor-C6tfXOSX.js.
+ *
+ * Comprimento flexível ({6,}): o padrão do Rollup é 8, mas configs podem mudar;
+ * em /assets/ todo emit é content-hashed e imutável, então casar 6+ é seguro.
+ */
+const CONTENT_HASH_CHUNK_RE = /[-_][A-Za-z0-9_-]{6,}\.(?:js|css|mjs)(?:\?|$)/;
+
 interface RecoveryState {
   attempts: number;
   firstAt: number;
@@ -75,21 +103,25 @@ export function isChunkLoadError(error: unknown): boolean {
 
   // Response de fetch direto (raro neste path mas suportado)
   if (typeof Response !== 'undefined' && error instanceof Response) {
-    return error.status === 502 || error.status === 503 || error.status === 504;
+    return error.status === 404 || error.status === 502 || error.status === 503 || error.status === 504; // 404: chunk removed in new deploy
   }
 
   const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
 
   if (!message) return false;
 
+  // Use toLowerCase() for case-insensitive matching across browsers
+  // (Firefox may capitalize: 'Error loading...' vs 'error loading...')
+  const msgLower = message.toLowerCase();
+
   return (
-    message.includes('Failed to fetch dynamically imported module') ||
-    message.includes('error loading dynamically imported module') ||
-    message.includes('Loading chunk') ||
-    message.includes('ChunkLoadError') ||
-    message.includes('Importing a module script failed') ||
-    message.includes('Unable to preload CSS') ||
-    /\b(502|503|504)\b/.test(message)
+    msgLower.includes('failed to fetch dynamically imported module') ||
+    msgLower.includes('error loading dynamically imported module') ||
+    msgLower.includes('loading chunk') ||
+    msgLower.includes('chunkloaderror') ||
+    msgLower.includes('importing a module script failed') ||
+    msgLower.includes('unable to preload css') ||
+    /\b(404|502|503|504)\b/.test(message) // 404: Chrome may include status in error.message
   );
 }
 
@@ -97,8 +129,32 @@ export function isChunkLoadError(error: unknown): boolean {
  * Sondagem leve: HEAD no mesmo asset que falhou, com cache-bust. Usado para
  * distinguir 502 transitório (servidor voltou) de 502 persistente.
  * Retorna true se o servidor parece OK (status 2xx/3xx), false caso contrário.
+ *
+ * BUG-CR-3 FIX (2026-06-27): charset corrigido para BASE64URL [A-Za-z0-9_-]
+ * (Vite/Rollup — não base62, nem hex). A versão anterior não detectava hashes
+ * com '_' ou '-' (ex: CloudStatusBanner-Dkobv_wg.js) e emitia HEAD à toa.
+ *
+ * Assets Vite com content-hash são IMUTÁVEIS — após um deploy, a URL antiga
+ * retorna 404 garantido. Detectamos isso via CONTENT_HASH_CHUNK_RE e pulamos
+ * o probe de rede, prevenindo as mensagens "Falha ao carregar Buscar: HEAD".
+ * 404s reais são cacheados em swConfirmedStaleUrls para evitar rerequests.
  */
 async function probeAsset(url: string, timeoutMs = 3000): Promise<boolean> {
+  // BUG-CR-2 FIX (path 1): SW ou chamada anterior confirmou 404 para esta URL.
+  if (swConfirmedStaleUrls.has(url)) {
+    logger.log('[chunk-recovery] probe skipped — already confirmed stale:', url);
+    return false;
+  }
+
+  // BUG-CR-3 FIX (path 2): asset com content-hash Vite/Rollup (base64url).
+  // Exemplos: CloudStatusBanner-Dkobv_wg.js, index-JOKOWKMb.js, ui-vendor-C6tfXOSX.js
+  // URL post-deploy retorna 404 por definição (hash é imutável). Skip o probe.
+  if (url && CONTENT_HASH_CHUNK_RE.test(url)) {
+    swConfirmedStaleUrls.add(url); // cache para chamadas futuras na mesma sessão
+    logger.log('[chunk-recovery] probe skipped — Vite content-hash asset (base64url):', url);
+    return false;
+  }
+
   if (typeof fetch === 'undefined') return false;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -110,6 +166,10 @@ async function probeAsset(url: string, timeoutMs = 3000): Promise<boolean> {
       credentials: 'same-origin',
       signal: controller.signal,
     });
+    // BUG-CR-2 FIX (path 3): 404 no probe → cachear para evitar rerequests.
+    if (res.status === 404) {
+      swConfirmedStaleUrls.add(url);
+    }
     return res.ok || (res.status >= 300 && res.status < 400);
   } catch {
     return false;
@@ -136,7 +196,7 @@ function appendCacheBust(url: string): string {
 export function extractChunkUrl(error: unknown): string | undefined {
   const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
   if (!message) return undefined;
-  const match = message.match(/https?:\/\/[^\s)'"]+/);
+  const match = /https?:\/\/[^\s)'"]+/.exec(message);
   return match?.[0];
 }
 
@@ -235,22 +295,33 @@ export function attemptChunkRecovery(error: unknown): Promise<boolean> {
     NProgress.set(0.8);
     NProgress.start();
 
-    // Sonda opcional: se conseguimos a URL e ela ainda está down,
-    // espera um pouco mais antes de recarregar (back-off curto).
+    // Sonda: distingue 502 transitório de 404 intencional (novo deploy).
+    // probeAsset() já gerencia os casos de content-hash e SW-confirmado internamente.
     if (url) {
-      const ok = await probeAsset(url);
-      if (!ok) {
-        const backoffMs = 500 * attempts;
-        logger.warn(
-          `[chunk-recovery] asset ainda indisponível, aguardando ${backoffMs}ms antes do reload`,
-        );
-        await new Promise((r) => setTimeout(r, backoffMs));
+      const isSwConfirmedStale = swConfirmedStaleUrls.has(url);
+      if (!isSwConfirmedStale) {
+        const ok = await probeAsset(url);
+        if (!ok) {
+          const backoffMs = 500 * attempts;
+          logger.warn(
+            `[chunk-recovery] asset indisponível, aguardando ${backoffMs}ms antes do reload`,
+          );
+          await new Promise((r) => {
+            setTimeout(r, backoffMs);
+          });
+        }
+      } else {
+        // SW confirmou 404 — chunk removido pelo deploy. Reload imediato.
+        logger.log('[chunk-recovery] SW confirmou chunk stale — reload imediato sem probe');
       }
     }
 
     await hardReload();
     return true;
-  })();
+  })().finally(() => {
+    // BUG-CR-1 FIX: reseta inFlight para permitir nova tentativa de recovery.
+    inFlight = null;
+  });
 
   return inFlight;
 }
@@ -261,7 +332,6 @@ export function attemptChunkRecovery(error: unknown): Promise<boolean> {
  * resolveu o problema).
  */
 export function markBootSuccessful(): void {
-  // Pequeno delay garante que módulos lazy iniciais já carregaram.
   if (typeof window === 'undefined') return;
   window.setTimeout(() => {
     const state = readState();

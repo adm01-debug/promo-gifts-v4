@@ -53,12 +53,12 @@ export function useKitWizardShortcuts({
       }
       if (['1', '2', '3', '4'].includes(e.key)) {
         const idx = Number(e.key) - 1;
-        const target = STEP_BY_INDEX[idx];
-        if (!target) return;
+        const stepTarget = STEP_BY_INDEX[idx];
+        if (!stepTarget) return;
         // Allow only if completed or current
-        if (target === currentStep || completedSteps.includes(target)) {
+        if (stepTarget === currentStep || completedSteps.includes(stepTarget)) {
           e.preventDefault();
-          onJump(target);
+          onJump(stepTarget);
         }
       }
     };

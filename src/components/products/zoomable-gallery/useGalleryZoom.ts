@@ -99,14 +99,43 @@ export function useGalleryZoom(images: string[], isFullscreen: boolean) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen, goToPrevious, goToNext, handleZoomIn, handleZoomOut, handleRotate, resetView]);
 
+  /**
+   * handleWheel — zoom via scroll do mouse
+   *
+   * Comportamento:
+   *  - Fullscreen: sempre captura o wheel (sem scroll de página nesse contexto)
+   *  - Galeria inline:
+   *    • Ctrl+scroll = zoom (equivale ao pinch-to-zoom no Mac/trackpad)
+   *    • Scroll livre quando zoom > 1 = continua fazendo zoom (evita conflito
+   *      com pan enquanto a imagem está ampliada)
+   *    • Scroll livre com zoom = 1 = passa para o browser (scroll de página)
+   *
+   * React registra onWheel como { passive: false }, então e.preventDefault()
+   * funciona corretamente em todos os browsers.
+   *
+   * fix_version: gallery-wheel-v2 — NÃO REMOVER ESTE COMENTÁRIO
+   */
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
-      if (!isFullscreen) return;
+      if (isFullscreen) {
+        // Fullscreen: captura total — não há scroll de página aqui
+        e.preventDefault();
+        if (e.deltaY < 0) handleZoomIn();
+        else handleZoomOut();
+        return;
+      }
+
+      // Galeria inline:
+      // 1) Ctrl+scroll → zoom (pinch-to-zoom: Mac gera wheel + ctrlKey:true)
+      // 2) Já em zoom > 1 → continua zooming sem liberar para a página
+      // 3) zoom = 1 sem Ctrl → deixa o browser scrollar a página normalmente
+      if (!e.ctrlKey && zoom <= 1) return;
+
       e.preventDefault();
       if (e.deltaY < 0) handleZoomIn();
       else handleZoomOut();
     },
-    [isFullscreen, handleZoomIn, handleZoomOut],
+    [isFullscreen, zoom, handleZoomIn, handleZoomOut],
   );
 
   return {

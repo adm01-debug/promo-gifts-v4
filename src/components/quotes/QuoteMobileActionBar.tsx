@@ -37,7 +37,9 @@ export function QuoteMobileActionBar({
           size="sm"
           onClick={onSync}
           disabled={isSyncing}
-          className="flex-1 shrink-0 gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
+          data-testid="sync-mobile"
+          aria-label="Sincronizar orçamento"
+          className="h-9 flex-[0.85] shrink-0 gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {isSyncing ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -47,7 +49,14 @@ export function QuoteMobileActionBar({
           {isSyncing ? '...' : 'Sincronizar'}
         </Button>
       )}
-      <Button size="sm" onClick={onDownloadPDF} disabled={isGeneratingPDF} className="flex-1 gap-2">
+      <Button
+        size="sm"
+        onClick={onDownloadPDF}
+        disabled={isGeneratingPDF}
+        className="flex-1 gap-2"
+        data-testid="pdf-export-mobile"
+        aria-label="Baixar PDF da proposta"
+      >
         {isGeneratingPDF ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (

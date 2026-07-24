@@ -36,7 +36,19 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
     (data: MockupDraftData) => {
       try {
         const key = `${LOCAL_STORAGE_KEY}_${user?.id || 'anonymous'}_${draftKey}`;
-        localStorage.setItem(key, JSON.stringify(data));
+        // BUG-DRAFT-LOCAL-STORAGE-QUOTA FIX: strip data URL logos before writing to
+        // localStorage — a single 5MB upload encodes to ~7MB base64 which easily
+        // blows the 5-10MB per-origin quota and causes a silent DOMException.
+        // Only keep http(s) URLs (already-uploaded logos); the loadDraft
+        // re-hydration path restores data URLs from the backend when available.
+        const safeData: MockupDraftData = {
+          ...data,
+          personalizationAreas: data.personalizationAreas.map((a) => ({
+            ...a,
+            logoPreview: a.logoPreview?.startsWith('http') ? a.logoPreview : null,
+          })),
+        };
+        localStorage.setItem(key, JSON.stringify(safeData));
       } catch (err) {
         logger.error('Erro ao salvar no localStorage:', err);
       }
@@ -60,7 +72,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
   // BUG-A FIX: removed 3 FK pre-validation queries (product, technique, client).
   // These fired on every auto-save (every 2s during active editing), generating
   // ~90 unnecessary SELECT queries per 5 minutes of work.
-  // The upsert's existing 23503/409 fallback already handles FK violations gracefully.
+  // The upsert's 23503 fallback handles FK violations gracefully.
   const saveToBackend = useCallback(
     async (data: MockupDraftData): Promise<boolean> => {
       if (!user) return false;
@@ -75,7 +87,7 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
         }));
 
         const firstLogo = data.personalizationAreas.find((a) => a.logoPreview)?.logoPreview || null;
-        const safeLogoData = firstLogo && firstLogo.startsWith('http') ? firstLogo : null;
+        const safeLogoData = firstLogo?.startsWith('http') ? firstLogo : null;
 
         // BUG-A FIX: IDs used directly — no pre-validation queries.
         // FK violations are caught below and handled via fallback.
@@ -102,15 +114,18 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
           .upsert(payload, { onConflict: 'user_id,draft_key' });
 
         if (upsertError) {
-          if (upsertError.code === '23503' || upsertError.code === '409') {
+          if (upsertError.code === '23503') {
             logger.warn('[useMockupDraft] FK violation on draft save — falling back to null IDs.', {
               productId: safeProductId,
               techniqueId: safeTechniqueId,
               clientId: safeClientId,
             });
-            const { error: updateError } = await supabase
-              .from('mockup_drafts')
-              .update({
+            // BUG-17 FIX: was `.update()` — silently wrote 0 rows on first-ever
+            // save (no row exists yet), while still calling setLastSaved and
+            // returning true. Using `.upsert()` guarantees the row is created
+            // even when the FK-violating draft has never been persisted before.
+            const { error: updateError } = await supabase.from('mockup_drafts').upsert(
+              {
                 user_id: payload.user_id,
                 draft_key: payload.draft_key,
                 product_name: payload.product_name,
@@ -122,9 +137,9 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
                 product_id: null,
                 technique_id: null,
                 client_id: null,
-              })
-              .eq('user_id', user.id)
-              .eq('draft_key', draftKey);
+              },
+              { onConflict: 'user_id,draft_key' },
+            );
 
             if (updateError) throw updateError;
           } else {
@@ -257,6 +272,14 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
   }, [loadFromLocal, loadFromBackend]);
 
   const clearDraft = useCallback(async () => {
+    // BUG-1 FIX: cancel pending debounced save BEFORE clearing storage — otherwise
+    // a 2s timer started by the last saveDraft() call would re-create the draft
+    // row/localStorage entry immediately after we delete it (race condition).
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
     try {
       const key = `${LOCAL_STORAGE_KEY}_${user?.id || 'anonymous'}_${draftKey}`;
       localStorage.removeItem(key);
@@ -266,11 +289,12 @@ export function useMockupDraft(options: UseMockupDraftOptions = {}) {
 
     if (user) {
       try {
-        await supabase
+        const { error: deleteError } = await supabase
           .from('mockup_drafts')
           .delete()
           .eq('user_id', user.id)
           .eq('draft_key', draftKey);
+        if (deleteError) throw deleteError;
       } catch (err) {
         logger.error('Erro ao limpar rascunho do backend:', err);
       }

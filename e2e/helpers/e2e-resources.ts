@@ -19,6 +19,13 @@ import { expect, type Locator, type Page } from "@playwright/test";
 import { e2eName, getTestPrefix, isE2eName } from "../fixtures/test-user";
 import { Sel } from "../fixtures/selectors";
 
+// Re-export dos helpers de nomenclatura E2E para que outros módulos possam
+// importar diretamente de `./e2e-resources` (padrão adotado por
+// `quotes-status-seed.ts`, `discount-approval-seed.ts` e specs 04p*).
+// Sem este re-export, Playwright falha a coleta com
+// `does not provide an export named 'e2eName'` e o CI reporta 0 testes.
+export { e2eName, getTestPrefix, isE2eName };
+
 /**
  * Guarda runtime: lança se `value` não começa com o prefixo global E2E
  * NEM com um sub-prefixo `[E2E:*]` (gerado por `e2eScope`).

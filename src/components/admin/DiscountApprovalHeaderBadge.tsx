@@ -1,4 +1,4 @@
-import { Shield } from 'lucide-react';
+import { CircleDollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -21,8 +21,16 @@ export function DiscountApprovalHeaderBadge() {
 
   const { data: count = 0 } = useQuery({
     queryKey: QUERY_KEY,
+    // BUG-DAR-ABORT-REGRESSION FIX (2026-06-23):
+    // O "fix" de 2026-06-22 (BUG-DAR-ABORT) passou .abortSignal(signal) ao Supabase,
+    // o que na verdade INTRODUZIU o console error "Falha ao carregar Buscar: HEAD".
+    // Causa raiz: React Query v5 chama controller.abort() quando enabled vai true→false
+    // durante race de auth no page load. Com .abortSignal(signal), o abort propaga ao
+    // fetch nativo -> browser loga "Falha ao carregar Buscar". SEM o signal, o fetch
+    // completa silenciosamente (React Query ignora o resultado) sem erro no console.
+    // O signal foi removido propositalmente.
     queryFn: async () => {
-      const { count } = await supabase
+      const { count: rawCount } = await supabase
         // rls-allow: admin-only via has_role; RLS filtra
         .from('discount_approval_requests')
         // GET em vez de HEAD: evita 503/console noise em proxies/CDNs que
@@ -30,12 +38,14 @@ export function DiscountApprovalHeaderBadge() {
         .select('id', { count: 'exact', head: false })
         .eq('status', 'pending')
         .limit(1);
-      return count || 0;
+      return rawCount || 0;
     },
     enabled: rolesLoaded && Boolean(isAdmin), // rolesLoaded garante JWT pronto
-    retry: 0, // sem retries: falha = falha, não flood de HEAD requests
-    retryOnMount: false, // não re-tenta ao remontar o componente
+    retry: 0,              // sem retries: falha = falha, nao flood
+    retryOnMount: false,   // nao re-tenta ao remontar
     refetchInterval: 60_000,
+    refetchOnWindowFocus: false,  // evita abort extra ao focar aba
+    refetchOnReconnect: false,    // evita abort extra ao reconectar
     staleTime: 15_000,
   });
 
@@ -51,7 +61,7 @@ export function DiscountApprovalHeaderBadge() {
           onClick={() => navigate('/admin/usuarios?tab=discounts')}
           aria-label={`${count} aprovações de desconto pendentes`}
         >
-          <Shield className="h-4 w-4 text-amber-500" />
+          <CircleDollarSign className="h-4 w-4 text-amber-500" />
           <Badge
             className={cn(
               'absolute -right-0.5 -top-0.5 h-4 min-w-4 px-1 text-[10px] font-bold',

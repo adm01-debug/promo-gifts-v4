@@ -41,7 +41,7 @@ export interface ExternalImage {
   applies_to_color?: boolean;
   // Cloudflare Images sync
   cf_image_id?: string;
-  cf_sync_status?: 'pending' | 'syncing' | 'verified' | 'missing' | 'failed' | 'skipped';
+  cf_sync_status?: 'failed' | 'missing' | 'pending' | 'skipped' | 'syncing' | 'verified';
   // Perceptual hash for duplicate detection
   content_hash?: string;
   // Blurhash placeholder for progressive loading
@@ -65,7 +65,7 @@ export const IMAGE_TYPES = [
   { value: 'logo', label: 'Logo', icon: Type, color: 'text-primary' },
 ];
 
-export type FilterMode = 'all' | 'general' | 'by-variant' | string;
+export type FilterMode = string | 'all' | 'by-variant' | 'general';
 
 export interface VariantInfo {
   id: string;

@@ -138,7 +138,7 @@ export default function ProductClassificationSection({
           subtitle="Gênero, cor, tamanho e capacidade"
           icon={Settings2}
           iconColor="bg-primary/10 text-primary"
-          defaultOpen={true}
+          defaultOpen
         >
           <ProductVariationAxesConfig
             productId={productId || ''}

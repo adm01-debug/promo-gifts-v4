@@ -1,0 +1,122 @@
+name: SECURITY DEFINER ACL — Multi-Env
+
+# ────────────────────────────────────────────────────────────────────────────
+# Roda o gate `check-security-definer-acl` + a suíte vitest de regressão contra
+# múltiplos bancos reais (staging e produção canônica `doufsxqlfjyuvxuezpln`)
+# para garantir que a política de ACL não dependa apenas do banco usado no
+# CI padrão (freight-quality-gates.yml).
+#
+# Segurança:
+#   - Cada ambiente usa GitHub Environments (staging / production) com secrets
+#     próprios. Não há fallback cruzado.
+#   - Se os secrets de um ambiente estiverem ausentes, o job é *skipped*
+#     (não falha o workflow) — safe-by-default para forks/PRs sem acesso.
+#   - O RPC `audit_security_definer_acl` é read-only; nunca escreve no banco.
+#
+# Gatilhos:
+#   - schedule: diário 09:00 UTC (06:00 BRT) — regressão contínua.
+#   - workflow_dispatch: execução manual (permite escolher ambiente).
+#   - push em main: re-valida após merge.
+# ────────────────────────────────────────────────────────────────────────────
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Ambiente a validar (all = staging + production)"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - staging
+          - production
+  push:
+    branches: [main, master]
+    paths:
+      - "scripts/check-security-definer-acl.mjs"
+      - "tests/security/security-definer-acl.test.ts"
+      - "supabase/migrations/**"
+      - "qa/migrations-draft/**"
+      - ".github/workflows/security-definer-acl-multi-env.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  acl-check:
+    name: "ACL check — ${{ matrix.env_name }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Filtra a matriz quando o dispatch escolhe um ambiente específico.
+    if: >-
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.environment == 'all' ||
+      github.event.inputs.environment == matrix.env_name
+    # `environment:` escopa os secrets ao ambiente correspondente.
+    environment: ${{ matrix.env_name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        env_name: [staging, production]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Detectar credenciais do ambiente
+        id: creds
+        env:
+          URL: ${{ secrets.VITE_SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "has_creds=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Secrets ausentes::Ambiente '${{ matrix.env_name }}' sem VITE_SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY — job será pulado."
+          else
+            echo "has_creds=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Gate script — audit_security_definer_acl RPC
+        if: steps.creds.outputs.has_creds == 'true'
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run check:security-definer-acl
+
+      - name: Vitest — regression suite
+        if: steps.creds.outputs.has_creds == 'true'
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run test:security-definer-acl
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## SECURITY DEFINER ACL — ${{ matrix.env_name }}"
+            if [ "${{ steps.creds.outputs.has_creds }}" = "true" ]; then
+              echo ""
+              echo "- Credenciais: ✅ presentes (via GitHub Environment \`${{ matrix.env_name }}\`)"
+              echo "- Gate script: \`check:security-definer-acl\`"
+              echo "- Suíte vitest: \`test:security-definer-acl\`"
+              echo "- Resultado do job: \`${{ job.status }}\`"
+            else
+              echo ""
+              echo "- Credenciais: ⚠️ ausentes — job pulado."
+              echo "- Configure \`VITE_SUPABASE_URL\` e \`SUPABASE_SERVICE_ROLE_KEY\` no GitHub Environment \`${{ matrix.env_name }}\` para habilitar."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

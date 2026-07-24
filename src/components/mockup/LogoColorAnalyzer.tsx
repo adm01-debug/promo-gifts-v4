@@ -36,7 +36,7 @@ export function LogoColorAnalyzer({
   if (isAnalyzing) {
     return (
       <div className={cn('flex items-center justify-center gap-3 py-6', className)}>
-        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin text-primary" />
         <span className="text-sm text-muted-foreground">Analisando cores da logo com IA...</span>
       </div>
     );
@@ -44,8 +44,11 @@ export function LogoColorAnalyzer({
 
   if (error) {
     return (
-      <div className={cn('flex items-center gap-2 py-4 text-sm text-destructive', className)}>
-        <AlertTriangle className="h-4 w-4" />
+      <div
+        role="alert"
+        className={cn('flex items-center gap-2 py-4 text-sm text-destructive', className)}
+      >
+        <AlertTriangle className="h-4 w-4" aria-hidden="true" />
         <span>{error}</span>
       </div>
     );
@@ -60,7 +63,7 @@ export function LogoColorAnalyzer({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
+          <Sparkles aria-hidden="true" className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold">Cores Detectadas</span>
           <Badge variant="secondary" className="text-[10px]">
             {colors.length} cor{colors.length !== 1 ? 'es' : ''}
@@ -71,7 +74,7 @@ export function LogoColorAnalyzer({
       {/* Warning if exceeds max */}
       {exceedsMax && (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
+          <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0 text-destructive" />
           <span className="text-xs text-destructive">
             O número máximo de cores é <strong>{maxColors}</strong>. Substitua uma ou mais cores
             para continuar.
@@ -92,7 +95,7 @@ export function LogoColorAnalyzer({
         </div>
 
         {colors.map((color, index) => (
-          <ColorRow key={index} color={color} index={index} onPantoneChange={onPantoneChange} />
+          <ColorRow key={color.hex} color={color} index={index} onPantoneChange={onPantoneChange} />
         ))}
       </div>
     </div>
@@ -166,22 +169,28 @@ function PantoneDropdown({ selectedCode, pantoneHex, onChange }: PantoneDropdown
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          type="button"
           className="flex w-full items-center gap-2 rounded-md border border-border/50 px-2 py-1.5 text-left transition-colors hover:bg-muted/50"
-          aria-label="Recolher"
+          aria-label={`Selecionar cor Pantone (atual: ${selectedCode})`}
+          aria-expanded={open}
         >
           <div
             className="h-6 w-6 shrink-0 rounded border border-border/50"
             style={{ backgroundColor: displayHex }}
           />
           <span className="flex-1 truncate text-xs font-medium">Pantone {selectedCode}</span>
-          <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+          <ChevronDown aria-hidden="true" className="h-3 w-3 shrink-0 text-muted-foreground" />
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="start">
         <div className="border-b border-border/50 p-2">
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search
+              aria-hidden="true"
+              className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+            />
             <Input
+              aria-label="Buscar código Pantone"
               placeholder="Buscar Pantone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -195,6 +204,7 @@ function PantoneDropdown({ selectedCode, pantoneHex, onChange }: PantoneDropdown
             {results.map((p) => (
               <button
                 key={p.code}
+                type="button"
                 onClick={() => {
                   onChange(p.code);
                   setOpen(false);

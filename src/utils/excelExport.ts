@@ -31,7 +31,7 @@ export interface ExcelColumn {
   /** Largura da coluna (em caracteres) */
   width?: number;
   /** Função de formatação customizada */
-  format?: (value: unknown, row: Record<string, unknown>) => string | number;
+  format?: (value: unknown, row: Record<string, unknown>) => number | string;
 }
 
 /**
@@ -44,7 +44,7 @@ export async function exportToExcel(config: ExcelExportConfig): Promise<void> {
     const XLSX = await getXLSX();
     // 1. Preparar dados formatados
     const formattedData = data.map((row) => {
-      const formattedRow: Record<string, string | number> = {};
+      const formattedRow: Record<string, number | string> = {};
 
       columns.forEach((col) => {
         const value = getNestedValue(row, col.key);
@@ -117,7 +117,7 @@ export async function exportMultipleSheets(
 
     sheets.forEach(({ sheetName, columns, data }) => {
       const formattedData = data.map((row) => {
-        const formattedRow: Record<string, string | number> = {};
+        const formattedRow: Record<string, number | string> = {};
         columns.forEach((col) => {
           const value = getNestedValue(row, col.key);
           formattedRow[col.header] = col.format ? col.format(value, row) : formatValue(value);
@@ -153,7 +153,7 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 }
 
 // Formata valor automaticamente
-function formatValue(value: unknown): string | number {
+function formatValue(value: unknown): number | string {
   if (value instanceof Date) {
     return formatDateTime(value);
   }

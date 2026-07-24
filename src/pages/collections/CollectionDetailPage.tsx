@@ -25,6 +25,7 @@ import { PageSEO } from '@/components/seo/PageSEO';
 import { ProductGrid } from '@/components/products/ProductGrid';
 import { ProductTableView } from '@/components/products/ProductTableView';
 import { ProductListItem } from '@/components/products/ProductListItem';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
 import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import { Button } from '@/components/ui/button';
@@ -49,10 +50,11 @@ import { useExternalCollections, useExternalCollectionProducts } from '@/hooks/c
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useComparisonStore } from '@/stores/useComparisonStore';
 import { toast } from 'sonner';
+import { showUndoToast } from '@/utils/undoToast';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-type SortOption = 'name' | 'sku' | 'added';
+type SortOption = 'added' | 'name' | 'sku';
 type ViewMode = 'grid' | 'list' | 'table';
 
 export default function CollectionDetailPage() {
@@ -68,8 +70,11 @@ export default function CollectionDetailPage() {
     restoreFromTrash,
   } = useCollectionsContext();
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
-  const { isFavorite, toggleFavorite } = useFavoritesStore();
-  const { isInCompare, toggleCompare, canAddMore } = useComparisonStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const toggleCompare = useComparisonStore((s) => s.toggleCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
   const [showPresentation, setShowPresentation] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -319,16 +324,15 @@ export default function CollectionDetailPage() {
   const handleRemoveFromCollection = (productId: string) => {
     removeProductFromCollection(collection.id, productId);
     setAnnouncement(`Produto removido da coleção ${collection.name}`);
-    toast.success('Produto removido da coleção', {
-      action: {
-        label: 'Desfazer',
-        onClick: async () => {
-          const ok = await restoreFromTrash(collection.id, productId);
-          if (ok) {
-            setAnnouncement('Produto restaurado');
-            toast.success('Produto restaurado');
-          } else toast.error('Não foi possível restaurar');
-        },
+    showUndoToast({
+      title: 'Produto removido da coleção',
+      description: 'Você pode desfazer esta ação.',
+      onUndo: async () => {
+        const ok = await restoreFromTrash(collection.id, productId);
+        if (ok) {
+          setAnnouncement('Produto restaurado');
+          toast.success('Produto restaurado');
+        } else toast.error('Não foi possível restaurar');
       },
     });
   };
@@ -536,7 +540,7 @@ export default function CollectionDetailPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="products" className="space-y-4">
+            <TabsContent value="products" className="space-y-4" style={swatchSizeStyle(viewMode, gridColumns)}>
               {products.length > 0 ? (
                 filteredProducts.length > 0 ? (
                   manageMode ? (
@@ -644,7 +648,7 @@ export default function CollectionDetailPage() {
             </TabsContent>
           </Tabs>
         ) : products.length > 0 ? (
-          <div className="space-y-4">
+          <div className="space-y-4" style={swatchSizeStyle(viewMode, gridColumns)}>
             {viewMode === 'table' ? (
               <ProductTableView
                 products={productsWithVariant}

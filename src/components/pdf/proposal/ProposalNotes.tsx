@@ -12,6 +12,22 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
 
   return (
     <div style={{ marginTop: '14px' }}>
+      {/* Título "Condições Comerciais" acima do card (fora da borda) */}
+      <div
+        style={{
+          fontFamily: "'Montserrat', sans-serif",
+          fontWeight: 700,
+          fontSize: '12px',
+          color: '#00c853',
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+          marginBottom: '4px',
+          paddingLeft: '2px',
+        }}
+      >
+        Condições Comerciais
+      </div>
+
       {/* Bloco de Condições Comerciais */}
       <div
         style={{
@@ -21,24 +37,38 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
           backgroundColor: '#fafafa',
         }}
       >
-        <div
-          style={{
-            fontFamily: "'Montserrat', sans-serif",
-            fontWeight: 700,
-            fontSize: '10px',
-            color: '#00c853',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '8px',
-            borderBottom: '2px solid #e8f5e9',
-            paddingBottom: '4px',
-          }}
-        >
-          Condições Comerciais
-        </div>
+        {data.notes && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '8px',
+              marginBottom: '8px',
+              borderBottom: '2px solid #e8f5e9',
+              paddingBottom: '4px',
+              fontSize: '9px',
+              color: '#555',
+              lineHeight: '1.4',
+            }}
+          >
+            <span
+              style={{
+                fontWeight: 800,
+                color: '#333',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                flex: '0 0 auto',
+              }}
+            >
+              Observações:
+            </span>
+            <span style={{ flex: '1 1 auto' }}>{data.notes}</span>
+          </div>
+        )}
+
 
         {/* TABLE LAYOUT instead of CSS grid — html2canvas does not support grid */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '8px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '2px' }}>
           <tbody>
             <tr>
               <td style={{ width: '25%', padding: '0 8px 0 0', verticalAlign: 'top' }}>
@@ -117,22 +147,10 @@ export function ProposalNotes({ data }: { data: ProposalTemplateData }) {
           </tbody>
         </table>
 
-        <div
-          style={{
-            fontSize: '9px',
-            color: '#777',
-            lineHeight: '1.5',
-            paddingTop: '6px',
-            marginBottom: '8px',
-          }}
-        >
-          <div>- Todos os valores incluem personalização conforme descrição.</div>
-          <div>- Todos os produtos passam por controle de qualidade.</div>
-          {data.notes && <div>- {data.notes}</div>}
-        </div>
 
         {/* Termos de Aceite */}
-        <div style={{ paddingTop: '8px' }}>
+        <div style={{ paddingTop: '2px' }}>
+
           <div
             style={{
               fontFamily: "'Montserrat', sans-serif",

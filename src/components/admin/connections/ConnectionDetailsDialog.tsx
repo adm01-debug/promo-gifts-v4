@@ -194,9 +194,9 @@ export function ConnectionDetailsDialog({
               </h3>
               <ul className="space-y-3">
                 {fields.map((f) => {
-                  const status = f.status;
-                  const has = !!status?.has_value;
-                  const last = historyBySecret[f.secretName];
+                  const fieldStatus = f.status;
+                  const has = !!fieldStatus?.has_value;
+                  const fieldLast = historyBySecret[f.secretName];
                   return (
                     <li key={f.secretName} className="rounded-md border bg-background p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -215,8 +215,8 @@ export function ConnectionDetailsDialog({
                         </div>
                         {has ? (
                           <MaskedSuffixBadge
-                            suffix={status?.masked_suffix ?? null}
-                            length={status?.length ?? null}
+                            suffix={fieldStatus?.masked_suffix ?? null}
+                            length={fieldStatus?.length ?? null}
                             secretName={f.secretName}
                             showWhenValid
                           />
@@ -233,34 +233,34 @@ export function ConnectionDetailsDialog({
                       <dl className="mt-2 grid grid-cols-3 gap-x-3 gap-y-1 text-[11px]">
                         <dt className="text-muted-foreground">Tamanho</dt>
                         <dd className="col-span-2 font-mono">
-                          {status?.length ? `${status.length} chars` : '—'}
+                          {fieldStatus?.length ? `${fieldStatus.length} chars` : '—'}
                         </dd>
                         <dt className="text-muted-foreground">Origem</dt>
                         <dd className="col-span-2 capitalize">
-                          {status?.source ?? (has ? '—' : 'não configurado')}
+                          {fieldStatus?.source ?? (has ? '—' : 'não configurado')}
                         </dd>
                         <dt className="text-muted-foreground">Última rotação</dt>
                         <dd className="col-span-2">
                           {loading ? (
                             <span className="text-muted-foreground">carregando…</span>
-                          ) : last ? (
+                          ) : fieldLast ? (
                             <span className="flex items-center gap-1.5">
                               <UserRound className="h-3 w-3 text-muted-foreground" />
                               <span className="font-medium">
-                                {last.rotated_by_email ??
-                                  (last.rotated_by
-                                    ? `${last.rotated_by.slice(0, 8)}…`
+                                {fieldLast.rotated_by_email ??
+                                  (fieldLast.rotated_by
+                                    ? `${fieldLast.rotated_by.slice(0, 8)}…`
                                     : 'autor desconhecido')}
                               </span>
                               <span className="text-muted-foreground">
-                                · {fmtDate(last.rotated_at)}
+                                · {fmtDate(fieldLast.rotated_at)}
                               </span>
-                              {last.action_type && (
+                              {fieldLast.action_type && (
                                 <Badge
                                   variant="outline"
                                   className="ml-1 px-1 py-0 text-[9px] uppercase"
                                 >
-                                  {last.action_type}
+                                  {fieldLast.action_type}
                                 </Badge>
                               )}
                             </span>

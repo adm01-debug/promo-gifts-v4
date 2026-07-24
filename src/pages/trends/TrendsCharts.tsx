@@ -4,6 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Clickable } from '@/components/shared/Clickable';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Eye,
@@ -185,17 +186,10 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                     {index < 3 ? ['🥇', '🥈', '🥉'][index] : index + 1}
                   </div>
-                  <div
-                    className="min-w-0 flex-1 cursor-pointer"
-                    role="button"
-                    tabIndex={0}
+                  <Clickable
+                    className="min-w-0 flex-1"
+                    disabled={!product.id}
                     onClick={() => product.id && navigate(`/produto/${product.id}`)}
-                    onKeyDown={(e) => {
-                      if ((e.key === 'Enter' || e.key === ' ') && product.id) {
-                        e.preventDefault();
-                        navigate(`/produto/${product.id}`);
-                      }
-                    }}
                     aria-label={`Ver produto ${product.name}`}
                   >
                     <div className="flex items-center gap-1.5">
@@ -222,7 +216,7 @@ export function ProductsTabContent({ topProducts, isLoading }: ProductsTabProps)
                     {product.sku && (
                       <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
                     )}
-                  </div>
+                  </Clickable>
                   <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
                     <Badge variant="secondary" className="text-xs">
                       <Eye className="mr-1 h-3 w-3" />

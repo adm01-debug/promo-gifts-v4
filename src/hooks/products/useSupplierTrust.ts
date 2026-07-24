@@ -82,7 +82,7 @@ export function useSupplierTrust(productId?: string) {
               countMode: 'none',
             });
             if (supplierResult.records.length) {
-              isVerified = supplierResult.records[0].active !== false;
+              isVerified = supplierResult.records[0].active;
             }
           } catch {
             // Supplier lookup failed — mark as not verified

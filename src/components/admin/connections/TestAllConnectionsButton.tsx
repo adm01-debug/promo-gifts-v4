@@ -42,7 +42,7 @@ import { resolveSource } from './CredentialsSourceFilterContext';
 import { getErrorCopy } from '@/lib/connection-error-copy';
 import { toast } from 'sonner';
 
-type EnvKey = 'promobrind' | 'crm';
+type EnvKey = 'crm' | 'promobrind';
 
 const TARGETS: Array<{
   envKey: EnvKey;

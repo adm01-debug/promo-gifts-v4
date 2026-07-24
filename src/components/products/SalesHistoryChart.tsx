@@ -191,13 +191,13 @@ export function SalesHistoryChart({ productId, productSku }: SalesHistoryChartPr
             icon={FileText}
             label="Orçado (qtd)"
             value={kpis.totalQuotedQty.toLocaleString('pt-BR')}
-            sub={`${formatCurrency(kpis.totalQuotedValue)}`}
+            sub={formatCurrency(kpis.totalQuotedValue)}
           />
           <KpiCard
             icon={ShoppingCart}
             label="Vendido (qtd)"
             value={kpis.totalOrderedQty.toLocaleString('pt-BR')}
-            sub={`${formatCurrency(kpis.totalOrderedValue)}`}
+            sub={formatCurrency(kpis.totalOrderedValue)}
             highlight
           />
           <KpiCard

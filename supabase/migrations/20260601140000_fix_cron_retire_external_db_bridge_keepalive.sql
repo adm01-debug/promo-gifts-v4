@@ -5,6 +5,14 @@
 -- Essas falhas derrubavam o smoke test cron_health_1h (conta qualquer falha na última hora).
 --
 -- Solução: remover o job. A bridge não receberá deploy — não há razão para mantê-la ativa.
--- Idempotente: SELECT cron.unschedule retorna false se o job não existir.
+-- Idempotente via DO/EXCEPTION: cron.unschedule lança XX000 se o job não existir
+-- (não retorna false como a documentação antiga sugeria); o bloco captura e ignora.
 
-SELECT cron.unschedule('external-db-bridge-keepalive');
+DO $$
+BEGIN
+  PERFORM cron.unschedule('external-db-bridge-keepalive');
+EXCEPTION WHEN OTHERS THEN
+  -- Job not present in this environment (e.g. fresh CI DB) — nothing to remove.
+  NULL;
+END;
+$$;

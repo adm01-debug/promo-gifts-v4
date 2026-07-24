@@ -160,12 +160,12 @@ function buildIndustryCells(rows: IndustryRow[]): IndustryMonthCell[] {
 
 function pickTop<T extends { quotesCount?: number; avgQuotesPerCompany?: number }>(
   cells: T[],
-  key: 'quotesCount' | 'avgQuotesPerCompany',
+  key: 'avgQuotesPerCompany' | 'quotesCount',
   n = 3,
 ): T[] {
   return [...cells]
-    .filter((c) => (c[key] as number) > 0)
-    .sort((a, b) => (b[key] as number) - (a[key] as number))
+    .filter((c) => c[key]! > 0)
+    .sort((a, b) => b[key]! - a[key]!)
     .slice(0, n);
 }
 

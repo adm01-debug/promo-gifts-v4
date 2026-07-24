@@ -14,7 +14,7 @@ interface ScrollToTopButtonProps {
 }
 
 export const ScrollToTopButton = forwardRef<HTMLButtonElement, ScrollToTopButtonProps>(
-  function ScrollToTopButton({ threshold = 300, className, bottomOffset, containerRef }, ref) {
+  ({ threshold = 300, className, bottomOffset, containerRef }, ref) => {
     const [isVisible, setIsVisible] = useState(false);
     const { announceStatus } = useAriaLive();
 

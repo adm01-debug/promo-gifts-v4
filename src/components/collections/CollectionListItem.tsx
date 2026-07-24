@@ -5,6 +5,7 @@
 import { m as motion } from 'framer-motion';
 import { MoreVertical, Pencil, Copy, Star, Trash2, Package, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Clickable } from '@/components/shared/Clickable';
 import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import {
   DropdownMenu,
@@ -17,6 +18,7 @@ import { cn } from '@/lib/utils';
 import type { Collection } from '@/hooks/collections';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface CollectionListItemProps {
   collection: Collection;
@@ -46,13 +48,17 @@ export function CollectionListItem({
   index,
 }: CollectionListItemProps) {
   return (
-    <motion.div
+    <Clickable
+      as={motion.div}
       layout
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
+      strictTarget
+      isPressed={isSelected}
+      showFocusRing={false}
       className={cn(
-        'group flex cursor-pointer items-center gap-4 rounded-xl border bg-card p-3 transition-all duration-200',
+        'group flex items-center gap-4 rounded-xl border bg-card p-3 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
         isSelected
           ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
           : 'border-border/50 hover:border-primary/40 hover:shadow-md',
@@ -69,6 +75,7 @@ export function CollectionListItem({
         {previewImage ? (
           <OptimizedImage
             src={getCdnUrl(previewImage, 'thumbnail')}
+            urlOriginal={getProxiedImageUrl(previewImage) ?? null}
             alt=""
             className="object-cover"
             containerClassName="h-full w-full"
@@ -146,6 +153,6 @@ export function CollectionListItem({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </motion.div>
+    </Clickable>
   );
 }

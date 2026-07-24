@@ -12,8 +12,8 @@ interface RamoAtividadeBadgeProps {
   ramoName?: string;
   hexCode?: string | null;
   icon?: string | null;
-  size?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'outline' | 'solid' | 'ghost';
+  size?: 'lg' | 'md' | 'sm';
+  variant?: 'default' | 'ghost' | 'outline' | 'solid';
   showRamo?: boolean;
   onClick?: () => void;
   onRemove?: () => void;

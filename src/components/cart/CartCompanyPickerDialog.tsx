@@ -22,7 +22,9 @@ import { cn } from '@/lib/utils';
 import { selectCrm, searchCrm } from '@/lib/crm-db';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import type { CreateCartInput } from '@/hooks/products';
+import { toast } from 'sonner';
 
 interface CompanyItem {
   id: string;
@@ -30,11 +32,12 @@ interface CompanyItem {
   razao_social: string;
   nome_fantasia: string | null;
   ramo: string | null;
+  cnpj: string | null;
   logo_url: string | null;
 }
 
-const RECENT_KEY = 'cart-companies-recent';
-const FAV_KEY = 'cart-companies-favorites';
+const RECENT_KEY_BASE = 'cart-companies-recent';
+const FAV_KEY_BASE = 'cart-companies-favorites';
 const MAX_RECENT = 5;
 
 function readList(key: string): CompanyItem[] {
@@ -64,18 +67,27 @@ export function CartCompanyPickerDialog({
   onOpenChange,
   onCreated,
 }: CartCompanyPickerDialogProps) {
-  const [tab, setTab] = useState<'recent' | 'favorites' | 'search'>('recent');
+  const [tab, setTab] = useState<'favorites' | 'recent' | 'search'>('recent');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [recents, setRecents] = useState<CompanyItem[]>(() => readList(RECENT_KEY));
-  const [favorites, setFavorites] = useState<CompanyItem[]>(() => readList(FAV_KEY));
+  const [recents, setRecents] = useState<CompanyItem[]>([]);
+  const [favorites, setFavorites] = useState<CompanyItem[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { createCart, canCreateCart } = useSellerCartContext();
+  const { createCart, canCreateCart, carts, setActiveCartId } = useSellerCartContext();
+  const { user } = useAuth();
+  const uid = user?.id ?? '';
+  const recentKey = uid ? `${RECENT_KEY_BASE}:${uid}` : RECENT_KEY_BASE;
+  const favKey = uid ? `${FAV_KEY_BASE}:${uid}` : FAV_KEY_BASE;
 
   useEffect(() => {
-    if (!open) return;
-    setRecents(readList(RECENT_KEY));
-    setFavorites(readList(FAV_KEY));
+    if (!open) {
+      setSearchTerm('');
+      setIsCreating(false);
+      return;
+    }
+    setRecents(readList(recentKey));
+    setFavorites(readList(favKey));
     // Sempre abre na aba "Todas" (busca) para o usuário poder digitar imediatamente.
     setTab('search');
     // Aguarda a aba "search" montar para garantir que inputRef.current exista.
@@ -84,7 +96,7 @@ export function CartCompanyPickerDialog({
       inputRef.current?.select();
     }, 120);
     return () => clearTimeout(t);
-  }, [open]);
+  }, [open, recentKey, favKey]);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), 280);
@@ -95,7 +107,7 @@ export function CartCompanyPickerDialog({
     queryKey: ['cart-companies-local'],
     queryFn: async () => {
       const companies = await selectCrm<CrmCompany>('companies', {
-        select: 'id, razao_social, nome_fantasia, logo_url, ramo_atividade',
+        select: 'id, razao_social, nome_fantasia, logo_url, ramo_atividade, cnpj',
         filters: { deleted_at: null, is_customer: true },
         orderBy: { column: 'razao_social', ascending: true },
         limit: 200,
@@ -107,6 +119,7 @@ export function CartCompanyPickerDialog({
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia || null,
           ramo: c.ramo_atividade || null,
+          cnpj: c.cnpj || null,
           logo_url: c.logo_url || null,
         }),
       );
@@ -119,17 +132,30 @@ export function CartCompanyPickerDialog({
     queryKey: ['cart-companies-search', debouncedSearch],
     queryFn: async () => {
       if (debouncedSearch.length < 3) return [];
-      const results = await searchCrm<CrmCompany>('companies', 'razao_social', debouncedSearch, {
+      const searchOpts = {
         orderBy: { column: 'razao_social', ascending: true },
         limit: 30,
-      });
-      return results.map(
+      } as const;
+      const [byRazao, byFantasia] = await Promise.all([
+        searchCrm<CrmCompany>('companies', 'razao_social', debouncedSearch, searchOpts),
+        searchCrm<CrmCompany>('companies', 'nome_fantasia', debouncedSearch, searchOpts),
+      ]);
+      const seen = new Set<string>();
+      const deduped: CrmCompany[] = [];
+      for (const c of [...byRazao, ...byFantasia]) {
+        if (!seen.has(c.id)) {
+          seen.add(c.id);
+          deduped.push(c);
+        }
+      }
+      return deduped.map(
         (c): CompanyItem => ({
           id: c.id,
           name: getCompanyDisplayName(c),
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia || null,
           ramo: c.ramo_atividade || null,
+          cnpj: c.cnpj || null,
           logo_url: c.logo_url || null,
         }),
       );
@@ -158,54 +184,108 @@ export function CartCompanyPickerDialog({
 
   const isFavorite = useCallback((id: string) => favorites.some((f) => f.id === id), [favorites]);
 
-  const toggleFavorite = useCallback((company: CompanyItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFavorites((prev) => {
-      const next = prev.some((f) => f.id === company.id)
-        ? prev.filter((f) => f.id !== company.id)
-        : [company, ...prev].slice(0, 20);
-      writeList(FAV_KEY, next);
-      return next;
-    });
-  }, []);
+  const toggleFavorite = useCallback(
+    (company: CompanyItem, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setFavorites((prev) => {
+        const next = prev.some((f) => f.id === company.id)
+          ? prev.filter((f) => f.id !== company.id)
+          : [company, ...prev].slice(0, 20);
+        writeList(favKey, next);
+        return next;
+      });
+    },
+    [favKey],
+  );
 
   const handleSelect = useCallback(
     async (company: CompanyItem) => {
-      const input: CreateCartInput = {
-        company_id: company.id,
-        company_name: company.name,
-        company_location: company.ramo || undefined,
-        company_logo_url: company.logo_url || undefined,
-      };
-      const result = await createCart(input);
-      if (result) {
+      // Trava de duplo-submit: antes isCreating nunca era setado para true (guard
+      // morto), então dois cliques/Enter durante o await de createCart criavam dois
+      // carrinhos para a mesma empresa.
+      if (isCreating) return;
+
+      // Já existe carrinho para esta empresa? Abre o existente em vez de duplicar
+      // (evita dividir o pedido em 2 carrinhos → orçamento parcial). Antes do guard
+      // de limite: abrir o existente deve funcionar mesmo no limite máximo de carrinhos.
+      const existingCart = carts.find((c) => c.company_id === company.id);
+      if (existingCart) {
+        setActiveCartId(existingCart.id);
+        toast.info(`Você já tem um carrinho para ${company.name}`, {
+          description: 'Abrindo o carrinho existente.',
+        });
         const nextRecents = [company, ...recents.filter((r) => r.id !== company.id)].slice(
           0,
           MAX_RECENT,
         );
-        writeList(RECENT_KEY, nextRecents);
+        writeList(recentKey, nextRecents);
         setRecents(nextRecents);
-        onCreated?.(result.id);
+        onCreated?.(existingCart.id);
         onOpenChange(false);
+        return;
+      }
+
+      if (!canCreateCart) return;
+      setIsCreating(true);
+      try {
+        const input: CreateCartInput = {
+          company_id: company.id,
+          company_name: company.name,
+          company_location: company.cnpj || company.ramo || undefined,
+          company_logo_url: company.logo_url || undefined,
+        };
+        const result = await createCart(input);
+        if (result) {
+          const nextRecents = [company, ...recents.filter((r) => r.id !== company.id)].slice(
+            0,
+            MAX_RECENT,
+          );
+          writeList(recentKey, nextRecents);
+          setRecents(nextRecents);
+          onCreated?.(result.id);
+          onOpenChange(false);
+        }
+      } finally {
+        setIsCreating(false);
       }
     },
-    [createCart, onCreated, onOpenChange, recents],
+    [
+      createCart,
+      onCreated,
+      onOpenChange,
+      recents,
+      recentKey,
+      isCreating,
+      canCreateCart,
+      carts,
+      setActiveCartId,
+    ],
   );
 
   const isLoading = loadingLocal || loadingServer;
 
+  const canSelect = canCreateCart && !isCreating;
+
   const renderRow = (company: CompanyItem) => (
-    <button
+    <div
       key={company.id}
-      type="button"
+      role="button"
+      tabIndex={canSelect ? 0 : -1}
+      aria-disabled={!canSelect}
       data-testid="cart-company-picker-select"
       data-company-id={company.id}
       className={cn(
-        'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left',
+        'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left',
         'group transition-colors hover:bg-accent/60',
+        !canSelect && 'pointer-events-none opacity-50',
       )}
-      onClick={() => handleSelect(company)}
-      disabled={!canCreateCart}
+      onClick={() => canSelect && handleSelect(company)}
+      onKeyDown={(e) => {
+        if (canSelect && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          handleSelect(company);
+        }
+      }}
     >
       {company.logo_url ? (
         <img
@@ -216,7 +296,7 @@ export function CartCompanyPickerDialog({
         />
       ) : (
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <Building2 aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
         </div>
       )}
       <div className="min-w-0 flex-1">
@@ -236,9 +316,12 @@ export function CartCompanyPickerDialog({
         )}
         aria-label={isFavorite(company.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
       >
-        <Star className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')} />
+        <Star
+          aria-hidden="true"
+          className={cn('h-4 w-4', isFavorite(company.id) && 'fill-current')}
+        />
       </button>
-    </button>
+    </div>
   );
 
   return (
@@ -255,15 +338,15 @@ export function CartCompanyPickerDialog({
           <div className="px-5">
             <TabsList className="grid h-9 w-full grid-cols-3">
               <TabsTrigger value="recent" className="gap-1.5 text-xs">
-                <Clock className="h-3.5 w-3.5" />
+                <Clock aria-hidden="true" className="h-3.5 w-3.5" />
                 Recentes
               </TabsTrigger>
               <TabsTrigger value="favorites" className="gap-1.5 text-xs">
-                <Star className="h-3.5 w-3.5" />
+                <Star aria-hidden="true" className="h-3.5 w-3.5" />
                 Favoritas
               </TabsTrigger>
               <TabsTrigger value="search" className="gap-1.5 text-xs">
-                <Globe className="h-3.5 w-3.5" />
+                <Globe aria-hidden="true" className="h-3.5 w-3.5" />
                 Todas
               </TabsTrigger>
             </TabsList>
@@ -319,16 +402,22 @@ export function CartCompanyPickerDialog({
 
           <TabsContent value="search" className="m-0 space-y-3 px-3 pb-4 pt-3">
             <div className="relative px-2">
-              <Search className="left-4.5 absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Search
+                aria-hidden="true"
+                className="absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+              />
               <Input
                 ref={inputRef}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Nome, CNPJ ou segmento..."
+                placeholder="Nome ou segmento..."
                 className="h-9 border-border/40 bg-muted/20 pl-8 text-sm transition-colors focus:bg-background"
               />
               {isLoading && (
-                <Loader2 className="right-4.5 absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground opacity-50" />
+                <Loader2
+                  aria-hidden="true"
+                  className="absolute right-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground opacity-50"
+                />
               )}
             </div>
             <ScrollArea className="h-[290px] pr-2">

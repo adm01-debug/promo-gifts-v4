@@ -75,11 +75,11 @@ describe("getPriceFreshness — default 60d quando threshold não existe", () =>
   });
 
   it("classifica corretamente em torno do default 60d quando threshold ausente", () => {
-    // Bordas exatas do default 60: ≤30 fresh, 31..60 aging, >60 stale
+    // Bordas exatas do default 60: ≤30 fresh, 31..59 aging, ≥60 stale (BUG-008)
     expect(getPriceFreshness(daysAgo(0), null).status).toBe("fresh");
     expect(getPriceFreshness(daysAgo(30), null).status).toBe("fresh");
     expect(getPriceFreshness(daysAgo(31), null).status).toBe("aging");
-    expect(getPriceFreshness(daysAgo(60), null).status).toBe("aging");
+    expect(getPriceFreshness(daysAgo(60), null).status).toBe("stale");
     expect(getPriceFreshness(daysAgo(61), null).status).toBe("stale");
     expect(getPriceFreshness(daysAgo(120), null).status).toBe("stale");
   });

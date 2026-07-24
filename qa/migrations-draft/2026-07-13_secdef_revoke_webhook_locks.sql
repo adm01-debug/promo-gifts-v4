@@ -1,0 +1,64 @@
+-- ============================================================================
+-- Draft (NÃO executar sem aprovação do PO — CLAUDE.md #Comportamento obrigatório)
+-- Alvo: doufsxqlfjyuvxuezpln
+-- ----------------------------------------------------------------------------
+-- Contexto
+--   supabase--linter (2026-07-13) apontou 57 findings 0028/0029 (SECURITY
+--   DEFINER executável por PUBLIC/anon/authenticated). Baseline aceito em
+--   .security/supabase-linter-baseline.json cobre 48 funções (RLS helpers +
+--   RPCs do frontend). O diff atual identifica 4 funções fora do baseline:
+--
+--     Só edge/cron (service_role) — devem ter EXECUTE revogado:
+--       • claim_webhook_delivery(p_webhook_id uuid, p_payload_hash text)
+--       • release_webhook_delivery_lock(p_webhook_id uuid, p_payload_hash text)
+--       • cleanup_stale_webhook_locks()
+--
+--     Frontend RPC intencional — mantém, só adicionar ao baseline:
+--       • restore_seller_cart(_snapshot jsonb)   -- chamada em
+--         src/hooks/products/useSellerCarts.ts:325
+--
+-- Callers verificados
+--   supabase/functions/webhook-dispatcher/index.ts:254,373
+--     (rpc('claim_webhook_delivery' / 'release_webhook_delivery_lock'))
+--   Edge functions rodam como service_role → não são afetadas pelo REVOKE.
+--   cleanup_stale_webhook_locks é acionada por cron/edge (mesma classe).
+--
+-- Efeito esperado
+--   • Fecha 3 findings (2 de 0028 + 3 de 0029, contando overloads).
+--   • Nenhuma quebra de superfície pública/autenticada.
+--
+-- Rollback
+--   GRANT EXECUTE ON FUNCTION public.<fn>(...) TO authenticated, anon;
+--
+-- Aprovação
+--   PO deve confirmar antes de aplicar via supabase--migration. Este arquivo
+--   fica em qa/migrations-draft/ conforme convenção (mesmo padrão de
+--   2026-06-18_security_definer_acl.sql e 2026-06-20_revoke_secdef_from_authenticated.sql).
+-- ============================================================================
+
+BEGIN;
+
+-- 1) claim_webhook_delivery — atomic delivery lock, chamada só em edge
+REVOKE EXECUTE ON FUNCTION public.claim_webhook_delivery(uuid, text) FROM PUBLIC, anon, authenticated;
+GRANT  EXECUTE ON FUNCTION public.claim_webhook_delivery(uuid, text) TO service_role;
+
+-- 2) release_webhook_delivery_lock — libera lock após entrega
+REVOKE EXECUTE ON FUNCTION public.release_webhook_delivery_lock(uuid, text) FROM PUBLIC, anon, authenticated;
+GRANT  EXECUTE ON FUNCTION public.release_webhook_delivery_lock(uuid, text) TO service_role;
+
+-- 3) cleanup_stale_webhook_locks — limpeza de locks expirados (cron)
+REVOKE EXECUTE ON FUNCTION public.cleanup_stale_webhook_locks() FROM PUBLIC, anon, authenticated;
+GRANT  EXECUTE ON FUNCTION public.cleanup_stale_webhook_locks() TO service_role;
+
+COMMIT;
+
+-- ----------------------------------------------------------------------------
+-- Validação pós-migração (esperado):
+--   node scripts/check-security-definer-acl.mjs  → 0 violações
+--   (hoje: 7 violações — 3 fns × PUBLIC/anon/authenticated com overloads)
+--
+-- Observação sobre restore_seller_cart:
+--   NÃO precisa entrar no baseline. Migration
+--   20260713101342_*.sql já fez REVOKE ALL FROM PUBLIC/anon e GRANT
+--   apenas para authenticated+service_role — não aparece no gate.
+-- ============================================================================

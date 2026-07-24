@@ -28,10 +28,10 @@ import { MaterialsFilter } from './filter-panel/sections/MaterialsFilter';
 import { RamosFilter } from './filter-panel/sections/RamosFilter';
 import {
   PublicoFilter,
-  EndomarketingFilter,
   TechniquesFilter,
   TagsFilter,
   QuickOptionsFilter,
+  StockFilter,
 } from './filter-panel/sections/SimpleFilters';
 import { SizeFilter } from './filter-panel/sections/SizeFilter';
 
@@ -98,9 +98,15 @@ export function FilterPanel({
             <span className="text-xs text-muted-foreground">R$</span>
             <DebouncedPriceInput
               value={filters.priceRange[0]}
-              onChange={(v) =>
-                onFilterChange({ ...filters, priceRange: [v, filters.priceRange[1]] })
-              }
+              onChange={(v) => {
+                const curMax = filters.priceRange[1];
+                // Auto-swap: se novo mínimo supera máximo real (< sentinela 9999), inverte
+                if (v > curMax && curMax < 9999) {
+                  onFilterChange({ ...filters, priceRange: [curMax, v] });
+                } else {
+                  onFilterChange({ ...filters, priceRange: [v, curMax] });
+                }
+              }}
               fallback={0}
               min={0}
               className={filters.priceRange[0] > 0 ? 'border-brand-primary/60' : ''}
@@ -111,9 +117,16 @@ export function FilterPanel({
             <span className="text-xs text-muted-foreground">R$</span>
             <DebouncedPriceInput
               value={filters.priceRange[1] >= 9999 ? '' : filters.priceRange[1]}
-              onChange={(v) =>
-                onFilterChange({ ...filters, priceRange: [filters.priceRange[0], v || 9999] })
-              }
+              onChange={(v) => {
+                const newMax = v || 9999;
+                const curMin = filters.priceRange[0];
+                // Auto-swap: se novo máximo real é menor que mínimo, inverte
+                if (newMax < curMin && newMax < 9999) {
+                  onFilterChange({ ...filters, priceRange: [newMax, curMin] });
+                } else {
+                  onFilterChange({ ...filters, priceRange: [curMin, newMax] });
+                }
+              }}
               fallback={9999}
               placeholder="Sem limite"
               min={0}
@@ -188,15 +201,6 @@ export function FilterPanel({
         compact
       />
     ),
-    endomarketing: () => (
-      <EndomarketingFilter
-        filters={filters}
-        endomarketingOptions={state.endomarketingOptions}
-        endoSearch={state.endoSearch}
-        setEndoSearch={state.setEndoSearch}
-        toggleArrayFilter={state.toggleArrayFilter}
-      />
-    ),
     materiais: () => (
       <MaterialsFilter
         materialSearch={state.materialSearch}
@@ -247,7 +251,17 @@ export function FilterPanel({
       />
     ),
     'opcoes-rapidas': () => (
-      <QuickOptionsFilter filters={filters} toggleBooleanFilter={state.toggleBooleanFilter} />
+      <QuickOptionsFilter
+        filters={filters}
+        toggleBooleanFilter={state.toggleBooleanFilter}
+      />
+    ),
+    estoque: () => (
+      <StockFilter
+        filters={filters}
+        toggleBooleanFilter={state.toggleBooleanFilter}
+        onMinStockChange={(v) => onFilterChange({ ...filters, minStock: v })}
+      />
     ),
     ordenacao: () => (
       <Select
@@ -315,12 +329,16 @@ export function FilterPanel({
             const config = SECTION_CONFIG[sId];
             if (!config) return false;
             if (!state.sectionMatchesSearch(sId, config.title)) return false;
-            // SF-D: o filtro de Técnicas é não-funcional — não há vínculo
-            // produto↔técnica no catálogo (junção product_group_location_techniques
-            // vazia; produto leve sem metadata.techniques). Exibir checkboxes
-            // selecionáveis que não filtram nada é enganoso. Ocultamos a seção até
-            // existir dado/suporte server-side (reverter esta linha re-habilita;
-            // SECTION_CONFIG e o renderer permanecem intactos).
+            // SF-TECNICAS-DEAD-FILTER FIX: a seção Técnicas era exibida assim que
+            // personalization_techniques tinha qualquer linha (techniqueOptions > 0),
+            // mas a FILTRAGEM por técnica é um no-op estrutural: nenhum mapper hidrata
+            // product.metadata.techniques (catálogo leve E completo), então
+            // `techniquesDataAvailable` é SEMPRE false → selecionar uma técnica não
+            // filtra nada, não gera chip nem entra no activeFiltersCount, apesar de a
+            // seção mostrar um badge. Era um controle "morto" e enganoso. Ocultamos a
+            // seção até existir filtragem server-side por técnica (futuro
+            // useProductsByTechnique + RPC, análogo a cor/material/metadados). Quando
+            // isso existir, troque esta linha pelo gate de disponibilidade real.
             if (sId === 'tecnicas') return false;
             if (sId === 'tags' && state.tagOptions.length === 0) return false;
             return true;

@@ -50,7 +50,9 @@ export const notificationPreferenceService = {
 
   subscribeToPreferences(onUpdate: (preference: UserNotificationPreference) => void): () => void {
     const channel = supabase
-      .channel('user_notification_preferences_realtime')
+      // BUG-RT-CHANNEL FIX: tópico único por inscrição — evita reaproveitar canal já
+      // inscrito (crash "postgres_changes ... after subscribe()") em montagens concorrentes.
+      .channel(`user_notification_preferences_realtime:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {

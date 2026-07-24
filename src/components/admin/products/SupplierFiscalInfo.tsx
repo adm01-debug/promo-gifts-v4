@@ -23,6 +23,7 @@ import { DeleteConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useSupplierFiscalData, type FiscalOverrideInput } from '@/hooks/products';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { maskCnpj } from '@/utils/masks';
 
 interface Props {
   productId: string | undefined;
@@ -44,7 +45,7 @@ function EditField({
   onChange: (v: string) => void;
   mono?: boolean;
   placeholder?: string;
-  type?: 'text' | 'number';
+  type?: 'number' | 'text';
 }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -102,7 +103,7 @@ function FiscalField({
   mono = false,
 }: {
   label: string;
-  value: string | number | null | undefined;
+  value: number | string | null | undefined;
   mono?: boolean;
 }) {
   if (value === null || value === '') return null;
@@ -325,7 +326,7 @@ export function SupplierFiscalInfo({ productId, supplierId }: Props) {
           <span className="text-xs font-medium">{data.branch_name}</span>
           {data.branch_cnpj && (
             <Badge variant="outline" className="h-5 font-mono text-[10px]">
-              {data.branch_cnpj}
+              {maskCnpj(data.branch_cnpj)}
             </Badge>
           )}
           {data.branch_state_uf && (

@@ -1,18 +1,26 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from 'react';
 
 interface A11yContextType {
   reducedMotion: boolean;
   highContrast: boolean;
-  fontSize: 'normal' | 'large' | 'larger';
+  fontSize: 'large' | 'larger' | 'normal';
   keyboardMode: boolean;
-  announceMessage: (message: string, priority?: 'polite' | 'assertive') => void;
-  setFontSize: (size: 'normal' | 'large' | 'larger') => void;
+  announceMessage: (message: string, priority?: 'assertive' | 'polite') => void;
+  setFontSize: (size: 'large' | 'larger' | 'normal') => void;
   setHighContrast: (enabled: boolean) => void;
 }
 
 const A11yContext = createContext<A11yContextType | null>(null);
 
-const FONT_SIZE_PX: Record<'normal' | 'large' | 'larger', string> = {
+const FONT_SIZE_PX: Record<'large' | 'larger' | 'normal', string> = {
   normal: '16px',
   large: '18px',
   larger: '20px',
@@ -29,11 +37,11 @@ export function useA11y() {
 export function AccessibilityProvider({ children }: { children: ReactNode }) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [highContrast, setHighContrast] = useState(false);
-  const [fontSize, setFontSize] = useState<'normal' | 'large' | 'larger'>('normal');
+  const [fontSize, setFontSize] = useState<'large' | 'larger' | 'normal'>('normal');
   const [keyboardMode, setKeyboardMode] = useState(false);
   const [announcement, setAnnouncement] = useState<{
     message: string;
-    priority: 'polite' | 'assertive';
+    priority: 'assertive' | 'polite';
   } | null>(null);
 
   // Detect reduced motion preference
@@ -101,24 +109,44 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     }
   }, [keyboardMode]);
 
-  const announceMessage = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
-    setAnnouncement({ message, priority });
-    // Clear after announcement
-    setTimeout(() => setAnnouncement(null), 1000);
-  };
+  // Clear announcement after it's read — useEffect for proper cleanup
+  useEffect(() => {
+    if (announcement) {
+      const timer = setTimeout(() => setAnnouncement(null), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [announcement]);
+
+  const announceMessage = useCallback(
+    (message: string, priority: 'assertive' | 'polite' = 'polite') => {
+      setAnnouncement({ message, priority });
+    },
+    [],
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      reducedMotion,
+      highContrast,
+      fontSize,
+      keyboardMode,
+      announceMessage,
+      setFontSize,
+      setHighContrast,
+    }),
+    [
+      reducedMotion,
+      highContrast,
+      fontSize,
+      keyboardMode,
+      announceMessage,
+      setFontSize,
+      setHighContrast,
+    ],
+  );
 
   return (
-    <A11yContext.Provider
-      value={{
-        reducedMotion,
-        highContrast,
-        fontSize,
-        keyboardMode,
-        announceMessage,
-        setFontSize,
-        setHighContrast,
-      }}
-    >
+    <A11yContext.Provider value={contextValue}>
       {children}
 
       {/* Screen Reader Announcements */}
@@ -164,11 +192,9 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement>, isActive: boolea
           e.preventDefault();
           lastFocusable?.focus();
         }
-      } else {
-        if (document.activeElement === lastFocusable) {
-          e.preventDefault();
-          firstFocusable?.focus();
-        }
+      } else if (document.activeElement === lastFocusable) {
+        e.preventDefault();
+        firstFocusable?.focus();
       }
     };
 

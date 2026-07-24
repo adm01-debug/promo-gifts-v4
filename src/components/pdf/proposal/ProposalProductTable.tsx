@@ -9,6 +9,9 @@
 import React, { useEffect, useState } from 'react';
 import type { ProposalItem } from '../ProposalHtmlTemplate';
 import { processLogoTransparent } from './LogoWithTransparentBg';
+import { formatPersonalizationSummary } from '@/lib/quotes/personalizationSummary';
+import { getProposalImageUrl } from '@/utils/image-utils';
+import { PDF_TOKENS } from '../ProposalStyles';
 
 function ProductImageTransparent({ src, alt }: { src: string; alt: string }) {
   // FIX #3b: inicializar com src (não "") para que img.complete só retorne true
@@ -55,7 +58,7 @@ function fmt(v: number): string {
 
 const thBase: React.CSSProperties = {
   backgroundColor: '#00c853',
-  color: '#fff',
+  color: '#111',
   padding: '10px 10px',
   fontSize: '11px',
   fontFamily: "'Montserrat', sans-serif",
@@ -79,7 +82,7 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
   // Group items by kit_group_id
   const groups: { kitName: string | null; items: { item: ProposalItem; globalIdx: number }[] }[] =
     [];
-  let currentGroupId: string | null | undefined = undefined;
+  let currentGroupId: string | null | undefined;
 
   items.forEach((item, idx) => {
     const gid = item.kit_group_id || null;
@@ -161,44 +164,31 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                     sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0)
                   );
                 }, 0) || 0;
-              const allInUnitPrice = item.unitPrice + persUnitCost;
+              const allInUnitPrice = item.unitPrice + persUnitCost; // display only (rounded per-unit)
               const itemDiscount = item.discount || 0;
-              // FIX #6: total da linha = (preço unitário all-in × qtd) − desconto da linha
-              const lineTotal = allInUnitPrice * item.quantity - itemDiscount;
+              // BUG-048c: use p.total_cost directly to avoid double-rounding
+              const persTotal =
+                item.personalizations?.reduce((s, p) => s + (p.total_cost || 0), 0) || 0;
+              const lineTotal = item.quantity * item.unitPrice + persTotal - itemDiscount;
               const isEven = globalIdx % 2 === 0;
 
-              const gravacao = item.personalizations
-                ?.map((p) => {
-                  let s = p.technique_name;
-                  let widthCm = p.width_cm;
-                  let heightCm = p.height_cm;
-                  if ((!widthCm || !heightCm) && p.notes) {
-                    const dimMatch = p.notes.match(/\|\s*([\d.]+)×([\d.]+)cm/);
-                    if (dimMatch) {
-                      widthCm = parseFloat(dimMatch[1]);
-                      heightCm = parseFloat(dimMatch[2]);
-                    }
-                  }
-                  if (widthCm && heightCm) s += ` ${widthCm}×${heightCm}cm`;
-                  if (p.colors_count)
-                    s += ` | ${p.colors_count} cor${p.colors_count > 1 ? 'es' : ''}`;
-                  if (p.material) s += ` | ${p.material}`;
-                  return s;
-                })
-                .join(' · ');
+              const personalizations = item.personalizations ?? [];
+              const gravacaoBadges = personalizations
+                .map((p) => formatPersonalizationSummary(p))
+                .filter((s): s is string => Boolean(s && s.trim().length > 0));
 
               return (
                 <tr
                   key={item.sku || globalIdx}
                   style={{
-                    backgroundColor: isEven ? '#ffffff' : '#f9fafb',
+                    backgroundColor: isEven ? PDF_TOKENS.rowEven : PDF_TOKENS.rowOdd,
                     borderBottom: '1px solid #eef0f2',
                   }}
                 >
                   {hasAnyImage && (
                     <td style={{ padding: '1px', textAlign: 'center', verticalAlign: 'middle' }}>
                       {item.imageUrl ? (
-                        <ProductImageTransparent src={item.imageUrl} alt={item.name} />
+                        <ProductImageTransparent src={getProposalImageUrl(item.imageUrl)} alt={item.name} />
                       ) : (
                         <div
                           style={{
@@ -217,37 +207,6 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                     </td>
                   )}
                   <td style={{ padding: '8px 10px', verticalAlign: 'middle' }}>
-                    {(item.composedCode || item.sku) &&
-                      (() => {
-                        const bgColor = item.colorHex || '#2e7d32';
-                        const hex = bgColor.replace('#', '');
-                        const r = parseInt(hex.substring(0, 2), 16);
-                        const g = parseInt(hex.substring(2, 4), 16);
-                        const b = parseInt(hex.substring(4, 6), 16);
-                        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                        const textColor = luminance > 0.5 ? '#1a1a1a' : '#ffffff';
-                        return (
-                          <div style={{ display: 'block', marginBottom: '4px' }}>
-                            <span
-                              style={{
-                                display: 'inline-block',
-                                background: bgColor,
-                                color: textColor,
-                                fontSize: '9px',
-                                padding: '2px 7px',
-                                borderRadius: '3px',
-                                fontWeight: 700,
-                                fontFamily: "'Roboto', sans-serif",
-                                whiteSpace: 'nowrap',
-                                border:
-                                  luminance > 0.85 ? '1px solid #ccc' : '1px solid transparent',
-                              }}
-                            >
-                              {item.composedCode || item.sku}
-                            </span>
-                          </div>
-                        );
-                      })()}
                     <div
                       style={{
                         fontWeight: 800,
@@ -257,7 +216,9 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                         marginBottom: '2px',
                       }}
                     >
-                      {item.name}
+                      {/* FIX gap-C (QA adversarial): clampa nome a ~2 linhas para não estourar ROW_H. */}
+                      {/* @fix_version proposal-truncate-name-2026-06 */}
+                      {item.name.length > 90 ? `${item.name.slice(0, 90).trimEnd()}…` : item.name}
                     </div>
                     {item.description && (
                       <span
@@ -268,45 +229,118 @@ export function ProposalProductTable({ items, showHeader = true, startIndex = 0 
                           marginBottom: '4px',
                           lineHeight: '1.4',
                           maxWidth: '340px',
+                          wordBreak: 'break-word',
                         }}
                       >
-                        {item.description}
+                        {/* FIX P1 #7: trunca descrições longas (~2 linhas) para blindar
+                            a altura da linha e evitar clipping no html2canvas.
+                            @fix_version proposal-truncate-desc-2026-06 */}
+                        {item.description.length > 120
+                          ? `${item.description.slice(0, 120).trimEnd()}…`
+                          : item.description}
                       </span>
                     )}
-                    {gravacao && (
-                      <table style={{ borderCollapse: 'collapse', marginTop: '2px' }}>
-                        <tbody>
-                          <tr>
-                            <td style={{ width: '3px', backgroundColor: '#00796b', padding: 0 }} />
-                            <td
-                              style={{
-                                backgroundColor: '#e0f2f1',
-                                padding: '3px 7px',
-                                borderRadius: '0 4px 4px 0',
-                              }}
-                            >
-                              <span style={{ fontSize: '10px', color: '#00796b', fontWeight: 700 }}>
-                                ✦ Gravação:{' '}
-                              </span>
-                              <span style={{ fontSize: '10px', color: '#00796b', fontWeight: 500 }}>
-                                {gravacao}
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    )}
-                    {!gravacao && item.color && (
-                      <span
+                    {/* Rediagramação 2026-07: SKU + Cor na MESMA linha, abaixo do nome/descrição.
+                        Ordem: [badge SKU] · Cor: LARANJA
+                        @fix_version proposal-sku-color-inline-2026-07 */}
+                    {((item.composedCode || item.sku) || item.color) && (
+                      <div
                         style={{
                           display: 'block',
-                          fontSize: '10px',
-                          color: '#666',
                           marginTop: '2px',
+                          marginBottom: '2px',
+                          lineHeight: '1.4',
                         }}
                       >
-                        Cor: {item.color}
-                      </span>
+                        {(item.composedCode || item.sku) && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              color: '#111',
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              fontFamily: "'Roboto', sans-serif",
+                              whiteSpace: 'nowrap',
+                              verticalAlign: 'middle',
+                            }}
+                          >
+                            {item.composedCode || item.sku}
+                          </span>
+                        )}
+                        {(item.composedCode || item.sku) && item.color && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              margin: '0 6px',
+                              color: '#999',
+                              fontSize: '10px',
+                              verticalAlign: 'middle',
+                            }}
+                          >
+                            ·
+                          </span>
+                        )}
+                        {item.color && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              fontSize: '10px',
+                              color: '#555',
+                              fontWeight: 600,
+                              verticalAlign: 'middle',
+                            }}
+                          >
+                            Cor:{' '}
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                width: '10px',
+                                height: '10px',
+                                borderRadius: '2px',
+                                background: item.colorHex || PDF_TOKENS.swatchFallback,
+                                border: `1px solid ${PDF_TOKENS.swatchBorder}`,
+                                verticalAlign: 'middle',
+                                marginRight: '4px',
+                                marginBottom: '1px',
+                              }}
+                            />
+                            <span style={{ fontWeight: 500, color: '#333', verticalAlign: 'middle' }}>
+                              {item.color}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {gravacaoBadges.length > 0 && (
+                      <div style={{ marginTop: '3px', display: 'block' }}>
+                        {gravacaoBadges.map((g, i) => (
+                          <table
+                            key={i}
+                            style={{
+                              borderCollapse: 'collapse',
+                              marginTop: i === 0 ? 0 : '2px',
+                            }}
+                          >
+                            <tbody>
+                              <tr>
+                                <td style={{ width: '3px', backgroundColor: '#00796b', padding: 0 }} />
+                                <td
+                                  style={{
+                                    backgroundColor: '#e0f2f1',
+                                    padding: '1px 7px',
+                                    borderRadius: '0 4px 4px 0',
+                                    lineHeight: 1.2,
+                                  }}
+                                >
+                                  <span style={{ fontSize: '9px', color: '#00796b', fontWeight: 600, lineHeight: 1.2 }}>
+                                    {g}
+                                  </span>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        ))}
+                      </div>
                     )}
                   </td>
                   <td

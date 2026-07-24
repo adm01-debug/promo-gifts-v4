@@ -25,7 +25,7 @@ export function isRetryableSecretError(err: SecretError | undefined): boolean {
     msg.includes('failed to fetch') ||
     msg.includes('timeout') ||
     msg.includes('timed out') ||
-    (msg.includes('aborted') === false &&
+    (!msg.includes('aborted') &&
       (msg.includes(' 500') ||
         msg.includes(' 502') ||
         msg.includes(' 503') ||
@@ -76,7 +76,7 @@ export async function withRetryBackoff(
     if (attempt === maxAttempts) return result;
 
     // Exponential backoff with small jitter: 600ms, 1200ms, 2400ms…
-    const delay = baseDelayMs * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 150);
+    const delay = baseDelayMs * 2 ** (attempt - 1) + Math.floor(Math.random() * 150);
     onAttempt?.(attempt, delay);
 
     await new Promise<void>((resolve, reject) => {

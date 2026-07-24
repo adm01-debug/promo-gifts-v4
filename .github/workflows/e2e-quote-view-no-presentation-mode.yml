@@ -1,0 +1,79 @@
+name: E2E Quote View — Sem Modo Apresentação
+
+# Regressão: garante que "Modo Apresentação" não volte ao DropdownMenu do
+# QuoteViewPage. Roda sobre o harness dev-only `/__visual/quote-view-order`
+# (sem auth/seed). Matriz: light/dark × desktop/mobile + keyboard nav +
+# snapshots visuais do menu em mobile.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/quotes/QuoteViewPage.tsx'
+      - 'src/pages/quotes/quote-view/useQuoteViewData.ts'
+      - 'src/pages/__visual/QuoteViewOrderHarness.tsx'
+      - 'src/routes/AppRoutes.tsx'
+      - 'e2e/quotes/quote-view-no-presentation-mode.spec.ts'
+      - '.github/workflows/e2e-quote-view-no-presentation-mode.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/pages/quotes/QuoteViewPage.tsx'
+      - 'src/pages/quotes/quote-view/useQuoteViewData.ts'
+      - 'src/pages/__visual/QuoteViewOrderHarness.tsx'
+      - 'src/routes/AppRoutes.tsx'
+      - 'e2e/quotes/quote-view-no-presentation-mode.spec.ts'
+      - '.github/workflows/e2e-quote-view-no-presentation-mode.yml'
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: "true"
+      FORCE_COLOR: "0"
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run spec (light/dark × desktop/mobile + keyboard + snapshots)
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-view-no-presentation-mode.spec.ts \
+            --project=chromium-public \
+            --reporter=list
+
+      # Estabilidade: roda a mesma suíte 3x para flagrar flakiness (qualquer
+      # falha em qualquer repetição quebra o job).
+      - name: Stability run (--repeat-each=3)
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-view-no-presentation-mode.spec.ts \
+            --project=chromium-public \
+            --repeat-each=3 \
+            --retries=0 \
+            --reporter=list
+
+      - name: Upload report + snapshots em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-view-no-presentation-mode
+          path: |
+            playwright-report
+            test-results
+            e2e/quotes/quote-view-no-presentation-mode.spec.ts-snapshots
+          retention-days: 14

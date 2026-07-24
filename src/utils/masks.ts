@@ -1,5 +1,24 @@
-export function maskCnpj(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 14);
+/**
+ * Retorna somente os dígitos do CNPJ, limitado a 14 caracteres.
+ *
+ * SSOT para "como armazenar" um CNPJ no formulário/estado: `normalizeCnpj`.
+ * O valor renderizado em inputs/labels DEVE passar por `maskCnpj` na hora
+ * do render — o estado permanece cru (`^\d{0,14}$`).
+ */
+export function normalizeCnpj(value: string | null | undefined): string {
+  return (value ?? '').replace(/\D/g, '').slice(0, 14);
+}
+
+/**
+ * True quando o valor contém exatamente 14 dígitos (sem máscara).
+ * Não valida os DVs — para isso use `validateCnpj`.
+ */
+export function isNormalizedCnpj(value: string | null | undefined): boolean {
+  return /^\d{14}$/.test(value ?? '');
+}
+
+export function maskCnpj(value: string | null | undefined): string {
+  const digits = normalizeCnpj(value);
   return digits
     .replace(/^(\d{2})(\d)/, '$1.$2')
     .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')

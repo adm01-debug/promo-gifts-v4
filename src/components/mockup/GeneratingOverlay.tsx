@@ -82,7 +82,7 @@ export function GeneratingOverlay({
           {/* Header */}
           <div className="text-center">
             <div className="relative mb-4 inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-              <CurrentIcon className="h-10 w-10 animate-bounce text-primary" />
+              <CurrentIcon className="h-10 w-10 animate-bounce text-primary" aria-hidden="true" />
               <div className="absolute inset-0 animate-pulse-ring rounded-full border-2 border-primary/30" />
             </div>
             <h2 className="mb-1 font-display text-xl font-semibold text-foreground">
@@ -125,7 +125,11 @@ export function GeneratingOverlay({
                       !isComplete && !isCurrent && 'bg-muted text-muted-foreground',
                     )}
                   >
-                    {isComplete ? <Check className="h-4 w-4" /> : <StepIcon className="h-4 w-4" />}
+                    {isComplete ? (
+                      <Check className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <StepIcon className="h-4 w-4" aria-hidden="true" />
+                    )}
                   </div>
                   <span
                     className={cn(

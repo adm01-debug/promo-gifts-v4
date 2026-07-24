@@ -13,11 +13,6 @@ const SmartRecommendations = lazyWithRetry(() =>
     default: m.SmartRecommendations,
   })),
 );
-const SmartRecommendationsMock = lazyWithRetry(() =>
-  import('@/components/products/SmartRecommendationsMock').then((m) => ({
-    default: m.SmartRecommendationsMock,
-  })),
-);
 const StockHistoryChart = lazyWithRetry(() =>
   import('@/components/products/StockHistoryChart').then((m) => ({ default: m.StockHistoryChart })),
 );
@@ -39,6 +34,11 @@ const FutureStockModal = lazyWithRetry(() =>
 );
 const PackagingModal = lazyWithRetry(() =>
   import('@/components/products/PackagingModal').then((m) => ({ default: m.PackagingModal })),
+);
+const ProductEngravingSection = lazyWithRetry(() =>
+  import('@/components/products/ProductEngravingSection').then((m) => ({
+    default: m.ProductEngravingSection,
+  })),
 );
 
 import {
@@ -71,7 +71,9 @@ export default function ProductDetail() {
   const { toast } = useToast();
   const { trackProductView } = useProductAnalytics();
 
-  const { isFavorite: isFavoriteCheck, toggleFavorite, removeFavorite } = useFavoritesStore();
+  const isFavoriteCheck = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
   const [favPickerOpen, setFavPickerOpen] = useState(false);
   const [colorAutoSelected, setColorAutoSelected] = useState(false);
@@ -99,17 +101,24 @@ export default function ProductDetail() {
     [similarItems, product?.category?.name],
   );
 
+  // FIX BUG-VW-01 (2026-06-21): product_views SELECT RLS limits non-admin users to
+  // only their own rows → regular users always saw their own visit count (1–5),
+  // not the global total. products.view_count is maintained by a SECURITY DEFINER
+  // trigger (fn_sync_product_view_count) which bypasses RLS and always reflects
+  // the correct all-user all-time total. Reading from products is both correct and
+  // one round-trip cheaper (no COUNT over N rows, just a single column read).
   const { data: viewCount = 0 } = useQuery({
-    queryKey: ['product-views-count', id],
+    queryKey: ['product-view-count', id],
     queryFn: async () => {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const { count } = await supabase
-        .from('product_views')
-        .select('*', { count: 'exact', head: true })
-        .eq('product_id', id ?? '')
-        .gte('created_at', thirtyDaysAgo.toISOString());
-      return count || 0;
+      const { data: row } = await supabase
+        .from('products')
+        .select('view_count')
+        .eq('id', id ?? '')
+        .maybeSingle();
+      // TS2339: view_count exists in the DB (migration 20250103080000, maintained by
+      // fn_sync_product_view_count trigger) but types.ts is stale and lacks the column.
+      // Type assertion bridges the gap until types are regenerated.
+      return (row as { view_count: number | null } | null)?.view_count ?? 0;
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
@@ -140,11 +149,11 @@ export default function ProductDetail() {
       url: currentUrl,
       brand: {
         '@type': 'Brand',
-        name: product.supplier?.name || 'Promo Brindes',
+        name: product.supplier?.name || product.brand || 'Promo Gifts',
       },
       offers: {
         '@type': 'Offer',
-        price: product.price || 0,
+        price: product.price ?? 0,
         priceCurrency: 'BRL',
         priceValidUntil: nextYear.toISOString().split('T')[0],
         itemCondition: 'https://schema.org/NewCondition',
@@ -154,19 +163,11 @@ export default function ProductDetail() {
             : product.stockStatus === 'out-of-stock'
               ? 'https://schema.org/OutOfStock'
               : 'https://schema.org/LimitedAvailability',
-        seller: { '@type': 'Organization', name: 'Promo Brindes' },
+        seller: { '@type': 'Organization', name: 'Promo Gifts' },
         url: currentUrl,
       },
       category: product.category?.name,
       material: product.materials?.join(', '),
-      // Adicionando aggregateRating vazio para evitar avisos do Google se o sistema não tiver reviews reais
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '5',
-        reviewCount: '1',
-        bestRating: '5',
-        worstRating: '1',
-      },
     };
   }, [product]);
 
@@ -181,6 +182,12 @@ export default function ProductDetail() {
       addToRecentlyViewed(product.id);
     }
   }, [product, trackProductView, addToRecentlyViewed]);
+
+  // Reset color state when navigating between products (SPA: component is reused, state persists).
+  useEffect(() => {
+    setColorAutoSelected(false);
+    setSelectedVariation(null);
+  }, [id]);
 
   // Auto-select color from URL
   useEffect(() => {
@@ -221,17 +228,16 @@ export default function ProductDetail() {
       const normalizedHex = hexParam.startsWith('#')
         ? hexParam.toLowerCase()
         : `#${hexParam.toLowerCase()}`;
-      match = product.variations.find(
-        (v: ProductVariation) =>
-          v.color?.hex?.toLowerCase() === normalizedHex ||
-          v.color?.hex?.toLowerCase() === `#${normalizedHex}`,
-      );
+      match = product.variations.find((v: ProductVariation) => {
+        const dbHex = (v.color?.hex?.toLowerCase() ?? '').replace(/^#/, '');
+        return dbHex !== '' && dbHex === normalizedHex.replace(/^#/, '');
+      });
     }
 
     // 4. Tenta match por grupo
     if (!match && grupoParam && product.colors?.length) {
       const c = product.colors.find(
-        (c: { groupSlug?: string; name?: string }) => c.groupSlug === grupoParam,
+        (colorItem: { groupSlug?: string; name?: string }) => colorItem.groupSlug === grupoParam,
       );
       if (c) {
         match = product.variations.find(
@@ -321,7 +327,9 @@ export default function ProductDetail() {
         description={product.description || `${product.name} - Brinde Promocional`}
         path={`/produto/${product.id}`}
         ogImage={
-          product.og_image_url ? getCdnUrl(product.og_image_url, 'large') : product.images[0] || ''
+          product.og_image_url
+            ? getCdnUrl(product.og_image_url, 'large')
+            : product.images?.[0] || ''
         }
         ogType="product"
       />
@@ -358,6 +366,17 @@ export default function ProductDetail() {
           hasErrorNiches={isError}
         />
 
+        <Suspense fallback={null}>
+          <ProductEngravingSection
+            productId={product.id}
+            productName={product.name}
+            productSku={product.sku}
+            productPrice={product.price ?? 0}
+            productImageUrl={product.images?.[0]}
+            categoryName={product.category?.name}
+          />
+        </Suspense>
+
         <div className="border-t border-border/60 pt-6 xl:pt-8">
           <Suspense
             fallback={
@@ -370,7 +389,7 @@ export default function ProductDetail() {
           </Suspense>
         </div>
 
-        {product.sku === '09138' ? (
+        {aiCandidates.length > 0 && (
           <div className="border-t border-border/60 pt-6 xl:pt-8">
             <Suspense
               fallback={
@@ -379,29 +398,15 @@ export default function ProductDetail() {
                 </div>
               }
             >
-              <SmartRecommendationsMock />
+              <SmartRecommendations
+                currentProductId={product.id}
+                candidateProducts={aiCandidates}
+                maxResults={6}
+                title="Recomendações inteligentes para este produto"
+                onProductClick={(pid) => navigate(`/produto/${pid}`)}
+              />
             </Suspense>
           </div>
-        ) : (
-          aiCandidates.length > 0 && (
-            <div className="border-t border-border/60 pt-6 xl:pt-8">
-              <Suspense
-                fallback={
-                  <div className="flex h-48 items-center justify-center">
-                    <Skeleton className="h-full w-full" />
-                  </div>
-                }
-              >
-                <SmartRecommendations
-                  currentProductId={product.id}
-                  candidateProducts={aiCandidates}
-                  maxResults={6}
-                  title="Recomendações inteligentes para este produto"
-                  onProductClick={(pid) => navigate(`/produto/${pid}`)}
-                />
-              </Suspense>
-            </div>
-          )
         )}
 
         <div className="grid gap-4 border-t border-border/60 pt-6 md:grid-cols-2 xl:gap-6 xl:pt-8">

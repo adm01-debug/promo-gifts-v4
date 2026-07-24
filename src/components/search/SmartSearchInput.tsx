@@ -33,7 +33,7 @@ interface SmartSearchInputProps {
 }
 
 export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps>(
-  function SmartSearchInput(
+  (
     {
       placeholder = 'Buscar produtos, categorias, fornecedores...',
       onSelect,
@@ -44,7 +44,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
       products,
     },
     _ref,
-  ) {
+  ) => {
     const navigate = useNavigate();
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -63,7 +63,8 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
     const [tooltipVisible, setTooltipVisible] = useState(false);
     // ──────────────────────────────────────────────────────────────────────────
 
-    const { query, setQuery, suggestions, quickSuggestions, clearHistory, totalProductMatches } = useSearch(products);
+    const { query, setQuery, suggestions, quickSuggestions, clearHistory, totalProductMatches } =
+      useSearch(products);
 
     const { history, addToHistory, removeFromHistory } = useSearchHistory('general');
 
@@ -189,10 +190,7 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
          *   open={!isFocused && tooltipVisible}
          *   onOpenChange={setTooltipVisible}
          */}
-        <Tooltip
-          open={!isFocused && tooltipVisible}
-          onOpenChange={setTooltipVisible}
-        >
+        <Tooltip open={!isFocused && tooltipVisible} onOpenChange={setTooltipVisible}>
           <TooltipTrigger asChild>
             <div className="group relative">
               <button
@@ -389,10 +387,10 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
                     onClick={() => submitSearch(query)}
                   >
                     <span>
-                      Ver todos <strong className="text-foreground">{totalProductMatches}</strong> resultados
-                      {' '}para &ldquo;<span className="text-primary">{query}</span>&rdquo;
+                      Ver todos <strong className="text-foreground">{totalProductMatches}</strong>{' '}
+                      resultados para &ldquo;<span className="text-primary">{query}</span>&rdquo;
                     </span>
-                    <span className="text-primary text-sm">→</span>
+                    <span className="text-sm text-primary">→</span>
                   </button>
                 </div>
               )}

@@ -47,14 +47,14 @@ export function useKitBuilderQuote() {
         total: pricing.total,
         negotiation_markup_percent: 0,
         notes: `Kit: ${kitMetadataNote}`,
-        internal_notes: `Criado pelo Kit Builder. Quantidade de kits: ${kitQuantity}.`,
+        // internal_notes removido: campo descontinuado na UI.
         tags: {
           source: 'kit-builder',
           kit_name: kitLabel,
           kit_quantity: kitQuantity,
           kit_identity_tag: kitState.identity?.tag ?? null,
         },
-      } satisfies TablesInsert<'quotes'>;
+      } as unknown as TablesInsert<'quotes'>;
 
       // Create quote
       const { data: quote, error: quoteError } = await supabase

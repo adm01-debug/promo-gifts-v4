@@ -25,7 +25,7 @@ import { inferErrorKind } from '@/lib/error-kind-inference';
 
 interface Props {
   type: ConnectionType;
-  envKey?: 'promobrind' | 'crm';
+  envKey?: 'crm' | 'promobrind';
   connectionId?: string;
   /** Bump after a "Testar conexão" succeeds to refetch. */
   refreshKey?: number | string;
@@ -83,8 +83,8 @@ function formatAbsolute(iso: string): string {
   }
 }
 
-type StatusFilter = 'all' | 'ok' | 'fail';
-type SourceFilter = 'all' | 'manual' | 'cron';
+type StatusFilter = 'all' | 'fail' | 'ok';
+type SourceFilter = 'all' | 'cron' | 'manual';
 
 function emptyMessage(status: StatusFilter, source: SourceFilter): string {
   if (source === 'cron' && status === 'fail') return 'Nenhuma falha do cron neste período 🎉';
@@ -179,7 +179,7 @@ function LatencySparkline({
     .slice(-12);
   if (sorted.length < 2) return null;
 
-  const values = sorted.map((i) => i.latency_ms as number);
+  const values = sorted.map((i) => i.latency_ms!);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = Math.max(1, max - min);
@@ -189,7 +189,7 @@ function LatencySparkline({
 
   const points = sorted.map((it, idx) => {
     const x = idx * stepX;
-    const y = pad + innerH - (((it.latency_ms as number) - min) / range) * innerH;
+    const y = pad + innerH - ((it.latency_ms! - min) / range) * innerH;
     return { x, y, ok: it.ok };
   });
   const path = points

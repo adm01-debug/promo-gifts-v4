@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef, forwardRef } from 'react';
-import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+
 import { useToast } from '@/hooks/ui/use-toast';
 import { authDebug, authDebugError } from '@/lib/auth/auth-debug';
 import { markOAuthPending, clearOAuthPending, readOAuthPending } from '@/lib/auth/oauth-pending';
@@ -63,7 +63,7 @@ interface SocialLoginButtonsProps {
  * Para reativar o SSO antes do deploy, ver `docs/AUTH-SSO-ACTIVATION.md`.
  */
 export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsProps>(
-  function SocialLoginButtons({ onError, retryRef }, ref) {
+  ({ onError, retryRef }, ref) => {
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [slowHint, setSlowHint] = useState<string | null>(null);
     const { toast } = useToast();
@@ -154,25 +154,24 @@ export const SocialLoginButtons = forwardRef<HTMLDivElement, SocialLoginButtonsP
         finishWithError('timeout', { autoFallback: true });
       }, REDIRECT_TIMEOUT_MS);
 
-
-      try {
-        const supabase = await getSupabaseClient();
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: redirect_uri },
+      const { authService } = await import('@/services/authService');
+      const res = await authService.signInWithOAuthSafe({
+        provider: 'google',
+        redirectTo: redirect_uri,
+      });
+      if (res.kind === 'err') {
+        authDebugError('social-login', 'signInWithOAuthSafe err', {
+          errorKind: res.errorKind,
         });
-        if (error) {
-          authDebugError('social-login', 'supabase.signInWithOAuth returned error', error);
-          finishWithError(mapOAuthError(error.message));
-          return;
-        }
-        authDebug('social-login', 'redirect dispatched via Supabase OAuth');
-        // Sucesso: o navegador deve redirecionar. Timers serão limpos pelo unmount/visibilitychange.
-      } catch (err) {
-        authDebugError('social-login', 'unexpected exception during OAuth', err);
-        const raw = err instanceof Error ? err.message : 'Tente novamente mais tarde';
+        const raw =
+          res.errorKind === 'network' || res.errorKind === 'timeout'
+            ? 'network'
+            : res.userMessage;
         finishWithError(mapOAuthError(raw));
+        return;
       }
+      authDebug('social-login', 'redirect dispatched via Supabase OAuth');
+      // Sucesso: o navegador deve redirecionar. Timers serão limpos pelo unmount/visibilitychange.
     };
 
     // Publica a função `retry()` no ref do pai (banner de erro).

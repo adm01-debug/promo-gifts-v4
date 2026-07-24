@@ -27,7 +27,10 @@ export default {
         display: ["var(--font-display)", "system-ui", "sans-serif"],
       },
       colors: {
-        border: "hsl(var(--border))",
+        border: {
+          DEFAULT: "hsl(var(--border))",
+          strong: "hsl(var(--border-strong))",
+        },
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
@@ -54,6 +57,14 @@ export default {
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+        },
+        "neon-blue": {
+          DEFAULT: "hsl(var(--neon-blue))",
+          foreground: "hsl(var(--neon-blue-foreground))",
+        },
+        "neon-green": {
+          DEFAULT: "hsl(var(--neon-green))",
+          foreground: "hsl(var(--neon-green-foreground))",
         },
         info: {
           DEFAULT: "hsl(var(--info))",
@@ -279,6 +290,14 @@ export default {
         "border-glow": {
           "0%, 100%": { borderColor: "hsl(var(--primary) / 0.3)" },
           "50%": { borderColor: "hsl(var(--primary) / 0.8)" },
+        },
+        "preview-breath": {
+          "0%, 100%": { boxShadow: "0 0 4px hsl(var(--primary) / 0.18)" },
+          "50%": { boxShadow: "0 0 10px hsl(var(--primary) / 0.32)" },
+        },
+        "preview-breath-border": {
+          "0%, 100%": { borderColor: "hsl(var(--primary) / 0.25)" },
+          "50%": { borderColor: "hsl(var(--primary) / 0.45)" },
         },
         wiggle: {
           "0%, 100%": { transform: "rotate(-3deg)" },

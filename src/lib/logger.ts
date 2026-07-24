@@ -17,21 +17,30 @@ function serializeError(err: Error): Record<string, unknown> {
   return { name: err.name, message: err.message, stack: err.stack };
 }
 
+// Keys that must never be assigned as property names — defense-in-depth
+// even on null-prototype objects (Object.create(null) already prevents
+// __proto__ from polluting Object.prototype, but static analysis tools
+// flag any dynamic property write from user-supplied strings).
+const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 function redactValue(value: unknown): unknown {
   if (value === null || value === undefined) return value;
   if (value instanceof Error) return serializeError(value);
   if (Array.isArray(value)) return value.map((item) => redactValue(item));
   if (typeof value === 'object') {
-    const out: Record<string, unknown> = {};
+    const out = Object.create(null) as Record<string, unknown>;
     for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-      out[key] = SENSITIVE_KEY_RE.test(key) ? '[REDACTED]' : redactValue(nested);
+      if (BLOCKED_KEYS.has(key)) continue;
+      if (Object.hasOwn(value as object, key)) {
+        out[key] = SENSITIVE_KEY_RE.test(key) ? '[REDACTED]' : redactValue(nested);
+      }
     }
     return out;
   }
   return value;
 }
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = 'debug' | 'error' | 'info' | 'warn';
 
 interface LogEntry {
   level: LogLevel;

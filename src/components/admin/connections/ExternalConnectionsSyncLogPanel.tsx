@@ -98,7 +98,14 @@ export function ExternalConnectionsSyncLogPanel() {
           <History className="h-4 w-4 text-muted-foreground" />
           <CardTitle className="text-base">Auditoria · sync external_connections</CardTitle>
         </div>
-        <Button size="sm" variant="ghost" onClick={() => void load()} disabled={loading}>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            load();
+          }}
+          disabled={loading}
+        >
           <RefreshCw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
         </Button>
       </CardHeader>

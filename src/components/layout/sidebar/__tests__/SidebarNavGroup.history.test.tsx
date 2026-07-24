@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Garante que o destaque (active state) e a auto-expansão do grupo "Orçamentos"
  * permanecem consistentes para "Novo Orçamento" — em paridade com "Orçamentos"
@@ -48,7 +49,7 @@ function Layout() {
     <>
       <SidebarNavGroup
         group={group}
-        isOpen={true}
+        isOpen
         isCollapsed={false}
         onToggle={() => {}}
         onMobileClose={() => {}}
@@ -100,6 +101,7 @@ function groupShouldAutoOpen(pathname: string): boolean {
 }
 
 async function go(router: Router, delta: number) {
+  // eslint-disable-next-line @typescript-eslint/require-await
   await act(async () => {
     router.navigate(delta);
   });

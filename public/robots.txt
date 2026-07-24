@@ -1,16 +1,46 @@
+# robots.txt — Promo Brindes (promogifts.com.br)
+# Atualizado: 2026-06-27 — SEO módulo ativo, sitemap dinâmico via Vercel
+
+# ── Googlebot e crawlers principais ──────────────────────────────────────────
 User-agent: Googlebot
-Allow: /
-
 User-agent: Bingbot
+User-agent: Applebot
 Allow: /
+Allow: /produto/
+Allow: /categoria/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /debug
+Disallow: /__test
+Disallow: /orcamentos/
+Disallow: /simulador-precos/
 
+# ── Social media crawlers (OG meta tags via CF Worker) ───────────────────────
 User-agent: Twitterbot
-Allow: /
-
 User-agent: facebookexternalhit
+User-agent: LinkedInBot
+User-agent: WhatsApp
+User-agent: Slackbot
 Allow: /
 
+# ── Crawlers SEO agressivos ──────────────────────────────────────────────────
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: DotBot
+User-agent: MJ12bot
+User-agent: BLEXBot
+Disallow: /
+
+# ── Fallback ─────────────────────────────────────────────────────────────────
 User-agent: *
 Allow: /
+Allow: /produto/
+Allow: /categoria/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /debug
+Disallow: /__test
 
+# ── Sitemap dinâmico (api/sitemap.ts → vw_sitemap_all no Supabase) ───────────
 Sitemap: https://www.promogifts.com.br/sitemap.xml

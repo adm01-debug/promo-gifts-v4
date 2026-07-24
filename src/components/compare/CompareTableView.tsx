@@ -26,6 +26,7 @@ import { OtherSuppliersRow } from './OtherSuppliersRow';
 import type { CompareVariantInfo } from '@/stores/useComparisonStore';
 // Runtime/UI Product (from useProducts) — distinct from src/types/product.ts (DB-oriented).
 import type { Product } from '@/types/product-catalog';
+import { leadTimeProxy, leadTimeLabel } from '@/lib/comparison-utils';
 
 export interface CompareEntry {
   product: Product;
@@ -40,32 +41,6 @@ interface CompareTableViewProps {
   getStockStatusLabel: (s: string) => { label: string; color: string };
   onRemove: (index: number) => void;
   differencesOnly?: boolean;
-}
-
-function leadTimeProxy(status: string | undefined): number {
-  switch (status) {
-    case 'in-stock':
-      return 1;
-    case 'low-stock':
-      return 2;
-    case 'out-of-stock':
-      return 4;
-    default:
-      return 2;
-  }
-}
-
-function leadTimeLabel(status: string | undefined): string {
-  switch (status) {
-    case 'in-stock':
-      return '1-3 dias';
-    case 'low-stock':
-      return '5-10 dias';
-    case 'out-of-stock':
-      return 'Sob consulta';
-    default:
-      return '—';
-  }
 }
 
 function allEqual<T>(arr: T[]): boolean {
@@ -210,9 +185,8 @@ export function CompareTableView({
                           {/* Hover swatches → swap header image */}
                           {(entry.product.colors?.length ?? 0) > 1 && (
                             <div className="flex flex-wrap justify-center gap-0.5">
-                              {entry.product.colors
-                                .slice(0, 6)
-                                .map((c: { name: string; hex?: string }, i: number) => (
+                              {entry.product.colors.map(
+                                (c: { name: string; hex?: string }, i: number) => (
                                   <button
                                     key={i}
                                     type="button"
@@ -234,7 +208,8 @@ export function CompareTableView({
                                       }))
                                     }
                                   />
-                                ))}
+                                ),
+                              )}
                             </div>
                           )}
                           <StockRiskBadge product={entry.product} />
@@ -358,18 +333,21 @@ export function CompareTableView({
                 label="Cores disponíveis"
                 products={products}
                 render={(p) => (
-                  <div className="flex flex-wrap justify-center gap-1">
-                    {p.colors?.slice(0, 6).map((c: { name: string; hex?: string }, i: number) => (
+                  <div
+                    className="flex flex-wrap justify-center gap-1"
+                    aria-label={`${p.colors?.length ?? 0} cores`}
+                    data-testid="compare-colors-cell"
+                    data-colors-count={p.colors?.length ?? 0}
+                  >
+                    {p.colors?.map((c: { name: string; hex?: string }, i: number) => (
                       <div
                         key={i}
                         className="h-5 w-5 rounded-full border border-border"
                         style={{ backgroundColor: c.hex }}
                         title={c.name}
+                        data-testid="compare-color-dot"
                       />
                     ))}
-                    {(p.colors?.length ?? 0) > 6 && (
-                      <span className="text-xs text-muted-foreground">+{p.colors.length - 6}</span>
-                    )}
                   </div>
                 )}
               />
@@ -524,7 +502,7 @@ function HighlightedNumberRow({
   products: Product[];
   valueFn: (p: Product) => number;
   renderFn: (v: number) => string;
-  mode: 'lower-is-better' | 'higher-is-better';
+  mode: 'higher-is-better' | 'lower-is-better';
   subtitle?: string;
 }) {
   const values = products.map(valueFn);

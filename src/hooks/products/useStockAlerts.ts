@@ -2,7 +2,7 @@ import { dbInvoke, shouldRetry } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
 import { getProductImageUrl, type PromobrindProduct } from '@/lib/external-db/product-types';
 
-export type AlertLevel = 'low' | 'critical' | 'out';
+export type AlertLevel = 'critical' | 'low' | 'out';
 
 export interface StockAlert {
   id: string;
@@ -19,7 +19,7 @@ const STOCK_ALERT_SELECT =
   'id, name, sku, stock_quantity, min_quantity, brand, primary_image_url, images';
 
 export function useStockAlerts(lowStockThreshold = 50, criticalStockThreshold = 10) {
-  return useQuery<StockAlert[], Error>({
+  return useQuery<StockAlert[]>({
     queryKey: ['stock-alerts', lowStockThreshold, criticalStockThreshold],
     queryFn: async () => {
       const result = await dbInvoke<PromobrindProduct>({

@@ -240,7 +240,7 @@ describe('Mockup Deletion Flow', () => {
     mockMg.activeTab = 'history';
     renderWithProviders(<MockupGenerator />);
 
-    const regenerate = (await screen.findAllByLabelText('Regenerar'))[0];
+    const regenerate = (await screen.findAllByLabelText(/Regenerar/))[0];
     fireEvent.click(regenerate);
 
     expect(mockMg.loadFromHistory).toHaveBeenCalledTimes(1);

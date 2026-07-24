@@ -18,8 +18,10 @@ describe('BUG-001: ProductGrid Rules-of-Hooks', () => {
     const src = readSrc('components/products/ProductGrid.tsx');
     const lines = src.split('\n');
 
+    // Match either arrow or named-function form — we care about hook ordering,
+    // not the specific function syntax chosen by the formatter/linter.
     const gridStart = lines.findIndex((l) =>
-      l.includes('export const ProductGrid = memo(function ProductGrid('),
+      l.includes('export const ProductGrid = memo('),
     );
     expect(gridStart).toBeGreaterThan(-1);
 

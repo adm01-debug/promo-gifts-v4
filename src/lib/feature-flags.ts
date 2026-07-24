@@ -10,14 +10,8 @@
  */
 
 export type FeatureFlag =
-  | 'mfa'
-  | 'ai_recommendations'
-  | 'presentation_mode'
-  | 'voice_commands'
-  | 'magic_up'
-  | 'e2e_tests'
   | 'advanced_analytics'
-  | 'custom_kits_v2'
+  | 'ai_recommendations'
   /**
    * M-05: Controle dinâmico do crm-db-bridge (pgxfvjmuubtbowutlide).
    *
@@ -31,7 +25,47 @@ export type FeatureFlag =
    * Usar esta flag para feature rollout controlado; usar o kill-switch
    * para desligamentos de emergência (indisponibilidade, incidente).
    */
-  | 'crm_bridge_enabled';
+  | 'crm_bridge_enabled'
+  | 'custom_kits_v2'
+  | 'e2e_tests'
+  /**
+   * Módulo Magazine — criação de revistas/catálogos personalizados a partir
+   * do catálogo, com 10 templates de design, branding do cliente CRM,
+   * PDF (browser print) e link público via token. Rota /magazine.
+   */
+  | 'magazineModule'
+  | 'magic_up'
+  | 'mfa'
+  | 'presentation_mode'
+  /**
+   * Aba "Confiabilidade de Fornecedores" em /estoque. Lê
+   * variant_supplier_sources (next_date_N) e stock_snapshots (chegadas reais)
+   * e calcula índice de confiança previsão × realidade por fornecedor.
+   */
+  | 'supplierReliability'
+  /**
+   * Onda 2 — ColorSwatchPicker com dados reais do banco.
+   *
+   * Substitui ProductColorSwatches por ColorSwatchPicker (novo)
+   * usando o hook useProductColorSwatch (lê products.color_swatches JSONB +
+   * RPC fn_get_color_swatches_batch).
+   *
+   * ✅ HABILITADO — products.color_swatches populado em produção:
+   * - 7.153 produtos com color_swatches preenchidos (100% de cobertura)
+   * - fn_rebuild_color_swatches: trigger automático em product_variants e product_images
+   * - fn_get_color_swatches_batch: RPC para lazy-load
+   * - Hierarquia de imagem: P1(CF CDN/variant_id) → P2(CF CDN/color_id) → P3(supplier CDN) → P4(primary)
+   * - 16.631 swatches, 97,4% com CF CDN (imagedelivery.net)
+   * - Aplicado: 2026-06-22
+   */
+  | 'useColorSwatchesV2'
+  /**
+   * Onda 1 — Painel preditivo de ruptura por fornecedor (EMA α=0.3).
+   * Habilita RupturePanelEma e useRuptureAlerts na página /estoque.
+   * Banner StockHeroRiskBanner NÃO é controlado por esta flag.
+   */
+  | 'useEmaRupture'
+  | 'voice_commands';
 
 interface FlagConfig {
   /** Default enabled state */
@@ -82,6 +116,39 @@ const FLAG_REGISTRY: Record<FeatureFlag, FlagConfig> = {
       'CRM DB Bridge — acesso a empresas/contatos via crm-db-bridge ' +
       '(pgxfvjmuubtbowutlide). Desativar via setFeatureFlag para modo degradado ' +
       'sem CRM externo. Para desligamento de emergência, usar system_kill_switches.',
+  },
+  useEmaRupture: {
+    enabled: true,
+    description:
+      'Painel preditivo de ruptura por fornecedor (EMA α=0.3) — Onda 1. ' +
+      'Habilita RupturePanelEma + useRuptureAlerts na página /estoque.',
+  },
+  supplierReliability: {
+    enabled: true,
+    description:
+      'Aba "Confiabilidade de Fornecedores" em /estoque: índice de ' +
+      'confiança previsão × chegada real (variant_supplier_sources.next_date_N ' +
+      'vs stock_snapshots delta positivo), histórico paginado e próximas ' +
+      'reposições por fornecedor.',
+  },
+  useColorSwatchesV2: {
+    // ✅ HABILITADO — products.color_swatches existe e está populado (2026-06-22)
+    // 7.153 produtos / 16.631 swatches / 97,4% CF CDN / triggers ativos
+    // Para rollback: setFeatureFlag('useColorSwatchesV2', false) no console
+    enabled: true,
+    description:
+      'ColorSwatchPicker com products.color_swatches JSONB — ' +
+      'imagem e estoque por cor ao clicar na bolinha. ' +
+      'Backend: fn_rebuild_color_swatches (P1→P4) + fn_get_color_swatches_batch. ' +
+      'ATIVO desde 2026-06-22.',
+  },
+  magazineModule: {
+    enabled: true,
+    description:
+      'Módulo Magazine (/magazine) — cria revistas de produtos com 10 ' +
+      'templates de design, branding do cliente CRM, PDF via print e link ' +
+      'público /revista-publica/:token. v1 persiste em localStorage; ' +
+      'schema Gold em qa/migrations-draft/2026-07-12_magazines.sql.',
   },
 };
 

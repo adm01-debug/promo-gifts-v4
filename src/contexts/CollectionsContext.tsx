@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode, useCallback } from 'react';
+import { createContext, useContext, type ReactNode, useCallback, useMemo } from 'react';
 import {
   useCollections,
   type Collection,
@@ -19,7 +19,7 @@ interface CollectionsContextType {
     clientId?: string | null,
     clientName?: string | null,
   ) => Collection;
-  updateCollection: (id: string, updates: Partial<Omit<Collection, 'id' | 'createdAt'>>) => void;
+  updateCollection: (id: string, updates: Partial<Omit<Collection, 'createdAt' | 'id'>>) => void;
   deleteCollection: (id: string) => void;
   addProductToCollection: (
     collectionId: string,
@@ -32,6 +32,7 @@ interface CollectionsContextType {
     productId: string,
     collectionIds: string[],
     variant?: CollectionVariantInfo,
+    priceAtSave?: number | null,
   ) => void;
   restoreFromTrash: (collectionId: string, productId: string) => Promise<boolean>;
   reorderProducts: (collectionId: string, orderedProductIds: string[]) => void;
@@ -61,11 +62,13 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
     [collectionsHook.getCollectionProductsFromMap, getProductsByIds],
   );
 
-  return (
-    <CollectionsContext.Provider value={{ ...collectionsHook, getCollectionProducts }}>
-      {children}
-    </CollectionsContext.Provider>
+  const value = useMemo(
+    () => ({ ...collectionsHook, getCollectionProducts }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [collectionsHook, getCollectionProducts],
   );
+
+  return <CollectionsContext.Provider value={value}>{children}</CollectionsContext.Provider>;
 }
 
 export function useCollectionsContext() {

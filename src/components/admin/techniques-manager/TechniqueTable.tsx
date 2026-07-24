@@ -89,7 +89,7 @@ export function TechniqueTable({
           <TableHead>Qtd. Mín.</TableHead>
           <TableHead>Prazo</TableHead>
           <TableHead className="text-center">Status</TableHead>
-          <TableHead></TableHead>
+          <TableHead />
         </TableRow>
       </TableHeader>
       <TableBody>

@@ -5,7 +5,9 @@ import { applyPixMask, validatePixKey } from '@/utils/pixMask';
 import { searchCrm } from '@/lib/crm-db';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { validateCnpj, maskCep } from '@/utils/masks';
+import { validateCnpj, maskCep, normalizeCnpj } from '@/utils/masks';
+import { assertPersistableCnpj } from '@/utils/cnpj-schema';
+import { cnpjErrorHaystack, mapCnpjError } from '@/utils/cnpj-errors';
 import { fetchAddressByCep } from '@/utils/viacep';
 import { fetchCnpjData } from '@/utils/cnpj-lookup';
 import { logger } from '@/lib/logger';
@@ -35,11 +37,12 @@ export function useSuppliersManager() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'product' | 'engraving'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'engraving' | 'product'>('all');
+  const [filterStatus, setFilterStatus] = useState<'active' | 'all' | 'inactive'>('all');
   const [editingSupplier, setEditingSupplier] = useState<Partial<Supplier> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cnpjError, setCnpjError] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
   // BUG-04 FIX: state-based delete confirmation — no more confirm() blocking dialog
   const [deleteConfirmSupplier, setDeleteConfirmSupplier] = useState<Supplier | null>(null);
@@ -110,7 +113,7 @@ export function useSuppliersManager() {
     return null;
   };
 
-  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: string | boolean) => {
+  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: boolean | string) => {
     setPixKeys((prev) => {
       const updated = prev.map((k) => {
         if (k.id !== id)
@@ -205,7 +208,9 @@ export function useSuppliersManager() {
   const handleEdit = (supplier: Supplier) => {
     // BUG-25 FIX: removed dead code blocks for address_details / social_details
     // (those fields do not exist in the real DB schema)
-    const s: Partial<Supplier> = { ...supplier };
+    // CNPJ pode vir do BD com máscara/espaços — normalizamos para dígitos-only
+    // no formulário; o display continua via `maskCnpj(...)` nos inputs/cards.
+    const s: Partial<Supplier> = { ...supplier, cnpj: normalizeCnpj(supplier.cnpj) || null };
     setEditingSupplier(s);
 
     // BUG-16 FIX: contacts may come from DB as parsed object (JSONB) or as JSON string
@@ -234,12 +239,13 @@ export function useSuppliersManager() {
 
     // Parse financial data (still in notes for payment/pix)
     const notesStr = supplier.notes || '';
-    const finMatchNew = notesStr.match(
-      /\[Financeiro: Forma: (.*?), PIX: (.*?), PIX Atualizado: (.*?)\]/,
+    const finMatchNew = /\[Financeiro: Forma: (.*?), PIX: (.*?), PIX Atualizado: (.*?)\]/.exec(
+      notesStr,
     );
-    const finMatchLegacy = notesStr.match(
-      /\[Financeiro: Forma: (.*?), PIX Tipo: (.*?), PIX Número: (.*?), PIX Favorecido: (.*?), PIX Atualizado: (.*?)\]/,
-    );
+    const finMatchLegacy =
+      /\[Financeiro: Forma: (.*?), PIX Tipo: (.*?), PIX Número: (.*?), PIX Favorecido: (.*?), PIX Atualizado: (.*?)\]/.exec(
+        notesStr,
+      );
     if (finMatchNew) {
       setFormaPagamento(finMatchNew[1] !== '-' ? finMatchNew[1].split(',').filter(Boolean) : []);
       const pixData = finMatchNew[2];
@@ -291,8 +297,8 @@ export function useSuppliersManager() {
 
     // ── Backward compat: migrate legacy notes data if dedicated columns are empty ──
     if (!supplier.inscricao_estadual && !supplier.tax_regime && !supplier.state_uf) {
-      const fiscalMatch = notesStr.match(
-        /\[Fiscal: IE: (.*?), Regime: (.*?), UF Faturamento: (.*?)\]/,
+      const fiscalMatch = /\[Fiscal: IE: (.*?), Regime: (.*?), UF Faturamento: (.*?)\]/.exec(
+        notesStr,
       );
       if (fiscalMatch) {
         setInscricaoEstadual(fiscalMatch[1] !== '-' ? fiscalMatch[1] : '');
@@ -301,13 +307,13 @@ export function useSuppliersManager() {
       }
     }
     if (!supplier.phone2) {
-      const foneMatch = notesStr.match(/\[Fones Fixos: 01: (.*?), 02: (.*?)\]/);
+      const foneMatch = /\[Fones Fixos: 01: (.*?), 02: (.*?)\]/.exec(notesStr);
       if (foneMatch) {
         setFoneFixo2(foneMatch[2] !== '-' ? foneMatch[2] : '');
       }
     }
 
-    const carrierMatch = notesStr.match(/\[Transportadora: (.*?), ID: (.*?)\]/);
+    const carrierMatch = /\[Transportadora: (.*?), ID: (.*?)\]/.exec(notesStr);
     if (carrierMatch) {
       setTransportadoraPadrao(carrierMatch[1] !== '-' ? carrierMatch[1] : '');
       setTransportadoraId(carrierMatch[2] !== '-' ? carrierMatch[2] : '');
@@ -339,24 +345,28 @@ export function useSuppliersManager() {
       toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') ?? '';
+    const cnpjRaw = normalizeCnpj(editingSupplier.cnpj);
     if (cnpjRaw.length > 0 && !validateCnpj(cnpjRaw)) {
       toast.error('CNPJ informado é inválido');
       return;
     }
+    setCnpjError('');
     setSaving(true);
 
     // Duplicate checks
     if (cnpjRaw.length === 14 && editingSupplier.cnpj) {
       try {
-        const { data: existingRecords } = await untypedFrom<{
+        // BUG-SUPPLIERMGR-CNPJ-DUPCHECK-SILENT-FAIL FIX: { data } without error check — a failed
+        // SELECT silently bypassed the CNPJ dup check; now throws so the outer catch logs it.
+        const { data: existingRecords, error: cnpjCheckErr } = await untypedFrom<{
           id: string;
           name: string;
           cnpj: string;
         }>('suppliers')
           .select('id,name,cnpj')
-          .eq('cnpj', editingSupplier.cnpj.trim())
+          .eq('cnpj', cnpjRaw)
           .limit(5);
+        if (cnpjCheckErr) throw cnpjCheckErr;
         const duplicate = existingRecords?.find((r) => r.id !== editingSupplier.id);
         if (duplicate) {
           toast.error(`Já existe outro fornecedor com este CNPJ: "${duplicate.name}".`);
@@ -445,7 +455,7 @@ export function useSuppliersManager() {
             .replace(/[^A-Z0-9_]/g, '')
             .slice(0, 20),
         trading_name: es.trading_name?.trim() || null,
-        cnpj: es.cnpj?.trim() || null,
+        cnpj: assertPersistableCnpj(es.cnpj),
         active: es.active ?? true,
         contact_name: contacts[0]?.name?.trim() || null,
         contact_person: contacts[0]?.role?.trim() || null,
@@ -506,7 +516,16 @@ export function useSuppliersManager() {
       fetchSuppliers();
     } catch (err: unknown) {
       logger.error('Failed to save supplier', err);
-      toast.error('Erro ao salvar fornecedor');
+      // SSOT: mesma copy inline nas duas UIs (ver src/utils/cnpj-errors.ts).
+      const hay = cnpjErrorHaystack(err);
+      if (/cnpj/i.test(hay)) {
+        const mapped = mapCnpjError(err);
+        const cnpjCopy = mapped.message;
+        setCnpjError(cnpjCopy);
+        toast.error(cnpjCopy);
+      } else {
+        toast.error('Erro ao salvar fornecedor');
+      }
     } finally {
       setSaving(false);
     }
@@ -635,6 +654,7 @@ export function useSuppliersManager() {
     setEditingSupplier,
     isNew,
     saving,
+    cnpjError,
     deleting,
     // BUG-04: new delete confirmation state/actions
     deleteConfirmSupplier,

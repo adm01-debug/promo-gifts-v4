@@ -16,7 +16,7 @@ import {
 export interface SalesGoal {
   id: string;
   user_id: string;
-  goal_type: 'monthly' | 'weekly' | 'quarterly';
+  goal_type: 'monthly' | 'quarterly' | 'weekly';
   target_value: number;
   current_value: number;
   target_quotes: number;
@@ -32,7 +32,7 @@ export interface SalesGoal {
 }
 
 export interface CreateGoalInput {
-  goal_type: 'monthly' | 'weekly' | 'quarterly';
+  goal_type: 'monthly' | 'quarterly' | 'weekly';
   target_value: number;
   target_quotes?: number;
   target_conversions?: number;
@@ -43,7 +43,7 @@ export function useSalesGoals() {
   const queryClient = useQueryClient();
 
   // Get date range based on goal type
-  const getDateRange = (type: 'monthly' | 'weekly' | 'quarterly') => {
+  const getDateRange = (type: 'monthly' | 'quarterly' | 'weekly') => {
     const now = new Date();
     switch (type) {
       case 'weekly':
@@ -74,6 +74,9 @@ export function useSalesGoals() {
       return data as SalesGoal[];
     },
     enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 
   // Get active goal for current period
@@ -96,6 +99,9 @@ export function useSalesGoals() {
       return data as SalesGoal | null;
     },
     enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 
   // Create goal mutation
@@ -186,7 +192,7 @@ export function useSalesGoals() {
 
       return { goal: data as SalesGoal, justAchieved: isAchieved && wasNotAchieved };
     },
-    onSuccess: async ({ justAchieved }) => {
+    onSuccess: ({ justAchieved }) => {
       queryClient.invalidateQueries({ queryKey: ['sales-goals'] });
       queryClient.invalidateQueries({ queryKey: ['active-sales-goal'] });
 

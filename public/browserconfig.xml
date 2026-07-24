@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  browserconfig.xml — Microsoft Windows tile configuration
+  Reference: https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/dn320426(v=vs.85)
+  Used when user pins promogifts.com.br to Windows 10/11 Start menu or taskbar.
+-->
+<browserconfig>
+  <msapplication>
+    <tile>
+      <square70x70logo src="/icons/icon-192.png"/>
+      <square150x150logo src="/icons/icon-192.png"/>
+      <square310x310logo src="/icons/icon-512.png"/>
+      <TileColor>#1e40af</TileColor>
+    </tile>
+  </msapplication>
+</browserconfig>

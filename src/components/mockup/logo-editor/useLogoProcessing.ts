@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { processLogoForLaser, processLogoForSerigrafia } from '@/utils/laser-logo-processor';
+import { logger } from '@/lib/logger';
 import type { TechniqueColorConfig } from '../techniqueColorUtils';
 
 /**
@@ -47,7 +48,8 @@ export function useLogoProcessing(
       .then((dataUrl) => {
         if (!cancelled) setProcessedLogoUrl(dataUrl);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        logger.error('[useLogoProcessing] Falha ao processar logo para técnica:', err);
         if (!cancelled) setProcessedLogoUrl(null);
       })
       .finally(() => {

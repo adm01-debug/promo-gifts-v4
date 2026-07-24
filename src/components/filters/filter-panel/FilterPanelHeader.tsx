@@ -56,6 +56,7 @@ export function FilterPanelHeader({
               size="sm"
               onClick={() => {
                 onReset();
+                collapseAllSections();
                 toast.success('Filtros resetados');
               }}
               className={cn(

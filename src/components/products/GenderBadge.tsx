@@ -14,7 +14,7 @@ const GENDER_CONFIG: Record<string, { label: string; className: string }> = {
 
 interface GenderBadgeProps {
   gender?: string | null;
-  size?: 'sm' | 'md';
+  size?: 'md' | 'sm';
   className?: string;
 }
 

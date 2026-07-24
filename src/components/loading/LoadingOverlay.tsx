@@ -17,7 +17,7 @@ const SPINNER_SIZE_CLASSES = {
 interface LoadingOverlayProps {
   isLoading: boolean;
   message?: string;
-  variant?: 'fullscreen' | 'container' | 'inline';
+  variant?: 'container' | 'fullscreen' | 'inline';
   blur?: boolean;
   className?: string;
 }
@@ -69,7 +69,7 @@ export function LoadingOverlay({
 }
 
 interface SpinnerProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   className?: string;
 }
 

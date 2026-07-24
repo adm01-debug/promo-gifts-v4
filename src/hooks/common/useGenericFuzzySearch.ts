@@ -25,7 +25,7 @@ interface FuzzyKey<T> {
   weight: number;
 }
 
-type FuzzyKeyConfig<T> = keyof T | FuzzyKey<T>;
+type FuzzyKeyConfig<T> = FuzzyKey<T> | keyof T;
 
 export function useGenericFuzzySearch<T>(
   items: T[],

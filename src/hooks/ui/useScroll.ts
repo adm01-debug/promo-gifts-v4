@@ -16,7 +16,7 @@ export function useScroll(options: UseScrollOptions = {}) {
     scrollY: 0,
     scrollX: 0,
     isScrolled: false,
-    direction: 'none' as 'up' | 'down' | 'none',
+    direction: 'none' as 'down' | 'none' | 'up',
     isAtTop: true,
     isAtBottom: false,
   });
@@ -70,7 +70,7 @@ export function useScroll(options: UseScrollOptions = {}) {
  * useScrollDirection - Hook simplificado apenas para direção
  */
 export function useScrollDirection(threshold = 10) {
-  const [scrollDirection, setScrollDirection] = useState<'up' | 'down' | null>(null);
+  const [scrollDirection, setScrollDirection] = useState<'down' | 'up' | null>(null);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {

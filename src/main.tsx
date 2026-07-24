@@ -1,10 +1,10 @@
 import './lib/console-filter';
-import { Fragment } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import { registerServiceWorker } from '@/lib/sw-register';
 import { installGlobalErrorHandlers } from '@/lib/error-reporter';
 import { initSentry } from '@/lib/sentry';
+import { initNavigationMetrics } from '@/lib/telemetry/navigationMetrics';
 import { installSafeToast } from '@/lib/security/safeToast';
 import { validateSupabaseConfig } from '@/integrations/supabase/runtime-validator';
 import EnhancedErrorBoundary from '@/components/errors/EnhancedErrorBoundary';
@@ -16,6 +16,7 @@ import './styles/diversity-overrides.css';
 
 validateSupabaseConfig();
 initSentry();
+initNavigationMetrics();
 installGlobalErrorHandlers();
 installSafeToast();
 
@@ -35,10 +36,17 @@ if (import.meta.env.DEV) {
 // Cooldown (10 s) prevents infinite-reload loops caused by genuine 404s.
 const _CHUNK_RELOAD_KEY = '__vite_chunk_reload';
 window.addEventListener('vite:preloadError', () => {
-  const last = sessionStorage.getItem(_CHUNK_RELOAD_KEY);
-  const now = Date.now();
-  if (!last || now - parseInt(last, 10) > 10_000) {
-    sessionStorage.setItem(_CHUNK_RELOAD_KEY, String(now));
+  try {
+    const last = sessionStorage.getItem(_CHUNK_RELOAD_KEY);
+    const now = Date.now();
+    if (!last || now - parseInt(last, 10) > 10_000) {
+      sessionStorage.setItem(_CHUNK_RELOAD_KEY, String(now));
+      window.location.reload();
+    }
+  } catch {
+    // sessionStorage unavailable (Safari private mode / iframe sandbox) → reload unconditionally.
+    // Without the cooldown guard, this could loop — but the boot guard in index.html
+    // (URL-based __bare/__bart counter, max 2 reloads) prevents infinite loops.
     window.location.reload();
   }
 });
@@ -51,13 +59,11 @@ if (!root) {
 }
 
 createRoot(root).render(
-  <Fragment>
-    <HelmetProvider>
-      <EnhancedErrorBoundary>
-        <App />
-      </EnhancedErrorBoundary>
-    </HelmetProvider>
-  </Fragment>,
+  <HelmetProvider>
+    <EnhancedErrorBoundary>
+      <App />
+    </EnhancedErrorBoundary>
+  </HelmetProvider>,
 );
 
 if (import.meta.env.PROD) {

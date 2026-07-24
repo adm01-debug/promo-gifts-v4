@@ -1,12 +1,13 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { logger } from '@/lib/logger';
 
 interface TrackViewParams {
   productId?: string;
   productSku?: string;
   productName: string;
-  viewType: 'detail' | 'card' | 'compare' | 'favorite';
+  viewType: 'card' | 'compare' | 'detail' | 'favorite';
 }
 
 interface TrackSearchParams {
@@ -30,19 +31,18 @@ export function useProductAnalytics() {
       if (!user?.id) return;
 
       try {
-        // Using type assertion since table was just created
-        // Silently insert - all errors are ignored for analytics to not affect UX
-        await supabase.from('product_views').insert({
+        // BUG-ANALYTICS-VIEW-SILENT-FAIL FIX: bare await swallowed RLS/constraint errors.
+        // Supabase JS v2 never throws for DB errors — must destructure { error }.
+        const { error: viewErr } = await supabase.from('product_views').insert({
           product_id: productId,
           product_sku: productSku,
           product_name: productName,
           seller_id: user.id,
           view_type: viewType,
         });
-        // Note: We intentionally ignore ALL errors (including 409/23505 conflicts and RLS errors)
-        // Analytics should never block or affect user experience
-      } catch {
-        // Silently ignore all tracking errors
+        if (viewErr) logger.warn('[analytics] trackProductView insert failed', viewErr);
+      } catch (error) {
+        logger.warn('[analytics] trackProductView unexpected error', error);
       }
     },
     [user?.id],
@@ -53,15 +53,15 @@ export function useProductAnalytics() {
       if (!user?.id || !searchTerm.trim()) return;
 
       try {
-        // Silently insert - all errors are ignored for analytics to not affect UX
-        await supabase.from('search_analytics').insert({
+        // BUG-ANALYTICS-SEARCH-SILENT-FAIL FIX: bare await swallowed RLS/constraint errors.
+        const { error: searchErr } = await supabase.from('search_analytics').insert({
           search_term: searchTerm.toLowerCase().trim(),
           results_count: resultsCount,
           user_id: user.id,
         });
-        // Note: We intentionally ignore ALL errors for analytics
-      } catch {
-        // Silently ignore all tracking errors
+        if (searchErr) logger.warn('[analytics] trackSearch insert failed', searchErr);
+      } catch (error) {
+        logger.warn('[analytics] trackSearch unexpected error', error);
       }
     },
     [user?.id],
@@ -75,7 +75,8 @@ export function useProductAnalytics() {
       if (!user?.id) return;
 
       try {
-        await supabase.from('catalog_analytics').insert({
+        // BUG-ANALYTICS-SORT-SILENT-FAIL FIX: bare await swallowed RLS/constraint errors.
+        const { error: sortErr } = await supabase.from('catalog_analytics').insert({
           user_id: user.id,
           event_type: 'sort',
           event_data: {
@@ -86,8 +87,9 @@ export function useProductAnalytics() {
             url: window.location.href,
           },
         });
-      } catch {
-        // Silently ignore all tracking errors
+        if (sortErr) logger.warn('[analytics] trackSort insert failed', sortErr);
+      } catch (error) {
+        logger.warn('[analytics] trackSort unexpected error', error);
       }
     },
     [user?.id],

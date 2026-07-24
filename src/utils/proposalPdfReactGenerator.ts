@@ -67,16 +67,29 @@ export async function generateProposalPDFv2(
       (img) =>
         new Promise<void>((resolve) => {
           // FIX: naturalWidth > 0 evita tratar img com src vazio como "carregada"
-          if (img.complete && img.naturalWidth > 0) return resolve();
-          if (img.complete && img.src === '') return resolve();
+          if (img.complete && img.naturalWidth > 0) {
+            resolve();
+            return;
+          }
+          if (img.complete && img.src === '') {
+            resolve();
+            return;
+          }
           img.onload = () => resolve();
           img.onerror = () => resolve();
           setTimeout(resolve, 5000);
         }),
     );
     const fontPromise = document.fonts?.ready
-      ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1000))])
-      : new Promise((r) => setTimeout(r, 500));
+      ? Promise.race([
+          document.fonts.ready,
+          new Promise((r) => {
+            setTimeout(r, 1000);
+          }),
+        ])
+      : new Promise((r) => {
+          setTimeout(r, 500);
+        });
 
     await Promise.all([...imgPromises, fontPromise]);
 

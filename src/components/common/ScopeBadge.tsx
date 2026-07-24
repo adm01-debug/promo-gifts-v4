@@ -8,7 +8,7 @@ import { useSalesScope, type SalesScope } from '@/lib/auth/visibility-scope';
 
 const LABELS: Record<
   SalesScope,
-  { text: string; icon: typeof Eye; variant: 'secondary' | 'outline' }
+  { text: string; icon: typeof Eye; variant: 'outline' | 'secondary' }
 > = {
   self: { text: 'Apenas seus dados', icon: Eye, variant: 'secondary' },
   team: { text: 'Dados do time', icon: Users, variant: 'outline' },

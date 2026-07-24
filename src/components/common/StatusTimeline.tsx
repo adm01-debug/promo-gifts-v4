@@ -15,17 +15,17 @@ import {
 import { cn } from '@/lib/utils';
 
 type TimelineStatus =
-  | 'created'
-  | 'sent'
-  | 'viewed'
   | 'approved'
-  | 'rejected'
+  | 'cancelled'
+  | 'comment'
+  | 'created'
+  | 'delivered'
   | 'paid'
   | 'production'
+  | 'rejected'
+  | 'sent'
   | 'shipped'
-  | 'delivered'
-  | 'cancelled'
-  | 'comment';
+  | 'viewed';
 
 interface TimelineEvent {
   id: string;
@@ -34,7 +34,7 @@ interface TimelineEvent {
   description?: string;
   timestamp: Date | string;
   user?: string;
-  metadata?: Record<string, string | number | boolean>;
+  metadata?: Record<string, boolean | number | string>;
 }
 
 interface StatusTimelineProps {

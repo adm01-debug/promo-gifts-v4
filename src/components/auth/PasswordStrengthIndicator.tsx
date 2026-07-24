@@ -53,7 +53,7 @@ export function PasswordStrengthIndicator({
     const score = criteria.filter((c) => c.met).length;
     const allMet = criteria.every((c) => c.met);
 
-    let strength: 'empty' | 'weak' | 'fair' | 'good' | 'strong' = 'empty';
+    let strength: 'empty' | 'fair' | 'good' | 'strong' | 'weak' = 'empty';
     let color = 'bg-muted';
     let label = '';
 

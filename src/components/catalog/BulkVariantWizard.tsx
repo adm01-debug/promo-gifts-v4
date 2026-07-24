@@ -25,13 +25,14 @@ import {
 } from '@/hooks/products/useExternalVariantStock';
 import type { Product } from '@/types/product-catalog';
 import { m as motion, AnimatePresence } from 'framer-motion';
+import { getCdnUrl } from '@/utils/image-utils';
 
 export interface BulkVariantSelection {
   product: Product;
   variant: ExternalVariantStock | null;
 }
 
-export type BulkWizardMode = 'cart' | 'quote' | 'favorite' | 'compare' | 'collection' | 'pdf';
+export type BulkWizardMode = 'cart' | 'collection' | 'compare' | 'favorite' | 'pdf' | 'quote';
 
 interface BulkVariantWizardProps {
   open: boolean;
@@ -200,16 +201,11 @@ function ProductVariantStep({
             >
               {variant.selected_thumbnail ? (
                 <img
-                  src={`${variant.selected_thumbnail}/thumbnail`}
+                  src={getCdnUrl(variant.selected_thumbnail, 'thumbnail')}
                   alt={variant.color_name ?? ''}
                   className="h-10 w-10 shrink-0 rounded-lg border border-border/50 object-cover shadow-sm transition-transform group-hover:scale-105"
                   onError={(e) => {
-                    const t = e.currentTarget;
-                    if (t.src.includes('/thumbnail')) {
-                      t.src = variant.selected_thumbnail ?? '';
-                    } else {
-                      t.style.display = 'none';
-                    }
+                    e.currentTarget.style.display = 'none';
                   }}
                 />
               ) : (
@@ -318,6 +314,7 @@ export function BulkVariantWizard({
   const handleSelect = useCallback(
     (variant: ExternalVariantStock | null) => {
       const product = products[currentIndex];
+      if (!product) return;
       const newSelections = [...selections, { product, variant }];
 
       if (currentIndex + 1 >= products.length) {

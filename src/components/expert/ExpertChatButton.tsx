@@ -14,7 +14,7 @@ interface ExpertChatButtonProps {
 }
 
 export const ExpertChatButton = React.forwardRef<HTMLButtonElement, ExpertChatButtonProps>(
-  function ExpertChatButton({ clientId, clientName }, ref) {
+  ({ clientId, clientName }, ref) => {
     const [isOpen, setIsOpen] = useState(false);
     const bridgeOpen = useOracleVoiceBridge((s) => s.isOracleOpen);
     const pendingMessage = useOracleVoiceBridge((s) => s.pendingMessage);

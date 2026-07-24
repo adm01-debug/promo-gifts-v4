@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 interface GlassCardProps {
   children: ReactNode;
   className?: string;
-  blur?: 'sm' | 'md' | 'lg' | 'xl';
+  blur?: 'lg' | 'md' | 'sm' | 'xl';
   opacity?: number;
   border?: boolean;
   gradient?: boolean;

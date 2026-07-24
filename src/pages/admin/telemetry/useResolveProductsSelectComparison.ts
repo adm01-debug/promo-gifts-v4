@@ -20,7 +20,7 @@ import { supabase } from '@/integrations/supabase/client';
  *       — a cauda lenta é exatamente o que queremos comparar).
  */
 
-export type ComparisonWindow = '24h' | '7d' | '30d';
+export type ComparisonWindow = '7d' | '24h' | '30d';
 
 export interface ResolveProductsSelectMetrics {
   samples: number;

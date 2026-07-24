@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { History, RefreshCw, Eye } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -67,15 +68,21 @@ export function RecentAuditTable() {
 
     const ids = [...new Set(list.map((e) => e.user_id))];
     if (ids.length > 0) {
-      const { data: profs } = await supabase
+      // BUG-RECENTAUDIT-PROFILES-SELECT-SILENT-FAIL FIX: error not checked — RLS failure
+      // silently left profiles empty, showing raw UUIDs instead of admin names.
+      const { data: profs, error: profsErr } = await supabase
         .from('profiles')
         .select('user_id, full_name, email')
         .in('user_id', ids);
-      const map: Record<string, ProfileLite> = {};
-      (profs || []).forEach((p) => {
-        if (p.user_id) map[p.user_id] = p as ProfileLite;
-      });
-      setProfiles(map);
+      if (profsErr) {
+        logger.warn('[RecentAuditTable] profile enrichment failed — showing UUIDs:', profsErr);
+      } else {
+        const map: Record<string, ProfileLite> = {};
+        (profs || []).forEach((p) => {
+          if (p.user_id) map[p.user_id] = p as ProfileLite;
+        });
+        setProfiles(map);
+      }
     }
     setLoading(false);
   };

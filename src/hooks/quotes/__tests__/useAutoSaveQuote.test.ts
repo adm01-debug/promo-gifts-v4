@@ -29,9 +29,15 @@ vi.mock('@/lib/logger', () => ({
 const store: Record<string, string> = {};
 const localStorageMock = {
   getItem: vi.fn((key: string) => store[key] ?? null),
-  setItem: vi.fn((key: string, val: string) => { store[key] = val; }),
-  removeItem: vi.fn((key: string) => { delete store[key]; }),
-  clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]); }),
+  setItem: vi.fn((key: string, val: string) => {
+    store[key] = val;
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete store[key];
+  }),
+  clear: vi.fn(() => {
+    Object.keys(store).forEach((k) => delete store[k]);
+  }),
 };
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true });
 
@@ -83,45 +89,38 @@ describe('restore ao montar', () => {
   it('chama onRestore com dados do localStorage quando enabled=true', () => {
     const savedData = { title: 'Rascunho', items: [1, 2] };
     const payload = { version: 2, data: savedData, savedAt: '2026-01-01T00:00:00.000Z' };
-    store['quote_builder_autosave'] = JSON.stringify(payload);
+    store.quote_builder_autosave = JSON.stringify(payload);
 
     const onRestore = vi.fn();
-    renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data: {}, onRestore })
-    );
+    renderHook(() => useAutoSaveQuote({ enabled: true, data: {}, onRestore }));
 
     expect(onRestore).toHaveBeenCalledTimes(1);
     expect(onRestore).toHaveBeenCalledWith(savedData);
   });
 
   it('nao chama onRestore quando enabled=false', () => {
-    store['quote_builder_autosave'] = JSON.stringify({ version: 2, data: { x: 1 }, savedAt: '' });
+    store.quote_builder_autosave = JSON.stringify({ version: 2, data: { x: 1 }, savedAt: '' });
     const onRestore = vi.fn();
 
-    renderHook(() =>
-      useAutoSaveQuote({ enabled: false, data: {}, onRestore })
-    );
+    renderHook(() => useAutoSaveQuote({ enabled: false, data: {}, onRestore }));
 
     expect(onRestore).not.toHaveBeenCalled();
   });
 
   it('nao chama onRestore quando localStorage vazio', () => {
     const onRestore = vi.fn();
-    renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data: {}, onRestore })
-    );
+    renderHook(() => useAutoSaveQuote({ enabled: true, data: {}, onRestore }));
     expect(onRestore).not.toHaveBeenCalled();
   });
 
   it('guard: restaura apenas uma vez mesmo após re-renders', () => {
     const savedData = { x: 1 };
-    store['quote_builder_autosave'] = JSON.stringify({ version: 2, data: savedData, savedAt: '' });
+    store.quote_builder_autosave = JSON.stringify({ version: 2, data: savedData, savedAt: '' });
     const onRestore = vi.fn();
 
     const { rerender } = renderHook(
-      ({ enabled }: { enabled: boolean }) =>
-        useAutoSaveQuote({ enabled, data: {}, onRestore }),
-      { initialProps: { enabled: true } }
+      ({ enabled }: { enabled: boolean }) => useAutoSaveQuote({ enabled, data: {}, onRestore }),
+      { initialProps: { enabled: true } },
     );
     rerender({ enabled: true });
     rerender({ enabled: true });
@@ -133,25 +132,23 @@ describe('restore ao montar', () => {
 // ── save debounced ────────────────────────────────────────────────────────────
 describe('save com debounce', () => {
   it('nao salva imediatamente (debounce)', () => {
-    renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data: { x: 1 }, debounceMs: 2000 })
-    );
+    renderHook(() => useAutoSaveQuote({ enabled: true, data: { x: 1 }, debounceMs: 2000 }));
     expect(localStorageMock.setItem).not.toHaveBeenCalled();
   });
 
   it('salva apos debounceMs', () => {
-    renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data: { x: 1 }, debounceMs: 2000 })
-    );
-    act(() => { vi.advanceTimersByTime(2000); });
+    renderHook(() => useAutoSaveQuote({ enabled: true, data: { x: 1 }, debounceMs: 2000 }));
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
     expect(localStorageMock.setItem).toHaveBeenCalled();
   });
 
   it('salva com schema version 2 no payload', () => {
-    renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data: { title: 'X' }, debounceMs: 500 })
-    );
-    act(() => { vi.advanceTimersByTime(500); });
+    renderHook(() => useAutoSaveQuote({ enabled: true, data: { title: 'X' }, debounceMs: 500 }));
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
 
     const [, savedJson] = localStorageMock.setItem.mock.calls[0];
     const payload = JSON.parse(savedJson);
@@ -163,14 +160,18 @@ describe('save com debounce', () => {
     const data = { x: 1 };
     // Simular que ja salvou antes
     const { rerender } = renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data, debounceMs: 500 })
+      useAutoSaveQuote({ enabled: true, data, debounceMs: 500 }),
     );
-    act(() => { vi.advanceTimersByTime(500); });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
     const firstCount = localStorageMock.setItem.mock.calls.length;
 
     // Re-render com mesmos dados
     rerender();
-    act(() => { vi.advanceTimersByTime(500); });
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
 
     // Nao deve ter chamado de novo
     expect(localStorageMock.setItem).toHaveBeenCalledTimes(firstCount);
@@ -178,20 +179,22 @@ describe('save com debounce', () => {
 
   it('cancela timer anterior ao desmontar (BUG-07 cleanup)', () => {
     const { unmount } = renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data: { y: 2 }, debounceMs: 2000 })
+      useAutoSaveQuote({ enabled: true, data: { y: 2 }, debounceMs: 2000 }),
     );
     unmount();
-    act(() => { vi.advanceTimersByTime(2000); });
+    act(() => {
+      vi.advanceTimersByTime(2000);
+    });
 
     // Timer foi cancelado: nao deve ter salvo
     expect(localStorageMock.setItem).not.toHaveBeenCalled();
   });
 
   it('nao salva quando enabled=false', () => {
-    renderHook(() =>
-      useAutoSaveQuote({ enabled: false, data: { z: 3 }, debounceMs: 500 })
-    );
-    act(() => { vi.advanceTimersByTime(500); });
+    renderHook(() => useAutoSaveQuote({ enabled: false, data: { z: 3 }, debounceMs: 500 }));
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
     expect(localStorageMock.setItem).not.toHaveBeenCalled();
   });
 });
@@ -199,19 +202,17 @@ describe('save com debounce', () => {
 // ── clearAutoSave ─────────────────────────────────────────────────────────────
 describe('clearAutoSave', () => {
   it('remove item do localStorage', () => {
-    store['quote_builder_autosave'] = '{"version":2,"data":{},"savedAt":""}';
-    const { result } = renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data: {} })
-    );
+    store.quote_builder_autosave = '{"version":2,"data":{},"savedAt":""}';
+    const { result } = renderHook(() => useAutoSaveQuote({ enabled: true, data: {} }));
 
-    act(() => { result.current.clearAutoSave(); });
+    act(() => {
+      result.current.clearAutoSave();
+    });
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('quote_builder_autosave');
   });
 
   it('BUG-13: referencia estavel entre re-renders (useCallback)', () => {
-    const { result, rerender } = renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data: {} })
-    );
+    const { result, rerender } = renderHook(() => useAutoSaveQuote({ enabled: true, data: {} }));
     const ref1 = result.current.clearAutoSave;
     rerender();
     const ref2 = result.current.clearAutoSave;
@@ -221,9 +222,11 @@ describe('clearAutoSave', () => {
 
   it('usa a key correta ao remover', () => {
     const { result } = renderHook(() =>
-      useAutoSaveQuote({ enabled: true, data: {}, key: 'minha_chave_custom' })
+      useAutoSaveQuote({ enabled: true, data: {}, key: 'minha_chave_custom' }),
     );
-    act(() => { result.current.clearAutoSave(); });
+    act(() => {
+      result.current.clearAutoSave();
+    });
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('minha_chave_custom');
   });
 });

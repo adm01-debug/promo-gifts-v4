@@ -174,11 +174,18 @@ export function MockupLayoutButtons({
       return;
     }
     // No mockup yet — trigger generation, layout opens via useEffect above
-    if (onGenerateMockup) {
-      pendingLayoutAI.current = true;
-      await onGenerateMockup();
-    } else {
+    if (!onGenerateMockup) {
       toast.error('Configure o gerador de mockup primeiro.');
+      return;
+    }
+    // BUG-LAY1 FIX: wrap in try/catch so that (a) unhandled rejection is prevented
+    // and (b) pendingLayoutAI is cleared if onGenerateMockup throws, stopping it
+    // from auto-opening the layout dialog on the next unrelated mockup generation.
+    pendingLayoutAI.current = true;
+    try {
+      await onGenerateMockup();
+    } catch {
+      pendingLayoutAI.current = false;
     }
   }, [generatedMockup, buildApprovalData, onGenerateMockup]);
 
@@ -194,7 +201,7 @@ export function MockupLayoutButtons({
       const canvas = document.createElement('canvas');
       canvas.width = CANVAS_SIZE;
       canvas.height = CANVAS_SIZE;
-      const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+      const ctx = canvas.getContext('2d')!;
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
@@ -323,9 +330,9 @@ export function MockupLayoutButtons({
                 className="w-full gap-1.5 !bg-primary font-semibold !text-primary-foreground shadow-md shadow-primary/30 transition-all hover:!bg-primary/80 hover:shadow-lg hover:shadow-primary/40 disabled:cursor-not-allowed disabled:!opacity-40"
               >
                 {isGeneratingStatic ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <ImageIcon className="h-3.5 w-3.5" />
+                  <ImageIcon aria-hidden="true" className="h-3.5 w-3.5" />
                 )}
                 Gerar Layout
               </Button>
@@ -348,9 +355,9 @@ export function MockupLayoutButtons({
                 className="w-full gap-1.5 !bg-primary font-semibold !text-primary-foreground shadow-md shadow-primary/30 transition-all hover:!bg-primary/80 hover:shadow-lg hover:shadow-primary/40 disabled:cursor-not-allowed disabled:!opacity-40"
               >
                 {isGeneratingMockup ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
+                  <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
                 )}
                 Gerar Layout - IA
               </Button>

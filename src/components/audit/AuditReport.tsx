@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface AuditResult {
   name: string;
@@ -25,7 +26,11 @@ export function AuditReport() {
   const runAudit = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('audit-suite');
+      const { data, error } = await invokeEdge<{
+        status?: string;
+        timestamp?: string;
+        results?: AuditResult[];
+      }>('audit-suite');
       if (error) throw error;
       setReport(data);
       toast.success('Auditoria concluída com sucesso');

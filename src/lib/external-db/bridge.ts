@@ -30,7 +30,7 @@ import { toErrorMessage } from '@/lib/to-error-message';
 
 const KILL_SWITCH_NAME = 'edge_external_db_bridge';
 
-export type Operation = 'select' | 'insert' | 'update' | 'delete' | 'upsert' | 'batch_insert';
+export type Operation = 'batch_insert' | 'delete' | 'insert' | 'select' | 'update' | 'upsert';
 
 const WRITE_OPERATIONS: ReadonlySet<Operation> = new Set<Operation>([
   'insert',
@@ -73,7 +73,8 @@ export interface InvokeOptions<T = Record<string, unknown>> {
   orderBy?: { column: string; ascending?: boolean };
   limit?: number;
   offset?: number;
-  countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  countMode?: 'estimated' | 'exact' | 'none' | 'planned';
+  onConflict?: string;
 }
 
 export interface InvokeResult<T> {
@@ -115,7 +116,7 @@ export interface BatchResult {
  *
  * Phase 4B (2026-06-01): removed ~100 lines of dead retry/backoff/auth/cold-start code.
  */
-export async function invokeBridge<T>(_body: Record<string, unknown>): Promise<BridgeResponse<T>> {
+export function invokeBridge<T>(_body: Record<string, unknown>): Promise<BridgeResponse<T>> {
   throw new KillSwitchActiveError(KILL_SWITCH_NAME, 'Bridge OFF. REST nativo ativo.');
 }
 

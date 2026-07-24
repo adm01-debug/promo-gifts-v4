@@ -8,11 +8,15 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+
 
 jobs:
   visual-baseline:
     permissions:
       contents: write
+      pull-requests: write
+      issues: write
     strategy:
       fail-fast: false
       matrix:
@@ -22,14 +26,17 @@ jobs:
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions/setup-node@v6
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
         node-version-file: '.nvmrc'
         cache: 'npm'
 
     - name: Install dependencies
       run: npm ci
+
+    - name: Validate visual specs exist (fail-fast antes do Playwright)
+      run: node scripts/check-visual-tests-specs.mjs
 
     - name: Clear Cache & Artifacts
       run: |
@@ -40,13 +47,18 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
 
-    - name: Run Playwright Visual Tests (update missing baselines)
-      run: npx playwright test --update-snapshots --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} e2e/flows/99-auth-ui-baseline.spec.ts e2e/flows/supplier-comparison-visual.spec.ts e2e/flows/31-promoflix-player.spec.ts e2e/tooltips-a11y.spec.ts e2e/optimized-image-visual.spec.ts e2e/routes/app/replenishment-grid-visual.spec.ts e2e/routes/app/novelty-grid-visual.spec.ts e2e/routes/app/novelty-card-variations.spec.ts e2e/flows/voice-tooltip.spec.ts e2e/product-card-visual-regression.spec.ts e2e/catalog/product-card-badges-visual.spec.ts e2e/catalog/product-card-to-superfilter.spec.ts e2e/admin/stock-dashboard-visual.spec.ts e2e/admin/stock-dashboard-layout.spec.ts e2e/admin/stock-health-badges.spec.ts
+    - name: Run Playwright Visual Tests (auto-create missing baselines only)
+      # `--update-snapshots=missing` (Playwright ≥1.50) gera PNGs APENAS para specs
+      # sem baseline ainda. Specs com baseline existente continuam validando regressão
+      # normalmente (fail em diff) — evita churn e protege baselines já aprovados.
+      run: npx playwright test --update-snapshots=missing --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} e2e/flows/99-auth-ui-baseline.spec.ts e2e/flows/supplier-comparison-visual.spec.ts e2e/flows/31-promoflix-player.spec.ts e2e/tooltips-a11y.spec.ts e2e/optimized-image-visual.spec.ts e2e/routes/app/replenishment-grid-visual.spec.ts e2e/routes/app/novelty-grid-visual.spec.ts e2e/routes/app/novelty-card-variations.spec.ts e2e/flows/voice-tooltip.spec.ts e2e/product-card-visual-regression.spec.ts e2e/catalog/product-card-badges-visual.spec.ts e2e/catalog/product-card-to-superfilter.spec.ts e2e/catalog/swatch-picker-v2-visual-baseline.spec.ts e2e/catalog/swatch-picker-v2-focus-and-quickview.spec.ts e2e/catalog/superfiltro-toolbar-actions-alignment.spec.ts e2e/flows/03d-superfiltro-toolbar-alignment.spec.ts e2e/admin/stock-dashboard-visual.spec.ts e2e/admin/stock-dashboard-layout.spec.ts e2e/admin/stock-health-badges.spec.ts e2e/quotes/quote-builder-scroll-and-sidebar.spec.ts
       env:
         CI: true
 
     - name: Commit new baselines if generated
       if: always()
+      env:
+        GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -73,12 +85,21 @@ jobs:
           done <<< "$STAGED_LIST"
           git add --force 'e2e/**/*.png' '**/*.spec.ts-snapshots/**' 2>/dev/null || true
           if ! git diff --staged --quiet; then
+            # PRs de forks: GITHUB_TOKEN é read-only → push retorna 403. Detectamos
+            # cedo e pulamos com mensagem clara (artefato `playwright-baselines-*`
+            # ainda fica disponível para download manual).
+            if [ "${GITHUB_EVENT_NAME}" = "pull_request" ] && [ "${GITHUB_EVENT_PULL_REQUEST_HEAD_REPO_FULL_NAME}" != "${GITHUB_REPOSITORY}" ]; then
+              echo "::warning::PR de fork detectado — push de baselines pulado. Baixe o artefato 'playwright-baselines-${{ matrix.shardIndex }}' e commite manualmente."
+              exit 0
+            fi
             git commit -m "chore(e2e): auto-generate missing visual baselines [skip ci]"
             # Retry loop handles the parallel-shard race: both shards add different
             # PNG files to the same branch, so the loser does a clean rebase and retries.
+            PUSHED=0
             for attempt in 1 2 3 4 5; do
               if git push origin "HEAD:${TARGET_BRANCH}"; then
                 echo "Baselines pushed (attempt ${attempt})."
+                PUSHED=1
                 break
               fi
               echo "Push rejected (attempt ${attempt}) — fetch + rebase and retry."
@@ -86,13 +107,92 @@ jobs:
               git rebase "origin/${TARGET_BRANCH}" || { git rebase --abort; exit 1; }
               sleep $(( (RANDOM % 4) + 1 ))
             done
+            if [ "${PUSHED}" -ne 1 ]; then
+              echo "::error::Falha ao publicar baselines após 5 tentativas. Verifique branch protection / permissões do GITHUB_TOKEN."
+              exit 1
+            fi
           fi
         fi
 
     - name: Upload Test Report
       if: always()
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v4
       with:
         name: playwright-report-${{ matrix.shardIndex }}
         path: playwright-report/
         retention-days: 30
+
+    - name: Upload visual diffs (actual / expected / diff)
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-visual-diffs-${{ matrix.shardIndex }}
+        path: |
+          test-results/**/*-actual.png
+          test-results/**/*-expected.png
+          test-results/**/*-diff.png
+        if-no-files-found: ignore
+        retention-days: 30
+
+    - name: Upload generated baseline PNGs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-baselines-${{ matrix.shardIndex }}
+        path: |
+          e2e/**/*.png
+          **/*.spec.ts-snapshots/**/*.png
+        if-no-files-found: ignore
+        retention-days: 30
+
+    - name: Comment PR with visual diffs on failure
+      if: failure() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          const root = 'test-results';
+          if (!fs.existsSync(root)) return;
+          const diffs = [];
+          const walk = (d) => {
+            for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+              const p = path.join(d, e.name);
+              if (e.isDirectory()) walk(p);
+              else if (/-diff\.png$/.test(e.name)) diffs.push(p);
+            }
+          };
+          walk(root);
+          if (!diffs.length) return;
+          const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+          const artifactName = `playwright-visual-diffs-${{ matrix.shardIndex }}`;
+          // Agrupa por "tela" — usa o nome do diretório que o Playwright cria
+          // por teste (ex.: "...quote-builder-mobile-chromium").
+          const byScreen = new Map();
+          for (const p of diffs) {
+            const screen = path.basename(path.dirname(p));
+            if (!byScreen.has(screen)) byScreen.set(screen, []);
+            byScreen.get(screen).push(p);
+          }
+          const screens = [...byScreen.keys()].sort();
+          const sections = screens.map((screen) => {
+            const items = byScreen.get(screen).slice(0, 6).map((p) => `- \`${p}\``).join('\n');
+            return `<details open><summary><strong>📱 ${screen}</strong> — ${byScreen.get(screen).length} diff(s)</summary>\n\n${items}\n\n</details>`;
+          }).join('\n\n');
+          const body = [
+            `### 🖼️ Visual regression — shard ${{ matrix.shardIndex }}`,
+            ``,
+            `**${diffs.length} diff(s)** em **${screens.length} tela(s)**: ${screens.map((s) => `\`${s}\``).join(', ')}.`,
+            ``,
+            `📎 Baixe o artefato [\`${artifactName}\`](${runUrl}) para visualizar as thumbnails \`*-actual.png\` / \`*-expected.png\` / \`*-diff.png\` lado a lado.`,
+            ``,
+            sections,
+          ].join('\n');
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.payload.pull_request.number,
+            body,
+          });
+
+

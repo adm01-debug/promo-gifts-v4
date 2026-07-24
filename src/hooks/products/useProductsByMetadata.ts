@@ -3,7 +3,8 @@
  *
  * Resolve product_ids via a RPC `fn_super_filtro_product_ids` para os filtros de
  * metadados cujo dado vive em tabelas relacionais e NAO e hidratado no catalogo
- * lightweight: Datas Comemorativas, Tags, Ramos/Segmentos de Atividade e Publico-Alvo.
+ * lightweight: Datas Comemorativas, Tags, Ramos/Segmentos de Atividade, Publico-Alvo
+ * e Endomarketing (tag slug → filtrado por tags.slug = ANY(_endomarketing)).
  *
  * Antes desta correcao, esses filtros rodavam client-side sobre `product.tags.*`
  * (sempre vazio no fetch lightweight), entao selecionar qualquer um zerava a lista
@@ -23,6 +24,7 @@ interface UseProductsByMetadataOptions {
   ramos: string[]; // ramo_atividade.slug
   segmentos: string[]; // ramo_atividade_filho.slug
   publico: string[]; // products.target_audience values
+  endomarketing: string[]; // tags.slug (e.g. 'endomarketing')
 }
 
 interface UseProductsByMetadataResult {
@@ -38,6 +40,7 @@ export function useProductsByMetadata({
   ramos,
   segmentos,
   publico,
+  endomarketing,
 }: UseProductsByMetadataOptions): UseProductsByMetadataResult {
   const [productIds, setProductIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -49,8 +52,16 @@ export function useProductsByMetadata({
       tags.length > 0 ||
       ramos.length > 0 ||
       segmentos.length > 0 ||
-      publico.length > 0,
-    [datas.length, tags.length, ramos.length, segmentos.length, publico.length],
+      publico.length > 0 ||
+      endomarketing.length > 0,
+    [
+      datas.length,
+      tags.length,
+      ramos.length,
+      segmentos.length,
+      publico.length,
+      endomarketing.length,
+    ],
   );
 
   const filterKey = useMemo(
@@ -61,8 +72,9 @@ export function useProductsByMetadata({
         [...ramos].sort().join(','),
         [...segmentos].sort().join(','),
         [...publico].sort().join(','),
+        [...endomarketing].sort().join(','),
       ].join('|'),
-    [datas, tags, ramos, segmentos, publico],
+    [datas, tags, ramos, segmentos, publico, endomarketing],
   );
 
   const lastFetchedKey = useRef('');
@@ -75,7 +87,15 @@ export function useProductsByMetadata({
   const fetchProductIds = useCallback(async () => {
     if (lastFetchedKey.current === filterKey) return;
     if (!hasFilter) {
-      setProductIds(new Set());
+      // Increment token to invalidate any in-flight request (same pattern as
+      // useProductsByColor / useProductsByCategory BUG-002 fix).
+      ++fetchTokenRef.current;
+      setIsLoading(false);
+      // FIX BUG-RENDER-META-01: conditional setState prevents render loop.
+      // new Set() is a different object reference every call; when productIds is
+      // already empty, returning prev bails out of React's re-render cycle that
+      // would otherwise re-trigger this effect indefinitely after filter clear.
+      setProductIds((prev) => (prev.size === 0 ? prev : new Set()));
       lastFetchedKey.current = '';
       return;
     }
@@ -86,7 +106,7 @@ export function useProductsByMetadata({
     try {
       setError(null);
       // fn_super_filtro_product_ids ainda nao consta nos tipos gerados (types.ts).
-      const { data, error } = await (
+      const { data, error: rpcError } = await (
         supabase as unknown as {
           rpc: (
             name: string,
@@ -99,10 +119,11 @@ export function useProductsByMetadata({
         _ramos: ramos,
         _segmentos: segmentos,
         _publico: publico,
+        _endomarketing: endomarketing,
       });
 
       if (token !== fetchTokenRef.current) return; // superseded — nova selecao de filtro
-      if (error) throw error;
+      if (rpcError) throw new Error(String(rpcError));
 
       const rows = (data as Array<{ product_id: string }> | null) || [];
       setProductIds(new Set(rows.map((r) => r.product_id)));

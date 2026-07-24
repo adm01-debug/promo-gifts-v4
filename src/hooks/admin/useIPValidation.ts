@@ -1,6 +1,7 @@
 import { logger } from '@/lib/logger';
 import { useState, useCallback } from 'react';
 import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface IPValidationResult {
   isAllowed: boolean;
@@ -19,13 +20,25 @@ export function useIPValidation() {
     try {
       // Usar a nossa própria edge function que é mais confiável e contorna AdBlockers
       const supabase = await getSupabaseClient();
-      const { data, error } = await supabase.functions.invoke('get-visitor-info');
+      const { data, error } = await invokeEdge<{ ip?: string }>('get-visitor-info');
       if (error || !data?.ip) {
         logger.warn('Fallback to secondary IP identification');
-        const response = await fetch('https://api.ipify.org?format=json').catch(() => null);
+        const ipCtrl = new AbortController();
+        const ipTimeout = setTimeout(() => ipCtrl.abort(), 5000);
+        const response = await fetch('https://api.ipify.org?format=json', {
+          signal: ipCtrl.signal,
+        })
+          .catch(() => null)
+          .finally(() => clearTimeout(ipTimeout));
         if (response) {
-          const data = await response.json();
-          return data.ip;
+          try {
+            const ipData = (await response.json()) as { ip?: string };
+            return ipData?.ip ?? null;
+          } catch {
+            // Non-JSON body (e.g. a rate-limit HTML page) would otherwise throw and be
+            // swallowed by the outer catch — treat it as "IP unknown" explicitly.
+            return null;
+          }
         }
         return null;
       }
@@ -66,6 +79,8 @@ export function useIPValidation() {
       try {
         const currentIP = await fetchCurrentIP();
 
+        // Fail-secure when the IP cannot be identified (deliberate — covered by
+        // useIPValidation.test "returns error when current IP cannot be identified").
         if (!currentIP) {
           return {
             isAllowed: false,
@@ -77,7 +92,7 @@ export function useIPValidation() {
 
         // Chamar edge function validate-access
         const supabase = await getSupabaseClient();
-        const { data, error } = await supabase.functions.invoke('validate-access', {
+        const { data, error } = await invokeEdge('validate-access', {
           body: {
             ip: currentIP,
             userAgent: navigator.userAgent,
@@ -160,7 +175,9 @@ export function useIPValidation() {
         const currentIP = await fetchCurrentIP();
 
         const supabase = await getSupabaseClient();
-        await supabase.functions.invoke('log-login-attempt', {
+        // BUG-IPVALIDATION-LOGIN-LOG-SILENT-FAIL FIX: functions.invoke returns { data, error }
+        // for application errors — bare await discarded them. try-catch only catches network failures.
+        const { error: loginLogErr } = await invokeEdge('log-login-attempt', {
           body: {
             email,
             user_id: userId,
@@ -170,8 +187,9 @@ export function useIPValidation() {
             user_agent: navigator.userAgent,
           },
         });
+        if (loginLogErr) logger.warn('Error logging login attempt (function error):', loginLogErr);
       } catch (error) {
-        logger.error('Error logging login attempt:', error);
+        logger.error('Error logging login attempt (network):', error);
       }
     },
     [fetchCurrentIP],

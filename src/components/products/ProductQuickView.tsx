@@ -22,7 +22,11 @@ import { CartSelectorDialog } from '@/components/cart/CartSelectorDialog';
 import { useSellerCartContext } from '@/contexts/SellerCartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useLocation } from 'react-router-dom';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getCdnUrl, getSrcSet, getColorImages, type ProductImageMeta } from '@/utils/image-utils';
 import { useProductImages } from '@/hooks/products/useProductImages';
 import {
@@ -30,22 +34,12 @@ import {
   type ProductColor,
 } from '@/components/products/ProductColorSelector';
 import { type Product } from '@/types/product-catalog';
+import { useWordMagic } from '@/hooks/word-magic/useWordMagic';
 import { sortByColorGroup } from '@/utils/colorSorting';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-const QuickViewTooltip = ({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) => (
+const QuickViewTooltip = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <Tooltip>
     <TooltipTrigger asChild>
       <span className="inline-flex">{children}</span>
@@ -57,8 +51,17 @@ const QuickViewTooltip = ({
 // Image types that are excluded from the gallery (ADR-001)
 const TECHNICAL_IMAGE_TYPES = new Set(['box', 'pouch', 'location', 'area', 'component']);
 
+// BUG-QVW-01 FIX (2026-06-21): Intl.NumberFormat era recriado a cada chamada dentro do
+// componente. Mover para módulo — mesmo padrão de BUG-PSH-01 / BUG-TVW-01.
+const quickViewPriceFormatter = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+});
+const formatPrice = (price: number) => quickViewPriceFormatter.format(price);
+
 interface ProductQuickViewProps {
   product: Product | null;
+  isLoading?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isFavorited?: boolean;
@@ -71,11 +74,18 @@ interface ProductQuickViewProps {
   onShare?: (product: Product) => void;
   onAddToQuote?: (product: Product) => void;
   onAddToCollection?: (product: Product) => void;
+  /**
+   * Quando definido, o QuickView abre já com esta cor pré-selecionada
+   * (match case-insensitive por `name`). O usuário pode trocar livremente
+   * ou clicar em "Todas as cores" para limpar a seleção.
+   */
+  initialColorName?: string | null;
 }
 
 export const ProductQuickView = React.memo(
   ({
     product,
+    isLoading = false,
     open,
     onOpenChange,
     isFavorited = false,
@@ -88,8 +98,14 @@ export const ProductQuickView = React.memo(
     onShare,
     onAddToQuote,
     onAddToCollection,
+    initialColorName = null,
   }: ProductQuickViewProps) => {
-    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    // fix_version: word-magic-quick-view-2026-07-03
+    // Hook chamado ANTES do early-return "if(!product) return null" — regra dos hooks do React
+    // product pode ser null aqui; useWordMagic aceita null e retorna '' para displayName
+    // ANTI-REGRESSÃO: não mover para depois do if(!product) — viola Rules of Hooks
+    const { displayName } = useWordMagic(product);
+        const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [quantity, setQuantity] = useState(1);
     const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
     // imageLoaded removido — transição instantânea sem skeleton intermediário
@@ -97,19 +113,56 @@ export const ProductQuickView = React.memo(
     const [selectorOpen, setSelectorOpen] = useState(false);
     const { carts, addToActiveCart, canCreateCart } = useSellerCartContext();
 
+  // Respeita o toggle "Etiquetas dos Produtos" — fix_version: badge-toggle-v2
+  const location = useLocation();
+  const { actualTheme } = useTheme();
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) return actualTheme === 'dark' ? settings.dark : settings.light;
+    return s.badgesEnabled;
+  });
+
     // Hook: buscar imagens do produto via BD externo (Briefing v3)
     const { data: productImages = [] } = useProductImages(open && product ? product.id : null);
 
-    // Reset state quando produto muda ou modal abre
+    // Mapear cores do produto para o formato do seletor com ordenação padronizada.
+    // Memoizado e elevado acima do early-return para que possa alimentar
+    // o seeding de `selectedColorId` a partir de `initialColorName`.
+    const productColors: ProductColor[] = useMemo(() => {
+      if (!product) return [];
+      const sorted = sortByColorGroup(
+        product.colors || [],
+        (color) => color.name || '',
+        (color) => color.hex,
+      );
+      return sorted.map((color, idx) => ({
+        id: color.code || `${product.id}-color-${idx}`,
+        name: color.name,
+        hex: color.hex,
+        variationName: color.name,
+        groupName: color.group,
+      }));
+    }, [product]);
+
+    // Reset state quando produto muda ou modal abre.
+    // Seed `selectedColorId` a partir de `initialColorName` (case-insensitive),
+    // permitindo abrir o QuickView já posicionado na cor clicada pelo usuário.
     useEffect(() => {
       if (open) {
         setCurrentImageIndex(0);
         setQuantity(1);
-        setSelectedColorId(null);
-        // reset states
         setImageError(false);
+        if (initialColorName) {
+          const target = initialColorName.toLowerCase();
+          const match = productColors.find((c) => c.name.toLowerCase() === target);
+          if (match) {
+            setSelectedColorId(match.id ?? null);
+            return;
+          }
+        }
+        setSelectedColorId(null);
       }
-    }, [open, product?.id]);
+    }, [open, product?.id, initialColorName, productColors]);
 
     // Converter ProductImage[] para ProductImageMeta[] para usar com image-utils
     const imageMetas: ProductImageMeta[] = useMemo(() => {
@@ -179,29 +232,47 @@ export const ProductQuickView = React.memo(
       setImageError(false);
     }, [selectedColorId]);
 
-    // Early return if product is null
-    if (!product) return null;
-
-    // Mapear cores do produto para o formato do seletor com ordenação padronizada
-    const sortedColors = sortByColorGroup(
-      product.colors || [],
-      (color) => color.name || '',
-      (color) => color.hex,
-    );
-    const productColors: ProductColor[] = sortedColors.map((color, idx) => ({
-      id: color.code || `${product.id}-color-${idx}`,
-      name: color.name,
-      hex: color.hex,
-      variationName: color.name,
-      groupName: color.group,
-    }));
-
-    const formatPrice = (price: number) => {
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      }).format(price);
-    };
+    // Show skeleton while loading; render nothing if no product and not loading
+    if (!product) {
+      if (!isLoading) return null;
+      return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent
+            className={cn(
+              'max-h-[90vh] w-full max-w-4xl overflow-y-auto p-0',
+              'data-[state=open]:animate-in data-[state=closed]:animate-out',
+              'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+              'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            )}
+          >
+            <DialogClose className="absolute right-4 top-4 z-10 rounded-full bg-background/80 p-1.5 backdrop-blur-sm transition-colors hover:bg-background">
+              <X className="h-4 w-4" />
+            </DialogClose>
+            <DialogTitle className="sr-only">Carregando produto...</DialogTitle>
+            <DialogDescription className="sr-only">Carregando dados do produto</DialogDescription>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              <div className="bg-muted/30 p-6">
+                <Skeleton className="aspect-square w-full rounded-lg" />
+              </div>
+              <div className="flex flex-col gap-4 p-6">
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-1/3" />
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+                <Skeleton className="h-8 w-1/3" />
+                <Skeleton className="h-6 w-1/2 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-4/6" />
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    }
 
     const getStockStatusInfo = (status: string) => {
       switch (status) {
@@ -216,11 +287,34 @@ export const ProductQuickView = React.memo(
       }
     };
 
-    const stockInfo = getStockStatusInfo(product.stockStatus);
+    // Cor selecionada (resolvida) e seu estoque específico, quando disponível.
+    // Quando o usuário escolhe uma cor, o badge passa a refletir o estoque
+    // DAQUELA variação (campo `stock` em `ProductColor`); ao limpar, volta ao
+    // total agregado do produto. Threshold: <=0 esgotado, <10 baixo, >=10 ok.
+    const selectedColor =
+      selectedColorId !== null && selectedColorId !== undefined
+        ? (product.colors || []).find(
+            (c) => (productColors.find((pc) => pc.id === selectedColorId)?.name ?? '').toLowerCase() ===
+              (c.name ?? '').toLowerCase(),
+          )
+        : undefined;
+    const hasColorStock = typeof selectedColor?.stock === 'number';
+    const effectiveStockQty: number | null = hasColorStock
+      ? (selectedColor?.stock ?? 0)
+      : (typeof product.stock === 'number' ? product.stock : null);
+    const effectiveStockStatus: 'in-stock' | 'low-stock' | 'out-of-stock' = hasColorStock
+      ? (selectedColor!.stock! <= 0
+          ? 'out-of-stock'
+          : selectedColor!.stock! < 10
+            ? 'low-stock'
+            : 'in-stock')
+      : product.stockStatus;
 
-    // O badge de unidades usa product.stock (number no tipo de catálogo). Guarda
-    // leve apenas para o caso de o runtime trazer um valor não-numérico do mapper.
-    const stockQty: number | null = typeof product.stock === 'number' ? product.stock : null;
+    const stockInfo = getStockStatusInfo(effectiveStockStatus);
+
+    // Mantém compat com o restante do componente que ainda lê `stockQty`.
+    const stockQty: number | null = effectiveStockQty;
+
 
     // Obter URL atual da imagem com variante CDN
     const currentImage = displayImages[currentImageIndex] || displayImages[0];
@@ -265,7 +359,7 @@ export const ProductQuickView = React.memo(
         return;
       }
 
-      const selectedColor = productColors.find((c) => c.id === selectedColorId);
+      const activeColor = productColors.find((c) => c.id === selectedColorId);
 
       addToActiveCart(
         {
@@ -275,8 +369,8 @@ export const ProductQuickView = React.memo(
           product_image_url: displayImages[currentImageIndex]?.url_cdn || product.images?.[0],
           product_price: product.price ?? 0,
           quantity,
-          color_name: selectedColor?.name || undefined,
-          color_hex: selectedColor?.hex || undefined,
+          color_name: activeColor?.name || undefined,
+          color_hex: activeColor?.hex || undefined,
         },
         cartId,
       );
@@ -399,7 +493,7 @@ export const ProductQuickView = React.memo(
                     {product.brand}
                   </p>
                 )}
-                <h2 className="mt-1 text-xl font-semibold leading-tight">{product.name}</h2>
+                <h2 className="mt-1 text-xl font-semibold leading-tight">{displayName || product.name}</h2>
                 {product.sku && (
                   <p className="mt-0.5 font-mono text-xs text-muted-foreground">
                     SKU: {product.sku}
@@ -426,6 +520,9 @@ export const ProductQuickView = React.memo(
                   stockInfo.bg,
                   stockInfo.color,
                 )}
+                data-testid="quickview-stock"
+                data-stock-qty={stockQty ?? ''}
+                data-color-id={selectedColorId ?? ''}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {stockInfo.label}
@@ -437,12 +534,25 @@ export const ProductQuickView = React.memo(
               {/* Colors */}
               {productColors.length > 0 && (
                 <div>
-                  <p className="mb-2 text-sm font-medium">
-                    Cor
-                    {selectedColorId
-                      ? `: ${productColors.find((c) => c.id === selectedColorId)?.name ?? ''}`
-                      : ''}
-                  </p>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">
+                      Cor
+                      {selectedColorId
+                        ? `: ${productColors.find((c) => c.id === selectedColorId)?.name ?? ''}`
+                        : ''}
+                    </p>
+                    {selectedColorId && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedColorId(null)}
+                        className="rounded-full border border-border/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                        data-testid="quickview-clear-color"
+                        aria-label="Ver todas as cores"
+                      >
+                        Todas as cores
+                      </button>
+                    )}
+                  </div>
                   <ProductColorSelector
                     colors={productColors}
                     selectedColorId={selectedColorId}
@@ -492,134 +602,138 @@ export const ProductQuickView = React.memo(
               {/* Actions */}
               <div className="mt-auto flex flex-col gap-2 pt-2">
                 <TooltipProvider delayDuration={200}>
-                <div className="flex flex-wrap gap-2" data-testid="product-quickview-actions">
-                  <QuickViewTooltip label="Adicionar ao carrinho">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleAddToCart()}
-                      disabled={product.stockStatus === 'out-of-stock'}
-                      className="flex-shrink-0"
-                      aria-label="Adicionar ao carrinho"
-                      data-testid="product-quickview-cart"
-                    >
-                      <ShoppingCart className="h-4 w-4" />
-                    </Button>
-                  </QuickViewTooltip>
+                  <div className="flex flex-wrap gap-2" data-testid="product-quickview-actions">
+                    <QuickViewTooltip label="Adicionar ao carrinho">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleAddToCart()}
+                        disabled={product.stockStatus === 'out-of-stock'}
+                        className="flex-shrink-0"
+                        aria-label="Adicionar ao carrinho"
+                        data-testid="product-quickview-cart"
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                      </Button>
+                    </QuickViewTooltip>
 
-                  {onAddToQuote && (
                     <QuickViewTooltip label="Adicionar ao orçamento">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onAddToQuote(product)}
-                      className="flex-shrink-0"
-                      aria-label="Adicionar ao orçamento"
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onAddToQuote?.(product)}
+                        disabled={!onAddToQuote}
+                        className="flex-shrink-0"
+                        aria-label="Adicionar ao orçamento"
+                        data-testid="product-quickview-quote"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
                     </QuickViewTooltip>
-                  )}
 
-                  {onAddToCollection && (
                     <QuickViewTooltip label="Adicionar à coleção">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => onAddToCollection(product)}
-                      className="flex-shrink-0"
-                      aria-label="Adicionar à coleção"
-                    >
-                      <FolderPlus className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => onAddToCollection?.(product)}
+                        disabled={!onAddToCollection}
+                        className="flex-shrink-0"
+                        aria-label="Adicionar à coleção"
+                        data-testid="product-quickview-collection"
+                      >
+                        <FolderPlus className="h-4 w-4" />
+                      </Button>
                     </QuickViewTooltip>
-                  )}
 
-                  {onToggleFavorite && (
-                    <QuickViewTooltip label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleFavorite}
-                      className={cn(
-                        'flex-shrink-0',
-                        isFavorited && 'border-red-200 bg-red-50 text-red-500',
-                      )}
-                      aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                      data-testid="product-quickview-favorite"
+                    <QuickViewTooltip
+                      label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
                     >
-                      <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
-                    </Button>
-                    </QuickViewTooltip>
-                  )}
-
-                  {onToggleCompare && (
-                    <QuickViewTooltip label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleCompare}
-                      disabled={!isInCompare && !canAddToCompare}
-                      className={cn(
-                        'flex-shrink-0',
-                        isInCompare && 'border-primary/30 bg-primary/5 text-primary',
-                      )}
-                      aria-label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
-                      data-testid="product-quickview-compare"
-                    >
-                      <BarChart2 className="h-4 w-4" />
-                    </Button>
-                    </QuickViewTooltip>
-                  )}
-
-                  <QuickViewTooltip label="Compartilhar">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={async () => {
-                      if (onShare) {
-                        onShare(product);
-                        return;
-                      }
-                      const url = typeof window !== 'undefined' ? window.location.href : '';
-                      const nav: Navigator | undefined =
-                        typeof navigator !== 'undefined' ? navigator : undefined;
-                      try {
-                        if (nav && typeof nav.share === 'function') {
-                          await nav.share({ title: product.name, url });
-                        } else if (nav?.clipboard) {
-                          await nav.clipboard.writeText(url);
-                          toast.success('Link copiado');
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleFavorite}
+                        disabled={!onToggleFavorite}
+                        className={cn(
+                          'flex-shrink-0',
+                          isFavorited && 'border-red-200 bg-red-50 text-red-500',
+                        )}
+                        aria-label={
+                          isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'
                         }
-                      } catch {
-                        /* user cancelled */
-                      }
-                    }}
-                    className="flex-shrink-0"
-                    aria-label="Compartilhar"
-                    data-testid="product-quickview-share"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  </QuickViewTooltip>
+                        data-testid="product-quickview-favorite"
+                      >
+                        <Heart className={cn('h-4 w-4', isFavorited && 'fill-current')} />
+                      </Button>
+                    </QuickViewTooltip>
 
+                    <QuickViewTooltip
+                      label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
+                    >
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleCompare}
+                        disabled={!onToggleCompare || (!isInCompare && !canAddToCompare)}
+                        className={cn(
+                          'flex-shrink-0',
+                          isInCompare && 'border-primary/30 bg-primary/5 text-primary',
+                        )}
+                        aria-label={isInCompare ? 'Remover da comparação' : 'Comparar produto'}
+                        data-testid="product-quickview-compare"
+                      >
+                        <BarChart2 className="h-4 w-4" />
+                      </Button>
+                    </QuickViewTooltip>
 
-                  {onNavigateToProduct && (
-                    <Button variant="outline" onClick={handleNavigate} className="flex-1">
-                      Ver produto completo
-                    </Button>
-                  )}
-                </div>
+                    <QuickViewTooltip label="Compartilhar">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={async () => {
+                          if (onShare) {
+                            onShare(product);
+                            return;
+                          }
+                          const url = typeof window !== 'undefined' ? window.location.href : '';
+                          const nav: Navigator | undefined =
+                            typeof navigator !== 'undefined' ? navigator : undefined;
+                          try {
+                            if (nav && typeof nav.share === 'function') {
+                              await nav.share({ title: product.name, url });
+                            } else if (nav?.clipboard) {
+                              await nav.clipboard.writeText(url);
+                              toast.success('Link copiado');
+                            }
+                          } catch {
+                            /* user cancelled */
+                          }
+                        }}
+                        className="flex-shrink-0"
+                        aria-label="Compartilhar"
+                        data-testid="product-quickview-share"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </QuickViewTooltip>
+
+                    {onNavigateToProduct && (
+                      <Button variant="outline" onClick={handleNavigate} className="flex-1">
+                        Ver produto completo
+                      </Button>
+                    )}
+                  </div>
                 </TooltipProvider>
               </div>
 
-              {/* Badges */}
-              <div className="flex flex-wrap gap-1">
-                {product.newArrival && <Badge variant="secondary">Novidade</Badge>}
-                {product.onSale && <Badge variant="destructive">Promoção</Badge>}
-                {product.featured && <Badge variant="outline">Destaque</Badge>}
-                {product.isKit && <Badge variant="outline">Kit</Badge>}
-              </div>
+              {/* Badges — ocultados quando toggle "Etiquetas dos Produtos" está OFF */}
+              {badgesEnabled && (
+                <div className="flex flex-wrap gap-1">
+                  {product.newArrival && <Badge variant="secondary">Novidade</Badge>}
+                  {product.onSale && <Badge variant="destructive">Promoção</Badge>}
+                  {product.featured && <Badge variant="outline">Destaque</Badge>}
+                  {product.isKit && <Badge variant="outline">Kit</Badge>}
+                </div>
+              )}
             </div>
           </div>
         </DialogContent>

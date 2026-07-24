@@ -7,6 +7,7 @@ export * from '@/hooks/common/useDebouncedFilters';
 export * from '@/hooks/common/useEntitySelectionMode';
 export * from '@/hooks/common/useGenericFuzzySearch';
 export * from '@/hooks/common/useInfiniteScroll';
+export * from '@/hooks/common/useListUrlState';
 export * from '@/hooks/common/useNetworkStatus';
 export * from '@/hooks/common/useOfflineGuard';
 export * from '@/hooks/common/useOrgData';

@@ -26,6 +26,7 @@ import {
   mockFromOnce, mockFromAlways, mockFunctionsInvoke, resetSupabaseMocks,
 } from './_helpers/mock-supabase-builder';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 vi.mock('@/lib/logger', () => ({
   logger: { debug: vi.fn(), warn: vi.fn(), log: vi.fn(), error: vi.fn() },
@@ -42,6 +43,16 @@ beforeEach(() => {
   resetSupabaseMocks();
   localStorage.clear();
   vi.useFakeTimers();
+  // useWorkspaceNotifications é gated por rolesLoaded (BUG-NOTIF-403). O mock global de
+  // AuthContext em render-helpers (validado 2026-05-26) é anterior a esse guard e não
+  // fornece rolesLoaded — completamos aqui para a query rodar.
+  vi.mocked(useAuth).mockReturnValue({
+    user: { id: 'test-user-id', email: 'test@test.com' },
+    session: { access_token: 'mock-token' },
+    loading: false,
+    signOut: vi.fn(),
+    rolesLoaded: true,
+  } as unknown as ReturnType<typeof useAuth>);
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -54,7 +65,7 @@ afterEach(() => {
 // BUG-08 -- useWorkspaceNotifications: polling nao recriado apos fetch
 // ────────────────────────────────────────────────────────────────────────────
 describe('BUG-08 -- polling nao recriado apos fetch', () => {
-  it('setInterval de 30s criado UMA vez por montagem', async () => {
+  it('setInterval de 60s criado UMA vez por montagem', async () => {
     vi.useRealTimers();
     const spy = vi.spyOn(global, 'setInterval');
     mockFromAlways({
@@ -67,10 +78,10 @@ describe('BUG-08 -- polling nao recriado apos fetch', () => {
     });
     const { result } = renderHookWithProviders(() => useWorkspaceNotifications());
     await waitFor(() => expect(result.current.notifications.length).toBeGreaterThan(0), { timeout: 3000 });
-    expect(spy.mock.calls.filter(c => c[1] === 30_000).length).toBe(1);
+    expect(spy.mock.calls.filter(c => c[1] === 60_000).length).toBe(1);
   }, 10000);
 
-  it('polling dispara fetch apos 30s (timer nao resetado)', async () => {
+  it('polling dispara fetch apos 60s (timer nao resetado)', async () => {
     let fetchCount = 0;
     (supabase.from as ReturnType<typeof vi.fn>).mockImplementation(() => ({
       select: vi.fn().mockReturnValue({
@@ -93,7 +104,7 @@ describe('BUG-08 -- polling nao recriado apos fetch', () => {
     });
     const afterMount = fetchCount;
     await act(async () => {
-      vi.advanceTimersByTime(30_000);
+      vi.advanceTimersByTime(60_000);
       await Promise.resolve();
     });
     expect(fetchCount).toBeGreaterThan(afterMount);

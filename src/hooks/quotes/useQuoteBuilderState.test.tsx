@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useQuoteBuilderState } from './useQuoteBuilderState';
@@ -20,7 +21,7 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'test-user-id' } }),
 }));
 
-vi.mock('@/hooks/quotes', async () => {
+vi.mock('@/hooks/quotes', () => {
   return {
     useQuotes: () => ({
       createQuote: vi.fn(),
@@ -28,7 +29,6 @@ vi.mock('@/hooks/quotes', async () => {
       fetchQuote: vi.fn(),
       isLoading: false,
     }),
-    useQuoteTemplates: () => ({ templates: [] }),
     useSellerDiscountLimits: () => ({ myLimit: 10 }),
     useDiscountApproval: () => ({ requestApproval: vi.fn() }),
     useAutoSaveQuote: () => ({ clearAutoSave: vi.fn() }),

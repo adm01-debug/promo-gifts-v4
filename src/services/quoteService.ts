@@ -15,8 +15,38 @@ import {
   round2,
 } from '@/hooks/quotes/quoteHelpers';
 import { sanitizeMessage } from '@/lib/security/sanitize-message';
+import {
+  QUOTE_STATUS_CONFIG,
+  isValidQuoteTransition,
+} from '@/lib/quote-status-config';
+import { quoteStatusSchema, type QuoteStatus } from '@/types/quote';
+import { createClientLogger } from '@/lib/telemetry/structuredLogger';
+import { logInvalidStatusTransition } from '@/lib/telemetry/quoteStatusTelemetry';
+
+const quoteStatusLogger = createClientLogger('quotes_service');
+
+/**
+ * Sanitiza o `status` vindo do banco: se for um valor desconhecido pelo FE,
+ * loga warn estruturado e faz fallback p/ 'pending' — nunca derruba a UI.
+ */
+function sanitizeQuoteStatus(row: { id?: string; status?: unknown }): QuoteStatus {
+  const parsed = quoteStatusSchema.safeParse(row.status);
+  if (parsed.success) return parsed.data;
+  quoteStatusLogger.warn('quote_status_unknown', {
+    quote_id: row.id ?? null,
+    status: String(row.status),
+  });
+  return 'pending';
+}
+import { sendTransactionalEmail, type EmailEventType } from '@/hooks/common/useTransactionalEmail';
 
 import { logger } from '@/lib/logger';
+
+const EMAIL_STATUS_MAP: Partial<Record<QuoteStatus, EmailEventType>> = {
+  sent: 'quote_sent',
+  approved: 'quote_approved',
+  rejected: 'quote_rejected',
+};
 export const quoteService = {
   async fetchQuotes(userId: string, scope: string) {
     let query = supabase
@@ -33,7 +63,8 @@ export const quoteService = {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data as Quote[];
+    const rows = (data ?? []) as Array<Quote & { status?: unknown }>;
+    return rows.map((r) => ({ ...r, status: sanitizeQuoteStatus(r) })) as Quote[];
   },
 
   async fetchQuote(quoteId: string): Promise<Quote | null> {
@@ -74,7 +105,96 @@ export const quoteService = {
       personalizations: allPersonalizations.filter((p) => p.quote_item_id === item.id),
     })) as unknown as QuoteItem[];
 
-    return { ...quoteData, items } as Quote;
+    // Hidratação runtime-only de categoria (não persistida em quote_items): batch
+    // lookup por product_id para alimentar "Agrupar por categoria" no Resumo.
+    const productIds = Array.from(
+      new Set(items.map((i) => i.product_id).filter((v): v is string => !!v)),
+    );
+    if (productIds.length > 0) {
+      try {
+        const { data: prodCats } = await supabase
+          .from('products')
+          .select('id, category_id, category_name')
+          .in('id', productIds);
+        if (prodCats) {
+          const catById = new Map(
+            prodCats.map((p) => [
+              p.id as string,
+              {
+                cid: (p as { category_id?: string | null }).category_id ?? null,
+                cname: (p as { category_name?: string | null }).category_name ?? null,
+              },
+            ]),
+          );
+          for (const it of items) {
+            if (!it.product_id) continue;
+            const c = catById.get(it.product_id);
+            if (c) {
+              it.product_category_id = c.cid;
+              it.product_category_name = c.cname;
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn('[quoteService.fetchQuote] category hydration failed', err);
+      }
+    }
+
+    // Hidratação runtime do SKU composto (base-código_cor) a partir de product_variants
+    // quando o item tem variante (color_name) mas product_sku ainda é o base SKU
+    // (itens legados gravados antes do fix de useQuoteItems.ts). Mantém PDF/tela
+    // consistentes mostrando ex. "94297-7.1" em vez de "94297".
+    try {
+      const candidates = items.filter(
+        (it) =>
+          it.product_id &&
+          it.color_name &&
+          (!it.product_sku?.includes('-')),
+      );
+      if (candidates.length > 0) {
+        const variantProductIds = Array.from(
+          new Set(candidates.map((c) => c.product_id).filter((v): v is string => !!v)),
+        );
+        const { data: variants } = await supabase
+          .from('product_variants')
+          .select('product_id, sku, color_name')
+          .in('product_id', variantProductIds)
+          .eq('is_active', true);
+        if (variants && variants.length > 0) {
+          const norm = (s: string) => s.trim().toLowerCase();
+          const variantMap = new Map<string, string>();
+          for (const v of variants as Array<{ product_id: string; sku: string; color_name: string | null }>) {
+            if (!v.color_name || !v.sku) continue;
+            variantMap.set(`${v.product_id}|${norm(v.color_name)}`, v.sku);
+          }
+          for (const it of candidates) {
+            if (!it.product_id || !it.color_name) continue;
+            const sku = variantMap.get(`${it.product_id}|${norm(it.color_name)}`);
+            if (sku) {
+              it.product_sku = sku;
+            } else {
+              // Fallback: variante não encontrada — mantém o SKU base sem expor
+              // o nome da cor no badge composto. Registra aviso para investigação
+              // (variante removida/renomeada, color_name divergente, etc.).
+              logger.warn(
+                '[quoteService.fetchQuote] variant sku not found — keeping base SKU',
+                {
+                  product_id: it.product_id,
+                  color_name: it.color_name,
+                  base_sku: it.product_sku ?? null,
+                },
+              );
+            }
+          }
+        }
+
+      }
+    } catch (err) {
+      logger.warn('[quoteService.fetchQuote] variant sku hydration failed', err);
+    }
+
+    return { ...quoteData, status: sanitizeQuoteStatus(quoteData), items } as Quote;
+
   },
 
   async createQuote(
@@ -115,10 +235,49 @@ export const quoteService = {
       throw new Error('Não foi possível criar o orçamento: nenhum dado retornado.');
     }
 
+    // Auditoria estruturada — facilita investigar divergência prévia × salvo.
+    // Campos: org_id, seller_id, year_yy, quote_number final e status.
+    // Filtrar `quote_create_ok` por `quote_number` revela colisões (mesmo
+    // número retornado para 2 inserts distintos) — gap conhecido enquanto
+    // o trigger generate_quote_number não tiver advisory_lock+UNIQUE.
+    try {
+      const c = created as Quote;
+      const yy = typeof c.quote_number === 'string' ? c.quote_number.split('/')[1] : null;
+      logger.info('quote_create_ok', {
+        quote_id: c.id,
+        quote_number: c.quote_number,
+        year_yy: yy,
+        status: c.status,
+        seller_id: userId,
+        org_id: orgId,
+        trigger_strategy: 'max_plus_one_no_lock', // SSOT: docs/QUOTE_NUMBERING.md
+      });
+    } catch {
+      // logging nunca pode quebrar a criação
+    }
+
     return { ...(created as Quote), items } as Quote;
   },
 
-  async updateQuote(quoteId: string, quote: Partial<Quote>, items: QuoteItem[]): Promise<Quote> {
+  /**
+   * QBP-08 FIX (2026-06-22): Adicionado parâmetro `expectedVersion` para ativar
+   * o optimistic lock server-side em `update_quote_transactional`.
+   *
+   * PROBLEMA ORIGINAL: `_expected_version` nunca era passado (sempre NULL).
+   * A RPC tem lógica completa de detecção de conflito por versão, mas estava inativa.
+   * O lock app-level (updated_at comparison) é suficiente para UX, mas o lock
+   * server-side garante atomicidade no banco mesmo em race conditions não detectados
+   * pelo app (ex: dois tabs simultâneos sem shared state).
+   *
+   * NOTA: expectedVersion é opcional (compatibilidade retroativa). Quando NULL,
+   * o comportamento da RPC é idêntico ao anterior (sem lock server-side).
+   */
+  async updateQuote(
+    quoteId: string,
+    quote: Partial<Quote>,
+    items: QuoteItem[],
+    expectedVersion?: number | null,
+  ): Promise<Quote> {
     const totals = calculateQuoteTotals(quote, items);
     const updatePayload = buildUpdatePayload(quote, totals);
     const itemsPayload = buildItemsInsertPayload(items, quoteId).map((item, index) => ({
@@ -128,7 +287,7 @@ export const quoteService = {
       notes: item.notes?.trim().slice(0, 1000),
       personalizations: buildPersonalizationsInsertPayload(
         items[index]?.personalizations ?? [],
-        quoteId,
+        items[index]?.id ?? '',
       ),
     }));
 
@@ -138,18 +297,24 @@ export const quoteService = {
         _quote_id: quoteId,
         _quote_patch: updatePayload,
         _items: itemsPayload,
+        // QBP-08 FIX: passar versão para ativar lock server-side
+        _expected_version: expectedVersion ?? null,
       } as never,
     );
 
     if (error) {
       const message = sanitizeMessage(error, {
-        fallback: 'Não foi possível atualizar o orçamento. Tente novamente.',
+        fallback:
+          'Não foi possível atualizar o orçamento de forma transacional. Nenhuma alteração foi salva.',
       });
+
       throw new Error(message);
     }
 
     if (!updated) {
-      throw new Error('Não foi possível atualizar o orçamento: nenhum dado retornado.');
+      throw new Error(
+        'Não foi possível atualizar o orçamento de forma transacional: nenhum dado retornado.',
+      );
     }
 
     return { ...(updated as Quote), items } as Quote;
@@ -180,10 +345,13 @@ export const quoteService = {
           item.personalizations,
           insertedItem.id,
         );
-        const { error } = await supabase.from('quote_item_personalizations').insert(persPayload);
+        const insertPersonalizationsResult = await supabase
+          .from('quote_item_personalizations')
+          .insert(persPayload);
+        const { error } = insertPersonalizationsResult;
 
         if (error) {
-          throw Object.assign(error, {
+          const enrichedError = Object.assign(error, {
             context: {
               quoteId,
               quoteItemId: insertedItem.id,
@@ -191,15 +359,88 @@ export const quoteService = {
             },
             message: `Falha ao inserir personalizações do item ${insertedItem.id} no orçamento ${quoteId}: ${error.message}`,
           });
+
+          throw enrichedError;
         }
       }
     }
   },
 
   async updateQuoteStatus(quoteId: string, status: Quote['status']) {
+    // Fetch current status + email fields in one query to avoid a second round-trip.
+    const { data: current, error: fetchErr } = await supabase
+      .from('quotes') // rls-allow: SELECT por id; RLS (can_access_quote) valida ownership
+      .select('status, client_email, client_name, quote_number, total, valid_until')
+      .eq('id', quoteId)
+      .single();
+    if (fetchErr) throw fetchErr;
+    if (!current) throw new Error('Orçamento não encontrado');
+
+    const fromStatus = current.status as QuoteStatus;
+    const toStatus = status as QuoteStatus;
+    if (fromStatus !== toStatus && !isValidQuoteTransition(fromStatus, toStatus)) {
+      const fromLabel = QUOTE_STATUS_CONFIG[fromStatus]?.label ?? fromStatus;
+      const toLabel = QUOTE_STATUS_CONFIG[toStatus]?.label ?? toStatus;
+      // Telemetria: transição bloqueada pelo FE (QUOTE_VALID_TRANSITIONS).
+      logInvalidStatusTransition({
+        quoteId,
+        from: fromStatus,
+        to: toStatus,
+        reason: 'not_allowed_by_config',
+        source: 'service',
+      });
+      throw new Error(`Transição de status inválida: "${fromLabel}" → "${toLabel}"`);
+    }
+
     // rls-allow: UPDATE de status por id; RLS (can_access_quote) valida ownership
     const { error } = await supabase.from('quotes').update({ status }).eq('id', quoteId);
-    if (error) throw error;
+    if (error) {
+      // Defesa-em-profundidade: se o banco rejeitar o status via CHECK
+      // `valid_quote_status` (SQLSTATE 23514), emite telemetria e devolve erro
+      // claro. FE e DB estão ALINHADOS nos 10 status (verificado 2026-06-25 via
+      // pg_constraint), então este ramo NÃO dispara hoje — existe apenas para
+      // flagrar um futuro 11º status adicionado no FE sem a migration par.
+      const pgError = error as { code?: string; message?: string; hint?: string | null };
+      const isCheckViolation =
+        pgError.code === '23514' ||
+        /valid_quote_status/i.test(pgError.message ?? '');
+      if (isCheckViolation) {
+        logInvalidStatusTransition({
+          quoteId,
+          from: fromStatus,
+          to: toStatus,
+          reason: 'db_check_violation',
+          source: 'db',
+          dbError: {
+            code: pgError.code,
+            hint: pgError.hint ?? null,
+            constraint: 'valid_quote_status',
+          },
+        });
+        throw new Error(
+          `Status "${toStatus}" rejeitado pela constraint valid_quote_status do banco.`,
+        );
+      }
+      throw error;
+    }
+
+    // FIX-E01: fire transactional email for status changes that the client cares about.
+    // Fire-and-forget — never throw; a broken email must never roll back the status change.
+    const eventType = EMAIL_STATUS_MAP[toStatus];
+    if (eventType && current.client_email) {
+      sendTransactionalEmail({
+        event_type: eventType,
+        recipient_email: current.client_email as string,
+        recipient_name: current.client_name ?? undefined,
+        data: {
+          quote_number: current.quote_number,
+          total: current.total,
+          valid_until: current.valid_until ?? null,
+        },
+      }).catch((err) => {
+        logger.error('[quoteService.updateQuoteStatus] Email send failed (non-fatal):', err);
+      });
+    }
   },
 
   async deleteQuote(quoteId: string) {

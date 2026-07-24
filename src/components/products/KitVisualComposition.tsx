@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Package } from 'lucide-react';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 export interface KitItem {
   id: string;
@@ -35,6 +36,7 @@ export function KitVisualComposition({ items, className }: KitVisualCompositionP
             {item.imageUrl ? (
               <OptimizedImage
                 src={getCdnUrl(item.imageUrl, 'card')}
+                urlOriginal={getProxiedImageUrl(item.imageUrl) ?? null}
                 alt={item.name}
                 className="object-cover"
                 containerClassName="h-full w-full"

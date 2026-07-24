@@ -39,21 +39,153 @@ Deno.serve(async (req) => {
 
     const results: Record<string, number> = {};
     const now = new Date().toISOString();
+    const PAGE = 500; // tamanho de página para paginação completa
+    const UPDATE_BATCH = 50;
+    // HARDENING (auditoria Novidades 2026-06-20): guarda anti-loop infinito para os
+    // laços de paginação abaixo. Se um UPDATE falhar de forma PERSISTENTE numa página
+    // cheia, o SELECT seguinte re-traria as MESMAS linhas (flag ainda true) e o
+    // while(true) giraria até o timeout de 55s do cron. Espelha o MAX_PAGES dos hooks
+    // de novidades (useNovelties.ts, ISSUE-8). 1000 × 500 = 500k linhas/laço — ordens
+    // de grandeza acima de qualquer lote diário de expiração, então nunca trunca
+    // trabalho legítimo; só impede o giro infinito.
+    const MAX_LOOP_PAGES = 1000;
 
-    // 1) Limpar novidades expiradas no banco LOCAL (legado)
-    try {
-      const { data } = await supabase.rpc('cleanup_expired_novelties');
-      results.local_novelties_cleaned = data || 0;
-      console.log(`✅ Novidades locais limpas: ${results.local_novelties_cleaned}`);
-    } catch (e) {
-      console.log('ℹ️ cleanup_expired_novelties RPC não disponível (ok se não existir)');
+    // Utilitário: limpa um flag expirado em um banco específico, com paginação completa
+    async function cleanExpiredFlag(
+      db: ReturnType<typeof createClient>,
+      dbLabel: string,
+      flag: string,
+      expiresField: string,
+      extraClearFields: string[] = [],
+    ): Promise<number> {
+      let totalCleaned = 0;
+      let pageGuard = 0;
+      while (true) {
+        if (pageGuard++ >= MAX_LOOP_PAGES) {
+          console.warn(
+            `⚠️ [${dbLabel}] ${flag}: limite de ${MAX_LOOP_PAGES} páginas atingido — abortando laço (possível UPDATE falhando em loop)`,
+          );
+          break;
+        }
+        const { data: expired, error: selectError } = await db
+          .from('products')
+          .select('id')
+          .eq(flag, true)
+          .not(expiresField, 'is', null)
+          .lt(expiresField, now)
+          .limit(PAGE);
+
+        if (selectError) {
+          console.log(
+            `⚠️ [${dbLabel}] Coluna ${expiresField} pode não existir`,
+            safeErrorFields(selectError),
+          );
+          break;
+        }
+        if (!expired || expired.length === 0) break;
+
+        const updateData: Record<string, unknown> = {
+          [flag]: false,
+          [expiresField]: null,
+          updated_at: now,
+        };
+        for (const field of extraClearFields) updateData[field] = null;
+
+        const ids = expired.map((p: { id: string }) => p.id);
+        for (let i = 0; i < ids.length; i += UPDATE_BATCH) {
+          const batch = ids.slice(i, i + UPDATE_BATCH);
+          const { error: updateError } = await db
+            .from('products')
+            .update(updateData)
+            .in('id', batch);
+          if (updateError) {
+            console.error(
+              `❌ [${dbLabel}] Erro ao desativar ${flag}:`,
+              safeErrorFields(updateError),
+            );
+          } else {
+            totalCleaned += batch.length;
+          }
+        }
+
+        if (expired.length < PAGE) break; // última página — não há mais registros
+      }
+      return totalCleaned;
     }
 
-    // 2) Limpar flags expirados no banco EXTERNO
+    // 1) Sincronizar product_novelties: desativar registros expirados antes de limpar products.
+    //    BUG-FIX: o passo anterior usava a RPC cleanup_expired_novelties (best-effort DELETE)
+    //    que poderia falhar silenciosamente. Sem este passo, produtos que expiram na janela
+    //    03:00–04:05 ficavam com product_novelties.is_active=true enquanto products.is_new
+    //    já era false (passo 2 abaixo), causando reativação indevida pela
+    //    fn_reactivate_valid_novelties (Frente 3) na hora seguinte — ghost novelty de ~22h.
+    try {
+      let pnCleaned = 0;
+      let pnPageGuard = 0;
+      while (true) {
+        if (pnPageGuard++ >= MAX_LOOP_PAGES) {
+          console.warn(
+            `⚠️ product_novelties: limite de ${MAX_LOOP_PAGES} páginas atingido — abortando laço (possível UPDATE falhando em loop)`,
+          );
+          break;
+        }
+        const { data: expiredPn, error: pnSelectErr } = await supabase
+          .from('product_novelties')
+          .select('id')
+          .eq('is_active', true)
+          .not('expires_at', 'is', null)
+          .lt('expires_at', now)
+          .limit(PAGE);
+        if (pnSelectErr) {
+          console.log('⚠️ product_novelties select error:', safeErrorFields(pnSelectErr));
+          break;
+        }
+        if (!expiredPn || expiredPn.length === 0) break;
+        const pnIds = (expiredPn as { id: string }[]).map((r) => r.id);
+        for (let i = 0; i < pnIds.length; i += UPDATE_BATCH) {
+          const batch = pnIds.slice(i, i + UPDATE_BATCH);
+          const { error: pnUpdateErr } = await supabase
+            .from('product_novelties')
+            .update({ is_active: false, updated_at: now })
+            .in('id', batch);
+          if (pnUpdateErr) {
+            console.error('❌ Erro desativando product_novelties:', safeErrorFields(pnUpdateErr));
+          } else {
+            pnCleaned += batch.length;
+          }
+        }
+        if (expiredPn.length < PAGE) break;
+      }
+      results.product_novelties_synced = pnCleaned;
+      console.log(`✅ product_novelties sincronizados: ${pnCleaned} registros`);
+    } catch (err) {
+      console.error('❌ Erro sincronizando product_novelties:', safeErrorFields(err));
+      results.product_novelties_synced = 0;
+    }
+
+    // 2) Limpar is_new expirado no banco LOCAL via novelty_expires_at
+    //    O banco Gold usa novelty_expires_at (não is_new_expires_at).
+    //    Também zera novelty_detected_at para limpar a janela de novidade.
+    try {
+      const localCleaned = await cleanExpiredFlag(
+        supabase,
+        'local',
+        'is_new',
+        'novelty_expires_at',
+        ['novelty_detected_at'],
+      );
+      results.local_is_new_cleaned = localCleaned;
+      console.log(`✅ is_new local (novelty_expires_at): ${localCleaned} produtos desativados`);
+    } catch (err) {
+      console.error('❌ Erro limpando is_new local:', safeErrorFields(err));
+      results.local_is_new_cleaned = 0;
+    }
+
+    // 3) Limpar flags expirados no banco EXTERNO (Promobrind)
     if (externalUrl && externalKey) {
       const externalDb = createClient(externalUrl, externalKey);
 
-      // Definição dos flags e seus campos de expiração
+      // is_new no externo usa is_new_expires_at (schema Promobrind)
       const flagConfigs = [
         { flag: 'is_featured', expiresField: 'is_featured_expires_at' },
         { flag: 'is_bestseller', expiresField: 'is_bestseller_expires_at' },
@@ -63,68 +195,19 @@ Deno.serve(async (req) => {
 
       for (const { flag, expiresField } of flagConfigs) {
         try {
-          // Buscar produtos com flag ativo E data de expiração vencida
-          const { data: expiredProducts, error: selectError } = await externalDb
-            .from('products')
-            .select('id')
-            .eq(flag, true)
-            .not(expiresField, 'is', null)
-            .lt(expiresField, now)
-            .limit(500);
-
-          if (selectError) {
-            // Coluna pode não existir ainda - degradação graciosa
-            console.log(`⚠️ Coluna ${expiresField} pode não existir`, safeErrorFields(selectError));
-            results[`${flag}_error`] = 0;
-            continue;
-          }
-
-          if (!expiredProducts || expiredProducts.length === 0) {
-            results[`${flag}_cleaned`] = 0;
-            continue;
-          }
-
-          // Desativar o flag e limpar a data de expiração
-          const ids = expiredProducts.map((p) => p.id);
-          const updateData: Record<string, any> = {
-            [flag]: false,
-            [expiresField]: null,
-            updated_at: now,
-          };
-
-          let updatedCount = 0;
-          // Atualizar em lotes de 50
-          for (let i = 0; i < ids.length; i += 50) {
-            const batch = ids.slice(i, i + 50);
-            const { error: updateError } = await externalDb
-              .from('products')
-              .update(updateData)
-              .in('id', batch);
-
-            if (updateError) {
-              console.error(
-                `❌ Erro ao desativar ${flag} para lote:`,
-                safeErrorFields(updateError),
-              );
-            } else {
-              updatedCount += batch.length;
-            }
-          }
-
-          results[`${flag}_cleaned`] = updatedCount;
-          console.log(`✅ ${flag}: ${updatedCount} produtos desativados (expirados)`);
-
-          console.log(`${flag}: produtos afetados`, { count: expiredProducts.length });
-        } catch (err: any) {
-          console.error(`❌ Erro processando ${flag}:`, safeErrorFields(err));
-          results[`${flag}_error`] = 0;
+          const count = await cleanExpiredFlag(externalDb, 'externo', flag, expiresField);
+          results[`ext_${flag}_cleaned`] = count;
+          console.log(`✅ [externo] ${flag}: ${count} produtos desativados`);
+        } catch (err) {
+          console.error(`❌ [externo] Erro processando ${flag}:`, safeErrorFields(err));
+          results[`ext_${flag}_error`] = 0;
         }
       }
     } else {
       console.log('⚠️ Banco externo não configurado - pulando limpeza de flags');
     }
 
-    // 3) Limpar logs antigos
+    // 4) Limpar logs antigos
     try {
       const { data: logsDeleted } = await supabase.rpc('cleanup_old_logs');
       if (logsDeleted) {

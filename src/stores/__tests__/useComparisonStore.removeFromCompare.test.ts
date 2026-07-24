@@ -20,8 +20,8 @@ function resetStore() {
 }
 
 /** Helper: add an item directly via the public API. */
-function addItem(productId: string, variant?: CompareVariantInfo): boolean {
-  return useComparisonStore.getState().addToCompare(productId, variant);
+function addItem(productId: string, variantInfo?: CompareVariantInfo): boolean {
+  return useComparisonStore.getState().addToCompare(productId, variantInfo);
 }
 
 /** Helper: read the current items snapshot. */

@@ -119,7 +119,7 @@ export function PresetCard({ preset, isActive, onSelect }: PresetCardProps) {
           </p>
         </motion.div>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className=" ">
+      <TooltipContent side="bottom">
         <p className="font-semibold">
           {preset.emoji} {preset.name}
         </p>

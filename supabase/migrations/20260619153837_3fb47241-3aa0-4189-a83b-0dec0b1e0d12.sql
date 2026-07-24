@@ -1,0 +1,9 @@
+REVOKE EXECUTE ON FUNCTION public.audit_rls_coverage() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.audit_rls_matrix() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.auto_block_extreme_offenders() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.auto_revoke_orphan_full_keys(text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_expired_collection_trash() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_expired_edge_rate_limits() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_expired_favorite_trash() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_expired_public_comparisons() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_expired_step_up() FROM PUBLIC, anon, authenticated;

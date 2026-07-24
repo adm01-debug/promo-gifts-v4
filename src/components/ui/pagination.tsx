@@ -26,12 +26,13 @@ const PaginationItem = React.forwardRef<HTMLLIElement, React.ComponentProps<'li'
 );
 PaginationItem.displayName = 'PaginationItem';
 
-type PaginationLinkProps = {
-  isActive?: boolean;
-} & Pick<ButtonProps, 'size'> &
-  React.ComponentProps<'a'>;
+type PaginationLinkProps = Pick<ButtonProps, 'size'> &
+  React.ComponentProps<'a'> & {
+    isActive?: boolean;
+  };
 
 const PaginationLink = ({ className, isActive, size = 'icon', ...props }: PaginationLinkProps) => (
+  // eslint-disable-next-line jsx-a11y/anchor-has-content -- children are forwarded via {...props} at call sites
   <a
     aria-current={isActive ? 'page' : undefined}
     className={cn(

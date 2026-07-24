@@ -19,17 +19,15 @@ export function ProposalSellerSignature({ data }: Props) {
   return (
     <div
       style={{
-        padding: '0 36px',
-        marginBottom: '10px',
         display: 'flex',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
       }}
     >
       <div
         style={{
           textAlign: 'center',
-          minWidth: '220px',
-          maxWidth: '280px',
+          minWidth: '187px',
+          maxWidth: '238px',
         }}
       >
         {/* Signature: PNG image or Sacramento font fallback */}
@@ -96,7 +94,7 @@ export function ProposalSellerSignature({ data }: Props) {
         {/* Electronic signature disclaimer */}
         <div
           style={{
-            fontSize: '8px',
+            fontSize: '10px',
             color: '#333',
             marginTop: '6px',
             lineHeight: '1.3',

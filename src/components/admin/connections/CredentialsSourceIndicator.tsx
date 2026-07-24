@@ -116,7 +116,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
   // Limita a lista exibida no tooltip para não estourar a viewport
   // quando houver muitos secrets — o restante aparece como "+ N mais".
 
-  function renderNameList(items: SecretStatus[], tone: 'success' | 'warning' | 'destructive') {
+  function renderNameList(items: SecretStatus[], tone: 'destructive' | 'success' | 'warning') {
     if (items.length === 0) {
       return <p className="italic text-muted-foreground">Nenhum secret nesta categoria.</p>;
     }

@@ -7,7 +7,7 @@ import { useMemo } from 'react';
 import type { Quote } from '@/hooks/quotes';
 
 export interface FunnelStage {
-  id: 'draft' | 'sent' | 'viewed' | 'approved' | 'converted';
+  id: 'approved' | 'converted' | 'draft' | 'sent' | 'viewed';
   label: string;
   count: number;
   /** Taxa relativa à etapa anterior (0–100) */

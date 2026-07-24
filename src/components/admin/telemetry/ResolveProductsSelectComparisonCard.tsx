@@ -21,7 +21,7 @@ import {
   type ResolveProductsSelectMetrics,
 } from '@/pages/admin/telemetry/useResolveProductsSelectComparison';
 
-type DeltaDirection = 'down-good' | 'up-bad' | 'neutral';
+type DeltaDirection = 'down-good' | 'neutral' | 'up-bad';
 
 function formatMs(ms: number): string {
   if (!ms) return '—';

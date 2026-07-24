@@ -38,7 +38,7 @@ type ExternalConnRow = {
 type DataSourceMap = {
   field: string;
   description: string;
-  source: 'integration_credentials' | 'external_connections' | 'ambos (sync trigger)';
+  source: 'ambos (sync trigger)' | 'external_connections' | 'integration_credentials';
   notes: string;
 };
 

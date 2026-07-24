@@ -72,7 +72,6 @@ export function useKeyboardShortcuts({
         e.preventDefault();
         onReset();
         toast.info('⌨️ Formulário limpo', { duration: 1500 });
-        return;
       }
     },
     [canGenerate, canDownload, isLoading, onGenerate, onDownload, onReset, onStepChange],

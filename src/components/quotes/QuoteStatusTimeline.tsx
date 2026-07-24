@@ -33,9 +33,12 @@ const statusOrder: Record<string, number> = {
   pending_approval: 1,
   pending: 2,
   sent: 5,
+  viewed: 5,
   approved: 5,
+  converted: 5,
   rejected: 5,
   expired: 5,
+  cancelled: 5,
 };
 
 function formatTs(ts?: string) {
@@ -55,40 +58,49 @@ export function QuoteStatusTimeline({
   isSyncing = false,
 }: QuoteStatusTimelineProps) {
   const isPendingApproval = status === 'pending_approval';
-  // Compute current index based on filtered steps
-  const activeSteps = isPendingApproval ? steps : steps.filter((s) => s.key !== 'pending_approval');
-  const stepIdx = activeSteps.findIndex((s) => s.key === status);
+
+  // stepsPool: fonte única de verdade para índices E renderização.
+  // Anteriormente existiam duas arrays idênticas (activeSteps + relevantSteps)
+  // com a mesma lógica de filtro — vetor de divergência futura eliminado.
+  const stepsPool = isPendingApproval
+    ? steps
+    : steps.filter((s) => s.key !== 'pending_approval');
+
+  const stepIdx = stepsPool.findIndex((s) => s.key === status);
+  const mappedOrder = statusOrder[status];
   const baseIdx =
     stepIdx >= 0
       ? stepIdx
-      : statusOrder[status] !== null
-        ? Math.min(statusOrder[status], activeSteps.length)
+      : // Unknown status → undefined (not null), so guard with !== undefined. Clamp to the
+        // LAST valid index (length - 1): terminal statuses (sent/viewed/approved/…) map to 5
+        // but there are only 4 visible steps, and Math.min(5, length) would be out of bounds,
+        // leaving the final step perpetually "completed" and never "current".
+        mappedOrder !== undefined
+        ? Math.min(mappedOrder, stepsPool.length - 1)
         : 0;
-  const syncIdx = activeSteps.findIndex((s) => s.key === 'syncing');
+  const syncIdx = stepsPool.findIndex((s) => s.key === 'syncing');
   const currentIdx = isSyncing && syncIdx >= 0 ? syncIdx : baseIdx;
 
   const isRejected = status === 'rejected';
   const isExpired = status === 'expired';
-  const isFinalNegative = isRejected || isExpired;
+  const isCancelled = status === 'cancelled';
+  const isFinalNegative = isRejected || isExpired || isCancelled;
 
-  // Filter out pending_approval step if not relevant to this quote
-  const relevantSteps =
-    isPendingApproval || status === 'pending_approval'
-      ? steps
-      : steps.filter((s) => s.key !== 'pending_approval');
-
-  const displaySteps = relevantSteps.map((step, idx) => {
-    if (idx === relevantSteps.length - 1 && isRejected) {
+  const displaySteps = stepsPool.map((step, idx) => {
+    if (idx === stepsPool.length - 1 && isRejected) {
       return { key: 'rejected', label: 'Rejeitado', icon: ThumbsDown };
     }
-    if (idx === relevantSteps.length - 1 && isExpired) {
+    if (idx === stepsPool.length - 1 && isExpired) {
       return { key: 'expired', label: 'Expirado', icon: AlertTriangle };
+    }
+    if (idx === stepsPool.length - 1 && isCancelled) {
+      return { key: 'cancelled', label: 'Cancelado', icon: AlertTriangle };
     }
     return step;
   });
 
   return (
-    <div className="flex w-full items-center gap-0">
+    <div data-testid="quote-status-timeline" className="flex w-full items-center gap-0">
       {displaySteps.map((step, idx) => {
         const isCompleted = idx < currentIdx;
         const isCurrent = idx === currentIdx;
@@ -123,7 +135,7 @@ export function QuoteStatusTimeline({
                     isSync &&
                     'border-success bg-primary/10 text-primary ring-2 ring-primary/20',
                   isCurrent &&
-                    isRejected &&
+                    (isRejected || isCancelled) &&
                     'border-destructive bg-destructive/10 text-destructive ring-2 ring-destructive/20',
                   isCurrent &&
                     isExpired &&
@@ -147,7 +159,7 @@ export function QuoteStatusTimeline({
                   isCompleted && 'text-primary',
                   isCurrent && !isFinalNegative && !isSync && 'font-semibold text-primary',
                   isCurrent && isSync && 'font-semibold text-primary',
-                  isCurrent && isRejected && 'font-semibold text-destructive',
+                  isCurrent && (isRejected || isCancelled) && 'font-semibold text-destructive',
                   isCurrent && isExpired && 'font-semibold text-muted-foreground',
                   !isCompleted && !isCurrent && 'text-muted-foreground/50',
                 )}

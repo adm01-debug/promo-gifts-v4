@@ -3,8 +3,8 @@ import type { OverviewRow } from '@/hooks/intelligence';
 import type { ConsecutiveFailureInfo } from '@/hooks/common';
 import { CONSECUTIVE_FAILURE_THRESHOLD } from '@/lib/connections-config';
 
-export type OverviewStatusFilter = 'all' | 'ok' | 'fail';
-export type OverviewWindowFilter = 'any' | '5m' | '1h' | '24h' | '7d' | 'never';
+export type OverviewStatusFilter = 'all' | 'fail' | 'ok';
+export type OverviewWindowFilter = '1h' | '5m' | '7d' | '24h' | 'any' | 'never';
 
 export interface OverviewFilters {
   types: string[];
@@ -35,8 +35,9 @@ export function applyFilters(
   consecutiveFailuresMap?: Map<string, ConsecutiveFailureInfo>,
   now: number = Date.now(),
 ): OverviewRow[] {
+  const typesSet = new Set(filters.types);
   return rows.filter((r) => {
-    if (filters.types.length > 0 && !filters.types.includes(r.type)) return false;
+    if (typesSet.size > 0 && !typesSet.has(r.type)) return false;
 
     if (filters.status === 'ok' && r.last_test_ok !== true) return false;
     if (filters.status === 'fail' && r.last_test_ok !== false) return false;

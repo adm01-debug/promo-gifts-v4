@@ -15,6 +15,7 @@ import {
   type EngravingLocation,
   type EngravingSpecs,
   type AvailableTechnique,
+  type Personalization,
   WIZARD_STEPS,
   getStepIndex,
   getNextStep,
@@ -91,6 +92,24 @@ export function useSimulatorWizard() {
     (product: SelectedProduct | null) => {
       dispatch({ type: 'SELECT_PRODUCT', payload: product });
       if (product) dispatch({ type: 'SET_STEP', payload: 'location' });
+    },
+    [dispatch],
+  );
+
+  const loadDraft = useCallback(
+    (draft: {
+      product: SelectedProduct;
+      quantity: number;
+      personalizations?: Personalization[];
+    }) => {
+      dispatch({
+        type: 'LOAD_DRAFT',
+        payload: {
+          product: draft.product,
+          quantity: draft.quantity,
+          personalizations: draft.personalizations ?? [],
+        },
+      });
     },
     [dispatch],
   );
@@ -245,6 +264,7 @@ export function useSimulatorWizard() {
     nextStep,
     previousStep,
     selectProduct,
+    loadDraft,
     setQuantity,
     selectLocation,
     updateSpecs,

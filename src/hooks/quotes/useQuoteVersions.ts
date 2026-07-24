@@ -44,8 +44,12 @@ export function useQuoteVersions(quoteId?: string) {
 
         if (qErr || !currentQuote) throw qErr ?? new Error('Quote not found');
 
-        // Find the root quote ID (the original quote)
-        const rootId = currentQuote.parent_quote_id || currentQuote.id;
+        // Find the root quote ID (the original quote).
+        // Guard against self-referencing parent_quote_id (data corruption) which would
+        // cause the OR query to return the same row twice, corrupting the version tree.
+        const _parentId = currentQuote.parent_quote_id;
+        const rootId =
+          _parentId !== null && _parentId !== currentQuote.id ? _parentId : currentQuote.id;
 
         // Get all versions: the root + all children
         const { data, error } = await supabase
@@ -61,10 +65,14 @@ export function useQuoteVersions(quoteId?: string) {
 
         // Count items for each version
         const versionIds = (data || []).map((v) => v.id);
-        const { data: itemCounts } = await supabase
+        // BUG-QUOTEVERSIONS-ITEMCOUNTS-SELECT-SILENT-FAIL FIX: { data: itemCounts } without
+        // error check — RLS failure silently showed items_count=0 on all versions.
+        // Secondary fetch: primary versions query already succeeded; log.warn and degrade.
+        const { data: itemCounts, error: itemCountsErr } = await supabase
           .from('quote_items')
           .select('quote_id')
           .in('quote_id', versionIds);
+        if (itemCountsErr) logger.warn('Failed to fetch item counts for versions:', itemCountsErr);
 
         const countMap = new Map<string, number>();
         (itemCounts || []).forEach((item) => {
@@ -106,34 +114,53 @@ export function useQuoteVersions(quoteId?: string) {
         if (!original) throw new Error('Orçamento não encontrado');
 
         // Get current version info
-        const { data: currentData } = await supabase
+        // BUG-VERSION-CTX-SILENT-FAIL FIX: previously { error } was not destructured.
+        // A failed lookup silently left currentVersion=1 and rootId=sourceQuoteId,
+        // risking duplicate version numbers if another version already had those values.
+        const { data: currentData, error: versionCtxErr } = await supabase
           // rls-allow: lookup por quote_id; RLS valida ownership
           .from('quotes')
           .select('version, parent_quote_id')
           .eq('id', sourceQuoteId)
           .single();
+        if (versionCtxErr) logger.warn('Failed to fetch version context, defaulting:', versionCtxErr);
 
-        const rootId = currentData?.parent_quote_id || sourceQuoteId;
-        const currentVersion = currentData?.version || 1;
+        const _parentId2 = currentData?.parent_quote_id ?? null;
+        const rootId =
+          _parentId2 !== null && _parentId2 !== sourceQuoteId ? _parentId2 : sourceQuoteId;
+        const currentVersion = currentData?.version ?? 1;
 
         // Find max version across all versions of this quote
-        const { data: maxVersionData } = await supabase
+        // BUG-VERSION-MAX-SILENT-FAIL FIX: previously { error } was not destructured.
+        // A failed query silently defaulted maxVersion=currentVersion, risking duplicate
+        // version numbers when the actual max in the DB was higher.
+        const { data: maxVersionData, error: maxVersionErr } = await supabase
           // rls-allow: lookup por quote_id; RLS valida ownership
           .from('quotes')
           .select('version')
           .or(`id.eq.${rootId},parent_quote_id.eq.${rootId}`)
           .order('version', { ascending: false })
           .limit(1);
+        if (maxVersionErr) logger.warn('Failed to fetch max version, defaulting to currentVersion:', maxVersionErr);
 
-        const maxVersion = maxVersionData?.[0]?.version || currentVersion;
+        // BUG-033: use ?? not || so version=0 (impossible but defensive) doesn't
+        // fall back to currentVersion and produce a duplicate version number.
+        const maxVersion = maxVersionData?.[0]?.version ?? currentVersion;
         const newVersion = maxVersion + 1;
 
         // Mark all existing versions as not latest
-        await supabase
+        // BUG-VERSION-SILENT-FAIL FIX: silent failure here leaves the old version
+        // with is_latest_version=true and the new one also marked true, corrupting
+        // the version tree. Log and throw so createNewVersion rolls back cleanly.
+        const { error: clearErr } = await supabase
           // rls-allow: lookup por quote_id; RLS valida ownership
           .from('quotes')
           .update({ is_latest_version: false })
           .or(`id.eq.${rootId},parent_quote_id.eq.${rootId}`);
+        if (clearErr) {
+          logger.error('Failed to clear is_latest_version on prior versions:', clearErr);
+          throw clearErr;
+        }
 
         // Create new version via duplicate
         const items =
@@ -166,19 +193,23 @@ export function useQuoteVersions(quoteId?: string) {
         const newQuote = await createQuote(
           {
             client_id: original.client_id,
+            contact_id: original.contact_id,
             client_name: original.client_name,
             client_email: original.client_email,
             client_phone: original.client_phone,
             client_company: original.client_company,
+            client_cnpj: original.client_cnpj ?? undefined,
             status: 'draft',
             discount_percent: original.discount_percent,
             discount_amount: original.discount_amount,
+            negotiation_markup_percent: original.negotiation_markup_percent ?? 0,
             notes: original.notes,
+            payment_method: original.payment_method,
             payment_terms: original.payment_terms,
             delivery_time: original.delivery_time,
             shipping_type: original.shipping_type,
             shipping_cost: original.shipping_cost,
-            internal_notes: original.internal_notes,
+            // internal_notes removido: campo descontinuado (apenas notes vai na proposta).
             valid_until: original.valid_until,
           },
           items,
@@ -186,7 +217,9 @@ export function useQuoteVersions(quoteId?: string) {
 
         if (newQuote?.id) {
           // Update the new quote with version info
-          await supabase
+          // BUG-VERSION-SILENT-FAIL FIX: silent failure here leaves the new quote
+          // without a version number or parent link — the version tree is broken.
+          const { error: versionErr } = await supabase
             // rls-allow: lookup por quote_id; RLS valida ownership
             .from('quotes')
             .update({
@@ -195,6 +228,7 @@ export function useQuoteVersions(quoteId?: string) {
               is_latest_version: true,
             })
             .eq('id', newQuote.id);
+          if (versionErr) logger.error('Failed to set version metadata on new quote:', versionErr);
 
           await logQuoteHistory(
             newQuote.id,

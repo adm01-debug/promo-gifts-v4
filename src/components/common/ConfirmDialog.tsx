@@ -1,16 +1,13 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+/**
+ * DEPRECATED — mantido apenas para retrocompatibilidade da API antiga
+ * (`confirmText`/`cancelText`). Use `@/components/ui/ConfirmDialog` diretamente.
+ * Este wrapper delega ao SSOT para garantir o layout moderno único.
+ */
+import { useState } from 'react';
+import { ConfirmDialog as SsotConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { AlertTriangle, Info, CheckCircle2, XCircle } from 'lucide-react';
 
-type ConfirmVariant = 'default' | 'destructive' | 'warning' | 'success';
+type ConfirmVariant = 'default' | 'destructive' | 'success' | 'warning';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -24,28 +21,12 @@ interface ConfirmDialogProps {
   loading?: boolean;
 }
 
-const variantConfig = {
-  default: {
-    icon: Info,
-    iconColor: 'text-primary',
-    iconBg: 'bg-primary/10',
-  },
-  destructive: {
-    icon: XCircle,
-    iconColor: 'text-destructive',
-    iconBg: 'bg-destructive/10',
-  },
-  warning: {
-    icon: AlertTriangle,
-    iconColor: 'text-warning',
-    iconBg: 'bg-warning/10',
-  },
-  success: {
-    icon: CheckCircle2,
-    iconColor: 'text-success',
-    iconBg: 'bg-success/10',
-  },
-};
+const iconMap = {
+  default: Info,
+  destructive: XCircle,
+  warning: AlertTriangle,
+  success: CheckCircle2,
+} as const;
 
 export function ConfirmDialog({
   open,
@@ -58,46 +39,23 @@ export function ConfirmDialog({
   variant = 'default',
   loading = false,
 }: ConfirmDialogProps) {
-  const config = variantConfig[variant];
-  const Icon = config.icon;
-
+  const ssotVariant: 'default' | 'destructive' | 'info' | 'warning' =
+    variant === 'success' ? 'info' : variant;
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <div className="flex items-start gap-3">
-            <div
-              className={`h-10 w-10 rounded-full ${config.iconBg} flex shrink-0 items-center justify-center`}
-            >
-              <Icon className={`h-5 w-5 ${config.iconColor}`} />
-            </div>
-            <div className="flex-1">
-              <AlertDialogTitle>{title}</AlertDialogTitle>
-              <AlertDialogDescription className="mt-2">{description}</AlertDialogDescription>
-            </div>
-          </div>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>{cancelText}</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            disabled={loading}
-            className={
-              variant === 'destructive'
-                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                : ''
-            }
-          >
-            {loading ? 'Processando...' : confirmText}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <SsotConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={onConfirm}
+      title={title}
+      description={description}
+      confirmLabel={loading ? 'Processando...' : confirmText}
+      cancelLabel={cancelText}
+      variant={ssotVariant}
+      icon={iconMap[variant]}
+      loading={loading}
+    />
   );
 }
-
-// Hook auxiliar para uso mais fácil
-import { useState } from 'react';
 
 export function useConfirm() {
   const [state, setState] = useState<{

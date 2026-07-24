@@ -26,7 +26,7 @@ export interface TechniqueOption {
   efetiva_altura_max: number; // MIN(max_height, gravacao_altura_max)
 
   // Forma
-  shape: 'rectangle' | 'circle';
+  shape: 'circle' | 'rectangle';
   is_curved: boolean;
 
   // Cores e preço

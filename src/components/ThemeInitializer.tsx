@@ -1,6 +1,12 @@
 import { useContext, useEffect } from 'react';
 import { ThemeContext } from '@/contexts/ThemeContext';
-import { loadThemeConfig, applyThemePreset, applyRadius } from '@/lib/theme-presets';
+import {
+  loadThemeConfig,
+  applyThemePreset,
+  applyRadius,
+  STORAGE_KEY,
+  type ThemeConfig,
+} from '@/lib/theme-presets';
 
 import { logger } from '@/lib/logger';
 /**
@@ -24,9 +30,27 @@ export function ThemeInitializer() {
     }
 
     const cfg = loadThemeConfig();
-    applyThemePreset(cfg.presetId, cfg.mode);
+    // Dark mode is locked app-wide; never resolve 'auto' here to avoid
+    // applying light tokens when the OS is in light mode.
+    applyThemePreset(cfg.presetId, 'dark');
     applyRadius(cfg.radius);
   }, [ctx, ctx?.actualTheme]);
+
+  // Cross-tab preset sync: when another tab saves a new preset, apply it here.
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY || !e.newValue) return;
+      try {
+        const cfg = JSON.parse(e.newValue) as ThemeConfig;
+        applyThemePreset(cfg.presetId, 'dark');
+        applyRadius(cfg.radius);
+      } catch {
+        // ignore malformed storage event
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   return null;
 }

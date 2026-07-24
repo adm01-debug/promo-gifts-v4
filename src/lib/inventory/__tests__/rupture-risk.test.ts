@@ -85,7 +85,7 @@ describe('computeRuptureRisk — missing/invalid avgDailyDepletion', () => {
     ['NaN', NaN],
     ['Infinity', Infinity],
   ])('returns no-risk/null when avgDailyDepletion is %s', (_label, value) => {
-    expect(computeRuptureRisk(input({ avgDailyDepletion: value as number }))).toEqual({
+    expect(computeRuptureRisk(input({ avgDailyDepletion: value! }))).toEqual({
       atRisk: false,
       projectedStock: null,
       daysToTarget: null,
@@ -101,7 +101,7 @@ describe('computeRuptureRisk — missing/invalid targetQty', () => {
     ['negative', -5],
     ['NaN', NaN],
   ])('returns no-risk/null when targetQty is %s', (_label, value) => {
-    expect(computeRuptureRisk(input({ targetQty: value as number }))).toEqual({
+    expect(computeRuptureRisk(input({ targetQty: value! }))).toEqual({
       atRisk: false,
       projectedStock: null,
       daysToTarget: null,

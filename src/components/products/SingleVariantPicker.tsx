@@ -4,12 +4,18 @@
  */
 import { useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { getCdnUrl } from '@/utils/image-utils';
 import { Package, AlertTriangle, SkipForward } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useExternalVariantStock,
   type ExternalVariantStock,
 } from '@/hooks/products/useExternalVariantStock';
+import { CATALOG_LOW_STOCK_THRESHOLD } from '@/lib/catalog-stock-status';
+
+// BUG-SVP-03 FIX (2026-06-21): fmt criado dentro do componente → nova instância por render.
+// Mover para módulo evita recrição desnecessária.
+const fmt = (qty: number) => (qty >= 1000 ? `${(qty / 1000).toFixed(1)}k` : qty.toString());
 
 interface SingleVariantPickerProps {
   productId: string;
@@ -36,8 +42,6 @@ export function SingleVariantPicker({
       return (a.color_name ?? '').localeCompare(b.color_name ?? '');
     });
   }, [variants]);
-
-  const fmt = (qty: number) => (qty >= 1000 ? `${(qty / 1000).toFixed(1)}k` : qty.toString());
 
   // Auto-skip when no variants — use setTimeout to let dialog mount first
   useEffect(() => {
@@ -92,8 +96,10 @@ export function SingleVariantPicker({
       >
         {sortedVariants.map((variant) => {
           const stock = variant.stock_quantity ?? 0;
-          const isOutOfStock = stock === 0;
-          const isLowStock = stock > 0 && stock < 100;
+          // BUG-SVP-01 FIX (2026-06-21): stock === 0 perdia estoque negativo (← DB legado).
+          // BUG-SVP-02 FIX (2026-06-21): limiar low-stock era 100 — SSOT é CATALOG_LOW_STOCK_THRESHOLD (10).
+          const isOutOfStock = stock <= 0;
+          const isLowStock = stock > 0 && stock < CATALOG_LOW_STOCK_THRESHOLD;
 
           return (
             <button
@@ -114,7 +120,7 @@ export function SingleVariantPicker({
             >
               {variant.selected_thumbnail ? (
                 <img
-                  src={`${variant.selected_thumbnail}/thumbnail`}
+                  src={getCdnUrl(variant.selected_thumbnail, 'thumbnail')}
                   alt={variant.color_name ?? ''}
                   className="h-8 w-8 shrink-0 rounded-md border border-border/50 object-cover transition-transform group-hover:scale-105"
                   onError={(e) => {

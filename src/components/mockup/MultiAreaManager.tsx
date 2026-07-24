@@ -62,7 +62,13 @@ export function MultiAreaManager({
       toast.error('Selecione uma área com logo primeiro');
       return;
     }
-    onAreasChange(areas.map((a) => ({ ...a, logoPreview: activeArea.logoPreview })));
+    onAreasChange(
+      areas.map((a) => ({
+        ...a,
+        logoPreview: activeArea.logoPreview,
+        logoFile: activeArea.logoFile ?? null,
+      })),
+    );
     toast.success(`Logo aplicado em ${areas.length} áreas`);
   };
 
@@ -81,14 +87,25 @@ export function MultiAreaManager({
         e.preventDefault();
         setIsDraggingOver(false);
         const file = e.dataTransfer.files?.[0];
-        if (file && file.type.startsWith('image/')) {
-          const targetAreaId = activeAreaId || areas[0]?.id;
-          if (targetAreaId) {
-            onLogoUpload(targetAreaId, file);
-            toast.success(
-              `Logo aplicado na área "${areas.find((a) => a.id === targetAreaId)?.name || 'ativa'}"`,
-            );
-          }
+        if (!file) return;
+        // SVG excluded: the generate-mockup edge function rejects SVGs (assertNotSvg),
+        // so accepting them here would succeed at upload but fail at generation — confusing UX.
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+        const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+        if (!ALLOWED_TYPES.includes(file.type)) {
+          toast.error('Formato não suportado. Use JPG, PNG ou WebP.');
+          return;
+        }
+        if (file.size > MAX_SIZE_BYTES) {
+          toast.error('Arquivo muito grande. Tamanho máximo: 10 MB.');
+          return;
+        }
+        const targetAreaId = activeAreaId || areas[0]?.id;
+        if (targetAreaId) {
+          onLogoUpload(targetAreaId, file);
+          toast.success(
+            `Logo aplicado na área "${areas.find((a) => a.id === targetAreaId)?.name || 'ativa'}"`,
+          );
         }
       }}
       className={cn(
@@ -101,16 +118,16 @@ export function MultiAreaManager({
           <CollapsibleTrigger asChild>
             <div className="flex cursor-pointer items-center justify-between hover:opacity-80">
               <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" />
+                <Layers className="h-4 w-4 text-primary" aria-hidden="true" />
                 <CardTitle className="text-base">Áreas de Personalização</CardTitle>
                 <Badge variant="secondary" className="text-xs">
                   {areas.length} {areas.length === 1 ? 'área' : 'áreas'}
                 </Badge>
               </div>
               {isExpanded ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                <ChevronUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               )}
             </div>
           </CollapsibleTrigger>
@@ -133,14 +150,14 @@ export function MultiAreaManager({
                   area={area}
                   index={index}
                   isActive={activeAreaId === area.id}
-                  isReadOnly={true}
+                  isReadOnly
                   canRemove={false}
                   onSelect={() => onActiveAreaChange(area.id)}
                   onNameChange={() => {}}
                   onLogoUpload={(file) => onLogoUpload(area.id, file)}
                   onLogoRemove={() => {
                     const updated = areas.map((a) =>
-                      a.id === area.id ? { ...a, logoData: null, logoPreview: null } : a,
+                      a.id === area.id ? { ...a, logoPreview: null, logoFile: null } : a,
                     );
                     onAreasChange(updated);
                     onLogoRemove?.(area.id);
@@ -157,7 +174,7 @@ export function MultiAreaManager({
                 onClick={applyLogoToAllAreas}
                 className="w-full"
               >
-                <Copy className="mr-1 h-4 w-4" /> Aplicar Logo em Todas as Áreas
+                <Copy className="mr-1 h-4 w-4" aria-hidden="true" /> Aplicar Logo em Todas as Áreas
               </Button>
             )}
           </CardContent>

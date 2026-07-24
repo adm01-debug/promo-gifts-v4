@@ -206,7 +206,7 @@ function ProductSlide({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-xl bg-muted/50 p-4">
       <p className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">{label}</p>

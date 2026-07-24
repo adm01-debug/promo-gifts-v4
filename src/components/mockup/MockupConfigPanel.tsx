@@ -30,6 +30,8 @@ interface Technique {
   id: string;
   name: string;
   code: string | null;
+  /** Permite Technique ser atribuível a MockupTechnique (que aceita campos arbitrários do bridge). */
+  [key: string]: unknown;
   maxWidth?: number | null;
   maxHeight?: number | null;
   areaName?: string | null;
@@ -117,7 +119,7 @@ export function MockupConfigPanel({
     <Card className="border-border/30">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Wand2 className="h-5 w-5 text-primary" />
+          <Wand2 className="h-5 w-5 text-primary" aria-hidden="true" />
           Configuração
         </CardTitle>
         <CardDescription>
@@ -127,8 +129,11 @@ export function MockupConfigPanel({
       <CardContent className="space-y-6">
         {isLoadingData && (
           <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <Loader2 className="mx-auto mb-2 h-8 w-8 animate-spin text-primary" />
+            <div className="text-center" role="status">
+              <Loader2
+                className="mx-auto mb-2 h-8 w-8 animate-spin text-primary"
+                aria-hidden="true"
+              />
               <p className="text-sm text-muted-foreground">Carregando dados...</p>
             </div>
           </div>
@@ -169,7 +174,10 @@ export function MockupConfigPanel({
               trailing={
                 selectedTechnique && (
                   <TechniqueTooltip technique={selectedTechnique}>
-                    <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-primary" />
+                    <Info
+                      className="h-3.5 w-3.5 cursor-help text-muted-foreground transition-colors hover:text-primary"
+                      aria-label="Informações sobre a técnica"
+                    />
                   </TechniqueTooltip>
                 )
               }
@@ -181,7 +189,10 @@ export function MockupConfigPanel({
                   onTechniqueSelect(technique || null);
                 }}
               >
-                <SelectTrigger data-testid="mockup-technique-select-trigger">
+                <SelectTrigger
+                  data-testid="mockup-technique-select-trigger"
+                  aria-label="Selecionar técnica de personalização"
+                >
                   <SelectValue placeholder="Selecione uma técnica..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -192,43 +203,48 @@ export function MockupConfigPanel({
                           Técnicas compatíveis com {productSelection.product.name}
                         </div>
                       )}
-                      {filteredTechniques.map((technique) => (
-                        <TechniqueTooltip key={technique.id} technique={technique}>
-                          <SelectItem value={technique.id} className="cursor-pointer">
-                            <div className="flex w-full flex-col gap-0.5">
-                              <div className="flex items-center gap-2">
-                                <Paintbrush className="h-3.5 w-3.5 text-primary" />
-                                <span>{technique.name}</span>
-                                {technique.maxWidth && technique.maxHeight ? (
-                                  <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
-                                    {technique.maxWidth}×{technique.maxHeight}cm
-                                  </span>
-                                ) : null}
-                              </div>
-                              {(technique.variationLabel ||
-                                technique.maxColors ||
-                                technique.isCurved ||
-                                technique.usesDimension) && (
-                                <div className="ml-5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                  {technique.variationLabel && (
-                                    <span className="max-w-[140px] truncate">
-                                      {technique.variationLabel}
-                                    </span>
-                                  )}
-                                  {technique.maxColors ? (
-                                    <span>
-                                      · {technique.maxColors} cor
-                                      {technique.maxColors > 1 ? 'es' : ''}
+                      {filteredTechniques
+                        .filter((t) => t.id)
+                        .map((technique) => (
+                          <TechniqueTooltip key={technique.id} technique={technique}>
+                            <SelectItem value={technique.id} className="cursor-pointer">
+                              <div className="flex w-full flex-col gap-0.5">
+                                <div className="flex items-center gap-2">
+                                  <Paintbrush
+                                    className="h-3.5 w-3.5 text-primary"
+                                    aria-hidden="true"
+                                  />
+                                  <span>{technique.name}</span>
+                                  {technique.maxWidth && technique.maxHeight ? (
+                                    <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                                      {technique.maxWidth}×{technique.maxHeight}cm
                                     </span>
                                   ) : null}
-                                  {technique.isCurved ? <span>· curvo</span> : null}
-                                  {technique.usesDimension ? <span>· por área</span> : null}
                                 </div>
-                              )}
-                            </div>
-                          </SelectItem>
-                        </TechniqueTooltip>
-                      ))}
+                                {(technique.variationLabel ||
+                                  technique.maxColors ||
+                                  technique.isCurved ||
+                                  technique.usesDimension) && (
+                                  <div className="ml-5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                    {technique.variationLabel && (
+                                      <span className="max-w-[140px] truncate">
+                                        {technique.variationLabel}
+                                      </span>
+                                    )}
+                                    {technique.maxColors ? (
+                                      <span>
+                                        · {technique.maxColors} cor
+                                        {technique.maxColors > 1 ? 'es' : ''}
+                                      </span>
+                                    ) : null}
+                                    {technique.isCurved ? <span>· curvo</span> : null}
+                                    {technique.usesDimension ? <span>· por área</span> : null}
+                                  </div>
+                                )}
+                              </div>
+                            </SelectItem>
+                          </TechniqueTooltip>
+                        ))}
                     </>
                   ) : (
                     <div className="px-2 py-4 text-center text-sm text-muted-foreground">
@@ -302,21 +318,23 @@ export function MockupConfigPanel({
               />
             </MobileCollapsibleSection>
 
-            {/* Step 5: Art Files */}
-            <MobileCollapsibleSection
-              id="step-art-files"
-              label="Arquivos de Arte (Vetor)"
-              isCompleted={artAttachments.length > 0}
-              summary={
-                artAttachments.length > 0 ? `${artAttachments.length} arquivo(s)` : undefined
-              }
-            >
-              <ArtFileUpload
-                userId={userId || ''}
-                attachments={artAttachments}
-                onAttachmentsChange={onArtAttachmentsChange}
-              />
-            </MobileCollapsibleSection>
+            {/* Step 5: Art Files — only rendered when user is authenticated */}
+            {userId && (
+              <MobileCollapsibleSection
+                id="step-art-files"
+                label="Arquivos de Arte (Vetor)"
+                isCompleted={artAttachments.length > 0}
+                summary={
+                  artAttachments.length > 0 ? `${artAttachments.length} arquivo(s)` : undefined
+                }
+              >
+                <ArtFileUpload
+                  userId={userId}
+                  attachments={artAttachments}
+                  onAttachmentsChange={onArtAttachmentsChange}
+                />
+              </MobileCollapsibleSection>
+            )}
 
             {/* Logo Color Analysis — auto-appears after logo upload */}
             {logoColorAnalysis &&
@@ -347,7 +365,7 @@ export function MockupConfigPanel({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" onClick={onReset} aria-label="Limpar formulário">
-                    <RefreshCw className="h-4 w-4" />
+                    <RefreshCw className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Limpar formulário</TooltipContent>
@@ -409,7 +427,10 @@ function MobileCollapsibleSection({
                     {summary}
                   </span>
                 )}
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
+                <ChevronDown
+                  className="h-4 w-4 text-muted-foreground transition-transform"
+                  aria-hidden="true"
+                />
               </div>
             </div>
           </CollapsibleTrigger>

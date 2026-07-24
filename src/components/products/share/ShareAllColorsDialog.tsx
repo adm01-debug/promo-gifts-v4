@@ -18,6 +18,7 @@ import { openWhatsAppShare } from './whatsapp';
 import { cn } from '@/lib/utils';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface ShareAllColorsDialogProps {
   open: boolean;
@@ -192,6 +193,7 @@ export function ShareAllColorsDialog({ open, onOpenChange, product }: ShareAllCo
                           <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-secondary">
                             <OptimizedImage
                               src={getCdnUrl(thumb, 'thumbnail')}
+                              urlOriginal={getProxiedImageUrl(thumb) ?? null}
                               alt={color.name}
                               className="object-cover"
                               containerClassName="h-full w-full"

@@ -6,7 +6,7 @@ import { formatMaskedSuffix } from '@/lib/masked-suffix';
 interface Props {
   maskedSuffix: string | null;
   length: number;
-  action: 'set' | 'rotate';
+  action: 'rotate' | 'set';
   wasUpdate?: boolean;
   /** ms before the flash auto-hides */
   duration?: number;

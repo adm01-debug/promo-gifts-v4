@@ -10,9 +10,11 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { waitForBridgeReady, invalidateBridgeReadyCache } from '@/lib/external-db/health-check';
+import { logger } from '@/lib/logger';
 
 /** Detecta erros do bridge causados por 503 / cold-start do isolate. */
 const BRIDGE_FAILURE_PATTERNS = [
@@ -38,7 +40,7 @@ export interface OptimizationItem {
   description: string | null;
   category: string;
   priority: number;
-  status: 'pending' | 'running' | 'done' | 'failed' | 'skipped' | 'blocked';
+  status: 'blocked' | 'done' | 'failed' | 'pending' | 'running' | 'skipped';
   result: Record<string, unknown> | null;
   error: string | null;
   guardrail_status: string | null;
@@ -52,6 +54,7 @@ const QUEUE_KEY = ['admin', 'optimization-queue'];
 
 export function useOptimizationQueue() {
   const queryClient = useQueryClient();
+  const { rolesLoaded, isAdmin } = useAuth();
   const [autoRun, setAutoRun] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const stopRef = useRef(false);
@@ -62,13 +65,24 @@ export function useOptimizationQueue() {
     refetch,
   } = useQuery<OptimizationItem[]>({
     queryKey: QUEUE_KEY,
-    refetchInterval: 10_000,
-    queryFn: async () => {
+    enabled: rolesLoaded && Boolean(isAdmin),
+    staleTime: 5_000,
+    refetchOnWindowFocus: false,
+    // BUG-OQ-INTERVAL FIX (2026-06-23): evitar polling antes do primeiro fetch completar.
+    // BUG-OQ-DATAUPATEDAT FIX (2026-06-23): substituir status==='success' por
+    // dataUpdatedAt===0. Com status==='success', quando a query vai para 'error'
+    // (ex: Supabase temporariamente indisponível após retry limit) o polling PARA
+    // permanentemente — painel desatualizado até reload manual.
+    // dataUpdatedAt===0 significa "nunca teve fetch bem-sucedido" → pausa apenas
+    // no arranque, mas retoma polling após primeiro sucesso E mantém recovery
+    // automático a cada 10s mesmo em caso de erro subsequente.
+    refetchInterval: (query) => (query.state.dataUpdatedAt === 0 ? false : 10_000),
+    queryFn: async () => { // BUG-OQ-ABORT FIX (2026-06-23): removido { signal } + .abortSignal(signal). Idêntico ao BUG-DAR-ABORT.
       const { data, error } = await supabase
         .from('optimization_queue' as never)
         .select('*')
         .order('priority', { ascending: true })
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
       if (error) throw error;
       return (data ?? []) as unknown as OptimizationItem[];
     },
@@ -135,7 +149,7 @@ export function useOptimizationQueue() {
   }, [invalidate]);
 
   /** Executa um item: simula trabalho leve + checa guardrail. */
-  const runOne = useCallback(async (): Promise<'done' | 'blocked' | 'empty' | 'error'> => {
+  const runOne = useCallback(async (): Promise<'blocked' | 'done' | 'empty' | 'error'> => {
     const { data: claimedRaw, error: claimErr } = await supabase.rpc(
       'claim_next_optimization' as never,
     );
@@ -151,14 +165,16 @@ export function useOptimizationQueue() {
     invalidate();
 
     // Aguarda janela curta para guardrail medir possíveis regressões pós-execução.
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => {
+      setTimeout(r, 1500);
+    });
 
     // Checa guardrail
-    const { data: guardrail } = await supabase.rpc('check_telemetry_regression' as never);
+    const { data: guardrail } = await supabase.rpc('check_telemetry_regression');
     const guardrailStatus =
       (guardrail as { status?: string } | null)?.status ?? 'insufficient_data';
 
-    let finalStatus: 'done' | 'blocked' = 'done';
+    let finalStatus: 'blocked' | 'done' = 'done';
     let notes = `Executado automaticamente · guardrail=${guardrailStatus}`;
     let errorMsg: string | null = null;
 
@@ -168,7 +184,9 @@ export function useOptimizationQueue() {
       notes = errorMsg;
     }
 
-    await supabase.rpc(
+    // BUG-OPTQUEUE-COMPLETE-SILENT-FAIL FIX: bare RPC await with no error handling.
+    // If this fails, item stays 'pending' in DB but function returns 'done' — state corruption.
+    const { error: completeErr } = await supabase.rpc(
       'complete_optimization' as never,
       {
         _id: item.id,
@@ -179,6 +197,10 @@ export function useOptimizationQueue() {
         _error: errorMsg,
       } as never,
     );
+    if (completeErr) {
+      logger.warn('[optimization-queue] complete_optimization RPC failed:', completeErr);
+      throw completeErr;
+    }
 
     invalidate();
     return finalStatus === 'blocked' ? 'blocked' : 'done';
@@ -204,7 +226,9 @@ export function useOptimizationQueue() {
         if (result === 'error') {
           break;
         }
-        await new Promise((r) => setTimeout(r, 800));
+        await new Promise((r) => {
+          setTimeout(r, 800);
+        });
       }
     } finally {
       setIsExecuting(false);
@@ -281,10 +305,12 @@ export function useOptimizationQueue() {
     if (!ok) return false;
 
     // 3) Marca o item original como 'skipped' para limpar a UI.
-    await supabase
+    // BUG-OPTQUEUE-REQUEUE-SKIP-SILENT-FAIL FIX: bare await swallowed RLS errors.
+    const { error: skipErr } = await supabase
       .from('optimization_queue' as never)
       .update({ status: 'skipped', error: `${target.error ?? ''} (re-enfileirado)` } as never)
       .eq('id', target.id);
+    if (skipErr) logger.warn('[optimization-queue] Failed to mark item as skipped:', skipErr);
     invalidate();
 
     // 4) Dispara o auto-runner imediatamente.

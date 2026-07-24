@@ -59,7 +59,7 @@ export function playTtsAudio(
 
   const clearPrimingUrl = () => {
     if (!primingUrl) return;
-    if (audio && audio.src === primingUrl) {
+    if (audio?.src === primingUrl) {
       audio.removeAttribute('src');
       audio.load();
     }
@@ -170,7 +170,7 @@ export function playTtsAudio(
         })
         .catch((err) => {
           cleanup();
-          reject(err);
+          reject(err instanceof Error ? err : new Error(String(err)));
         });
     });
   })();

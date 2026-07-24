@@ -59,7 +59,9 @@ export function OffscreenLayoutCapture({ request, onCaptured }: OffscreenLayoutC
 
     const capture = async () => {
       // Wait for template to render
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => {
+        setTimeout(r, 500);
+      });
       if (!templateRef.current || !mountedRef.current) return;
 
       // Wait for all images inside the template to load
@@ -80,7 +82,9 @@ export function OffscreenLayoutCapture({ request, onCaptured }: OffscreenLayoutC
       }
 
       // Extra buffer for rendering after images load
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise((r) => {
+        setTimeout(r, 500);
+      });
       if (!templateRef.current || !mountedRef.current) return;
 
       setIsCapturing(true);

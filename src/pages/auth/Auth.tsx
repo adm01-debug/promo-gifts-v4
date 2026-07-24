@@ -38,6 +38,7 @@ import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder'
 import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 type LoginForm = LoginFormData;
 
@@ -94,6 +95,10 @@ export default function Auth() {
   const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
 
   const emailInputRef = useRef<HTMLInputElement | null>(null);
+  // P2-05: honeypot anti-bot. Campo invisível (name="website") fora do
+  // react-hook-form. Humanos não preenchem; bots automáticos costumam preencher
+  // todo input encontrado. Lemos via ref no submit pra decidir se rejeita.
+  const honeypotRef = useRef<HTMLInputElement | null>(null);
   // Função `retry` publicada pelo SocialLoginButtons para reexecutar o Google login.
   const googleRetryRef = useRef<(() => void) | null>(null);
   const handleRetryGoogle = useCallback(() => {
@@ -154,8 +159,11 @@ export default function Auth() {
     const loadInfo = async () => {
       if (!isLighthousePlaceholder) {
         try {
-          const supabase = await getSupabaseClient();
-          const { data, error } = await supabase.functions.invoke('get-visitor-info');
+          const { data, error } = await invokeEdge<{
+            ip?: string;
+            city?: string;
+            country_code?: string;
+          }>('get-visitor-info');
           if (!cancelled && !error && data) {
             if (data.ip) setCurrentIP(data.ip);
             if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
@@ -170,6 +178,13 @@ export default function Auth() {
 
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  // Cleanup rate-limit countdown timer on unmount to prevent state updates after unmount.
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
     };
   }, []);
 
@@ -238,6 +253,28 @@ export default function Auth() {
     setIsSubmitting(true);
     setIpBlocked(false);
 
+    // P2-05: honeypot anti-bot. Se o campo invisível `website` foi preenchido,
+    // quase certamente é bot. Simula delay realista (1.5-2.3s, faixa típica de
+    // resposta de servidor de auth) e retorna como credencial inválida sem
+    // sequer tocar o Supabase. Não loga em logLoginAttempt pra não poluir
+    // métricas reais de tentativas humanas.
+    if (honeypotRef.current?.value) {
+      logger.warn('[AUTH_HONEYPOT_HIT]', {
+        honeypot_len: honeypotRef.current.value.length,
+      });
+      const fakeDelayMs = 1500 + Math.random() * 800;
+      await new Promise<void>((r) => {
+        setTimeout(r, fakeDelayMs);
+      });
+      toast({
+        variant: 'destructive',
+        title: 'Não foi possível entrar',
+        description: 'Ocorreu um erro ao validar seu acesso. Por favor, tente novamente.',
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const { error } = await signIn(data.email, data.password);
 
@@ -264,7 +301,7 @@ export default function Auth() {
           description =
             'Detectamos muitas tentativas seguidas. Por segurança, sua conta foi bloqueada por alguns minutos.';
           // Extrai o tempo de espera da mensagem do Supabase (ex: "after 47 seconds")
-          const secondsMatch = error.message.match(/after (\d+) seconds?/i);
+          const secondsMatch = /after (\d+) seconds?/i.exec(error.message);
           const waitSeconds = secondsMatch ? parseInt(secondsMatch[1], 10) : 60;
           hint = `Aguarde ${waitSeconds} segundos antes de tentar novamente.`;
 
@@ -301,7 +338,7 @@ export default function Auth() {
 
         toast({
           variant: 'destructive',
-          title: title,
+          title,
           description: (
             <div className="space-y-3">
               <p className="font-medium leading-relaxed">{description}</p>
@@ -381,7 +418,7 @@ export default function Auth() {
         return;
       }
 
-      if (profileData && profileData.is_active === false) {
+      if (profileData?.is_active === false) {
         toast({
           variant: 'destructive',
           title: 'Acesso Bloqueado',
@@ -567,7 +604,9 @@ export default function Auth() {
                     >
                       Entre com suas credenciais para Brilhar, Você nasceu para isso!
                     </div>
-                    <p className="text-[13px] text-white/50">Inicie sua jornada rumo ao sucesso</p>
+                    <p className="text-[13px] text-white/50">
+                      Continue sua jornada rumo ao sucesso.
+                    </p>
                   </div>
                 </CardHeader>
 
@@ -678,6 +717,36 @@ export default function Auth() {
                     name="login"
                     noValidate
                   >
+                    {/*
+                      P2-05: honeypot anti-bot. Não remova.
+                      - tabIndex={-1}: pula no Tab
+                      - autoComplete="off": browsers não tentam preencher
+                      - aria-hidden + position absolute fora da viewport:
+                        leitores de tela e usuários humanos nunca veem
+                      - name="website": bots genéricos preenchem campos
+                        com nomes plausíveis automaticamente
+                    */}
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        left: '-9999px',
+                        width: '1px',
+                        height: '1px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <label htmlFor="website-hp">Website (deixe em branco)</label>
+                      <input
+                        ref={honeypotRef}
+                        id="website-hp"
+                        name="website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        defaultValue=""
+                      />
+                    </div>
                     <div className="space-y-2">
                       <label
                         htmlFor="login-email"

@@ -123,7 +123,7 @@ export function useSimulation() {
     queryFn: async () => {
       const raw = await fetchPromobrindProducts({ limit: 500 });
       return raw
-        .filter((p) => p.active !== false && p.is_active !== false)
+        .filter((p) => p.active && p.is_active)
         .map((p) => ({
           id: p.id,
           name: p.name,
@@ -458,7 +458,7 @@ export function useSimulation() {
   }, []);
 
   // ─── Mutations ────────────────────────────────────────────
-  const saveSimulationMutation = useMutation<void, Error, void>({
+  const saveSimulationMutation = useMutation<undefined, Error, undefined>({
     mutationFn: async () => {
       if (!user || !selectedProduct || simulationOptions.length === 0)
         throw new Error('Dados incompletos');
@@ -489,7 +489,7 @@ export function useSimulation() {
     },
   });
 
-  const deleteSimulationMutation = useMutation<void, Error, string>({
+  const deleteSimulationMutation = useMutation<undefined, Error, string>({
     mutationFn: async (id: string) => {
       const { error } = await untypedFrom('personalization_simulations').delete().eq('id', id);
       if (error) throw error;

@@ -40,7 +40,7 @@ export function ProposalHeader({ data, isContinuation }: Props) {
           <div
             style={{
               textAlign: 'right',
-              color: '#fff',
+              color: '#111',
               display: 'flex',
               alignItems: 'center',
               gap: '16px',
@@ -131,7 +131,7 @@ export function ProposalHeader({ data, isContinuation }: Props) {
           position: 'absolute',
           zIndex: 10,
           textAlign: 'right',
-          color: '#ffffff',
+          color: '#111',
           top: '0',
           bottom: '0',
           right: '32px',
@@ -183,7 +183,7 @@ export function ProposalHeader({ data, isContinuation }: Props) {
         </p>
         <p
           style={{
-            fontSize: '12px',
+            fontSize: '14px',
             opacity: 0.7,
             margin: 0,
             fontFamily: "'Montserrat', sans-serif",

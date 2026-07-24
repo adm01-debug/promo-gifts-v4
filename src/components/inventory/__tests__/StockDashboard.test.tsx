@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeAll, beforeEach } from 'vitest';
@@ -16,6 +17,7 @@ import {
 const mockUseVariantStock = vi.fn();
 vi.mock('@/hooks/products', () => ({
   useVariantStock: () => mockUseVariantStock(),
+  noveltyToProduct: vi.fn(),
 }));
 
 // ── Mock toast ──────────────────────────────────────────────────
@@ -48,6 +50,15 @@ vi.mock('../VariantStockTable', () => ({
 }));
 
 import { StockDashboard } from '../StockDashboard';
+
+// Mock useRuptureAlerts (hook React-Query da feature EMA). O VariantStockTable
+// monta esse hook quando a flag `useEmaRupture` está ativa (default: on), o que
+// exige QueryClientProvider em produção. Estes testes verificam render/linhas a
+// partir de props, não o fetch de EMA — então mockamos o hook (consistente com
+// a estratégia de mocks do arquivo) e evitamos precisar de um provider.
+vi.mock('@/hooks/stock/useRuptureAlerts', () => ({
+  useRuptureAlerts: () => ({ alerts: [], byVariantId: new Map(), isLoading: false, error: null }),
+}));
 
 beforeAll(() => {
   const proto = Element.prototype as unknown as Record<string, unknown>;
@@ -125,6 +136,7 @@ const futureEntry = (over: Partial<FutureStockEntry> = {}): FutureStockEntry => 
     id: over.id ?? `f-${seq}`,
     productId: over.productId ?? `prod-${seq}`,
     productName: over.productName ?? `Futuro ${seq}`,
+    variantId: over.variantId ?? `var-${seq}`,
     expectedQuantity: over.expectedQuantity ?? 50,
     expectedDate: over.expectedDate ?? '2026-07-01T00:00:00.000Z',
     source: over.source ?? 'purchase_order',
@@ -233,22 +245,24 @@ describe('StockDashboard — render states', () => {
     expect(fetchStockData).toHaveBeenCalled();
   });
 
-  it('renderiza visão geral, cartões e tabela quando carregado', () => {
+  it('renderiza cartões de KPI e tabela quando carregado', () => {
     renderDashboard();
-    expect(screen.getByText('Visão Geral')).toBeInTheDocument();
     // StatCards expose unique aria-labels ("<title>: <value>. <hint>").
-    expect(screen.getByRole('button', { name: /^Total de Produtos:/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Total de Variações:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Em Estoque:/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Estoque Baixo:/ })).toBeInTheDocument();
+    // "Risco de Ruptura" (EMA, Onda 1) replaced the defunct "Estoque Baixo"/"Crítico" card.
+    expect(screen.getByRole('button', { name: /^Risco de Ruptura:/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Sem Estoque:/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Estoque Futuro:/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Estoque Futuro/ })).toBeInTheDocument();
     expect(screen.getByTestId('variant-stock-table')).toBeInTheDocument();
   });
 
-  it('exibe o badge de saúde do estoque', () => {
+  it('exibe o card "Estoque por Cor/Variação" com contagem de produtos', () => {
     renderDashboard();
-    const badge = screen.getByTestId('health-score-badge');
-    expect(badge).toHaveTextContent(/Saúde:/);
+    // CardTitle da seção de tabela — confirma que o dashboard está carregado
+    expect(screen.getByText('Estoque por Cor/Variação')).toBeInTheDocument();
+    // health-score-badge foi removido intencionalmente (regression test confirma)
+    expect(screen.queryByTestId('health-score-badge')).not.toBeInTheDocument();
   });
 });
 
@@ -256,7 +270,7 @@ describe('StockDashboard — stat card filters', () => {
   it('clica em "Total de Produtos" e aplica status=all', async () => {
     const user = userEvent.setup();
     renderDashboard();
-    await user.click(screen.getByRole('button', { name: /^Total de Produtos:/ }));
+    await user.click(screen.getByRole('button', { name: /^Total de Variações:/ }));
     expect(updateFilter).toHaveBeenCalledWith('status', 'all');
   });
 
@@ -283,7 +297,7 @@ describe('StockDashboard — stat card filters', () => {
       buildHookValue({ futureStock: [futureEntry({ productName: 'Reposição X' })] }),
     );
     renderDashboard();
-    await user.click(screen.getByRole('button', { name: /^Estoque Futuro:/ }));
+    await user.click(screen.getByRole('button', { name: /^Estoque Futuro/ }));
     expect(updateFilter).toHaveBeenCalledWith('status', 'incoming');
     // dialog opens with the future entries
     await waitFor(() => expect(screen.getByText('Previsão de Reposição')).toBeInTheDocument());
@@ -291,7 +305,7 @@ describe('StockDashboard — stat card filters', () => {
 });
 
 describe('StockDashboard — critical alerts & active filter', () => {
-  it('mostra o badge de alertas críticos e abre o dialog ao clicar', async () => {
+  it('clica em "Sem Estoque" com alertas críticos → abre o OutOfStockDialog', async () => {
     const user = userEvent.setup();
     mockUseVariantStock.mockReturnValue(
       buildHookValue({
@@ -299,10 +313,11 @@ describe('StockDashboard — critical alerts & active filter', () => {
       }),
     );
     renderDashboard();
-    const badge = screen.getByTestId('critical-alerts-badge');
-    expect(badge).toHaveTextContent('1 alertas');
-    await user.click(badge);
-    // OutOfStockDialog opens
+    // critical-alerts-badge foi removido intencionalmente; o dialog ainda abre
+    // via clique no StatCard "Sem Estoque" quando há alertas críticos.
+    expect(screen.queryByTestId('critical-alerts-badge')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Sem Estoque:/ }));
+    expect(updateFilter).toHaveBeenCalledWith('status', 'out_of_stock');
     await waitFor(() => expect(screen.getByText('Crítico A')).toBeInTheDocument());
   });
 
@@ -322,11 +337,11 @@ describe('StockDashboard — critical alerts & active filter', () => {
 });
 
 describe('StockDashboard — health drawer & risk panel', () => {
-  it('abre o drawer de saúde ao clicar no badge', async () => {
-    const user = userEvent.setup();
+  it('health drawer começa fechado (sem trigger visível no header)', () => {
     renderDashboard();
-    await user.click(screen.getByTestId('health-score-badge'));
-    await waitFor(() => expect(screen.getByTestId('health-drawer')).toBeInTheDocument());
+    // health-score-badge foi removido; o drawer não é renderizado por padrão.
+    expect(screen.queryByTestId('health-score-badge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('health-drawer')).not.toBeInTheDocument();
   });
 
   it('exibe o painel de risco por padrão e permite recolher', async () => {
@@ -364,6 +379,7 @@ describe('StockDashboard — info alerts', () => {
 describe('StockDashboard — keyboard shortcut', () => {
   it('Ctrl+Shift+S dispara refresh e toast', async () => {
     renderDashboard();
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       window.dispatchEvent(
         new KeyboardEvent('keydown', { key: 'S', ctrlKey: true, shiftKey: true }),

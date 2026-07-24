@@ -14,17 +14,17 @@
 import { useEffect } from 'react';
 
 interface IdleOptions {
-  timeout?: number;  // max wait antes de forçar execução (ms). Default: 3000
-  delay?: number;    // delay mínimo antes de agendar (ms). Default: 0
+  timeout?: number; // max wait antes de forçar execução (ms). Default: 3000
+  delay?: number; // delay mínimo antes de agendar (ms). Default: 0
 }
 
 export function useIdleEffect(
-  fn: () => (() => void) | void,
+  fn: () => (() => void) | undefined,
   deps: React.DependencyList,
   { timeout = 3000, delay = 0 }: IdleOptions = {},
 ): void {
   useEffect(() => {
-    let cleanup: (() => void) | void;
+    let cleanup: (() => void) | undefined;
     let idleId: number | undefined;
     // BUG-G FIX (2026-06-15): separate variables so the delay timer and the
     // fallback schedule timer are both properly cancelled on unmount.
@@ -41,9 +41,12 @@ export function useIdleEffect(
           { timeout },
         );
       } else {
-        scheduleTimerId = setTimeout(() => {
-          cleanup = fn();
-        }, Math.max(timeout / 2, 100));
+        scheduleTimerId = setTimeout(
+          () => {
+            cleanup = fn();
+          },
+          Math.max(timeout / 2, 100),
+        );
       }
     };
 
@@ -61,6 +64,6 @@ export function useIdleEffect(
       if (scheduleTimerId !== undefined) clearTimeout(scheduleTimerId);
       cleanup?.();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }

@@ -27,16 +27,7 @@ import { LayoutPopover } from '@/components/products/LayoutPopover';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -482,26 +473,17 @@ export default function CollectionsPage() {
         defaultIcons={defaultIcons}
       />
 
-      <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir coleção?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. Os produtos não serão excluídos, apenas removidos
-              desta coleção.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        onOpenChange={(o) => !o && setDeleteConfirm(null)}
+        variant="destructive"
+        title="Excluir coleção?"
+        description="Esta ação não pode ser desfeita. Os produtos não serão excluídos, apenas removidos desta coleção."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={handleDelete}
+        testId="collections-delete-dialog"
+      />
     </>
   );
 }

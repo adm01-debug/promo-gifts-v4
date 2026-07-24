@@ -53,7 +53,7 @@ describe('AuthFlowTracer', () => {
     const payload = btoa(
       JSON.stringify({ iss: 'https://x.supabase.co/auth/v1', sub: 'u1', aud: 'authenticated' }),
     )
-      .replace(/=+$/, '')
+      .replace(/[=]+$/, '')
       .replace(/\+/g, '-')
       .replace(/\//g, '_');
     const access = `h.${payload}.s`;

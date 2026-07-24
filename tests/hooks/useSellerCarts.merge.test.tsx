@@ -39,8 +39,8 @@ type Row = {
 const ops: Array<{ kind: string; [k: string]: unknown }> = [];
 let itemsTable: Row[] = [];
 const cartsTable = [
-  { id: 'cart-A', seller_id: 'seller-1', company_id: 'co', company_name: 'A', company_location: null, company_logo_url: null, notes: null, status: 'novo', created_at: '', updated_at: '' },
-  { id: 'cart-B', seller_id: 'seller-1', company_id: 'co', company_name: 'B', company_location: null, company_logo_url: null, notes: null, status: 'novo', created_at: '', updated_at: '' },
+  { id: 'cart-A', seller_id: 'seller-1', company_id: 'co', company_name: 'A', company_location: null, company_logo_url: null, notes: null, status: 'em_separacao', created_at: '', updated_at: '' },
+  { id: 'cart-B', seller_id: 'seller-1', company_id: 'co', company_name: 'B', company_location: null, company_logo_url: null, notes: null, status: 'em_separacao', created_at: '', updated_at: '' },
 ];
 
 function makeBuilder(table: string) {
@@ -61,7 +61,14 @@ function makeBuilder(table: string) {
     );
 
   const resolveList = () => {
-    if (table === 'seller_carts') return { data: cartsTable, error: null };
+    if (table === 'seller_carts') {
+      // Simula o nested join PostgREST select('*, seller_cart_items(*)').
+      const withItems = cartsTable.map((cart) => ({
+        ...cart,
+        seller_cart_items: itemsTable.filter((it) => it.cart_id === cart.id),
+      }));
+      return { data: withItems, error: null };
+    }
     return { data: applyFilters(itemsTable), error: null };
   };
 
@@ -94,7 +101,7 @@ function makeBuilder(table: string) {
     eq(col: string, val: unknown) { state.filters.push(['eq', col, val]); return b; },
     is(col: string, val: unknown) { state.filters.push(['is', col, val]); return b; },
     in(col: string, val: unknown) { state.filters.push(['in', col, val]); return b; },
-    order() { return Promise.resolve(resolveList()); },
+    order() { return b; },
     maybeSingle() { return Promise.resolve(resolveSingle()); },
     single() { return Promise.resolve(resolveSingle()); },
     then(onF: (v: unknown) => unknown, onR?: (e: unknown) => unknown) {

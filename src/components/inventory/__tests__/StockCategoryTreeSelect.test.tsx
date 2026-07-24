@@ -8,6 +8,7 @@ import type { CategoryNode, CategoryTreeItem } from '@/hooks/products';
 const mockUseCategoriesTree = vi.fn();
 vi.mock('@/hooks/products', () => ({
   useCategoriesTree: () => mockUseCategoriesTree(),
+  noveltyToProduct: vi.fn(),
 }));
 
 // ── Factories ────────────────────────────────────────────────────

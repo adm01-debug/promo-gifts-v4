@@ -36,7 +36,13 @@ export function QuoteSignaturePad({ onSign, isSubmitting }: QuoteSignaturePadPro
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     const point = 'touches' in e ? e.touches[0] : e;
-    return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+    // Scale CSS pixel coords → canvas internal pixel coords (canvas may be CSS-scaled)
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (point.clientX - rect.left) * scaleX,
+      y: (point.clientY - rect.top) * scaleY,
+    };
   };
 
   const start = (e: React.MouseEvent | React.TouchEvent) => {

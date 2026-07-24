@@ -58,7 +58,9 @@ describe('oauth-pending', () => {
   it('mark é idempotente — sobrescreve startedAt', async () => {
     markOAuthPending('google');
     const first = readOAuthPending()!.startedAt;
-    await new Promise((r) => setTimeout(r, 5));
+    await new Promise((r) => {
+      setTimeout(r, 5);
+    });
     markOAuthPending('google');
     const second = readOAuthPending()!.startedAt;
     expect(second).toBeGreaterThanOrEqual(first);

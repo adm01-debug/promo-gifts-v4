@@ -63,7 +63,7 @@ export function ArtFileUpload({
   const [isDragging, setIsDragging] = useState(false);
 
   const handleFiles = useCallback(
-    async (files: FileList | File[]) => {
+    async (files: File[] | FileList) => {
       if (!userId) {
         toast.error('Faça login para anexar arquivos');
         return;
@@ -102,9 +102,19 @@ export function ArtFileUpload({
           continue;
         }
 
-        const { data: signed } = await supabase.storage
+        // BUG-ARTFILE-SIGNEDURL-SILENT-FAIL FIX: if createSignedUrl failed, signed was null
+        // and file_url: '' was inserted into the DB — corrupt record with inaccessible file.
+        const { data: signed, error: signErr } = await supabase.storage
           .from('mockup-art-files')
           .createSignedUrl(path, 60 * 60 * 24 * 7);
+
+        if (signErr || !signed?.signedUrl) {
+          logger.error('[ArtFileUpload] createSignedUrl failed — skipping file', signErr);
+          toast.error(`Falha ao gerar URL de acesso para ${file.name}`);
+          const { error: cleanupErr } = await supabase.storage.from('mockup-art-files').remove([path]);
+          if (cleanupErr) logger.warn('[ArtFileUpload] storage cleanup after signedUrl fail:', cleanupErr);
+          continue;
+        }
 
         const { data: row, error: insErr } = await supabase
           .from('art_file_attachments')
@@ -125,7 +135,9 @@ export function ArtFileUpload({
         if (insErr || !row) {
           logger.error('[ArtFileUpload] db insert error', insErr);
           toast.error(`Falha ao registrar ${file.name}`);
-          await supabase.storage.from('mockup-art-files').remove([path]);
+          // BUG-ARTFILE-CLEANUP-SILENT-FAIL FIX: storage.remove returns { data, error } — best-effort cleanup.
+          const { error: cleanupErr } = await supabase.storage.from('mockup-art-files').remove([path]);
+          if (cleanupErr) logger.warn('[ArtFileUpload] storage cleanup failed:', cleanupErr);
           continue;
         }
 
@@ -154,7 +166,12 @@ export function ArtFileUpload({
         return;
       }
 
-      await supabase.storage.from('mockup-art-files').remove([att.file_path]);
+      const { error: storageErr } = await supabase.storage
+        .from('mockup-art-files')
+        .remove([att.file_path]);
+      if (storageErr) {
+        logger.error('[ArtFileUpload] Falha ao remover arquivo do storage:', storageErr);
+      }
       onAttachmentsChange(attachments.filter((a) => a.id !== att.id));
       toast.success('Arquivo removido');
     },
@@ -198,16 +215,17 @@ export function ArtFileUpload({
           multiple
           accept={[...ACCEPTED_EXTENSIONS, ...ACCEPTED_MIME].join(',')}
           className="hidden"
+          aria-label="Upload de arquivos de arte vetorial"
           onChange={(e) => e.target.files && handleFiles(e.target.files)}
         />
         {isUploading ? (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" />
             <p className="text-sm">Enviando…</p>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <Upload className="h-6 w-6" />
+            <Upload className="h-6 w-6" aria-hidden="true" />
             <p className="text-sm font-medium">Arraste arquivos vetoriais ou clique</p>
             <p className="text-xs">
               {ACCEPTED_EXTENSIONS.join(', ')} • máx {MAX_SIZE_MB}MB
@@ -220,7 +238,7 @@ export function ArtFileUpload({
         <div className="space-y-2">
           {attachments.map((att) => (
             <Card key={att.id} className="flex items-center gap-3 p-3">
-              <FileText className="h-5 w-5 shrink-0 text-primary" />
+              <FileText className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{att.original_name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -232,18 +250,18 @@ export function ArtFileUpload({
                 size="icon"
                 variant="ghost"
                 onClick={() => handleDownload(att)}
-                aria-label="Baixar"
+                aria-label={`Baixar arquivo ${att.original_name}`}
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4" aria-hidden="true" />
               </Button>
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={() => handleRemove(att)}
-                aria-label="Remover"
+                aria-label={`Remover arquivo ${att.original_name}`}
                 className="text-destructive hover:text-destructive"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </Card>
           ))}

@@ -16,6 +16,7 @@ interface UseProductsByColorResult {
   productIds: Set<string>;
   hasFilter: boolean;
   isLoading: boolean;
+  error: unknown;
 }
 
 export function useProductsByColor({
@@ -26,6 +27,7 @@ export function useProductsByColor({
 }: UseProductsByColorOptions): UseProductsByColorResult {
   const [productIds, setProductIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<unknown>(null);
 
   const hasFilter = useMemo(
     () =>
@@ -38,33 +40,43 @@ export function useProductsByColor({
 
   const filterKey = useMemo(
     () =>
-      [...colorGroups].sort().join(',') +
-      '|' +
-      [...colorVariations].sort().join(',') +
-      '|' +
-      [...colorNuances].sort().join(',') +
-      '|' +
-      [...colors].sort().join(','),
+      `${[...colorGroups].sort().join(',')}|${[...colorVariations].sort().join(',')}|${[...colorNuances].sort().join(',')}|${[...colors].sort().join(',')}`,
     [colorGroups, colorVariations, colorNuances, colors],
   );
 
   const lastFetchedKey = useRef('');
-  // fetchTokenRef: substitui isFetchingRef — cada chamada incrementa o token;
-  // resultados de chamadas supersedidas sao descartados, eliminando a condicao de corrida
-  // onde filtros rapidos A->B bloqueavam B (isFetchingRef=true) e mostravam o resultado
-  // stale de A. Propriedade chave: somente o ultimo fetch em voo aplica setState.
+  // fetchTokenRef: each new call increments the token; only the latest call applies
+  // setState — stale results from slow in-flight requests are discarded.
   const fetchTokenRef = useRef(0);
+  // abortControllerRef: cancels the previous HTTP request so network bandwidth is not
+  // wasted on superseded fetches (token alone prevents stale setState but not network I/O).
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchProductIds = useCallback(async () => {
     if (lastFetchedKey.current === filterKey) return;
     if (!hasFilter) {
-      setProductIds(new Set());
+      // Abort any in-flight request and invalidate its token so the stale
+      // setState in its finally/resolve path cannot overwrite the cleared state.
+      abortControllerRef.current?.abort();
+      ++fetchTokenRef.current;
+      setIsLoading(false);
+      // FIX BUG-RENDER-COLOR-01: conditional setState prevents render loop.
+      // new Set() creates a different object reference every call; when productIds is
+      // already empty, React's Object.is check on the prev ref short-circuits the
+      // re-render that would re-trigger this effect indefinitely.
+      setProductIds((prev) => (prev.size === 0 ? prev : new Set()));
       lastFetchedKey.current = '';
       return;
     }
 
     const token = ++fetchTokenRef.current;
+    // Cancel the previous in-flight request before starting a new one
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const { signal } = controller;
     setIsLoading(true);
+    setError(null);
 
     try {
       const refQueries = [
@@ -97,7 +109,7 @@ export function useProductsByColor({
         },
       ];
 
-      const refResults = await Promise.all(refQueries.map((q) => dbInvoke(q)));
+      const refResults = await Promise.all(refQueries.map((q) => dbInvoke({ ...q, signal })));
       if (token !== fetchTokenRef.current) return; // superseded
 
       const groupsData = (refResults[0]?.records ?? []) as Record<string, unknown>[];
@@ -156,24 +168,34 @@ export function useProductsByColor({
       const matchingProductIds = new Set<string>();
 
       if (colorIdArray.length > 0) {
+        // PERF-COLOR-01 (2026-06-18): chunks paralelos em vez de serial.
+        // Antes: loop com await serial → cada CHUNK = 1 round-trip sequential.
+        // Depois: Promise.all → todos os chunks em paralelo → até 3× mais rápido
+        // para filtros de cor com >50 color IDs (ex: grupo inteiro de cores).
+        // Edge: se 1 chunk falha, Promise.all rejeita → catch zera productIds (safe).
         const CHUNK = 50;
+        const chunks: string[][] = [];
         for (let i = 0; i < colorIdArray.length; i += CHUNK) {
-          const chunk = colorIdArray.slice(i, i + CHUNK);
-          const variantQueries = [
-            {
+          chunks.push(colorIdArray.slice(i, i + CHUNK));
+        }
+
+        const chunkResults = await Promise.all(
+          chunks.map((chunk) =>
+            dbInvoke<{ product_id: string }>({
               table: 'product_variants',
-              operation: 'select' as const,
+              operation: 'select',
               select: 'product_id',
               filters: { is_active: true, color_id: chunk },
               limit: 5000,
               offset: 0,
-            },
-          ];
+              signal,
+            }),
+          ),
+        );
 
-          const variantResults = await Promise.all(variantQueries.map((q) => dbInvoke(q)));
-          // FIX-CATALOG-01: dbInvoke returns InvokeResult { records, count }, not BatchResult { success, data }
-          if (variantResults[0]?.records) {
-            for (const r of variantResults[0].records as Array<{ product_id: string }>) {
+        for (const result of chunkResults) {
+          if (result?.records) {
+            for (const r of result.records) {
               matchingProductIds.add(r.product_id);
             }
           }
@@ -187,8 +209,11 @@ export function useProductsByColor({
         `[useProductsByColor] Found ${matchingProductIds.size} products for ${colorIdArray.length} color IDs`,
       );
     } catch (err) {
+      // Ignore aborted requests — a new fetch is already in-flight
+      if ((err as { name?: string })?.name === 'AbortError') return;
       if (token !== fetchTokenRef.current) return; // superseded
       logger.error('[useProductsByColor] Critical Error:', err);
+      setError(err);
       setProductIds(new Set());
     } finally {
       if (token === fetchTokenRef.current) setIsLoading(false);
@@ -200,5 +225,5 @@ export function useProductsByColor({
     if (filterKey !== lastFetchedKey.current || !hasFilter) fetchProductIds();
   }, [filterKey, hasFilter, fetchProductIds]);
 
-  return { productIds, hasFilter, isLoading };
+  return { productIds, hasFilter, isLoading, error };
 }
