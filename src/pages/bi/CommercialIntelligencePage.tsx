@@ -13,8 +13,11 @@ import { ProductRankingSearch } from '@/components/intelligence/ProductRankingSe
 import { CategoryRanking } from '@/components/intelligence/CategoryRanking';
 import { SupplierSales } from '@/components/intelligence/SupplierSales';
 import { GoldSyncBadge } from '@/components/intelligence/GoldSyncBadge';
+import { ZeroResultDiagnosisCallout } from '@/components/intelligence/ZeroResultDiagnosisCallout';
 import { Brain, Clock } from 'lucide-react';
 import { useDebouncedFilters } from '@/hooks/common';
+import { useCommercialKPIs } from '@/hooks/intelligence';
+import type { FilterKey } from '@/hooks/intelligence/useZeroResultDiagnosis';
 
 export default function CommercialIntelligencePage() {
   const [lastRefresh] = useState<Date>(new Date());
@@ -31,6 +34,35 @@ export default function CommercialIntelligencePage() {
   // Debounce 300ms — evita refetch em cascata ao trocar filtros rapidamente
   const filters = useDebouncedFilters(rawFilters, 300);
   const setFilters = setRawFilters;
+
+  // KPIs consumidos aqui p/ decidir se exibimos o diagnóstico de "resultado zero".
+  // react-query dedupa a chamada com IntelligenceKPICards (mesma queryKey).
+  const { data: kpis, isLoading: isLoadingKpis } = useCommercialKPIs(
+    filters.days,
+    filters.categoryId,
+    filters.supplierId,
+    filters.productId,
+  );
+  const hasActiveFilter = !!(filters.categoryId || filters.supplierId || filters.productId);
+  const isEmptyResult =
+    !isLoadingKpis && !!kpis && kpis.totalOrders === 0 && kpis.totalQuotes === 0;
+  const showZeroDiagnosis = isEmptyResult && (hasActiveFilter || filters.days <= 30);
+
+  const clearFilter = (key: FilterKey) => {
+    setFilters((prev) => {
+      if (key === 'category') return { ...prev, categoryId: null, categoryName: null };
+      if (key === 'supplier') return { ...prev, supplierId: null, supplierName: null };
+      return { ...prev, productId: null, productName: null };
+    });
+  };
+
+  const widenWindow = () => {
+    setFilters((prev) => {
+      const ladder = [7, 30, 90, 180, 365];
+      const next = ladder.find((d) => d > prev.days) ?? 365;
+      return { ...prev, days: next };
+    });
+  };
 
   const formatRelative = (d: Date) => {
     const diff = Math.round((Date.now() - d.getTime()) / 1000);
