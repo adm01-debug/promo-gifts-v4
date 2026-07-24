@@ -12,6 +12,7 @@ import { TrendingProducts } from '@/components/intelligence/TrendingProducts';
 import { ProductRankingSearch } from '@/components/intelligence/ProductRankingSearch';
 import { CategoryRanking } from '@/components/intelligence/CategoryRanking';
 import { SupplierSales } from '@/components/intelligence/SupplierSales';
+import { GoldSyncBadge } from '@/components/intelligence/GoldSyncBadge';
 import { Brain, Clock } from 'lucide-react';
 import { useDebouncedFilters } from '@/hooks/common';
 
@@ -63,9 +64,12 @@ export default function CommercialIntelligencePage() {
               Produtos & Fornecedores · comportamento do mercado + vendas internas
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
-            <span>Atualizado {formatRelative(lastRefresh)}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <GoldSyncBadge windowDays={filters.days} />
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+              Atualizado {formatRelative(lastRefresh)}
+            </span>
           </div>
         </div>
 
