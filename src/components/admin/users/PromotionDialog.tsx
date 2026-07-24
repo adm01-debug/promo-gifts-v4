@@ -20,7 +20,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ShieldCheck, ShieldAlert, ArrowRight } from 'lucide-react';
 import { z } from 'zod';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { type UserWithRole } from './types';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
@@ -89,7 +88,7 @@ export function PromotionDialog({
           reason: parsed.data.reason,
         },
       });
-      if (invokeErr) throw invokeErr;
+      if (invokeErr) throw new Error(invokeErr.message);
       if (data?.error) throw new Error(data.error);
 
       toast.success(

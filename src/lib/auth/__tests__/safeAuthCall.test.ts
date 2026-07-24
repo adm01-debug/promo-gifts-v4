@@ -3,11 +3,7 @@
  * Invariante: nunca lança; sempre retorna SafeAuthResult com userMessage segura.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  safeAuthCall,
-  __resetBreakers,
-  type AuthErrorKind,
-} from '@/lib/auth/safeAuthCall';
+import { safeAuthCall, __resetBreakers, type AuthErrorKind } from '@/lib/auth/safeAuthCall';
 import {
   resetStructuredLoggerMock,
   findLoggerEventsByScope,
@@ -28,10 +24,13 @@ function mkErr(status: number, message: string, name = 'AuthApiError') {
 }
 
 describe('safeAuthCall — sucesso e classificação', () => {
-  beforeEach(() => { __resetBreakers(); resetStructuredLoggerMock(); });
+  beforeEach(() => {
+    __resetBreakers();
+    resetStructuredLoggerMock();
+  });
 
   it('retorna kind=ok no primeiro sucesso', async () => {
-    const r = await safeAuthCall(async () => OK, { op: 'signIn' });
+    const r = await safeAuthCall(() => Promise.resolve(OK), { op: 'signIn' });
     expect(r.kind).toBe('ok');
     if (r.kind === 'ok') expect(r.attempts).toBe(1);
   });
@@ -47,7 +46,7 @@ describe('safeAuthCall — sucesso e classificação', () => {
     [503, 'service unavailable', 'server'],
     [504, 'gateway timeout', 'server'],
   ])('classifica status=%s msg=%s como %s', async (status, msg, kind) => {
-    const r = await safeAuthCall(async () => mkErr(status, msg), {
+    const r = await safeAuthCall(() => Promise.resolve(mkErr(status, msg)), {
       op: 'signIn',
       maxRetries: 1,
     });
@@ -56,7 +55,7 @@ describe('safeAuthCall — sucesso e classificação', () => {
   });
 
   it('não retenta credential (retorna após 1 tentativa mesmo com maxRetries=3)', async () => {
-    const call = vi.fn(async () => mkErr(401, 'Invalid login'));
+    const call = vi.fn(() => Promise.resolve(mkErr(401, 'Invalid login')));
     const r = await safeAuthCall(call, { op: 'signIn', maxRetries: 3 });
     expect(call).toHaveBeenCalledTimes(1);
     expect(r.attempts).toBe(1);
@@ -64,7 +63,7 @@ describe('safeAuthCall — sucesso e classificação', () => {
   });
 
   it('não retenta ratelimit', async () => {
-    const call = vi.fn(async () => mkErr(429, 'rate limit'));
+    const call = vi.fn(() => Promise.resolve(mkErr(429, 'rate limit')));
     const r = await safeAuthCall(call, { op: 'signIn', maxRetries: 3 });
     expect(call).toHaveBeenCalledTimes(1);
     if (r.kind === 'err') expect(r.errorKind).toBe('ratelimit');
@@ -72,10 +71,10 @@ describe('safeAuthCall — sucesso e classificação', () => {
 
   it('retenta network e retorna ok na 2ª tentativa', async () => {
     let n = 0;
-    const call = vi.fn(async () => {
+    const call = vi.fn((): Promise<typeof OK> => {
       n++;
-      if (n === 1) throw new TypeError('Failed to fetch');
-      return OK;
+      if (n === 1) return Promise.reject(new TypeError('Failed to fetch'));
+      return Promise.resolve(OK);
     });
     const r = await safeAuthCall(call, { op: 'signIn', maxRetries: 3 });
     expect(call).toHaveBeenCalledTimes(2);
@@ -84,7 +83,7 @@ describe('safeAuthCall — sucesso e classificação', () => {
   });
 
   it('retenta server 500 até esgotar', async () => {
-    const call = vi.fn(async () => mkErr(500, 'boom'));
+    const call = vi.fn(() => Promise.resolve(mkErr(500, 'boom')));
     const r = await safeAuthCall(call, { op: 'signIn', maxRetries: 3 });
     expect(call).toHaveBeenCalledTimes(3);
     if (r.kind === 'err') expect(r.errorKind).toBe('server');
@@ -93,7 +92,7 @@ describe('safeAuthCall — sucesso e classificação', () => {
   it('respeita AbortSignal externo já abortado', async () => {
     const ac = new AbortController();
     ac.abort();
-    const call = vi.fn(async () => OK);
+    const call = vi.fn(() => Promise.resolve(OK));
     const r = await safeAuthCall(call, {
       op: 'signIn',
       signal: ac.signal,
@@ -118,9 +117,8 @@ describe('safeAuthCall — sucesso e classificação', () => {
 
   it('nunca lança exceção — resposta malformada vira unknown', async () => {
     // Simula lib devolvendo algo inesperado
-    const call = vi.fn(async () => {
-      throw { weird: true };
-    });
+    // eslint-disable-next-line prefer-promise-reject-errors, @typescript-eslint/prefer-promise-reject-errors
+    const call = vi.fn(() => Promise.reject({ weird: true }));
     const r = await safeAuthCall(call as never, {
       op: 'signIn',
       maxRetries: 1,
@@ -134,8 +132,8 @@ describe('safeAuthCall — sucesso e classificação', () => {
   });
 
   it('userMessage é sanitizada (não expõe stack) em não-dev', async () => {
-    const call = vi.fn(async () =>
-      mkErr(500, 'TypeError: Cannot read properties at http://x/foo.js:1:2'),
+    const call = vi.fn(() =>
+      Promise.resolve(mkErr(500, 'TypeError: Cannot read properties at http://x/foo.js:1:2')),
     );
     const r = await safeAuthCall(call, {
       op: 'signIn',
@@ -149,7 +147,7 @@ describe('safeAuthCall — sucesso e classificação', () => {
   });
 
   it('em dev retorna mensagem crua', async () => {
-    const r = await safeAuthCall(async () => mkErr(500, 'DEV_RAW_MSG_XYZ'), {
+    const r = await safeAuthCall(() => Promise.resolve(mkErr(500, 'DEV_RAW_MSG_XYZ')), {
       op: 'signIn',
       maxRetries: 1,
       isDev: true,
@@ -158,13 +156,13 @@ describe('safeAuthCall — sucesso e classificação', () => {
   });
 
   it('emite structured log com scope auth.<op>', async () => {
-    await safeAuthCall(async () => OK, { op: 'signUp' });
+    await safeAuthCall(() => Promise.resolve(OK), { op: 'signUp' });
     const evs = findLoggerEventsByScope('auth.signUp');
     expect(evs.some((e) => e.event === 'signUp_ok')).toBe(true);
   });
 
   it('emite exhausted quando esgota retries', async () => {
-    await safeAuthCall(async () => mkErr(500, 'x'), {
+    await safeAuthCall(() => Promise.resolve(mkErr(500, 'x')), {
       op: 'refresh',
       maxRetries: 2,
     });
@@ -174,7 +172,10 @@ describe('safeAuthCall — sucesso e classificação', () => {
 });
 
 describe('safeAuthCall — fuzz combinacional (40 cenários)', () => {
-  beforeEach(() => { __resetBreakers(); resetStructuredLoggerMock(); });
+  beforeEach(() => {
+    __resetBreakers();
+    resetStructuredLoggerMock();
+  });
 
   const errorMatrix: ReadonlyArray<[number, string]> = [
     [400, 'Invalid login credentials'],
@@ -189,23 +190,18 @@ describe('safeAuthCall — fuzz combinacional (40 cenários)', () => {
     [0, 'Failed to fetch'],
   ];
 
-  it.each(errorMatrix)(
-    'nunca lança para status=%s / msg=%s',
-    async (status, msg) => {
-      for (let i = 0; i < 4; i++) {
-        const r = await safeAuthCall(
-          async () =>
-            status === 0
-              ? Promise.reject(new TypeError(msg))
-              : Promise.resolve(mkErr(status, msg)),
-          { op: 'fuzz', maxRetries: 1 + (i % 2), timeoutMs: 500 },
-        );
-        expect(r.kind === 'ok' || r.kind === 'err').toBe(true);
-        if (r.kind === 'err') {
-          expect(typeof r.userMessage).toBe('string');
-          expect(r.userMessage.length).toBeGreaterThan(0);
-        }
+  it.each(errorMatrix)('nunca lança para status=%s / msg=%s', async (status, msg) => {
+    for (let i = 0; i < 4; i++) {
+      const r = await safeAuthCall(
+        () =>
+          status === 0 ? Promise.reject(new TypeError(msg)) : Promise.resolve(mkErr(status, msg)),
+        { op: 'fuzz', maxRetries: 1 + (i % 2), timeoutMs: 500 },
+      );
+      expect(r.kind === 'ok' || r.kind === 'err').toBe(true);
+      if (r.kind === 'err') {
+        expect(typeof r.userMessage).toBe('string');
+        expect(r.userMessage.length).toBeGreaterThan(0);
       }
-    },
-  );
+    }
+  });
 });

@@ -2,7 +2,6 @@
  * Caches the ElevenLabs Scribe token to avoid fetching on every activation.
  * Tokens expire after 15 minutes; we cache for 12 minutes to be safe.
  */
-import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 

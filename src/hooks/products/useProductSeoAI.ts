@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { UseFormGetValues, UseFormSetValue } from 'react-hook-form';
@@ -50,11 +49,13 @@ export function useProductSeoAI(
         sale_price: getValues('sale_price'),
       };
 
-      const { data, error } = await invokeEdge<Partial<SeoAIResult> & { error?: string; slug?: string }>('generate-product-seo', {
+      const { data, error } = await invokeEdge<
+        Partial<SeoAIResult> & { error?: string; slug?: string }
+      >('generate-product-seo', {
         body: { product },
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
 
       for (const field of SEO_FIELDS) {

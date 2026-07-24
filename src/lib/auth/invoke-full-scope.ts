@@ -26,7 +26,6 @@
  *   else if (result.status === "cancelled") { return; }
  *   else toast.error(...);
  */
-import { supabase } from '@/integrations/supabase/client';
 import type { StepUpAction } from '@/hooks/auth';
 import { handleStepUpError } from '@/lib/auth/step-up-error';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';

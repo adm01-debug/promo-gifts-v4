@@ -3,7 +3,6 @@
  * para gerar tag/cor/ícone a partir do nome + itens do kit.
  */
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
@@ -36,7 +35,7 @@ export function useKitIdentitySuggestion() {
           body: input,
         },
       );
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       const s = data?.suggestion as IdentitySuggestion | undefined;
       if (!s?.tag || !s?.color || !s?.icon) throw new Error('Sugestão incompleta');

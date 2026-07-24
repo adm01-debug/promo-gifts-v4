@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getErrorCopy } from '@/lib/connection-error-copy';
 import { createClientLogger } from '@/lib/telemetry/structuredLogger';
@@ -67,7 +66,7 @@ export function useConnectionTester() {
           body: { action: 'test', type, config, connection_id, env_key },
           headers: log.headers(),
         });
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         const r = (data?.result ?? {}) as TestResult;
         const normalized: TestResult = {
           ok: !!r.ok,

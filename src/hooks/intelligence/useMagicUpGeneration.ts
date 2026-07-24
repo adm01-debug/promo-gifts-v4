@@ -199,7 +199,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
             imageModel: deps.imageModel ?? 'pro',
           },
         });
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         if (data?.imageUrl) {
           let genId: string | null = null;
           const diagnosis = await analyzeQuality(data.imageUrl, variantBrief, variantControls);
@@ -312,7 +312,11 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
         .select('metadata,status')
         .eq('id', currentVariation.id)
         .maybeSingle();
-      if (existingErr) logger.warn('[magic-up] pre-fetch for score update failed, using empty metadata:', existingErr);
+      if (existingErr)
+        logger.warn(
+          '[magic-up] pre-fetch for score update failed, using empty metadata:',
+          existingErr,
+        );
       const metadata = toJsonRecord(existing?.metadata);
       const status = (existing?.status as MagicUpCurationStatus | null) || curationStatus;
       // BUG-MAGICUP-SCORE-SILENT-FAIL FIX: bare await swallowed RLS errors.
@@ -366,7 +370,11 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
           .select('metadata')
           .eq('id', currentVariation.id)
           .maybeSingle();
-        if (existingErr) logger.warn('[magic-up] pre-fetch for curation update failed, using empty metadata:', existingErr);
+        if (existingErr)
+          logger.warn(
+            '[magic-up] pre-fetch for curation update failed, using empty metadata:',
+            existingErr,
+          );
         const metadata = toJsonRecord(existing?.metadata);
         // BUG-MAGICUP-CURATION-SILENT-FAIL FIX: bare await swallowed RLS errors;
         // optimistic local state (lines above) diverges from DB on failure.
@@ -514,10 +522,7 @@ export function useMagicUpGeneration(deps: GenerationDeps) {
     async (id: string) => {
       // BUG-MAGICUP-DELETE-SILENT-FAIL FIX: bare await swallowed RLS denials;
       // the success toast fired even when the DB row was not deleted.
-      const { error: delErr } = await supabase
-        .from('magic_up_generations')
-        .delete()
-        .eq('id', id);
+      const { error: delErr } = await supabase.from('magic_up_generations').delete().eq('id', id);
       if (delErr) {
         logger.warn('[magic-up] Delete history failed:', delErr);
         return;

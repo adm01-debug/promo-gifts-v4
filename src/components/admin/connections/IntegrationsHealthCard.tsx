@@ -268,7 +268,7 @@ export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatu
         passed: number;
         total: number;
       }>('connections-hub-audit');
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       const score = report?.score ?? 0;
       const passed = report?.passed ?? 0;
       const total = report?.total ?? 0;

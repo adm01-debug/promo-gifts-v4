@@ -94,11 +94,7 @@ export function EdgeInvokeLivePanel() {
   const categories = useMemo(() => rollupByCategory(summary), [summary]);
 
   const errorTone =
-    summary.errorRatio >= 0.05
-      ? 'destructive'
-      : summary.errorRatio >= 0.01
-        ? 'warning'
-        : 'muted';
+    summary.errorRatio >= 0.05 ? 'destructive' : summary.errorRatio >= 0.01 ? 'warning' : 'muted';
 
   return (
     <section
@@ -109,13 +105,10 @@ export function EdgeInvokeLivePanel() {
         <div className="flex items-center gap-2">
           <Radio className="h-5 w-5 text-primary" />
           <div>
-            <h2 className="font-display text-lg font-bold leading-tight">
-              Edge Invokes (live)
-            </h2>
+            <h2 className="font-display text-lg font-bold leading-tight">Edge Invokes (live)</h2>
             <p className="text-[11px] text-muted-foreground">
-              Telemetria in-memory da superfície{' '}
-              <code className="text-[10px]">invokeEdgeSafe</code> — sessão atual, últimos{' '}
-              {WINDOW_OPTIONS.find((o) => o.value === windowMs)?.label}.
+              Telemetria in-memory da superfície <code className="text-[10px]">invokeEdgeSafe</code>{' '}
+              — sessão atual, últimos {WINDOW_OPTIONS.find((o) => o.value === windowMs)?.label}.
             </p>
           </div>
         </div>
@@ -247,10 +240,7 @@ export function EdgeInvokeLivePanel() {
                 ) : (
                   bottlenecks.map((b) => (
                     <tr key={b.fn} className="border-t border-border/40">
-                      <td
-                        className="max-w-[180px] truncate px-2 py-1.5 font-mono"
-                        title={b.fn}
-                      >
+                      <td className="max-w-[180px] truncate px-2 py-1.5 font-mono" title={b.fn}>
                         {b.fn}
                       </td>
                       <td className="px-2 py-1.5">
@@ -320,9 +310,7 @@ export function EdgeInvokeLivePanel() {
                       <td className="px-2 py-1.5 text-right tabular-nums">
                         {fmtPct(c.errorRatio)}
                       </td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">
-                        {fmtMs(c.worstP95Ms)}
-                      </td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">{fmtMs(c.worstP95Ms)}</td>
                       <td
                         className={cn(
                           'px-2 py-1.5 text-right font-semibold tabular-nums',
@@ -419,10 +407,7 @@ export function EdgeInvokeLivePanel() {
                         className={cn(
                           'px-2 py-1.5 text-right tabular-nums',
                           f.p95Ms !== null && f.p95Ms >= 2000 && 'font-semibold text-destructive',
-                          f.p95Ms !== null &&
-                            f.p95Ms >= 1000 &&
-                            f.p95Ms < 2000 &&
-                            'text-warning',
+                          f.p95Ms !== null && f.p95Ms >= 1000 && f.p95Ms < 2000 && 'text-warning',
                         )}
                       >
                         {fmtMs(f.p95Ms)}
@@ -544,7 +529,7 @@ interface MiniKpiProps {
   label: string;
   value: string;
   hint?: string;
-  tone?: 'muted' | 'warning' | 'destructive';
+  tone?: 'destructive' | 'muted' | 'warning';
 }
 
 function MiniKpi({ icon, label, value, hint, tone = 'muted' }: MiniKpiProps) {
@@ -560,9 +545,7 @@ function MiniKpi({ icon, label, value, hint, tone = 'muted' }: MiniKpiProps) {
         {icon}
         {label}
       </div>
-      <div className={cn('mt-1 font-display text-xl font-bold tabular-nums', toneCls)}>
-        {value}
-      </div>
+      <div className={cn('mt-1 font-display text-xl font-bold tabular-nums', toneCls)}>{value}</div>
       {hint ? <div className="text-[10px] text-muted-foreground">{hint}</div> : null}
     </div>
   );

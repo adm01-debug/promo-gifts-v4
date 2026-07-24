@@ -16,7 +16,7 @@
  * localStorage/IndexedDB (evita crescimento e vazamento cross-user).
  */
 
-export type InvokeEventKind = 'start' | 'ok' | 'failed' | 'breaker_open';
+export type InvokeEventKind = 'breaker_open' | 'failed' | 'ok' | 'start';
 
 export interface InvokeEvent {
   ts: number;

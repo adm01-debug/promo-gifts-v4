@@ -5,6 +5,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { __resetBreakers } from '@/lib/auth/safeAuthCall';
 import {
+  filterLoggerEvents,
+  findLoggerEvent,
   resetStructuredLoggerMock,
   structuredLoggerMockFactory,
 } from '@/test/mockStructuredLogger';
@@ -17,7 +19,7 @@ void structuredLoggerMockFactory;
 
 const mockInvoke = vi.fn();
 vi.mock('@/integrations/supabase/lazy-client', () => ({
-  getSupabaseClient: async () => ({ functions: { invoke: mockInvoke } }),
+  getSupabaseClient: () => Promise.resolve({ functions: { invoke: mockInvoke } }),
 }));
 
 import { invokeEdgeSafe, normalizeInvokeError } from '@/lib/edge/safeInvokeCall';
@@ -181,10 +183,6 @@ describe('safeInvokeCall — Onda 17', () => {
 // ============================================================================
 // Onda 20 — Telemetria & Propagação de X-Request-Id
 // ============================================================================
-import {
-  filterLoggerEvents,
-  findLoggerEvent,
-} from '@/test/mockStructuredLogger';
 import { REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 
 describe('safeInvokeCall — Onda 20 telemetria', () => {

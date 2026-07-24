@@ -30,7 +30,7 @@ export function useDropboxFiles() {
       const { data, error: edgeErr } = await invokeEdge<{ connected?: boolean }>('dropbox-list', {
         body: { action: 'check' },
       });
-      if (edgeErr) throw edgeErr instanceof Error ? edgeErr : new Error(String(edgeErr));
+      if (edgeErr) throw new Error(edgeErr.message);
       setIsConnected(data?.connected || false);
       return data?.connected || false;
     } catch {
@@ -49,7 +49,7 @@ export function useDropboxFiles() {
           body: { path, action: 'list' },
         },
       );
-      if (edgeErr) throw edgeErr instanceof Error ? edgeErr : new Error(String(edgeErr));
+      if (edgeErr) throw new Error(edgeErr.message);
       setEntries(data?.entries ?? []);
       setCurrentPath(path);
       return data?.entries ?? [];

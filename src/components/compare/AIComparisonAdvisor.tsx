@@ -7,7 +7,6 @@ import type { Product } from '@/types/product-catalog';
 import { Brain, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
@@ -95,7 +94,7 @@ export function AIComparisonAdvisor({ products }: AIComparisonAdvisorProps) {
         body: { products: slim },
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
 
       const advice: AdvisorResult = {

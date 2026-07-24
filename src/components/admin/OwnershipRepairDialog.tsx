@@ -35,7 +35,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
@@ -98,7 +97,7 @@ export function OwnershipRepairDialog({ reportId, hasIssues }: Props) {
       const { data, error } = await invokeEdge('ownership-repair', {
         body: { report_id: reportId, dry_run: dryRun, triggered_by: dryRun ? 'dry_run' : 'apply' },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       const result = (data as { result: RepairResult }).result;
       return result;
     } catch (e) {

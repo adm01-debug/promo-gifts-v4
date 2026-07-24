@@ -6,7 +6,6 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { getBestPantoneMatch, type PantoneMatch } from '@/utils/color-matching';
 import { toast } from 'sonner';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
@@ -87,7 +86,7 @@ export function useLogoColorAnalysis() {
         body: { imageBase64: resizedBase64 },
       });
 
-      if (fnError) throw fnError;
+      if (fnError) throw new Error(fnError.message);
 
       if (data?.error) {
         throw new Error(data.error);

@@ -49,7 +49,7 @@ export function KitAIPromptDialog({ onApply }: KitAIPromptDialogProps) {
           body: { prompt: prompt.trim() },
         },
       );
-      if (error) throw error instanceof Error ? error : new Error(String(error));
+      if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       setSuggestion(data?.suggestion ?? null);
     } catch {

@@ -28,7 +28,6 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { ScenePrompt } from './PromptBank';
@@ -203,7 +202,7 @@ export function PromptGenerator({
         },
       );
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
 
       if (data?.prompts && Array.isArray(data.prompts)) {
         setGeneratedPrompts(data.prompts);

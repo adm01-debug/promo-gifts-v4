@@ -15,7 +15,6 @@ import {
   Database,
   Inbox,
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/ui';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
@@ -55,20 +54,17 @@ export function MarketIntelligenceInsightsCard({
   const { data, isLoading, isError } = useQuery({
     queryKey: ['market-intelligence-insights', days, categoryId, supplierId, productId],
     queryFn: async (): Promise<InsightResponse> => {
-      const { data: queryRows, error } = await invokeEdge(
-        'market-intelligence-insights',
-        {
-          body: {
-            days,
-            categoryId,
-            supplierId,
-            productId,
-            categoryName,
-            supplierName,
-            productName,
-          },
+      const { data: queryRows, error } = await invokeEdge('market-intelligence-insights', {
+        body: {
+          days,
+          categoryId,
+          supplierId,
+          productId,
+          categoryName,
+          supplierName,
+          productName,
         },
-      );
+      });
       if (error) {
         if (error.message?.includes('429')) {
           toast({
@@ -83,7 +79,7 @@ export function MarketIntelligenceInsightsCard({
             variant: 'destructive',
           });
         }
-        throw error;
+        throw new Error(error.message);
       }
       return queryRows as InsightResponse;
     },

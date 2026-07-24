@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import type { ConnectionType } from '@/hooks/intelligence/useConnectionTester';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
@@ -45,7 +44,10 @@ export function useConnectionTestHistory({
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fnErr } = await invokeEdge<{ items?: TestHistoryItem[]; total?: number }>('connection-tester', {
+      const { data, error: fnErr } = await invokeEdge<{
+        items?: TestHistoryItem[];
+        total?: number;
+      }>('connection-tester', {
         body: {
           action: 'test_history',
           type,
@@ -54,7 +56,7 @@ export function useConnectionTestHistory({
           limit,
         },
       });
-      if (fnErr) throw fnErr;
+      if (fnErr) throw new Error(fnErr.message);
       if (cancelRef.current) return;
       setItems((data?.items ?? []) as TestHistoryItem[]);
       setTotal(typeof data?.total === 'number' ? data.total : (data?.items?.length ?? 0));

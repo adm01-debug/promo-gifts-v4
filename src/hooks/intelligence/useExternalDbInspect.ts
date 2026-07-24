@@ -3,7 +3,6 @@
  */
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
@@ -35,7 +34,7 @@ export function useExternalDbInspect() {
         const { data, error } = await invokeEdge<InspectResult>('external-db-inspect', {
           body: { action, ...params },
         });
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         setResult(data);
         return data;
       } catch (err) {

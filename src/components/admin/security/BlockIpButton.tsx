@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/ui';
-import { supabase } from '@/integrations/supabase/client';
 import { Ban, Loader2 } from 'lucide-react';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
@@ -49,7 +48,7 @@ export function BlockIpButton({
       const { data, error } = await invokeEdge('block-ip-temporarily', {
         body: { ip: ip.trim(), reason: reason.trim() || undefined, hours },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
       toast({
         title: 'IP bloqueado',

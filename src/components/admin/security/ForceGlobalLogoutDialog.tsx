@@ -12,7 +12,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/ui';
-import { supabase } from '@/integrations/supabase/client';
 import { LogOut, AlertTriangle, Loader2 } from 'lucide-react';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
@@ -32,7 +31,7 @@ export function ForceGlobalLogoutDialog() {
         body: { confirm: 'FORCE_LOGOUT_ALL' },
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
 
       const result = data as { signed_out: number; errors: number };

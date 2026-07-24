@@ -1,7 +1,6 @@
 /**
  * useTransactionalEmail — Hook para enviar emails transacionais.
  */
-import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
