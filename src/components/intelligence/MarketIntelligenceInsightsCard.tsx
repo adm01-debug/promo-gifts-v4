@@ -1,10 +1,17 @@
 /**
  * MarketIntelligenceInsightsCard — narrativa em IA dos dados do dashboard de Inteligência de Mercado.
  * Consome a edge function `market-intelligence-insights` (Lovable AI).
+ *
+ * Controles de foco: permite direcionar a "próxima ação" para conversão, ticket
+ * médio ou ruptura/estoque. O foco entra na cache key do backend, então cada
+ * eixo tem seu próprio insight persistido; o botão "Regenerar" força refresh.
  */
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import {
   Sparkles,
@@ -14,10 +21,17 @@ import {
   Star,
   Database,
   Inbox,
+  RefreshCw,
+  Target,
+  Wallet,
+  PackageX,
+  Wand2,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/ui';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
+
+export type InsightFocus = 'auto' | 'conversion' | 'ticket' | 'rupture';
 
 interface Props {
   days: number;
@@ -40,6 +54,18 @@ interface InsightResponse {
   generated_at?: string;
 }
 
+const FOCUS_OPTIONS: Array<{
+  value: InsightFocus;
+  label: string;
+  hint: string;
+  Icon: typeof Target;
+}> = [
+  { value: 'auto', label: 'Automático', hint: 'A IA escolhe o gargalo mais crítico.', Icon: Wand2 },
+  { value: 'conversion', label: 'Conversão', hint: 'Foca em orçamentos que não viraram pedido.', Icon: Target },
+  { value: 'ticket', label: 'Ticket médio', hint: 'Foca em cross-sell, upsell e mix.', Icon: Wallet },
+  { value: 'rupture', label: 'Ruptura / Estoque', hint: 'Foca em risco de falta e reposição.', Icon: PackageX },
+];
+
 export function MarketIntelligenceInsightsCard({
   days,
   categoryId,
@@ -50,9 +76,19 @@ export function MarketIntelligenceInsightsCard({
   productName,
 }: Props) {
   const { toast } = useToast();
+  const [focus, setFocus] = useState<InsightFocus>('auto');
+  const [forceRefreshTick, setForceRefreshTick] = useState(0);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['market-intelligence-insights', days, categoryId, supplierId, productId],
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
+    queryKey: [
+      'market-intelligence-insights',
+      days,
+      categoryId,
+      supplierId,
+      productId,
+      focus,
+      forceRefreshTick,
+    ],
     queryFn: async (): Promise<InsightResponse> => {
       const { data: queryRows, error } = await invokeEdge('market-intelligence-insights', {
         body: {
@@ -63,6 +99,8 @@ export function MarketIntelligenceInsightsCard({
           categoryName,
           supplierName,
           productName,
+          focus,
+          forceRefresh: forceRefreshTick > 0,
         },
       });
       if (error) {
@@ -87,6 +125,20 @@ export function MarketIntelligenceInsightsCard({
     retry: false,
   });
 
+  const handleFocusChange = (next: string) => {
+    if (!next) return; // ToggleGroup permite desmarcar; ignoramos para manter sempre um foco.
+    const parsed = next as InsightFocus;
+    if (parsed === focus) return;
+    setFocus(parsed);
+    setForceRefreshTick(0); // troca de foco usa cache próprio; não força refresh.
+  };
+
+  const handleRegenerate = () => {
+    setForceRefreshTick((t) => t + 1);
+    // Aguarda tick propagar como queryKey nova antes de refetch.
+    setTimeout(() => refetch(), 0);
+  };
+
   const filterChips = [
     categoryName && `Categoria: ${categoryName}`,
     supplierName && `Fornecedor: ${supplierName}`,
@@ -96,45 +148,110 @@ export function MarketIntelligenceInsightsCard({
   return (
     <TooltipProvider>
       <Card className="animate-fade-in border-primary/30 bg-gradient-to-br from-primary/5 via-background to-chart-2/5">
-        <CardHeader className="pb-3">
-          <div className="min-w-0">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Insights da IA
-              {data?.cached && (
-                <Tooltip>
+        <CardHeader className="gap-3 pb-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Insights da IA
+                {data?.cached && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-chart-2/40 px-1.5 py-0 text-[10px] text-chart-2"
+                      >
+                        <Database className="h-2.5 w-2.5" /> Cache
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">
+                        Gerado em{' '}
+                        {data.generated_at
+                          ? new Date(data.generated_at).toLocaleString('pt-BR')
+                          : '—'}
+                        .
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </CardTitle>
+              <CardDescription className="mt-1 flex flex-wrap items-center gap-1.5">
+                <span>Análise dos últimos {days} dias</span>
+                {filterChips.map((c) => (
+                  <Badge
+                    key={c}
+                    variant="outline"
+                    className="border-primary/30 px-1.5 py-0 text-[10px] text-primary"
+                  >
+                    {c}
+                  </Badge>
+                ))}
+              </CardDescription>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleRegenerate}
+                    disabled={isFetching}
+                    aria-label="Regenerar próxima ação"
+                    data-testid="market-insights-regenerate"
+                  >
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`}
+                      aria-hidden
+                    />
+                    <span className="ml-1.5 text-xs">Regenerar</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Força uma nova chamada à IA ignorando o cache.</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+
+          <div
+            className="flex flex-col gap-1.5"
+            role="group"
+            aria-label="Foco da próxima ação sugerida pela IA"
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Foco da próxima ação
+            </span>
+            <ToggleGroup
+              type="single"
+              value={focus}
+              onValueChange={handleFocusChange}
+              variant="outline"
+              size="sm"
+              className="flex flex-wrap justify-start gap-1.5"
+              data-testid="market-insights-focus"
+            >
+              {FOCUS_OPTIONS.map(({ value, label, hint, Icon }) => (
+                <Tooltip key={value}>
                   <TooltipTrigger asChild>
-                    <Badge
-                      variant="outline"
-                      className="gap-1 border-chart-2/40 px-1.5 py-0 text-[10px] text-chart-2"
+                    <ToggleGroupItem
+                      value={value}
+                      aria-label={`Foco: ${label}`}
+                      aria-pressed={focus === value}
+                      data-testid={`market-insights-focus-${value}`}
+                      className="h-8 gap-1.5 px-2.5 text-xs data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
                     >
-                      <Database className="h-2.5 w-2.5" /> Cache
-                    </Badge>
+                      <Icon className="h-3.5 w-3.5" aria-hidden />
+                      {label}
+                    </ToggleGroupItem>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">
-                      Gerado em{' '}
-                      {data.generated_at
-                        ? new Date(data.generated_at).toLocaleString('pt-BR')
-                        : '—'}
-                      .
-                    </p>
+                    <p className="text-xs">{hint}</p>
                   </TooltipContent>
                 </Tooltip>
-              )}
-            </CardTitle>
-            <CardDescription className="mt-1 flex flex-wrap items-center gap-1.5">
-              <span>Análise dos últimos {days} dias</span>
-              {filterChips.map((c) => (
-                <Badge
-                  key={c}
-                  variant="outline"
-                  className="border-primary/30 px-1.5 py-0 text-[10px] text-primary"
-                >
-                  {c}
-                </Badge>
               ))}
-            </CardDescription>
+            </ToggleGroup>
           </div>
         </CardHeader>
         <CardContent>
@@ -179,9 +296,12 @@ export function MarketIntelligenceInsightsCard({
                 />
                 <InsightRow
                   icon={<Sparkles className="h-4 w-4 text-primary" />}
-                  label="Próxima ação"
+                  label={`Próxima ação · ${
+                    FOCUS_OPTIONS.find((o) => o.value === focus)?.label ?? 'Automático'
+                  }`}
                   text={data.next_action}
                   delay={150}
+                  testId="market-insights-next-action"
                 />
                 {data.highlights && data.highlights.length > 0 && (
                   <div
@@ -217,17 +337,20 @@ function InsightRow({
   label,
   text,
   delay = 0,
+  testId,
 }: {
   icon: React.ReactNode;
   label: string;
   text?: string;
   delay?: number;
+  testId?: string;
 }) {
   if (!text) return null;
   return (
     <div
       className="flex animate-fade-in items-start gap-2 rounded-md border border-border/40 bg-card/60 p-2.5"
       style={{ animationDelay: `${delay}ms` }}
+      data-testid={testId}
     >
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div className="min-w-0">

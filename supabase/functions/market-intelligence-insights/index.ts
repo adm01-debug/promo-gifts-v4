@@ -12,6 +12,8 @@ import {
 const FUNCTION_NAME = "market-intelligence-insights";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
 
+type InsightFocus = "auto" | "conversion" | "ticket" | "rupture";
+
 interface RequestBody {
   days?: number;
   categoryId?: string | null;
@@ -21,6 +23,7 @@ interface RequestBody {
   supplierName?: string | null;
   productName?: string | null;
   forceRefresh?: boolean;
+  focus?: InsightFocus;
 }
 
 interface AggregatedSummary {
@@ -70,9 +73,46 @@ function buildCacheKey(b: RequestBody): Promise<string> {
       c: b.categoryId ?? null,
       s: b.supplierId ?? null,
       p: b.productId ?? null,
+      f: b.focus ?? "auto",
       day: new Date().toISOString().slice(0, 10),
     }),
   );
+}
+
+const FOCUS_LABELS: Record<InsightFocus, string> = {
+  auto: "priorização automática (identifique o gargalo mais crítico)",
+  conversion: "CONVERSÃO — orçamentos que não viraram pedido, follow-up, taxa de fechamento",
+  ticket: "TICKET MÉDIO — cross-sell, upsell, mix de produtos, precificação",
+  rupture: "RUPTURA/ESTOQUE — risco de falta, cobertura, reposição, produtos em risco",
+};
+
+function focusDirective(focus: InsightFocus): string {
+  return `Foco solicitado pelo analista: ${FOCUS_LABELS[focus]}. Enviese "next_action" para esse eixo, sem inventar dados.`;
+}
+
+function focusFallbackNextAction(focus: InsightFocus, s: AggregatedSummary): string {
+  const conv = s.current.conversion_rate;
+  const avg = s.current.avg_ticket;
+  const top = s.top_products[0]?.name;
+  if (focus === "conversion") {
+    return conv < 60
+      ? `Conversão em ${conv}% — priorize follow-up dos ${s.current.quotes} orçamentos abertos para destravar pedidos.`
+      : `Conversão saudável (${conv}%). Documente o playbook de fechamento e replique nos vendedores com menor performance.`;
+  }
+  if (focus === "ticket") {
+    const avgFmt = avg.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    return top
+      ? `Ticket médio ${avgFmt} — proponha combos/cross-sell a partir de "${top}" para elevar o valor por pedido.`
+      : `Ticket médio ${avgFmt} — construa kits e faixas de desconto por volume para elevar o valor por pedido.`;
+  }
+  if (focus === "rupture") {
+    return top
+      ? `Valide cobertura de estoque de "${top}" e demais top 5 do período; acione compras para os itens com giro alto e saldo baixo.`
+      : `Rode o painel de Ruptura para os produtos com maior giro e antecipe pedidos de reposição aos fornecedores prioritários.`;
+  }
+  return conv < 30
+    ? `Conversão em ${conv}% — revise follow-up dos orçamentos abertos para destravar pedidos.`
+    : "Mantenha o ritmo: foque os 5 produtos de maior giro para sustentar o faturamento.";
 }
 
 function buildEmptyState(s: AggregatedSummary): InsightPayload {
@@ -89,14 +129,13 @@ function buildEmptyState(s: AggregatedSummary): InsightPayload {
   };
 }
 
-function buildFallback(s: AggregatedSummary): InsightPayload {
+function buildFallback(s: AggregatedSummary, focus: InsightFocus = "auto"): InsightPayload {
   const filterCtx =
     [s.filters.category, s.filters.supplier, s.filters.product].filter(Boolean).join(" · ") ||
     "todo o catálogo";
   const rev = s.current.revenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const dRev = s.deltas.revenue_pct;
   const dQuotes = s.deltas.quotes_pct;
-  const conv = s.current.conversion_rate;
   const top = s.top_products[0]?.name;
 
   return {
@@ -110,10 +149,7 @@ function buildFallback(s: AggregatedSummary): InsightPayload {
     why: top
       ? `Performance puxada por "${top}" e concentração nos 5 principais fornecedores.`
       : "Volume distribuído entre múltiplos produtos sem concentração clara.",
-    next_action:
-      conv < 30
-        ? `Conversão em ${conv}% — revise follow-up dos orçamentos abertos para destravar pedidos.`
-        : "Mantenha o ritmo: foque os 5 produtos de maior giro para sustentar o faturamento.",
+    next_action: focusFallbackNextAction(focus, s),
     highlights: [
       s.top_suppliers[0]
         ? `${s.top_suppliers[0].name} representa ${s.top_suppliers[0].share_pct}% do faturamento.`
@@ -227,8 +263,9 @@ Deno.serve(async (req) => {
     });
     if (!contractResult.ok) return contractResult.response;
     const body = contractResult.data as RequestBody;
+    const focus: InsightFocus = body.focus ?? "auto";
     responseHeaders = contractResult.responseHeaders;
-    const cacheKey = await buildCacheKey(body);
+    const cacheKey = await buildCacheKey({ ...body, focus });
 
     // 1) Cache lookup (skip if forceRefresh)
     if (!body.forceRefresh) {
@@ -283,14 +320,14 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       log("warn", "missing_api_key", { user_id: userId });
-      return new Response(JSON.stringify(buildFallback(summary)), {
+      return new Response(JSON.stringify(buildFallback(summary, focus)), {
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
 
     // 5) Call AI Gateway
     const aiT0 = Date.now();
-    const systemPrompt = `Você é analista comercial sênior. Gere insights ACIONÁVEIS e ESPECÍFICOS em pt-BR sobre o desempenho de vendas. Use números concretos do JSON fornecido. Seja direto: 1 frase por campo. Nunca invente dados.`;
+    const systemPrompt = `Você é analista comercial sênior. Gere insights ACIONÁVEIS e ESPECÍFICOS em pt-BR sobre o desempenho de vendas. Use números concretos do JSON fornecido. Seja direto: 1 frase por campo. Nunca invente dados. ${focusDirective(focus)}`;
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -299,7 +336,7 @@ Deno.serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Dados:\n${JSON.stringify(summary, null, 2)}` },
+          { role: "user", content: `Foco: ${focus}\nDados:\n${JSON.stringify(summary, null, 2)}` },
         ],
         tools: [
           {
@@ -329,14 +366,14 @@ Deno.serve(async (req) => {
 
     if (aiResp.status === 429) {
       log("warn", "ai_rate_limited", { user_id: userId, ai_duration_ms: aiDuration });
-      return new Response(JSON.stringify({ error: "rate_limited", ...buildFallback(summary) }), {
+      return new Response(JSON.stringify({ error: "rate_limited", ...buildFallback(summary, focus) }), {
         status: 429,
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
     if (aiResp.status === 402) {
       log("warn", "ai_no_credits", { user_id: userId });
-      return new Response(JSON.stringify({ error: "no_credits", ...buildFallback(summary) }), {
+      return new Response(JSON.stringify({ error: "no_credits", ...buildFallback(summary, focus) }), {
         status: 402,
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
@@ -344,7 +381,7 @@ Deno.serve(async (req) => {
     if (!aiResp.ok) {
       const txt = await aiResp.text();
       log("error", "ai_error", { user_id: userId, status: aiResp.status, body: txt.slice(0, 300) });
-      return new Response(JSON.stringify(buildFallback(summary)), {
+      return new Response(JSON.stringify(buildFallback(summary, focus)), {
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
@@ -361,7 +398,7 @@ Deno.serve(async (req) => {
     }
     if (!parsed || !parsed.summary) {
       log("warn", "ai_parse_failed", { user_id: userId });
-      return new Response(JSON.stringify(buildFallback(summary)), {
+      return new Response(JSON.stringify(buildFallback(summary, focus)), {
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
@@ -397,6 +434,7 @@ Deno.serve(async (req) => {
           tokens_input: usage.prompt_tokens ?? null,
           tokens_output: usage.completion_tokens ?? null,
           period_days: summary.period_days,
+          focus,
         },
       }),
     ]);
