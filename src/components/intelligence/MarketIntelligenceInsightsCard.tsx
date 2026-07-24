@@ -339,11 +339,22 @@ export function MarketIntelligenceInsightsCard({
               <span>Não foi possível gerar insights agora. Tente novamente em instantes.</span>
             </div>
           ) : data?.empty ? (
-            <div className="flex items-start gap-3 rounded-md border border-dashed border-border bg-muted/40 p-4">
+            <div
+              className="flex items-start gap-3 rounded-md border border-dashed border-border bg-muted/40 p-4"
+              data-testid="market-insights-empty"
+            >
               <Inbox className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
               <div className="space-y-1.5">
                 <p className="text-sm font-medium text-foreground">{data.summary}</p>
                 <p className="text-xs text-muted-foreground">{data.next_action}</p>
+                {diagnosisMention && (
+                  <p
+                    className="text-xs font-medium text-foreground/90"
+                    data-testid="market-insights-diagnosis-mention"
+                  >
+                    {diagnosisMention}
+                  </p>
+                )}
               </div>
             </div>
           ) : data ? (
