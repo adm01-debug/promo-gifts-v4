@@ -227,7 +227,17 @@ export function ZeroResultDiagnosisCallout({
           key={filter.key}
           size="sm"
           variant="outline"
-          onClick={() => onClearFilter(filter.key)}
+          onClick={() => {
+            trackZeroResultActionClicked({
+              action: 'clear_filter',
+              culpritBefore: data.culprit,
+              filterKey: filter.key,
+              days,
+              previewQuotes: q ?? null,
+              previewOrders: o ?? null,
+            });
+            onClearFilter(filter.key);
+          }}
           data-testid={`zero-diagnosis-clear-${filter.key}`}
         >
           Remover filtro de {KEY_LABEL[filter.key]}
@@ -240,7 +250,19 @@ export function ZeroResultDiagnosisCallout({
     body = <>Não há orçamentos nem pedidos na janela selecionada.</>;
     if (onWidenWindow) {
       actions.push(
-        <Button key="widen" size="sm" variant="outline" onClick={onWidenWindow}>
+        <Button
+          key="widen"
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            trackZeroResultActionClicked({
+              action: 'widen_window',
+              culpritBefore: null,
+              days,
+            });
+            onWidenWindow();
+          }}
+        >
           Ampliar janela
         </Button>,
       );
