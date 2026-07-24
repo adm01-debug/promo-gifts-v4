@@ -1,4 +1,4 @@
-import { AlertCircle, Filter, Loader2 } from 'lucide-react';
+import { AlertCircle, Filter, Loader2, FileText, ShoppingCart } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,46 @@ import {
   useZeroResultDiagnosis,
   type FilterKey,
 } from '@/hooks/intelligence/useZeroResultDiagnosis';
+
+/**
+ * Mini-preview de quantos orçamentos + pedidos apareceriam ao aplicar uma
+ * ampliação (remover filtro ou ampliar janela). Renderiza `—` quando o probe
+ * ainda não rodou (null).
+ */
+function PreviewBadges({
+  quotes,
+  orders,
+  testId,
+}: {
+  quotes: number | null | undefined;
+  orders: number | null | undefined;
+  testId?: string;
+}) {
+  const fmt = (n: number | null | undefined) =>
+    typeof n === 'number' ? n.toLocaleString('pt-BR') : '—';
+  return (
+    <span
+      className="ml-1 inline-flex items-center gap-1 align-middle"
+      data-testid={testId}
+      aria-label={`Prévia: ${fmt(quotes)} orçamentos e ${fmt(orders)} pedidos`}
+    >
+      <Badge
+        variant="outline"
+        className="gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[11px] font-medium text-amber-900 dark:text-amber-100"
+      >
+        <FileText className="h-3 w-3" aria-hidden="true" />
+        {fmt(quotes)} orç.
+      </Badge>
+      <Badge
+        variant="outline"
+        className="gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[11px] font-medium text-amber-900 dark:text-amber-100"
+      >
+        <ShoppingCart className="h-3 w-3" aria-hidden="true" />
+        {fmt(orders)} ped.
+      </Badge>
+    </span>
+  );
+}
 
 interface Props {
   /** Só ativa quando pedidos+orçamentos = 0. Pai controla. */
