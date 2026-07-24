@@ -263,8 +263,9 @@ Deno.serve(async (req) => {
     });
     if (!contractResult.ok) return contractResult.response;
     const body = contractResult.data as RequestBody;
+    const focus: InsightFocus = body.focus ?? "auto";
     responseHeaders = contractResult.responseHeaders;
-    const cacheKey = await buildCacheKey(body);
+    const cacheKey = await buildCacheKey({ ...body, focus });
 
     // 1) Cache lookup (skip if forceRefresh)
     if (!body.forceRefresh) {
