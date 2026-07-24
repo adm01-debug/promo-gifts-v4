@@ -320,14 +320,14 @@ Deno.serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       log("warn", "missing_api_key", { user_id: userId });
-      return new Response(JSON.stringify(buildFallback(summary)), {
+      return new Response(JSON.stringify(buildFallback(summary, focus)), {
         headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
       });
     }
 
     // 5) Call AI Gateway
     const aiT0 = Date.now();
-    const systemPrompt = `Você é analista comercial sênior. Gere insights ACIONÁVEIS e ESPECÍFICOS em pt-BR sobre o desempenho de vendas. Use números concretos do JSON fornecido. Seja direto: 1 frase por campo. Nunca invente dados.`;
+    const systemPrompt = `Você é analista comercial sênior. Gere insights ACIONÁVEIS e ESPECÍFICOS em pt-BR sobre o desempenho de vendas. Use números concretos do JSON fornecido. Seja direto: 1 frase por campo. Nunca invente dados. ${focusDirective(focus)}`;
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -336,7 +336,7 @@ Deno.serve(async (req) => {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Dados:\n${JSON.stringify(summary, null, 2)}` },
+          { role: "user", content: `Foco: ${focus}\nDados:\n${JSON.stringify(summary, null, 2)}` },
         ],
         tools: [
           {
