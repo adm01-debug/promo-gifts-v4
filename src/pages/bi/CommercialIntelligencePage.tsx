@@ -220,6 +220,8 @@ export default function CommercialIntelligencePage() {
               onClearFilter={clearFilter}
               onWidenWindow={widenWindow}
               onApplySubstitute={applySubstitute}
+              canUndo={!!undoSnapshot}
+              onUndo={undoLastAction}
             />
           </div>
         )}
