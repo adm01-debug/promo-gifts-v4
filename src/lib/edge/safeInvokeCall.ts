@@ -146,7 +146,7 @@ export async function invokeEdgeSafe<T = unknown>(
       headers: outboundHeaders,
     });
     if (error) {
-      return { data: null, error: await normalizeInvokeError(error) };
+      return { data: null, error: normalizeInvokeError(error) };
     }
     return { data: (data ?? null) as T | null, error: null };
   };
