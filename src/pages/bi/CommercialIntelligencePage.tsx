@@ -147,6 +147,7 @@ export default function CommercialIntelligencePage() {
               productName={filters.productName}
               onClearFilter={clearFilter}
               onWidenWindow={widenWindow}
+              onApplySubstitute={applySubstitute}
             />
           </div>
         )}
