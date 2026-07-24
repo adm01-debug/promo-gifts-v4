@@ -3,7 +3,6 @@
  * Reaproveita a infra do outbound_webhooks (registro em /admin/conexoes).
  * Idempotência é garantida pelo próprio dispatcher via correlation key do payload.
  */
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import type { Quote } from '@/hooks/quotes';

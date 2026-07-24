@@ -23,8 +23,8 @@ import { recordInvokeEvent } from '@/lib/edge/invokeTelemetrySink';
 export type EdgeErrorKind =
   | 'client'
   | 'credential'
-  | 'ratelimit'
   | 'network'
+  | 'ratelimit'
   | 'server'
   | 'timeout'
   | 'unknown';
@@ -53,7 +53,7 @@ interface NormalizedError {
 /**
  * Normaliza qualquer erro do supabase.functions.invoke em `{message,status,name}`.
  */
-export async function normalizeInvokeError(err: unknown): Promise<NormalizedError> {
+export function normalizeInvokeError(err: unknown): NormalizedError {
   if (!err || typeof err !== 'object') {
     return { message: String(err ?? 'unknown'), status: 0 };
   }
@@ -123,9 +123,7 @@ export async function invokeEdgeSafe<T = unknown>(
   // Request-id por chamada — reaproveita se o caller já fornecer (via option
   // ou via header explícito), senão gera. NUNCA sobrescreve intencionalmente.
   const callerHeaderId =
-    headers?.[REQUEST_ID_HEADER] ??
-    headers?.[REQUEST_ID_HEADER.toLowerCase()] ??
-    undefined;
+    headers?.[REQUEST_ID_HEADER] ?? headers?.[REQUEST_ID_HEADER.toLowerCase()] ?? undefined;
   const requestId = providedRequestId ?? callerHeaderId ?? newRequestId();
   const outboundHeaders = { ...(headers ?? {}), [REQUEST_ID_HEADER]: requestId };
   const startedAt = Date.now();

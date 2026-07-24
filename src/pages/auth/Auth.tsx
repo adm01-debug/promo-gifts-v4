@@ -159,8 +159,11 @@ export default function Auth() {
     const loadInfo = async () => {
       if (!isLighthousePlaceholder) {
         try {
-          const supabase = await getSupabaseClient();
-          const { data, error } = await invokeEdge<{ ip?: string; city?: string; country_code?: string }>('get-visitor-info');
+          const { data, error } = await invokeEdge<{
+            ip?: string;
+            city?: string;
+            country_code?: string;
+          }>('get-visitor-info');
           if (!cancelled && !error && data) {
             if (data.ip) setCurrentIP(data.ip);
             if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);

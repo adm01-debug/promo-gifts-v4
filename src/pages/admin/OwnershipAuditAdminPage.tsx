@@ -101,7 +101,7 @@ export default function OwnershipAuditAdminPage() {
       }>('ownership-audit', {
         body: { triggered_by: 'manual_admin' },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       toast.success(
         `Auditoria concluída: ${data?.summary?.total_tables_scanned ?? 0} tabelas, ` +
           `${data?.summary?.total_issues_found ?? 0} problemas.`,

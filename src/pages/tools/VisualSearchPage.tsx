@@ -306,7 +306,7 @@ export default function VisualSearchPage() {
         }
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       setResults(data);
       void saveToHistory(base64, data?.analysis?.productType ?? 'Produto');
       toast.success('Análise concluída com sucesso!');
