@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import {
   IntelligenceFilterBar,
@@ -18,6 +18,11 @@ import { Brain, Clock } from 'lucide-react';
 import { useDebouncedFilters } from '@/hooks/common';
 import { useCommercialKPIs } from '@/hooks/intelligence';
 import type { FilterKey } from '@/hooks/intelligence/useZeroResultDiagnosis';
+import {
+  trackZeroResultOutcome,
+  type ZeroResultAction,
+  type ZeroResultCulprit,
+} from '@/lib/analytics/zeroResultAnalytics';
 
 export default function CommercialIntelligencePage() {
   const [lastRefresh] = useState<Date>(new Date());
