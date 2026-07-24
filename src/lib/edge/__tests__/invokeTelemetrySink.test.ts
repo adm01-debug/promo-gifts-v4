@@ -18,7 +18,7 @@ afterEach(() => clearInvokeSink());
 
 const NOW = 1_700_000_000_000;
 
-function ev(overrides: Partial<InvokeEvent> & Pick<InvokeEvent, 'kind' | 'fn'>): InvokeEvent {
+function ev(overrides: Partial<InvokeEvent> & Pick<InvokeEvent, 'fn' | 'kind'>): InvokeEvent {
   return {
     ts: NOW,
     requestId: 'req-1',

@@ -30,8 +30,8 @@ import { sanitizeMessage } from '@/lib/security/sanitize-message';
 
 export type AuthErrorKind =
   | 'credential'
-  | 'ratelimit'
   | 'network'
+  | 'ratelimit'
   | 'server'
   | 'timeout'
   | 'unknown';
@@ -54,7 +54,7 @@ export interface SafeAuthErr {
   elapsedMs: number;
 }
 
-export type SafeAuthResult<T> = SafeAuthOk<T> | SafeAuthErr;
+export type SafeAuthResult<T> = SafeAuthErr | SafeAuthOk<T>;
 
 export interface SafeAuthOptions {
   /** Nome curto da operação (ex.: 'signIn'). Vai no log e no scope. */
@@ -87,7 +87,7 @@ interface BreakerState {
 }
 const BREAKER_THRESHOLD = 5;
 const BREAKER_COOLDOWN_MS = 60_000;
-const breakers: Map<string, BreakerState> = new Map();
+const breakers = new Map<string, BreakerState>();
 
 function getBreaker(op: string): BreakerState {
   let s = breakers.get(op);
@@ -159,11 +159,7 @@ function classifySupabaseError(err: {
     return 'ratelimit';
   }
   if (status >= 500 && status < 600) return 'server';
-  if (
-    err.name === 'AbortError' ||
-    msg.includes('timeout') ||
-    msg.includes('aborted')
-  ) {
+  if (err.name === 'AbortError' || msg.includes('timeout') || msg.includes('aborted')) {
     return 'timeout';
   }
   if (
@@ -182,11 +178,7 @@ function classifyThrown(err: unknown): AuthErrorKind {
   const e = err as { name?: string; message?: string };
   const msg = (e.message ?? '').toLowerCase();
   if (e.name === 'AbortError' || msg.includes('timeout')) return 'timeout';
-  if (
-    e.name === 'TypeError' ||
-    msg.includes('failed to fetch') ||
-    msg.includes('networkerror')
-  ) {
+  if (e.name === 'TypeError' || msg.includes('failed to fetch') || msg.includes('networkerror')) {
     return 'network';
   }
   return 'unknown';
@@ -219,8 +211,7 @@ async function withTimeout<T>(
     } else {
       ctrl.signal.addEventListener(
         'abort',
-        () =>
-          reject(Object.assign(new Error('aborted'), { name: 'AbortError' })),
+        () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })),
         { once: true },
       );
     }
@@ -242,7 +233,7 @@ export async function safeAuthCall<T>(
     timeoutMs = DEFAULT_TIMEOUT_MS,
     maxRetries = DEFAULT_MAX_ATTEMPTS,
     signal,
-    isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV === true,
+    isDev = import.meta?.env?.DEV,
   } = options;
 
   const log = createClientLogger(`auth.${op}`);
@@ -264,7 +255,6 @@ export async function safeAuthCall<T>(
     };
   }
 
-
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     if (signal?.aborted) {
       lastKind = 'timeout';
@@ -272,11 +262,7 @@ export async function safeAuthCall<T>(
       break;
     }
     try {
-      const result = await withTimeout(
-        async () => call(),
-        timeoutMs,
-        signal,
-      );
+      const result = await withTimeout(async () => call(), timeoutMs, signal);
       if (result.error) {
         lastKind = classifySupabaseError(result.error);
         lastRaw = result.error;
@@ -324,7 +310,10 @@ export async function safeAuthCall<T>(
     }
     // Backoff antes da próxima tentativa
     const wait = jitter(BACKOFF_MS[attempt] ?? 500);
-    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    if (wait > 0)
+      await new Promise<void>((r) => {
+        setTimeout(r, wait);
+      });
   }
 
   breakerRecordFailure(op, lastKind);

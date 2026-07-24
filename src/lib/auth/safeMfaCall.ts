@@ -10,10 +10,10 @@
  */
 import { safeAuthCall, type SafeAuthResult, type AuthErrorKind } from './safeAuthCall';
 
-export type MfaErrorKind = AuthErrorKind | 'invalid_code' | 'expired_challenge' | 'factor_locked';
+export type MfaErrorKind = AuthErrorKind | 'expired_challenge' | 'factor_locked' | 'invalid_code';
 
 export interface SafeMfaOptions {
-  op: 'mfaEnroll' | 'mfaChallenge' | 'mfaVerify' | 'mfaUnenroll' | 'mfaListFactors' | 'mfaGetAAL';
+  op: 'mfaChallenge' | 'mfaEnroll' | 'mfaGetAAL' | 'mfaListFactors' | 'mfaUnenroll' | 'mfaVerify';
   timeoutMs?: number;
   maxRetries?: number;
   signal?: AbortSignal;
@@ -21,7 +21,6 @@ export interface SafeMfaOptions {
 }
 
 export type SafeMfaResult<T> =
-  | { kind: 'ok'; data: T; attempts: number; elapsedMs: number }
   | {
       kind: 'err';
       errorKind: MfaErrorKind;
@@ -29,9 +28,14 @@ export type SafeMfaResult<T> =
       raw: unknown;
       attempts: number;
       elapsedMs: number;
-    };
+    }
+  | { kind: 'ok'; data: T; attempts: number; elapsedMs: number };
 
-function refineMfaError(msg: string, status: number | undefined, base: AuthErrorKind): MfaErrorKind {
+function refineMfaError(
+  msg: string,
+  status: number | undefined,
+  base: AuthErrorKind,
+): MfaErrorKind {
   const m = (msg ?? '').toLowerCase();
   if (m.includes('invalid') && (m.includes('code') || m.includes('otp') || m.includes('token'))) {
     return 'invalid_code';
@@ -43,7 +47,10 @@ function refineMfaError(msg: string, status: number | undefined, base: AuthError
 }
 
 export async function safeMfaCall<T>(
-  call: () => Promise<{ data?: T; error?: { message?: string; status?: number; name?: string } | null }>,
+  call: () => Promise<{
+    data?: T;
+    error?: { message?: string; status?: number; name?: string } | null;
+  }>,
   options: SafeMfaOptions,
 ): Promise<SafeMfaResult<T>> {
   const inner: SafeAuthResult<T> = await safeAuthCall(call, {
