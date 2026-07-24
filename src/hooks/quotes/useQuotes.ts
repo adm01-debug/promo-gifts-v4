@@ -191,6 +191,7 @@ export function useQuotes() {
     },
   });
 
+  // Actions
   const fetchQuote = useCallback(async (quoteId: string) => {
     try {
       return await quoteService.fetchQuote(quoteId);
