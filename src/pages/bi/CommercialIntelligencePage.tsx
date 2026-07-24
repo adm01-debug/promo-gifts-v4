@@ -64,6 +64,17 @@ export default function CommercialIntelligencePage() {
     });
   };
 
+  const applySubstitute = (
+    key: FilterKey,
+    value: { id: string; name: string },
+  ) => {
+    setFilters((prev) => {
+      if (key === 'category') return { ...prev, categoryId: value.id, categoryName: value.name };
+      if (key === 'supplier') return { ...prev, supplierId: value.id, supplierName: value.name };
+      return { ...prev, productId: value.id, productName: value.name };
+    });
+  };
+
   const formatRelative = (d: Date) => {
     const diff = Math.round((Date.now() - d.getTime()) / 1000);
     if (diff < 60) return 'agora';
@@ -136,6 +147,7 @@ export default function CommercialIntelligencePage() {
               productName={filters.productName}
               onClearFilter={clearFilter}
               onWidenWindow={widenWindow}
+              onApplySubstitute={applySubstitute}
             />
           </div>
         )}

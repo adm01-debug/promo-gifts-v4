@@ -6,6 +6,7 @@ import {
   useZeroResultDiagnosis,
   type FilterKey,
 } from '@/hooks/intelligence/useZeroResultDiagnosis';
+import { ZeroResultSubstitutes } from '@/components/intelligence/ZeroResultSubstitutes';
 
 /**
  * Mini-preview de quantos orçamentos + pedidos apareceriam ao aplicar uma
@@ -61,6 +62,11 @@ interface Props {
   onClearFilter?: (key: FilterKey) => void;
   /** Callback para ampliar a janela em dias. */
   onWidenWindow?: () => void;
+  /** Callback para aplicar um substituto ranqueado (ex.: trocar categoria). */
+  onApplySubstitute?: (
+    key: FilterKey,
+    value: { id: string; name: string },
+  ) => void;
 }
 
 const KEY_LABEL: Record<FilterKey, string> = {
@@ -85,6 +91,7 @@ export function ZeroResultDiagnosisCallout({
   productName,
   onClearFilter,
   onWidenWindow,
+  onApplySubstitute,
 }: Props) {
   const { data, isLoading } = useZeroResultDiagnosis({
     enabled,
@@ -235,6 +242,15 @@ export function ZeroResultDiagnosisCallout({
             {actions}
           </div>
         )}
+        <ZeroResultSubstitutes
+          enabled={enabled}
+          days={days}
+          categoryId={categoryId}
+          supplierId={supplierId}
+          productId={productId}
+          culprit={data.culprit}
+          onApplySubstitute={onApplySubstitute}
+        />
       </AlertDescription>
     </Alert>
   );
