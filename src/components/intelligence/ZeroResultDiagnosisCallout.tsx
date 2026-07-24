@@ -304,6 +304,13 @@ export function ZeroResultDiagnosisCallout({
                     substituteId: value.id,
                     substituteName: value.name,
                   });
+                  trackSubstituteApplied({
+                    axis: key,
+                    substituteId: value.id,
+                    substituteName: value.name,
+                    days,
+                    culpritBefore: data.culprit,
+                  });
                   onApplySubstitute(key, value);
                 }
               : undefined
