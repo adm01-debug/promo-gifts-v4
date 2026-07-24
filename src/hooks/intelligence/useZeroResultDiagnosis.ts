@@ -141,39 +141,58 @@ export function useZeroResultDiagnosis({
     ],
     queryFn: async () => {
       const since = getSince(days);
+      const widenedDays = Math.min(365, Math.max(days * 2, days + 30));
+      const sinceWidened = getSince(widenedDays);
 
-      const [unfilteredQuoteCount, catProbe, supProbe, prodProbe] = await Promise.all([
-        // Baseline: houve algum orçamento na janela, sem qualquer filtro?
+      // Resolve IDs uma única vez por combinação leave-one-out (economiza roundtrips)
+      const [catIds, supIds, prodIds] = await Promise.all([
+        categoryId ? resolveProductIds(null, supplierId, productId) : Promise.resolve(null),
+        supplierId ? resolveProductIds(categoryId, null, productId) : Promise.resolve(null),
+        productId ? resolveProductIds(categoryId, supplierId, null) : Promise.resolve(null),
+      ]);
+
+      const [
+        unfilteredQuoteCount,
+        unfilteredOrderCount,
+        catProbeQ,
+        supProbeQ,
+        prodProbeQ,
+        catProbeO,
+        supProbeO,
+        prodProbeO,
+        widenedQuotes,
+        widenedOrders,
+      ] = await Promise.all([
         countQuotesInWindow(since, null),
-        // Leave-one-out categoria (mantém supplier + product)
-        categoryId
-          ? resolveProductIds(null, supplierId, productId).then((ids) =>
-              countQuotesInWindow(since, ids),
-            )
-          : Promise.resolve<number | null>(null),
-        // Leave-one-out fornecedor (mantém category + product)
-        supplierId
-          ? resolveProductIds(categoryId, null, productId).then((ids) =>
-              countQuotesInWindow(since, ids),
-            )
-          : Promise.resolve<number | null>(null),
-        // Leave-one-out produto (mantém category + supplier)
-        productId
-          ? resolveProductIds(categoryId, supplierId, null).then((ids) =>
-              countQuotesInWindow(since, ids),
-            )
-          : Promise.resolve<number | null>(null),
+        countOrdersInWindow(since, null),
+        categoryId ? countQuotesInWindow(since, catIds) : Promise.resolve<number | null>(null),
+        supplierId ? countQuotesInWindow(since, supIds) : Promise.resolve<number | null>(null),
+        productId ? countQuotesInWindow(since, prodIds) : Promise.resolve<number | null>(null),
+        categoryId ? countOrdersInWindow(since, catIds) : Promise.resolve<number | null>(null),
+        supplierId ? countOrdersInWindow(since, supIds) : Promise.resolve<number | null>(null),
+        productId ? countOrdersInWindow(since, prodIds) : Promise.resolve<number | null>(null),
+        countQuotesInWindow(sinceWidened, null),
+        countOrdersInWindow(sinceWidened, null),
       ]);
 
       const leaveOneOut: Record<FilterKey, number | null> = {
-        category: catProbe,
-        supplier: supProbe,
-        product: prodProbe,
+        category: catProbeQ,
+        supplier: supProbeQ,
+        product: prodProbeQ,
+      };
+      const leaveOneOutOrders: Record<FilterKey, number | null> = {
+        category: catProbeO,
+        supplier: supProbeO,
+        product: prodProbeO,
       };
 
-      const positive = (Object.entries(leaveOneOut) as [FilterKey, number | null][])
-        .filter(([, v]) => v !== null && v > 0)
-        .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0));
+      // "Positivo" combina orçamentos + pedidos — qualquer sinal destrava o filtro
+      const combined: Array<[FilterKey, number]> = (Object.keys(leaveOneOut) as FilterKey[]).map(
+        (k) => [k, (leaveOneOut[k] ?? 0) + (leaveOneOutOrders[k] ?? 0)],
+      );
+      const positive = combined
+        .filter(([k, v]) => v > 0 && (leaveOneOut[k] !== null || leaveOneOutOrders[k] !== null))
+        .sort((a, b) => b[1] - a[1]);
 
       const activeFilters: Array<{ key: FilterKey; label: string }> = [];
       if (productId) activeFilters.push({ key: 'product', label: productName ?? 'Produto' });
@@ -183,23 +202,37 @@ export function useZeroResultDiagnosis({
       let culprit: ZeroResultDiagnosis['culprit'] = null;
       let filtersToWiden: Array<{ key: FilterKey; label: string }> = [];
 
-      if (unfilteredQuoteCount === 0) {
+      const totalBaseline = unfilteredQuoteCount + unfilteredOrderCount;
+      if (totalBaseline === 0) {
         culprit = 'window';
       } else if (positive.length === 1) {
         const [key] = positive[0];
         culprit = key;
         filtersToWiden = activeFilters.filter((f) => f.key === key);
       } else if (positive.length > 1) {
-        // Mais de um filtro, se removido, destrava resultados — intersecção estreita
         culprit = 'intersection';
-        filtersToWiden = positive.map(([key]) => activeFilters.find((f) => f.key === key)!).filter(Boolean);
+        filtersToWiden = positive
+          .map(([key]) => activeFilters.find((f) => f.key === key)!)
+          .filter(Boolean);
       } else if (activeFilters.length > 0) {
-        // Todos leave-one-out = 0 mas há baseline — intersecção vazia
         culprit = 'intersection';
         filtersToWiden = activeFilters;
       }
 
-      return { unfilteredQuoteCount, leaveOneOut, culprit, filtersToWiden };
+      const widenedPreview =
+        culprit === 'window'
+          ? { days: widenedDays, quotes: widenedQuotes, orders: widenedOrders }
+          : null;
+
+      return {
+        unfilteredQuoteCount,
+        unfilteredOrderCount,
+        leaveOneOut,
+        leaveOneOutOrders,
+        widenedPreview,
+        culprit,
+        filtersToWiden,
+      };
     },
   });
 }
