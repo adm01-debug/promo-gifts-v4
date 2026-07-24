@@ -129,14 +129,13 @@ function buildEmptyState(s: AggregatedSummary): InsightPayload {
   };
 }
 
-function buildFallback(s: AggregatedSummary): InsightPayload {
+function buildFallback(s: AggregatedSummary, focus: InsightFocus = "auto"): InsightPayload {
   const filterCtx =
     [s.filters.category, s.filters.supplier, s.filters.product].filter(Boolean).join(" · ") ||
     "todo o catálogo";
   const rev = s.current.revenue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const dRev = s.deltas.revenue_pct;
   const dQuotes = s.deltas.quotes_pct;
-  const conv = s.current.conversion_rate;
   const top = s.top_products[0]?.name;
 
   return {
@@ -150,10 +149,7 @@ function buildFallback(s: AggregatedSummary): InsightPayload {
     why: top
       ? `Performance puxada por "${top}" e concentração nos 5 principais fornecedores.`
       : "Volume distribuído entre múltiplos produtos sem concentração clara.",
-    next_action:
-      conv < 30
-        ? `Conversão em ${conv}% — revise follow-up dos orçamentos abertos para destravar pedidos.`
-        : "Mantenha o ritmo: foque os 5 produtos de maior giro para sustentar o faturamento.",
+    next_action: focusFallbackNextAction(focus, s),
     highlights: [
       s.top_suppliers[0]
         ? `${s.top_suppliers[0].name} representa ${s.top_suppliers[0].share_pct}% do faturamento.`
