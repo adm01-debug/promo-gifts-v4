@@ -55,7 +55,7 @@ export function useProductSeoAI(
         body: { product },
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
 
       for (const field of SEO_FIELDS) {

@@ -48,7 +48,7 @@ export function BlockIpButton({
       const { data, error } = await invokeEdge('block-ip-temporarily', {
         body: { ip: ip.trim(), reason: reason.trim() || undefined, hours },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
       toast({
         title: 'IP bloqueado',

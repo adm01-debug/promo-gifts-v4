@@ -48,7 +48,7 @@ export function GitHubCredentialsTester() {
       const { data, error } = await invokeEdge('github-credentials-test', {
         body: {},
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       const r = (data as { report?: Report }).report;
       if (!r) throw new Error('Resposta inválida do servidor');
       setReport(r);

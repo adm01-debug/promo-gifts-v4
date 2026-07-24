@@ -55,7 +55,7 @@ export function TrendsInsightsCard({ days }: TrendsInsightsCardProps) {
             variant: 'destructive',
           });
         }
-        throw error;
+        throw new Error(error.message);
       }
       return queryRows as InsightResponse;
     },

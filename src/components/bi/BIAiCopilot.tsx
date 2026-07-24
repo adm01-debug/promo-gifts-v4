@@ -117,7 +117,7 @@ export function BIAiCopilot({ open, onOpenChange, clientId, clientName, ramoAtiv
         },
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       const answer = (data as { answer?: string })?.answer ?? 'Não consegui processar agora.';
       setMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
     } catch {

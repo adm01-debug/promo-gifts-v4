@@ -93,7 +93,7 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
           test_webhook_id: hookId,
         },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       setResult({
         success: !!data?.success,
         status_code: data?.status_code ?? null,

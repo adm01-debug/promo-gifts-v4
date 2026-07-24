@@ -56,7 +56,7 @@ export function useConnectionTestHistory({
           limit,
         },
       });
-      if (fnErr) throw fnErr;
+      if (fnErr) throw new Error(fnErr.message);
       if (cancelRef.current) return;
       setItems((data?.items ?? []) as TestHistoryItem[]);
       setTotal(typeof data?.total === 'number' ? data.total : (data?.items?.length ?? 0));

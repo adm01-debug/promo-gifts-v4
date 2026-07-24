@@ -63,7 +63,7 @@ export function useConnectionTestDetails({ open, type, envKey, connectionId, his
           },
         },
       );
-      if (invokeError) throw invokeError;
+      if (invokeError) throw new Error(invokeError.message);
       const raw = (data?.details ?? null) as TestDetails | null;
       // Fallback: registros antigos podem ter `error.kind = null`. Inferimos o
       // kind a partir do error_message + status_code para que o badge semântico

@@ -94,7 +94,7 @@ export function AIComparisonAdvisor({ products }: AIComparisonAdvisorProps) {
         body: { products: slim },
       });
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
 
       const advice: AdvisorResult = {

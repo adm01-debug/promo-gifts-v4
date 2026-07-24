@@ -35,7 +35,7 @@ export function useKitIdentitySuggestion() {
           body: input,
         },
       );
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       const s = data?.suggestion as IdentitySuggestion | undefined;
       if (!s?.tag || !s?.color || !s?.icon) throw new Error('Sugestão incompleta');

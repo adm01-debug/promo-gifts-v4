@@ -86,7 +86,7 @@ export function useLogoColorAnalysis() {
         body: { imageBase64: resizedBase64 },
       });
 
-      if (fnError) throw fnError;
+      if (fnError) throw new Error(fnError.message);
 
       if (data?.error) {
         throw new Error(data.error);

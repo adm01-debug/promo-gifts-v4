@@ -88,7 +88,7 @@ export function PromotionDialog({
           reason: parsed.data.reason,
         },
       });
-      if (invokeErr) throw invokeErr;
+      if (invokeErr) throw new Error(invokeErr.message);
       if (data?.error) throw new Error(data.error);
 
       toast.success(

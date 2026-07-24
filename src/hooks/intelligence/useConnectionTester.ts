@@ -66,7 +66,7 @@ export function useConnectionTester() {
           body: { action: 'test', type, config, connection_id, env_key },
           headers: log.headers(),
         });
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         const r = (data?.result ?? {}) as TestResult;
         const normalized: TestResult = {
           ok: !!r.ok,

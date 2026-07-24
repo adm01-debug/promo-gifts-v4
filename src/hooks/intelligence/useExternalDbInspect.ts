@@ -34,7 +34,7 @@ export function useExternalDbInspect() {
         const { data, error } = await invokeEdge<InspectResult>('external-db-inspect', {
           body: { action, ...params },
         });
-        if (error) throw error;
+        if (error) throw new Error(error.message);
         setResult(data);
         return data;
       } catch (err) {

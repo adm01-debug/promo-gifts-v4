@@ -61,11 +61,7 @@ export function ImageUploadButton({
           });
 
           if (error) {
-            // Se for erro 403 (bloqueio por malware ou falha de verificação), não tentamos novamente
-            if (error.status === 403) {
-              throw error;
-            }
-            throw error;
+            throw new Error(error.message);
           }
 
           onUpload(data!.url);

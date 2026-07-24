@@ -202,7 +202,7 @@ export function PromptGenerator({
         },
       );
 
-      if (error) throw error;
+      if (error) throw new Error(error.message);
 
       if (data?.prompts && Array.isArray(data.prompts)) {
         setGeneratedPrompts(data.prompts);

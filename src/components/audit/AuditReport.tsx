@@ -30,7 +30,7 @@ export function AuditReport() {
         timestamp?: string;
         results?: AuditResult[];
       }>('audit-suite');
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       setReport(data);
       toast.success('Auditoria concluída com sucesso');
     } catch (err: unknown) {

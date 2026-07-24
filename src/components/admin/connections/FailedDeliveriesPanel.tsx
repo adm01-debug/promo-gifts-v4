@@ -69,7 +69,7 @@ export function FailedDeliveriesPanel() {
       }>('webhook-dispatcher', {
         body: { event: '__replay__', replay_delivery_id: id },
       });
-      if (error) throw error;
+      if (error) throw new Error(error.message);
       const r = result?.results?.[0];
       if (r?.status === 'success') toast.success('Webhook reenviado com sucesso');
       else
