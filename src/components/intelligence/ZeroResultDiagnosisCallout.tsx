@@ -91,6 +91,7 @@ export function ZeroResultDiagnosisCallout({
   productName,
   onClearFilter,
   onWidenWindow,
+  onApplySubstitute,
 }: Props) {
   const { data, isLoading } = useZeroResultDiagnosis({
     enabled,
