@@ -12,7 +12,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/ui';
-import { supabase } from '@/integrations/supabase/client';
 import { LogOut, AlertTriangle, Loader2 } from 'lucide-react';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 

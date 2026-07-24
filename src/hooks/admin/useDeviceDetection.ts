@@ -1,6 +1,5 @@
 import { logger } from '@/lib/logger';
 import { useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { untypedFrom } from '@/lib/supabase-untyped';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';

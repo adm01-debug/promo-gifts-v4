@@ -6,7 +6,6 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { getBestPantoneMatch, type PantoneMatch } from '@/utils/color-matching';
 import { toast } from 'sonner';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';

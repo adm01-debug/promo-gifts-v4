@@ -43,7 +43,6 @@ import { useCanGrantMcpFull } from './useCanGrantMcpFull';
 import { sanitizeError } from '@/lib/security/sanitize-error';
 import { useDevChallenge } from '@/contexts/DevChallengeContext';
 import { invokeFullScopeFunction } from '@/lib/auth/invoke-full-scope';
-import { supabase } from '@/integrations/supabase/client';
 import { handleStepUpError } from '@/lib/auth/step-up-error';
 import type { McpKeyRow } from './useMcpKeys';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';

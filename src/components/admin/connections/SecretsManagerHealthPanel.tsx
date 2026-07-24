@@ -34,7 +34,6 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 import {
   getSecretsManagerSamples,

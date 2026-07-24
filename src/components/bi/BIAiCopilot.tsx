@@ -16,7 +16,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Send, Bot, User as UserIcon, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import { useClientHealthScore } from '@/hooks/bi/useClientHealthScore';
 import { useClientBI } from '@/hooks/bi/useClientBI';
 import { useClientAffinity } from '@/hooks/bi/useClientAffinity';

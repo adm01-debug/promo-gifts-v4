@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import type { ConnectionType, ErrorKind } from '@/hooks/intelligence/useConnectionTester';
 import { inferErrorKind } from '@/lib/error-kind-inference';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';

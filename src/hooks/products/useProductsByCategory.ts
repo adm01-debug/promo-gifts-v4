@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
@@ -196,12 +195,15 @@ export function useCategoryDescendants(categoryIds: string[]) {
       const token = ++fetchTokenRef.current;
       setIsLoading(true);
       try {
-        const { data, error } = await invokeEdge<{ success: boolean; data?: string[] }>('categories-api', {
-          body: {
-            action: 'descendants',
-            categoryIds: idsForFetch,
+        const { data, error } = await invokeEdge<{ success: boolean; data?: string[] }>(
+          'categories-api',
+          {
+            body: {
+              action: 'descendants',
+              categoryIds: idsForFetch,
+            },
           },
-        });
+        );
 
         if (token !== fetchTokenRef.current) return; // superseded — nova seleção de categoria
         if (!error && data?.success) {

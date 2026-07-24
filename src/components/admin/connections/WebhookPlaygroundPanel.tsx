@@ -20,7 +20,6 @@ import {
   SelectLabel,
 } from '@/components/ui/select';
 import { Beaker, Loader2, Send, CheckCircle2, AlertCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { WEBHOOK_EVENTS_CATALOG } from '@/lib/webhook-events-catalog';
 import { getEventSamplePayload } from '@/lib/webhook-events-payload-samples';

@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/ui';
-import { supabase } from '@/integrations/supabase/client';
 
 import { logger } from '@/lib/logger';
 import { sanitizeMessage } from '@/lib/security/sanitize-message';
@@ -51,7 +50,11 @@ export function VisualSearchButton({ onResultsFound }: VisualSearchProps) {
       setIsLoading(true);
 
       try {
-        const { data, error } = await invokeEdge<{ products: SearchResult[]; analysis: ProductAnalysis; error?: string }>('visual-search', {
+        const { data, error } = await invokeEdge<{
+          products: SearchResult[];
+          analysis: ProductAnalysis;
+          error?: string;
+        }>('visual-search', {
           body: { imageBase64 },
         });
 

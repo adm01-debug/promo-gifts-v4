@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import type { OverviewRow } from '@/hooks/intelligence';
 import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
