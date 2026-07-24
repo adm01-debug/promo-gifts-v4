@@ -6,6 +6,7 @@ import {
   useZeroResultDiagnosis,
   type FilterKey,
 } from '@/hooks/intelligence/useZeroResultDiagnosis';
+import { ZeroResultSubstitutes } from '@/components/intelligence/ZeroResultSubstitutes';
 
 /**
  * Mini-preview de quantos orçamentos + pedidos apareceriam ao aplicar uma
