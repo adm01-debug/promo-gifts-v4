@@ -1,20 +1,14 @@
-import { type BridgeCallSample } from '@/lib/telemetry/bridgeCallMetrics';
-
-export function formatBytes(b: number): string {
-  if (b < 1024) return `${b}B`;
-  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)}KB`;
-  return `${(b / 1024 / 1024).toFixed(2)}MB`;
-}
-
 export function latencyClass(ms: number): string {
-  if (ms < 200) return 'text-emerald-400';
-  if (ms < 600) return 'text-amber-400';
-  if (ms < 1500) return 'text-orange-400';
+  if (ms < 200) return 'text-green-400';
+  if (ms < 500) return 'text-yellow-400';
   return 'text-red-400';
 }
 
-export function bridgeBadge(b: BridgeCallSample['bridge']): string {
-  return b === 'external-db-bridge'
-    ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
-    : 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-500/40';
+const BYTE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), BYTE_UNITS.length - 1);
+  return `${parseFloat((bytes / k ** i).toFixed(1))} ${BYTE_UNITS[i]}`;
 }

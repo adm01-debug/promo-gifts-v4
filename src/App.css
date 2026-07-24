@@ -5,8 +5,13 @@
 @import './styles/responsive.css';
 @import './styles/motion-tokens.css';
 @keyframes bounce-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10%); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10%);
+  }
 }
 .animate-bounce-slow {
   animation: bounce-slow 3s infinite ease-in-out;
@@ -70,23 +75,23 @@ body {
 
 /* Fix for iOS input zoom */
 @media screen and (max-width: 768px) {
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="url"],
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='number'],
+  input[type='tel'],
+  input[type='url'],
   select,
   textarea {
     font-size: 16px !important;
   }
 }
 
-/* Prevent horizontal scroll */
+/* Prevent horizontal scroll and set default background */
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
   width: 100%;
-  background-color: transparent !important;
+  background-color: #0a0a0a;
 }
 
 /* Smooth transitions for theme/skin changes — applied globally during switch */
@@ -94,9 +99,14 @@ body {
 .theme-transitioning *,
 .theme-transitioning *::before,
 .theme-transitioning *::after {
-  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease,
-              fill 0.3s ease, stroke 0.3s ease, box-shadow 0.4s ease,
-              outline-color 0.3s ease !important;
+  transition:
+    background-color 0.4s ease,
+    border-color 0.4s ease,
+    color 0.3s ease,
+    fill 0.3s ease,
+    stroke 0.3s ease,
+    box-shadow 0.4s ease,
+    outline-color 0.3s ease !important;
 }
 
 /* Legacy class kept for backward compatibility */

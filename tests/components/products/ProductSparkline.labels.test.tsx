@@ -3,7 +3,8 @@
  *
  * Changed labels:
  *   - Tooltip day header: "Vendas no fornecedor · Dia N" → "Mercado · Dia N"
- *   - Tooltip metric label: "Vendas no fornecedor 30d" → "Saídas 30d"
+ *   - Tooltip metric label: "Vendas no fornecedor 30d" → "Saídas 90d"
+ *     (janela real do agregado = SPARKLINE_WINDOW_DAYS = 90 dias)
  *
  * Removed section:
  *   - Source legend div with "Proxy: unidades depletadas no estoque do fornecedor..."
@@ -22,7 +23,7 @@ const mockSparklineData = {
   dailyQty: [5, 3, 8, 10, 4, 7, 9, 6, 3, 12, 5, 8, 4, 6, 11, 9, 3, 7, 5, 10, 8, 6, 4, 9, 11, 5, 7, 3, 8, 6],
 };
 
-vi.mock("@/hooks/intelligence", () => ({
+vi.mock("@/hooks/intelligence/useSparklineSales", () => ({
   useSparklineData: vi.fn(() => mockSparklineData),
 }));
 
@@ -56,7 +57,7 @@ describe("ProductSparkline — PR label changes", () => {
     expect(screen.queryByText(/Vendas no fornecedor · Dia/i)).not.toBeInTheDocument();
   });
 
-  it("shows 'Saídas 30d' in tooltip metrics grid (new label)", async () => {
+  it("shows 'Saídas 90d' in tooltip metrics grid (new label)", async () => {
     const { ProductSparkline } = await import("@/components/products/ProductSparkline");
     renderWithProviders(<ProductSparkline productId="test-product" />);
 
@@ -68,7 +69,7 @@ describe("ProductSparkline — PR label changes", () => {
     }
 
     // New label should be visible
-    expect(screen.getByText("Saídas 30d")).toBeInTheDocument();
+    expect(screen.getByText("Saídas 90d")).toBeInTheDocument();
   });
 
   it("shows 'Mercado · Dia N' header in tooltip (new label)", async () => {
@@ -114,11 +115,11 @@ describe("ProductSparkline — PR label changes", () => {
     }
 
     // After mouse leaves, tooltip data should not be visible
-    expect(screen.queryByText("Saídas 30d")).not.toBeInTheDocument();
+    expect(screen.queryByText("Saídas 90d")).not.toBeInTheDocument();
   });
 
   it("returns null when product has no real data (no render)", async () => {
-    const { useSparklineData } = await import("@/hooks/intelligence");
+    const { useSparklineData } = await import("@/hooks/intelligence/useSparklineSales");
     vi.mocked(useSparklineData).mockReturnValueOnce(null);
 
     const { ProductSparkline } = await import("@/components/products/ProductSparkline");
@@ -127,7 +128,7 @@ describe("ProductSparkline — PR label changes", () => {
   });
 
   it("returns null when totalQty is 0 (all-zero data treated as no data)", async () => {
-    const { useSparklineData } = await import("@/hooks/intelligence");
+    const { useSparklineData } = await import("@/hooks/intelligence/useSparklineSales");
     vi.mocked(useSparklineData).mockReturnValueOnce({
       totalQty: 0,
       totalReplenished: 0,

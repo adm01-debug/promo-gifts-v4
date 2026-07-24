@@ -118,7 +118,7 @@ export interface UseTechniqueRecommendationsResult {
 function extractKeywords(product: Product | null): string[] {
   if (!product) return [];
 
-  const text = [product.name, product.categoryName, product.brand, product.sku]
+  const text = [product.name, product.category?.name, product.sku]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
@@ -136,7 +136,7 @@ function calculateRecommendationScore(
   technique: Technique,
   keywords: string[],
 ): { score: number; matchedKeywords: string[]; reason: string } {
-  const code = technique.code?.toUpperCase() || '';
+  const code = technique.code?.toUpperCase() ?? '';
   const matchedKeywords: string[] = [];
   let score = 0;
   const reasons: string[] = [];
@@ -194,7 +194,7 @@ export function useTechniqueRecommendations(
       const { score, matchedKeywords, reason } = calculateRecommendationScore(technique, keywords);
 
       const popularityKey = Object.keys(POPULARITY_SCORES).find((k) =>
-        (technique.code?.toUpperCase() || '').includes(k),
+        (technique.code?.toUpperCase() ?? '').includes(k),
       );
       const popularityScore = popularityKey ? POPULARITY_SCORES[popularityKey] : 30;
 
@@ -238,12 +238,12 @@ export function useTechniqueRecommendations(
 }
 
 export type SortOption =
-  | 'recommended'
+  | 'popularity'
   | 'price_asc'
   | 'price_desc'
+  | 'recommended'
   | 'time_asc'
-  | 'time_desc'
-  | 'popularity';
+  | 'time_desc';
 
 /**
  * Ordena técnicas por critério

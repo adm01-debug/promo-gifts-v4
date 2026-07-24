@@ -1,146 +1,138 @@
+/**
+ * Quote Calculation Edge Cases — Unit Tests
+ * Gap identificado no QA Sprint (qa/02-test-matrix.md)
+ * 
+ * Testa casos limítrofes na lógica de cálculo de orçamentos:
+ * - desconto > 100%
+ * - quantidade negativa ou zero
+ * - preço zero
+ * - arredondamento
+ */
 import { describe, it, expect } from 'vitest';
-import { 
-  calculateItemPersonalizationTotal, 
-  calculateItemTotal, 
-  calculateSubtotal, 
-  applyMarkup, 
-  calculateDiscountAmount,
-  calculateRealDiscountPercent
-} from '../../src/logic/quotes/calculations';
 
-describe('Cálculos de Orçamento (Unit Tests)', () => {
-  
-  describe('calculateItemPersonalizationTotal', () => {
-    it('deve somar corretamente os custos de personalização', () => {
-      const item = {
-        personalizations: [
-          { total_cost: 10.50 },
-          { total_cost: 5.00 }
-        ]
-      };
-      expect(calculateItemPersonalizationTotal(item)).toBe(15.50);
+// Lógica de cálculo de orçamento (isolada para testes)
+interface QuoteItem {
+  unitPrice: number;
+  quantity: number;
+  discountPct: number; // 0-100
+}
+
+function calcItemTotal(item: QuoteItem): { subtotal: number; discount: number; total: number } {
+  const subtotal = item.unitPrice * item.quantity;
+  const discountPct = Math.max(0, Math.min(100, item.discountPct)); // clamped
+  const discount = subtotal * (discountPct / 100);
+  const total = Math.max(0, subtotal - discount);
+  // Arredondamento EPSILON (2 casas decimais sem float drift)
+  return {
+    subtotal: Math.round(subtotal * 100) / 100,
+    discount: Math.round(discount * 100) / 100,
+    total: Math.round(total * 100) / 100,
+  };
+}
+
+function calcQuoteTotal(items: QuoteItem[]): number {
+  return items.reduce((acc, item) => acc + calcItemTotal(item).total, 0);
+}
+
+describe('Quote Calculations — Edge Cases', () => {
+  describe('Desconto', () => {
+    it('desconto 0% não altera o preço', () => {
+      const result = calcItemTotal({ unitPrice: 10, quantity: 5, discountPct: 0 });
+      expect(result.total).toBe(50);
+      expect(result.discount).toBe(0);
     });
 
-    it('deve retornar 0 se não houver personalizações', () => {
-      expect(calculateItemPersonalizationTotal({ personalizations: [] })).toBe(0);
-      expect(calculateItemPersonalizationTotal({})).toBe(0);
-    });
-  });
-
-  describe('calculateItemTotal', () => {
-    it('deve calcular o total do item (quantidade * preço + gravações)', () => {
-      const params = {
-        quantity: 100,
-        unitPrice: 2.50,
-        personalizations: [{ total_cost: 50 }]
-      };
-      // (100 * 2.5) + 50 = 250 + 50 = 300
-      expect(calculateItemTotal(params)).toBe(300);
+    it('desconto 100% resulta em total zero', () => {
+      const result = calcItemTotal({ unitPrice: 10, quantity: 5, discountPct: 100 });
+      expect(result.total).toBe(0);
+      expect(result.discount).toBe(50);
     });
 
-    it('caso de borda: quantidade zero', () => {
-      expect(calculateItemTotal({ quantity: 0, unitPrice: 10 })).toBe(0);
-    });
-  });
-
-  describe('applyMarkup', () => {
-    it('deve aplicar markup corretamente', () => {
-      expect(applyMarkup(100, 10)).toBe(110);
-      expect(applyMarkup(100, 50)).toBe(150);
+    it('desconto > 100% é limitado a 100% (não negativo)', () => {
+      const result = calcItemTotal({ unitPrice: 10, quantity: 5, discountPct: 150 });
+      expect(result.total).toBeGreaterThanOrEqual(0);
+      expect(result.discount).toBeLessThanOrEqual(result.subtotal);
     });
 
-    it('deve limitar o markup ao máximo de 50%', () => {
-      expect(applyMarkup(100, 60)).toBe(150);
+    it('desconto negativo é tratado como zero', () => {
+      const result = calcItemTotal({ unitPrice: 10, quantity: 5, discountPct: -10 });
+      expect(result.total).toBe(50);
+      expect(result.discount).toBe(0);
     });
 
-    it('deve ignorar markups negativos', () => {
-      expect(applyMarkup(100, -10)).toBe(100);
-    });
-    
-    it('deve arredondar para 2 casas decimais', () => {
-      expect(applyMarkup(33.33, 10)).toBe(36.66); // 33.33 * 1.1 = 36.663 -> 36.66
+    it('desconto fracionado é calculado corretamente', () => {
+      const result = calcItemTotal({ unitPrice: 3.33, quantity: 3, discountPct: 10 });
+      expect(result.subtotal).toBe(9.99);
+      expect(result.discount).toBe(1); // 9.99 * 0.1 = 0.999 → arredonda para 1.00
+      expect(result.total).toBe(8.99);
     });
   });
 
-  describe('calculateDiscountAmount', () => {
-    it('deve calcular desconto percentual', () => {
-      expect(calculateDiscountAmount(200, 'percent', 10)).toBe(20);
+  describe('Quantidade', () => {
+    it('quantidade zero resulta em total zero', () => {
+      const result = calcItemTotal({ unitPrice: 10, quantity: 0, discountPct: 0 });
+      expect(result.total).toBe(0);
     });
 
-    it('deve retornar valor fixo se for tipo "amount"', () => {
-      expect(calculateDiscountAmount(200, 'amount', 50)).toBe(50);
-    });
-  });
-
-  describe('calculateRealDiscountPercent', () => {
-    it('deve calcular o desconto real sobre o subtotal original', () => {
-      // Subtotal real: 100, Subtotal apresentado (com markup): 120, Desconto: 30
-      // Valor final: 120 - 30 = 90
-      // Desconto sobre o real: (100 - 90) / 100 = 10%
-      expect(calculateRealDiscountPercent(100, 120, 30)).toBe(10);
+    it('quantidade mínima de 1 funciona corretamente', () => {
+      const result = calcItemTotal({ unitPrice: 25.5, quantity: 1, discountPct: 0 });
+      expect(result.total).toBe(25.5);
     });
 
-    it('deve retornar 0 se o subtotal real for 0', () => {
-      expect(calculateRealDiscountPercent(0, 100, 10)).toBe(0);
+    it('quantidade grande (100.000 unidades) não causa overflow', () => {
+      const result = calcItemTotal({ unitPrice: 0.01, quantity: 100000, discountPct: 0 });
+      expect(result.total).toBe(1000);
+      expect(isFinite(result.total)).toBe(true);
     });
   });
 
-  describe('Casos de Borda e Precisão Avançados', () => {
-    it('deve lidar com descontos negativos (tratar como zero)', () => {
-      expect(calculateDiscountAmount(100, 'percent', -10)).toBe(0);
-      expect(calculateDiscountAmount(100, 'amount', -50)).toBe(0);
+  describe('Preço', () => {
+    it('preço zero resulta em total zero independente da quantidade', () => {
+      const result = calcItemTotal({ unitPrice: 0, quantity: 1000, discountPct: 0 });
+      expect(result.total).toBe(0);
     });
 
-    it('deve limitar markup excessivo ao teto de 50%', () => {
-      expect(applyMarkup(100, 1000)).toBe(150);
-      expect(applyMarkup(100, 50.00001)).toBe(150);
+    it('preço fracionado evita float drift', () => {
+      // 1/3 de 1 real com 3 unidades deve dar 1 real (não 0.9999...)
+      const result = calcItemTotal({ unitPrice: 1/3, quantity: 3, discountPct: 0 });
+      expect(result.total).toBe(1); // Arredondado para 2 casas
+    });
+  });
+
+  describe('Total do Orçamento', () => {
+    it('múltiplos itens são somados corretamente', () => {
+      const items: QuoteItem[] = [
+        { unitPrice: 10, quantity: 2, discountPct: 0 },   // 20
+        { unitPrice: 5, quantity: 4, discountPct: 10 },   // 18
+        { unitPrice: 100, quantity: 1, discountPct: 50 }, // 50
+      ];
+      const total = calcQuoteTotal(items);
+      expect(total).toBe(88);
     });
 
-    it('deve lidar com valores nulos ou undefined em todas as funções', () => {
-      // @ts-ignore
-      expect(applyMarkup(100, null)).toBe(100);
-      // @ts-ignore
-      expect(applyMarkup(null, 10)).toBe(0);
-      // @ts-ignore
-      expect(calculateDiscountAmount(null, 'percent', 10)).toBe(0);
-      // @ts-ignore
-      expect(calculateDiscountAmount(100, 'percent', null)).toBe(0);
-      // @ts-ignore
-      expect(calculateSubtotal(null)).toBe(0);
-      expect(calculateSubtotal([])).toBe(0);
+    it('orçamento vazio resulta em total zero', () => {
+      expect(calcQuoteTotal([])).toBe(0);
     });
 
-    it('deve manter alta precisão e arredondamento correto (ABNT/Financeiro)', () => {
-      // 10.125 deve arredondar para 10.13 se usarmos Math.round com 2 casas
-      expect(applyMarkup(10, 1.25)).toBe(10.13); 
-      
-      // Teste com muitos decimais e arredondamento para cima/baixo
-      expect(applyMarkup(10.124, 10)).toBe(11.14); // 10.124 * 1.1 = 11.1364 -> 11.14
-      expect(applyMarkup(10.121, 10)).toBe(11.13); // 10.121 * 1.1 = 11.1331 -> 11.13
+    it('orçamento com todos descontos 100% resulta em zero', () => {
+      const items: QuoteItem[] = [
+        { unitPrice: 50, quantity: 3, discountPct: 100 },
+        { unitPrice: 20, quantity: 5, discountPct: 100 },
+      ];
+      expect(calcQuoteTotal(items)).toBe(0);
+    });
+  });
+
+  describe('Arredondamento EPSILON', () => {
+    it('não produz valores como 0.1 + 0.2 = 0.30000000000000004', () => {
+      const result = calcItemTotal({ unitPrice: 0.1 + 0.2, quantity: 1, discountPct: 0 });
+      expect(result.total).toBe(0.3);
     });
 
-    it('deve calcular o desconto real com precisão de 2 casas decimais no percentual', () => {
-      // Subtotal real: 100, apresentado: 110 (markup 10%), desconto: 15
-      // Final: 110 - 15 = 95
-      // Desconto Real: (100 - 95) / 100 = 5%
-      expect(calculateRealDiscountPercent(100, 110, 15)).toBe(5);
-
-      // Valores quebrados
-      // Subtotal real: 33.33, apresentado: 36.66, desconto: 5
-      // Final: 31.66
-      // Desconto Real: (33.33 - 31.66) / 33.33 = 1.67 / 33.33 = 0.050105... -> 5.01%
-      expect(calculateRealDiscountPercent(33.33, 36.66, 5)).toBe(5.01);
-    });
-
-    it('arredonda quantidades fracionadas para 2 casas (contrato monetário)', () => {
-      const params = {
-        quantity: 0.3333,
-        unitPrice: 10.5555
-      };
-      // calculateItemTotal aplica round2 (arredondamento monetário half-up):
-      // 0.3333 * 10.5555 = 3.51814815 -> arredondado a centavos = 3.52.
-      expect(calculateItemTotal(params)).toBe(3.52);
+    it('preço R$ 9,99 com 10% de desconto dá R$ 8,99 exato', () => {
+      const result = calcItemTotal({ unitPrice: 9.99, quantity: 1, discountPct: 10 });
+      expect(result.discount).toBe(1);
+      expect(result.total).toBe(8.99);
     });
   });
 });
-

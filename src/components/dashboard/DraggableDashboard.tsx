@@ -1,8 +1,8 @@
-import * as React from "react";
-import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import * as React from 'react';
+import { m as motion, AnimatePresence, Reorder } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
   Plus,
   X,
@@ -14,13 +14,10 @@ import {
   Lock,
   Unlock,
   LayoutGrid,
-} from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+} from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+import { logger } from '@/lib/logger';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -83,12 +80,12 @@ export function useDashboardWidgets({
   defaultWidgets = [],
 }: UseDashboardWidgetsOptions = {}) {
   const [widgets, setWidgets] = React.useState<DashboardWidget[]>(() => {
-    if (storageKey && typeof window !== "undefined") {
+    if (storageKey && typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(`dashboard_${storageKey}`);
         if (stored) return JSON.parse(stored);
       } catch (e) {
-        console.error("Failed to load dashboard widgets:", e);
+        logger.error('Failed to load dashboard widgets:', e);
       }
     }
     return defaultWidgets;
@@ -102,26 +99,26 @@ export function useDashboardWidgets({
       try {
         localStorage.setItem(`dashboard_${storageKey}`, JSON.stringify(widgets));
       } catch (e) {
-        console.error("Failed to save dashboard widgets:", e);
+        logger.error('Failed to save dashboard widgets:', e);
       }
     }
   }, [widgets, storageKey]);
 
-  const addWidget = React.useCallback((widget: Omit<DashboardWidget, "id">) => {
+  const addWidget = React.useCallback((widget: Omit<DashboardWidget, 'id'>) => {
     const newWidget: DashboardWidget = {
       ...widget,
       id: crypto.randomUUID(),
     };
-    setWidgets(prev => [...prev, newWidget]);
+    setWidgets((prev) => [...prev, newWidget]);
     return newWidget;
   }, []);
 
   const removeWidget = React.useCallback((id: string) => {
-    setWidgets(prev => prev.filter(w => w.id !== id));
+    setWidgets((prev) => prev.filter((w) => w.id !== id));
   }, []);
 
   const updateWidget = React.useCallback((id: string, updates: Partial<DashboardWidget>) => {
-    setWidgets(prev => prev.map(w => w.id === id ? { ...w, ...updates } : w));
+    setWidgets((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } : w)));
   }, []);
 
   const reorderWidgets = React.useCallback((newOrder: DashboardWidget[]) => {
@@ -168,25 +165,27 @@ export function DraggableWidget({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
       className={cn(
-        "relative",
-        widget.colSpan === 1 && "col-span-1",
-        widget.colSpan === 2 && "col-span-2",
-        widget.colSpan === 3 && "col-span-3",
-        widget.colSpan === 4 && "col-span-4",
-        widget.rowSpan === 2 && "row-span-2"
+        'relative',
+        widget.colSpan === 1 && 'col-span-1',
+        widget.colSpan === 2 && 'col-span-2',
+        widget.colSpan === 3 && 'col-span-3',
+        widget.colSpan === 4 && 'col-span-4',
+        widget.rowSpan === 2 && 'row-span-2',
       )}
     >
-      <Card className={cn(
-        "h-full transition-all",
-        isEditing && "ring-2 ring-primary/20 ring-dashed",
-        widget.isLocked && "opacity-75"
-      )}>
-        <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
+      <Card
+        className={cn(
+          'h-full transition-all',
+          isEditing && 'ring-dashed ring-2 ring-primary/20',
+          widget.isLocked && 'opacity-75',
+        )}
+      >
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-2">
           <div className="flex items-center gap-2">
             {isEditing && !widget.isLocked && (
-              <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
+              <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground active:cursor-grabbing" />
             )}
-            <h3 className="font-display font-semibold text-sm">{widget.title}</h3>
+            <h3 className="font-display text-sm font-semibold">{widget.title}</h3>
           </div>
 
           <div className="flex items-center gap-1">
@@ -197,14 +196,17 @@ export function DraggableWidget({
                 size="icon"
                 className="h-7 w-7"
                 onClick={onRefresh}
-               aria-label="Atualizar"><RefreshCw className="h-3.5 w-3.5" />
+                aria-label="Atualizar"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
               </Button>
             )}
 
             {/* Collapse */}
             <Button
               variant="ghost"
-              size="icon" aria-label="Maximizar"
+              size="icon"
+              aria-label="Maximizar"
               className="h-7 w-7"
               onClick={onToggleCollapse}
             >
@@ -220,7 +222,8 @@ export function DraggableWidget({
               <>
                 <Button
                   variant="ghost"
-                  size="icon" aria-label="Bloquear"
+                  size="icon"
+                  aria-label="Bloquear"
                   className="h-7 w-7"
                   onClick={onToggleLock}
                 >
@@ -233,7 +236,8 @@ export function DraggableWidget({
 
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Settings2"><Settings2 className="h-3.5 w-3.5" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Configurar widget">
+                      <Settings2 className="h-3.5 w-3.5" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-48">
@@ -243,7 +247,7 @@ export function DraggableWidget({
                         {([1, 2, 3, 4] as const).map((span) => (
                           <Button
                             key={span}
-                            variant={widget.colSpan === span ? "secondary" : "ghost"}
+                            variant={widget.colSpan === span ? 'secondary' : 'ghost'}
                             size="sm"
                             className="flex-1"
                             onClick={() => onResize(span)}
@@ -262,7 +266,9 @@ export function DraggableWidget({
                     size="icon"
                     className="h-7 w-7 text-destructive hover:text-destructive"
                     onClick={onRemove}
-                   aria-label="Fechar"><X className="h-3.5 w-3.5" />
+                    aria-label="Fechar"
+                  >
+                    <X className="h-3.5 w-3.5" />
                   </Button>
                 )}
               </>
@@ -274,14 +280,14 @@ export function DraggableWidget({
           {!widget.isCollapsed && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
+              animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
             >
               <CardContent className="p-4 pt-2">
                 {WidgetComponent ? (
                   <WidgetComponent widget={widget} />
                 ) : (
-                  <div className="h-32 flex items-center justify-center text-muted-foreground">
+                  <div className="flex h-32 items-center justify-center text-muted-foreground">
                     Widget não configurado
                   </div>
                 )}
@@ -310,7 +316,7 @@ export function WidgetPicker({ availableWidgets, onAddWidget, className }: Widge
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className={cn("gap-2", className)}>
+        <Button variant="outline" className={cn('gap-2', className)}>
           <Plus className="h-4 w-4" />
           Adicionar Widget
         </Button>
@@ -318,10 +324,8 @@ export function WidgetPicker({ availableWidgets, onAddWidget, className }: Widge
       <PopoverContent className="w-80" align="end">
         <div className="space-y-4">
           <div>
-            <h4 className="font-semibold text-sm">Widgets Disponíveis</h4>
-            <p className="text-xs text-muted-foreground">
-              Clique para adicionar ao dashboard
-            </p>
+            <h4 className="text-sm font-semibold">Widgets Disponíveis</h4>
+            <p className="text-xs text-muted-foreground">Clique para adicionar ao dashboard</p>
           </div>
           <div className="grid gap-2">
             {availableWidgets.map((config) => (
@@ -331,13 +335,13 @@ export function WidgetPicker({ availableWidgets, onAddWidget, className }: Widge
                   onAddWidget(config);
                   setIsOpen(false);
                 }}
-                className="flex items-start gap-3 p-3 rounded-lg text-left hover:bg-muted transition-colors"
+                className="flex items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-muted"
               >
-                <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded bg-primary/10">
                   {config.icon || <LayoutGrid className="h-4 w-4 text-primary" />}
                 </div>
                 <div>
-                  <p className="font-medium text-sm">{config.title}</p>
+                  <p className="text-sm font-medium">{config.title}</p>
                   {config.description && (
                     <p className="text-xs text-muted-foreground">{config.description}</p>
                   )}
@@ -376,36 +380,33 @@ export function DraggableDashboard({
   };
 
   const handleRemoveWidget = (id: string) => {
-    onWidgetsChange(widgets.filter(w => w.id !== id));
+    onWidgetsChange(widgets.filter((w) => w.id !== id));
   };
 
   const handleUpdateWidget = (id: string, updates: Partial<DashboardWidget>) => {
-    onWidgetsChange(widgets.map(w => w.id === id ? { ...w, ...updates } : w));
+    onWidgetsChange(widgets.map((w) => (w.id === id ? { ...w, ...updates } : w)));
   };
 
   const getWidgetConfig = (type: string) => {
-    return availableWidgets.find(c => c.type === type);
+    return availableWidgets.find((c) => c.type === type);
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {isEditing && (
-            <WidgetPicker
-              availableWidgets={availableWidgets}
-              onAddWidget={handleAddWidget}
-            />
+            <WidgetPicker availableWidgets={availableWidgets} onAddWidget={handleAddWidget} />
           )}
         </div>
         <Button
-          variant={isEditing ? "secondary" : "outline"}
+          variant={isEditing ? 'secondary' : 'outline'}
           size="sm"
           onClick={() => onEditModeChange?.(!isEditing)}
         >
-          <Settings2 className="h-4 w-4 mr-2" />
-          {isEditing ? "Concluir" : "Editar Dashboard"}
+          <Settings2 className="mr-2 h-4 w-4" />
+          {isEditing ? 'Concluir' : 'Editar Dashboard'}
         </Button>
       </div>
 
@@ -415,10 +416,10 @@ export function DraggableDashboard({
         values={widgets}
         onReorder={onWidgetsChange}
         className={cn(
-          "grid gap-4",
-          columns === 2 && "grid-cols-2",
-          columns === 3 && "grid-cols-3",
-          columns === 4 && "grid-cols-4"
+          'grid gap-4',
+          columns === 2 && 'grid-cols-2',
+          columns === 3 && 'grid-cols-3',
+          columns === 4 && 'grid-cols-4',
         )}
       >
         <AnimatePresence>
@@ -433,12 +434,10 @@ export function DraggableDashboard({
                 config={getWidgetConfig(widget.type)}
                 isEditing={isEditing}
                 onRemove={() => handleRemoveWidget(widget.id)}
-                onToggleCollapse={() => 
+                onToggleCollapse={() =>
                   handleUpdateWidget(widget.id, { isCollapsed: !widget.isCollapsed })
                 }
-                onToggleLock={() => 
-                  handleUpdateWidget(widget.id, { isLocked: !widget.isLocked })
-                }
+                onToggleLock={() => handleUpdateWidget(widget.id, { isLocked: !widget.isLocked })}
                 onResize={(colSpan) => handleUpdateWidget(widget.id, { colSpan })}
               />
             </Reorder.Item>
@@ -449,16 +448,13 @@ export function DraggableDashboard({
       {/* Empty State */}
       {widgets.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <LayoutGrid className="h-12 w-12 text-muted-foreground/50 mb-4" />
-          <h3 className="font-display text-lg font-semibold mb-2">Dashboard vazio</h3>
-          <p className="text-muted-foreground text-sm mb-4">
+          <LayoutGrid className="mb-4 h-12 w-12 text-muted-foreground/50" />
+          <h3 className="mb-2 font-display text-lg font-semibold">Dashboard vazio</h3>
+          <p className="mb-4 text-sm text-muted-foreground">
             Adicione widgets para personalizar seu dashboard
           </p>
           {isEditing && (
-            <WidgetPicker
-              availableWidgets={availableWidgets}
-              onAddWidget={handleAddWidget}
-            />
+            <WidgetPicker availableWidgets={availableWidgets} onAddWidget={handleAddWidget} />
           )}
         </div>
       )}

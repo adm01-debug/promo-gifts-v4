@@ -2,7 +2,7 @@
  * supabase/functions/_shared/contracts/schemas/sync-external-db.ts
  *
  * v1: table obrigatório. Sunset 2026-11-30.
- * v2: strict + since como ISO 8601.
+ * v2: strict + since como ISO 8601 + idempotency_key.
  */
 import { z } from "https://esm.sh/zod@3.23.8";
 
@@ -19,6 +19,7 @@ export const SyncExternalDbV2 = z
     table: z.string().min(1).max(63),
     direction: DirectionEnum,
     since: z.string().datetime({ offset: true }).optional(),
+    idempotency_key: z.string().uuid(),
   })
   .strict();
 

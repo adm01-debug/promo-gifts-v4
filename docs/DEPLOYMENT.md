@@ -144,4 +144,5 @@ Se um deploy quebrar produção:
 - `docs/redeploy/REDEPLOY-T2.5-FOLLOWUP.md` — arquitetura Lovable + Vercel
 - `docs/BRANCH_PROTECTION.md` — política de proteção de branch
 - `docs/SECURITY_ALERTS.md` — Dependabot + CodeQL + Secret Scanning
+- `docs/ENVIRONMENTS_PARITY.md` — matriz de ambientes, variáveis, segredos, limitações e paridade mínima CI↔staging
 - `docs/storage/PUBLIC_BUCKETS.md` — política de buckets

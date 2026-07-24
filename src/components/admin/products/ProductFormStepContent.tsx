@@ -1,5 +1,8 @@
 /**
  * ProductFormStepContent — Renderiza o conteúdo de cada etapa do formulário
+ *
+ * Sprint 3 (26/05/2026):
+ *   BUG-03: pass engravingFlushRef down to ProductEngravingSection
  */
 import React, { Suspense } from 'react';
 import { Card } from '@/components/ui/card';
@@ -10,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, Package, Layers, Info, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SectionCard } from './ProductFormHelpers';
+import { SectionCard, type FormSectionProps } from './ProductFormHelpers';
 import { CategoryCascadeSelector } from './CategoryCascadeSelector';
 import { ProductSupplierSection } from './sections/ProductSupplierSection';
 import { ProductInfoSection } from './sections/ProductInfoSection';
@@ -23,7 +26,6 @@ import { ProductSeoSection } from './sections/ProductSeoSection';
 import { ProductMarketingTextsSection } from './sections/ProductMarketingTextsSection';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 import type { ProductFormData } from './ProductFormSchema';
-import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 
 const ProductClassificationSection = lazyWithRetry(
   () => import('./sections/ProductClassificationSection'),
@@ -48,13 +50,7 @@ function SectionSkeleton() {
   );
 }
 
-interface FormProps {
-  register: UseFormRegister<ProductFormData>;
-  setValue: UseFormSetValue<ProductFormData>;
-  watch: UseFormWatch<ProductFormData>;
-  errors: FieldErrors<ProductFormData>;
-  numericProps: (name: keyof ProductFormData) => object;
-}
+type FormProps = FormSectionProps;
 
 interface StepContentProps {
   stepId: string;
@@ -81,6 +77,9 @@ interface StepContentProps {
   expirations: Record<string, string | null>;
   generateSeoAI: () => void;
   isSeoGenerating: boolean;
+  /** BUG-03: ref populated by ProductEngravingSection with flushLocalAreas */
+  engravingFlushRef?: React.MutableRefObject<((id: string) => Promise<void>) | null>;
+  lastPriceUpdate?: { date: string; user: string } | null;
 }
 
 export function ProductFormStepContent({
@@ -108,6 +107,8 @@ export function ProductFormStepContent({
   expirations,
   generateSeoAI,
   isSeoGenerating,
+  engravingFlushRef,
+  lastPriceUpdate,
 }: StepContentProps) {
   const { register, setValue, errors } = formProps;
 
@@ -128,8 +129,8 @@ export function ProductFormStepContent({
           />
           <ProductInfoSection
             {...formProps}
-            skuStatus={skuStatus}
-            duplicateName={duplicateName}
+            skuStatus={skuStatus as 'checking' | 'duplicate' | 'idle' | 'valid'}
+            duplicateName={duplicateName ?? ''}
             skuManuallyEdited={skuManuallyEdited}
             onSkuManualEdit={onSkuManualEdit}
           />
@@ -167,6 +168,7 @@ export function ProductFormStepContent({
             onCostPriceDisplayChange={onCostPriceDisplayChange}
             onSalePriceDisplayChange={onSalePriceDisplayChange}
             onSalePriceManualEdit={onSalePriceManualEdit}
+            lastPriceUpdate={lastPriceUpdate}
           />
           <ProductFiscalSection {...formProps} />
         </>
@@ -198,7 +200,12 @@ export function ProductFormStepContent({
     case 'engraving':
       return (
         <Suspense fallback={<SectionSkeleton />}>
-          <ProductEngravingSection productId={productId} isEdit={isEdit} />
+          {/* BUG-03: pass engravingFlushRef so AdminProductFormPage can flush local areas after creation */}
+          <ProductEngravingSection
+            productId={productId}
+            isEdit={isEdit}
+            engravingFlushRef={engravingFlushRef}
+          />
         </Suspense>
       );
     case 'classification':
@@ -245,7 +252,7 @@ export function ProductFormStepContent({
                   <TooltipTrigger asChild>
                     <Info className="h-3 w-3 shrink-0 cursor-help text-muted-foreground/40" />
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-[220px] text-xs">
+                  <TooltipContent>
                     Define como kit composto por múltiplos componentes
                   </TooltipContent>
                 </Tooltip>

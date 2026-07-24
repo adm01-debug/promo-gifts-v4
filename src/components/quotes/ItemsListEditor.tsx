@@ -1,11 +1,11 @@
 /**
  * ItemsListEditor — editor de linha de itens de orçamento (qtd, preço unitário, observações).
  */
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { CurrencyInput } from "@/components/ui/currency-input";
-import { Button } from "@/components/ui/button";
-import { Trash2, Package } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { CurrencyInput } from '@/components/ui/currency-input';
+import { Button } from '@/components/ui/button';
+import { Trash2, Package } from 'lucide-react';
 
 export interface QuoteItemRow {
   id?: string;
@@ -33,7 +33,7 @@ export function ItemsListEditor({ items, onChange }: ItemsListEditorProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Package className="h-4 w-4 text-primary" /> Itens ({items.length})
         </CardTitle>
       </CardHeader>
@@ -42,7 +42,10 @@ export function ItemsListEditor({ items, onChange }: ItemsListEditorProps) {
           <p className="text-sm text-muted-foreground">Nenhum item adicionado.</p>
         ) : (
           items.map((item, idx) => (
-            <div key={item.id ?? idx} className="grid grid-cols-12 gap-2 items-end border-b pb-2 last:border-0">
+            <div
+              key={item.id ?? idx}
+              className="grid grid-cols-12 items-end gap-2 border-b pb-2 last:border-0"
+            >
               <div className="col-span-12 sm:col-span-5">
                 <Input
                   placeholder="Produto"
@@ -56,7 +59,9 @@ export function ItemsListEditor({ items, onChange }: ItemsListEditorProps) {
                   min={1}
                   placeholder="Qtd"
                   value={item.quantity}
-                  onKeyDown={(e) => { if (e.key === "-" || e.key === "+" || e.key === "e") e.preventDefault(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === '-' || e.key === '+' || e.key === 'e') e.preventDefault();
+                  }}
                   onChange={(e) => update(idx, { quantity: Math.max(1, +e.target.value || 1) })}
                 />
               </div>
@@ -68,7 +73,12 @@ export function ItemsListEditor({ items, onChange }: ItemsListEditorProps) {
                 />
               </div>
               <div className="col-span-2 flex justify-end">
-                <Button variant="ghost" size="icon" onClick={() => remove(idx)} aria-label="Remover item">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => remove(idx)}
+                  aria-label="Remover item"
+                >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>

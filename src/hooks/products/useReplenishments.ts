@@ -1,36 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db/bridge';
+import { untypedRpc } from '@/lib/supabase-untyped';
+import { shouldRetry } from '@/lib/db/postgrest';
+import { logger } from '@/lib/logger';
 
-/** Window in days for considering a product as "replenished" */
+/**
+ * Módulo Reposição — FONTE ÚNICA DE VERDADE: RPC `fn_get_reposicao_listing`.
+ *
+ * Antes este hook inferia "reposição" por produtos recém-editados em
+ * v_products_public (delta created_at↔updated_at ≥ 24h). Isso NÃO refletia
+ * reabastecimento real e divergia dos KPIs. Agora a grade, o widget e a
+ * contagem consomem o mesmo RPC canônico que alimenta os cards:
+ * detecção zero→positivo (fronteira do dia), no fuso America/Sao_Paulo,
+ * com atribuição determinística de fornecedor.
+ */
 const REPLENISHMENT_WINDOW_DAYS = 30;
 
-/** Minimum time (ms) between created_at and updated_at to qualify as replenishment (24h) */
-const MIN_REPLENISHMENT_DELTA_MS = 86_400_000;
-
-const REPLENISHMENT_SELECT = 'id, name, sku, primary_image_url, sale_price, category_id, supplier_id, created_at, updated_at, stock_quantity, min_quantity' as const;
-
-// ─── Date Utilities ──────────────────────────────────────────────
-
-function getCutoffDate(days: number = REPLENISHMENT_WINDOW_DAYS): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
-}
-
-function calcDaysSinceReplenishment(updatedAt: string): number {
-  const updated = new Date(updatedAt).getTime();
-  if (Number.isNaN(updated)) return REPLENISHMENT_WINDOW_DAYS;
-  return Math.max(0, Math.floor((Date.now() - updated) / (1000 * 60 * 60 * 24)));
-}
-
-function calcDaysRemaining(updatedAt: string): number {
-  const elapsed = calcDaysSinceReplenishment(updatedAt);
-  return Math.max(0, REPLENISHMENT_WINDOW_DAYS - elapsed);
-}
+/** Carrega o conjunto COMPLETO de reposições da janela (evita truncamento). */
+const FETCH_ALL_LIMIT = 2000;
 
 // ─── Types ───────────────────────────────────────────────────────
 
-export type ReplenishmentStatus = 'active' | 'expiring_soon' | 'expired';
+export type ReplenishmentStatus = 'active' | 'expired' | 'expiring_soon';
 export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock';
 
 export interface ReplenishmentWithDetails {
@@ -41,6 +31,7 @@ export interface ReplenishmentWithDetails {
   readonly product_description: string | null;
   readonly base_price: number | null;
   readonly product_image: string | null;
+  readonly product_set_image: string | null;
   readonly category_id: string | null;
   category_name: string | null;
   supplier_code: string | null;
@@ -60,6 +51,18 @@ export interface ReplenishmentWithDetails {
   readonly stock_status: StockStatus;
 }
 
+/**
+ * KPI stats para o módulo Reposição.
+ *
+ * PRIMÁRIOS (Cenário A — produto saiu do zero):
+ *   restockedToday/Week/15d = produtos onde stock foi de 0 → positivo
+ *   topSupplierName/Count   = fornecedor líder em restocks reais
+ *   activeReplenishments    = variantes esgotadas com data de chegada futura
+ *
+ * SECUNDÁRIOS (Cenário B — reabastecimento preventivo, opcionais):
+ *   reorderedThisWeek/Month  = produtos que já tinham estoque e receberam mais
+ *   upcomingRestockVariants  = variantes com next_date_1 futuro (em estoque ou não)
+ */
 export interface ReplenishmentStatsDisplay {
   readonly totalReplenishments: number;
   readonly activeReplenishments: number;
@@ -69,116 +72,154 @@ export interface ReplenishmentStatsDisplay {
   readonly restockedToday: number;
   readonly restockedThisWeek: number;
   readonly restockedLast15Days: number;
+  readonly restockedLast30Days: number;
   readonly topSupplierName: string | null;
   readonly topSupplierCount: number;
+  readonly reorderedThisWeek: number;
+  readonly reorderedThisMonth: number;
+  readonly upcomingRestockVariants: number;
 }
 
-interface RawProduct {
-  readonly id: string;
+/** Linha crua retornada pelo RPC fn_get_reposicao_listing. */
+interface ReposicaoRow {
+  readonly product_id: string;
   readonly name: string;
+  readonly slug: string | null;
   readonly sku: string | null;
-  readonly primary_image_url: string | null;
   readonly sale_price: number | null;
-  readonly category_id: string | null;
+  readonly is_stockout: boolean | null;
+  readonly is_new: boolean | null;
+  readonly total_stock: number | null;
+  readonly primary_image_url: string | null;
+  readonly primary_image_cdn: string | null;
   readonly supplier_id: string | null;
-  readonly created_at: string;
-  readonly updated_at: string;
-  readonly stock_quantity: number | null;
-  readonly min_quantity: number | null;
+  readonly supplier_name: string | null;
+  readonly supplier_code: string | null;
+  readonly ultimo_restock_date: string | null;
+  readonly earliest_restock_date: string | null;
+  readonly earliest_restock_qty: number | null;
+  readonly has_upcoming_restock: boolean | null;
+  readonly category_names: string[] | null;
+  readonly primary_category_id: string | null;
+  readonly primary_category_name: string | null;
+  readonly is_low_stock: boolean | null;
 }
 
-interface CategoryRecord {
-  readonly id: string;
-  readonly name: string;
+// ─── Date Utilities ──────────────────────────────────────────────
+//
+// O RPC entrega `ultimo_restock_date` como 'YYYY-MM-DD' (data BR).
+// Ancoramos no MEIO-DIA LOCAL para que a diferença em dias de calendário
+// não sofra off-by-one por fuso (parse de 'YYYY-MM-DD' vira 00:00 UTC).
+
+function daysSinceLocal(dateStr: string | null): number {
+  if (!dateStr) return REPLENISHMENT_WINDOW_DAYS;
+  const parts = dateStr.slice(0, 10).split('-').map(Number);
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) {
+    return REPLENISHMENT_WINDOW_DAYS;
+  }
+  const [y, m, d] = parts;
+  const restockNoon = new Date(y, m - 1, d, 12, 0, 0, 0).getTime();
+  const now = new Date();
+  const todayNoon = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    12,
+    0,
+    0,
+    0,
+  ).getTime();
+  return Math.max(0, Math.round((todayNoon - restockNoon) / 86_400_000));
 }
 
-interface SupplierRecord {
-  readonly id: string;
-  readonly name: string;
-  readonly code?: string;
+function addDaysISO(dateStr: string | null, days: number): string {
+  const base = dateStr ? new Date(`${dateStr.slice(0, 10)}T12:00:00`) : new Date();
+  return new Date(base.getTime() + days * 86_400_000).toISOString();
 }
 
 // ─── Data Logic ──────────────────────────────────────────────────
 
-function getStockStatus(stock: number, minQty: number): StockStatus {
-  if (stock === 0) return 'out-of-stock';
-  if (stock < minQty) return 'low-stock';
+function deriveStockStatus(
+  totalStock: number,
+  isStockout: boolean,
+  isLowStock: boolean,
+): StockStatus {
+  if (isStockout || totalStock <= 0) return 'out-of-stock';
+  if (isLowStock) return 'low-stock';
   return 'in-stock';
 }
 
-function getReplenishmentStatus(daysRemaining: number): ReplenishmentStatus {
+function statusFromDaysRemaining(daysRemaining: number): ReplenishmentStatus {
   if (daysRemaining <= 0) return 'expired';
   if (daysRemaining <= 7) return 'expiring_soon';
   return 'active';
 }
 
-function isReplenishment(p: RawProduct): boolean {
-  if (!p.updated_at || !p.created_at) return false;
-  const created = new Date(p.created_at).getTime();
-  const updated = new Date(p.updated_at).getTime();
-  if (Number.isNaN(created) || Number.isNaN(updated)) return false;
-  return (updated - created) >= MIN_REPLENISHMENT_DELTA_MS;
-}
-
-function toReplenishment(p: RawProduct): ReplenishmentWithDetails {
-  const daysRemaining = calcDaysRemaining(p.updated_at);
-  const daysSince = calcDaysSinceReplenishment(p.updated_at);
-  const expiresAt = new Date(new Date(p.updated_at).getTime() + REPLENISHMENT_WINDOW_DAYS * 86_400_000).toISOString();
-  const stock = p.stock_quantity ?? 0;
-  const minQty = p.min_quantity ?? 10;
+function mapRow(r: ReposicaoRow): ReplenishmentWithDetails {
+  const restockDate = r.ultimo_restock_date;
+  const nowIso = new Date().toISOString();
+  const daysSince = daysSinceLocal(restockDate);
+  const daysRemaining = Math.max(0, REPLENISHMENT_WINDOW_DAYS - daysSince);
+  const totalStock = Number(r.total_stock ?? 0);
+  const isStockout = Boolean(r.is_stockout) || totalStock <= 0;
 
   return {
-    replenishment_id: p.id,
-    product_id: p.id,
-    product_sku: p.sku,
-    product_name: p.name,
+    replenishment_id: r.product_id,
+    product_id: r.product_id,
+    product_sku: r.sku,
+    product_name: r.name,
     product_description: null,
-    base_price: p.sale_price,
-    product_image: p.primary_image_url,
-    category_id: p.category_id,
-    category_name: null,
-    supplier_code: null,
-    supplier_id: p.supplier_id,
-    supplier_name: null,
+    base_price: r.sale_price,
+    product_image: r.primary_image_cdn ?? r.primary_image_url,
+    product_set_image: null,
+    category_id: r.primary_category_id,
+    category_name: r.primary_category_name,
+    supplier_code: r.supplier_code,
+    supplier_id: r.supplier_id,
+    supplier_name: r.supplier_name,
     supplier_product_code: null,
-    replenished_at: p.updated_at,
-    created_at: p.created_at,
-    expires_at: expiresAt,
+    replenished_at: restockDate ?? nowIso,
+    created_at: restockDate ?? nowIso,
+    expires_at: addDaysISO(restockDate, REPLENISHMENT_WINDOW_DAYS),
     days_remaining: daysRemaining,
     days_since: daysSince,
-    status: getReplenishmentStatus(daysRemaining),
+    status: statusFromDaysRemaining(daysRemaining),
     is_highlighted: daysSince <= 5,
-    is_active: daysRemaining > 0,
-    stock_quantity: stock,
-    min_quantity: minQty,
-    stock_status: getStockStatus(stock, minQty),
+    is_active: true,
+    stock_quantity: totalStock,
+    min_quantity: 0,
+    stock_status: deriveStockStatus(totalStock, isStockout, Boolean(r.is_low_stock)),
   };
 }
 
-// ─── Enrichment ──────────────────────────────────────────────────
+function isGoneError(error: { message?: string } | null): boolean {
+  const msg = error?.message;
+  return Boolean(msg && (msg.includes('410') || msg.includes('Gone')));
+}
 
-async function enrichReplenishments(items: ReplenishmentWithDetails[]): Promise<ReplenishmentWithDetails[]> {
-  const categoryIds = [...new Set(items.map(n => n.category_id).filter((id): id is string => id !== null))];
-  const supplierIds = [...new Set(items.map(n => n.supplier_id).filter((id): id is string => id !== null))];
+async function fetchReposicao(limit: number): Promise<ReplenishmentWithDetails[]> {
+  const { data, error } = await untypedRpc('fn_get_reposicao_listing', {
+    p_supplier_id: null,
+    p_category_id: null,
+    p_sort_by: 'mais_recentes',
+    p_limit: limit,
+    p_offset: 0,
+    p_days: REPLENISHMENT_WINDOW_DAYS,
+  });
 
-  const [catResult, supResult] = await Promise.all([
-    categoryIds.length > 0
-      ? invokeExternalDb<CategoryRecord>({ table: 'categories', operation: 'select', select: 'id, name', filters: { id: `in.(${categoryIds.join(',')})` }, limit: 500 })
-      : { records: [] as CategoryRecord[] },
-    supplierIds.length > 0
-      ? invokeExternalDb<SupplierRecord>({ table: 'suppliers', operation: 'select', select: 'id, name, code', filters: { id: `in.(${supplierIds.join(',')})` }, limit: 200 })
-      : { records: [] as SupplierRecord[] },
-  ]);
+  if (error) {
+    if (isGoneError(error)) {
+      logger.warn(
+        '[Reposição] fn_get_reposicao_listing retornou 410 Gone — possível schema desatualizado. Retornando lista vazia.',
+        error.message,
+      );
+      return [];
+    }
+    throw error;
+  }
 
-  const catMap = new Map(catResult.records.map(c => [c.id, c.name]));
-  const supMap = new Map(supResult.records.map(s => [s.id, { name: s.name, code: s.code ?? null }]));
-
-  return items.map(n => ({
-    ...n,
-    category_name: (n.category_id ? catMap.get(n.category_id) : undefined) ?? null,
-    supplier_name: (n.supplier_id ? supMap.get(n.supplier_id)?.name : undefined) ?? null,
-    supplier_code: (n.supplier_id ? supMap.get(n.supplier_id)?.code : undefined) ?? null,
-  }));
+  const rows = (data as unknown as ReposicaoRow[]) ?? [];
+  return rows.map(mapRow);
 }
 
 // ─── Hooks ───────────────────────────────────────────────────────
@@ -189,152 +230,87 @@ export interface UseReplenishmentsOptions {
 }
 
 export function useReplenishmentsWithDetails(options: UseReplenishmentsOptions = {}) {
-  const { limit = 200, onlyHighlighted = false } = options;
+  const { limit = FETCH_ALL_LIMIT, onlyHighlighted = false } = options;
 
-  return useQuery<ReplenishmentWithDetails[], Error>({
-    queryKey: ['replenishments-details', limit, onlyHighlighted],
-    queryFn: async () => {
-      const cutoff = getCutoffDate();
-
-      const result = await invokeExternalDb<RawProduct>({
-        table: 'products',
-        operation: 'select',
-        select: REPLENISHMENT_SELECT,
-        filters: { is_active: true, updated_at: `gte.${cutoff}` },
-        orderBy: { column: 'updated_at', ascending: false },
-        limit,
-      });
-
-      let items = result.records
-        .filter(isReplenishment)
-        .map(toReplenishment)
-        .filter(n => n.is_active);
-
-      if (onlyHighlighted) {
-        items = items.filter(n => n.is_highlighted);
-      }
-
-      return enrichReplenishments(items);
-    },
+  return useQuery<ReplenishmentWithDetails[], Error, ReplenishmentWithDetails[]>({
+    queryKey: ['replenishments-details', limit],
+    queryFn: async () => fetchReposicao(limit),
+    // filter in select so toggling onlyHighlighted reuses cached data without re-fetch
+    select: (items) => (onlyHighlighted ? items.filter((n) => n.is_highlighted) : items),
     staleTime: 2 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }
 
+// ─── Stats Hook (RPC) ────────────────────────────────────────────
+//
+// FONTE DE VERDADE: fn_get_replenishment_stats() no Supabase.
+// untypedRpc: função não está nos tipos gerados; migrar para supabase.rpc()
+// após rerun do types.ts.
+
 export function useReplenishmentStats() {
-  return useQuery<ReplenishmentStatsDisplay, Error>({
+  return useQuery<ReplenishmentStatsDisplay>({
     queryKey: ['replenishment-stats'],
     queryFn: async () => {
-      const cutoff = getCutoffDate();
+      const { data: rawData, error } = await untypedRpc('fn_get_replenishment_stats');
 
-      const [repResult, totalResult] = await Promise.all([
-        invokeExternalDb<RawProduct>({
-          table: 'products',
-          operation: 'select',
-          select: 'id, created_at, updated_at, supplier_id',
-          filters: { is_active: true, updated_at: `gte.${cutoff}` },
-          limit: 500,
-          countMode: 'exact',
-        }),
-        invokeExternalDb<{ id: string }>({
-          table: 'products',
-          operation: 'select',
-          select: 'id',
-          filters: { is_active: true },
-          limit: 1,
-          countMode: 'exact',
-        }),
-      ]);
-
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const weekStart = todayStart - 6 * 86_400_000;
-      const fifteenDaysStart = todayStart - 14 * 86_400_000;
-
-      const replenishments = repResult.records
-        .filter(isReplenishment)
-        .map(p => ({
-          daysRemaining: calcDaysRemaining(p.updated_at),
-          updatedTime: new Date(p.updated_at).getTime(),
-          supplierId: p.supplier_id,
-        }));
-
-      const active = replenishments.filter(n => n.daysRemaining > 0);
-      const expiring = active.filter(n => n.daysRemaining <= 7);
-      const restockedToday = active.filter(n => n.updatedTime >= todayStart).length;
-      const restockedThisWeek = active.filter(n => n.updatedTime >= weekStart).length;
-      const restockedLast15Days = active.filter(n => n.updatedTime >= fifteenDaysStart).length;
-      const totalProducts = totalResult.count ?? 0;
-      const activeCount = active.length;
-
-      // Find top supplier
-      const supplierCounts = new Map<string, number>();
-      for (const n of active) {
-        if (n.supplierId) {
-          supplierCounts.set(n.supplierId, (supplierCounts.get(n.supplierId) ?? 0) + 1);
+      if (error) {
+        if (isGoneError(error)) {
+          logger.warn(
+            '[Reposição] fn_get_replenishment_stats retornou 410 Gone — retornando stats zeradas.',
+            error.message,
+          );
+          return {
+            totalReplenishments: 0,
+            activeReplenishments: 0,
+            expiringSoon: 0,
+            totalProducts: 0,
+            replenishmentRate: 0,
+            restockedToday: 0,
+            restockedThisWeek: 0,
+            restockedLast15Days: 0,
+            restockedLast30Days: 0,
+            topSupplierName: null,
+            topSupplierCount: 0,
+            reorderedThisWeek: 0,
+            reorderedThisMonth: 0,
+            upcomingRestockVariants: 0,
+          };
         }
+        throw error;
       }
 
-      let topSupplierId: string | null = null;
-      let topSupplierCount = 0;
-      for (const [id, count] of supplierCounts) {
-        if (count > topSupplierCount) {
-          topSupplierCount = count;
-          topSupplierId = id;
-        }
-      }
-
-      let topSupplierName: string | null = null;
-      if (topSupplierId) {
-        try {
-          const supResult = await invokeExternalDb<{ name: string }>({
-            table: 'suppliers',
-            operation: 'select',
-            select: 'name',
-            filters: { id: topSupplierId },
-            limit: 1,
-          });
-          topSupplierName = supResult.records[0]?.name ?? null;
-        } catch {
-          // Graceful fallback — supplier name unavailable
-        }
-      }
+      const d = (rawData ?? {}) as Record<string, unknown>;
 
       return {
-        totalReplenishments: replenishments.length,
-        activeReplenishments: activeCount,
-        expiringSoon: expiring.length,
-        totalProducts,
-        replenishmentRate: totalProducts > 0 ? Math.round((activeCount / totalProducts) * 100) : 0,
-        restockedToday,
-        restockedThisWeek,
-        restockedLast15Days,
-        topSupplierName,
-        topSupplierCount,
+        totalReplenishments: Number(d.restockedLast30Days ?? 0),
+        activeReplenishments: Number(d.activeReplenishments ?? 0),
+        expiringSoon: Number(d.expiringSoon ?? 0),
+        totalProducts: Number(d.totalVariants ?? 0),
+        replenishmentRate: Number(d.replenishmentRate ?? 0),
+        restockedToday: Number(d.restockedToday ?? 0),
+        restockedThisWeek: Number(d.restockedThisWeek ?? 0),
+        restockedLast15Days: Number(d.restockedLast15Days ?? 0),
+        restockedLast30Days: Number(d.restockedLast30Days ?? 0),
+        topSupplierName: (d.topSupplierName as string) ?? null,
+        topSupplierCount: Number(d.topSupplierCount ?? 0),
+        reorderedThisWeek: Number(d.reorderedThisWeek ?? 0),
+        reorderedThisMonth: Number(d.reorderedThisMonth ?? 0),
+        upcomingRestockVariants: Number(d.upcomingRestockVariants ?? 0),
       };
     },
     staleTime: 5 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }
 
 export function useReplenishmentCount() {
-  return useQuery<number, Error>({
-    queryKey: ['replenishment-count'],
-    queryFn: async () => {
-      const cutoff = getCutoffDate();
-
-      const result = await invokeExternalDb<RawProduct>({
-        table: 'products',
-        operation: 'select',
-        select: 'id, created_at, updated_at',
-        filters: { is_active: true, updated_at: `gte.${cutoff}` },
-        limit: 500,
-      });
-
-      return result.records.filter(isReplenishment).length;
-    },
+  // Must match useReplenishmentsWithDetails(default) queryKey — no duplicate fetch.
+  return useQuery<ReplenishmentWithDetails[], Error, number>({
+    queryKey: ['replenishments-details', FETCH_ALL_LIMIT],
+    queryFn: () => fetchReposicao(FETCH_ALL_LIMIT),
+    select: (data) => data.length,
     staleTime: 2 * 60 * 1000,
-    retry: 2,
+    retry: shouldRetry,
   });
 }

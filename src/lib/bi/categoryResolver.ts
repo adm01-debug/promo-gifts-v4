@@ -10,16 +10,16 @@
  */
 
 export type BICategorySlug =
-  | "garrafas"
-  | "canetas"
-  | "mochilas"
-  | "agendas"
-  | "eletronicos"
-  | "blocos"
-  | "vestuario"
-  | "kits"
-  | "necessaires"
-  | "outros";
+  | 'agendas'
+  | 'blocos'
+  | 'canetas'
+  | 'eletronicos'
+  | 'garrafas'
+  | 'kits'
+  | 'mochilas'
+  | 'necessaires'
+  | 'outros'
+  | 'vestuario';
 
 export interface BICategoryMeta {
   slug: BICategorySlug;
@@ -29,21 +29,24 @@ export interface BICategoryMeta {
 }
 
 const REGEX_RULES: Array<{ test: RegExp; meta: BICategoryMeta }> = [
-  { test: /garrafa|squeeze|t[eé]rmic/i, meta: { slug: "garrafas", label: "Garrafas e Squeezes" } },
-  { test: /caneta|lapiseira|roller/i, meta: { slug: "canetas", label: "Canetas Premium" } },
-  { test: /mochila|bolsa|sling/i, meta: { slug: "mochilas", label: "Mochilas e Bolsas" } },
-  { test: /agenda|planner|caderno/i, meta: { slug: "agendas", label: "Agendas" } },
+  { test: /garrafa|squeeze|t[eé]rmic/i, meta: { slug: 'garrafas', label: 'Garrafas e Squeezes' } },
+  { test: /caneta|lapiseira|roller/i, meta: { slug: 'canetas', label: 'Canetas Premium' } },
+  { test: /mochila|bolsa|sling/i, meta: { slug: 'mochilas', label: 'Mochilas e Bolsas' } },
+  { test: /agenda|planner|caderno/i, meta: { slug: 'agendas', label: 'Agendas' } },
   {
     test: /power\s*bank|carregador|wireless|bluetooth|fone|caixa\s*de\s*som|eletr[oô]n/i,
-    meta: { slug: "eletronicos", label: "Brindes Tecnológicos" },
+    meta: { slug: 'eletronicos', label: 'Brindes Tecnológicos' },
   },
-  { test: /bloco|notas/i, meta: { slug: "blocos", label: "Blocos e Notas" } },
-  { test: /camis|polo|jaqueta|moletom|bone|bon[eé]/i, meta: { slug: "vestuario", label: "Vestuário" } },
-  { test: /kit/i, meta: { slug: "kits", label: "Kits" } },
-  { test: /necessaire|nec[eé]ssaire/i, meta: { slug: "necessaires", label: "Necessaires" } },
+  { test: /bloco|notas/i, meta: { slug: 'blocos', label: 'Blocos e Notas' } },
+  {
+    test: /camis|polo|jaqueta|moletom|bone|bon[eé]/i,
+    meta: { slug: 'vestuario', label: 'Vestuário' },
+  },
+  { test: /kit/i, meta: { slug: 'kits', label: 'Kits' } },
+  { test: /necessaire|nec[eé]ssaire/i, meta: { slug: 'necessaires', label: 'Necessaires' } },
 ];
 
-const FALLBACK: BICategoryMeta = { slug: "outros", label: "Outros" };
+const FALLBACK: BICategoryMeta = { slug: 'outros', label: 'Outros' };
 
 /**
  * Resolve a categoria BI a partir do nome do produto e (opcional) categoria explícita.
@@ -56,14 +59,14 @@ export function resolveBICategory(
   explicitCategoryName?: string | null,
 ): BICategoryMeta {
   // 1) Categoria real explícita — tenta casar o nome dela contra as regras (não o nome do produto)
-  if (explicitCategoryName && explicitCategoryName.trim().length > 0) {
+  if (explicitCategoryName && explicitCategoryName.trim() !== '') {
     for (const rule of REGEX_RULES) {
       if (rule.test.test(explicitCategoryName)) return rule.meta;
     }
     // Categoria real existe mas não casou nenhuma regra → usa o próprio nome dela como label
     const cleaned = explicitCategoryName.trim();
     return {
-      slug: "outros",
+      slug: 'outros',
       label: cleaned.charAt(0).toUpperCase() + cleaned.slice(1),
     };
   }

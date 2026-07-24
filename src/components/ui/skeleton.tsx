@@ -1,23 +1,21 @@
-import * as React from "react";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
-const Skeleton = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => {
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  animate?: boolean;
+}
+
+const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
+  ({ className, animate = true, ...props }, ref) => {
     return (
       <div
         ref={ref}
-        className={cn(
-          "relative overflow-hidden rounded-md bg-muted",
-          "after:absolute after:inset-0",
-          "after:bg-gradient-to-r after:from-transparent after:via-white/[0.06] after:to-transparent",
-          "after:animate-[shimmer_1.8s_ease-in-out_infinite]",
-          className
-        )}
+        className={cn('rounded-md bg-muted', animate && 'skeleton-shimmer', className)}
         {...props}
       />
     );
-  }
+  },
 );
-Skeleton.displayName = "Skeleton";
+Skeleton.displayName = 'Skeleton';
 
 export { Skeleton };

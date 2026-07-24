@@ -40,14 +40,14 @@ function NavItemSample({ state, collapsed }: { state: State; collapsed: boolean 
         // focus-visible simulado via ring estático
         forceFocus && 'ring-2 ring-primary ring-offset-2',
         isActive
-          ? 'bg-orange/15 font-bold text-orange before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-orange'
-          : 'text-sidebar-foreground/75 before:absolute before:left-0 before:top-1/2 before:h-0 before:w-[2px] before:-translate-y-1/2 before:rounded-r-full before:bg-orange/50',
+          ? 'bg-brand-primary/15 font-bold text-brand-primary before:absolute before:left-0 before:top-1/2 before:h-5 before:w-[3px] before:-translate-y-1/2 before:rounded-r-full before:bg-brand-primary'
+          : 'text-sidebar-foreground/75 before:absolute before:left-0 before:top-1/2 before:h-0 before:w-[2px] before:-translate-y-1/2 before:rounded-r-full before:bg-brand-primary/50',
       )}
     >
       <Package
         className={cn(
           'h-4 w-4 shrink-0 transition-colors',
-          isActive ? 'text-orange' : 'text-sidebar-foreground/60',
+          isActive ? 'text-brand-primary' : 'text-sidebar-foreground/60',
         )}
       />
       {!collapsed && <span className="flex-1 truncate text-sm">Produtos</span>}
@@ -63,11 +63,14 @@ function GroupHeaderSample({ active }: { active: boolean }) {
       className={cn(
         'flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200',
         'text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
-        active && 'bg-orange/15 text-orange',
+        active && 'bg-brand-primary/15 text-brand-primary',
       )}
     >
       <ShoppingCart
-        className={cn('h-4 w-4 shrink-0', active ? 'text-orange' : 'text-sidebar-foreground/40')}
+        className={cn(
+          'h-4 w-4 shrink-0',
+          active ? 'text-brand-primary' : 'text-sidebar-foreground/40',
+        )}
       />
       <span className="flex-1 text-left text-xs font-semibold uppercase tracking-wider">
         Vendas
@@ -143,7 +146,7 @@ export default function SidebarQAPage() {
       <PageSEO
         title="QA — Sidebar | Promo Gifts"
         description="Validação visual do sidebar"
-        noindex
+        noIndex
       />
       <div className="mx-auto max-w-[1920px] space-y-6 p-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
@@ -178,7 +181,7 @@ export default function SidebarQAPage() {
               </h2>
               <div className="flex flex-wrap items-start gap-6">
                 <SidebarPreview width={vp.value} dark={false} />
-                {showSideBySide && <SidebarPreview width={vp.value} dark={true} />}
+                {showSideBySide && <SidebarPreview width={vp.value} dark />}
               </div>
             </div>
           ))}

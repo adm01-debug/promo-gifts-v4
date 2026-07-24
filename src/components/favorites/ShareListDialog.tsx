@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Copy, Share2, Trash2, Check } from "lucide-react";
-import { toast } from "sonner";
-import type { FavoriteList } from "@/hooks/favorites";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Copy, Share2, Trash2, Check, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import type { FavoriteList } from '@/hooks/favorites';
 
 interface Props {
   open: boolean;
@@ -22,26 +27,37 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = list.shared_token
-    ? `${window.location.origin}/lista-publica/${list.shared_token}`
-    : null;
+  const isExpired =
+    list.shared_expires_at !== null && new Date(list.shared_expires_at) < new Date();
+  const shareUrl =
+    list.shared_token && !isExpired
+      ? `${window.location.origin}/lista-publica/${list.shared_token}`
+      : null;
 
   const handleGenerate = async () => {
     setBusy(true);
-    try { await onShare(list.id, days); } finally { setBusy(false); }
+    try {
+      await onShare(list.id, days);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleCopy = async () => {
     if (!shareUrl) return;
     await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    toast.success("Link copiado");
+    toast.success('Link copiado');
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleRevoke = async () => {
     setBusy(true);
-    try { await onRevoke(list.id); } finally { setBusy(false); }
+    try {
+      await onRevoke(list.id);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -56,6 +72,15 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
           </DialogDescription>
         </DialogHeader>
 
+        {isExpired && (
+          <div className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              O link expirou em{' '}
+              {new Date(list.shared_expires_at ?? '').toLocaleDateString('pt-BR')}. Gere um novo abaixo.
+            </span>
+          </div>
+        )}
         {shareUrl ? (
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -63,17 +88,26 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
               <div className="flex gap-2">
                 <Input value={shareUrl} readOnly className="font-mono text-xs" />
                 <Button variant="outline" size="icon" onClick={handleCopy}>
-                  {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
+                  {copied ? (
+                    <Check className="h-4 w-4 text-success" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
             {list.shared_expires_at && (
               <p className="text-xs text-muted-foreground">
-                Expira em {new Date(list.shared_expires_at).toLocaleDateString("pt-BR")}
+                Expira em {new Date(list.shared_expires_at).toLocaleDateString('pt-BR')}
               </p>
             )}
-            <Button variant="outline" className="w-full text-destructive hover:text-destructive" onClick={handleRevoke} disabled={busy}>
-              <Trash2 className="h-4 w-4 mr-2" />
+            <Button
+              variant="outline"
+              className="w-full text-destructive hover:text-destructive"
+              onClick={handleRevoke}
+              disabled={busy}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
               Revogar acesso
             </Button>
           </div>
@@ -91,13 +125,26 @@ export function ShareListDialog({ open, onOpenChange, list, onShare, onRevoke }:
               />
             </div>
             <Button onClick={handleGenerate} className="w-full" disabled={busy}>
-              {busy ? "Gerando…" : "Gerar link público"}
+              {busy ? 'Gerando…' : isExpired ? 'Gerar novo link' : 'Gerar link público'}
             </Button>
+            {isExpired && list.shared_token && (
+              <Button
+                variant="outline"
+                className="w-full text-destructive hover:text-destructive"
+                onClick={handleRevoke}
+                disabled={busy}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Revogar link expirado
+              </Button>
+            )}
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Fechar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -9,20 +9,22 @@
  *    selecionar outra técnica troca e mantém as dimensões já preenchidas.
  */
 
-import { useState, useMemo, useCallback, useRef, useEffect, useId } from "react";
-import { Pencil, Info } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { TechniqueCard } from "./TechniqueCard";
-import { ConfigurationPanelV6 } from "./ConfigurationPanelV6";
+import { useState, useMemo, useCallback, useRef, useEffect, useId } from 'react';
+import { Pencil, Info } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TechniqueCard } from './TechniqueCard';
+import { ConfigurationPanelV6 } from './ConfigurationPanelV6';
+import { cn } from '@/lib/utils';
 import type {
   TechniqueOption,
   GravacaoLocation,
   CustomizationPriceResponseV6,
   PersonalizationItem,
-} from "@/types/customization";
+} from '@/types/customization';
 
 interface LocationPanelProps {
   location: GravacaoLocation;
@@ -49,7 +51,7 @@ interface LocationDraft {
   savedAt: string;
 }
 
-const DRAFT_STORAGE_PREFIX = "qb:loc-draft";
+const DRAFT_STORAGE_PREFIX = 'qb:loc-draft';
 const DRAFT_TTL_MS = 1000 * 60 * 60 * 24; // 24h
 
 function draftKey(productId: string | undefined, locationCode: string): string | null {
@@ -58,7 +60,7 @@ function draftKey(productId: string | undefined, locationCode: string): string |
 }
 
 function readDraft(key: string | null): LocationDraft | null {
-  if (!key || typeof window === "undefined") return null;
+  if (!key || typeof window === 'undefined') return null;
   try {
     const raw = window.sessionStorage.getItem(key);
     if (!raw) return null;
@@ -73,8 +75,8 @@ function readDraft(key: string | null): LocationDraft | null {
   }
 }
 
-function writeDraft(key: string | null, draft: Omit<LocationDraft, "savedAt">) {
-  if (!key || typeof window === "undefined") return;
+function writeDraft(key: string | null, draft: Omit<LocationDraft, 'savedAt'>) {
+  if (!key || typeof window === 'undefined') return;
   try {
     const payload: LocationDraft = { ...draft, savedAt: new Date().toISOString() };
     window.sessionStorage.setItem(key, JSON.stringify(payload));
@@ -84,7 +86,7 @@ function writeDraft(key: string | null, draft: Omit<LocationDraft, "savedAt">) {
 }
 
 function clearDraft(key: string | null) {
-  if (!key || typeof window === "undefined") return;
+  if (!key || typeof window === 'undefined') return;
   try {
     window.sessionStorage.removeItem(key);
   } catch {
@@ -94,12 +96,12 @@ function clearDraft(key: string | null) {
 
 /** Agrupa técnicas por grupo_tecnica */
 function groupByGrupo(options: TechniqueOption[]): Record<string, TechniqueOption[]> {
-  return options.reduce((groups, t) => {
-    const group = t.grupo_tecnica || "OUTROS";
+  return options.reduce<Record<string, TechniqueOption[]>>((groups, t) => {
+    const group = t.grupo_tecnica || 'OUTROS';
     if (!groups[group]) groups[group] = [];
     groups[group].push(t);
     return groups;
-  }, {} as Record<string, TechniqueOption[]>);
+  }, {});
 }
 
 interface SelectedTechniqueBarProps {
@@ -117,40 +119,52 @@ function SelectedTechniqueBar({
   pickerId,
   changeButtonRef,
 }: SelectedTechniqueBarProps) {
+  const reduceMotion = useReducedMotion();
   return (
-    <div
-      className={
-        "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 transition-colors " +
-        (isPickerOpen
-          ? "border-primary/60 bg-primary/10 ring-1 ring-primary/30"
-          : "border-primary/30 bg-primary/5")
+    <motion.div
+      layout={reduceMotion ? false : 'position'}
+      transition={
+        reduceMotion
+          ? { duration: 0 }
+          : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }
       }
+      className={cn(
+        'flex items-center justify-between gap-2 rounded-full border px-3 py-1.5',
+        'transition-[background-color,border-color,box-shadow] duration-200 ease-out',
+        isPickerOpen
+          ? 'border-primary/50 bg-primary/[0.06] shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]'
+          : 'border-border/60 bg-card',
+      )}
     >
       <div className="flex min-w-0 items-center gap-2">
         <span
-          className={
-            "h-2 w-2 shrink-0 rounded-full bg-primary transition-transform " +
-            (isPickerOpen ? "animate-pulse scale-110" : "")
-          }
+          className={cn(
+            'h-1.5 w-1.5 shrink-0 rounded-full bg-primary transition-transform',
+            isPickerOpen && !reduceMotion && 'animate-pulse',
+          )}
           aria-hidden
         />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">
-            {technique.tecnica_nome}
-          </p>
-          {technique.grupo_tecnica && (
-            <p className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">
-              {technique.grupo_tecnica}
-            </p>
-          )}
-        </div>
+        <motion.p
+          key={technique.technique_id}
+          initial={reduceMotion ? false : { opacity: 0, y: -2 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.16, ease: 'easeOut' }}
+          className="truncate text-[13px] font-medium text-foreground"
+        >
+          {technique.tecnica_nome}
+        </motion.p>
+        {technique.grupo_tecnica && (
+          <span className="hidden shrink-0 text-[10px] uppercase tracking-wide text-muted-foreground/70 sm:inline">
+            · {technique.grupo_tecnica.replace('_', ' ')}
+          </span>
+        )}
       </div>
       <Button
         ref={changeButtonRef}
         type="button"
-        variant={isPickerOpen ? "default" : "outline"}
+        variant="ghost"
         size="sm"
-        className="h-8 shrink-0 gap-1.5"
+        className="h-7 shrink-0 gap-1 px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         onClick={onChangeClick}
         aria-expanded={isPickerOpen}
         aria-controls={pickerId}
@@ -161,12 +175,13 @@ function SelectedTechniqueBar({
         }
         data-testid="customization-change-technique"
       >
-        <Pencil className="h-3.5 w-3.5" />
-        {isPickerOpen ? "Fechar" : "Trocar"}
+        <Pencil className="h-3 w-3" />
+        {isPickerOpen ? 'Fechar' : 'Trocar'}
       </Button>
-    </div>
+    </motion.div>
   );
 }
+
 
 export function LocationPanel({
   location,
@@ -180,7 +195,9 @@ export function LocationPanel({
     [productId, location.location_code],
   );
 
-  const [announcement, setAnnouncement] = useState("");
+  const [announcement, setAnnouncement] = useState('');
+  const [isSwapping, setIsSwapping] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   // Hidrata estado inicial: confirmada > rascunho persistido > nada.
   const initialDraft = useMemo<LocationDraft | null>(
@@ -208,7 +225,6 @@ export function LocationPanel({
     height: confirmedPersonalization?.height ?? initialDraft?.height,
     colors: confirmedPersonalization?.numberOfColors ?? initialDraft?.colors,
   });
-
 
   // Persiste rascunho sempre que técnica/picker muda. Dimensões são persistidas em handleDimensionsChange.
   useEffect(() => {
@@ -269,7 +285,7 @@ export function LocationPanel({
     }
 
     if (!selectedTechnique) {
-      setAnnouncement("");
+      setAnnouncement('');
       return;
     }
 
@@ -311,16 +327,30 @@ export function LocationPanel({
         const currentH = lastDimsRef.current.height;
         const currentC = lastDimsRef.current.colors;
 
-        forcedW = technique.usa_dimensao && currentW !== undefined && currentW !== null && currentW > (technique.efetiva_largura_max || 0);
-        forcedH = technique.usa_dimensao && currentH !== undefined && currentH !== null && currentH > (technique.efetiva_altura_max || 0);
-        forcedC = technique.cobra_por_cor && currentC !== undefined && currentC !== null && currentC > (technique.max_cores || 1);
+        forcedW =
+          technique.usa_dimensao &&
+          currentW !== undefined &&
+          currentW !== null &&
+          currentW > (technique.efetiva_largura_max || 0);
+        forcedH =
+          technique.usa_dimensao &&
+          currentH !== undefined &&
+          currentH !== null &&
+          currentH > (technique.efetiva_altura_max || 0);
+        forcedC =
+          technique.cobra_por_cor &&
+          currentC !== undefined &&
+          currentC !== null &&
+          currentC > (technique.max_cores || 1);
 
         if (forcedW || forcedH || forcedC) {
           const reasons = [];
-          if (forcedW) reasons.push("Largura");
-          if (forcedH) reasons.push("Altura");
-          if (forcedC) reasons.push("Cores");
-          setClampNotice(`As dimensões (${reasons.join(", ")}) foram ajustadas aos limites da nova técnica.`);
+          if (forcedW) reasons.push('Largura');
+          if (forcedH) reasons.push('Altura');
+          if (forcedC) reasons.push('Cores');
+          setClampNotice(
+            `As dimensões (${reasons.join(', ')}) foram ajustadas aos limites da nova técnica.`,
+          );
         }
       }
 
@@ -333,19 +363,26 @@ export function LocationPanel({
 
       setSelectedTechnique(technique);
       setIsPickerOpen(false);
+      setIsSwapping(true);
+      window.setTimeout(() => setIsSwapping(false), reduceMotion ? 0 : 140);
 
       // Foco automático no controle ajustado se houve clamp (A11y)
       setTimeout(() => {
         if (forcedW) {
           document.querySelector<HTMLElement>('[data-testid="customization-width-input"]')?.focus();
         } else if (forcedH) {
-          document.querySelector<HTMLElement>('[data-testid="customization-height-input"]')?.focus();
+          document
+            .querySelector<HTMLElement>('[data-testid="customization-height-input"]')
+            ?.focus();
         } else if (forcedC) {
-          document.querySelector<HTMLElement>('[data-testid^="customization-color-button-"]')?.focus();
+          document
+            .querySelector<HTMLElement>('[data-testid^="customization-color-button-"]')
+            ?.focus();
         }
       }, 50);
     },
-    [selectedTechnique, toast],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: see comment above
+    [selectedTechnique, toast, reduceMotion],
   );
 
   const handlePriceCalculated = useCallback(
@@ -371,14 +408,16 @@ export function LocationPanel({
   const handleDimensionsChange = useCallback(
     (dims: { width?: number; height?: number; colors?: number }) => {
       lastDimsRef.current = {
-        width: dims.width !== undefined ? dims.width : lastDimsRef.current.width,
-        height: dims.height !== undefined ? dims.height : lastDimsRef.current.height,
-        colors: dims.colors !== undefined ? dims.colors : lastDimsRef.current.colors,
+        width: dims.width ?? lastDimsRef.current.width,
+        height: dims.height ?? lastDimsRef.current.height,
+        colors: dims.colors ?? lastDimsRef.current.colors,
       };
 
       // Se a técnica atual NÃO cobra por cor, forçamos colors a undefined para o rascunho
       // Isso evita que rascunhos de Silk (monocromático) carreguem cores anteriores de um Transfer.
-      const colorsToPersist = selectedTechnique?.cobra_por_cor ? lastDimsRef.current.colors : undefined;
+      const colorsToPersist = selectedTechnique?.cobra_por_cor
+        ? lastDimsRef.current.colors
+        : undefined;
 
       // Persiste o rascunho atualizado (só se há técnica selecionada e não está confirmada).
       if (
@@ -406,12 +445,18 @@ export function LocationPanel({
   // - troca de técnica → usa últimas dimensões digitadas, com clamp aos limites da nova técnica
   //   (evita estourar largura/altura máxima quando a nova técnica é menor).
   const clamp = (v: number | undefined, max: number | undefined) =>
-    v === null || v === undefined ? undefined : max !== null && max !== undefined && v > max ? max : v;
+    v === null || v === undefined
+      ? undefined
+      : max !== null && max !== undefined && v > max
+        ? max
+        : v;
 
   const isSameAsConfirmed =
     selectedTechnique?.technique_id === confirmedPersonalization?.techniqueId;
   const rawWidth = isSameAsConfirmed ? confirmedPersonalization?.width : lastDimsRef.current.width;
-  const rawHeight = isSameAsConfirmed ? confirmedPersonalization?.height : lastDimsRef.current.height;
+  const rawHeight = isSameAsConfirmed
+    ? confirmedPersonalization?.height
+    : lastDimsRef.current.height;
   const rawColors = isSameAsConfirmed
     ? confirmedPersonalization?.numberOfColors
     : lastDimsRef.current.colors;
@@ -450,71 +495,90 @@ export function LocationPanel({
           />
 
           {clampNotice && !isPickerOpen && (
-            <Alert variant="default" className="bg-amber-50 border-amber-200 py-2" data-testid="clamp-notice">
+            <Alert
+              variant="default"
+              className="border-amber-200 bg-amber-50 py-2"
+              data-testid="clamp-notice"
+            >
               <Info className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-xs text-amber-800">
-                {clampNotice}
-              </AlertDescription>
+              <AlertDescription className="text-xs text-amber-800">{clampNotice}</AlertDescription>
             </Alert>
           )}
         </div>
       )}
 
-      {/* Picker de técnicas (Estado A ou C) */}
+      {/* Picker de técnicas (Estado A ou C) — motion enter animation */}
       {showPicker && (
-        <div
+        <motion.div
           ref={firstCardRef}
           id={pickerId}
           role="radiogroup"
+          tabIndex={0}
           aria-label={
             selectedTechnique
               ? `Trocar técnica de gravação para ${location.location_name}. Atual: ${selectedTechnique.tecnica_nome}.`
               : `Escolha a técnica de gravação para ${location.location_name}.`
           }
-          className="space-y-3 animate-in fade-in slide-in-from-top-1 rounded-lg border border-primary/20 bg-primary/[0.02] p-3"
+          className="overflow-hidden rounded-lg border border-border/50 bg-card/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           data-testid="customization-technique-picker"
+          initial={reduceMotion ? false : { opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
           onKeyDown={(e) => {
-            if (e.key === "Escape" && selectedTechnique) {
+            if (e.key === 'Escape' && selectedTechnique) {
               setIsPickerOpen(false);
             }
           }}
         >
-          {selectedTechnique && (
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="space-y-2 p-2.5">
+            {selectedTechnique && (
+              <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 Escolha a nova técnica
+                <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground/70">
+                  · atual: {selectedTechnique.tecnica_nome}
+                </span>
               </p>
-              <Badge variant="secondary" className="text-[10px]">
-                Atual: {selectedTechnique.tecnica_nome}
-              </Badge>
-            </div>
-          )}
+            )}
 
-          {Object.entries(grouped).map(([grupo, techs]) => (
-            <div key={grupo} className="space-y-1.5">
-              {Object.keys(grouped).length > 1 && (
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">
-                  {grupo}
-                </p>
-              )}
-              {techs.map((t) => (
-                <TechniqueCard
-                  key={t.technique_id}
-                  technique={t}
-                  isSelected={selectedTechnique?.technique_id === t.technique_id}
-                  onSelect={handleSelectTechnique}
-                />
-              ))}
-            </div>
-          ))}
-        </div>
+            {Object.entries(grouped).map(([grupo, techs]) => (
+              <div key={grupo} className="space-y-1">
+                {Object.keys(grouped).length > 1 && (
+                  <p className="px-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/80">
+                    {grupo.replace('_', ' ')}
+                  </p>
+                )}
+                {techs.map((t) => (
+                  <TechniqueCard
+                    key={t.technique_id}
+                    technique={t}
+                    isSelected={selectedTechnique?.technique_id === t.technique_id}
+                    onSelect={handleSelectTechnique}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </motion.div>
       )}
+
+
 
       {/* Configuration panel — permanece MONTADO mesmo com o picker aberto,
           apenas ocultado via `hidden`. Isso preserva o hook reativo de preço
           e evita re-cálculo desnecessário ao clicar na mesma técnica. */}
       {showConfig && (
-        <div hidden={isPickerOpen} aria-hidden={isPickerOpen}>
+        <div
+          hidden={isPickerOpen}
+          aria-hidden={isPickerOpen}
+          /* A altura mínima só existe durante troca de técnica. No estado normal,
+             o wrapper precisa seguir a altura real do ConfigurationPanelV6 para
+             permitir que o resumo abaixo suba/baixe ao colapsar a gravação. */
+          className={cn(
+            'relative transition-[min-height] duration-300 ease-out motion-reduce:transition-none',
+            isSwapping && 'min-h-[260px]',
+          )}
+          data-testid="customization-config-shell"
+        >
           <ConfigurationPanelV6
             key={selectedTechnique.technique_id}
             technique={selectedTechnique}
@@ -526,6 +590,31 @@ export function LocationPanel({
             onPriceCalculated={handlePriceCalculated}
             onDimensionsChange={handleDimensionsChange}
           />
+
+          {/* Skeleton overlay durante a troca de técnica — evita CLS e dá
+              feedback de "carregando" sem desmontar o painel (preserva foco e
+              hooks reativos). Respeita prefers-reduced-motion. */}
+          <AnimatePresence>
+            {isSwapping && (
+              <motion.div
+                key="config-skeleton-overlay"
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.12 }}
+                className="pointer-events-none absolute inset-0 z-10 space-y-2 rounded-md bg-background/85 p-2 backdrop-blur-[2px]"
+                data-testid="customization-config-skeleton"
+                aria-hidden="true"
+              >
+                <Skeleton className="h-8 w-2/3 rounded-md" />
+                <div className="grid grid-cols-2 gap-2">
+                  <Skeleton className="h-16 rounded-md" />
+                  <Skeleton className="h-16 rounded-md" />
+                </div>
+                <Skeleton className="h-24 w-full rounded-md" />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </div>

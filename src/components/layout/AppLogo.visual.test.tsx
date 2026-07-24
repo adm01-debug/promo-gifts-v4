@@ -17,7 +17,9 @@ describe('AppLogo Visual Consistency', () => {
     expect(iconContainer).toBeInTheDocument();
     const icon = iconContainer?.querySelector('svg');
     expect(icon).toHaveClass('text-primary-foreground');
-    expect(iconContainer).toHaveClass('h-10 w-10');
+    // QA: V3 icon box usa h-10 w-10 (tamanho fixo para todos os variants).
+    expect(iconContainer).toHaveClass('h-10');
+    expect(iconContainer).toHaveClass('w-10');
   });
 
   it('renders light variant with primary background and primary foreground icon', () => {

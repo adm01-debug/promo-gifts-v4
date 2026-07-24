@@ -36,7 +36,7 @@ import {
 const STATUS_META: Record<
   GuardrailStatus,
   {
-    tone: 'destructive' | 'warning' | 'success' | 'muted';
+    tone: 'destructive' | 'muted' | 'success' | 'warning';
     icon: typeof AlertOctagon;
     label: string;
   }

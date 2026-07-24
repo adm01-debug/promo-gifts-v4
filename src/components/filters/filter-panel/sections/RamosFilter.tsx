@@ -1,4 +1,3 @@
-import React from 'react';
 import { Search, X, Building2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -6,18 +5,19 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { RamoAtividadeBadge } from '@/components/ramo-atividade/RamoAtividadeBadge';
 import { RamoAtividadeGroupAccordion } from '@/components/ramo-atividade/RamoAtividadeGroupAccordion';
 import type { FilterState } from '../types';
+import type { RamoAtividadeGroup, SegmentoComplete } from '@/types/ramo-atividade';
 
 interface RamosFilterProps {
   filters: FilterState;
   onFilterChange: (filters: FilterState) => void;
   ramoSearch: string;
   setRamoSearch: (v: string) => void;
-  ramoGroups: Record<string, unknown>[];
-  allSegmentos: Record<string, unknown>[];
+  ramoGroups: RamoAtividadeGroup[];
+  allSegmentos: SegmentoComplete[];
   ramosLoading: boolean;
   totalRamoGroups: number;
   totalRamoSegmentos: number;
-  getSegmentosForRamo: (slug: string) => unknown[];
+  getSegmentosForRamo: (slug: string) => SegmentoComplete[];
   productCountsByRamo: { ramoCounts: Map<string, number>; segmentoCounts: Map<string, number> };
 }
 
@@ -37,9 +37,9 @@ export function RamosFilter({
   return (
     <div className="space-y-3">
       {(filters.ramosAtividade.length > 0 || filters.segmentosAtividade.length > 0) && (
-        <div className="rounded-lg border border-orange/20 bg-orange/5 p-2.5">
+        <div className="rounded-lg border border-brand-primary/20 bg-brand-primary/5 p-2.5">
           <div className="mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-xs font-medium text-orange">
+            <span className="flex items-center gap-1.5 text-xs font-medium text-brand-primary">
               <Building2 className="h-3 w-3" />
               Selecionados
             </span>
@@ -126,7 +126,7 @@ export function RamosFilter({
         <span>•</span>
         <span>{totalRamoSegmentos} segmentos</span>
         <span>•</span>
-        <span className="font-medium text-orange">
+        <span className="font-medium text-brand-primary">
           {filters.ramosAtividade.length + filters.segmentosAtividade.length} selecionados
         </span>
       </div>

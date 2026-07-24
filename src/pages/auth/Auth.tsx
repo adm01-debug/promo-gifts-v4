@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { resolveRedirectTarget } from '@/lib/auth/resolve-redirect-target';
@@ -17,33 +17,40 @@ import {
   Wifi,
   AlertTriangle,
   RotateCw,
-  Database,
-  Server,
-  Activity,
   CheckCircle2,
-  XCircle,
   Rocket,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AuthBrandingPanel, SpaceScene } from "@/pages/auth/AuthBranding";
+import { AuthBrandingPanel, SpaceScene } from '@/pages/auth/AuthBranding';
 
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { useToast } from '@/hooks/ui';
+import { useToast } from '@/hooks/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { LegalFooter } from '@/components/auth/LegalFooter';
-import { useDevGate, useIPValidation } from "@/hooks/admin";
+
+import { useDevGate } from '@/hooks/admin/useDevGate';
+import { useIPValidation } from '@/hooks/admin/useIPValidation';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
-import { supabase } from '@/integrations/supabase/client';
 import { AppLogo } from '@/components/layout/AppLogo';
+import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 import { loginSchema, type LoginFormData } from '@/lib/validations';
+import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 type LoginForm = LoginFormData;
 
 // ContinuousRockets and AuthBrandingPanel extracted to ./auth/AuthBranding.tsx
+
+const authButtonClass = (...parts: Array<string | false | null | undefined>) =>
+  [
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-bold transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+    ...parts,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -52,7 +59,7 @@ export default function Auth() {
   const { toast } = useToast();
   const { user, isLoading: authLoading, signIn, signOut } = useAuth();
   const { validateIPForAuthenticatedUser, logLoginAttempt } = useIPValidation();
-  const { isAllowed: isDevAllowed } = useDevGate();
+  const { isAllowed: _isDevAllowed } = useDevGate();
 
   /**
    * Destino pós-login. Precedência:
@@ -63,8 +70,9 @@ export default function Auth() {
    * Consumido aqui para que login por e-mail/senha também respeite o destino.
    */
   const resolveRedirectTargetCb = useCallback((): string => {
-    const fromState = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)
-      ?.from;
+    const fromState = (
+      location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null
+    )?.from;
     return resolveRedirectTarget({
       fromState: fromState ?? null,
       queryRedirect: searchParams.get('redirect'),
@@ -78,20 +86,19 @@ export default function Auth() {
   const [blockedIP, setBlockedIP] = useState<string | null>(null);
   const [currentIP, setCurrentIP] = useState<string | null>(null);
   const [geoLocation, setGeoLocation] = useState<string | null>(null);
+
+  /** Segundos restantes para rate limit. 0 = sem bloqueio. */
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+  const rateLimitTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Fallback social → email/senha: mensagem amigável quando OAuth falha.
   const [socialError, setSocialError] = useState<OAuthErrorCopy | null>(null);
-  
-  // External Database Check State
-  const [dbStatus, setDbStatus] = useState<{
-    principal: { ok: boolean; url?: string; source?: string; loading: boolean };
-    external: { ok: boolean; url?: string; source?: string; loading: boolean };
-    crm: { ok: boolean; url?: string; source?: string; loading: boolean };
-  }>({
-    principal: { ok: false, loading: true },
-    external: { ok: false, loading: true },
-    crm: { ok: false, loading: true },
-  });
+
   const emailInputRef = useRef<HTMLInputElement | null>(null);
+  // P2-05: honeypot anti-bot. Campo invisível (name="website") fora do
+  // react-hook-form. Humanos não preenchem; bots automáticos costumam preencher
+  // todo input encontrado. Lemos via ref no submit pra decidir se rejeita.
+  const honeypotRef = useRef<HTMLInputElement | null>(null);
   // Função `retry` publicada pelo SocialLoginButtons para reexecutar o Google login.
   const googleRetryRef = useRef<(() => void) | null>(null);
   const handleRetryGoogle = useCallback(() => {
@@ -104,9 +111,17 @@ export default function Auth() {
   useEffect(() => {
     const err = searchParams.get('error');
     if (err) {
-      setSocialError(resolveOAuthError(err));
+      const nextError = resolveOAuthError(err);
+      setSocialError({
+        ...nextError,
+        code: nextError.code ?? err,
+        description: searchParams.get('error_description') ?? nextError.description,
+        hint: searchParams.get('hint') ?? nextError.hint,
+      });
       const next = new URLSearchParams(searchParams);
       next.delete('error');
+      next.delete('error_description');
+      next.delete('hint');
       setSearchParams(next, { replace: true });
     }
   }, [searchParams, setSearchParams]);
@@ -118,87 +133,47 @@ export default function Auth() {
 
   const handleSocialError = useCallback(
     (message: string, opts?: { autoFallback?: boolean }) => {
-      const copy = resolveOAuthError(message);
-      setSocialError(copy);
-      // Fallback automático em falhas recuperáveis (timeout/silencioso):
-      // o usuário não precisa clicar — o foco vai direto pro e-mail.
-      if (opts?.autoFallback && !copy.isConfig) {
+      logger.error('[AUTH_SOCIAL_FAILED] OAuth initialization failed:', { message });
+      const nextError = resolveOAuthError(message);
+      setSocialError({
+        ...nextError,
+        code: nextError.code ?? 'OAUTH_INIT_ERROR',
+      });
+
+      if (opts?.autoFallback) {
         toast({
-          title: 'Login com Google indisponível',
-          description: 'Mudamos para entrada com e-mail e senha automaticamente.',
+          title: 'Google indisponível',
+          description: 'Não conseguimos conectar ao Google. Use seu e-mail para entrar.',
         });
-        setTimeout(() => focusEmailFallback(), 50);
-        return;
+        focusEmailFallback();
       }
-      setTimeout(() => emailInputRef.current?.focus(), 50);
     },
     [toast, focusEmailFallback],
   );
 
-  // Fetch IP, geolocation and backend status
+  // Fetch visitor IP and geolocation
   useEffect(() => {
-    // Guarda de cancelamento: evita setState após o unmount do componente.
-    // Sem isso, os awaits de loadInfo podem resolver depois do teardown e
-    // disparar setDbStatus/setCurrentIP fora do ciclo de vida do React
-    // (em testes, isso vaza como "ReferenceError: window is not defined").
     let cancelled = false;
+    const isLighthousePlaceholder = isSupabaseLighthousePlaceholder();
 
     const loadInfo = async () => {
-      // 1. IP Info
-      try {
-        const { data, error } = await supabase.functions.invoke('get-visitor-info');
-        if (!cancelled && !error && data) {
-          if (data.ip) setCurrentIP(data.ip);
-          if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
-        }
-      } catch {
-        // silent fail
-      }
-
-      if (cancelled) return;
-
-      // 2. Principal Backend (Directly from env or client)
-      const principalUrl = import.meta.env.VITE_EXTERNAL_SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
-      const isExternal = !!import.meta.env.VITE_EXTERNAL_SUPABASE_URL;
-      
-      setDbStatus(prev => ({
-        ...prev,
-        principal: { 
-          ok: !!principalUrl, 
-          url: principalUrl, 
-          source: isExternal ? 'Externo (Principal)' : 'Lovable Cloud',
-          loading: false 
-        }
-      }));
-
-      // 3. External (Gestão de Produtos) via bridge ping op
-      try {
-        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-          body: { operation: 'ping' }
-        });
-
-        if (cancelled) return;
-
-        if (!error && data?.ok) {
-          setDbStatus(prev => ({
-            ...prev,
-            external: { 
-              ok: data.config?.has_url && data.config?.has_key, 
-              url: data.config?.url || 'Configurado', 
-              source: data.config?.is_external ? 'Externo' : 'Cloud', 
-              loading: false 
-            }
-          }));
-        } else {
-          setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
-        }
-      } catch {
-        if (!cancelled) {
-          setDbStatus(prev => ({ ...prev, external: { ok: false, loading: false } }));
+      if (!isLighthousePlaceholder) {
+        try {
+          const { data, error } = await invokeEdge<{
+            ip?: string;
+            city?: string;
+            country_code?: string;
+          }>('get-visitor-info');
+          if (!cancelled && !error && data) {
+            if (data.ip) setCurrentIP(data.ip);
+            if (data.city) setGeoLocation(`${data.city}, ${data.country_code}`);
+          }
+        } catch {
+          // silent fail
         }
       }
     };
-    
+
     loadInfo();
 
     return () => {
@@ -206,11 +181,23 @@ export default function Auth() {
     };
   }, []);
 
-  // Redirect if already logged in (only on initial load)
+  // Cleanup rate-limit countdown timer on unmount to prevent state updates after unmount.
   useEffect(() => {
-    if (user && !authLoading && !isSubmitting) {
+    return () => {
+      if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+    };
+  }, []);
+
+  // Redirect if already logged in (only on initial load)
+  const navigatedRef = useRef(false);
+  useEffect(() => {
+    if (user && !authLoading && !isSubmitting && !navigatedRef.current) {
       const target = resolveRedirectTargetCb();
-      setTimeout(() => navigate(target, { replace: true }), 100);
+      const timer = setTimeout(() => {
+        navigatedRef.current = true;
+        navigate(target, { replace: true });
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [user, authLoading, navigate, isSubmitting, resolveRedirectTargetCb]);
 
@@ -255,65 +242,114 @@ export default function Auth() {
       }, 600);
       return true;
     } catch {
-      console.warn('Validation failed during post-login access checks; continuing with fail-open redirect');
+      logger.warn('[AUTH_POST_LOGIN_VALIDATION] continuing with fail-open redirect');
       navigate(resolveRedirectTargetCb(), { replace: true }); // Fail-open
       return true;
     }
   };
 
   const handleLogin = async (data: LoginForm) => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setIpBlocked(false);
+
+    // P2-05: honeypot anti-bot. Se o campo invisível `website` foi preenchido,
+    // quase certamente é bot. Simula delay realista (1.5-2.3s, faixa típica de
+    // resposta de servidor de auth) e retorna como credencial inválida sem
+    // sequer tocar o Supabase. Não loga em logLoginAttempt pra não poluir
+    // métricas reais de tentativas humanas.
+    if (honeypotRef.current?.value) {
+      logger.warn('[AUTH_HONEYPOT_HIT]', {
+        honeypot_len: honeypotRef.current.value.length,
+      });
+      const fakeDelayMs = 1500 + Math.random() * 800;
+      await new Promise<void>((r) => {
+        setTimeout(r, fakeDelayMs);
+      });
+      toast({
+        variant: 'destructive',
+        title: 'Não foi possível entrar',
+        description: 'Ocorreu um erro ao validar seu acesso. Por favor, tente novamente.',
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const { error } = await signIn(data.email, data.password);
 
       if (error) {
-        console.warn('[AUTH_FAILED] Authentication failed', { status: error.status ?? 'unknown' });
+        logger.warn('[AUTH_FAILED] Authentication failed', { status: error.status ?? 'unknown' });
         await logLoginAttempt(data.email, null, false, error.message);
 
-        let description = error.message;
-        let diagnosis = "Verifique as credenciais";
-        let title = "Erro ao entrar";
+        let description = 'Ocorreu um erro ao validar seu acesso. Por favor, tente novamente.';
+        let title = 'Não foi possível entrar';
+        let hint = 'Se o erro persistir, tente redefinir sua senha ou use o login social.';
 
-        // Heurística de erro baseada no código e mensagem
         if (error.message.includes('Invalid login credentials') || error.status === 400) {
-          description = 'Email ou senha incorretos. Por favor, tente novamente.';
-          diagnosis = "AUTH_FAILED: Credenciais inválidas (400).";
+          title = 'E-mail ou Senha Incorretos';
+          description =
+            'Não encontramos uma conta com esses dados. Verifique se digitou corretamente ou use "Esqueci minha senha".';
+          hint = 'Dica: Verifique se o Caps Lock está ativado.';
         } else if (error.message.includes('Email not confirmed')) {
-          description = 'E-mail pendente de confirmação. Por favor, valide sua conta.';
-          diagnosis = "AUTH_CONFIRM: Usuário existe mas e-mail não foi confirmado.";
+          title = 'E-mail não confirmado';
+          description =
+            'Sua conta ainda não foi ativada. Verifique sua caixa de entrada e spam pelo e-mail de confirmação.';
+          hint = 'Ainda não recebeu? Aguarde alguns minutos antes de solicitar um novo envio.';
         } else if (error.message.includes('rate limit') || error.status === 429) {
-          title = "Conta Temporariamente Bloqueada";
-          description = 'Muitas tentativas falhas. Por segurança, aguarde alguns minutos.';
-          diagnosis = "RATE_LIMIT: Bloqueio temporário ativado (429).";
-        } else if (error.status === 0 || error.message.includes('network') || error.message.includes('Fetch')) {
-          title = "Erro de Conexão";
-          description = 'Não foi possível alcançar o servidor. Verifique sua internet.';
-          diagnosis = "NETWORK_ERROR: Falha física ou DNS (0).";
-        } else if (error.message.includes('Database error') || error.status >= 500) {
-          title = "Erro no Servidor";
-          description = 'O sistema está instável no momento. Nossa equipe já foi notificada.';
-          diagnosis = `SERVER_ERROR: Erro interno do Supabase (${error.status || 500}).`;
+          title = 'Acesso Temporariamente Suspenso';
+          description =
+            'Detectamos muitas tentativas seguidas. Por segurança, sua conta foi bloqueada por alguns minutos.';
+          // Extrai o tempo de espera da mensagem do Supabase (ex: "after 47 seconds")
+          const secondsMatch = /after (\d+) seconds?/i.exec(error.message);
+          const waitSeconds = secondsMatch ? parseInt(secondsMatch[1], 10) : 60;
+          hint = `Aguarde ${waitSeconds} segundos antes de tentar novamente.`;
+
+          // Iniciar countdown visual
+          if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+          setRateLimitCountdown(waitSeconds);
+          rateLimitTimerRef.current = setInterval(() => {
+            setRateLimitCountdown((prev) => {
+              if (prev <= 1) {
+                if (rateLimitTimerRef.current) clearInterval(rateLimitTimerRef.current);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        } else if (
+          error.status === 0 ||
+          error.message.includes('network') ||
+          error.message.includes('Fetch')
+        ) {
+          title = 'Erro de Conexão';
+          description =
+            'Parece que você está sem internet ou nosso servidor está temporariamente inacessível.';
+          hint = 'Verifique sua conexão Wi-Fi ou dados móveis.';
+        } else if (
+          error.message.includes('Database error') ||
+          (error.status !== undefined && error.status >= 500)
+        ) {
+          title = 'Sistema em Manutenção';
+          description =
+            'Estamos ajustando os motores das nossas galáxias. O serviço deve voltar ao normal em breve.';
+          hint = 'Nossa equipe técnica já foi notificada.';
         }
 
         toast({
           variant: 'destructive',
-          title: title,
+          title,
           description: (
             <div className="space-y-3">
-              <p className="font-medium">{description}</p>
-              <div className="p-2 bg-black/40 rounded-lg border border-white/5 font-mono text-[10px] text-white/50">
-                DIAGNÓSTICO: {diagnosis}
+              <p className="font-medium leading-relaxed">{description}</p>
+              <div className="rounded-xl border border-white/10 bg-black/40 p-3 shadow-inner">
+                <p className="text-[11px] leading-snug text-white/70">
+                  <span className="mr-2 text-[9px] font-bold uppercase tracking-wider text-primary">
+                    Como resolver:
+                  </span>
+                  {hint}
+                </p>
               </div>
-              <Button 
-                variant="link" 
-                size="sm" 
-                className="h-auto p-0 text-xs text-white/60 hover:text-white"
-                onClick={() => navigate('/admin/status')}
-              >
-                Verificar status do sistema →
-              </Button>
             </div>
           ),
         });
@@ -323,20 +359,24 @@ export default function Auth() {
       // Credential Management API — pede ao navegador para salvar email/senha
       // após login bem-sucedido (Chrome/Edge/Brave). Silencioso se não suportado.
       try {
-        const CredCtor = (window as unknown as {
-          PasswordCredential?: new (init: { id: string; password: string; name?: string }) => Credential;
-        }).PasswordCredential;
+        const CredCtor = (
+          window as unknown as {
+            PasswordCredential?: new (init: {
+              id: string;
+              password: string;
+              name?: string;
+            }) => Credential;
+          }
+        ).PasswordCredential;
         if (CredCtor && navigator.credentials?.store) {
           const cred = new CredCtor({ id: data.email, password: data.password, name: data.email });
           await navigator.credentials.store(cred);
         }
       } catch {
-        console.warn('[AUTH_CRED_STORE] Credential store failed');
+        logger.warn('[AUTH_CRED_STORE] Credential store failed');
       }
 
-
-
-
+      const supabase = await getSupabaseClient();
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       const userId = session?.user?.id;
@@ -358,7 +398,7 @@ export default function Auth() {
         .single();
 
       if (profileError) {
-        console.error('[AUTH_PROFILE_FAILED] Failed to load authenticated profile', {
+        logger.error('[AUTH_PROFILE_FAILED] Failed to load authenticated profile', {
           code: profileError.code ?? 'unknown',
         });
         const isRLSError = profileError.code === 'PGRST301' || profileError.code === '42501';
@@ -368,16 +408,17 @@ export default function Auth() {
           description: (
             <div className="space-y-2">
               <p>Autenticado, mas não conseguimos carregar suas permissões.</p>
-              <div className="p-2 bg-black/40 rounded border border-white/5 font-mono text-[9px] text-white/50">
-                {isRLSError ? 'RLS_BLOCK' : 'PROFILE_MISSING'}: {profileError.code} - {profileError.message}
+              <div className="rounded border border-white/5 bg-black/40 p-2 font-mono text-[9px] text-white/50">
+                {isRLSError ? 'RLS_BLOCK' : 'PROFILE_MISSING'}: {profileError.code} -{' '}
+                {profileError.message}
               </div>
             </div>
           ),
         });
+        return;
       }
 
-
-      if (profileData && profileData.is_active === false) {
+      if (profileData?.is_active === false) {
         toast({
           variant: 'destructive',
           title: 'Acesso Bloqueado',
@@ -394,15 +435,15 @@ export default function Auth() {
         .eq('user_id', userId);
 
       if (rolesError || !rolesData || rolesData.length === 0) {
-        console.warn('[AUTH_RBAC_WARN] Authenticated user has no assigned roles');
+        logger.warn('[AUTH_RBAC_WARN] Authenticated user has no assigned roles', {
+          code: rolesError?.code ?? 'none',
+        });
       }
-
 
       // 3. Validação final de IP e Redirecionamento
       await validateAndRedirect(userId, data.email);
-      
     } catch {
-      console.error('Login exception');
+      logger.error('[AUTH_LOGIN_EXCEPTION] Unexpected login exception');
       toast({
         variant: 'destructive',
         title: 'Erro inesperado',
@@ -427,18 +468,22 @@ export default function Auth() {
 
   if (user && !authLoading && !isSubmitting) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#030508] text-white">
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#030508] text-white">
         <SpaceScene />
-        <div className="z-10 flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-500">
+        <div className="z-10 flex flex-col items-center gap-6 duration-500 animate-in fade-in zoom-in">
           <div className="relative">
-            <AppLogo showText={false} iconClassName="h-20 w-20 rounded-2xl shadow-blue-500/40 animate-pulse" onClick={() => navigate('/')} />
-            <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-success flex items-center justify-center ring-4 ring-[#030508]">
+            <AppLogo
+              showText={false}
+              iconClassName="h-20 w-20 rounded-2xl shadow-blue-500/40 animate-pulse"
+              onClick={() => navigate('/')}
+            />
+            <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-success ring-4 ring-[#030508]">
               <Rocket className="h-3 w-3 text-white" />
             </div>
           </div>
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-display font-bold">Você já está conectado</h2>
-            <p className="text-white/60 text-sm">Redirecionando para sua área segura...</p>
+          <div className="space-y-2 text-center">
+            <h2 className="font-display text-2xl font-bold">Você já está conectado</h2>
+            <p className="text-sm text-white/60">Redirecionando para sua área segura...</p>
           </div>
         </div>
       </main>
@@ -447,7 +492,7 @@ export default function Auth() {
 
   return (
     <main
-      className="relative flex flex-col lg:flex-row min-h-screen bg-[#030508] overflow-x-hidden"
+      className="relative flex min-h-screen flex-col overflow-hidden bg-[#030508] lg:flex-row"
       role="main"
       aria-label="Autenticação"
     >
@@ -457,11 +502,10 @@ export default function Auth() {
       <PageSEO
         title="Login | Promo Gifts"
         description="Acesse a plataforma Promo Gifts. Entre com suas credenciais para gerenciar seus produtos e orçamentos com a melhor IA das Galáxias!"
-        path="/login"
+        path="/auth"
       />
       {/* Left side - Branding */}
       <AuthBrandingPanel onLogoClick={() => window.location.reload()} />
-
 
       {/* Right side - Auth Form */}
       <div className="relative z-10 flex flex-1 items-center justify-center p-5 lg:p-10">
@@ -491,17 +535,18 @@ export default function Auth() {
                     <p className="text-sm text-muted-foreground">
                       Entre em contato com o administrador do sistema para liberar seu acesso.
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
+                    <button
+                      type="button"
+                      className={authButtonClass(
+                        'mt-2 h-9 rounded-lg border-2 border-primary/30 bg-background px-3 text-primary hover:border-primary hover:bg-primary/5',
+                      )}
                       onClick={() => {
                         setIpBlocked(false);
                         setBlockedIP(null);
                       }}
                     >
                       Tentar novamente
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </CardContent>
@@ -511,160 +556,204 @@ export default function Auth() {
           {/* Auth Card */}
           <Card
             aria-labelledby="auth-title"
-            className={`relative border-white/10 bg-black/60 shadow-2xl shadow-black/60 backdrop-blur-xl rounded-[2rem] overflow-hidden transition-all duration-500 ${ipBlocked ? 'pointer-events-none opacity-50' : ''}`}
+            className={cn(
+              'relative overflow-hidden rounded-[2rem] border-white/10 bg-black/60 shadow-2xl shadow-black/60 backdrop-blur-xl transition-all duration-500',
+              ipBlocked && 'pointer-events-none opacity-50',
+            )}
           >
-            <AnimatePresence mode="wait">
-              {loginStatus === 'success' ? (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
-                  animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col items-center justify-center py-16 px-8 text-center"
-                >
-                  <div className="relative mb-8">
-                    <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/30 duration-700" />
-                    <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.5)] overflow-hidden">
-                      <Rocket className="h-12 w-12 -rotate-45 animate-bounce" />
-                    </div>
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.4 }}
-                      className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg border-4 border-[#030508]"
-                    >
-                      <CheckCircle2 className="h-4 w-4 text-white" />
-                    </motion.div>
+            {loginStatus === 'success' ? (
+              <div
+                key="success"
+                className="flex flex-col items-center justify-center px-8 py-16 text-center duration-500 animate-in fade-in zoom-in"
+              >
+                <div className="relative mb-8">
+                  <div className="absolute inset-0 animate-ping rounded-full bg-blue-500/30 duration-700" />
+                  <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl bg-blue-500/10 text-blue-400 shadow-[0_0_50px_rgba(59,130,246,0.5)] ring-1 ring-blue-500/20">
+                    <Rocket className="h-12 w-12 -rotate-45 animate-bounce" />
                   </div>
-                  <motion.h2
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="font-display text-3xl font-bold text-white tracking-tight"
-                  >
-                    Decolagem autorizada!
-                  </motion.h2>
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="mt-3 text-base text-white/50"
-                  >
-                    Bem-vindo a bordo. Iniciando sistemas...
-                  </motion.p>
-                </motion.div>
-              ) : showForgotPassword ? (
-                <motion.div
-                  key="forgot-password"
-                  initial={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
-                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <CardContent className="pb-7 pt-7">
-                    <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
-                  </CardContent>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="login-form"
-                  initial={{ opacity: 0, x: -20, filter: 'blur(5px)' }}
-                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                  exit={{ opacity: 0, x: 20, filter: 'blur(5px)' }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <CardHeader className="pb-3 pt-9">
-                    <div className="space-y-1 text-center">
-                      <div className="font-display text-[1.036rem] font-normal text-white tracking-tight" id="auth-title">
-                        Entre com suas credenciais para Brilhar, você nasce para isso!
-                      </div>
-                      <p className="text-[13px] text-white/50">
-                        Inicie sua jornada rumo ao sucesso
-                      </p>
+                  <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-4 border-[#030508] bg-emerald-500 shadow-lg duration-300 animate-in zoom-in">
+                    <CheckCircle2 className="h-4 w-4 text-white" />
+                  </div>
+                </div>
+                <h2 className="font-display text-3xl font-bold tracking-tight text-white">
+                  Decolagem autorizada!
+                </h2>
+                <p className="mt-3 text-base text-white/50">
+                  Bem-vindo a bordo. Iniciando sistemas...
+                </p>
+              </div>
+            ) : showForgotPassword ? (
+              <div
+                key="forgot-password"
+                className="duration-300 animate-in fade-in slide-in-from-right-2"
+              >
+                <CardContent className="pb-7 pt-7">
+                  <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+                </CardContent>
+              </div>
+            ) : (
+              <div
+                key="login-form"
+                className="duration-300 animate-in fade-in slide-in-from-left-2"
+              >
+                <CardHeader className="pb-3 pt-9">
+                  <div className="space-y-1 text-center">
+                    <div
+                      className="font-display text-[1.036rem] font-normal tracking-tight text-white"
+                      id="auth-title"
+                    >
+                      Entre com suas credenciais para Brilhar, Você nasceu para isso!
                     </div>
-                  </CardHeader>
+                    <p className="text-[13px] text-white/50">
+                      Continue sua jornada rumo ao sucesso.
+                    </p>
+                  </div>
+                </CardHeader>
 
                 <CardContent className="space-y-5 pb-9">
                   {socialError && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                    <div
                       role="alert"
-                      className="relative overflow-hidden animate-fade-in space-y-3 rounded-[1.5rem] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-5 text-sm shadow-2xl backdrop-blur-xl"
+                      className="relative space-y-3 overflow-hidden rounded-[1.5rem] border border-amber-500/20 bg-gradient-to-br from-amber-500/10 to-transparent p-5 text-sm shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-2"
                     >
-                      <div className="absolute top-0 right-0 p-2 opacity-10">
+                      <div className="absolute right-0 top-0 p-2 opacity-10">
                         <ShieldAlert className="h-12 w-12 text-amber-500" />
                       </div>
-                      
+
                       <div className="flex items-start gap-4">
                         <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 shadow-inner">
                           <AlertTriangle className="h-5 w-5 text-amber-500" />
                         </div>
                         <div className="flex-1 space-y-2">
-                          <h3 className="font-display text-base font-bold text-amber-200" data-testid="social-login-error-title">
+                          <h3
+                            className="font-display text-base font-bold text-amber-200"
+                            data-testid="social-login-error-title"
+                          >
                             {socialError.title}
                           </h3>
-                          <p className="text-[13px] leading-relaxed text-amber-100/70" data-testid="social-login-error-description">
+                          <p
+                            className="text-[13px] leading-relaxed text-amber-100/70"
+                            data-testid="social-login-error-description"
+                          >
                             {socialError.description}
                           </p>
+                          {socialError.code &&
+                            socialError.code.length < 30 &&
+                            !socialError.code.includes('.') && (
+                              <p
+                                className="font-mono text-[10px] uppercase tracking-wide text-amber-100/40"
+                                data-testid="social-login-error-code"
+                              >
+                                ID: {socialError.code}
+                              </p>
+                            )}
                           {socialError.hint && (
-                            <div className="mt-3 rounded-xl bg-black/40 p-3 border border-white/5" data-testid="social-login-error-hint">
+                            <div
+                              className="mt-3 rounded-xl border border-white/5 bg-black/40 p-3"
+                              data-testid="social-login-error-hint"
+                            >
                               <p className="text-[11px] leading-snug text-white/60">
-                                <span className="font-bold uppercase tracking-wider text-[9px] text-amber-500 mr-2">Solução:</span>
+                                <span className="mr-2 text-[9px] font-bold uppercase tracking-wider text-amber-500">
+                                  Solução:
+                                </span>
                                 {socialError.hint}
                               </p>
                             </div>
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-col gap-2 pt-3">
                         <div className="flex items-center gap-2">
                           {!socialError.isConfig && (
-                            <Button
+                            <button
                               type="button"
-                              className="flex-1 h-11 gap-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs transition-all active:scale-95 rounded-xl shadow-lg shadow-amber-500/20"
+                              className={authButtonClass(
+                                'h-11 flex-1 rounded-xl bg-amber-500 text-xs text-black shadow-lg shadow-amber-500/20 hover:bg-amber-600 active:scale-95',
+                              )}
                               onClick={handleRetryGoogle}
                             >
                               <RotateCw className="h-4 w-4" />
                               Tentar Google Novamente
-                            </Button>
+                            </button>
                           )}
-                          <Button
+                          <button
                             type="button"
-                            variant="outline"
-                            className="flex-1 h-11 text-xs font-bold border-white/10 bg-white/5 text-white hover:bg-white/10 rounded-xl transition-all active:scale-95"
+                            className={authButtonClass(
+                              'h-11 flex-1 rounded-xl border border-white/10 bg-white/5 text-xs text-white hover:bg-white/10 active:scale-95',
+                            )}
                             onClick={focusEmailFallback}
                           >
                             Usar E-mail
-                          </Button>
+                          </button>
                         </div>
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          className="h-8 text-[10px] uppercase tracking-widest text-white/30 hover:text-white/60 hover:bg-transparent"
+                          className={authButtonClass(
+                            'h-8 rounded-lg px-3 text-[10px] uppercase tracking-widest text-white/30 hover:bg-transparent hover:text-white/60',
+                          )}
                           onClick={() => setSocialError(null)}
                         >
                           Ignorar aviso
-                        </Button>
+                        </button>
                       </div>
-                    </motion.div>
+                    </div>
                   )}
+                  <div className="relative mb-6 mt-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-white/10" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-[#030508] px-2 text-white/30 backdrop-blur-xl">ou</span>
+                    </div>
+                  </div>
+
+                  <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
 
                   <form
                     onSubmit={loginForm.handleSubmit(handleLogin)}
                     className="space-y-4"
                     data-testid="login-form"
-                    method="post"
-                    action="/auth"
                     name="login"
+                    noValidate
                   >
-
+                    {/*
+                      P2-05: honeypot anti-bot. Não remova.
+                      - tabIndex={-1}: pula no Tab
+                      - autoComplete="off": browsers não tentam preencher
+                      - aria-hidden + position absolute fora da viewport:
+                        leitores de tela e usuários humanos nunca veem
+                      - name="website": bots genéricos preenchem campos
+                        com nomes plausíveis automaticamente
+                    */}
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        left: '-9999px',
+                        width: '1px',
+                        height: '1px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <label htmlFor="website-hp">Website (deixe em branco)</label>
+                      <input
+                        ref={honeypotRef}
+                        id="website-hp"
+                        name="website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        defaultValue=""
+                      />
+                    </div>
                     <div className="space-y-2">
-                      <Label htmlFor="login-email" className="text-foreground">
+                      <label
+                        htmlFor="login-email"
+                        className="text-sm font-medium leading-none text-foreground"
+                      >
                         Email
-                      </Label>
+                      </label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
@@ -676,7 +765,7 @@ export default function Auth() {
                           inputMode="email"
                           autoCapitalize="none"
                           spellCheck={false}
-                          className="border-white/10 bg-white/5 pl-10 lowercase focus:border-primary/50 focus:ring-primary/20 transition-all duration-300 placeholder:text-white/20"
+                          className="border-white/10 bg-white/5 pl-10 lowercase transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
                           {...loginForm.register('email')}
                           onChange={(e) => {
                             const lower = e.target.value.toLowerCase();
@@ -697,9 +786,13 @@ export default function Auth() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="login-password" title="password" className="text-foreground">
+                      <label
+                        htmlFor="login-password"
+                        title="password"
+                        className="text-sm font-medium leading-none text-foreground"
+                      >
                         Senha de Acesso
-                      </Label>
+                      </label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
@@ -708,7 +801,7 @@ export default function Auth() {
                           type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
                           autoComplete="current-password"
-                          className="border-white/10 bg-white/5 pl-10 pr-10 focus:border-primary/50 focus:ring-primary/20 transition-all duration-300 placeholder:text-white/20"
+                          className="border-white/10 bg-white/5 pl-10 pr-10 transition-all duration-300 placeholder:text-white/20 focus:border-primary/50 focus:ring-primary/20"
                           {...loginForm.register('password')}
                         />
                         <button
@@ -717,6 +810,7 @@ export default function Auth() {
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 -mr-2 flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition-colors hover:text-blue-500"
                           aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                          aria-pressed={showPassword}
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -736,59 +830,45 @@ export default function Auth() {
                       <button
                         type="button"
                         data-testid="login-forgot-link"
-                        className="h-auto p-0 text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-blue-300 transition-colors"
+                        className="h-auto p-0 text-xs font-bold uppercase tracking-wider text-blue-400 transition-colors hover:text-blue-300"
                         onClick={() => setShowForgotPassword(true)}
                       >
                         Esqueci minha senha
                       </button>
                     </div>
 
-                    <Button
+                    <button
                       type="submit"
                       data-testid="login-submit"
-                      className="h-12 w-full text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/40 border border-white/10 rounded-xl active:scale-[0.98]"
-                        disabled={isSubmitting || loginStatus === 'success'}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Iniciando Sistemas...
-                          </>
-                        ) : loginStatus === 'success' ? (
-                          <>
-                            <div className="flex items-center gap-2 animate-in zoom-in duration-300">
-                              <Rocket className="h-4 w-4 -rotate-45" />
-                              <span>Decolando!</span>
-                            </div>
-                          </>
-                        ) : (
-                          'Entrar na Plataforma'
-                        )}
-                      </Button>
-
-                    <div className="relative py-2">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-white/10" />
-                      </div>
-                      <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
-                        <span className="bg-black/80 px-4 text-white/30 rounded-full border border-white/5">
-                          ou
-                        </span>
-                      </div>
-                    </div>
-
-                    <SocialLoginButtons onError={handleSocialError} retryRef={googleRetryRef} />
+                      className={authButtonClass(
+                        'h-12 w-full rounded-xl border border-white/10 bg-blue-600 text-base text-white shadow-lg shadow-blue-500/25 hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]',
+                      )}
+                      disabled={isSubmitting || rateLimitCountdown > 0}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Iniciando Sistemas...
+                        </>
+                      ) : rateLimitCountdown > 0 ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Aguarde {rateLimitCountdown}s...
+                        </>
+                      ) : (
+                        'Entrar na Plataforma'
+                      )}
+                    </button>
                   </form>
                 </CardContent>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-        </Card>
+          </Card>
 
           {/* IP/Location Widget */}
           {currentIP && (
             <div
-              className="mx-auto flex max-w-fit items-center justify-center gap-4 rounded-full border border-white/5 bg-black/40 px-6 py-2.5 opacity-0 shadow-lg backdrop-blur-md transition-all hover:bg-black/60 hover:border-white/10"
+              className="mx-auto flex max-w-fit items-center justify-center gap-4 rounded-full border border-white/5 bg-black/40 px-6 py-2.5 opacity-0 shadow-lg backdrop-blur-md transition-all hover:border-white/10 hover:bg-black/60"
               style={{ animation: 'scale-fade-in 0.5s ease-out 600ms forwards' }}
             >
               <div className="flex items-center gap-2.5 text-xs text-white/50">
@@ -807,63 +887,8 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Backend Status Widget — apenas visível para devs (gate via useDevGate) */}
-          {isDevAllowed && (
-            <div 
-              className="mx-auto flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 shadow-xl backdrop-blur-md opacity-0"
-              style={{ animation: 'scale-fade-in 0.5s ease-out 800ms forwards' }}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <Server className="h-4 w-4 text-blue-500" />
-                <span className="text-xs font-bold uppercase tracking-wider text-white/60">Status da Infraestrutura</span>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                {/* Principal DB */}
-                <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-2 border border-white/5">
-                  <div className="flex items-center gap-2">
-                    <Database className="h-3.5 w-3.5 text-white/40" />
-                    <span className="text-[11px] font-medium text-white/80">Principal</span>
-                  </div>
-                  {dbStatus.principal.loading ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-white/20" />
-                  ) : dbStatus.principal.ok ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-success font-bold uppercase tracking-tighter">{dbStatus.principal.source}</span>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                    </div>
-                  ) : (
-                    <XCircle className="h-3.5 w-3.5 text-destructive" />
-                  )}
-                </div>
-
-                {/* External DB (Gestão de Produtos) */}
-                <div className="flex items-center justify-between gap-4 rounded-lg bg-white/5 px-3 py-2 border border-white/5">
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-3.5 w-3.5 text-white/40" />
-                    <span className="text-[11px] font-medium text-white/80">Produtos</span>
-                  </div>
-                  {dbStatus.external.loading ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-white/20" />
-                  ) : dbStatus.external.ok ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-success font-bold uppercase tracking-tighter">Externo</span>
-                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">Pendente</span>
-                      <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <p className="text-[10px] text-white/30 italic text-center px-2">
-                Verificação em tempo real das instâncias Supabase configuradas via secrets.
-              </p>
-            </div>
-          )}
+          {/* SupabaseConnectionDebug removido a pedido do usuário */}
+          {/* Backend Status Widget removido a pedido do PO */}
 
           <LegalFooter />
         </div>

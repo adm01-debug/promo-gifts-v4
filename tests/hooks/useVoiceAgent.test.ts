@@ -21,6 +21,11 @@ let scribeConnected = false;
 let onDisconnectHandler: (() => void) | undefined;
 
 vi.mock("@elevenlabs/react", () => ({
+  // CommitStrategy enum necessário para useVoiceAgent.ts linha 90 (commitStrategy: CommitStrategy.VAD)
+  CommitStrategy: {
+    VAD: "vad",
+    MANUAL: "manual",
+  },
   useScribe: (opts: {
     onSessionStarted?: () => void;
     onPartialTranscript?: (data: { text: string }) => void;

@@ -1,24 +1,24 @@
 // src/components/simulator/ScenarioComparison.tsx
 // Comparativo de Cenários A vs B
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  GitCompare, 
-  Save, 
-  Trash2, 
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  GitCompare,
+  Save,
+  Trash2,
   ArrowRight,
   Trophy,
   TrendingDown,
   Clock,
-  Sparkles
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/hooks/simulation";
-import type { SimulationOption, Product } from "@/types/simulation";
+  Sparkles,
+} from 'lucide-react';
+import { m as motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { formatCurrency } from '@/hooks/simulation';
+import type { SimulationOption, Product } from '@/types/simulation';
 
 export interface SimulationScenario {
   id: string;
@@ -50,39 +50,47 @@ export function ScenarioComparison({
   onSaveAsScenario,
   onClearScenario,
 }: ScenarioComparisonProps) {
-  const [selectedView, setSelectedView] = useState<'compare' | 'details'>('compare');
+  const [_selectedView, _setSelectedView] = useState<'compare' | 'details'>('compare');
 
   const canSave = currentSimulation.options.length > 0;
 
   // Calculate comparison metrics
-  const comparison = scenarioA && scenarioB ? {
-    priceDiff: (scenarioB.bestOption?.grandTotal || 0) - (scenarioA.bestOption?.grandTotal || 0),
-    priceDiffPercent: scenarioA.bestOption?.grandTotal 
-      ? (((scenarioB.bestOption?.grandTotal || 0) - scenarioA.bestOption.grandTotal) / scenarioA.bestOption.grandTotal) * 100
-      : 0,
-    daysDiff: (scenarioB.bestOption?.estimatedDays || 0) - (scenarioA.bestOption?.estimatedDays || 0),
-    winner: (scenarioA.bestOption?.grandTotal || 0) <= (scenarioB.bestOption?.grandTotal || 0) ? 'A' : 'B',
-  } : null;
+  const comparison =
+    scenarioA && scenarioB
+      ? {
+          priceDiff:
+            (scenarioB.bestOption?.grandTotal || 0) - (scenarioA.bestOption?.grandTotal || 0),
+          priceDiffPercent: scenarioA.bestOption?.grandTotal
+            ? (((scenarioB.bestOption?.grandTotal || 0) - scenarioA.bestOption.grandTotal) /
+                scenarioA.bestOption.grandTotal) *
+              100
+            : 0,
+          daysDiff:
+            (scenarioB.bestOption?.estimatedDays || 0) - (scenarioA.bestOption?.estimatedDays || 0),
+          winner:
+            (scenarioA.bestOption?.grandTotal || 0) <= (scenarioB.bestOption?.grandTotal || 0)
+              ? 'A'
+              : 'B',
+        }
+      : null;
 
   return (
     <Card className="border-2 border-dashed border-muted-foreground/30">
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-muted">
+            <div className="rounded-lg bg-muted p-2">
               <GitCompare className="h-5 w-5 text-muted-foreground" />
             </div>
             <div>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 Comparar Cenários
-                <Badge variant="outline" className="text-xs gap-1">
+                <Badge variant="outline" className="gap-1 text-xs">
                   <Sparkles className="h-3 w-3" />
                   Beta
                 </Badge>
               </CardTitle>
-              <CardDescription>
-                Salve simulações para comparar lado a lado
-              </CardDescription>
+              <CardDescription>Salve simulações para comparar lado a lado</CardDescription>
             </div>
           </div>
         </div>
@@ -92,15 +100,15 @@ export function ScenarioComparison({
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm">Cenário A</span>
+              <span className="text-sm font-semibold">Cenário A</span>
               {scenarioA && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-7 text-xs text-destructive hover:text-destructive"
                   onClick={() => onClearScenario('A')}
                 >
-                  <Trash2 className="h-3 w-3 mr-1" />
+                  <Trash2 className="mr-1 h-3 w-3" />
                   Limpar
                 </Button>
               )}
@@ -109,9 +117,9 @@ export function ScenarioComparison({
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-3 rounded-lg bg-primary/10 border border-primary/30"
+                className="rounded-lg border border-primary/30 bg-primary/10 p-3"
               >
-                <p className="font-medium text-sm truncate">{scenarioA.productName}</p>
+                <p className="truncate text-sm font-medium">{scenarioA.productName}</p>
                 <p className="text-xs text-muted-foreground">{scenarioA.quantity} un</p>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Melhor:</span>
@@ -123,11 +131,11 @@ export function ScenarioComparison({
             ) : (
               <Button
                 variant="outline"
-                className="w-full h-20 border-dashed"
+                className="h-20 w-full border-dashed"
                 onClick={() => onSaveAsScenario('A')}
                 disabled={!canSave}
               >
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="mr-2 h-4 w-4" />
                 Salvar como A
               </Button>
             )}
@@ -135,15 +143,15 @@ export function ScenarioComparison({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm">Cenário B</span>
+              <span className="text-sm font-semibold">Cenário B</span>
               {scenarioB && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-7 text-xs text-destructive hover:text-destructive"
                   onClick={() => onClearScenario('B')}
                 >
-                  <Trash2 className="h-3 w-3 mr-1" />
+                  <Trash2 className="mr-1 h-3 w-3" />
                   Limpar
                 </Button>
               )}
@@ -152,9 +160,9 @@ export function ScenarioComparison({
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-3 rounded-lg bg-primary/15 border border-primary/25"
+                className="rounded-lg border border-primary/25 bg-primary/15 p-3"
               >
-                <p className="font-medium text-sm truncate">{scenarioB.productName}</p>
+                <p className="truncate text-sm font-medium">{scenarioB.productName}</p>
                 <p className="text-xs text-muted-foreground">{scenarioB.quantity} un</p>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Melhor:</span>
@@ -166,11 +174,11 @@ export function ScenarioComparison({
             ) : (
               <Button
                 variant="outline"
-                className="w-full h-20 border-dashed"
+                className="h-20 w-full border-dashed"
                 onClick={() => onSaveAsScenario('B')}
                 disabled={!canSave}
               >
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="mr-2 h-4 w-4" />
                 Salvar como B
               </Button>
             )}
@@ -182,24 +190,26 @@ export function ScenarioComparison({
           {comparison && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
+              animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="p-4 rounded-xl bg-gradient-to-br from-success/10 to-primary/10 border border-success/30">
-                <div className="flex items-center gap-2 mb-3">
+              <div className="rounded-xl border border-success/30 bg-gradient-to-br from-success/10 to-primary/10 p-4">
+                <div className="mb-3 flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-success" />
                   <span className="font-semibold">Resultado da Comparação</span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 text-center">
                   {/* Scenario A */}
-                  <div className={cn(
-                    "p-3 rounded-lg transition-all",
-                    comparison.winner === 'A' && "bg-success/20 ring-2 ring-success"
-                  )}>
-                    <p className="text-xs text-muted-foreground mb-1">Cenário A</p>
-                    <p className="font-bold text-lg">
+                  <div
+                    className={cn(
+                      'rounded-lg p-3 transition-all',
+                      comparison.winner === 'A' && 'bg-success/20 ring-2 ring-success',
+                    )}
+                  >
+                    <p className="mb-1 text-xs text-muted-foreground">Cenário A</p>
+                    <p className="text-lg font-bold">
                       {formatCurrency(scenarioA?.bestOption?.grandTotal || 0)}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -207,7 +217,7 @@ export function ScenarioComparison({
                     </p>
                     {comparison.winner === 'A' && (
                       <Badge className="mt-2 bg-success text-success-foreground">
-                        <Trophy className="h-3 w-3 mr-1" />
+                        <Trophy className="mr-1 h-3 w-3" />
                         Vencedor
                       </Badge>
                     )}
@@ -216,39 +226,47 @@ export function ScenarioComparison({
                   {/* Comparison */}
                   <div className="flex flex-col items-center justify-center">
                     <ArrowRight className="h-6 w-6 text-muted-foreground" />
-                    <div className={cn(
-                      "mt-2 px-3 py-1 rounded-full text-sm font-medium",
-                      comparison.priceDiff > 0 ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
-                    )}>
+                    <div
+                      className={cn(
+                        'mt-2 rounded-full px-3 py-1 text-sm font-medium',
+                        comparison.priceDiff > 0
+                          ? 'bg-success/20 text-success'
+                          : 'bg-destructive/20 text-destructive',
+                      )}
+                    >
                       {comparison.priceDiff > 0 ? (
                         <>
-                          <TrendingDown className="h-3 w-3 inline mr-1" />
-                          A é {Math.abs(comparison.priceDiffPercent).toFixed(1)}% mais barato
+                          <TrendingDown className="mr-1 inline h-3 w-3" />A é{' '}
+                          {Math.abs(comparison.priceDiffPercent).toFixed(1)}% mais barato
                         </>
                       ) : comparison.priceDiff < 0 ? (
                         <>
-                          <TrendingDown className="h-3 w-3 inline mr-1" />
-                          B é {Math.abs(comparison.priceDiffPercent).toFixed(1)}% mais barato
+                          <TrendingDown className="mr-1 inline h-3 w-3" />B é{' '}
+                          {Math.abs(comparison.priceDiffPercent).toFixed(1)}% mais barato
                         </>
                       ) : (
-                        "Mesmo preço"
+                        'Mesmo preço'
                       )}
                     </div>
                     {comparison.daysDiff !== 0 && (
-                      <div className="mt-1 text-xs text-muted-foreground flex items-center gap-1">
+                      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        {comparison.daysDiff > 0 ? `A é ${comparison.daysDiff}d mais rápido` : `B é ${Math.abs(comparison.daysDiff)}d mais rápido`}
+                        {comparison.daysDiff > 0
+                          ? `A é ${comparison.daysDiff}d mais rápido`
+                          : `B é ${Math.abs(comparison.daysDiff)}d mais rápido`}
                       </div>
                     )}
                   </div>
 
                   {/* Scenario B */}
-                  <div className={cn(
-                    "p-3 rounded-lg transition-all",
-                    comparison.winner === 'B' && "bg-success/20 ring-2 ring-success"
-                  )}>
-                    <p className="text-xs text-muted-foreground mb-1">Cenário B</p>
-                    <p className="font-bold text-lg">
+                  <div
+                    className={cn(
+                      'rounded-lg p-3 transition-all',
+                      comparison.winner === 'B' && 'bg-success/20 ring-2 ring-success',
+                    )}
+                  >
+                    <p className="mb-1 text-xs text-muted-foreground">Cenário B</p>
+                    <p className="text-lg font-bold">
                       {formatCurrency(scenarioB?.bestOption?.grandTotal || 0)}
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -256,7 +274,7 @@ export function ScenarioComparison({
                     </p>
                     {comparison.winner === 'B' && (
                       <Badge className="mt-2 bg-success text-success-foreground">
-                        <Trophy className="h-3 w-3 mr-1" />
+                        <Trophy className="mr-1 h-3 w-3" />
                         Vencedor
                       </Badge>
                     )}
@@ -265,8 +283,10 @@ export function ScenarioComparison({
 
                 {/* Savings highlight */}
                 {comparison.priceDiff !== 0 && (
-                  <div className="mt-4 p-3 rounded-lg bg-card/50 text-center">
-                    <p className="text-sm text-muted-foreground">Economia escolhendo {comparison.winner}:</p>
+                  <div className="mt-4 rounded-lg bg-card/50 p-3 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Economia escolhendo {comparison.winner}:
+                    </p>
                     <p className="text-2xl font-bold text-success">
                       {formatCurrency(Math.abs(comparison.priceDiff))}
                     </p>
@@ -279,8 +299,10 @@ export function ScenarioComparison({
 
         {/* Empty state hint */}
         {!scenarioA && !scenarioB && (
-          <div className="text-center py-4 text-sm text-muted-foreground">
-            <p>Salve duas simulações diferentes para comparar qual oferece melhor custo-benefício</p>
+          <div className="py-4 text-center text-sm text-muted-foreground">
+            <p>
+              Salve duas simulações diferentes para comparar qual oferece melhor custo-benefício
+            </p>
           </div>
         )}
       </CardContent>

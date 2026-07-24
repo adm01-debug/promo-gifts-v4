@@ -868,7 +868,6 @@
 | Search with Suggestions | `src/components/search/SearchWithSuggestions.tsx` | React |
 | Smart Suggestions | `src/components/search/SmartSuggestions.tsx` | React |
 | Advanced Search | `src/components/search/AdvancedSearch.tsx` | React |
-| Global Command Bar | `src/components/command/GlobalCommandBar.tsx` | React, cmdk |
 | Hook Search | `src/hooks/useSearch.ts` | React |
 | Hook Generic Fuzzy Search | `src/hooks/useGenericFuzzySearch.ts` | Fuse.js |
 

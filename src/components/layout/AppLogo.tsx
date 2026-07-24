@@ -1,62 +1,138 @@
-import { Gift, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+/**
+ * AppLogo — Logo da aplicação com suporte à SKIN DIVERSITY.
+ *
+ * SKIN DIVERSITY:
+ * Quando o preset 'diversity' está ativo, applyThemePreset() marca
+ * document.documentElement.dataset.presetId = 'diversity'.
+ * O hook usePresetId() observa esse atributo via MutationObserver e
+ * aplica gradiente arco-íris (var(--gradient-primary)) em:
+ *   1. Fundo do ícone   → background via inline style
+ *   2. Texto "Promo Gifts"  → background-clip: text trick
+ *   3. Subtítulo "Store System" → idem (com opacity-70 herdada)
+ */
+import { useEffect, useState } from 'react';
+import { Gift } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
+// ── Hook: detecta o preset ativo via data-preset-id no <html> ──────────────
+function usePresetId(): string {
+  const [presetId, setPresetId] = useState<string>(
+    () => document.documentElement.dataset.presetId ?? 'corporate',
+  );
+
+  useEffect(() => {
+    const root = document.documentElement;
+
+    // Leitura inicial (caso applyThemePreset já tenha rodado antes do mount)
+    setPresetId(root.dataset.presetId ?? 'corporate');
+
+    const observer = new MutationObserver(() => {
+      setPresetId(root.dataset.presetId ?? 'corporate');
+    });
+
+    observer.observe(root, {
+      attributes: true,
+      attributeFilter: ['data-preset-id'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  return presetId;
+}
+
+// ── Componente ──────────────────────────────────────────────────────────────
 interface AppLogoProps {
   className?: string;
   iconClassName?: string;
   textClassName?: string;
+  subtextClassName?: string;
   showText?: boolean;
-  variant?: 'light' | 'dark' | 'brand' | 'sidebar';
+  variant?: 'brand' | 'dark' | 'light' | 'sidebar';
+  onClick?: () => void;
 }
 
-export function AppLogo({ 
-  className, 
-  iconClassName, 
-  textClassName, 
+export function AppLogo({
+  className,
+  iconClassName,
+  textClassName,
+  subtextClassName,
   showText = true,
   variant = 'brand',
-  onClick
-}: AppLogoProps & { onClick?: () => void }) {
-  const isBrandOrSidebar = variant === 'brand' || variant === 'sidebar';
-  const usesBrandIcon = isBrandOrSidebar || variant === 'light';
-  const iconBg = usesBrandIcon ? 'bg-primary' : 'bg-foreground';
-  const iconColor = usesBrandIcon ? 'text-primary-foreground' : 'text-background';
+  onClick,
+}: AppLogoProps) {
+  const presetId = usePresetId();
+  const isDiversity = presetId === 'diversity';
+
+  const usesPrimary = variant === 'brand' || variant === 'sidebar' || variant === 'light';
+  const iconColor = usesPrimary ? 'text-primary-foreground' : 'text-background';
+  const textColor = variant === 'light' ? 'text-white' : 'text-foreground';
+
+  // SKIN DIVERSITY: fundo do ícone como gradiente arco-íris.
+  const iconBgClass = isDiversity
+    ? '' // inline style cuida do fundo — classe vazia evita conflito
+    : usesPrimary
+      ? 'bg-primary'
+      : 'bg-foreground';
+
+  const iconStyle = isDiversity ? { background: 'var(--gradient-primary)' } : undefined;
+
+  // SKIN DIVERSITY: gradient text trick — background-clip:text revela o
+  // gradiente arco-íris através do shape do texto. Não afeta elementos SVG.
+  const gradientTextStyle: React.CSSProperties | undefined = isDiversity
+    ? {
+        background: 'var(--gradient-primary)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }
+    : undefined;
 
   return (
-    <div className={cn("group flex items-center gap-3 select-none", className, onClick && "cursor-pointer active:scale-95 transition-transform duration-200")} onClick={onClick}>
-      <div className={cn(
-        "relative inline-flex items-center justify-center rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all duration-500 shrink-0 overflow-hidden border border-white/5",
-        !iconClassName?.includes('h-') && (variant === 'sidebar' ? "h-9 w-9" : "h-11 w-11"),
-        iconBg,
-        iconClassName
-      )}>
-        <Gift className={cn(
-          "shrink-0 transition-transform duration-500",
-          iconClassName?.includes('h-20') ? "h-10 w-10" : 
-          iconClassName?.includes('h-14') ? "h-7 w-7" : 
-          variant === 'sidebar' ? "h-5 w-5" : "h-6 w-6",
-          iconColor
-        )} />
-        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <Sparkles className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 text-white/50 animate-pulse" />
+    <div
+      className={cn('flex items-center gap-3', className, onClick && 'cursor-pointer')}
+      onClick={onClick}
+    >
+      {/* Icon box — V3 exact: h-10 w-10, rounded-xl, shadow-lg */}
+      <div
+        className={cn(
+          'inline-flex h-10 w-10 items-center justify-center rounded-xl shadow-lg',
+          iconBgClass,
+          iconClassName,
+        )}
+        style={iconStyle}
+      >
+        {/* Gift icon — V3 exact: h-6 w-6 */}
+        <Gift className={cn('h-6 w-6', isDiversity ? 'text-white drop-shadow-sm' : iconColor)} />
       </div>
+
       {showText && (
         <div className="flex flex-col">
-          <span className={cn(
-            "font-display text-lg font-black leading-none tracking-tight text-foreground drop-shadow-sm",
-            textClassName
-          )}>
+          {/* Name — DIVERSITY: gradient text | Outros: text-foreground/text-white */}
+          <span
+            className={cn(
+              'font-display text-xl font-bold leading-none tracking-tight',
+              isDiversity ? '' : textColor,
+              textClassName,
+            )}
+            style={gradientTextStyle}
+          >
             Promo Gifts
           </span>
-          <span className={cn(
-            "text-[9px] font-bold uppercase tracking-[0.2em] text-primary/80 flex items-center gap-1.5 mt-0.5",
-          )}>
-            Plataforma
-            <span className="inline-block w-1 h-1 rounded-full bg-primary" />
+
+          {/* Subtitle — DIVERSITY: gradient text (opacity-70 herdado) | Outros: muted/primary */}
+          <span
+            className={cn(
+              'text-right text-[10px] font-semibold uppercase tracking-widest opacity-70',
+              isDiversity ? '' : variant === 'light' ? 'text-primary' : 'text-muted-foreground',
+              subtextClassName,
+            )}
+            style={gradientTextStyle}
+          >
+            Store System
           </span>
         </div>
       )}
     </div>
   );
 }
-

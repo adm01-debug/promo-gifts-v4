@@ -1,0 +1,6 @@
+{
+  "generated_at": "2026-07-22T19:59:21.691Z",
+  "note": "Snapshot congelado de call sites diretos a supabase.functions.invoke. Novos call sites DEVEM usar invokeEdgeSafe (src/lib/edge/safeInvokeCall.ts). Regenerar com UPDATE_BASELINE=1 após migração legítima.",
+  "total": 0,
+  "entries": []
+}

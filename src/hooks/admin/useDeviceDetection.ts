@@ -1,6 +1,9 @@
+import { logger } from '@/lib/logger';
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { untypedFrom } from '@/lib/supabase-untyped';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface DeviceInfo {
   fingerprint: string;
@@ -22,17 +25,17 @@ function generateDeviceFingerprint(): string {
     navigator.hardwareConcurrency || 'unknown',
     (navigator as Navigator & { deviceMemory?: number }).deviceMemory || 'unknown',
   ];
-  
+
   const fingerprint = components.join('|');
-  
+
   // Simple hash function
   let hash = 0;
   for (let i = 0; i < fingerprint.length; i++) {
     const char = fingerprint.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+    hash = (hash << 5) - hash + char;
+    hash &= hash;
   }
-  
+
   return Math.abs(hash).toString(36);
 }
 
@@ -91,79 +94,89 @@ export function useDeviceDetection(targetUserId?: string) {
     try {
       const deviceInfo = getDeviceInfo();
 
-      const { data, error } = await supabase.functions.invoke('detect-new-device', {
-        body: {
-          userId: user.id,
-          userEmail: user.email,
-          deviceInfo,
+      const { data, error } = await invokeEdge<{ isNewDevice: boolean; isNewIP: boolean }>(
+        'detect-new-device',
+        {
+          body: {
+            userId: user.id,
+            userEmail: user.email,
+            deviceInfo,
+          },
         },
-      });
+      );
 
       if (error) {
-        console.error('Error checking device:', error);
+        logger.error('Error checking device:', error);
         return { isNewDevice: false, isNewIP: false, error: error.message };
       }
 
       return {
-        isNewDevice: data.isNewDevice || false,
-        isNewIP: data.isNewIP || false,
+        isNewDevice: data?.isNewDevice || false,
+        isNewIP: data?.isNewIP || false,
       };
     } catch (error: unknown) {
-      console.error('Device detection error:', error);
-      return { isNewDevice: false, isNewIP: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      logger.error('Device detection error:', error);
+      return {
+        isNewDevice: false,
+        isNewIP: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }, [user]);
 
   const getKnownDevices = useCallback(async () => {
     if (!effectiveUserId) return [];
 
-    const { data, error } = await supabase
-      .from('user_known_devices')
+    const { data, error } = await untypedFrom('user_known_devices')
       .select('*')
       .eq('user_id', effectiveUserId)
       .order('last_seen_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching known devices:', error);
+      logger.error('Error fetching known devices:', error);
       return [];
     }
 
     return data || [];
   }, [effectiveUserId]);
 
-  const removeDevice = useCallback(async (deviceId: string): Promise<boolean> => {
-    if (!effectiveUserId) return false;
+  const removeDevice = useCallback(
+    async (deviceId: string): Promise<boolean> => {
+      if (!effectiveUserId) return false;
 
-    const { error } = await supabase
-      .from('user_known_devices')
-      .delete()
-      .eq('id', deviceId)
-      .eq('user_id', effectiveUserId);
+      const { error } = await untypedFrom('user_known_devices')
+        .delete()
+        .eq('id', deviceId)
+        .eq('user_id', effectiveUserId);
 
-    if (error) {
-      console.error('Error removing device:', error);
-      return false;
-    }
+      if (error) {
+        logger.error('Error removing device:', error);
+        return false;
+      }
 
-    return true;
-  }, [effectiveUserId]);
+      return true;
+    },
+    [effectiveUserId],
+  );
 
-  const trustDevice = useCallback(async (deviceId: string): Promise<boolean> => {
-    if (!effectiveUserId) return false;
+  const trustDevice = useCallback(
+    async (deviceId: string): Promise<boolean> => {
+      if (!effectiveUserId) return false;
 
-    const { error } = await supabase
-      .from('user_known_devices')
-      .update({ is_trusted: true })
-      .eq('id', deviceId)
-      .eq('user_id', effectiveUserId);
+      const { error } = await untypedFrom('user_known_devices')
+        .update({ is_trusted: true })
+        .eq('id', deviceId)
+        .eq('user_id', effectiveUserId);
 
-    if (error) {
-      console.error('Error trusting device:', error);
-      return false;
-    }
+      if (error) {
+        logger.error('Error trusting device:', error);
+        return false;
+      }
 
-    return true;
-  }, [effectiveUserId]);
+      return true;
+    },
+    [effectiveUserId],
+  );
 
   return {
     checkDevice,

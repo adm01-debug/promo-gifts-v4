@@ -12,8 +12,9 @@ import {
   getActiveFlags,
   type IntelligenceFlag,
   type StockVelocity,
-} from '@/hooks/intelligence';
-import { useSupplierNames } from '@/hooks/products';
+  type ProductIntelligenceData,
+} from '@/hooks/intelligence/useStockHistory';
+import { useSupplierNames } from '@/hooks/products/useSupplierNames';
 import {
   safeVelocityTrend,
   safeNumber,
@@ -41,15 +42,17 @@ export function useStockChartData(productId: string) {
     refetch: refetchSummary,
   } = useStockDailySummary(productId, days);
   const {
-    data: velocity,
+    data: _velocity,
     error: velocityError,
     refetch: refetchVelocity,
   } = useStockVelocity(productId);
+  const velocity = _velocity as StockVelocity[] | undefined;
   const {
-    data: intelligence,
+    data: _intelligence,
     error: intelligenceError,
     refetch: refetchIntelligence,
   } = useProductIntelligenceData(productId);
+  const intelligence = _intelligence as ProductIntelligenceData | null | undefined;
 
   const hasData = !!summaries?.length;
   const hasError = !!(summaryError || velocityError || intelligenceError);
@@ -88,10 +91,17 @@ export function useStockChartData(productId: string) {
     if (!hasData) return mockChartData;
     const supplierId = selectedSupplier === 'all' ? undefined : selectedSupplier;
     const aggregated = aggregateDailySummaryByDate(summaries ?? [], supplierId);
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - days);
+    // BUG-CHART-CUTOFF: new Date('YYYY-MM-DD') is parsed as UTC midnight; comparing
+    // it against a local-time Date causes an off-by-one at the period boundary in
+    // non-UTC timezones (e.g. Brazil UTC-3 drops the oldest day).
+    // Fix: derive a local-timezone cutoff string and compare lexicographically —
+    // safe because 'YYYY-MM-DD' strings are zero-padded and lexicographically ordered.
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const cutoffStr = `${cutoffDate.getFullYear()}-${pad(cutoffDate.getMonth() + 1)}-${pad(cutoffDate.getDate())}`;
     return aggregated
-      .filter((d) => new Date(d.date) >= cutoff)
+      .filter((d) => d.date >= cutoffStr)
       .reduce<
         Array<{
           date: string;
@@ -120,11 +130,14 @@ export function useStockChartData(productId: string) {
   const bestVelocity = useMemo(() => {
     if (effectiveVelocities.length) {
       if (selectedSupplier !== 'all') {
-        const match = effectiveVelocities.find((v) => v.supplier_id === selectedSupplier);
+        const match = effectiveVelocities.find(
+          (v: StockVelocity) => v.supplier_id === selectedSupplier,
+        );
         if (match) return match;
       }
       return effectiveVelocities.reduce(
-        (best, v) => (v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best),
+        (best: StockVelocity, v: StockVelocity) =>
+          v.avg_daily_depletion_7d > (best?.avg_daily_depletion_7d ?? 0) ? v : best,
         effectiveVelocities[0],
       );
     }
@@ -175,7 +188,7 @@ export function useStockChartData(productId: string) {
       return name ? `em ${name}` : 'fornecedor selecionado';
     }
     const count = effectiveIntelligence?.supplier_count;
-    if (count === null || count === 0) return 'no fornecedor';
+    if (!count) return 'no fornecedor';
     return `em ${count} fornecedor${count > 1 ? 'es' : ''}`;
   }, [effectiveIntelligence, selectedSupplier, supplierNamesMap]);
 

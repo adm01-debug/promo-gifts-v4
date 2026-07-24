@@ -2,6 +2,11 @@
  * Logic tests for SellerCartsPage, QuoteBuilderPage, QuoteViewPage
  * These pages are too deeply interconnected for render tests in jsdom,
  * so we test their utility logic and data transformations.
+ *
+ * FIX 2026-06-29: ciclo de vida do carrinho reduzido para 2 estados
+ * (espelha STATUS_CONFIG + CartStatus + a constraint chk_sc_status do banco):
+ *   'em_separacao' (default) | 'pronto_orcamento'.
+ * Os valores antigos 'novo' e 'em_negociacao' foram colapsados em 'em_separacao'.
  */
 import { describe, it, expect } from "vitest";
 
@@ -14,18 +19,20 @@ function formatCNPJ(cnpj: string): string {
   return cnpj;
 }
 
-// Cart status logic from SellerCartsPage
-type CartStatus = "rascunho" | "aberto" | "enviado" | "aprovado" | "cancelado";
+/**
+ * CartStatus — espelha exatamente o tipo e STATUS_CONFIG de produção:
+ *   src/hooks/products/useSellerCarts.ts  (export type CartStatus)
+ *   src/components/cart/CartUtilComponents.tsx (STATUS_CONFIG)
+ */
+type CartStatus = "em_separacao" | "pronto_orcamento";
+
+const STATUS_COLORS: Record<CartStatus, string> = {
+  em_separacao: "bg-warning/10 text-warning border-warning/20",
+  pronto_orcamento: "bg-success/10 text-success border-success/20",
+};
 
 function getStatusColor(status: CartStatus): string {
-  const colors: Record<CartStatus, string> = {
-    rascunho: "secondary",
-    aberto: "default",
-    enviado: "outline",
-    aprovado: "default",
-    cancelado: "destructive",
-  };
-  return colors[status] || "secondary";
+  return STATUS_COLORS[status] ?? STATUS_COLORS.em_separacao;
 }
 
 function calculateCartTotal(items: Array<{ quantity: number; product_price: number }>): number {
@@ -56,10 +63,20 @@ describe("Page Utilities - SellerCartsPage", () => {
     expect(calculateCartTotal([])).toBe(0);
   });
 
-  it("returns correct status colors", () => {
-    expect(getStatusColor("rascunho")).toBe("secondary");
-    expect(getStatusColor("aprovado")).toBe("default");
-    expect(getStatusColor("cancelado")).toBe("destructive");
+  it("returns correct color for 'em_separacao'", () => {
+    expect(getStatusColor("em_separacao")).toBe("bg-warning/10 text-warning border-warning/20");
+  });
+
+  it("returns correct color for 'pronto_orcamento'", () => {
+    expect(getStatusColor("pronto_orcamento")).toBe("bg-success/10 text-success border-success/20");
+  });
+
+  it("STATUS_COLORS cobre todos os valores de CartStatus sem fallback", () => {
+    const statuses: CartStatus[] = ["em_separacao", "pronto_orcamento"];
+    for (const s of statuses) {
+      expect(STATUS_COLORS[s]).toBeDefined();
+      expect(getStatusColor(s)).toBe(STATUS_COLORS[s]);
+    }
   });
 });
 

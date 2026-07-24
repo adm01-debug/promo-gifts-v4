@@ -1,7 +1,8 @@
+import { dbInvoke } from '@/lib/db/postgrest';
+import { logger } from '@/lib/logger';
 /**
  * Price tables for Promobrind customization.
  */
-import { invokeExternalDb } from './bridge';
 
 export interface PromobrindPriceTable {
   id: string;
@@ -36,14 +37,23 @@ export async function fetchPromobrindPriceTables(options?: {
   if (options?.techniqueName) filters.customization_type_name = options.techniqueName;
   if (options?.techniqueCode) filters.table_code = options.techniqueCode;
 
-  const result = await invokeExternalDb<Record<string, unknown>>({
-    table: 'customization_price_tables',
-    operation: 'select',
-    filters,
-    select: '*',
-    limit: 500,
-    orderBy: { column: 'tier_1_min_qty', ascending: true },
-  });
+  let result: { records: Record<string, unknown>[] };
+  try {
+    result = await dbInvoke<Record<string, unknown>>({
+      table: 'customization_price_tables',
+      operation: 'select',
+      filters,
+      select: '*',
+      limit: 500,
+      orderBy: { column: 'tier_1_min_qty', ascending: true },
+    });
+  } catch (err) {
+    if (err instanceof Error && (err.message.includes('410') || err.message.includes('Gone'))) {
+      logger.warn('[price-tables] Bridge deprecated (410) for customization_price_tables');
+      return [];
+    }
+    throw err;
+  }
 
   let tables: PromobrindPriceTable[] = result.records.map((r) => ({
     id: r.id as string,

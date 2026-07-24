@@ -4,13 +4,13 @@
  *
  * Retorna um ref que deve ser anexado ao elemento sentinela no final da lista.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef } from 'react';
 
 export function useInfiniteScroll<T extends HTMLElement = HTMLDivElement>(
   onLoadMore: () => void,
   options: { enabled?: boolean; rootMargin?: string } = {},
 ) {
-  const { enabled = true, rootMargin = "120px" } = options;
+  const { enabled = true, rootMargin = '120px' } = options;
   const sentinelRef = useRef<T | null>(null);
   // Mantemos o callback estável dentro do efeito.
   const cbRef = useRef(onLoadMore);

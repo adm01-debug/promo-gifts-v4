@@ -1,0 +1,194 @@
+name: E2E Quotes Undo (04o/04p/04q)
+
+# Executa os specs de exclusão de orçamentos com "Desfazer" em ambiente
+# real usando credenciais E2E do repositório. Também executa uma passagem
+# em modo mock (E2E_MOCK_AUTH=1) para garantir que o fluxo funciona sem
+# credenciais — útil para forks e PRs externos.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "e2e/flows/04o-*.spec.ts"
+      - "e2e/flows/04p-*.spec.ts"
+      - "e2e/flows/04q-*.spec.ts"
+      - "e2e/flows/04r-*.spec.ts"
+      - "e2e/flows/04s-*.spec.ts"
+      - "e2e/helpers/mock-auth.ts"
+      - "e2e/helpers/diagnostics.ts"
+      - "e2e/helpers/quotes-status-seed.ts"
+      - "scripts/run-e2e-quotes-undo.mjs"
+      - "scripts/e2e-mock-auth-setup.mjs"
+      - "src/utils/undoToast.tsx"
+      - ".github/workflows/e2e-quotes-undo.yml"
+  pull_request:
+    paths:
+      - "e2e/flows/04o-*.spec.ts"
+      - "e2e/flows/04p-*.spec.ts"
+      - "e2e/flows/04q-*.spec.ts"
+      - "e2e/flows/04r-*.spec.ts"
+      - "e2e/flows/04s-*.spec.ts"
+      - "e2e/helpers/mock-auth.ts"
+      - "e2e/helpers/diagnostics.ts"
+      - "e2e/helpers/quotes-status-seed.ts"
+      - "scripts/run-e2e-quotes-undo.mjs"
+      - "scripts/e2e-mock-auth-setup.mjs"
+      - "src/utils/undoToast.tsx"
+      - ".github/workflows/e2e-quotes-undo.yml"
+  workflow_dispatch:
+    inputs:
+      focus:
+        description: "Restringir a um único spec (ex.: 04q). Vazio = todos."
+        required: false
+        default: ""
+
+jobs:
+  # ==========================================================================
+  # JOB 1 — Ambiente REAL com credenciais E2E do repositório.
+  # Só roda se os secrets estiverem configurados (skip automático em forks).
+  # ==========================================================================
+  quotes-undo-e2e-real:
+    name: Playwright — 04q real (credenciais E2E)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Evita rodar em PRs de forks (não têm acesso aos secrets do repo).
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Guard: sem credenciais, o job real é abortado com mensagem clara
+      # (evita horas de execução com "Missing E2E_USER_EMAIL").
+      - name: Verificar secrets de credenciais
+        id: creds
+        run: |
+          if [ -z "${E2E_USER_EMAIL:-}" ] || [ -z "${E2E_USER_PASSWORD:-}" ]; then
+            echo "::warning::Secrets E2E_USER_EMAIL/E2E_USER_PASSWORD ausentes — job real será marcado como skipped."
+            echo "has_creds=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_creds=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.creds.outputs.has_creds == 'true'
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        if: steps.creds.outputs.has_creds == 'true'
+        run: npm ci
+
+      - name: Install Playwright browsers
+        if: steps.creds.outputs.has_creds == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Build app
+        if: steps.creds.outputs.has_creds == 'true'
+        run: npm run build
+
+      # 1ª passada — todos os specs 04o/04p/04q com o wrapper npm.
+      # Focus opcional (workflow_dispatch): permite rodar só 04q em manual.
+      - name: Run 04o/04p/04q specs (1ª passada)
+        id: run1
+        if: steps.creds.outputs.has_creds == 'true'
+        run: |
+          if [ -n "${{ github.event.inputs.focus }}" ]; then
+            echo "▶ Focused run: e2e/flows/${{ github.event.inputs.focus }}"
+            npx playwright test "e2e/flows/${{ github.event.inputs.focus }}" \
+              --project=chromium-authed --retries=0 --reporter=html,list,github
+          else
+            npm run test:e2e:quotes-undo -- --retries=0 --reporter=html,list,github
+          fi
+        env:
+          CI: "1"
+
+      # 2ª passada — apenas os specs falhos (uma retentativa).
+      - name: Re-run failed specs (única retentativa)
+        if: steps.creds.outputs.has_creds == 'true' && failure() && steps.run1.conclusion == 'failure'
+        run: npx playwright test --last-failed --project=chromium-authed --retries=0 --reporter=html,list,github
+        env:
+          CI: "1"
+
+      - name: Upload Playwright HTML report (real)
+        if: steps.creds.outputs.has_creds == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quotes-undo-real
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload test-results (trace, screenshot, HTML dumps)
+        if: steps.creds.outputs.has_creds == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-quotes-undo-real
+          path: |
+            test-results/
+            e2e/.evidence/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ==========================================================================
+  # JOB 2 — Sanidade em modo MOCK (sem credenciais). Roda sempre, inclusive
+  # em forks — garante que a suíte permanece executável sem secrets.
+  # ==========================================================================
+  quotes-undo-e2e-mock:
+    name: Playwright — 04q mock (sem credenciais)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      E2E_MOCK_AUTH: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build app
+        run: npm run build
+
+      - name: Setup mock auth storageState
+        run: npm run e2e:mock-auth-setup
+
+      - name: Run 04o/04p/04q specs (mock auth)
+        run: npm run test:e2e:quotes-undo:mock -- --retries=0 --reporter=html,list,github
+        env:
+          CI: "1"
+
+      - name: Upload Playwright HTML report (mock)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quotes-undo-mock
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload test-results (mock)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-quotes-undo-mock
+          path: |
+            test-results/
+            e2e/.evidence/
+          retention-days: 14
+          if-no-files-found: ignore

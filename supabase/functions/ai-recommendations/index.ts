@@ -1,60 +1,45 @@
-// build-tag: 2026-04-16-fix-nonneg
-import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
+import { getCorsHeaders } from '../_shared/cors.ts';
+import { z } from 'npm:zod@3.23.8';
+import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
 import { authenticateRequest, authErrorResponse } from '../_shared/auth.ts';
-import { callAiWithTracking, QuotaExceededError } from '../_shared/ai-usage.ts';
-import { z } from '../_shared/zod-validate.ts';
-import { rateLimiters, applyRateLimit } from '../_shared/rate-limiter.ts';
-import { runBotProtection } from '../_shared/bot-protection.ts';
-import { extractAndParseAIJSON, safeJson } from '../_shared/json-parser.ts';
+import { safeJson } from '../_shared/json-parser.ts';
+import { resolveCredential } from '../_shared/credentials.ts';
+import { safeErrorFields } from '../_shared/log-safety.ts';
+import { applyRateLimit, rateLimiters } from '../_shared/rate-limiter.ts';
 
-const ClientSchema = z.object({
-  name: z.string().trim().min(1).max(255),
-  company: z.string().max(255).optional(),
-  industry: z.string().max(100).optional(),
-  preferences: z.array(z.string().max(100)).max(20).optional(),
-  purchaseHistory: z.array(z.string().max(200)).max(50).optional(),
-  budget: z.string().max(100).optional(),
-});
-
-const ProductSchema = z.object({
-  id: z.string().min(1).max(100),
-  name: z.string().min(1).max(255),
-  category: z.string().min(1).max(100),
-  description: z.string().max(1000).optional(),
-  priceRange: z.string().max(50).optional(),
-  tags: z.array(z.string().max(50)).max(20).optional(),
-});
+const AI_ENDPOINT = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+const AI_MODEL = 'google/gemini-2.5-flash';
 
 const RecommendationRequestSchema = z.object({
-  client: ClientSchema,
-  products: z.array(ProductSchema).min(1).max(100),
+  client: z.object({
+    name: z.string(),
+    company: z.string().optional(),
+    industry: z.string().optional(),
+    preferences: z.array(z.string()).optional(),
+    purchaseHistory: z.array(z.string()).optional(),
+    budget: z.string().optional(),
+  }),
+  products: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    category: z.string(),
+    tags: z.array(z.string()).optional(),
+  })),
 });
-
-/**
- * JSON robustness is now handled by _shared/json-parser.ts
- */
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    // Anti-scraping: bot UA check + rate limit por IP (camada externa antes do auth)
-    const protection = await runBotProtection(req, {
-      endpoint: 'ai-recommendations',
-      maxRequests: 60,
-      windowSeconds: 60,
-      blockSeconds: 1800,
-    }, corsHeaders);
-    if (!protection.allowed) return protection.blockResponse!;
+    let user: { id: string };
+    try {
+      const authResult = await authenticateRequest(req);
+      user = { id: authResult.userId };
+    } catch (authErr) {
+      return authErrorResponse(authErr, corsHeaders);
+    }
 
-    // Auth guard: require authenticated user
-    const auth = await authenticateRequest(req);
-    const user = { id: auth.userId };
-
-    // Rate limit: 20 req/min por usuário
     const rl = await applyRateLimit(req, rateLimiters.ai, () => user.id);
     if (rl) {
       const headers = new Headers(rl.headers);
@@ -62,126 +47,85 @@ Deno.serve(async (req) => {
       return new Response(rl.body, { status: rl.status, headers });
     }
 
+    const { value: LOVABLE_API_KEY } = await resolveCredential('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.warn('[ai-recommendations] LOVABLE_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ recommendations: [], insights: 'Serviço de IA não configurado.' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     const rawBody = await safeJson(req);
     if (!rawBody) {
-      return new Response(JSON.stringify({ error: "Invalid or empty request body" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ error: 'Invalid or empty request body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const parsed = RecommendationRequestSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Validation failed", details: parsed.error.flatten().fieldErrors }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: 'Validation failed', details: parsed.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
     const { client, products } = parsed.data;
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    const systemPrompt = `Você é um especialista em brindes promocionais e marketing corporativo.
+Retorne EXATAMENTE em formato JSON (sem markdown):
+{"recommendations":[{"productId":"id","score":0.95,"reason":"Motivo"}],"insights":"Análise"}`;
 
-    const systemPrompt = `Você é um especialista em brindes promocionais e marketing corporativo. 
-Sua tarefa é analisar o perfil de um cliente e recomendar os melhores produtos para ele.
+    const userPrompt = `Cliente: ${client.name}${client.industry ? ` | Segmento: ${client.industry}` : ''}\nProdutos: ${products.map(p => `${p.id}|${p.name}|${p.category}`).join(', ')}`;
 
-Considere:
-- O segmento/indústria do cliente
-- Histórico de compras anteriores
-- Preferências de cores e estilos
-- Orçamento disponível
-- Ocasiões e datas comemorativas relevantes
-
-Retorne EXATAMENTE em formato JSON com a estrutura:
-{
-  "recommendations": [
-    {
-      "productId": "id do produto",
-      "score": 0.95,
-      "reason": "Motivo breve da recomendação"
-    }
-  ],
-  "insights": "Uma análise geral do perfil do cliente e sugestões"
-}
-
-Ordene por score (maior primeiro). Retorne no máximo 6 recomendações.`;
-
-    const userPrompt = `
-## Perfil do Cliente
-- Nome: ${client.name}
-${client.company ? `- Empresa: ${client.company}` : ""}
-${client.industry ? `- Segmento: ${client.industry}` : ""}
-${client.preferences?.length ? `- Preferências: ${client.preferences.join(", ")}` : ""}
-${client.purchaseHistory?.length ? `- Histórico de Compras: ${client.purchaseHistory.join(", ")}` : ""}
-${client.budget ? `- Orçamento: ${client.budget}` : ""}
-
-## Produtos Disponíveis
-${products.map(p => `- ID: ${p.id} | ${p.name} | Categoria: ${p.category}${p.tags?.length ? ` | Tags: ${p.tags.join(", ")}` : ""}`).join("\n")}
-
-Com base no perfil do cliente, recomende os produtos mais adequados.`;
-
-    const model = "google/gemini-2.5-flash";
-
-    const response = await callAiWithTracking({
-      userId: user.id,
-      functionName: "ai-recommendations",
-      model,
-      apiKey: LOVABLE_API_KEY,
-      requestBody: {
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em alguns minutos." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos na sua conta." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      await response.text();
-      console.error("AI Gateway error:", { status: response.status });
-      throw new Error(`AI Gateway error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      throw new Error("No content in AI response");
-    }
-
-    // Parse JSON from response — robust extraction + sanitization to survive
-    // markdown fences, trailing commas, prose around the JSON, and minor truncation.
-    const recommendations = extractAndParseAIJSON(content);
-
-    return new Response(JSON.stringify(recommendations), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    if (error instanceof QuotaExceededError) {
+    let aiResponse: Response;
+    try {
+      aiResponse = await fetchWithBreaker('lovable-ai', AI_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: AI_MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        }),
+      });
+    } catch (aiErr) {
+      console.error('[ai-recommendations] Lovable AI request failed:', safeErrorFields(aiErr));
       return new Response(
-        JSON.stringify({ error: "Limite mensal de IA atingido. Contate o administrador." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+        JSON.stringify({ recommendations: [], insights: 'Serviço de IA temporariamente indisponível.' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    if ((error as any)?.status === 401 || (error as any)?.status === 403) {
-      return authErrorResponse(error, corsHeaders);
+
+    if (!aiResponse.ok) {
+      await aiResponse.text();
+      console.error('[ai-recommendations] Lovable AI error:', aiResponse.status);
+      return new Response(
+        JSON.stringify({ recommendations: [], insights: 'Serviço de IA temporariamente indisponível.' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    console.error("Error in ai-recommendations:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro ao gerar recomendações" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+
+    const aiData = await aiResponse.json();
+    const content = aiData?.choices?.[0]?.message?.content || '{}';
+
+    let result: { recommendations: unknown[]; insights: string };
+    try {
+      const cleaned = content.replace(/```json\n?|```/g, '').trim();
+      result = JSON.parse(cleaned);
+    } catch {
+      result = { recommendations: [], insights: content };
+    }
+
+    return new Response(JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+  } catch (err) {
+    console.error('[ai-recommendations] error:', safeErrorFields(err));
+    if (err instanceof CircuitOpenError) return circuitOpenResponse(err, corsHeaders);
+    const message = err instanceof Error ? err.message : 'Erro desconhecido';
+    return new Response(JSON.stringify({ error: message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 });

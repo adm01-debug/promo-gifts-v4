@@ -7,10 +7,10 @@ import {
   Settings2,
   AlertTriangle,
   type LucideIcon,
-} from "lucide-react";
-import type { ErrorKind } from "@/hooks/intelligence";
+} from 'lucide-react';
+import type { ErrorKind } from '@/hooks/intelligence';
 
-export type ErrorTone = "timeout" | "network" | "dns" | "auth" | "http" | "config" | "unknown";
+export type ErrorTone = 'auth' | 'config' | 'dns' | 'http' | 'network' | 'timeout' | 'unknown';
 
 export interface ErrorCopy {
   /** Título humano e curto. */
@@ -35,67 +35,70 @@ export function getErrorCopy(
   timeoutMs?: number | null,
 ): ErrorCopy {
   switch (kind) {
-    case "timeout":
+    case 'timeout':
       return {
-        title: "Tempo esgotado",
-        hint: timeoutMs && timeoutMs > 0
-          ? `O endpoint não respondeu em ${timeoutMs}ms. Verifique se o serviço está ativo e acessível.`
-          : "O endpoint não respondeu em tempo. Verifique se o serviço está ativo e acessível.",
+        title: 'Tempo esgotado',
+        hint:
+          timeoutMs && timeoutMs > 0
+            ? `O endpoint não respondeu em ${timeoutMs}ms. Verifique se o serviço está ativo e acessível.`
+            : 'O endpoint não respondeu em tempo. Verifique se o serviço está ativo e acessível.',
         icon: Clock,
-        tone: "timeout",
+        tone: 'timeout',
       };
-    case "network":
+    case 'network':
       return {
-        title: "Sem conexão com o serviço",
-        hint: "Falha de rede ao alcançar o destino. Verifique firewall, VPN ou se o host está no ar.",
+        title: 'Sem conexão com o serviço',
+        hint: 'Falha de rede ao alcançar o destino. Verifique firewall, VPN ou se o host está no ar.',
         icon: WifiOff,
-        tone: "network",
+        tone: 'network',
       };
-    case "dns":
+    case 'dns':
       return {
-        title: "URL não encontrada",
-        hint: "O DNS não resolveu o domínio. Confira a URL configurada na conexão.",
+        title: 'URL não encontrada',
+        hint: 'O DNS não resolveu o domínio. Confira a URL configurada na conexão.',
         icon: Globe,
-        tone: "dns",
+        tone: 'dns',
       };
-    case "auth":
+    case 'auth':
       return {
-        title: "Credenciais rejeitadas",
-        hint: "Token, chave ou senha inválido/expirado. Reabra o secret e cole o valor atualizado.",
+        title: 'Credenciais rejeitadas',
+        hint: 'Token, chave ou senha inválido/expirado. Reabra o secret e cole o valor atualizado.',
         icon: KeyRound,
-        tone: "auth",
+        tone: 'auth',
       };
-    case "http": {
+    case 'http': {
       const s = status ?? 0;
-      let hint = "O serviço destino retornou um erro. Inspecione a resposta nos detalhes.";
+      let hint = 'O serviço destino retornou um erro. Inspecione a resposta nos detalhes.';
       if (s >= 400 && s < 500) {
-        hint = "Requisição rejeitada pelo serviço. Verifique payload, permissões e escopos.";
+        hint = 'Requisição rejeitada pelo serviço. Verifique payload, permissões e escopos.';
       } else if (s >= 500) {
-        hint = "Instabilidade no serviço destino. Tente novamente em alguns minutos.";
+        hint = 'Instabilidade no serviço destino. Tente novamente em alguns minutos.';
       }
       return {
-        title: status ? `Erro HTTP ${status}` : "Erro HTTP",
+        title: status ? `Erro HTTP ${status}` : 'Erro HTTP',
         hint,
         icon: ServerCrash,
-        tone: "http",
+        tone: 'http',
       };
     }
-    case "config":
+    case 'config':
       return {
-        title: "Configuração incompleta",
-        hint: "Faltam campos obrigatórios. Edite a conexão e preencha todas as credenciais.",
+        title: 'Configuração incompleta',
+        hint: 'Faltam campos obrigatórios. Edite a conexão e preencha todas as credenciais.',
         icon: Settings2,
-        tone: "config",
+        tone: 'config',
       };
-    case "unknown":
+    case 'unknown':
     case null:
     case undefined:
     default:
       return {
-        title: "Falha na conexão",
-        hint: fallbackMessage?.trim() || "Não foi possível identificar a causa. Veja os detalhes do teste.",
+        title: 'Falha na conexão',
+        hint:
+          fallbackMessage?.trim() ||
+          'Não foi possível identificar a causa. Veja os detalhes do teste.',
         icon: AlertTriangle,
-        tone: "unknown",
+        tone: 'unknown',
       };
   }
 }
@@ -107,34 +110,41 @@ export function getErrorCopy(
  */
 export function getKindBadgeClass(tone: ErrorTone): string {
   switch (tone) {
-    case "timeout":
-      return "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400";
-    case "network":
-      return "border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-400";
-    case "dns":
-      return "border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-400";
-    case "auth":
-      return "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-400";
-    case "http":
-      return "border-destructive/40 bg-destructive/10 text-destructive";
-    case "config":
-      return "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400";
-    case "unknown":
+    case 'timeout':
+      return 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400';
+    case 'network':
+      return 'border-brand-primary-500/40 bg-brand-primary-500/10 text-brand-primary-700 dark:text-brand-primary-400';
+    case 'dns':
+      return 'border-purple-500/40 bg-purple-500/10 text-purple-700 dark:text-purple-400';
+    case 'auth':
+      return 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-400';
+    case 'http':
+      return 'border-destructive/40 bg-destructive/10 text-destructive';
+    case 'config':
+      return 'border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-400';
+    case 'unknown':
     default:
-      return "border-muted-foreground/40 bg-muted text-muted-foreground";
+      return 'border-muted-foreground/40 bg-muted text-muted-foreground';
   }
 }
 
 /** Rótulo PT-BR curto e legível para o badge. */
 export function getKindLabel(tone: ErrorTone): string {
   switch (tone) {
-    case "timeout": return "Timeout";
-    case "network": return "Rede";
-    case "dns": return "DNS";
-    case "auth": return "Auth";
-    case "http": return "HTTP";
-    case "config": return "Config";
-    case "unknown":
-    default: return "Desconhecido";
+    case 'timeout':
+      return 'Timeout';
+    case 'network':
+      return 'Rede';
+    case 'dns':
+      return 'DNS';
+    case 'auth':
+      return 'Auth';
+    case 'http':
+      return 'HTTP';
+    case 'config':
+      return 'Config';
+    case 'unknown':
+    default:
+      return 'Desconhecido';
   }
 }

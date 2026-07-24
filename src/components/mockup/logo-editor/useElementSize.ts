@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from 'react';
 
 export function useElementSize<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
@@ -15,14 +15,14 @@ export function useElementSize<T extends HTMLElement>() {
 
     update();
 
-    if (typeof ResizeObserver !== "undefined") {
+    if (typeof ResizeObserver !== 'undefined') {
       const ro = new ResizeObserver(() => update());
       ro.observe(el);
       return () => ro.disconnect();
     }
 
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
   }, []);
 
   return { ref, size };

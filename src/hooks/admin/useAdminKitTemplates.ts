@@ -5,11 +5,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { KitTemplateRow } from "@/hooks/kit-builder/useKitTemplates";
+import { sanitizeError } from '@/lib/security/sanitize-error';
+import type { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import type { KitTemplateRow } from '@/hooks/kit-builder/useKitTemplates';
 
 const QUERY_KEY = ['admin-kit-templates'] as const;
 
-export type KitTemplateInput = Partial<Omit<KitTemplateRow, 'id' | 'created_at' | 'updated_at'>> & {
+export type KitTemplateInput = Partial<Omit<KitTemplateRow, 'created_at' | 'id' | 'updated_at'>> & {
   name: string;
 };
 
@@ -34,13 +36,13 @@ export function useAdminKitTemplates() {
       if (id) {
         const { error } = await supabase
           .from('kit_templates')
-          .update(payload as never)
+          .update(payload as unknown as TablesUpdate<'kit_templates'>)
           .eq('id', id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('kit_templates')
-          .insert(payload as never);
+          .insert(payload as unknown as TablesInsert<'kit_templates'>);
         if (error) throw error;
       }
     },
@@ -49,7 +51,7 @@ export function useAdminKitTemplates() {
       queryClient.invalidateQueries({ queryKey: ['kit-templates'] });
       toast.success('Template salvo');
     },
-    onError: (err: Error) => toast.error(`Erro: ${err.message}`),
+    onError: (err: Error) => toast.error('Operação falhou', { description: sanitizeError(err) }),
   });
 
   const deleteMutation = useMutation({
@@ -66,10 +68,10 @@ export function useAdminKitTemplates() {
   });
 
   const toggleActiveMutation = useMutation({
-    mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
         .from('kit_templates')
-        .update({ is_active } as never)
+        .update({ is_active: isActive })
         .eq('id', id);
       if (error) throw error;
     },

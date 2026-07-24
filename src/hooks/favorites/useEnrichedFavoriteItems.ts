@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import { useFavoriteListItems, type FavoriteListItem } from "@/hooks/favorites";
-import { useProductsContext } from "@/contexts/ProductsContext";
-import type { Product } from "@/types/product";
+import { useMemo } from 'react';
+import { useFavoriteListItems, type FavoriteListItem } from '@/hooks/favorites';
+import { useProductsContext } from '@/contexts/ProductsContext';
+import type { Product } from '@/types/product-catalog';
 
 export interface EnrichedFavoriteItem {
   item: FavoriteListItem;
@@ -14,7 +14,7 @@ export interface EnrichedFavoriteItem {
 
 /** Cruza favorite_items remotos + ProductsContext + price diff calculado. */
 export function useEnrichedFavoriteItems(listId: string | null) {
-  const { items, isLoading, addItem, updateItem, removeItem, moveItem, refetch } =
+  const { items, isLoading, addItem, updateItem, removeItem, removeItems, moveItem, refetch } =
     useFavoriteListItems(listId);
   const { getProductsByIds, products: _signal } = useProductsContext();
 
@@ -33,7 +33,10 @@ export function useEnrichedFavoriteItems(listId: string | null) {
 
       let priceDiffPct: number | null = null;
       if (product && item.price_at_save && item.price_at_save > 0) {
-        const current = product.price ?? 0;
+        const current =
+          typeof (product as { sale_price?: number }).sale_price === 'number'
+            ? ((product as { sale_price?: number }).sale_price ?? 0)
+            : (product.price ?? 0);
         if (current > 0) {
           priceDiffPct = ((current - item.price_at_save) / item.price_at_save) * 100;
         }
@@ -50,6 +53,7 @@ export function useEnrichedFavoriteItems(listId: string | null) {
     addItem,
     updateItem,
     removeItem,
+    removeItems,
     moveItem,
     refetch,
   };

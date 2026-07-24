@@ -13,6 +13,7 @@
 import type { RpcContract } from './rpc-contracts';
 import { recordContractMismatch } from './adapters/schema-detection';
 
+import { logger } from '@/lib/logger';
 export interface ValidationResult {
   contract: string;
   ok: boolean;
@@ -26,7 +27,7 @@ function warnOnce(key: string, msg: string, payload?: unknown): void {
   if (warnedKeys.has(key)) return;
   warnedKeys.add(key);
 
-  console.warn(`[rpc-validator] ${msg}`, payload);
+  logger.warn(`[rpc-validator] ${msg}`, payload);
 }
 
 function isObject(v: unknown): v is Record<string, unknown> {

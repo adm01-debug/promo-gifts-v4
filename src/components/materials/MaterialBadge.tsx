@@ -1,4 +1,4 @@
-import { EntityBadge } from "@/components/common/EntityBadge";
+import { EntityBadge } from '@/components/common/EntityBadge';
 
 /**
  * Badge for displaying a Material (Plástico, Metal, Tecido, etc).
@@ -11,8 +11,8 @@ interface MaterialBadgeProps {
   name: string;
   groupName?: string;
   hexCode?: string | null;
-  size?: "sm" | "md" | "lg";
-  variant?: "default" | "outline" | "solid" | "ghost";
+  size?: 'lg' | 'md' | 'sm';
+  variant?: 'default' | 'ghost' | 'outline' | 'solid';
   showGroup?: boolean;
   onClick?: () => void;
   onRemove?: () => void;
@@ -25,8 +25,8 @@ export function MaterialBadge({
   name,
   groupName,
   hexCode,
-  size = "md",
-  variant = "default",
+  size = 'md',
+  variant = 'default',
   showGroup = false,
   onClick,
   onRemove,

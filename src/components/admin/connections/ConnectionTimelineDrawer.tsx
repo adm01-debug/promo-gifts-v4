@@ -5,7 +5,7 @@
  * - Tabela paginada dos últimos 50 testes
  * - Top 5 erros agrupados
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -13,9 +13,9 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -23,17 +23,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { History, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { ExportButton } from "./ExportButton";
+} from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { History, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { ExportButton } from './ExportButton';
 import {
   Area,
   AreaChart,
@@ -42,10 +36,12 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { formatDistanceToNow, format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+} from 'recharts';
+import { formatDistanceToNow, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+import { maskSensitiveText } from '@/lib/sensitive-masking';
 
 interface TestRow {
   id: string;
@@ -63,9 +59,9 @@ interface Props {
   /** Rótulo exibido no botão / cabeçalho */
   label: string;
   /** Variant do botão trigger */
-  triggerVariant?: "outline" | "ghost" | "secondary" | "default";
+  triggerVariant?: 'default' | 'ghost' | 'outline' | 'secondary';
   /** Tamanho do botão */
-  triggerSize?: "sm" | "default";
+  triggerSize?: 'default' | 'sm';
   /** Controle externo opcional do estado aberto (ex.: abrir a partir do modal de detalhes). */
   open?: boolean;
   /** Callback quando o estado aberto muda (apenas em modo controlado). */
@@ -77,8 +73,8 @@ interface Props {
 export function ConnectionTimelineDrawer({
   type,
   label,
-  triggerVariant = "outline",
-  triggerSize = "sm",
+  triggerVariant = 'outline',
+  triggerSize = 'sm',
   open: openProp,
   onOpenChange,
   hideTrigger = false,
@@ -100,11 +96,21 @@ export function ConnectionTimelineDrawer({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      // Busca conexões deste tipo
-      const { data: conns } = await supabase
-        .from("external_connections")
-        .select("id")
-        .eq("type", type);
+      // BUG-CONNTIMEDRAWER-CONNS-SELECT-SILENT-FAIL FIX: error not checked — RLS failure
+      // silently set ids=[] causing drawer to show empty-state instead of an error.
+      const { data: conns, error: connsErr } = await supabase
+        .from('external_connections')
+        .select('id')
+        .eq('type', type);
+      if (connsErr) {
+        logger.error('[connections.timeline] failed to load connections', {
+          type,
+          code: connsErr.code ?? 'unknown',
+          message: maskSensitiveText(connsErr.message) ?? 'unknown',
+        });
+        if (!cancelled) setLoading(false);
+        return;
+      }
       const ids = (conns ?? []).map((c) => c.id);
       if (ids.length === 0) {
         if (!cancelled) {
@@ -114,13 +120,19 @@ export function ConnectionTimelineDrawer({
         return;
       }
       const { data, error } = await supabase
-        .from("connection_test_history")
-        .select("*")
-        .in("connection_id", ids)
-        .order("tested_at", { ascending: false })
+        .from('connection_test_history')
+        .select('*')
+        .in('connection_id', ids)
+        .order('tested_at', { ascending: false })
         .limit(50);
       if (!cancelled) {
-        if (error) console.error(error);
+        if (error) {
+          logger.error('[connections.timeline] failed to load history', {
+            type,
+            code: error.code ?? 'unknown',
+            message: maskSensitiveText(error.message) ?? 'unknown',
+          });
+        }
         setRows((data ?? []) as TestRow[]);
         setLoading(false);
       }
@@ -138,7 +150,7 @@ export function ConnectionTimelineDrawer({
       .slice()
       .reverse()
       .map((r) => ({
-        t: format(new Date(r.tested_at), "dd/MM HH:mm"),
+        t: format(new Date(r.tested_at), 'dd/MM HH:mm'),
         latency: r.latency_ms ?? 0,
         success: r.success,
       }));
@@ -180,18 +192,16 @@ export function ConnectionTimelineDrawer({
       {!hideTrigger && (
         <SheetTrigger asChild>
           <Button variant={triggerVariant} size={triggerSize}>
-            <History className="h-4 w-4 mr-1" /> Histórico
+            <History className="mr-1 h-4 w-4" /> Histórico
           </Button>
         </SheetTrigger>
       )}
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <History className="h-4 w-4" /> Histórico — {label}
           </SheetTitle>
-          <SheetDescription>
-            Últimos 50 testes registrados (retenção automática).
-          </SheetDescription>
+          <SheetDescription>Últimos 50 testes registrados (retenção automática).</SheetDescription>
         </SheetHeader>
 
         <div className="mt-4 space-y-4">
@@ -201,7 +211,8 @@ export function ConnectionTimelineDrawer({
             </div>
           ) : rows.length === 0 ? (
             <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-              Nenhum teste registrado ainda. Execute "Testar conexão" para começar a gravar histórico.
+              Nenhum teste registrado ainda. Execute "Testar conexão" para começar a gravar
+              histórico.
             </div>
           ) : (
             <>
@@ -210,7 +221,7 @@ export function ConnectionTimelineDrawer({
                   <CardHeader className="pb-2">
                     <CardDescription className="text-[10px]">Taxa de sucesso</CardDescription>
                     <CardTitle className="text-lg">
-                      {stats.rate === null ? "—" : `${stats.rate.toFixed(0)}%`}
+                      {stats.rate === null ? '—' : `${stats.rate.toFixed(0)}%`}
                     </CardTitle>
                   </CardHeader>
                 </Card>
@@ -249,8 +260,8 @@ export function ConnectionTimelineDrawer({
                           <Tooltip
                             contentStyle={{
                               fontSize: 11,
-                              background: "hsl(var(--popover))",
-                              border: "1px solid hsl(var(--border))",
+                              background: 'hsl(var(--popover))',
+                              border: '1px solid hsl(var(--border))',
                               borderRadius: 6,
                             }}
                           />
@@ -271,7 +282,7 @@ export function ConnectionTimelineDrawer({
               {topErrors.length > 0 && (
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 text-sm">
                       <AlertCircle className="h-4 w-4 text-destructive" /> Top erros
                     </CardTitle>
                   </CardHeader>
@@ -279,9 +290,9 @@ export function ConnectionTimelineDrawer({
                     {topErrors.map(([msg, count]) => (
                       <div
                         key={msg}
-                        className="flex items-start justify-between gap-2 text-xs p-2 rounded bg-destructive/5 border border-destructive/10"
+                        className="flex items-start justify-between gap-2 rounded border border-destructive/10 bg-destructive/5 p-2 text-xs"
                       >
-                        <span className="font-mono truncate flex-1" title={msg}>
+                        <span className="flex-1 truncate font-mono" title={msg}>
                           {msg}
                         </span>
                         <Badge variant="outline" className="shrink-0">
@@ -302,16 +313,16 @@ export function ConnectionTimelineDrawer({
                       rows={rows.map((r) => ({
                         tested_at: r.tested_at,
                         success: r.success,
-                        latency_ms: r.latency_ms ?? "",
-                        status_code: r.status_code ?? "",
-                        error_message: r.error_message ?? "",
+                        latency_ms: r.latency_ms ?? '',
+                        status_code: r.status_code ?? '',
+                        error_message: r.error_message ?? '',
                       }))}
                       columns={[
-                        { key: "tested_at", header: "tested_at" },
-                        { key: "success", header: "success" },
-                        { key: "latency_ms", header: "latency_ms" },
-                        { key: "status_code", header: "status_code" },
-                        { key: "error_message", header: "error_message" },
+                        { key: 'tested_at', header: 'tested_at' },
+                        { key: 'success', header: 'success' },
+                        { key: 'latency_ms', header: 'latency_ms' },
+                        { key: 'status_code', header: 'status_code' },
+                        { key: 'error_message', header: 'error_message' },
                       ]}
                     />
                   </div>
@@ -321,15 +332,15 @@ export function ConnectionTimelineDrawer({
                     <TableHeader>
                       <TableRow>
                         <TableHead className="text-xs">Quando</TableHead>
-                        <TableHead className="text-xs w-16">Status</TableHead>
-                        <TableHead className="text-xs w-20">Latência</TableHead>
+                        <TableHead className="w-16 text-xs">Status</TableHead>
+                        <TableHead className="w-20 text-xs">Latência</TableHead>
                         <TableHead className="text-xs">Detalhe</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paged.map((r) => (
                         <TableRow key={r.id}>
-                          <TableCell className="text-xs whitespace-nowrap">
+                          <TableCell className="whitespace-nowrap text-xs">
                             {formatDistanceToNow(new Date(r.tested_at), {
                               locale: ptBR,
                               addSuffix: true,
@@ -342,24 +353,24 @@ export function ConnectionTimelineDrawer({
                               <AlertCircle className="h-4 w-4 text-destructive" />
                             )}
                           </TableCell>
-                          <TableCell className="text-xs font-mono">
-                            {r.latency_ms !== null ? `${r.latency_ms}ms` : "—"}
+                          <TableCell className="font-mono text-xs">
+                            {r.latency_ms !== null ? `${r.latency_ms}ms` : '—'}
                           </TableCell>
                           <TableCell
                             className={cn(
-                              "text-xs truncate max-w-[200px]",
-                              !r.success && "text-destructive",
+                              'max-w-[200px] truncate text-xs',
+                              !r.success && 'text-destructive',
                             )}
-                            title={r.error_message ?? ""}
+                            title={r.error_message ?? ''}
                           >
-                            {r.error_message ?? `HTTP ${r.status_code ?? "?"}`}
+                            {r.error_message ?? `HTTP ${r.status_code ?? '?'}`}
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                   {pages > 1 && (
-                    <div className="flex items-center justify-between p-2 border-t">
+                    <div className="flex items-center justify-between border-t p-2">
                       <Button
                         size="sm"
                         variant="ghost"

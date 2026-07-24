@@ -1,0 +1,22 @@
+-- ============================================================
+-- MIGRATION: ai_queue_cleanup_cron
+-- STATUS: APLICADO em produção 2026-06-22
+-- ============================================================
+-- Cria pg_cron job 154 para auto-cleanup de items processing presos
+-- Problema raiz: 428 items ficaram presos em 'processing' por 158h+
+-- (n8n não salvou resultados, items nunca saíram de processing)
+-- Solução: cron horário que reseta items > 4h em processing
+-- ============================================================
+
+-- SELECT cron.schedule(
+--   'ai-queue-stuck-cleanup',
+--   '0 * * * *',
+--   $$UPDATE ai_enrichment_queue
+--     SET status='pending', locked_by=NULL, locked_at=NULL,
+--         last_error='cron-reset:stuck>'||ROUND(EXTRACT(EPOCH FROM (now()-locked_at))/3600,1)||'h',
+--         updated_at=now()
+--     WHERE status='processing' AND locked_at < now() - interval '4 hours'$$
+-- );
+-- jobid: 154, schedule: 0 * * * *
+
+-- Verificar: SELECT * FROM cron.job WHERE jobname='ai-queue-stuck-cleanup';

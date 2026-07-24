@@ -51,7 +51,14 @@ export const VIDEO_TYPES = [
   { value: 'lifestyle', label: 'Lifestyle', icon: Sparkles, color: 'text-primary' },
 ];
 
-export const ACCEPTED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/mpeg', 'video/ogg'];
+export const ACCEPTED_VIDEO_TYPES = [
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/mpeg',
+  'video/ogg',
+];
 export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
 
 export function formatBytes(bytes: number | null): string {
@@ -69,7 +76,10 @@ export function extractThumbnailFromVideo(file: File): Promise<Blob | null> {
     video.playsInline = true;
     video.preload = 'auto';
 
-    const cleanup = () => { URL.revokeObjectURL(url); video.remove(); };
+    const cleanup = () => {
+      URL.revokeObjectURL(url);
+      video.remove();
+    };
 
     video.addEventListener('loadeddata', () => {
       video.currentTime = Math.min(1, video.duration || 0);
@@ -81,31 +91,52 @@ export function extractThumbnailFromVideo(file: File): Promise<Blob | null> {
         canvas.width = Math.min(video.videoWidth, 640);
         canvas.height = Math.round(canvas.width * (video.videoHeight / video.videoWidth));
         const ctx = canvas.getContext('2d');
-        if (!ctx) { cleanup(); resolve(null); return; }
+        if (!ctx) {
+          cleanup();
+          resolve(null);
+          return;
+        }
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => { cleanup(); resolve(blob); }, 'image/jpeg', 0.8);
-      } catch { cleanup(); resolve(null); }
+        canvas.toBlob(
+          (blob) => {
+            cleanup();
+            resolve(blob);
+          },
+          'image/jpeg',
+          0.8,
+        );
+      } catch {
+        cleanup();
+        resolve(null);
+      }
     });
 
-    video.addEventListener('error', () => { cleanup(); resolve(null); });
-    setTimeout(() => { cleanup(); resolve(null); }, 10000);
+    video.addEventListener('error', () => {
+      cleanup();
+      resolve(null);
+    });
+    setTimeout(() => {
+      cleanup();
+      resolve(null);
+    }, 10000);
   });
 }
+
+const YOUTUBE_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+const YOUTUBE_URL_PATTERNS = [
+  /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+  /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+];
 
 /**
  * Parse YouTube URL or ID and return the video ID, or null if not valid.
  */
 export function parseYouTubeId(input: string): string | null {
   if (!input) return null;
-  // Already an ID (11 chars alphanumeric + - _)
-  if (/^[a-zA-Z0-9_-]{11}$/.test(input.trim())) return input.trim();
-  // URL patterns
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
-  ];
-  for (const p of patterns) {
-    const m = input.match(p);
+  const trimmed = input.trim();
+  if (YOUTUBE_ID_RE.test(trimmed)) return trimmed;
+  for (const p of YOUTUBE_URL_PATTERNS) {
+    const m = trimmed.match(p);
     if (m) return m[1];
   }
   return null;

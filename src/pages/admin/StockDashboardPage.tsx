@@ -1,24 +1,35 @@
-import { PageSEO } from "@/components/seo/PageSEO";
-import { StockDashboard } from "@/components/inventory/StockDashboard";
+import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { PageSEO } from '@/components/seo/PageSEO';
+import { StockDashboard } from '@/components/inventory/StockDashboard';
 
+/**
+ * StockDashboardPage — entrada de `/estoque`.
+ *
+ * Cache-busting: ao montar a rota, invalida a query `variant-stock-data`
+ * para que o usuário sempre veja números frescos (evita o efeito "preciso
+ * dar hard reload pra ver mudança"). React Query continua deduplicando,
+ * então o custo é 1 refetch por visita à rota.
+ */
 export default function StockDashboardPage() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['variant-stock-data'] });
+    queryClient.invalidateQueries({ queryKey: ['rupture-alerts'] });
+  }, [queryClient]);
+
   return (
-      <>
-        <PageSEO title="Estoque" description="Acompanhe níveis de estoque e disponibilidade dos produtos." path="/estoque" noIndex />
-        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-          <div className="flex flex-col gap-1">
-            <h1 
-              data-testid="page-title-estoque"
-              className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-            >
-              Estoque
-            </h1>
-            <p className="max-w-lg text-sm text-muted-foreground">
-              Acompanhe níveis de estoque e disponibilidade dos produtos em tempo real.
-            </p>
-          </div>
-          <StockDashboard />
-        </div>
-      </>
+    <>
+      <PageSEO
+        title="Estoque"
+        description="Acompanhe níveis de estoque e disponibilidade dos produtos."
+        path="/estoque"
+        noIndex
+      />
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        <StockDashboard />
+      </div>
+    </>
   );
 }

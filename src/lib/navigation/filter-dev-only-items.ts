@@ -17,7 +17,7 @@
  * Importante: supervisor (`isAdmin=true, isDev=false`) NUNCA enxerga itens
  * técnicos — nem por flag, nem por path no SSOT.
  */
-import { isDevOnlyPath, isAdminOnlyPath } from "@/lib/navigation/restricted-routes";
+import { isDevOnlyPath, isAdminOnlyPath } from '@/lib/navigation/restricted-routes';
 
 export interface NavFlagItem {
   devOnly?: boolean;
@@ -31,10 +31,7 @@ export interface NavRoles {
   isAdmin: boolean;
 }
 
-export function isItemVisibleForRoles<T extends NavFlagItem>(
-  item: T,
-  roles: NavRoles,
-): boolean {
+export function isItemVisibleForRoles<T extends NavFlagItem>(item: T, roles: NavRoles): boolean {
   if (item.devOnly && !roles.isDev) return false;
   if (item.adminOnly && !roles.isAdmin) return false;
   if (item.href && isDevOnlyPath(item.href) && !roles.isDev) return false;

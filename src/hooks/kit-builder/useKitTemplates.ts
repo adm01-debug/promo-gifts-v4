@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
+import type { Json } from '@/integrations/supabase/types';
 
 export interface KitTemplateRow {
   id: string;
@@ -58,9 +60,11 @@ export function useKitTemplates() {
           name: `${template.name} (cópia)`,
           status: 'draft',
           kit_type: 'montado',
-          box_data: template.box_data,
-          items_data: template.items_data,
-          personalization_data: template.personalization_data,
+          box_data: template.box_data
+            ? (structuredClone(template.box_data) as unknown as Json)
+            : null,
+          items_data: structuredClone(template.items_data) as unknown as Json,
+          personalization_data: structuredClone(template.personalization_data) as unknown as Json,
           kit_quantity: 1,
           box_price: 0,
           items_price: 0,
@@ -74,12 +78,15 @@ export function useKitTemplates() {
         })
         .select()
         .single();
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Failed to clone template');
 
       // Increment usage_count (best-effort)
       try {
-        await (supabase as unknown as { rpc: (name: string, args: Record<string, unknown>) => Promise<unknown> })
-          .rpc('increment_kit_template_usage', { _template_id: template.id });
+        await (
+          supabase as unknown as {
+            rpc: (name: string, args: Record<string, unknown>) => Promise<unknown>;
+          }
+        ).rpc('increment_kit_template_usage', { _template_id: template.id });
       } catch {
         /* best-effort */
       }
@@ -90,7 +97,7 @@ export function useKitTemplates() {
       queryClient.invalidateQueries({ queryKey: ['custom-kits'] });
       toast.success('Template clonado para os seus kits!');
     },
-    onError: (err: Error) => toast.error(`Erro ao clonar: ${err.message}`),
+    onError: (err: Error) => toast.error('Erro ao clonar', { description: sanitizeError(err) }),
   });
 
   return {

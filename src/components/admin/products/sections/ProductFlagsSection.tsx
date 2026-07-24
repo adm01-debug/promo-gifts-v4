@@ -59,8 +59,8 @@ function formatRemaining(expiresAt: string | null): string | null {
 }
 
 type ExpiryKey =
-  | 'is_featured_expires_at'
   | 'is_bestseller_expires_at'
+  | 'is_featured_expires_at'
   | 'is_new_expires_at'
   | 'is_on_sale_expires_at';
 
@@ -159,7 +159,7 @@ export function ProductFlagsSection({ setValue, flags, expirations }: Props) {
                     <TooltipTrigger asChild>
                       <Info className="h-3 w-3 shrink-0 cursor-help text-muted-foreground/40" />
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-[220px] text-xs">{hint}</TooltipContent>
+                    <TooltipContent>{hint}</TooltipContent>
                   </Tooltip>
                 </div>
                 <div onClick={(e) => e.stopPropagation()}>

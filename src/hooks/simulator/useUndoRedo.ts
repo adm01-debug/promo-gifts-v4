@@ -37,7 +37,7 @@ export function useUndoableReducer<S, A extends { type: string }>(
   const historyReducer = useCallback(
     (
       history: HistoryState<S>,
-      action: A | { type: '__UNDO__' } | { type: '__REDO__' },
+      action: A | { type: '__REDO__' } | { type: '__UNDO__' },
     ): HistoryState<S> => {
       switch (action.type) {
         case '__UNDO__': {
@@ -90,11 +90,11 @@ export function useUndoableReducer<S, A extends { type: string }>(
   }, []);
 
   const undo = useCallback(() => {
-    historyDispatch({ type: '__UNDO__' } as unknown);
+    historyDispatch({ type: '__UNDO__' });
   }, []);
 
   const redo = useCallback(() => {
-    historyDispatch({ type: '__REDO__' } as unknown);
+    historyDispatch({ type: '__REDO__' });
   }, []);
 
   return {

@@ -1,10 +1,15 @@
-// Exporting all hooks from auth
-export * from "@/hooks/auth/use2FA";
-export * from "@/hooks/auth/useAccessSecurity";
-export * from "@/hooks/auth/useAuthMFA";
-export * from "@/hooks/auth/useLoginAttempts";
-export * from "@/hooks/auth/usePasswordResetRequests";
-export * from "@/hooks/auth/useProfileRoles";
-export * from "@/hooks/auth/useStepUpAuth";
-export * from "@/hooks/auth/usePasswordBreachCheck";
-export * from "@/hooks/auth/useRBAC";
+/**
+ * Barrel `@/hooks/auth` — SSOT de re-exports dos hooks de autenticação/segurança.
+ */
+export { useRBAC, type RoleName, type Role, type Permission } from './useRBAC';
+export { use2FA } from './use2FA';
+export { useAccessSecurity } from './useAccessSecurity';
+export type {
+  IpWhitelistEntry,
+  CountryWhitelistEntry,
+  AccessBlockedLog,
+  AccessSecuritySettings,
+} from './useAccessSecurity';
+export { useLoginAttempts, useLoginAttemptStats, type LoginAttempt } from './useLoginAttempts';
+export { usePasswordResetRequests, type PasswordResetRequest } from './usePasswordResetRequests';
+export { useStepUpAuth, type StepUpAction } from './useStepUpAuth';

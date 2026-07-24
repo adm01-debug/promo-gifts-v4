@@ -3,20 +3,21 @@
  * with PDF download capability and automatic layout capture.
  */
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Download, FileText, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { MockupApprovalTemplate } from "./MockupApprovalTemplate";
-import type { MockupApprovalData } from "@/types/mockup-approval";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Download, FileText, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { MockupApprovalTemplate } from './MockupApprovalTemplate';
+import type { MockupApprovalData } from '@/types/mockup-approval';
 
+import { logger } from '@/lib/logger';
 interface MockupApprovalPreviewProps {
   data: MockupApprovalData;
   open: boolean;
@@ -25,7 +26,12 @@ interface MockupApprovalPreviewProps {
   onLayoutCaptured?: (layoutDataUrl: string) => void;
 }
 
-export function MockupApprovalPreview({ data, open, onOpenChange, onLayoutCaptured }: MockupApprovalPreviewProps) {
+export function MockupApprovalPreview({
+  data,
+  open,
+  onOpenChange,
+  onLayoutCaptured,
+}: MockupApprovalPreviewProps) {
   const templateRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
   const hasCapturedRef = useRef(false);
@@ -38,18 +44,18 @@ export function MockupApprovalPreview({ data, open, onOpenChange, onLayoutCaptur
       if (!templateRef.current || hasCapturedRef.current) return;
       hasCapturedRef.current = true;
       try {
-        const html2canvas = (await import("html2canvas")).default;
+        const html2canvas = (await import('html2canvas')).default;
         const canvas = await html2canvas(templateRef.current, {
           scale: 1.5,
           useCORS: true,
           allowTaint: true,
-          backgroundColor: "#ffffff",
+          backgroundColor: '#ffffff',
           logging: false,
         });
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
         onLayoutCaptured(dataUrl);
       } catch (err) {
-        console.error("Layout capture error:", err);
+        logger.error('Layout capture error:', err);
       }
     }, 1500);
     return () => clearTimeout(timer);
@@ -65,19 +71,19 @@ export function MockupApprovalPreview({ data, open, onOpenChange, onLayoutCaptur
     setIsExporting(true);
 
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const { jsPDF } = await import("jspdf");
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
 
       const canvas = await html2canvas(templateRef.current, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: "#ffffff",
+        backgroundColor: '#ffffff',
         logging: false,
       });
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.92);
-      const pdf = new jsPDF("portrait", "mm", "a4");
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+      const pdf = new jsPDF('portrait', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
 
@@ -99,14 +105,14 @@ export function MockupApprovalPreview({ data, open, onOpenChange, onLayoutCaptur
         offsetX = (pageWidth - imgWidth) / 2;
       }
 
-      pdf.addImage(imgData, "JPEG", offsetX, offsetY, imgWidth, imgHeight);
+      pdf.addImage(imgData, 'JPEG', offsetX, offsetY, imgWidth, imgHeight);
 
-      const filename = `mockup-aprovacao-${data.documentNumber.replace(/[/\s]/g, "-")}.pdf`;
+      const filename = `mockup-aprovacao-${data.documentNumber.replace(/[/\s]/g, '-')}.pdf`;
       pdf.save(filename);
-      toast.success("PDF exportado com sucesso!");
+      toast.success('PDF exportado com sucesso!');
     } catch (err) {
-      console.error("PDF export error:", err);
-      toast.error("Erro ao exportar PDF. Tente novamente.");
+      logger.error('PDF export error:', err);
+      toast.error('Erro ao exportar PDF. Tente novamente.');
     } finally {
       setIsExporting(false);
     }
@@ -114,11 +120,11 @@ export function MockupApprovalPreview({ data, open, onOpenChange, onLayoutCaptur
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[860px] max-h-[95vh] p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-4 pb-2 border-b flex-row items-center justify-between">
+      <DialogContent className="max-h-[95vh] max-w-[860px] overflow-hidden p-0">
+        <DialogHeader className="flex-row items-center justify-between border-b px-6 pb-2 pt-4">
           <div>
             <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
+              <FileText aria-hidden="true" className="h-5 w-5 text-primary" />
               Aprovação de Layout
             </DialogTitle>
             <DialogDescription>
@@ -126,25 +132,20 @@ export function MockupApprovalPreview({ data, open, onOpenChange, onLayoutCaptur
             </DialogDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              onClick={handleExportPdf}
-              disabled={isExporting}
-              size="sm"
-              className="gap-1.5"
-            >
+            <Button onClick={handleExportPdf} disabled={isExporting} size="sm" className="gap-1.5">
               {isExporting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
               ) : (
-                <Download className="h-4 w-4" />
+                <Download aria-hidden="true" className="h-4 w-4" />
               )}
-              {isExporting ? "Exportando..." : "Baixar PDF"}
+              {isExporting ? 'Exportando...' : 'Baixar PDF'}
             </Button>
           </div>
         </DialogHeader>
 
-        <div className="overflow-auto max-h-[calc(95vh-80px)] bg-muted/30 p-4">
-          <div className="mx-auto" style={{ width: "794px" }}>
-            <div className="shadow-xl rounded-lg overflow-hidden bg-white">
+        <div className="max-h-[calc(95vh-80px)] overflow-auto bg-muted/30 p-4">
+          <div className="mx-auto" style={{ width: '794px' }}>
+            <div className="overflow-hidden rounded-lg bg-white shadow-xl">
               <MockupApprovalTemplate ref={templateRef} data={data} />
             </div>
           </div>

@@ -1,117 +1,77 @@
-import { useState, useCallback, useMemo, useEffect, useSyncExternalStore } from 'react';
+import { useState, useCallback, useSyncExternalStore } from 'react';
 import {
   getBridgeSamples,
   subscribeBridgeCalls,
   clearBridgeSamples,
   type BridgeCallSample,
 } from '@/lib/telemetry/bridgeCallMetrics';
-import {
-  getLongTaskEvents,
-  subscribeLongTasks,
-  type LongTaskEvent,
-} from '@/lib/telemetry/longTaskWatchdog';
 
-const STORAGE_KEY = 'lov:bridge-metrics-overlay:open';
-const MAX_VISIBLE = 60;
-const EMPTY: BridgeCallSample[] = [];
-const EMPTY_LT: LongTaskEvent[] = [];
+export type BridgeMetricsFilter = {
+  method?: string;
+  minLatency?: number;
+};
 
-export type BridgeMetricsFilter = 'all' | 'slow' | 'errors';
-export type BridgeMetricsTab = 'calls' | 'longtasks';
+interface BridgeMetricsEntry {
+  id: string;
+  method: string;
+  url: string;
+  latency: number;
+  status: number;
+  responseSize: number;
+  timestamp: number;
+}
 
-export function useBridgeMetrics(isAllowed: boolean) {
-  const [open, setOpen] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) === '1';
-    } catch {
-      return false;
-    }
-  });
-  const [paused, setPaused] = useState(false);
-  const [filter, setFilter] = useState<BridgeMetricsFilter>('all');
-  const [tab, setTab] = useState<BridgeMetricsTab>('calls');
+interface BridgeMetricsSummary {
+  total: number;
+  avg: number;
+  totalResp: number;
+  errors: number;
+  last20: number;
+}
 
-  const samples = useSyncExternalStore(
-    subscribeBridgeCalls,
-    useCallback(() => (open && !paused ? getBridgeSamples() : EMPTY), [open, paused]),
-    () => EMPTY,
-  );
+interface BridgeMetricsReturn {
+  entries: BridgeMetricsEntry[];
+  summary: BridgeMetricsSummary;
+  filter: BridgeMetricsFilter;
+  setFilter: (f: BridgeMetricsFilter) => void;
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  clear: () => void;
+}
 
-  const longTasks = useSyncExternalStore(
-    subscribeLongTasks,
-    useCallback(() => (open && !paused ? getLongTaskEvents() : EMPTY_LT), [open, paused]),
-    () => EMPTY_LT,
-  );
+function samplesToEntries(samples: readonly BridgeCallSample[]): BridgeMetricsEntry[] {
+  return samples.map((s) => ({
+    id: String(s.id),
+    method: s.op,
+    url: `${s.bridge}/${s.target ?? ''}`,
+    latency: s.durationMs,
+    status: s.status ?? (s.ok ? 200 : 500),
+    responseSize: s.respBytes,
+    timestamp: s.ts,
+  }));
+}
 
-  useEffect(() => {
-    if (!isAllowed) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== '`' || e.metaKey || e.ctrlKey || e.altKey) return;
-      const target = e.target as HTMLElement | null;
-      if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
-      if (target?.isContentEditable) return;
-      e.preventDefault();
-      setOpen((v) => {
-        const next = !v;
-        try {
-          localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
-        } catch {
-          /* noop */
-        }
-        return next;
-      });
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isAllowed]);
+export function useBridgeMetrics(): BridgeMetricsReturn {
+  const samples = useSyncExternalStore(subscribeBridgeCalls, getBridgeSamples, getBridgeSamples);
+  const [filter, setFilter] = useState<BridgeMetricsFilter>({});
+  const [open, setOpen] = useState(false);
 
-  const toggleOpen = useCallback((val?: boolean) => {
-    setOpen((v) => {
-      const next = val ?? !v;
-      try {
-        localStorage.setItem(STORAGE_KEY, next ? '1' : '0');
-      } catch {
-        /* noop */
-      }
-      return next;
-    });
+  const entries = samplesToEntries(samples);
+
+  const clear = useCallback(() => {
+    clearBridgeSamples();
   }, []);
 
-  const summary = useMemo(() => {
-    const last20 = samples.slice(-20);
-    const avg = last20.length
-      ? Math.round(last20.reduce((a, s) => a + s.durationMs, 0) / last20.length)
-      : 0;
-    const totalResp = last20.reduce((a, s) => a + s.respBytes, 0);
-    const errors = samples.filter((s) => !s.ok).length;
-    return {
-      total: samples.length,
-      avg,
-      totalResp,
-      errors,
-      last20: last20.length,
-    };
-  }, [samples]);
-
-  const visibleSamples = useMemo(() => {
-    let arr = samples.slice(-MAX_VISIBLE * 3);
-    if (filter === 'slow') arr = arr.filter((s) => s.durationMs >= 600);
-    else if (filter === 'errors') arr = arr.filter((s) => !s.ok);
-    return arr.slice(-MAX_VISIBLE).reverse();
-  }, [samples, filter]);
-
-  return {
-    open,
-    setOpen: toggleOpen,
-    paused,
-    setPaused,
-    filter,
-    setFilter,
-    tab,
-    setTab,
-    samples: visibleSamples,
-    longTasks,
-    summary,
-    clear: clearBridgeSamples,
+  const summary: BridgeMetricsSummary = {
+    total: entries.length,
+    avg:
+      entries.length > 0
+        ? Math.round(entries.reduce((s, e) => s + e.latency, 0) / entries.length)
+        : 0,
+    totalResp: entries.reduce((s, e) => s + e.responseSize, 0),
+    errors: entries.filter((e) => e.status >= 400).length,
+    last20: Math.min(entries.length, 20),
   };
+
+  return { entries, summary, filter, setFilter, open, setOpen, clear };
 }

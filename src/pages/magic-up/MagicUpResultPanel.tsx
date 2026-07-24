@@ -1,14 +1,14 @@
 /**
  * MagicUp Result Panel — Right side with generated image variations
  */
-import { useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { AdImageResult } from "@/components/magic-up/AdImageResult";
-import { MagicUpVariationComparator } from "@/components/magic-up/MagicUpVariationComparator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import type { useMagicUpState } from "@/hooks/intelligence";
+import { useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { AdImageResult } from '@/components/magic-up/AdImageResult';
+import { MagicUpVariationComparator } from '@/components/magic-up/MagicUpVariationComparator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import type { useMagicUpState } from '@/hooks/intelligence';
 
 type MagicUpStateReturn = ReturnType<typeof useMagicUpState>;
 
@@ -31,21 +31,21 @@ export function MagicUpResultPanel({ m }: MagicUpResultPanelProps) {
     // ArrowRight/Down no último índice e ArrowLeft/Up no primeiro NÃO ciclam.
     // Home/End sempre saltam para os extremos.
     let nextIndex: number | null = null;
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       if (currentIndex >= total - 1) {
         e.preventDefault(); // consome a tecla mas mantém foco
         return;
       }
       nextIndex = currentIndex + 1;
-    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       if (currentIndex <= 0) {
         e.preventDefault();
         return;
       }
       nextIndex = currentIndex - 1;
-    } else if (e.key === "Home") {
+    } else if (e.key === 'Home') {
       nextIndex = 0;
-    } else if (e.key === "End") {
+    } else if (e.key === 'End') {
       nextIndex = total - 1;
     }
     if (nextIndex === null) return;
@@ -55,12 +55,13 @@ export function MagicUpResultPanel({ m }: MagicUpResultPanelProps) {
   };
 
   const totalVariations = m.variations.length;
-  const liveAnnouncement = totalVariations > 1
-    ? `Variação ${m.activeVariation + 1} de ${totalVariations} selecionada`
-    : "";
+  const liveAnnouncement =
+    totalVariations > 1
+      ? `Variação ${m.activeVariation + 1} de ${totalVariations} selecionada`
+      : '';
 
   return (
-    <div className="lg:sticky lg:top-4 lg:self-start space-y-3">
+    <div className="space-y-3 lg:sticky lg:top-4 lg:self-start">
       {/* Live region para leitores de tela: anuncia troca de variação (WCAG 4.1.3) */}
       <div
         role="status"
@@ -75,15 +76,18 @@ export function MagicUpResultPanel({ m }: MagicUpResultPanelProps) {
       {m.variations.length > 1 && (
         <div className="flex items-center justify-between">
           <Button
-            variant="outline" size="icon" aria-label="Voltar" className="h-8 w-8 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            variant="outline"
+            size="icon"
+            aria-label="Voltar"
+            className="h-8 w-8 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
             disabled={m.activeVariation === 0}
             onClick={() => m.setActiveVariation(m.activeVariation - 1)}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <TooltipProvider delayDuration={300}>
+          <TooltipProvider>
             <div
-              className="flex gap-3 items-center justify-center flex-wrap"
+              className="flex flex-wrap items-center justify-center gap-3"
               role="tablist"
               aria-label="Variações geradas"
               data-testid="magic-up-dots-container"
@@ -92,25 +96,27 @@ export function MagicUpResultPanel({ m }: MagicUpResultPanelProps) {
                 <Tooltip key={i}>
                   <TooltipTrigger asChild>
                     <button
-                      ref={(el) => { dotRefs.current[i] = el; }}
+                      ref={(el) => {
+                        dotRefs.current[i] = el;
+                      }}
                       onClick={() => m.setActiveVariation(i)}
                       onKeyDown={(e) => handleArrowKey(e, i, dotRefs)}
                       aria-label={`Selecionar variação ${i + 1}`}
                       aria-describedby={`magic-up-dot-tooltip-${i}`}
-                      aria-current={i === m.activeVariation ? "true" : undefined}
+                      aria-current={i === m.activeVariation ? 'true' : undefined}
                       aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Home End"
                       role="tab"
                       aria-selected={i === m.activeVariation}
                       tabIndex={i === m.activeVariation ? 0 : -1}
-                      className="group relative inline-flex items-center justify-center w-11 h-11 min-w-11 min-h-11 -mx-[18px] -my-[18px] rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      className="group relative -mx-[18px] -my-[18px] inline-flex h-11 min-h-11 w-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                       <span
                         aria-hidden="true"
                         className={cn(
-                          "block h-2 rounded-full transition-all",
+                          'block h-2 rounded-full transition-all',
                           i === m.activeVariation
-                            ? "bg-primary w-6"
-                            : "bg-muted-foreground/30 w-2 group-hover:bg-muted-foreground/50"
+                            ? 'w-6 bg-primary'
+                            : 'w-2 bg-muted-foreground/30 group-hover:bg-muted-foreground/50',
                         )}
                       />
                     </button>
@@ -123,7 +129,10 @@ export function MagicUpResultPanel({ m }: MagicUpResultPanelProps) {
             </div>
           </TooltipProvider>
           <Button
-            variant="outline" size="icon" aria-label="Avançar" className="h-8 w-8 disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            variant="outline"
+            size="icon"
+            aria-label="Avançar"
+            className="h-8 w-8 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
             disabled={m.activeVariation === m.variations.length - 1}
             onClick={() => m.setActiveVariation(m.activeVariation + 1)}
           >
@@ -163,11 +172,17 @@ export function MagicUpResultPanel({ m }: MagicUpResultPanelProps) {
       />
 
       {m.variations.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Miniaturas das variações">
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          role="tablist"
+          aria-label="Miniaturas das variações"
+        >
           {m.variations.map((v, i) => (
             <button
               key={i}
-              ref={(el) => { thumbRefs.current[i] = el; }}
+              ref={(el) => {
+                thumbRefs.current[i] = el;
+              }}
               onClick={() => m.setActiveVariation(i)}
               onKeyDown={(e) => handleArrowKey(e, i, thumbRefs)}
               aria-label={`Abrir miniatura da variação ${i + 1}`}
@@ -176,13 +191,18 @@ export function MagicUpResultPanel({ m }: MagicUpResultPanelProps) {
               aria-selected={i === m.activeVariation}
               tabIndex={i === m.activeVariation ? 0 : -1}
               className={cn(
-                "w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                'h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 i === m.activeVariation
-                  ? "border-primary ring-2 ring-primary/20"
-                  : "border-border hover:border-primary/40"
+                  ? 'border-primary ring-2 ring-primary/20'
+                  : 'border-border hover:border-primary/40',
               )}
             >
-              <img src={v.imageUrl} alt={`Variação ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+              <img
+                src={v.imageUrl}
+                alt={`Variação ${i + 1}`}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
             </button>
           ))}
         </div>

@@ -1,8 +1,21 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Info, Palette, Ruler, MapPin, Layers, DollarSign, Package, Wrench, TrendingDown } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import {
+  Info,
+  Palette,
+  Ruler,
+  MapPin,
+  Layers,
+  DollarSign,
+  Package,
+  Wrench,
+  TrendingDown,
+} from 'lucide-react';
+import { qvType, qvSpacing } from './quote-view-typography';
+import { ProductThumb } from './ProductThumb';
+import { formatEngravingTitle } from '@/lib/customization/format-engraving-title';
+import { EngravingBadge } from './EngravingBadge';
 
 
 const QUANTITY_TIERS = [
@@ -43,17 +56,17 @@ interface QuoteItem {
 }
 
 function fmt(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 function parseNotesField(notes: string) {
-  const [locationPart, dimPart] = notes.split(" | ");
-  const locationSegments = locationPart?.split(" — ") || [];
+  const [locationPart, dimPart] = notes.split(' | ');
+  const locationSegments = locationPart?.split(' — ') ?? [];
   const location = locationSegments[0] || null;
   const code = locationSegments[1] || null;
   let dimensions: string | null = null;
   if (dimPart) {
-    dimensions = dimPart.replace("cm", " cm");
+    dimensions = dimPart.replace('cm', ' cm');
   }
   return { location, code, dimensions };
 }
@@ -74,7 +87,7 @@ function getCurrentTierLabel(qty: number) {
       return t.max ? `${t.min}-${t.max}` : `${t.min}+`;
     }
   }
-  return "1-9";
+  return '1-9';
 }
 
 /** Component that fetches and shows next tier pricing */
@@ -87,70 +100,101 @@ function NextTierHint({ currentQty }: { currentQty: number }) {
   const nextTierLabel = nextTier.max ? `${nextTier.min}-${nextTier.max}` : `${nextTier.min}+`;
 
   return (
-    <div className="bg-accent/50 border border-accent rounded-lg p-3 space-y-2">
-      <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-        <TrendingDown className="h-3.5 w-3.5 text-primary" />
+    <div className="space-y-1.5 rounded-lg border border-accent bg-accent/40 p-2.5">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+        <TrendingDown className="h-3 w-3 text-primary" />
         Próxima faixa de desconto
       </div>
-      <div className="text-xs text-muted-foreground">
-        Faltam <span className="font-bold text-foreground">{unitsNeeded} {unitsNeeded === 1 ? "unidade" : "unidades"}</span> para a faixa de{" "}
-        <span className="font-bold text-foreground">{nextTierLabel} un</span>
+      <div className="text-[11px] text-muted-foreground">
+        Faltam{' '}
+        <span className="font-semibold text-foreground">
+          {unitsNeeded} {unitsNeeded === 1 ? 'unidade' : 'unidades'}
+        </span>{' '}
+        para a faixa de <span className="font-semibold text-foreground">{nextTierLabel} un</span>
       </div>
     </div>
+
   );
 }
 export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
   const personalizations = item.personalizations || [];
-  const allInUnit = item.unit_price + personalizations.reduce((sum, p) => {
-    const pTotal = p.total_cost || 0;
-    return sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0);
-  }, 0);
+  // allInUnit: unit price + per-unit cost of each personalization (rounded for display only)
+  const allInUnit =
+    item.unit_price +
+    personalizations.reduce((sum, p) => {
+      const pTotal = p.total_cost || 0;
+      return sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0);
+    }, 0);
+  // Canonical item total: uses source p.total_cost to avoid double-rounding (BUG-048)
+  const itemTotalCanonical =
+    Math.round(
+      (item.unit_price * item.quantity +
+        personalizations.reduce((sum, p) => sum + (p.total_cost || 0), 0)) *
+        100,
+    ) / 100;
 
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-primary hover:text-primary/80 hover:bg-primary/10 h-7 px-2 font-semibold">
-          <Info className="h-3.5 w-3.5" />
+        <Button
+          variant="ghost"
+          size="sm"
+          data-testid="quote-item-detail-trigger"
+          className="h-6 gap-1 px-1.5 text-[11px] font-medium text-primary hover:bg-primary/10 hover:text-primary/80"
+        >
+          <Info className="h-3 w-3" />
           Detalhes
         </Button>
+
       </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+      <SheetContent className="w-full overflow-y-auto sm:max-w-md">
         <SheetHeader>
-          <SheetTitle className="text-left">Detalhes do Item</SheetTitle>
+          <SheetTitle className={`text-left ${qvType.sheetTitle}`}>Detalhes do Item</SheetTitle>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
+        <div className={qvSpacing.sheetStack}>
+
           {/* Product Info */}
           <div className="flex items-start gap-3">
-            {item.product_image_url && (
-              <img
-                src={item.product_image_url}
-                alt={item.product_name}
-                className="w-16 h-16 object-cover rounded-lg border border-border" loading="lazy" />
-            )}
-            <div className="flex-1 min-w-0">
+            <ProductThumb
+              src={item.product_image_url}
+              alt={item.product_name}
+              size="sheet"
+              roundedClassName="rounded-md"
+              iconClassName="h-6 w-6"
+              data-testid="quote-detail-thumb"
+            />
+
+            <div className="min-w-0 flex-1">
               {item.product_sku && (
-                <span 
-                  className="inline-flex items-center gap-1 font-mono text-xs px-1.5 py-0.5 rounded border mb-1"
-                  style={{ 
+                <span
+                  className="mb-1 inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[10px]"
+                  style={{
                     backgroundColor: item.color_hex ? `${item.color_hex}22` : undefined,
                     borderColor: item.color_hex || 'hsl(var(--border))',
-                    color: item.color_hex || 'hsl(var(--foreground))'
+                    color: item.color_hex || 'hsl(var(--foreground))',
                   }}
                 >
                   {item.color_hex && (
-                    <span className="w-2.5 h-2.5 rounded-full border border-border/50" style={{ backgroundColor: item.color_hex }} />
+                    <span
+                      className="h-2 w-2 rounded-full border border-border/50"
+                      style={{ backgroundColor: item.color_hex }}
+                    />
                   )}
-                  {item.product_sku}{item.color_name ? `-${item.color_name}` : ''}
+                  {item.product_sku}
                 </span>
               )}
-              <p className="font-semibold text-foreground">{item.product_name}</p>
+              <p className={qvType.productName}>{item.product_name}</p>
+
               {!item.product_sku && item.color_name && (
-                <div className="flex items-center gap-1.5 mt-1.5">
+                <div className="mt-1 flex items-center gap-1.5">
                   {item.color_hex && (
-                    <span className="w-3.5 h-3.5 rounded-full border border-border" style={{ backgroundColor: item.color_hex }} />
+                    <span
+                      className="h-3 w-3 rounded-full border border-border"
+                      style={{ backgroundColor: item.color_hex }}
+                    />
                   )}
-                  <span className="text-sm text-muted-foreground">{item.color_name}</span>
+                  <span className="text-xs text-muted-foreground">{item.color_name}</span>
                 </div>
               )}
             </div>
@@ -160,11 +204,12 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
 
           {/* Pricing Summary */}
           <div>
-            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
-              <DollarSign className="h-4 w-4 text-primary" />
+            <h4 className={`mb-2.5 flex items-center gap-1.5 ${qvType.sheetSection}`}>
+              <DollarSign className="h-3.5 w-3.5 text-primary" />
               Preços
             </h4>
-            <div className="space-y-2 text-sm">
+            <div className={`space-y-1.5 ${qvType.sheetRow}`}>
+
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Preço unitário (produto)</span>
                 <span className="font-medium">{fmt(item.unit_price)}</span>
@@ -173,14 +218,19 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Preço unitário (gravação)</span>
                   <span className="font-medium">
-                    {fmt(personalizations.reduce((sum, p) => {
-                      const pTotal = p.total_cost || 0;
-                      return sum + (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0);
-                    }, 0))}
+                    {fmt(
+                      personalizations.reduce((sum, p) => {
+                        const pTotal = p.total_cost || 0;
+                        return (
+                          sum +
+                          (item.quantity > 0 ? Math.round((pTotal / item.quantity) * 100) / 100 : 0)
+                        );
+                      }, 0),
+                    )}
                   </span>
                 </div>
               )}
-              <div className="flex justify-between font-semibold border-t border-border/50 pt-2">
+              <div className="flex justify-between border-t border-border/50 pt-1.5 font-semibold">
                 <span className="text-foreground">Unitário all-in</span>
                 <span className="text-primary">{fmt(allInUnit)}</span>
               </div>
@@ -188,120 +238,145 @@ export function QuoteItemDetailSheet({ item }: { item: QuoteItem }) {
                 <span className="text-muted-foreground">Quantidade</span>
                 <span className="font-medium">
                   {item.quantity}
-                  <span className="text-xs text-muted-foreground ml-1.5">
+                  <span className={`ml-1.5 ${qvType.microLabel}`}>
                     (faixa {getCurrentTierLabel(item.quantity)} un)
                   </span>
+
                 </span>
               </div>
-              <div className="flex justify-between font-semibold border-t border-border/50 pt-2">
+              <div className="flex justify-between border-t border-border/50 pt-1.5 font-semibold">
                 <span className="text-foreground">Total do item</span>
-                <span className="text-foreground">{fmt(Math.round(allInUnit * item.quantity * 100) / 100)}</span>
+                <span className="text-foreground">{fmt(itemTotalCanonical)}</span>
               </div>
             </div>
           </div>
+
+
 
           {/* Personalizations Detail */}
           {personalizations.length > 0 && (
             <>
               <Separator />
               <div>
-                <h4 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-3">
-                  <Wrench className="h-4 w-4 text-primary" />
+                <h4 className={`mb-2.5 flex items-center gap-1.5 ${qvType.sheetSection}`}>
+                  <Wrench className="h-3.5 w-3.5 text-primary" />
                   Personalização ({personalizations.length})
                 </h4>
-                <div className="space-y-4">
+
+                <div className="space-y-3">
                   {personalizations.map((p, idx) => {
-                    const parsed = parseNotesField(p.notes || "");
-                    const unitRounded = item.quantity > 0
-                      ? Math.round(((p.total_cost || 0) / item.quantity) * 100) / 100
-                      : 0;
-                    const totalRounded = Math.round(unitRounded * item.quantity * 100) / 100;
+                    const parsed = parseNotesField(p.notes || '');
+                    const unitRounded =
+                      item.quantity > 0
+                        ? Math.round(((p.total_cost || 0) / item.quantity) * 100) / 100
+                        : 0;
+                    // BUG-048: use p.total_cost directly to avoid double-rounding (round(round(x/n)*n) ≠ x)
+                    const totalRounded = Math.round((p.total_cost || 0) * 100) / 100;
 
                     return (
-                      <div key={idx} className="space-y-3">
-                        <div className="bg-muted/50 rounded-lg p-3 space-y-2.5 border border-border/50">
+                      <div
+                        key={`${p.technique_id || p.technique_name}-${idx}`}
+                        className="space-y-2"
+                      >
+                        <div className={qvSpacing.techCard}>
                           {/* Technique */}
                           <div className="flex items-center gap-2">
-                            <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/10">
-                              ✦ {p.technique_name || "Gravação"}
-                            </Badge>
+                            <EngravingBadge
+                              title={formatEngravingTitle({ nomeTabela: p.technique_name, fallback: 'Gravação' })}
+                              data-testid="detail-engraving-badge"
+                            />
                           </div>
 
-                          <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className={`grid grid-cols-2 gap-1.5 ${qvType.techGridItem}`}>
                             {parsed.location && (
-                              <div className="flex items-center gap-1.5">
-                                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-muted-foreground">Local:</span>
-                                <span className="font-medium text-foreground">{parsed.location}</span>
+                                <span className="font-medium text-foreground">
+                                  {parsed.location}
+                                </span>
                               </div>
                             )}
                             {parsed.code && (
-                              <div className="flex items-center gap-1.5">
-                                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex items-center gap-1">
+                                <Layers className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-muted-foreground">Código:</span>
-                                <span className="font-mono font-medium text-foreground">{parsed.code}</span>
+                                <span className="font-mono font-medium text-foreground">
+                                  {parsed.code}
+                                </span>
                               </div>
                             )}
                             {(parsed.dimensions || (p.width_cm && p.height_cm)) && (
-                              <div className="flex items-center gap-1.5">
-                                <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex items-center gap-1">
+                                <Ruler className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-muted-foreground">Tamanho:</span>
                                 <span className="font-medium text-foreground">
                                   {parsed.dimensions || `${p.width_cm}×${p.height_cm} cm`}
                                 </span>
                               </div>
                             )}
-                            <div className="flex items-center gap-1.5">
-                              <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+                            <div className="flex items-center gap-1">
+                              <Palette className="h-3 w-3 text-muted-foreground" />
                               <span className="text-muted-foreground">Cores:</span>
-                              <span className="font-medium text-foreground">{p.colors_count || 1}</span>
+                              <span className="font-medium text-foreground">
+                                {p.colors_count || 1}
+                              </span>
                             </div>
                             {p.area_cm2 && (
-                              <div className="flex items-center gap-1.5">
-                                <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                              <div className="flex items-center gap-1">
+                                <Package className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-muted-foreground">Área:</span>
-                                <span className="font-medium text-foreground">{p.area_cm2} cm²</span>
+                                <span className="font-medium text-foreground">
+                                  {p.area_cm2} cm²
+                                </span>
                               </div>
                             )}
                           </div>
 
                           {/* Costs */}
-                          <Separator className="my-1" />
-                          <div className="grid grid-cols-3 gap-2 text-xs">
+                          <Separator className="my-0.5" />
+                          <div className="grid grid-cols-3 gap-2 text-[11px] tabular-nums">
                             <div>
-                              <span className="text-muted-foreground block">Unitário</span>
-                              <span className="font-semibold text-foreground">{fmt(unitRounded)}</span>
+                              <span className={`block ${qvType.microLabel}`}>Unitário</span>
+                              <span className="font-semibold text-foreground">
+                                {fmt(unitRounded)}
+                              </span>
                             </div>
                             <div>
-                              <span className="text-muted-foreground block">Setup</span>
-                              <span className="font-semibold text-foreground">{fmt(p.setup_cost || 0)}</span>
+                              <span className={`block ${qvType.microLabel}`}>Setup</span>
+                              <span className="font-semibold text-foreground">
+                                {fmt(p.setup_cost || 0)}
+                              </span>
                             </div>
                             <div>
-                              <span className="text-muted-foreground block">Total</span>
-                              <span className="font-semibold text-primary">{fmt(totalRounded)}</span>
+                              <span className={`block ${qvType.microLabel}`}>Total</span>
+                              <span className="font-semibold text-primary">
+                                {fmt(totalRounded)}
+                              </span>
+
                             </div>
                           </div>
                         </div>
-
-                        {/* Next Tier Hint */}
-                        {getNextTier(item.quantity) && (
-                          <NextTierHint currentQty={item.quantity} />
-                        )}
                       </div>
                     );
                   })}
+
+                  {/* Next Tier Hint rendered once per item, not once per personalization */}
+                  {getNextTier(item.quantity) && <NextTierHint currentQty={item.quantity} />}
                 </div>
               </div>
             </>
           )}
 
           {/* Item Notes */}
-          {item.notes && !item.notes.includes("|||") && (
+          {item.notes && !item.notes.includes('|||') && (
             <>
               <Separator />
               <div>
-                <h4 className="text-sm font-semibold text-foreground mb-2">Observações</h4>
-                <p className="text-sm text-muted-foreground">{item.notes}</p>
+                <h4 className={`mb-1.5 ${qvType.sheetSection}`}>Observações</h4>
+                <p className={`leading-relaxed ${qvType.meta}`}>{item.notes}</p>
+
+
               </div>
             </>
           )}

@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
-const STORAGE_KEY = "product-grid-columns";
+const STORAGE_KEY = 'product-grid-columns';
 
 export type ColumnCount = 3 | 4 | 5 | 6 | 8;
 
@@ -24,7 +23,7 @@ function GridIcon({ cols, rows = 2 }: { cols: number; rows?: number }) {
           height={cellH}
           rx={1}
           fill="currentColor"
-        />
+        />,
       );
     }
   }
@@ -44,18 +43,14 @@ interface ColumnOption {
   minWidth: number;
 }
 
-// Breakpoints alinhados com responsividade do grid de produtos:
-// - 3 colunas: sempre disponível (mobile-first)
-// - 4 colunas: ≥768px (md tailwind)
-// - 5 colunas: ≥1024px (lg tailwind)
-// - 6 colunas: ≥1280px (xl tailwind)
-// - 8 colunas: ≥1536px (2xl tailwind)
+// Breakpoints reduzidos para garantir que TODAS as 5 opções (3/4/5/6/8)
+// fiquem disponíveis em telas comuns de desktop (≥1280px largura útil).
 const columnOptions: ColumnOption[] = [
-  { value: 3, label: "3 colunas", cols: 3, rows: 2, minWidth: 0 },
-  { value: 4, label: "4 colunas", cols: 4, rows: 2, minWidth: 768 },
-  { value: 5, label: "5 colunas", cols: 5, rows: 2, minWidth: 1024 },
-  { value: 6, label: "6 colunas", cols: 3, rows: 3, minWidth: 1280 },
-  { value: 8, label: "8 colunas", cols: 4, rows: 3, minWidth: 1536 },
+  { value: 3, label: '3 colunas', cols: 3, rows: 2, minWidth: 0 },
+  { value: 4, label: '4 colunas', cols: 4, rows: 2, minWidth: 640 },
+  { value: 5, label: '5 colunas', cols: 5, rows: 2, minWidth: 900 },
+  { value: 6, label: '6 colunas', cols: 3, rows: 3, minWidth: 1100 },
+  { value: 8, label: '8 colunas', cols: 4, rows: 3, minWidth: 1280 },
 ];
 
 function getAvailableOptions(screenWidth: number): ColumnOption[] {
@@ -69,8 +64,10 @@ function getDefaultColumns(): ColumnCount {
       const parsed = Number(saved) as ColumnCount;
       if ([3, 4, 5, 6, 8].includes(parsed)) return parsed;
     }
-  } catch { /* empty */ }
-  if (typeof window !== "undefined") {
+  } catch {
+    /* empty */
+  }
+  if (typeof window !== 'undefined') {
     const w = window.innerWidth;
     if (w < 1024) return 3;
   }
@@ -86,14 +83,14 @@ interface ColumnSelectorProps {
 export function ColumnSelector({ value, onChange, className }: ColumnSelectorProps) {
   // Track window width to filter options responsively.
   const [screenWidth, setScreenWidth] = useState<number>(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1600,
+    typeof window !== 'undefined' ? window.innerWidth : 1600,
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
     const onResize = () => setScreenWidth(window.innerWidth);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   const available = getAvailableOptions(screenWidth);
@@ -113,48 +110,61 @@ export function ColumnSelector({ value, onChange, className }: ColumnSelectorPro
   if (available.length <= 1) return null;
 
   return (
-    <div className={cn(
-      "inline-flex items-center gap-0.5 p-1 rounded-xl bg-muted/60 border border-border/40",
-      className
-    )}>
-      <AnimatePresence mode="popLayout">
-        {available.map((opt) => {
-          const isActive = value === opt.value;
-          return (
-            <Tooltip key={opt.value}>
-              <TooltipTrigger asChild>
-                <button
-                  aria-label={opt.label}
-                  className={cn(
-                    "relative flex items-center justify-center h-9 w-9 rounded-lg transition-colors duration-150",
-                    isActive
-                      ? "text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
-                  onClick={() => {
+    <div
+      role="radiogroup"
+      aria-label="Número de colunas"
+      data-testid="column-selector"
+      className={cn(
+        'inline-flex items-center gap-0.5 rounded-xl border border-border/40 bg-muted/60 p-1',
+        className,
+      )}
+    >
+      {available.map((opt) => {
+        const isActive = value === opt.value;
+        return (
+          <Tooltip key={opt.value}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                role="radio"
+                aria-label={opt.label}
+                aria-checked={isActive}
+                data-testid={`column-option-${opt.value}`}
+                className={cn(
+                  'relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg ring-offset-background transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
                     onChange(opt.value);
-                    try { localStorage.setItem(STORAGE_KEY, String(opt.value)); } catch { /* empty */ }
-                  }}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="column-selector-bg"
-                      className="absolute inset-0 rounded-lg bg-primary shadow-sm"
-                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                    />
-                  )}
-                  <span className="relative z-10">
-                    <GridIcon cols={opt.cols} rows={opt.rows} />
-                  </span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                {opt.label}
-              </TooltipContent>
-            </Tooltip>
-          );
-        })}
-      </AnimatePresence>
+                    try {
+                      localStorage.setItem(STORAGE_KEY, String(opt.value));
+                    } catch {
+                      /* empty */
+                    }
+                  }
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onChange(opt.value);
+                  try {
+                    localStorage.setItem(STORAGE_KEY, String(opt.value));
+                  } catch {
+                    /* empty */
+                  }
+                }}
+              >
+                <GridIcon cols={opt.cols} rows={opt.rows} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{opt.label}</TooltipContent>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }

@@ -19,15 +19,20 @@ import {
   FileDown,
   type LucideIcon,
 } from 'lucide-react';
-import { useExternalVariantStock, type ExternalVariantStock, type Product } from '@/hooks/products';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  useExternalVariantStock,
+  type ExternalVariantStock,
+} from '@/hooks/products/useExternalVariantStock';
+import type { Product } from '@/types/product-catalog';
+import { m as motion, AnimatePresence } from 'framer-motion';
+import { getCdnUrl } from '@/utils/image-utils';
 
 export interface BulkVariantSelection {
   product: Product;
   variant: ExternalVariantStock | null;
 }
 
-export type BulkWizardMode = 'cart' | 'quote' | 'favorite' | 'compare' | 'collection' | 'pdf';
+export type BulkWizardMode = 'cart' | 'collection' | 'compare' | 'favorite' | 'pdf' | 'quote';
 
 interface BulkVariantWizardProps {
   open: boolean;
@@ -36,6 +41,48 @@ interface BulkVariantWizardProps {
   mode: BulkWizardMode;
   onComplete: (selections: BulkVariantSelection[]) => void;
 }
+
+const BULK_WIZARD_MODE_CONFIG: Record<
+  BulkWizardMode,
+  { icon: LucideIcon; title: string; colorClass: string; bgClass: string }
+> = {
+  cart: {
+    icon: ShoppingBag,
+    title: 'Adicionar ao Carrinho',
+    colorClass: 'text-primary',
+    bgClass: 'bg-primary/15',
+  },
+  quote: {
+    icon: FileText,
+    title: 'Enviar para Orçamento',
+    colorClass: 'text-success',
+    bgClass: 'bg-success/15',
+  },
+  favorite: {
+    icon: Heart,
+    title: 'Favoritar com Cor',
+    colorClass: 'text-destructive',
+    bgClass: 'bg-destructive/15',
+  },
+  compare: {
+    icon: GitCompare,
+    title: 'Comparar com Cor',
+    colorClass: 'text-primary',
+    bgClass: 'bg-primary/15',
+  },
+  collection: {
+    icon: FolderPlus,
+    title: 'Coleção com Cor',
+    colorClass: 'text-info',
+    bgClass: 'bg-info/15',
+  },
+  pdf: {
+    icon: FileDown,
+    title: 'Gerar Catálogo PDF',
+    colorClass: 'text-brand-primary-500',
+    bgClass: 'bg-brand-primary-500/15',
+  },
+} as const;
 
 /* ── Step: variant picker for a single product ── */
 function ProductVariantStep({
@@ -76,8 +123,7 @@ function ProductVariantStep({
     if (!isLoading && sortedVariants.length === 0) {
       onSkip();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, sortedVariants.length]);
+  }, [isLoading, sortedVariants.length, onSkip]);
 
   if (isLoading) {
     return (
@@ -155,16 +201,11 @@ function ProductVariantStep({
             >
               {variant.selected_thumbnail ? (
                 <img
-                  src={`${variant.selected_thumbnail}/thumbnail`}
+                  src={getCdnUrl(variant.selected_thumbnail, 'thumbnail')}
                   alt={variant.color_name ?? ''}
                   className="h-10 w-10 shrink-0 rounded-lg border border-border/50 object-cover shadow-sm transition-transform group-hover:scale-105"
                   onError={(e) => {
-                    const t = e.currentTarget;
-                    if (t.src.includes('/thumbnail')) {
-                      t.src = variant.selected_thumbnail ?? '';
-                    } else {
-                      t.style.display = 'none';
-                    }
+                    e.currentTarget.style.display = 'none';
                   }}
                 />
               ) : (
@@ -184,7 +225,7 @@ function ProductVariantStep({
                   {isOutOfStock ? (
                     <span className="flex items-center gap-0.5 text-[10px] text-destructive">
                       <AlertTriangle className="h-2.5 w-2.5" />
-                      Sem estoque
+                      Estoque zerado
                     </span>
                   ) : (
                     <span
@@ -273,6 +314,7 @@ export function BulkVariantWizard({
   const handleSelect = useCallback(
     (variant: ExternalVariantStock | null) => {
       const product = products[currentIndex];
+      if (!product) return;
       const newSelections = [...selections, { product, variant }];
 
       if (currentIndex + 1 >= products.length) {
@@ -293,49 +335,8 @@ export function BulkVariantWizard({
   const currentProduct = products[currentIndex];
   if (!currentProduct) return null;
 
-  const modeConfig: Record<
-    BulkWizardMode,
-    { icon: LucideIcon; title: string; colorClass: string; bgClass: string }
-  > = {
-    cart: {
-      icon: ShoppingBag,
-      title: 'Adicionar ao Carrinho',
-      colorClass: 'text-primary',
-      bgClass: 'bg-primary/15',
-    },
-    quote: {
-      icon: FileText,
-      title: 'Enviar para Orçamento',
-      colorClass: 'text-success',
-      bgClass: 'bg-success/15',
-    },
-    favorite: {
-      icon: Heart,
-      title: 'Favoritar com Cor',
-      colorClass: 'text-destructive',
-      bgClass: 'bg-destructive/15',
-    },
-    compare: {
-      icon: GitCompare,
-      title: 'Comparar com Cor',
-      colorClass: 'text-primary',
-      bgClass: 'bg-primary/15',
-    },
-    collection: {
-      icon: FolderPlus,
-      title: 'Coleção com Cor',
-      colorClass: 'text-info',
-      bgClass: 'bg-info/15',
-    },
-    pdf: {
-      icon: FileDown,
-      title: 'Gerar Catálogo PDF',
-      colorClass: 'text-orange-500',
-      bgClass: 'bg-orange-500/15',
-    },
-  };
-  const { icon: Icon, title, colorClass } = modeConfig[mode];
-  const bgClass = modeConfig[mode].bgClass;
+  const { icon: Icon, title, colorClass } = BULK_WIZARD_MODE_CONFIG[mode];
+  const bgClass = BULK_WIZARD_MODE_CONFIG[mode].bgClass;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

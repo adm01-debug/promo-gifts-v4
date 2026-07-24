@@ -1,9 +1,8 @@
 // src/hooks/useTechniquePricingOptions.ts
-// Hook para buscar opções de cores e tamanhos da tabela customization_price_tables
-
 import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { dbInvoke } from '@/lib/db/postgrest';
 
+import { logger } from '@/lib/logger';
 interface PriceTableEntry {
   id: string;
   composed_code: string;
@@ -35,7 +34,6 @@ export interface ColorOption {
   value: number;
   label: string;
 }
-
 export interface SizeOption {
   value: string;
   label: string;
@@ -43,7 +41,6 @@ export interface SizeOption {
   height: number;
   areaCm2: number;
 }
-
 export interface TechniquePricingInfo {
   hasPriceByColor: boolean;
   hasPriceByArea: boolean;
@@ -62,75 +59,47 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
       setTables([]);
       return;
     }
-
     const fetchTables = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'customization_price_tables',
-            operation: 'select',
-            filters: { table_code: techniqueCode },
-            limit: 100,
-          },
+        // FIX-BRIDGE-01: migrated from supabase.functions.invoke to dbInvoke
+        const result = await dbInvoke({
+          table: 'customization_price_tables',
+          operation: 'select',
+          filters: { table_code: techniqueCode },
+          limit: 100,
         });
-
-        if (error) throw error;
-
-        if (data?.success && data?.data?.records) {
-          setTables(data.data.records);
-        } else if (Array.isArray(data?.data)) {
-          setTables(data.data);
-        } else {
-          setTables([]);
-        }
+        setTables((result.records || []) as PriceTableEntry[]);
       } catch (err) {
-        console.error('Error fetching technique pricing tables:', err);
+        logger.error('Error fetching technique pricing tables:', err);
         setTables([]);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchTables();
   }, [techniqueCode]);
 
-  // Determinar se usa preço por cor ou por área
-  const hasPriceByColor = useMemo(() => {
-    return tables.some((t) => t.price_by_color === true);
-  }, [tables]);
+  const hasPriceByColor = useMemo(() => tables.some((t) => t.price_by_color), [tables]);
+  const hasPriceByArea = useMemo(() => tables.some((t) => t.price_by_area), [tables]);
 
-  const hasPriceByArea = useMemo(() => {
-    return tables.some((t) => t.price_by_area === true);
-  }, [tables]);
-
-  // Gerar opções de cores únicas disponíveis
   const colorOptions = useMemo((): ColorOption[] => {
     if (!hasPriceByColor) return [];
-
     const uniqueColors = new Set<number>();
     tables.filter(hasMaxColors).forEach((t) => uniqueColors.add(t.max_colors));
-
     return Array.from(uniqueColors)
       .sort((a, b) => a - b)
-      .map((c) => ({
-        value: c,
-        label: c === 1 ? '1 cor' : `${c} cores`,
-      }));
+      .map((c) => ({ value: c, label: c === 1 ? '1 cor' : `${c} cores` }));
   }, [tables, hasPriceByColor]);
 
-  // Gerar opções de tamanho únicas disponíveis
   const sizeOptions = useMemo((): SizeOption[] => {
     if (!hasPriceByArea) return [];
-
     const uniqueSizes = new Map<string, SizeOption>();
-
     tables.filter(hasAreaSize).forEach((t) => {
       const w = t.max_area_width_cm;
       const h = t.max_area_height_cm;
       const key = `${w}x${h}`;
-
-      if (!uniqueSizes.has(key)) {
+      if (!uniqueSizes.has(key))
         uniqueSizes.set(key, {
           value: key,
           label: `${w} × ${h} cm`,
@@ -138,39 +107,28 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
           height: h,
           areaCm2: w * h,
         });
-      }
     });
-
     return Array.from(uniqueSizes.values()).sort((a, b) => a.areaCm2 - b.areaCm2);
   }, [tables, hasPriceByArea]);
 
-  // Função para encontrar a tabela correta baseada na seleção
   const getTableForSelection = (
     colors: number,
     sizeValue: string | null,
   ): PriceTableEntry | null => {
     if (tables.length === 0) return null;
-
-    // Filtrar tabelas que atendem aos critérios
     let candidates = [...tables];
-
-    // Se usa cores, encontrar tabela com max_colors >= colors selecionadas
     if (hasPriceByColor && colors > 0) {
       candidates = candidates.filter(
         (t) => t.price_by_color && t.max_colors && t.max_colors >= colors,
       );
-      // Ordenar pelo mais próximo (menor max_colors que atende)
       candidates.sort((a, b) => (a.max_colors || 0) - (b.max_colors || 0));
     }
-
-    // Se usa área, encontrar tabela com dimensões correspondentes
     if (hasPriceByArea && sizeValue) {
       const [w, h] = sizeValue.split('x').map(Number);
       candidates = candidates.filter(
         (t) => t.price_by_area && t.max_area_width_cm === w && t.max_area_height_cm === h,
       );
     }
-
     return candidates[0] || null;
   };
 
@@ -184,7 +142,6 @@ export function useTechniquePricingOptions(techniqueCode: string | null): Techni
   };
 }
 
-// Hook para múltiplas técnicas de uma vez
 export function useMultipleTechniquePricing(techniqueCodes: string[]) {
   const [allTables, setAllTables] = useState<Record<string, PriceTableEntry[]>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -192,65 +149,51 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
 
   useEffect(() => {
     const codes = techniqueCodesKey ? techniqueCodesKey.split(',').filter(Boolean) : [];
-
     if (codes.length === 0) {
       setAllTables({});
       return;
     }
-
     const fetchAll = async () => {
       setIsLoading(true);
       const results: Record<string, PriceTableEntry[]> = {};
-
       await Promise.all(
         codes.map(async (code) => {
           try {
-            const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'customization_price_tables',
-                operation: 'select',
-                filters: { table_code: code },
-                limit: 100,
-              },
+            // FIX-BRIDGE-01
+            const result = await dbInvoke({
+              table: 'customization_price_tables',
+              operation: 'select',
+              filters: { table_code: code },
+              limit: 100,
             });
-
-            if (!error && data?.success && data?.data?.records) {
-              results[code] = data.data.records;
-            } else if (!error && Array.isArray(data?.data)) {
-              results[code] = data.data;
-            }
+            if (result.records?.length) results[code] = result.records as PriceTableEntry[];
           } catch (err) {
-            console.error(`Error fetching pricing for ${code}:`, err);
+            logger.error(`Error fetching pricing for ${code}:`, err);
           }
         }),
       );
-
       setAllTables(results);
       setIsLoading(false);
     };
-
     fetchAll();
   }, [techniqueCodesKey]);
 
   const getPricingInfo = (code: string): Omit<TechniquePricingInfo, 'isLoading'> => {
     const tables = allTables[code] || [];
-
-    const hasPriceByColor = tables.some((t) => t.price_by_color === true);
-    const hasPriceByArea = tables.some((t) => t.price_by_area === true);
-
+    const hasPriceByColor = tables.some((t) => t.price_by_color);
+    const hasPriceByArea = tables.some((t) => t.price_by_area);
     const colorOptions: ColorOption[] = hasPriceByColor
-      ? Array.from(new Set(tables.filter(hasMaxColors).map((t) => t.max_colors)))
+      ? [...new Set(tables.filter(hasMaxColors).map((t) => t.max_colors))]
           .sort((a, b) => a - b)
           .map((c) => ({ value: c, label: c === 1 ? '1 cor' : `${c} cores` }))
       : [];
-
     const sizeOptions: SizeOption[] = hasPriceByArea
       ? Array.from(
           tables
             .filter(hasAreaSize)
             .reduce((map, t) => {
               const key = `${t.max_area_width_cm}x${t.max_area_height_cm}`;
-              if (!map.has(key)) {
+              if (!map.has(key))
                 map.set(key, {
                   value: key,
                   label: `${t.max_area_width_cm} × ${t.max_area_height_cm} cm`,
@@ -258,36 +201,30 @@ export function useMultipleTechniquePricing(techniqueCodes: string[]) {
                   height: t.max_area_height_cm,
                   areaCm2: t.max_area_width_cm * t.max_area_height_cm,
                 });
-              }
               return map;
             }, new Map<string, SizeOption>())
             .values(),
         ).sort((a, b) => a.areaCm2 - b.areaCm2)
       : [];
-
     const getTableForSelection = (
       colors: number,
       sizeValue: string | null,
     ): PriceTableEntry | null => {
       let candidates = [...tables];
-
       if (hasPriceByColor && colors > 0) {
         candidates = candidates.filter(
           (t) => t.price_by_color && t.max_colors && t.max_colors >= colors,
         );
         candidates.sort((a, b) => (a.max_colors || 0) - (b.max_colors || 0));
       }
-
       if (hasPriceByArea && sizeValue) {
         const [w, h] = sizeValue.split('x').map(Number);
         candidates = candidates.filter(
           (t) => t.price_by_area && t.max_area_width_cm === w && t.max_area_height_cm === h,
         );
       }
-
       return candidates[0] || null;
     };
-
     return { hasPriceByColor, hasPriceByArea, colorOptions, sizeOptions, getTableForSelection };
   };
 

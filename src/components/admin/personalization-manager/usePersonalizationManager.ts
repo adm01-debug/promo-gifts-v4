@@ -1,8 +1,8 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
-import { invokeExternalDb } from '@/lib/external-db';
 import { toast } from 'sonner';
 import {
   useSensor,
@@ -98,7 +98,7 @@ export function usePersonalizationManager() {
         group?.group_name.toLowerCase().includes(query) ||
         group?.group_code.toLowerCase().includes(query);
       return matchesName || matchesSku || matchesGroup;
-    }) || [];
+    }) ?? [];
 
   const { data: productMembership } = useQuery({
     queryKey: ['product-membership', selectedProduct],
@@ -154,7 +154,7 @@ export function usePersonalizationManager() {
   const { data: techniques } = useQuery({
     queryKey: ['techniques-external'],
     queryFn: async () => {
-      const result = await invokeExternalDb<Technique>({
+      const result = await dbInvoke<Technique>({
         table: 'personalization_techniques',
         operation: 'select',
         select: 'id, code, name',
@@ -189,10 +189,16 @@ export function usePersonalizationManager() {
 
   // ── Mutations ──
   const toggleGroupRulesMutation = useMutation({
-    mutationFn: async ({ id, use_group_rules }: { id: string; use_group_rules: boolean }) => {
+    mutationFn: async ({
+      id,
+      use_group_rules: useGroupRules,
+    }: {
+      id: string;
+      use_group_rules: boolean;
+    }) => {
       const { error } = await supabase
         .from('product_group_members')
-        .update({ use_group_rules })
+        .update({ use_group_rules: useGroupRules })
         .eq('id', id);
       if (error) throw error;
     },
@@ -400,14 +406,14 @@ export function usePersonalizationManager() {
       component_location_id: selectedLocationId,
       technique_id: newTechniqueId,
       composed_code: composedCode,
-      max_colors: newMaxColors ? parseInt(newMaxColors) : undefined,
+      max_colors: newMaxColors ? parseInt(newMaxColors, 10) : undefined,
     });
   };
 
   const getLocationsForComponent = (componentId: string) =>
-    locations?.filter((l) => l.component_id === componentId) || [];
+    locations?.filter((l) => l.component_id === componentId) ?? [];
   const getTechniquesForLocation = (locationId: string) =>
-    locationTechniques?.filter((lt) => lt.component_location_id === locationId) || [];
+    locationTechniques?.filter((lt) => lt.component_location_id === locationId) ?? [];
 
   const handleComponentDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -417,10 +423,18 @@ export function usePersonalizationManager() {
     const reordered = arrayMove(components, oldIndex, newIndex);
     for (let i = 0; i < reordered.length; i++) {
       if (reordered[i].sort_order !== i) {
-        await supabase
+        // BUG-REORDER-SORT-SILENT-FAIL FIX: bare await swallowed RLS errors and
+        // still showed toast.success to the user even when the DB update failed.
+        const { error: sortErr } = await supabase
           .from('product_components')
           .update({ sort_order: i })
           .eq('id', reordered[i].id);
+        if (sortErr) {
+          logger.warn('[personalization-manager] sort_order update failed at index', i, ':', sortErr);
+          toast.error('Erro ao reordenar componentes');
+          queryClient.invalidateQueries({ queryKey: ['product-components'] });
+          return;
+        }
       }
     }
     queryClient.invalidateQueries({ queryKey: ['product-components'] });
@@ -431,14 +445,24 @@ export function usePersonalizationManager() {
     if (!selectedProduct || !productMembership?.product_group_id) return;
     setIsCopying(true);
     try {
-      const { data: groupComponents } = await untypedFrom('product_group_components')
+      // BUG-PERSMAN-GROUPCOMPONENTS-SELECT-SILENT-FAIL FIX: error not checked —
+      // a failed SELECT would produce null data, mistakenly showing "no components"
+      // toast instead of the actual error, and leaving nothing to copy.
+      const { data: groupComponents, error: gcErr } = await untypedFrom('product_group_components')
         .select('*')
         .eq('product_group_id', productMembership.product_group_id);
+      if (gcErr) throw gcErr;
       if (!groupComponents?.length) {
         toast.error('Grupo não possui componentes configurados');
         return;
       }
-      await supabase.from('product_components').delete().eq('product_id', selectedProduct);
+      // BUG-PERSONALIZATION-DELETE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      // If delete fails, component insert loop would create duplicates.
+      const { error: deleteCompErr } = await supabase
+        .from('product_components')
+        .delete()
+        .eq('product_id', selectedProduct);
+      if (deleteCompErr) throw deleteCompErr;
       for (const gc of groupComponents) {
         const { data: newComp, error: compError } = await supabase
           .from('product_components')
@@ -453,9 +477,12 @@ export function usePersonalizationManager() {
           .select()
           .single();
         if (compError) throw compError;
-        const { data: groupLocations } = await untypedFrom('product_group_locations')
+        // BUG-PERSMAN-GROUPLOCATIONS-SELECT-SILENT-FAIL FIX: error not checked —
+        // a failed SELECT silently skipped locations, producing components without areas.
+        const { data: groupLocations, error: glErr } = await untypedFrom('product_group_locations')
           .select('*')
           .eq('group_component_id', gc.id);
+        if (glErr) throw glErr;
         if (groupLocations?.length) {
           for (const gl of groupLocations) {
             const { data: newLoc, error: locError } = await untypedFrom(
@@ -474,14 +501,20 @@ export function usePersonalizationManager() {
               .select()
               .single();
             if (locError) throw locError;
-            const { data: groupTechniques } = await untypedFrom('product_group_location_techniques')
+            // BUG-PERSMAN-GROUPTECHS-SELECT-SILENT-FAIL FIX: error not checked —
+            // a failed SELECT silently skipped techniques, creating locations without printing methods.
+            const { data: groupTechniques, error: gtErr } = await untypedFrom('product_group_location_techniques')
               .select('*')
               .eq('group_location_id', gl.id);
+            if (gtErr) throw gtErr;
             if (groupTechniques?.length) {
               for (const gt of groupTechniques) {
                 const technique = techniques?.find((t) => t.id === gt.technique_id);
-                const composedCode = `${gc.component_code}-${gl.location_code}-${technique?.code || ''}`;
-                await untypedFrom('product_component_location_techniques').insert({
+                const composedCode = `${gc.component_code}-${gl.location_code}-${technique?.code ?? ''}`;
+                // BUG-PERSMAN-TECH-INSERT-SILENT-FAIL FIX: bare untypedFrom await swallowed errors.
+                const { error: techErr } = await untypedFrom(
+                  'product_component_location_techniques',
+                ).insert({
                   component_location_id: newLoc.id,
                   technique_id: gt.technique_id,
                   composed_code: composedCode,
@@ -489,15 +522,18 @@ export function usePersonalizationManager() {
                   is_default: gt.is_default,
                   is_active: gt.is_active,
                 });
+                if (techErr) throw techErr;
               }
             }
           }
         }
       }
-      await supabase
+      // BUG-PERSMAN-MEMBER-UPDATE-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: memberErr } = await supabase
         .from('product_group_members')
         .update({ use_group_rules: false })
         .eq('id', productMembership.id);
+      if (memberErr) logger.warn('[personalization-manager] member update failed:', memberErr);
       queryClient.invalidateQueries({ queryKey: ['product-components'] });
       queryClient.invalidateQueries({ queryKey: ['component-locations'] });
       queryClient.invalidateQueries({ queryKey: ['location-techniques'] });

@@ -1,38 +1,68 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { PageSEO } from "@/components/seo/PageSEO";
+import { PageSEO } from '@/components/seo/PageSEO';
 import { getCdnUrl } from '@/utils/image-utils';
 import { ProductStickyHeader } from '@/components/products/ProductStickyHeader';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
-const SimilarProducts = lazyWithRetry(() => import('@/components/products/SimilarProducts').then(m => ({ default: m.SimilarProducts })));
-const SmartRecommendations = lazyWithRetry(() => import('@/components/products/SmartRecommendations').then(m => ({ default: m.SmartRecommendations })));
-const StockHistoryChart = lazyWithRetry(() => import('@/components/products/StockHistoryChart').then(m => ({ default: m.StockHistoryChart })));
-const SalesHistoryChart = lazyWithRetry(() => import('@/components/products/SalesHistoryChart').then(m => ({ default: m.SalesHistoryChart })));
-const SupplierComparisonModal = lazyWithRetry(() => import('@/components/compare/SupplierComparisonModal').then(m => ({ default: m.SupplierComparisonModal })));
-const VariantPickerDialog = lazyWithRetry(() => import('@/components/products/VariantPickerDialog').then(m => ({ default: m.VariantPickerDialog })));
-const FutureStockModal = lazyWithRetry(() => import('@/components/products/FutureStockModal').then(m => ({ default: m.FutureStockModal })));
-const PackagingModal = lazyWithRetry(() => import('@/components/products/PackagingModal').then(m => ({ default: m.PackagingModal })));
+const SimilarProducts = lazyWithRetry(() =>
+  import('@/components/products/SimilarProducts').then((m) => ({ default: m.SimilarProducts })),
+);
+const SmartRecommendations = lazyWithRetry(() =>
+  import('@/components/products/SmartRecommendations').then((m) => ({
+    default: m.SmartRecommendations,
+  })),
+);
+const StockHistoryChart = lazyWithRetry(() =>
+  import('@/components/products/StockHistoryChart').then((m) => ({ default: m.StockHistoryChart })),
+);
+const SalesHistoryChart = lazyWithRetry(() =>
+  import('@/components/products/SalesHistoryChart').then((m) => ({ default: m.SalesHistoryChart })),
+);
+const SupplierComparisonModal = lazyWithRetry(() =>
+  import('@/components/compare/SupplierComparisonModal').then((m) => ({
+    default: m.SupplierComparisonModal,
+  })),
+);
+const VariantPickerDialog = lazyWithRetry(() =>
+  import('@/components/products/VariantPickerDialog').then((m) => ({
+    default: m.VariantPickerDialog,
+  })),
+);
+const FutureStockModal = lazyWithRetry(() =>
+  import('@/components/products/FutureStockModal').then((m) => ({ default: m.FutureStockModal })),
+);
+const PackagingModal = lazyWithRetry(() =>
+  import('@/components/products/PackagingModal').then((m) => ({ default: m.PackagingModal })),
+);
+const ProductEngravingSection = lazyWithRetry(() =>
+  import('@/components/products/ProductEngravingSection').then((m) => ({
+    default: m.ProductEngravingSection,
+  })),
+);
 
-import { useProduct, useProductAnalytics, useProductIntelligenceBadges, useSimilarProducts, useSupplierTrust, type ExternalVariantStock } from "@/hooks/products";
+import {
+  useProduct,
+  useProductAnalytics,
+  useSimilarProducts,
+  useSupplierTrust,
+  type ExternalVariantStock,
+} from '@/hooks/products';
 import type { ProductForRecommendation } from '@/hooks/intelligence';
 import { useToast } from '@/hooks/ui';
 import type { Product, ProductVariation } from '@/types/product-catalog';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ProductDetailSkeleton } from '@/components/products/ProductDetailSkeleton';
 import { EmptyState } from '@/components/common/EmptyState';
-import { IntelligenceBadges } from '@/components/common/IntelligenceBadges';
 import { FloatingCompareBar } from '@/components/compare/FloatingCompareBar';
 import { MobileProductActions } from '@/components/mobile/MobileProductActions';
 import { useRecentlyViewedStore } from '@/stores/useRecentlyViewedStore';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
-import { ProductDetailHero } from "@/pages/products/product-detail/ProductDetailHero";
+import { ProductDetailHero } from '@/pages/products/product-detail/ProductDetailHero';
 import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
 import { formatCurrency } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ModalSkeleton } from '@/components/layout/SkeletonLoaders';
-
+import { ProductDetailSkeleton, ModalSkeleton } from '@/components/layout/SkeletonLoaders';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -41,7 +71,9 @@ export default function ProductDetail() {
   const { toast } = useToast();
   const { trackProductView } = useProductAnalytics();
 
-  const { isFavorite: isFavoriteCheck, toggleFavorite, removeFavorite } = useFavoritesStore();
+  const isFavoriteCheck = useFavoritesStore((s) => s.isFavorite);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const removeFavorite = useFavoritesStore((s) => s.removeFavorite);
   const [selectedVariation, setSelectedVariation] = useState<ProductVariation | null>(null);
   const [favPickerOpen, setFavPickerOpen] = useState(false);
   const [colorAutoSelected, setColorAutoSelected] = useState(false);
@@ -51,53 +83,42 @@ export default function ProductDetail() {
   const { addToRecentlyViewed } = useRecentlyViewedStore();
 
   const { data, isLoading, isError } = useProduct(id || '');
-  const product: Product | null | undefined = data;
+  const product = data as Product | null | undefined;
   const { data: supplierTrust } = useSupplierTrust(id);
   const { data: similarItems = [] } = useSimilarProducts(product);
-  
+
   const aiCandidates = useMemo<ProductForRecommendation[]>(
     () =>
       similarItems.slice(0, 12).map((it) => ({
         id: it.id,
         name: it.name,
+        sku: it.sku,
         category: it.category_name || product?.category?.name || 'Brindes',
         priceRange: formatCurrency(it.price),
+        imageUrl: it.image_url,
         tags: [it.supplier_name].filter(Boolean) as string[],
       })),
     [similarItems, product?.category?.name],
   );
-  
-  const catalogFlags = useMemo(
-    () =>
-      product
-        ? {
-            featured: product.featured,
-            newArrival: product.newArrival,
-            onSale: product.onSale,
-            lowStock: product.stockStatus === 'low-stock',
-            stock: product.stock,
-          }
-        : undefined,
-    [product?.featured, product?.newArrival, product?.onSale, product?.stockStatus, product?.stock],
-  );
-  
-  const {
-    badges: intellBadges,
-    turnoverScore: intellTurnover,
-    isDemo: intellIsDemo,
-  } = useProductIntelligenceBadges(id, catalogFlags);
 
+  // FIX BUG-VW-01 (2026-06-21): product_views SELECT RLS limits non-admin users to
+  // only their own rows → regular users always saw their own visit count (1–5),
+  // not the global total. products.view_count is maintained by a SECURITY DEFINER
+  // trigger (fn_sync_product_view_count) which bypasses RLS and always reflects
+  // the correct all-user all-time total. Reading from products is both correct and
+  // one round-trip cheaper (no COUNT over N rows, just a single column read).
   const { data: viewCount = 0 } = useQuery({
-    queryKey: ['product-views-count', id],
+    queryKey: ['product-view-count', id],
     queryFn: async () => {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const { count } = await supabase
-        .from('product_views')
-        .select('*', { count: 'exact', head: true })
-        .eq('product_id', id ?? '')
-        .gte('created_at', thirtyDaysAgo.toISOString());
-      return count || 0;
+      const { data: row } = await supabase
+        .from('products')
+        .select('view_count')
+        .eq('id', id ?? '')
+        .maybeSingle();
+      // TS2339: view_count exists in the DB (migration 20250103080000, maintained by
+      // fn_sync_product_view_count trigger) but types.ts is stale and lacks the column.
+      // Type assertion bridges the gap until types are regenerated.
+      return (row as { view_count: number | null } | null)?.view_count ?? 0;
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
@@ -109,11 +130,13 @@ export default function ProductDetail() {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const nextYear = new Date();
     nextYear.setFullYear(nextYear.getFullYear() + 1);
-    
+
     // Ensure images are absolute URLs
     const absoluteImages = (product.images || [])
       .filter(Boolean)
-      .map(img => img.startsWith('http') ? img : `${origin}${img.startsWith('/') ? '' : '/'}${img}`);
+      .map((img) =>
+        img.startsWith('http') ? img : `${origin}${img.startsWith('/') ? '' : '/'}${img}`,
+      );
 
     return {
       '@context': 'https://schema.org',
@@ -124,13 +147,13 @@ export default function ProductDetail() {
       mpn: product.sku,
       image: absoluteImages,
       url: currentUrl,
-      brand: { 
-        '@type': 'Brand', 
-        name: product.supplier?.name || 'Promo Gifts' 
+      brand: {
+        '@type': 'Brand',
+        name: product.supplier?.name || product.brand || 'Promo Gifts',
       },
       offers: {
         '@type': 'Offer',
-        price: product.price || 0,
+        price: product.price ?? 0,
         priceCurrency: 'BRL',
         priceValidUntil: nextYear.toISOString().split('T')[0],
         itemCondition: 'https://schema.org/NewCondition',
@@ -145,14 +168,6 @@ export default function ProductDetail() {
       },
       category: product.category?.name,
       material: product.materials?.join(', '),
-      // Adicionando aggregateRating vazio para evitar avisos do Google se o sistema não tiver reviews reais
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '5',
-        reviewCount: '1',
-        bestRating: '5',
-        worstRating: '1'
-      }
     };
   }, [product]);
 
@@ -168,36 +183,73 @@ export default function ProductDetail() {
     }
   }, [product, trackProductView, addToRecentlyViewed]);
 
+  // Reset color state when navigating between products (SPA: component is reused, state persists).
+  useEffect(() => {
+    setColorAutoSelected(false);
+    setSelectedVariation(null);
+  }, [id]);
+
   // Auto-select color from URL
   useEffect(() => {
     if (!product || colorAutoSelected) return;
+
     const corParam = searchParams.get('cor');
     const grupoParam = searchParams.get('grupo');
     const hexParam = searchParams.get('hex');
-    if ((!corParam && !grupoParam && !hexParam) || !product.variations?.length) return;
-    const normalizedParam = corParam?.toLowerCase().trim() || '';
+
+    // Se não há parâmetros de cor, não fazemos seleção automática
+    if (!corParam && !grupoParam && !hexParam) {
+      setColorAutoSelected(true);
+      return;
+    }
+
+    if (!product.variations?.length) {
+      setColorAutoSelected(true);
+      return;
+    }
+
+    const normalizedParam = corParam?.toLowerCase().trim() ?? '';
+
+    // 1. Tenta match exato por nome
     let match = product.variations.find(
       (v: ProductVariation) => v.color?.name?.toLowerCase().trim() === normalizedParam,
     );
-    if (!match && normalizedParam)
+
+    // 2. Tenta match parcial por nome
+    if (!match && normalizedParam) {
       match = product.variations.find((v: ProductVariation) => {
-        const name = v.color?.name?.toLowerCase().trim() || '';
+        const name = v.color?.name?.toLowerCase().trim() ?? '';
         return name.includes(normalizedParam) || normalizedParam.includes(name);
       });
-    if (!match && hexParam)
-      match = product.variations.find(
-        (v: ProductVariation) => v.color?.hex?.toLowerCase() === hexParam.toLowerCase(),
-      );
+    }
+
+    // 3. Tenta match por hex
+    if (!match && hexParam) {
+      const normalizedHex = hexParam.startsWith('#')
+        ? hexParam.toLowerCase()
+        : `#${hexParam.toLowerCase()}`;
+      match = product.variations.find((v: ProductVariation) => {
+        const dbHex = (v.color?.hex?.toLowerCase() ?? '').replace(/^#/, '');
+        return dbHex !== '' && dbHex === normalizedHex.replace(/^#/, '');
+      });
+    }
+
+    // 4. Tenta match por grupo
     if (!match && grupoParam && product.colors?.length) {
       const c = product.colors.find(
-        (c: { groupSlug?: string; name?: string }) => c.groupSlug === grupoParam,
+        (colorItem: { groupSlug?: string; name?: string }) => colorItem.groupSlug === grupoParam,
       );
-      if (c)
+      if (c) {
         match = product.variations.find(
           (v: ProductVariation) => v.color?.name?.toLowerCase() === c.name?.toLowerCase(),
         );
+      }
     }
-    if (match) setSelectedVariation(match);
+
+    if (match) {
+      setSelectedVariation(match);
+    }
+
     setColorAutoSelected(true);
   }, [product, searchParams, colorAutoSelected]);
 
@@ -206,8 +258,8 @@ export default function ProductDetail() {
     if (!product || !colorAutoSelected) return;
     const currentCor = searchParams.get('cor') || '';
     const currentHex = searchParams.get('hex') || '';
-    const newCor = selectedVariation?.color?.name || '';
-    const newHex = selectedVariation?.color?.hex || '';
+    const newCor = selectedVariation?.color?.name ?? '';
+    const newHex = selectedVariation?.color?.hex ?? '';
     if (currentCor === newCor && currentHex === newHex) return;
     const newParams = new URLSearchParams(searchParams);
     if (newCor) {
@@ -221,29 +273,25 @@ export default function ProductDetail() {
       newParams.delete('grupo');
     }
     setSearchParams(newParams, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVariation, colorAutoSelected]);
+  }, [product, selectedVariation, colorAutoSelected, setSearchParams, searchParams]);
 
-  if (isLoading)
-    return (
-        <ProductDetailSkeleton />
-    );
+  if (isLoading) return <ProductDetailSkeleton />;
 
   if (isError || !product) {
     return (
-        <EmptyState
-          variant="products"
-          title={isError ? 'Erro ao carregar produto' : 'Produto não encontrado'}
-          description={
-            isError
-              ? 'Não foi possível carregar os dados do produto.'
-              : 'O produto não existe ou foi removido.'
-          }
-          action={{
-            label: isError ? 'Tentar novamente' : 'Voltar para Vitrine',
-            onClick: () => (isError ? window.location.reload() : navigate('/')),
-          }}
-        />
+      <EmptyState
+        variant="products"
+        title={isError ? 'Erro ao carregar produto' : 'Produto não encontrado'}
+        description={
+          isError
+            ? 'Não foi possível carregar os dados do produto.'
+            : 'O produto não existe ou foi removido.'
+        }
+        action={{
+          label: isError ? 'Tentar novamente' : 'Voltar para Vitrine',
+          onClick: () => (isError ? window.location.reload() : navigate('/')),
+        }}
+      />
     );
   }
 
@@ -264,8 +312,8 @@ export default function ProductDetail() {
             color_name: variant.color_name,
             color_hex: variant.color_hex,
             size_code: variant.size_code,
-            variant_id: variant.variant_id,
-            thumbnail: variant.thumbnail,
+            variant_id: variant.id,
+            thumbnail: variant.selected_thumbnail,
           }
         : undefined,
     );
@@ -275,21 +323,17 @@ export default function ProductDetail() {
   return (
     <>
       <PageSEO
-        title={`${product.name} | Promo Gifts`}
+        title={`${product.name} | Promo Brindes`}
         description={product.description || `${product.name} - Brinde Promocional`}
         path={`/produto/${product.id}`}
         ogImage={
           product.og_image_url
             ? getCdnUrl(product.og_image_url, 'large')
-            : product.images[0] || ''
+            : product.images?.[0] || ''
         }
         ogType="product"
       />
-      {jsonLd && (
-        <script type="application/ld+json">
-          {JSON.stringify(jsonLd)}
-        </script>
-      )}
+      {jsonLd && <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>}
 
       <ProductStickyHeader
         productId={product.id}
@@ -303,13 +347,7 @@ export default function ProductDetail() {
         product={product}
       />
 
-      <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-4 animate-fade-in">
-        <IntelligenceBadges
-          badges={intellBadges}
-          turnoverScore={intellTurnover}
-          isDemo={intellIsDemo}
-        />
-
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-4 px-3 py-3 sm:px-4 sm:py-4 lg:px-6 xl:px-8">
         <ProductDetailHero
           product={product}
           id={id || ''}
@@ -318,21 +356,48 @@ export default function ProductDetail() {
           isFavorite={isFavorite}
           onToggleFavorite={handleFavorite}
           viewCount={viewCount}
-          supplierTrust={supplierTrust}
+          supplierTrust={supplierTrust ?? null}
           onOpenPackagingModal={() => setPackagingModalOpen(true)}
           onOpenFutureStock={() => setFutureStockOpen(true)}
           onOpenSupplierComparison={() => setSupplierCompareOpen(true)}
+          isLoadingTags={isLoading}
+          hasErrorTags={isError}
+          isLoadingNiches={isLoading}
+          hasErrorNiches={isError}
         />
 
+        <Suspense fallback={null}>
+          <ProductEngravingSection
+            productId={product.id}
+            productName={product.name}
+            productSku={product.sku}
+            productPrice={product.price ?? 0}
+            productImageUrl={product.images?.[0]}
+            categoryName={product.category?.name}
+          />
+        </Suspense>
+
         <div className="border-t border-border/60 pt-6 xl:pt-8">
-          <Suspense fallback={<div className="h-48 flex items-center justify-center"><Skeleton className="h-full w-full" /></div>}>
+          <Suspense
+            fallback={
+              <div className="flex h-48 items-center justify-center">
+                <Skeleton className="h-full w-full" />
+              </div>
+            }
+          >
             <SimilarProducts currentProduct={product} />
           </Suspense>
         </div>
 
         {aiCandidates.length > 0 && (
           <div className="border-t border-border/60 pt-6 xl:pt-8">
-            <Suspense fallback={<div className="h-48 flex items-center justify-center"><Skeleton className="h-full w-full" /></div>}>
+            <Suspense
+              fallback={
+                <div className="flex h-48 items-center justify-center">
+                  <Skeleton className="h-full w-full" />
+                </div>
+              }
+            >
               <SmartRecommendations
                 currentProductId={product.id}
                 candidateProducts={aiCandidates}
@@ -378,18 +443,18 @@ export default function ProductDetail() {
             isOpen={packagingModalOpen}
             onClose={() => setPackagingModalOpen(false)}
             packingType={
-              product.packagingContext === 'with_customization'
+              (product.packagingContext === 'with_customization'
                 ? product.repackingType || product.packingType
-                : product.packingType
+                : product.packingType) ?? null
             }
-            packagingContext={product.packagingContext}
-            boxImage={product.boxImage}
-            boxWidthMm={product.boxWidthMm}
-            boxHeightMm={product.boxHeightMm}
-            boxLengthMm={product.boxLengthMm}
-            boxWeightKg={product.boxWeightKg}
-            boxQuantity={product.boxQuantity}
-            boxVolumeCm3={product.boxVolumeCm3}
+            packagingContext={product.packagingContext ?? null}
+            boxImage={product.boxImage ?? null}
+            boxWidthMm={product.boxWidthMm ?? null}
+            boxHeightMm={product.boxHeightMm ?? null}
+            boxLengthMm={product.boxLengthMm ?? null}
+            boxWeightKg={product.boxWeightKg ?? null}
+            boxQuantity={product.boxQuantity ?? null}
+            boxVolumeCm3={product.boxVolumeCm3 ?? null}
           />
         </Suspense>
       </div>

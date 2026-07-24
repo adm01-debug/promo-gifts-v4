@@ -4,8 +4,8 @@
  * Filtro client-side: faixa de preço (aplicado na página atual)
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { invokeExternalDb } from '@/lib/external-db';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -16,15 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Filter, X, ChevronDown, RotateCcw, Boxes } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
+import { logger } from '@/lib/logger';
 export interface ProductFilters {
   category_id?: string;
   supplier_id?: string;
@@ -59,17 +56,10 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
   const [catSearch, setCatSearch] = useState('');
   const [supSearch, setSupSearch] = useState('');
 
-  // Carregar categorias e fornecedores ao abrir
-  useEffect(() => {
-    if (!isOpen) return;
-    if (categories.length === 0) loadCategories();
-    if (suppliers.length === 0) loadSuppliers();
-  }, [isOpen]);
-
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     setLoadingCats(true);
     try {
-      const result = await invokeExternalDb<CategoryOption>({
+      const result = await dbInvoke<CategoryOption>({
         table: 'categories',
         operation: 'select',
         select: 'id,name',
@@ -78,16 +68,16 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
       });
       setCategories(result.records || []);
     } catch (e) {
-      console.error('Erro ao carregar categorias:', e);
+      logger.error('Erro ao carregar categorias:', e);
     } finally {
       setLoadingCats(false);
     }
-  };
+  }, []);
 
-  const loadSuppliers = async () => {
+  const loadSuppliers = useCallback(async () => {
     setLoadingSups(true);
     try {
-      const result = await invokeExternalDb<SupplierOption>({
+      const result = await dbInvoke<SupplierOption>({
         table: 'suppliers',
         operation: 'select',
         select: 'id,name,code',
@@ -96,15 +86,25 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
       });
       setSuppliers(result.records || []);
     } catch (e) {
-      console.error('Erro ao carregar fornecedores:', e);
+      logger.error('Erro ao carregar fornecedores:', e);
     } finally {
       setLoadingSups(false);
     }
-  };
+  }, []);
 
-  const update = useCallback((partial: Partial<ProductFilters>) => {
-    onChange({ ...filters, ...partial });
-  }, [filters, onChange]);
+  // Carregar categorias e fornecedores ao abrir
+  useEffect(() => {
+    if (!isOpen) return;
+    if (categories.length === 0) loadCategories();
+    if (suppliers.length === 0) loadSuppliers();
+  }, [isOpen, categories.length, suppliers.length, loadCategories, loadSuppliers]);
+
+  const update = useCallback(
+    (partial: Partial<ProductFilters>) => {
+      onChange({ ...filters, ...partial });
+    },
+    [filters, onChange],
+  );
 
   const clearAll = useCallback(() => {
     onChange({});
@@ -126,19 +126,19 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
   const filteredCategories = useMemo(() => {
     if (!catSearch) return categories.slice(0, 50);
     const s = catSearch.toLowerCase();
-    return categories.filter(c => c.name.toLowerCase().includes(s)).slice(0, 50);
+    return categories.filter((c) => c.name.toLowerCase().includes(s)).slice(0, 50);
   }, [categories, catSearch]);
 
   const filteredSuppliers = useMemo(() => {
     if (!supSearch) return suppliers;
     const s = supSearch.toLowerCase();
-    return suppliers.filter(sp =>
-      sp.name.toLowerCase().includes(s) || sp.code?.toLowerCase().includes(s)
+    return suppliers.filter(
+      (sp) => sp.name.toLowerCase().includes(s) || sp.code?.toLowerCase().includes(s),
     );
   }, [suppliers, supSearch]);
 
-  const selectedCategoryName = categories.find(c => c.id === filters.category_id)?.name;
-  const selectedSupplierName = suppliers.find(s => s.id === filters.supplier_id)?.name;
+  const selectedCategoryName = categories.find((c) => c.id === filters.category_id)?.name;
+  const selectedSupplierName = suppliers.find((s) => s.id === filters.supplier_id)?.name;
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -149,7 +149,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
             size="sm"
             className={cn(
               'gap-2 transition-colors',
-              activeCount > 0 && 'border-primary text-primary hover:text-primary'
+              activeCount > 0 && 'border-primary text-primary hover:text-primary',
             )}
           >
             <Filter className="h-3.5 w-3.5" />
@@ -159,49 +159,74 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
                 {activeCount}
               </Badge>
             )}
-            <ChevronDown className={cn(
-              'h-3.5 w-3.5 transition-transform',
-              isOpen && 'rotate-180'
-            )} />
+            <ChevronDown
+              className={cn('h-3.5 w-3.5 transition-transform', isOpen && 'rotate-180')}
+            />
           </Button>
         </CollapsibleTrigger>
 
         {/* Badges dos filtros ativos */}
         {activeCount > 0 && !isOpen && (
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex flex-wrap items-center gap-1.5">
             {selectedCategoryName && (
-              <Badge variant="secondary" className="text-xs gap-1">
-                Cat: {selectedCategoryName.length > 20 ? selectedCategoryName.slice(0, 20) + '…' : selectedCategoryName}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => update({ category_id: undefined })} />
+              <Badge variant="secondary" className="gap-1 text-xs">
+                Cat:{' '}
+                {selectedCategoryName.length > 20
+                  ? `${selectedCategoryName.slice(0, 20)}…`
+                  : selectedCategoryName}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => update({ category_id: undefined })}
+                />
               </Badge>
             )}
             {selectedSupplierName && (
-              <Badge variant="secondary" className="text-xs gap-1">
-                Forn: {selectedSupplierName.length > 15 ? selectedSupplierName.slice(0, 15) + '…' : selectedSupplierName}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => update({ supplier_id: undefined })} />
+              <Badge variant="secondary" className="gap-1 text-xs">
+                Forn:{' '}
+                {selectedSupplierName.length > 15
+                  ? `${selectedSupplierName.slice(0, 15)}…`
+                  : selectedSupplierName}
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => update({ supplier_id: undefined })}
+                />
               </Badge>
             )}
             {filters.is_active !== undefined && filters.is_active !== 'all' && (
-              <Badge variant="secondary" className="text-xs gap-1">
+              <Badge variant="secondary" className="gap-1 text-xs">
                 {filters.is_active ? 'Ativos' : 'Inativos'}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => update({ is_active: 'all' })} />
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => update({ is_active: 'all' })}
+                />
               </Badge>
             )}
             {filters.is_kit && (
-              <Badge variant="secondary" className="text-xs gap-1">
+              <Badge variant="secondary" className="gap-1 text-xs">
                 <Boxes className="h-3 w-3" />
                 Apenas Kits
-                <X className="h-3 w-3 cursor-pointer" onClick={() => update({ is_kit: undefined })} />
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => update({ is_kit: undefined })}
+                />
               </Badge>
             )}
             {((filters.price_min ?? 0) > 0 || (filters.price_max ?? 0) > 0) && (
-              <Badge variant="secondary" className="text-xs gap-1">
+              <Badge variant="secondary" className="gap-1 text-xs">
                 R$ {filters.price_min || 0} – {filters.price_max || '∞'}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => update({ price_min: undefined, price_max: undefined })} />
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => update({ price_min: undefined, price_max: undefined })}
+                />
               </Badge>
             )}
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground" onClick={clearAll}>
-              <RotateCcw className="h-3 w-3 mr-1" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs text-muted-foreground"
+              onClick={clearAll}
+            >
+              <RotateCcw className="mr-1 h-3 w-3" />
               Limpar
             </Button>
           </div>
@@ -209,7 +234,7 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
       </div>
 
       <CollapsibleContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3 p-3 bg-muted/30 rounded-lg border border-border/50">
+        <div className="mt-3 grid grid-cols-1 gap-3 rounded-lg border border-border/50 bg-muted/30 p-3 sm:grid-cols-2 lg:grid-cols-4">
           {/* Categoria */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Categoria</label>
@@ -272,7 +297,13 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Status</label>
             <Select
-              value={filters.is_active === undefined || filters.is_active === 'all' ? '__all__' : filters.is_active ? 'active' : 'inactive'}
+              value={
+                filters.is_active === undefined || filters.is_active === 'all'
+                  ? '__all__'
+                  : filters.is_active
+                    ? 'active'
+                    : 'inactive'
+              }
               onValueChange={(v) => {
                 if (v === '__all__') update({ is_active: 'all' });
                 else update({ is_active: v === 'active' });
@@ -292,9 +323,9 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
           {/* Kit */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground">Tipo</label>
-            <div className="flex items-center gap-2 h-9 px-3 rounded-md border border-input bg-background">
+            <div className="flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3">
               <Boxes className="h-3.5 w-3.5 text-primary" />
-              <span className="text-sm flex-1">Apenas Kits</span>
+              <span className="flex-1 text-sm">Apenas Kits</span>
               <Switch
                 checked={!!filters.is_kit}
                 onCheckedChange={(checked) => update({ is_kit: checked || undefined })}
@@ -311,7 +342,9 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
                 type="number"
                 placeholder="Mín"
                 value={filters.price_min ?? ''}
-                onChange={(e) => update({ price_min: e.target.value ? parseFloat(e.target.value) : undefined })}
+                onChange={(e) =>
+                  update({ price_min: e.target.value ? parseFloat(e.target.value) : undefined })
+                }
                 className="h-9 text-sm"
                 min={0}
                 step={0.01}
@@ -321,7 +354,9 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
                 type="number"
                 placeholder="Máx"
                 value={filters.price_max ?? ''}
-                onChange={(e) => update({ price_max: e.target.value ? parseFloat(e.target.value) : undefined })}
+                onChange={(e) =>
+                  update({ price_max: e.target.value ? parseFloat(e.target.value) : undefined })
+                }
                 className="h-9 text-sm"
                 min={0}
                 step={0.01}
@@ -331,9 +366,9 @@ export function ProductFiltersBar({ filters, onChange }: ProductFiltersBarProps)
 
           {/* Ações */}
           {activeCount > 0 && (
-            <div className="sm:col-span-2 lg:col-span-4 flex justify-end">
+            <div className="flex justify-end sm:col-span-2 lg:col-span-4">
               <Button variant="ghost" size="sm" className="text-xs" onClick={clearAll}>
-                <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                <RotateCcw className="mr-1 h-3.5 w-3.5" />
                 Limpar todos os filtros
               </Button>
             </div>

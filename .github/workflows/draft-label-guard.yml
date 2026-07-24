@@ -1,0 +1,34 @@
+name: draft-label-guard
+
+# Gate DEDICADO (required check) — bloqueia merges quando o label
+# "Salvar Alterações" reaparecer nos fluxos de RASCUNHO de orçamento.
+# O label canônico é "Salvar Rascunho" (SSOT: aria-label + texto + testid
+# quote-save-draft*). Este workflow é rápido (<20s) por design para poder
+# ser required no Branch Protection sem virar gargalo.
+#
+# NOTA: o mesmo script (`npm run check:no-salvar-alteracoes-draft`) também
+# roda dentro do job `quality-gate` do ci.yml. Mantemos os dois: o job
+# consolidado dá contexto agregado, e este workflow dedicado é o que fica
+# marcado como required no ruleset "main" (ver .github/required-checks.json).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  draft-label-guard:
+    name: Draft label guard (Salvar Alterações → Salvar Rascunho)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+      - name: Verificar ausência de "Salvar Alterações" em fluxos de rascunho
+        run: node scripts/check-no-salvar-alteracoes-draft.mjs

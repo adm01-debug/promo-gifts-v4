@@ -32,8 +32,14 @@ Com branch protection:
    - ☑ **Require status checks to pass before merging**
      - ☑ Require branches to be up to date before merging
      - Adicionar ao "Search for status checks":
-       - `gitleaks` (de `.github/workflows/security.yml`)
-       - `branch-protection-sentinel` (de `.github/workflows/branch-protection-sentinel.yml`)
+       - `Lint, Typecheck & Test` (job crítico de lint + testes em `.github/workflows/ci.yml`)
+       - `Production Build & Warnings Gate` (job crítico de build em `.github/workflows/ci.yml`)
+       - `TypeScript gate (PR fail-fast)` (gate rápido para bloquear regressão de tipos)
+       - `Gitleaks — Secret Scan` (de `.github/workflows/security.yml`)
+       - `Verify push to main matches accepted patterns` (de `.github/workflows/branch-protection-sentinel.yml`)
+     - ✅ **Não marcar** "Require branches to be up to date before merging" como opcional: manter marcado para evitar merge com checks antigos.
+     - ✅ Em "Status checks that are required", deixar **somente checks finais** (não steps intermediários).
+     - 🔒 Resultado prático: merge fica bloqueado quando qualquer check obrigatório estiver **pending**, **failed** ou **cancelled**.
    - ☑ **Require conversation resolution before merging**
    - ☑ **Do not allow bypassing the above settings**
    - ☐ Allow force pushes (deixar **DESmarcado**)
@@ -59,9 +65,13 @@ Resultado esperado:
 
 Abrir um PR simples e clicar em **Merge** sem aprovar primeiro. O botão deve estar **desabilitado**.
 
-### Teste 3 — CI vermelho bloqueia merge
+### Teste 3 — CI pendente/vermelho bloqueia merge
 
 Abrir PR com `package.json` malformado de propósito. Mesmo com 1 approval, merge fica bloqueado até CI ficar verde.
+
+### Teste 4 — CI pendente bloqueia merge
+
+Abrir PR e, enquanto os jobs obrigatórios ainda estiverem rodando (status **Expected — Waiting for status to be reported** ou **Pending**), validar que o botão **Merge** permanece desabilitado.
 
 ## 4. Workflow auxiliar (defesa em profundidade)
 
@@ -79,5 +89,5 @@ Nenhuma. Hotfixes seguem o mesmo fluxo PR + approval. Se houver incidente que ex
 
 A cada trimestre:
 - Confirmar que regra continua ativa
-- Revisar lista de status checks obrigatórios
+- Revisar lista de status checks obrigatórios (lint, build e testes críticos)
 - Auditar logs de override

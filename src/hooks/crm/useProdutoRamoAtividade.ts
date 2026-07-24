@@ -1,9 +1,9 @@
 /**
  * useProdutoRamoAtividade — busca os ramos de atividade vinculados a um produto.
- * Consulta o banco externo Promobrind via external-db-bridge (SSOT).
+ * FIX-BRIDGE-01 (2026-06-01): migrated from supabase.functions.invoke to dbInvoke.
  */
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from '@tanstack/react-query';
+import { dbInvoke } from '@/lib/db/postgrest';
 
 export interface ProdutoRamo {
   ramo_id: string;
@@ -14,18 +14,16 @@ export interface ProdutoRamo {
 
 export function useProdutoRamoAtividade(productId: string | null | undefined) {
   return useQuery({
-    queryKey: ["produto-ramo-atividade", productId],
+    queryKey: ['produto-ramo-atividade', productId],
     enabled: !!productId,
     queryFn: async (): Promise<ProdutoRamo[]> => {
-      const { data, error } = await supabase.functions.invoke("external-db-bridge", {
-        body: {
-          operation: "select",
-          table: "produto_ramo_atividade",
-          filters: { product_id: productId },
-        },
+      const result = await dbInvoke<ProdutoRamo>({
+        operation: 'select',
+        table: 'produto_ramo_atividade',
+        // FIX 2026-06-26: a coluna real e 'produto_id' (PT), nao 'product_id' -> evitava PostgREST 400/42703.
+        filters: { produto_id: productId ?? '' },
       });
-      if (error) throw error;
-      return (data?.rows || []) as ProdutoRamo[];
+      return result.records || [];
     },
     staleTime: 5 * 60 * 1000,
   });

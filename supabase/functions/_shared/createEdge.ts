@@ -12,7 +12,7 @@
  *
  * Uso:
  *   export default createEdge(
- *     { auth: 'jwt', role: 'agente' },
+ *     { auth: 'jwt', role: 'vendedor' },
  *     async (req, ctx) => {
  *       const { userId, userRole } = ctx;
  *       return new Response(JSON.stringify({ ok: true }), { status: 200 });
@@ -39,7 +39,10 @@ import { authorizeCron } from "./dispatcher-auth.ts";
 // Tipos públicos
 // ---------------------------------------------------------------------------
 
-export type EdgeRole = "agente" | "supervisor" | "dev";
+// Roles reais em user_roles: 'vendedor' (tier-base), 'admin' (== supervisor),
+// 'dev'. 'agente'/'supervisor' permanecem como aliases historicos aceitos por
+// requireRole (ver _shared/auth.ts).
+export type EdgeRole = "vendedor" | "agente" | "supervisor" | "admin" | "dev";
 
 export type EdgeConfig =
   | { auth: "jwt"; role?: EdgeRole }
@@ -87,7 +90,7 @@ export function createEdge(
 
       // ── Modo cron ─────────────────────────────────────────────────────────
       if (config.auth === "cron") {
-        const result = authorizeCron(req, {
+        const result = await authorizeCron(req, {
           corsHeaders,
           secretEnvName: config.secretEnv,
           headerName: config.headerName ?? "x-cron-secret",

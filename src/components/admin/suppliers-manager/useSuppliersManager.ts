@@ -1,14 +1,13 @@
+import { dbInvoke, dbInvokeSingle, dbInvokeDelete } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { applyPixMask, validatePixKey } from '@/utils/pixMask';
-import {
-  invokeExternalDb,
-  invokeExternalDbSingle,
-  invokeExternalDbDelete,
-} from '@/lib/external-db';
 import { searchCrm } from '@/lib/crm-db';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { validateCnpj, maskCep } from '@/utils/masks';
+import { validateCnpj, maskCep, normalizeCnpj } from '@/utils/masks';
+import { assertPersistableCnpj } from '@/utils/cnpj-schema';
+import { cnpjErrorHaystack, mapCnpjError } from '@/utils/cnpj-errors';
 import { fetchAddressByCep } from '@/utils/viacep';
 import { fetchCnpjData } from '@/utils/cnpj-lookup';
 import { logger } from '@/lib/logger';
@@ -20,18 +19,33 @@ import {
   ORGANIZATION_ID,
   createEmptyContact,
   createEmptyPixKey,
-} from "./types";
+} from './types';
 
+/**
+ * Fixes applied (audit 26/05/2026):
+ *   BUG-04: handleDelete uses state instead of confirm() — exposes deleteConfirmSupplier/confirmDelete/cancelDelete
+ *   BUG-07 + BUG-30: social media fields (instagram, facebook, linkedin, youtube, tiktok) added to payload & handleEdit
+ *   BUG-12: fetchSuppliers paginates up to 2000 records (200/page loop)
+ *   BUG-13: removed deprecated minimum_order_value from payload
+ *   BUG-16: JSON.parse of contacts handles both string and already-parsed object
+ *   BUG-17: handleCnpjLookup only fills empty fields (never overwrites existing data)
+ *   BUG-21: name/tradingName dup checks use __ilike_ for case-insensitive comparison
+ *   BUG-23: carrier search timeout cleanup on unmount
+ *   BUG-25: removed dead code for address_details/social_details (fields don't exist in DB)
+ */
 export function useSuppliersManager() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'product' | 'engraving'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'engraving' | 'product'>('all');
+  const [filterStatus, setFilterStatus] = useState<'active' | 'all' | 'inactive'>('all');
   const [editingSupplier, setEditingSupplier] = useState<Partial<Supplier> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [cnpjError, setCnpjError] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
+  // BUG-04 FIX: state-based delete confirmation — no more confirm() blocking dialog
+  const [deleteConfirmSupplier, setDeleteConfirmSupplier] = useState<Supplier | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [fetchingCnpj, setFetchingCnpj] = useState(false);
   const [contacts, setContacts] = useState<SupplierContact[]>([createEmptyContact()]);
@@ -53,6 +67,14 @@ export function useSuppliersManager() {
   const carrierSearchTimeout = useRef<ReturnType<typeof setTimeout>>();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // BUG-23 FIX: cleanup carrier search timeout on unmount
+  useEffect(() => {
+    const timeoutRef = carrierSearchTimeout;
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
   const searchCarriers = useCallback(async (term: string) => {
     if (term.length < 2) {
       setCarrierResults([]);
@@ -71,9 +93,10 @@ export function useSuppliersManager() {
       }).catch(() => []);
       const list = (companies || []).filter((c) => c.nome_fantasia || c.razao_social);
       setCarrierResults(list);
-      setShowCarrierDropdown(list.length > 0);
+      setShowCarrierDropdown(true);
     } catch {
       setCarrierResults([]);
+      setShowCarrierDropdown(false);
     } finally {
       setSearchingCarriers(false);
     }
@@ -90,7 +113,7 @@ export function useSuppliersManager() {
     return null;
   };
 
-  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: string | boolean) => {
+  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: boolean | string) => {
     setPixKeys((prev) => {
       const updated = prev.map((k) => {
         if (k.id !== id)
@@ -123,17 +146,28 @@ export function useSuppliersManager() {
   const removeContact = (id: string) =>
     setContacts((prev) => (prev.length > 1 ? prev.filter((c) => c.id !== id) : prev));
 
+  // BUG-12 FIX: paginate suppliers up to 2000 records (200/page)
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await invokeExternalDb<Supplier>({
-        table: 'suppliers',
-        operation: 'select',
-        select: '*',
-        orderBy: { column: 'name', ascending: true },
-        limit: 200,
-      });
-      setSuppliers(result.records || []);
+      const all: Supplier[] = [];
+      const pageSize = 200;
+      const maxPages = 10; // cap at 2000 to prevent runaway
+      for (let page = 0; page < maxPages; page++) {
+        const { data: records, error } = await untypedFrom<Supplier>('suppliers')
+          .select(
+            'id, name, code, cnpj, contact_name, email, phone, address, active, created_at, website, contact_person, payment_terms, delivery_time_days, minimum_order_value, notes, updated_at, organization_id, trading_name, api_type, api_base_url, min_order_value, shipping_terms, default_markup_percent, is_product_supplier, is_engraving_supplier, sync_enabled, sync_interval_minutes, last_full_sync_at, last_sync_status, last_sync_error, api_rate_limit_per_hour, priority, api_requests_current_hour, api_requests_reset_at, state_uf, tax_regime, inscricao_estadual, phone2, logo_url',
+          )
+          .order('name', { ascending: true })
+          .range(page * pageSize, page * pageSize + pageSize - 1);
+        if (error) throw error;
+        // O parser do select tipa a linha só com as 40 colunas listadas;
+        // os campos sociais/endereço do Supplier não são colunas do DB
+        // (preenchidos em runtime a partir dos JSONs address/contacts).
+        all.push(...(records as unknown as Supplier[]));
+        if (records.length < pageSize) break; // last page
+      }
+      setSuppliers(all);
     } catch {
       toast.error('Erro ao carregar fornecedores');
     } finally {
@@ -172,27 +206,18 @@ export function useSuppliersManager() {
   };
 
   const handleEdit = (supplier: Supplier) => {
-    const s = { ...supplier } as Record<string, unknown>;
-    try {
-      const addr = (supplier as Record<string, unknown>).address_details
-        ? JSON.parse((supplier as Record<string, unknown>).address_details as string)
-        : null;
-      if (addr && typeof addr === 'object') Object.assign(s, addr);
-    } catch {
-      /* ignore */
-    }
-    try {
-      const social = (supplier as Record<string, unknown>).social_details
-        ? JSON.parse((supplier as Record<string, unknown>).social_details as string)
-        : null;
-      if (social && typeof social === 'object') Object.assign(s, social);
-    } catch {
-      /* ignore */
-    }
-    setEditingSupplier(s as Partial<Supplier>);
+    // BUG-25 FIX: removed dead code blocks for address_details / social_details
+    // (those fields do not exist in the real DB schema)
+    // CNPJ pode vir do BD com máscara/espaços — normalizamos para dígitos-only
+    // no formulário; o display continua via `maskCnpj(...)` nos inputs/cards.
+    const s: Partial<Supplier> = { ...supplier, cnpj: normalizeCnpj(supplier.cnpj) || null };
+    setEditingSupplier(s);
 
+    // BUG-16 FIX: contacts may come from DB as parsed object (JSONB) or as JSON string
     try {
-      const parsed = supplier.contacts ? JSON.parse(supplier.contacts) : null;
+      const raw = supplier.contacts;
+      const parsed: unknown =
+        raw === null || raw === undefined ? null : typeof raw === 'string' ? JSON.parse(raw) : raw; // already parsed by PostgREST JSONB
       if (Array.isArray(parsed) && parsed.length > 0) {
         setContacts(
           parsed.map(
@@ -214,12 +239,13 @@ export function useSuppliersManager() {
 
     // Parse financial data (still in notes for payment/pix)
     const notesStr = supplier.notes || '';
-    const finMatchNew = notesStr.match(
-      /\[Financeiro: Forma: (.*?), PIX: (.*?), PIX Atualizado: (.*?)\]/,
+    const finMatchNew = /\[Financeiro: Forma: (.*?), PIX: (.*?), PIX Atualizado: (.*?)\]/.exec(
+      notesStr,
     );
-    const finMatchLegacy = notesStr.match(
-      /\[Financeiro: Forma: (.*?), PIX Tipo: (.*?), PIX Número: (.*?), PIX Favorecido: (.*?), PIX Atualizado: (.*?)\]/,
-    );
+    const finMatchLegacy =
+      /\[Financeiro: Forma: (.*?), PIX Tipo: (.*?), PIX Número: (.*?), PIX Favorecido: (.*?), PIX Atualizado: (.*?)\]/.exec(
+        notesStr,
+      );
     if (finMatchNew) {
       setFormaPagamento(finMatchNew[1] !== '-' ? finMatchNew[1].split(',').filter(Boolean) : []);
       const pixData = finMatchNew[2];
@@ -262,17 +288,17 @@ export function useSuppliersManager() {
       setPixKeys([createEmptyPixKey(true)]);
     }
 
-    // ── Read dedicated columns (no more regex for these!) ──
+    // ── Read dedicated columns ──
     setFoneFixo1(supplier.phone || '');
     setFoneFixo2(supplier.phone2 || '');
     setInscricaoEstadual(supplier.inscricao_estadual || '');
     setRegimeTributario(supplier.tax_regime || '');
     setEstadoFaturamento(supplier.state_uf || '');
 
-    // ── Backward compat: migrate legacy notes data if columns are empty ──
+    // ── Backward compat: migrate legacy notes data if dedicated columns are empty ──
     if (!supplier.inscricao_estadual && !supplier.tax_regime && !supplier.state_uf) {
-      const fiscalMatch = notesStr.match(
-        /\[Fiscal: IE: (.*?), Regime: (.*?), UF Faturamento: (.*?)\]/,
+      const fiscalMatch = /\[Fiscal: IE: (.*?), Regime: (.*?), UF Faturamento: (.*?)\]/.exec(
+        notesStr,
       );
       if (fiscalMatch) {
         setInscricaoEstadual(fiscalMatch[1] !== '-' ? fiscalMatch[1] : '');
@@ -281,14 +307,13 @@ export function useSuppliersManager() {
       }
     }
     if (!supplier.phone2) {
-      const foneMatch = notesStr.match(/\[Fones Fixos: 01: (.*?), 02: (.*?)\]/);
+      const foneMatch = /\[Fones Fixos: 01: (.*?), 02: (.*?)\]/.exec(notesStr);
       if (foneMatch) {
-        // phone (fone fixo 1) is already a column — only recover phone2
         setFoneFixo2(foneMatch[2] !== '-' ? foneMatch[2] : '');
       }
     }
 
-    const carrierMatch = notesStr.match(/\[Transportadora: (.*?), ID: (.*?)\]/);
+    const carrierMatch = /\[Transportadora: (.*?), ID: (.*?)\]/.exec(notesStr);
     if (carrierMatch) {
       setTransportadoraPadrao(carrierMatch[1] !== '-' ? carrierMatch[1] : '');
       setTransportadoraId(carrierMatch[2] !== '-' ? carrierMatch[2] : '');
@@ -317,27 +342,32 @@ export function useSuppliersManager() {
       .filter((k) => k.chave.trim())
       .find((k) => validatePixKey(k.chave, k.tipo));
     if (invalidPix) {
-      toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo)!);
+      toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjRaw = editingSupplier.cnpj?.replace(/\D/g, '') || '';
+    const cnpjRaw = normalizeCnpj(editingSupplier.cnpj);
     if (cnpjRaw.length > 0 && !validateCnpj(cnpjRaw)) {
       toast.error('CNPJ informado é inválido');
       return;
     }
+    setCnpjError('');
     setSaving(true);
 
     // Duplicate checks
     if (cnpjRaw.length === 14 && editingSupplier.cnpj) {
       try {
-        const existing = await invokeExternalDb<{ id: string; name: string; cnpj: string }>({
-          table: 'suppliers',
-          operation: 'select',
-          select: 'id,name,cnpj',
-          filters: { cnpj: editingSupplier.cnpj.trim() },
-          limit: 5,
-        });
-        const duplicate = existing.records?.find((r) => r.id !== editingSupplier.id);
+        // BUG-SUPPLIERMGR-CNPJ-DUPCHECK-SILENT-FAIL FIX: { data } without error check — a failed
+        // SELECT silently bypassed the CNPJ dup check; now throws so the outer catch logs it.
+        const { data: existingRecords, error: cnpjCheckErr } = await untypedFrom<{
+          id: string;
+          name: string;
+          cnpj: string;
+        }>('suppliers')
+          .select('id,name,cnpj')
+          .eq('cnpj', cnpjRaw)
+          .limit(5);
+        if (cnpjCheckErr) throw cnpjCheckErr;
+        const duplicate = existingRecords?.find((r) => r.id !== editingSupplier.id);
         if (duplicate) {
           toast.error(`Já existe outro fornecedor com este CNPJ: "${duplicate.name}".`);
           setSaving(false);
@@ -347,13 +377,14 @@ export function useSuppliersManager() {
         logger.warn('[SuppliersManager] CNPJ dup check failed:', err);
       }
     }
+    // BUG-21 FIX: case-insensitive name dup check via __ilike_ prefix
     if (editingSupplier.name?.trim()) {
       try {
-        const existingByName = await invokeExternalDb<{ id: string; name: string }>({
+        const existingByName = await dbInvoke<{ id: string; name: string }>({
           table: 'suppliers',
           operation: 'select',
           select: 'id,name',
-          filters: { name: editingSupplier.name.trim() },
+          filters: { __ilike_name: editingSupplier.name.trim() },
           limit: 5,
         });
         const dupByName = existingByName.records?.find((r) => r.id !== editingSupplier.id);
@@ -368,7 +399,7 @@ export function useSuppliersManager() {
     }
     if (editingSupplier.trading_name?.trim()) {
       try {
-        const existingByTN = await invokeExternalDb<{
+        const existingByTN = await dbInvoke<{
           id: string;
           name: string;
           trading_name: string;
@@ -376,7 +407,8 @@ export function useSuppliersManager() {
           table: 'suppliers',
           operation: 'select',
           select: 'id,name,trading_name',
-          filters: { trading_name: editingSupplier.trading_name.trim() },
+          // BUG-21 FIX: case-insensitive trading_name dup check
+          filters: { __ilike_trading_name: editingSupplier.trading_name.trim() },
           limit: 5,
         });
         const dupByTN = existingByTN.records?.find((r) => r.id !== editingSupplier.id);
@@ -413,17 +445,17 @@ export function useSuppliersManager() {
         null;
 
       const payload: Record<string, unknown> = {
-        name: es.name!.trim(),
+        name: (es.name ?? '').trim(),
         code:
           es.code?.trim() ||
-          es
-            .name!.trim()
+          (es.name ?? '')
+            .trim()
             .toUpperCase()
             .replace(/\s+/g, '_')
             .replace(/[^A-Z0-9_]/g, '')
             .slice(0, 20),
         trading_name: es.trading_name?.trim() || null,
-        cnpj: es.cnpj?.trim() || null,
+        cnpj: assertPersistableCnpj(es.cnpj),
         active: es.active ?? true,
         contact_name: contacts[0]?.name?.trim() || null,
         contact_person: contacts[0]?.role?.trim() || null,
@@ -434,7 +466,7 @@ export function useSuppliersManager() {
         website: es.website?.trim() || null,
         default_markup_percent: es.default_markup_percent ?? null,
         min_order_value: es.min_order_value ?? null,
-        minimum_order_value: es.min_order_value ?? null,
+        // BUG-13 FIX: removed deprecated minimum_order_value column
         delivery_time_days: es.delivery_time_days ?? null,
         payment_terms: es.payment_terms?.trim() || null,
         shipping_terms: es.shipping_terms?.trim() || null,
@@ -442,6 +474,12 @@ export function useSuppliersManager() {
         inscricao_estadual: inscricaoEstadual.trim() || null,
         tax_regime: regimeTributario || null,
         state_uf: estadoFaturamento || null,
+        // BUG-07 + BUG-30 FIX: persist social media fields to dedicated columns
+        instagram: es.instagram?.trim() || null,
+        facebook: es.facebook?.trim() || null,
+        linkedin: es.linkedin?.trim() || null,
+        youtube: es.youtube?.trim() || null,
+        tiktok: es.tiktok?.trim() || null,
         notes: buildNotesPayload(
           es,
           contacts,
@@ -457,20 +495,16 @@ export function useSuppliersManager() {
 
       if (editingSupplier.logo_url) payload.logo_url = editingSupplier.logo_url;
       else if (!isNew && editingSupplier.logo_url === null) {
-        try {
-          payload.logo_url = null;
-        } catch {
-          /* ignore */
-        }
+        payload.logo_url = null;
       }
 
       if (isNew) {
         payload.organization_id = ORGANIZATION_ID;
         payload.created_at = now;
-        await invokeExternalDbSingle({ table: 'suppliers', operation: 'insert', data: payload });
+        await dbInvokeSingle({ table: 'suppliers', operation: 'insert', data: payload });
         toast.success(`Fornecedor "${editingSupplier.name}" criado`);
       } else {
-        await invokeExternalDbSingle({
+        await dbInvokeSingle({
           table: 'suppliers',
           operation: 'update',
           id: editingSupplier.id,
@@ -481,25 +515,45 @@ export function useSuppliersManager() {
       setEditingSupplier(null);
       fetchSuppliers();
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao salvar fornecedor');
+      logger.error('Failed to save supplier', err);
+      // SSOT: mesma copy inline nas duas UIs (ver src/utils/cnpj-errors.ts).
+      const hay = cnpjErrorHaystack(err);
+      if (/cnpj/i.test(hay)) {
+        const mapped = mapCnpjError(err);
+        const cnpjCopy = mapped.message;
+        setCnpjError(cnpjCopy);
+        toast.error(cnpjCopy);
+      } else {
+        toast.error('Erro ao salvar fornecedor');
+      }
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (supplier: Supplier) => {
-    if (!confirm(`Deseja realmente excluir o fornecedor "${supplier.name}"?`)) return;
+  // BUG-04 FIX: requestDelete sets confirmation state; actual delete in confirmDelete
+  const handleDelete = (supplier: Supplier) => {
+    setDeleteConfirmSupplier(supplier);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmSupplier) return;
+    const supplier = deleteConfirmSupplier;
+    setDeleteConfirmSupplier(null);
     setDeleting(supplier.id);
     try {
-      await invokeExternalDbDelete('suppliers', supplier.id);
+      await dbInvokeDelete({ table: 'suppliers', id: supplier.id });
       toast.success(`Fornecedor "${supplier.name}" excluído`);
       fetchSuppliers();
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao excluir fornecedor');
+      logger.error('Failed to delete supplier', err);
+      toast.error('Erro ao excluir fornecedor');
     } finally {
       setDeleting(null);
     }
   };
+
+  const cancelDelete = () => setDeleteConfirmSupplier(null);
 
   const updateField = (field: string, value: unknown) => {
     setEditingSupplier((prev) => (prev ? { ...prev, [field]: value } : null));
@@ -529,15 +583,17 @@ export function useSuppliersManager() {
       updateField('logo_url', urlData.publicUrl);
       toast.success('Logo enviada com sucesso');
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao enviar logo');
+      logger.error('Failed to upload supplier logo', err);
+      toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
     }
   };
 
+  // BUG-17 FIX: only fill fields that are currently empty — never overwrite existing data
   const handleCnpjLookup = async () => {
-    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') || '';
+    const digits = editingSupplier?.cnpj?.replace(/\D/g, '') ?? '';
     if (!validateCnpj(digits)) {
       toast.error('CNPJ inválido');
       return;
@@ -546,21 +602,25 @@ export function useSuppliersManager() {
     try {
       const data = await fetchCnpjData(digits);
       if (data) {
-        if (data.razao_social) updateField('name', data.razao_social);
-        if (data.nome_fantasia) updateField('trading_name', data.nome_fantasia);
-        if (data.logradouro) updateField('logradouro', data.logradouro);
-        if (data.numero) updateField('numero', data.numero);
-        if (data.complemento) updateField('complemento', data.complemento);
-        if (data.bairro) updateField('bairro', data.bairro);
-        if (data.cidade) updateField('cidade', data.cidade);
-        if (data.estado) updateField('estado', data.estado);
-        if (data.cep) updateField('cep', maskCep(data.cep));
-        if (data.email) updateField('email', data.email);
-        if (data.telefone) updateField('phone', data.telefone);
+        const es = editingSupplier ?? {};
+        if (data.razao_social && !es.name?.trim()) updateField('name', data.razao_social);
+        if (data.nome_fantasia && !es.trading_name?.trim())
+          updateField('trading_name', data.nome_fantasia);
+        if (data.logradouro && !es.logradouro?.trim()) updateField('logradouro', data.logradouro);
+        if (data.numero && !es.numero?.trim()) updateField('numero', data.numero);
+        if (data.complemento && !es.complemento?.trim())
+          updateField('complemento', data.complemento);
+        if (data.bairro && !es.bairro?.trim()) updateField('bairro', data.bairro);
+        if (data.cidade && !es.cidade?.trim()) updateField('cidade', data.cidade);
+        if (data.estado && !es.estado?.trim()) updateField('estado', data.estado);
+        if (data.cep && !es.cep?.trim()) updateField('cep', maskCep(data.cep));
+        if (data.email && !es.email?.trim()) updateField('email', data.email);
+        if (data.telefone && !foneFixo1.trim()) setFoneFixo1(data.telefone);
         toast.success('Dados preenchidos via CNPJ!');
       }
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao consultar CNPJ');
+      logger.error('Failed to lookup supplier CNPJ', err);
+      toast.error('Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);
     }
@@ -594,7 +654,12 @@ export function useSuppliersManager() {
     setEditingSupplier,
     isNew,
     saving,
+    cnpjError,
     deleting,
+    // BUG-04: new delete confirmation state/actions
+    deleteConfirmSupplier,
+    confirmDelete,
+    cancelDelete,
     uploadingLogo,
     fetchingCnpj,
     contacts,
@@ -700,6 +765,7 @@ function buildNotesPayload(
 
   // NOTE: Fones Fixos, Fiscal (IE, Regime, UF) are NO LONGER serialized here.
   // They now use dedicated columns: phone, phone2, inscricao_estadual, tax_regime, state_uf.
+  // Social media (instagram, facebook, etc.) also use dedicated columns now.
 
   return parts.join('\n') || null;
 }

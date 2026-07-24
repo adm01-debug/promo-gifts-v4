@@ -1,9 +1,11 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { searchCrm } from '@/lib/crm-db';
 import { applyPixMask, validatePixKey } from '@/utils/pixMask';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { validateCnpj, maskCep } from '@/utils/masks';
+import { validateCnpj, maskCep, normalizeCnpj } from '@/utils/masks';
+import { assertPersistableCnpj } from '@/utils/cnpj-schema';
+import { cnpjErrorHaystack, mapCnpjError } from '@/utils/cnpj-errors';
 import { fetchAddressByCep } from '@/utils/viacep';
 import { fetchCnpjData } from '@/utils/cnpj-lookup';
 import { logger } from '@/lib/logger';
@@ -15,6 +17,14 @@ import {
   ORGANIZATION_ID,
 } from './types';
 
+/**
+ * Fixes applied (audit 26/05/2026):
+ *   BUG-01: buildNotesField() no longer serializes phone/fiscal in notes — those use dedicated columns
+ *   BUG-06 + BUG-22: handleCreate payload includes inscricao_estadual, tax_regime, state_uf, phone2
+ *   BUG-14: removed deprecated minimum_order_value from payload
+ *   BUG-19: instagram, facebook, linkedin, youtube, tiktok included in payload
+ *   BUG-24: carrier search timeout cleanup on unmount
+ */
 export function useNewSupplierForm(onCreated: (id: string) => void) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -44,6 +54,14 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
   const [searchingCarriers, setSearchingCarriers] = useState(false);
   const [showCarrierDropdown, setShowCarrierDropdown] = useState(false);
   const carrierSearchTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  // BUG-24 FIX: cleanup carrier search timeout on unmount
+  useEffect(() => {
+    const timeoutRef = carrierSearchTimeout;
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   // Social
   const [instagram, setInstagram] = useState('');
@@ -128,7 +146,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     return null;
   };
 
-  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: string | boolean) => {
+  const updatePixKey = (id: string, field: keyof Omit<PixKey, 'id'>, value: boolean | string) => {
     setPixKeys((prev) => {
       const updated = prev.map((k) => {
         if (k.id !== id)
@@ -238,7 +256,8 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       setLogoUrl(urlData.publicUrl);
       toast.success('Logo enviada');
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao enviar logo');
+      logger.error('Failed to upload supplier logo', err);
+      toast.error('Erro ao enviar logo');
     } finally {
       setUploadingLogo(false);
       if (logoInputRef.current) logoInputRef.current.value = '';
@@ -255,21 +274,23 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     try {
       const data = await fetchCnpjData(digits);
       if (data) {
-        if (data.razao_social) setName(data.razao_social);
-        if (data.nome_fantasia) setTradingName(data.nome_fantasia);
-        if (data.logradouro) setLogradouro(data.logradouro);
-        if (data.numero) setNumero(data.numero);
-        if (data.complemento) setComplemento(data.complemento);
-        if (data.bairro) setBairro(data.bairro);
-        if (data.cidade) setCidade(data.cidade);
-        if (data.estado) setEstado(data.estado);
-        if (data.cep) setCep(maskCep(data.cep));
-        if (data.email) updateContact(contacts[0].id, 'email', data.email);
-        if (data.telefone) updateContact(contacts[0].id, 'phone', data.telefone);
+        if (data.razao_social && !name.trim()) setName(data.razao_social);
+        if (data.nome_fantasia && !tradingName.trim()) setTradingName(data.nome_fantasia);
+        if (data.logradouro && !logradouro.trim()) setLogradouro(data.logradouro);
+        if (data.numero && !numero.trim()) setNumero(data.numero);
+        if (data.complemento && !complemento.trim()) setComplemento(data.complemento);
+        if (data.bairro && !bairro.trim()) setBairro(data.bairro);
+        if (data.cidade && !cidade.trim()) setCidade(data.cidade);
+        if (data.estado && !estado.trim()) setEstado(data.estado);
+        if (data.cep && !cep.trim()) setCep(maskCep(data.cep));
+        if (data.email && !contacts[0]?.email?.trim())
+          updateContact(contacts[0].id, 'email', data.email);
+        if (data.telefone && !foneFixo1.trim()) setFoneFixo1(data.telefone);
         toast.success('Dados preenchidos via CNPJ!');
       }
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao consultar CNPJ');
+      logger.error('Failed to lookup supplier CNPJ', err);
+      toast.error('Erro ao consultar CNPJ');
     } finally {
       setFetchingCnpj(false);
     }
@@ -303,10 +324,10 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       .filter((k) => k.chave.trim())
       .find((k) => validatePixKey(k.chave, k.tipo));
     if (invalidPix) {
-      toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo)!);
+      toast.error(validatePixKey(invalidPix.chave, invalidPix.tipo) ?? 'Chave PIX inválida');
       return;
     }
-    const cnpjDigits = cnpj.replace(/\D/g, '');
+    const cnpjDigits = normalizeCnpj(cnpj);
     if (cnpjDigits.length > 0 && !validateCnpj(cnpjDigits)) {
       setCnpjError('CNPJ inválido');
       toast.error('CNPJ informado é inválido');
@@ -318,16 +339,20 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     // Duplicate checks
     if (cnpjDigits.length === 14) {
       try {
-        const { invokeExternalDb } = await import('@/lib/external-db');
-        const existing = await invokeExternalDb<{ id: string; name: string; cnpj: string }>({
-          table: 'suppliers',
-          operation: 'select',
-          select: 'id,name,cnpj',
-          filters: { cnpj: cnpj.trim() },
-          limit: 1,
-        });
-        if (existing.records && existing.records.length > 0) {
-          toast.error(`Já existe um fornecedor com este CNPJ: "${existing.records[0].name}".`);
+        const { untypedFrom } = await import('@/lib/supabase-untyped');
+        // BUG-NEWSUPPLIER-CNPJ-DUPCHECK-SILENT-FAIL FIX: { data } without error check — a failed
+        // SELECT silently bypassed the CNPJ dup check; now throws so the outer catch logs it.
+        const { data: existingRecords, error: cnpjCheckErr } = await untypedFrom<{
+          id: string;
+          name: string;
+          cnpj: string;
+        }>('suppliers')
+          .select('id,name,cnpj')
+          .eq('cnpj', cnpjDigits)
+          .limit(1);
+        if (cnpjCheckErr) throw cnpjCheckErr;
+        if (existingRecords && existingRecords.length > 0) {
+          toast.error(`Já existe um fornecedor com este CNPJ: "${existingRecords[0].name}".`);
           setSaving(false);
           return;
         }
@@ -336,7 +361,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
       }
     }
     try {
-      const { invokeExternalDb: invokeDbName } = await import('@/lib/external-db');
+      const { dbInvoke: invokeDbName } = await import('@/lib/db/postgrest');
       const existingByName = await invokeDbName<{ id: string; name: string }>({
         table: 'suppliers',
         operation: 'select',
@@ -354,7 +379,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     }
     if (tradingName.trim()) {
       try {
-        const { invokeExternalDb: invokeDbTN } = await import('@/lib/external-db');
+        const { dbInvoke: invokeDbTN } = await import('@/lib/db/postgrest');
         const existingByTN = await invokeDbTN<{ id: string; name: string; trading_name: string }>({
           table: 'suppliers',
           operation: 'select',
@@ -375,7 +400,7 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
     }
 
     try {
-      const { invokeExternalDbSingle } = await import('@/lib/external-db');
+      const { dbInvokeSingle } = await import('@/lib/db/postgrest');
       const now = new Date().toISOString();
       const generatedCode =
         code.trim() ||
@@ -398,61 +423,128 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
           .filter(Boolean)
           .join(', ') || null;
 
+      // BUG-01 FIX: buildNotesField no longer serializes phone/fiscal data — those use dedicated columns
       const notesValue = buildNotesField(
         notes,
         contacts,
         formaPagamento,
         pixKeys,
-        foneFixo1,
-        foneFixo2,
-        inscricaoEstadual,
-        regimeTributario,
-        estadoFaturamento,
         transportadoraPadrao,
         transportadoraId,
       );
+
+      let persistableCnpj: string | null;
+      try {
+        persistableCnpj = assertPersistableCnpj(cnpj);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'CNPJ inválido';
+        setCnpjError(msg);
+        toast.error(msg);
+        setSaving(false);
+        return;
+      }
 
       const data: Record<string, unknown> = {
         name: name.trim(),
         code: generatedCode,
         trading_name: tradingName.trim() || null,
-        cnpj: cnpj.trim() || null,
+        cnpj: persistableCnpj,
+
         active: isActive,
         organization_id: ORGANIZATION_ID,
         contact_name: contacts[0]?.name?.trim() || null,
         contact_person: contacts[0]?.role?.trim() || null,
         email: contacts[0]?.email?.trim() || null,
-        phone: contacts[0]?.phone?.trim() || null,
+        phone: foneFixo1.trim() || contacts[0]?.phone?.trim() || null,
+        // BUG-06 FIX: persist phone2 to dedicated column
+        phone2: foneFixo2.trim() || null,
         address: addressParts,
         website: website.trim() || null,
         default_markup_percent: defaultMarkup ? parseFloat(defaultMarkup) : null,
         min_order_value: minOrderValue ? parseFloat(minOrderValue) : null,
-        minimum_order_value: minOrderValue ? parseFloat(minOrderValue) : null,
-        delivery_time_days: deliveryTimeDays ? parseInt(deliveryTimeDays) : null,
+        // BUG-14 FIX: removed deprecated minimum_order_value
+        delivery_time_days: deliveryTimeDays ? parseInt(deliveryTimeDays, 10) : null,
         payment_terms: paymentTerms.trim() || null,
         shipping_terms: shippingTerms.trim() || null,
-        priority: priority ? parseInt(priority) : 50,
+        priority: priority ? parseInt(priority, 10) : 50,
         notes: notesValue,
         is_product_supplier: isProductSupplier,
         is_engraving_supplier: isEngravingSupplier,
+        // BUG-22 FIX: persist fiscal fields to dedicated columns
+        inscricao_estadual: inscricaoEstadual.trim() || null,
+        tax_regime: regimeTributario || null,
+        state_uf: estadoFaturamento || null,
+        // NOTE: the suppliers table has NO instagram/facebook/linkedin/youtube/tiktok
+        // columns, so sending them made PostgREST reject the whole insert (PGRST204).
+        // They are omitted here until dedicated columns exist; the UI inputs are kept.
         created_at: now,
         updated_at: now,
       };
       if (logoUrl) data.logo_url = logoUrl;
 
-      const result = await invokeExternalDbSingle<{ id: string }>({
+      const result = await dbInvokeSingle<{ id: string }>({
         table: 'suppliers',
         operation: 'insert',
         data,
       });
       if (result?.id) {
+        // BUG-20 FIX: rename the logo from temp path to the canonical {id}.{ext} path
+        if (logoUrl) {
+          try {
+            const tempPath = new URL(logoUrl).pathname.split('/supplier-logos/').pop();
+            if (tempPath?.startsWith('suppliers/new-')) {
+              const ext = tempPath.split('.').pop() || 'png';
+              const canonicalPath = `suppliers/${result.id}.${ext}`;
+              const { error: moveError } = await supabase.storage
+                .from('supplier-logos')
+                .move(tempPath, canonicalPath);
+              // Only point logo_url at the canonical path if the move actually succeeded;
+              // otherwise keep the (valid) temp URL.
+              if (moveError) throw moveError;
+              const { data: urlData } = supabase.storage
+                .from('supplier-logos')
+                .getPublicUrl(canonicalPath);
+              try {
+                await dbInvokeSingle({
+                  table: 'suppliers',
+                  operation: 'update',
+                  filters: { id: result.id },
+                  data: { logo_url: urlData.publicUrl },
+                });
+              } catch (updateErr) {
+                // File was moved but the DB still points at the temp path —
+                // roll the move back so the stored logo_url stays valid.
+                await supabase.storage
+                  .from('supplier-logos')
+                  .move(canonicalPath, tempPath)
+                  .catch(() => undefined);
+                throw updateErr;
+              }
+            }
+          } catch (logoErr) {
+            // Logo rename is best-effort; supplier was created successfully.
+            logger.warn('Supplier logo rename failed; keeping temp logo URL', logoErr);
+          }
+        }
         onCreated(result.id);
         toast.success(`Fornecedor "${name.trim()}" criado com sucesso`);
         setOpen(false);
         resetForm();
       }
     } catch (err: unknown) {
-      toast.error((err as Error).message || 'Erro ao criar fornecedor');
+      logger.error('Failed to create supplier', err);
+      // SSOT: mapCnpjError garante a MESMA copy do inline client-side para
+      // erros vindos do backend (23514 *_cnpj_*_chk, 23505 suppliers_cnpj_org_uniq, Zod).
+      const hay = cnpjErrorHaystack(err);
+      if (/cnpj/i.test(hay)) {
+        const mapped = mapCnpjError(err);
+        const cnpjCopy = mapped.message;
+        setCnpjError(cnpjCopy);
+        toast.error(cnpjCopy);
+      } else {
+        toast.error('Erro ao criar fornecedor');
+      }
+
     } finally {
       setSaving(false);
     }
@@ -581,21 +673,20 @@ export function useNewSupplierForm(onCreated: (id: string) => void) {
 
 /**
  * Tipo do objeto retornado por `useNewSupplierForm`, derivado diretamente do
- * hook para permanecer sempre em sincronia. As tabs (`AddressTab`,
- * `BasicDataTab`, ...) recebem este tipo em vez de `Record<string, unknown>`.
+ * hook para permanecer sempre em sincronia.
  */
 export type NewSupplierForm = ReturnType<typeof useNewSupplierForm>;
 
+/**
+ * BUG-01 FIX: buildNotesField no longer serializes phone/fiscal/social data.
+ * Those fields now use dedicated DB columns. Only free-text notes, PIX,
+ * contact extras, and transportadora remain here.
+ */
 function buildNotesField(
   notes: string,
   contacts: SupplierContact[],
   formaPagamento: string[],
   pixKeys: PixKey[],
-  foneFixo1: string,
-  foneFixo2: string,
-  inscricaoEstadual: string,
-  regimeTributario: string,
-  estadoFaturamento: string,
   transportadoraPadrao: string,
   transportadoraId: string,
 ): string | null {
@@ -623,13 +714,9 @@ function buildNotesField(
       `[Financeiro: Forma: ${formaPagamento.join(',') || '-'}, PIX: ${pixData || '-'}, PIX Atualizado: ${now_date}]`,
     );
   }
-  if (foneFixo1.trim() || foneFixo2.trim())
-    parts.push(`[Fones Fixos: 01: ${foneFixo1.trim() || '-'}, 02: ${foneFixo2.trim() || '-'}]`);
-  if (inscricaoEstadual.trim() || regimeTributario || estadoFaturamento)
-    parts.push(
-      `[Fiscal: IE: ${inscricaoEstadual.trim() || '-'}, Regime: ${regimeTributario || '-'}, UF Faturamento: ${estadoFaturamento || '-'}]`,
-    );
   if (transportadoraPadrao.trim())
     parts.push(`[Transportadora: ${transportadoraPadrao.trim()}, ID: ${transportadoraId || '-'}]`);
+  // NOTE: phone, phone2, inscricao_estadual, tax_regime, state_uf, social media
+  // are NO LONGER serialized here — they use dedicated columns.
   return parts.join('\n') || null;
 }

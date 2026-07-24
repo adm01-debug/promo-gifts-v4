@@ -1,0 +1,72 @@
+name: E2E · Quote View Sticky & Scroll
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/layout/**'
+      - 'src/components/quotes/QuoteItemsTable.tsx'
+      - 'src/pages/__visual/QuoteViewOrderHarness.tsx'
+      - 'src/App.css'
+      - 'src/styles/responsive.css'
+      - 'e2e/quotes/quote-view-sticky-sidebar.spec.ts'
+      - 'e2e/quotes/quote-view-overflow-regression.spec.ts'
+      - 'e2e/quotes/quote-items-inner-scroll.spec.ts'
+      - 'e2e/quotes/quote-view-mainlayout-overflow.spec.ts'
+      - 'e2e/quotes/quote-view-sticky-visual.spec.ts'
+      - '.github/workflows/e2e-quote-view-sticky.yml'
+      - 'scripts/check-overflow-x-clip.mjs'
+  workflow_dispatch:
+
+jobs:
+  overflow-static-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - name: Static gate — overflow-x-clip em MainLayout/html/body
+        run: node scripts/check-overflow-x-clip.mjs
+
+  sticky-and-scroll:
+    needs: overflow-static-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium-public, firefox-public, webkit-public]
+    env:
+      CI: 'true'
+      E2E_BASE_URL: 'http://localhost:8080'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - run: npm run build
+      - name: Start preview server
+        run: |
+          npx vite preview --port 8080 --host 127.0.0.1 &
+          npx wait-on http://localhost:8080 -t 60000
+      - name: Run Playwright (${{ matrix.project }})
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-view-sticky-sidebar.spec.ts \
+            e2e/quotes/quote-view-overflow-regression.spec.ts \
+            e2e/quotes/quote-view-mainlayout-overflow.spec.ts \
+            e2e/quotes/quote-view-sticky-visual.spec.ts \
+            e2e/quotes/quote-items-inner-scroll.spec.ts \
+            --project=${{ matrix.project }} \
+            --reporter=list,html,github
+      - name: Upload Playwright trace + screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-quote-view-sticky-traces-${{ matrix.project }}
+          path: |
+            test-results/**
+            playwright-report/**
+          retention-days: 14

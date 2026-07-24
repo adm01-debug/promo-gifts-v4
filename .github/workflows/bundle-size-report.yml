@@ -1,0 +1,109 @@
+name: Bundle size report
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'bundle-size-baseline.json'
+
+concurrency:
+  group: bundle-size-report-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Generate report
+        id: report
+        run: |
+          node scripts/bundle-size-report.mjs --out bundle-report.md
+          {
+            echo 'report<<EOF'
+            cat bundle-report.md
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upsert PR comment
+        # Fork PRs não têm permissão `pull-requests: write` — pula sem falhar.
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('bundle-report.md', 'utf8');
+            const marker = '<!-- bundle-size-report -->';
+
+            // Paginação completa: PRs longos podem ter >100 comentários.
+            const all = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+
+            // Filtra por autor (github-actions[bot]) E marcador — evita falso
+            // positivo se um humano citar o marcador em outro comentário.
+            const isSelf = (c) =>
+              c.user &&
+              (c.user.login === 'github-actions[bot]' || c.user.type === 'Bot') &&
+              c.body &&
+              c.body.includes(marker);
+            const matches = all.filter(isSelf).sort((a, b) => a.id - b.id);
+
+            if (matches.length === 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+              core.info('Bundle report comment created.');
+              return;
+            }
+
+            // Convergência: atualiza o mais antigo, apaga órfãos duplicados.
+            const [primary, ...duplicates] = matches;
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: primary.id,
+              body,
+            });
+            core.info(`Bundle report comment updated (#${primary.id}).`);
+
+            for (const dup of duplicates) {
+              try {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: dup.id,
+                });
+                core.warning(`Removed duplicate bundle report comment #${dup.id}.`);
+              } catch (err) {
+                core.warning(`Could not delete duplicate #${dup.id}: ${err.message}`);
+              }
+            }

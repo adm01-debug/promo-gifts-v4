@@ -5,33 +5,47 @@ import { renderHook, act, waitFor } from "@testing-library/react";
 const limitMock = vi.fn();
 
 vi.mock("@/integrations/supabase/client", () => {
-  const buildSelectChain = () => ({
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        order: vi.fn().mockReturnValue({
-          limit: (...args: unknown[]) => limitMock(...args),
-        }),
-      }),
-    }),
-    update: vi.fn().mockReturnValue({
+  let lastData = [];
+  const buildSelectChain = () => {
+    let headCount = false;
+    const chain: Record<string, unknown> = {};
+    for (const m of ["select", "eq", "order", "range", "gte"]) {
+      chain[m] = (...args: unknown[]) => {
+        if (m === "select" && args[1] && (args[1] as { head?: boolean }).head) headCount = true;
+        return chain;
+      };
+    }
+    chain.limit = (...args: unknown[]) => limitMock(...args);
+    chain.update = vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ error: null }),
       }),
-    }),
-    delete: vi.fn().mockReturnValue({
+    });
+    chain.delete = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ error: null }),
-    }),
-  });
+    });
+    chain.then = async (resolve, reject) => {
+      try {
+        if (headCount) { resolve({ count: lastData.filter((n) => !n.is_read).length, error: null }); return; }
+        const base = await limitMock();
+        lastData = (base && base.data) || [];
+        resolve({ ...base, count: lastData.length });
+      } catch (e) { reject(e); }
+    };
+    return chain;
+  };
   return {
     supabase: {
       from: vi.fn(() => buildSelectChain()),
+      channel: vi.fn(() => ({ on: vi.fn().mockReturnThis(), subscribe: vi.fn() })),
+      removeChannel: vi.fn(),
     },
   };
 });
 
 const STABLE_USER = { id: "user-prefetch-1" };
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: STABLE_USER }),
+  useAuth: () => ({ user: STABLE_USER, rolesLoaded: true }),
 }));
 
 const CACHE_KEY = "workspace_notifications_cache:user-prefetch-1";

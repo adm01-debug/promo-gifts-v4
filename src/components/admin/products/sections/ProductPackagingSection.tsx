@@ -60,10 +60,10 @@ export function ProductPackagingSection({
   watch,
   setValue,
 }: Props) {
-  const packingType = watch?.('packing_type') || '';
-  const packagingMaterial = watch?.('packaging_material') || '';
-  const packagingColor = watch?.('packaging_color') || '';
-  const packagingFinish = watch?.('packaging_finish') || '';
+  const packingType = watch?.('packing_type') ?? '';
+  const packagingMaterial = watch?.('packaging_material') ?? '';
+  const packagingColor = watch?.('packaging_color') ?? '';
+  const packagingFinish = watch?.('packaging_finish') ?? '';
 
   return (
     <SectionCard
@@ -101,7 +101,7 @@ export function ProductPackagingSection({
                   <TooltipTrigger asChild>
                     <Info className="h-3 w-3 shrink-0 cursor-help text-muted-foreground/40" />
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-[220px] text-xs">{hint}</TooltipContent>
+                  <TooltipContent>{hint}</TooltipContent>
                 </Tooltip>
               </div>
               <div onClick={(e) => e.stopPropagation()}>

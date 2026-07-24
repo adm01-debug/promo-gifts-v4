@@ -1,14 +1,14 @@
-import { Clock, Flame, AlertTriangle, TrendingUp, Zap } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Clock, Flame, AlertTriangle, TrendingUp, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
-type UrgencyType = 
-  | "limited-stock" 
-  | "ending-soon" 
-  | "trending" 
-  | "flash-sale" 
-  | "last-units"
-  | "high-demand";
+type UrgencyType =
+  | 'ending-soon'
+  | 'flash-sale'
+  | 'high-demand'
+  | 'last-units'
+  | 'limited-stock'
+  | 'trending';
 
 interface UrgencyBadgeProps {
   type: UrgencyType;
@@ -17,44 +17,47 @@ interface UrgencyBadgeProps {
   animate?: boolean;
 }
 
-const urgencyConfig: Record<UrgencyType, {
-  icon: typeof Clock;
-  label: string;
-  colors: string;
-  animation?: string;
-}> = {
-  "limited-stock": {
+const urgencyConfig: Record<
+  UrgencyType,
+  {
+    icon: typeof Clock;
+    label: string;
+    colors: string;
+    animation?: string;
+  }
+> = {
+  'limited-stock': {
     icon: AlertTriangle,
-    label: "Estoque Limitado",
-    colors: "bg-warning/15 text-warning border-warning/30",
-    animation: "animate-pulse",
+    label: 'Estoque Limitado',
+    colors: 'bg-warning/15 text-warning border-warning/30',
+    animation: 'animate-pulse',
   },
-  "ending-soon": {
+  'ending-soon': {
     icon: Clock,
-    label: "Termina em breve",
-    colors: "bg-destructive/15 text-destructive border-destructive/30",
+    label: 'Termina em breve',
+    colors: 'bg-destructive/15 text-destructive border-destructive/30',
   },
-  "trending": {
+  trending: {
     icon: TrendingUp,
-    label: "Em Alta",
-    colors: "bg-success/15 text-success border-success/30",
+    label: 'Em Alta',
+    colors: 'bg-success/15 text-success border-success/30',
   },
-  "flash-sale": {
+  'flash-sale': {
     icon: Zap,
-    label: "Oferta Relâmpago",
-    colors: "bg-orange/15 text-orange border-orange/30",
-    animation: "animate-pulse",
+    label: 'Oferta Relâmpago',
+    colors: 'bg-brand-primary/15 text-brand-primary border-brand-primary/30',
+    animation: 'animate-pulse',
   },
-  "last-units": {
+  'last-units': {
     icon: Flame,
-    label: "Últimas Unidades",
-    colors: "bg-destructive/15 text-destructive border-destructive/30",
-    animation: "animate-bounce-subtle",
+    label: 'Últimas Unidades',
+    colors: 'bg-destructive/15 text-destructive border-destructive/30',
+    animation: 'animate-bounce-subtle',
   },
-  "high-demand": {
+  'high-demand': {
     icon: TrendingUp,
-    label: "Alta Demanda",
-    colors: "bg-primary/15 text-primary border-primary/30",
+    label: 'Alta Demanda',
+    colors: 'bg-primary/15 text-primary border-primary/30',
   },
 };
 
@@ -63,13 +66,13 @@ export function UrgencyBadge({ type, value, className, animate = true }: Urgency
   const Icon = config.icon;
 
   return (
-    <Badge 
+    <Badge
       variant="outline"
       className={cn(
-        "gap-1.5 px-2.5 py-1 font-medium text-xs border",
+        'gap-1.5 border px-2.5 py-1 text-xs font-medium',
         config.colors,
         animate && config.animation,
-        className
+        className,
       )}
     >
       <Icon className="h-3.5 w-3.5" />

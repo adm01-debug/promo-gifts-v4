@@ -14,6 +14,8 @@ import {
 import { toast } from 'sonner';
 import { DEMO_COMPANY, isDemoClient } from '@/lib/bi/demoClient';
 import { logger } from '@/lib/logger';
+import { maskSensitiveText } from '@/lib/sensitive-masking';
+import { toErrorMessage } from '@/lib/to-error-message';
 
 /**
  * Lista empresas do CRM com filtros opcionais
@@ -80,7 +82,7 @@ export function useCrmCompany(id: string | null | undefined) {
 export function useCrmInfiniteCompanySelector() {
   return useInfiniteQuery({
     queryKey: ['crm-companies-infinite'],
-    queryFn: async ({ pageParam = 0 }) => {
+    queryFn: async ({ pageParam }) => {
       const startedAt = performance.now();
       logger.debug(`[CRM-DB] useCrmInfiniteCompanySelector: Carregando offset=${pageParam}...`);
 
@@ -89,9 +91,11 @@ export function useCrmInfiniteCompanySelector() {
           table: 'companies',
           operation: 'select',
           select: 'id, razao_social, nome_fantasia, ramo_atividade, logo_url, cnpj',
-          filters: { deleted_at: null },
+          // Filtrar apenas clientes ativos reduz drasticamente o conjunto de linhas
+          // (sem esse filtro o SELECT estourava o statement_timeout do CRM).
+          filters: { deleted_at: null, is_customer: true },
           orderBy: { column: 'razao_social', ascending: true },
-          limit: 100,
+          limit: 50,
           offset: pageParam,
         });
 
@@ -111,15 +115,14 @@ export function useCrmInfiniteCompanySelector() {
             logo_url: c.logo_url,
             cnpj: c.cnpj,
           })),
-          nextOffset: records.length === 100 ? pageParam + 100 : undefined,
+          nextOffset: records.length === 50 ? pageParam + 50 : undefined,
         };
       } catch (err) {
         const duration = Math.round(performance.now() - startedAt);
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error('[CRM-DB] useCrmInfiniteCompanySelector: FALHA:', {
+        const msg = maskSensitiveText(toErrorMessage(err)) ?? 'unknown';
+        logger.error('[CRM-DB] useCrmInfiniteCompanySelector: FALHA', {
           message: msg,
           durationMs: duration,
-          error: err,
         });
         throw err;
       }
@@ -140,7 +143,7 @@ export function useCrmInfiniteCompanySelector() {
 
       return isRetryable && failureCount < 3;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 10000),
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 }
 
@@ -175,12 +178,16 @@ export function useCrmCompanySelector() {
           cnpj: c.cnpj,
         }));
       } catch (err) {
-        console.error('[CRM-DB] useCrmCompanySelector: FALHA:', err);
+        logger.error('[CRM-DB] useCrmCompanySelector: FALHA', {
+          message: maskSensitiveText(toErrorMessage(err)) ?? 'unknown',
+        });
         toast.error('Não foi possível carregar a lista de empresas.');
         throw err;
       }
     },
     staleTime: 15 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 

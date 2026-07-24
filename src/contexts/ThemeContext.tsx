@@ -1,14 +1,22 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { performanceTracker } from '@/utils/performance';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+  type ReactNode,
+} from 'react';
 
-
-type Theme = 'light' | 'dark' | 'auto';
+type TooltipStyle = 'compact' | 'standard';
 
 interface ThemeContextType {
-  theme: Theme;
-  actualTheme: 'light' | 'dark';
-  setTheme: (theme: Theme) => void;
+  theme: 'dark';
+  actualTheme: 'dark';
+  tooltipStyle: TooltipStyle;
+  setTheme: (theme: 'dark') => void;
   toggleTheme: () => void;
+  setTooltipStyle: (style: TooltipStyle) => void;
   isFallback?: boolean;
 }
 
@@ -16,70 +24,53 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 
 interface ThemeProviderProps {
   children: ReactNode;
-  defaultTheme?: Theme;
   storageKey?: string;
+  tooltipStorageKey?: string;
 }
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'auto',
   storageKey = 'gifts-store-theme',
+  tooltipStorageKey = 'gifts-store-tooltip-style',
 }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>(() => {
+  // Theme is strictly fixed to dark
+  const theme = 'dark';
+  const actualTheme = 'dark';
+
+  const [tooltipStyle, setTooltipStyleState] = useState<TooltipStyle>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+      return (localStorage.getItem(tooltipStorageKey) as TooltipStyle) || 'standard';
     }
-    return defaultTheme;
+    return 'standard';
   });
 
-  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>(() => {
-    if (theme === 'auto') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return theme;
-  });
-
-  // Atualizar tema quando mudar
+  // Force dark theme class and remove any light-mode traces
   useEffect(() => {
     const root = window.document.documentElement;
+    root.classList.remove('light');
+    root.classList.add('dark');
 
-    // Remover temas anteriores
-    root.classList.remove('light', 'dark');
-
-    let resolved: 'light' | 'dark';
-    if (theme === 'auto') {
-      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } else {
-      resolved = theme;
+    // Cleanup any old theme preference
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(storageKey);
+      if (stored && stored !== 'dark') {
+        localStorage.setItem(storageKey, 'dark');
+      }
     }
+  }, [storageKey]);
 
-    root.classList.add(resolved);
-    setActualTheme(resolved);
-  }, [theme]);
-
-  // Listener para mudanças no tema do sistema
+  // Update tooltip style class
   useEffect(() => {
-    if (theme !== 'auto') return;
+    const root = window.document.documentElement;
+    root.classList.remove('tooltip-compact', 'tooltip-standard');
+    root.classList.add(`tooltip-${tooltipStyle}`);
+  }, [tooltipStyle]);
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      const resolved = e.matches ? 'dark' : 'light';
-      setActualTheme(resolved);
-      const root = window.document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(resolved);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
-
-  // Listener for changes from other tabs
+  // Listener for storage changes from other tabs to enforce dark mode
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === storageKey && e.newValue) {
-        setThemeState(e.newValue as Theme);
+      if (e.key === storageKey && e.newValue && e.newValue !== 'dark') {
+        localStorage.setItem(storageKey, 'dark');
       }
     };
 
@@ -87,38 +78,26 @@ export function ThemeProvider({
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [storageKey]);
 
-  const setTheme = (newTheme: Theme) => {
-    performanceTracker.startThemeChange(newTheme);
-    const apply = () => {
-      localStorage.setItem(storageKey, newTheme);
-      setThemeState(newTheme);
-      // We assume the transition ends after state update and class application in the next frame
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          performanceTracker.endThemeChange(newTheme);
-        });
-      });
-    };
+  const setTheme = useCallback(() => {
+    localStorage.setItem(storageKey, 'dark');
+  }, [storageKey]);
 
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      (document as any).startViewTransition(apply);
-    } else {
-      apply();
-    }
-  };
+  const toggleTheme = useCallback(() => {
+    // Theme is fixed to dark — no-op
+  }, []);
 
+  const setTooltipStyle = useCallback(
+    (style: TooltipStyle) => {
+      localStorage.setItem(tooltipStorageKey, style);
+      setTooltipStyleState(style);
+    },
+    [tooltipStorageKey],
+  );
 
-  const toggleTheme = () => {
-    const nextTheme = actualTheme === 'light' ? 'dark' : 'light';
-    setTheme(nextTheme);
-  };
-
-  const value: ThemeContextType = {
-    theme,
-    actualTheme,
-    setTheme,
-    toggleTheme,
-  };
+  const value = useMemo<ThemeContextType>(
+    () => ({ theme, actualTheme, tooltipStyle, setTheme, toggleTheme, setTooltipStyle }),
+    [theme, actualTheme, tooltipStyle, setTheme, toggleTheme, setTooltipStyle],
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
@@ -127,15 +106,13 @@ export function useTheme() {
   const context = useContext(ThemeContext);
 
   if (context === undefined) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('useTheme must be used within a ThemeProvider. Returning a fallback theme to avoid crash.');
-    }
-    // Return a safe fallback instead of throwing
     return {
-      theme: 'light',
-      actualTheme: 'light',
+      theme: 'dark',
+      actualTheme: 'dark',
+      tooltipStyle: 'standard',
       setTheme: () => {},
       toggleTheme: () => {},
+      setTooltipStyle: () => {},
       isFallback: true,
     } as ThemeContextType;
   }

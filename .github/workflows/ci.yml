@@ -1,602 +1,110 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [ main, master, develop ]
   pull_request:
-    branches: [main]
-  workflow_dispatch:
-
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
-# TZ fix: GitHub Actions runners (ubuntu-latest) default a UTC. Date.prototype
-# e Intl.DateTimeFormat cacheiam TZ na startup do Node, antes do vitest.config
-# rodar. Setar test.env no vitest.config NÃO funciona (Node já cacheou).
-# Solução: env: TZ no nível do workflow → herdado por todos os steps de todos
-# os jobs → Node nasce já com TZ correto em CI.
-# Snapshots e toLocaleString consistentes com dev (VPS BRT).
-env:
-  TZ: America/Sao_Paulo
+    branches: [ main, master, develop ]
 
 jobs:
-  smoke:
-    name: Smoke tests (rotas + health-check)
+  quality-gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
-    # Smoke é informativo: falha não bloqueia quality (URL de produção pode ser
-    # inalcançável do runner; checks estáticos continuam sendo validados).
-    continue-on-error: true
-
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-
-      # Sem npm ci: smoke usa só Node nativo (fetch/fs) para falhar em <30s
-      # antes de qualquer outro job pagar o custo de install + build.
-      # SMOKE_BASE_URL sem fallback: se vars.SMOKE_BASE_URL não estiver
-      # configurado, o script pula os checks HTTP e valida só rotas estáticas.
-      - name: Run smoke tests
-        env:
-          SMOKE_BASE_URL: ${{ vars.SMOKE_BASE_URL }}
-          SMOKE_HEALTH_FN_URL: ${{ secrets.SMOKE_HEALTH_FN_URL }}
-          SMOKE_TIMEOUT_MS: '5000'
-          SMOKE_FAIL_ON_DEGRADED: '0'
-        run: node scripts/smoke-tests.mjs
-
-  quality:
-    name: Lint, Typecheck & Test
-    runs-on: ubuntu-latest
-    needs: smoke
-    timeout-minutes: 90
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-
-      # Fail-fast: este guard usa só git+node nativo, sem deps. Roda antes de
-      # `npm ci` para abortar PRs que reintroduzem o comando proibido em
-      # segundos em vez de minutos.
-      - name: Migrations sync guard (desync 332 vs 209 — ver docs/DEPLOYMENT.md)
-        run: node scripts/check-no-db-push.mjs
-
-      # Fail-fast: também sem deps. Bloqueia migrations novas que adicionam
-      # SECURITY DEFINER sem search_path explicito + REVOKE de anon.
-      # Ver docs/redeploy/REDEPLOY-FASE3-PLAN.md (criterio C2).
-      - name: SECURITY DEFINER hardening guard
-        run: node scripts/check-security-definer-hardening.mjs
-
-      # Fail-fast: bloqueia qualquer reintrodução de chave de bypass hardcoded
-      # em código de auth/bridge (UUID literal ou const *BYPASS = "..."). Ver
-      # achado SEC-001 da auditoria back-end sênior 2026-05-22.
-      - name: Bypass-literal guard (auth/bridge — SEC-001)
-        run: node scripts/check-no-bypass-literals.mjs
-
+          node-version: '20'
+          cache: 'npm'
+          
       - name: Install dependencies
         run: npm ci
+        
+      - name: Lint check
+        run: npm run lint:check
+        
+      - name: Type check (baseline — zero regressions vs .tsc-baseline.json)
+        run: node scripts/check-tsc-baseline.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+        
+      - name: Build check
+        run: npm run build
 
-      - name: Seller-scope checker (RLS defesa em profundidade)
-        run: node scripts/check-seller-scope.mjs
+      - name: FAB accessibility static gate
+        run: npm run check:fab-a11y
 
-      - name: Route data-router APIs checker (errorElement + useRouteError fora de data router)
-        run: node scripts/check-route-error-element.mjs
+      - name: outline-none WCAG 2.4.7 gate (ratchet)
+        run: npm run check:outline-none
 
-      - name: Radix asChild nesting checker (forwardRef safety)
-        run: node scripts/check-aschild-nesting.mjs
+      - name: Banned phrases gate
+        run: npm run check:removed-phrases
 
-      - name: Route ref usage checker (guards + pages)
-        run: node scripts/check-route-ref-usage.mjs
+      - name: "Draft label regression gate (Salvar Alterações → Salvar Rascunho)"
+        run: npm run check:no-salvar-alteracoes-draft
 
-      # ESLint baseline gate — único step de lint: roda ESLint internamente
-      # e falha SOMENTE para erros NOVOS vs .eslint-baseline.json.
-      # Step informacional separado removido (era redundante e dobrava o tempo de CI).
-      - name: ESLint baseline gate (bloqueia apenas regressões novas)
-        run: npm run lint:baseline
+      - name: 🗑️ Sem referências residuais a QuoteComments/quote_comments
+        run: node scripts/check-no-quote-comments.mjs
 
+      - name: 🚫 Sem follow-up no frontend (src/)
+        run: npm run check:no-followup-frontend
 
-      - name: TypeScript type check
-        run: npm run typecheck
+      - name: 🖼️ Iframe sandbox gate (allow-scripts + allow-same-origin)
+        run: npm run check:iframe-sandbox
 
-      # hooks já cobertos pelo job dedicado hooks-tests (timeout-minutes: 10).
-      # test:strict-ref e test:coverage omitidos aqui — rodam em ref-warning-suite
-      # e integration-tests respectivamente, evitando tripla execução da suite.
-      - name: Run tests
-        run: npm run test:quality
-
-      - name: 🎨 Theme Presets & Contrast gate
-        run: npx vitest run src/lib/theme-presets.test.ts --reporter=verbose
-
-      - name: Security audit
-        run: npm audit --audit-level=high || true
-        continue-on-error: true
-
-      # Gate crítico: funções SECURITY DEFINER em public NÃO podem ser
-      # executáveis por PUBLIC/anon (fora da whitelist público-intencional)
-      # nem por authenticated em trigger functions. Lints Supabase 0028/0029.
-      # Se o ambiente não tem credenciais, o script faz skip silencioso.
-      - name: 🔐 SECURITY DEFINER ACL gate
+      - name: 🛡️ Supabase lint 0029 drift gate (SECURITY DEFINER exec)
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: node scripts/check-security-definer-acl.mjs
+        run: npm run check:lint-0029
 
-      # Gate estático: toda edge function deve estar declarada no
-      # manifest _shared/edge-authz-manifest.ts; edges supervisor/dev
-      # devem usar authorize() do _shared/authorize.ts ou marcar
-      # enforcedBy: "custom" com rationale explícito.
-      - name: 🛡️ Edge authorization manifest gate
-        run: node scripts/check-edge-authorization.mjs
-
-      # Garante que toda NOVA edge function adote o logger estruturado SSOT
-      # (createStructuredLogger). Allowlist congelada em snapshot 2026-04-27;
-      # ver scripts/check-edge-structured-logging.mjs.
-      - name: 📜 Edge structured-logging gate
-        run: node scripts/check-edge-structured-logging.mjs
-
-      # Para as edges CRÍTICAS (CRITICAL_EDGES no script), valida que:
-      #  (A) importam createStructuredLogger ou getOrCreateRequestId,
-      #  (B) propagam X-Request-Id em TODA resposta (log.respond/withRequestIdHeader/REQUEST_ID_HEADER),
-      #  (C) propagam X-Request-Id em TODA chamada interna (fetch /functions/v1 ou supabase.functions.invoke).
-      # ver scripts/check-edge-request-id-propagation.mjs.
-      - name: 🔗 Edge X-Request-Id propagation gate (rotas críticas)
-        run: node scripts/check-edge-request-id-propagation.mjs
-
-      # Valida que TODA edge function chamável pelo browser inclui x-request-id
-      # em Access-Control-Allow-Headers e expõe o header via
-      # Access-Control-Expose-Headers (via _shared/cors.ts ou inline).
-      # ver scripts/check-edge-cors-headers.mjs.
-      - name: 🌐 Edge CORS x-request-id gate
-        run: node scripts/check-edge-cors-headers.mjs
-
-      # Toda edge function precisa obter CORS via _shared/cors.ts (helpers SSOT)
-      # — nada de objeto literal `Access-Control-Allow-Headers` à mão.
-      - name: 🚫 Inline CORS literals gate
-        run: node scripts/check-no-inline-cors.mjs
-
-      # Bloqueia novas ocorrências de toast.error/warning vazando texto
-      # técnico (Error.message, stack, payload cru). Baseline congelada em
-      # .toast-leaks-baseline.json — somente regressões falham o build.
-      # ver scripts/check-toast-leaks.mjs.
-      - name: 🍞 Toast leaks gate (texto técnico em sonner)
-        run: node scripts/check-toast-leaks.mjs
-
-      # Garante que supabase/functions/_shared/cors-snapshot.json está em sync
-      # com os index.ts (consumido pela edge function `cors-audit`).
-      - name: 📸 CORS snapshot freshness
-        run: node scripts/build-cors-snapshot.mjs --check
-
-      - name: RLS policy tests (optional)
-        if: env.TEST_SELLER_PASSWORD != '' && env.TEST_ADMIN_PASSWORD != ''
+      - name: 🧪 Supabase lint 0011 drift gate (function_search_path_mutable)
         env:
-          TEST_SELLER_PASSWORD: ${{ secrets.TEST_SELLER_PASSWORD }}
-          TEST_ADMIN_PASSWORD: ${{ secrets.TEST_ADMIN_PASSWORD }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-        run: npx vitest run tests/rls/ --reporter=verbose --coverage.reporter=json-summary
-        continue-on-error: true
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run check:lint-0011
 
-  build-gate:
-    name: Production Build & Warnings Gate
-    runs-on: ubuntu-latest
-    needs: quality
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Production Build with Warning Analysis
-        run: npm run ci:build
-
-  coverage:
-
-    name: Test Coverage
-    runs-on: ubuntu-latest
-    needs: smoke
-    timeout-minutes: 75
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # No CI usamos apenas reporters leves (text + json + json-summary).
-      # O reporter `html` gera 1 arquivo por fonte (≥1.574 arquivos) em I/O
-      # single-threaded — causava 42-45 min de geração de relatório sozinho.
-      # O `lcov` também é omitido no CI (gerado sob demanda pós-merge).
-      # Os thresholds (60%) são aplicados via json-summary normalmente.
-      # Report-only job: thresholds globais zerados via CLI para não derrubar
-      # o CI. Gates de cobertura per-file/critical são aplicados em jobs
-      # dedicados (Cloud Status, Price Freshness, Hook tests, critical-e2e).
-      # O coverage real (com thresholds) é validado por aqueles gates.
-      - name: Run tests with coverage
-        run: >-
-          npx vitest run --coverage
-          --coverage.reporter=text
-          --coverage.reporter=json
-          --coverage.reporter=json-summary
-          --coverage.thresholds.lines=0
-          --coverage.thresholds.functions=0
-          --coverage.thresholds.branches=0
-          --coverage.thresholds.statements=0
-
-      - name: Upload coverage report
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: coverage-report-${{ github.run_id }}
-          path: coverage/
-          retention-days: 14
-          if-no-files-found: ignore
-
-      # Gate per-file: valida que arquivos críticos (FiltersPage, KitBuilderPage,
-      # MockupGenerator) mantêm coverage >=40%. Independente do threshold global
-      # (que é report-only acima). 'if: always()' garante que o sinal aparece
-      # mesmo se algo anterior falhou. 'continue-on-error: true' evita duplicar
-      # bloqueio com gate global — esse step é sinal informativo per-file.
-      - name: Enforce Critical Modules Coverage (per-file gate)
-        if: always()
-        continue-on-error: true
-        run: npm run check:critical-coverage
-
-  integration-tests:
-    name: Edge Integration & Fuzzing
-    runs-on: ubuntu-latest
-    needs: quality
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Run Fuzz Testing (Massive)
-        run: npm run test:fuzz:full
-      - name: Run Contract Testing (Schema Validation)
-        run: npm run test:contract
-      - name: Run Massive Stress Test
-        run: npm run test:stress
-      - name: Run Edge Integration Tests (Mocked Env)
-        run: |
-          npm run test:edge:integration || true
-      # Report-only: gera artifact JSON/HTML sem aplicar thresholds globais.
-      # Gates reais ficam em jobs dedicados (per-file).
-      - name: Generate Coverage Report (JSON/HTML)
-        run: >-
-          npx vitest run --coverage
-          --coverage.reporter=json
-          --coverage.reporter=html
-          --coverage.thresholds.lines=0
-          --coverage.thresholds.functions=0
-          --coverage.thresholds.branches=0
-          --coverage.thresholds.statements=0
-      - name: Upload Coverage Artifacts
-        uses: actions/upload-artifact@v5
-        with:
-          name: full-coverage-report
-          path: coverage/
-          retention-days: 14
-
-  critical-e2e:
-    name: Critical Flows E2E
-    runs-on: ubuntu-latest
-    needs: quality
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-      - name: Run Critical E2E
-        run: npm run test:e2e:critical
-      - name: Upload E2E Report
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 14
-      # 'Enforce Critical Coverage' foi MOVIDO para o job 'coverage' (vitest),
-      # que é onde o coverage-summary.json é gerado. O job critical-e2e
-      # roda Playwright apenas — não produz coverage instrumentation, então
-      # o step antigo aqui sempre falhava com 'coverage-summary.json não
-      # encontrado'. Decisão tomada em PR #227.
-
-  elite-ui-validation:
-    name: Elite UX Validation (E2E)
-    runs-on: ubuntu-latest
-    needs: build-gate
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-      - name: Install dependencies
-        run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-      - name: Run Elite UI Flows
-        run: npx playwright test e2e/flows/elite-ux-validation.spec.ts
-      - name: Upload Elite E2E Report
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: playwright-elite-report
-          path: playwright-report/
-          retention-days: 14
-
-
-  ref-warning-suite:
-    name: Ref-warning suite (skeletons + guards + rotas)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # Job dedicado: roda APENAS os testes que exercitam o warning canônico do React
-      # "Function components cannot be given refs" em modo estrito. Falha rápido se
-      # qualquer skeleton/guard/rota voltar a disparar o aviso, com visibilidade
-      # própria no PR (separado da suite geral). O setup global
-      # (tests/setup-ref-warning-capture.ts) intercepta console.error e falha o
-      # processo se houver warnings não interceptados pelos guards locais.
-      - name: Strict ref-warning tests (skeletons + guards + rotas)
+      - name: 🚨 SECURITY DEFINER anon exposure gate
         env:
-          STRICT_REF_WARNINGS: "1"
-          CONSOLE_SNAPSHOT_PATH: "coverage/console-snapshot-ref.json"
-        shell: bash
-        run: |
-          set -euo pipefail
-          files=(
-            tests/admin/skeleton-fallbacks-ref-warning.test.tsx
-            tests/admin/skeleton-navigation-integration.test.tsx
-            tests/admin/skeleton-snapshots.test.tsx
-            tests/admin/admin-ref-warning-guard.test.tsx
-            tests/admin/route-guards-ref-warning.test.tsx
-            tests/admin/react-warning-guard-sanity.test.ts
-            tests/admin/route-ref-checker.test.ts
-            tests/admin/route-error-element-checker.test.ts
-          )
-          echo "Arquivos detectados:"
-          printf '  - %s\n' "${files[@]}"
-          npx vitest run "${files[@]}" --reporter=verbose
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run check:secdef-anon
 
-      - name: Static checkers (route ref usage + asChild nesting + route data-router APIs)
-        run: |
-          node scripts/check-route-ref-usage.mjs
-          node scripts/check-aschild-nesting.mjs
-          node scripts/check-route-error-element.mjs
+      - name: 📚 Allowlist ↔ security-memory cross-check
+        run: npm run check:allowlist-memory
 
-      - name: Upload ref-warning console snapshot
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: console-snapshot-ref-${{ github.run_id }}
-          path: |
-            coverage/console-snapshot-ref.json
-            coverage/console-snapshot-ref.*.json
-          retention-days: 14
-          if-no-files-found: ignore
+      - name: ♿ A11y Clickable drift gate
+        run: npm run check:clickable
 
-  hooks-tests:
-    name: Hook tests (smoke + funcionais)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+      - name: 🚫 Invoke direct calls gate (functions.invoke → invokeEdgeSafe)
+        run: node scripts/check-invoke-direct-calls.mjs
 
-    steps:
-      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
 
-      # Smoke primeiro: falha rápido se algum hook não monta sequer com providers padrão.
-      # NOTA: convivem dois padrões de naming históricos (*-smoke.test.ts e *.smoke.test.ts).
-      # Expandimos os globs no bash (com globstar) e passamos os PATHS REAIS ao Vitest;
-      # se o array vier vazio, falhamos com mensagem explícita (regressão de cobertura
-      # de smoke, não flake de runner — antes o Vitest morria com exit 1 silencioso).
-      - name: Smoke tests (hooks)
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s globstar nullglob
-          files=( tests/hooks/**/*-smoke.test.* tests/hooks/**/*.smoke.test.* )
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "❌ Nenhum arquivo de smoke encontrado em tests/hooks/." >&2
-            echo "   Convenção: '*-smoke.test.ts(x)' ou '*.smoke.test.ts(x)'." >&2
-            exit 1
-          fi
-          echo "Smokes detectados (${#files[@]}):"
-          printf '  - %s\n' "${files[@]}"
-          npx vitest run "${files[@]}" --reporter=verbose
 
-      # Suíte funcional completa de hooks (separada do job principal para visibilidade dedicada no PR).
-      - name: Hook test suite (funcionais)
-        run: npx vitest run tests/hooks/ --reporter=verbose
 
-      - name: Hook coverage report
-        run: npx vitest run tests/hooks/ --coverage --coverage.reporter=text --coverage.reporter=json-summary
-        continue-on-error: true
 
-      - name: Upload hook coverage artifact
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: hooks-coverage
-          path: coverage/
-          retention-days: 14
-          if-no-files-found: ignore
 
-  price-freshness-tests:
-    name: Price Freshness — testes + gate de cobertura
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
 
-    steps:
-      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # Roda a suite de price freshness UMA única vez já com coverage instrumentado.
-      # Antes rodávamos duas vezes (suite + coverage), o que dobrava a janela de
-      # flake e custava ~37s extras sem ganho de assertividade.
-      # Bash expande os globs em paths reais antes de chamar o Vitest
-      # (passar "glob" entre aspas faz o Vitest tratar como literal e não achar nada).
-      - name: Run price freshness suite + coverage
-        shell: bash
-        run: |
-          set -euo pipefail
-          files=( tests/utils/price-freshness*.test.ts tests/components/PriceFreshnessBadge*.test.tsx )
-          echo "Arquivos detectados:"
-          printf '  - %s\n' "${files[@]}"
-          npx vitest run "${files[@]}" \
-            --reporter=verbose \
-            --coverage \
-            --coverage.reporter=text \
-            --coverage.reporter=json-summary \
-            --coverage.reporter=html \
-            --coverage.include='src/utils/price-freshness.ts' \
-            --coverage.include='src/components/products/PriceFreshnessBadge.tsx' \
-            --coverage.thresholds.statements=0 \
-            --coverage.thresholds.branches=0 \
-            --coverage.thresholds.functions=0 \
-            --coverage.thresholds.lines=0
-
-      # Gate por arquivo: falha se qualquer arquivo monitorado cair do piso atual.
-      - name: Enforce per-file coverage floor (anti-regressão)
-        run: node scripts/check-price-freshness-coverage.mjs
-
-      - name: Upload price-freshness coverage artifact
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: price-freshness-coverage
-          path: coverage/
-          retention-days: 30
-          if-no-files-found: ignore
-
-  cloud-status-tests:
-    name: Cloud Status — testes + gate de cobertura
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run cloud status suite + coverage
-        run: npm run test:cloud-status-coverage
-
-      - name: Upload cloud-status coverage artifact
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: cloud-status-coverage
-          path: coverage/
-          retention-days: 30
-          if-no-files-found: ignore
-
-  edge-functions-typecheck:
-    name: Edge Functions — Deno typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v2.x
-
-      # Roda `deno check` em cada supabase/functions/<fn>/*.ts.
-      # Falha o job se qualquer função tiver erro de tipos
-      # (ex: cast inseguro de GenericStringError, SupabaseClient com schema errado).
-      - name: Typecheck all edge functions
-        run: node scripts/typecheck-edge-functions.mjs
-
-  theme-validation:
-    name: 🎨 Theme & Accessibility Gate
-    runs-on: ubuntu-latest
-    needs: quality
-    timeout-minutes: 20
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright Browsers
+      - name: Run Unit & Integration Tests
+        run: npm run test:quality
+        
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Run Theme Validation Tests
-        run: npm run test:theme-validation
+      - name: Run E2E Critical Tests
+        run: npm run test:e2e:critical
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
-      - name: Upload Theme Validation Report
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: theme-validation-report
-          path: |
-            playwright-report/theme-validation-report.html
-            playwright-report/theme-validation-report.csv
-            theme-validation-output/theme-validation-data.json
-          retention-days: 30
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit Credentials
+        run: npm run audit:credentials

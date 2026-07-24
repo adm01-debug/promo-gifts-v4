@@ -48,6 +48,16 @@ vi.mock("sonner", () => ({
 // useKitUndoRedo
 // ============================
 describe("useKitUndoRedo", () => {
+  const baseSnap = {
+    name: "A",
+    kitType: "montado" as const,
+    box: null,
+    items: [],
+    personalization: { box: { enabled: false }, items: {} },
+    kitQuantity: 1,
+    identity: { color: "#000", icon: "Package", tag: "", description: "", isFavorite: false },
+  };
+
   it("initializes with empty history", async () => {
     const { useKitUndoRedo } = await import("@/hooks/kit-builder/useKitUndoRedo");
     const { result } = renderHook(() => useKitUndoRedo());
@@ -55,13 +65,37 @@ describe("useKitUndoRedo", () => {
     expect(result.current.canRedo).toBe(false);
   });
 
-  it("pushes snapshot and enables undo", async () => {
+  it("pushes snapshot and enables undo only after a 2nd distinct state", async () => {
     const { useKitUndoRedo } = await import("@/hooks/kit-builder/useKitUndoRedo");
     const { result } = renderHook(() => useKitUndoRedo());
-    const snap = { boxId: "b1", items: [], personalizationKeys: [], name: "A", kitQuantity: 1 };
-    act(() => { result.current.pushSnapshot({ ...snap, name: "A" }); });
-    act(() => { result.current.pushSnapshot({ ...snap, name: "B" }); });
+    act(() => { result.current.pushSnapshot({ ...baseSnap, name: "A" }); });
+    expect(result.current.canUndo).toBe(false); // só o estado inicial — nada a desfazer
+    act(() => { result.current.pushSnapshot({ ...baseSnap, name: "B" }); });
     expect(result.current.canUndo).toBe(true);
+  });
+
+  it("dedups identical consecutive snapshots", async () => {
+    const { useKitUndoRedo } = await import("@/hooks/kit-builder/useKitUndoRedo");
+    const { result } = renderHook(() => useKitUndoRedo());
+    act(() => { result.current.pushSnapshot({ ...baseSnap, name: "A" }); });
+    act(() => { result.current.pushSnapshot({ ...baseSnap, name: "A" }); });
+    expect(result.current.canUndo).toBe(false);
+  });
+
+  it("undo returns the previous snapshot and enables redo", async () => {
+    const { useKitUndoRedo } = await import("@/hooks/kit-builder/useKitUndoRedo");
+    const { result } = renderHook(() => useKitUndoRedo());
+    act(() => { result.current.pushSnapshot({ ...baseSnap, name: "A" }); });
+    act(() => { result.current.pushSnapshot({ ...baseSnap, name: "B" }); });
+
+    let restored: { name: string } | null = null;
+    act(() => { restored = result.current.undo(); });
+    expect(restored?.name).toBe("A");
+    expect(result.current.canRedo).toBe(true);
+
+    let redone: { name: string } | null = null;
+    act(() => { redone = result.current.redo(); });
+    expect(redone?.name).toBe("B");
   });
 });
 

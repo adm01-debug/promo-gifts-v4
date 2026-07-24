@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeCron } from "../_shared/dispatcher-auth.ts";
+import { safeErrorResponse } from "../_shared/error-response.ts";
 
 const corsHeaders = buildPublicCorsHeaders();
 
@@ -20,27 +21,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // 1. Cleanup old read notifications
-    const { error: cleanupError } = await supabase.rpc('cleanup_old_notifications');
-    
-    if (cleanupError) {
-      console.warn('Cleanup warning:', cleanupError.message);
-    }
-
-    // 2. Count unprocessed notifications per user for digest
-    const { data: unreadNotifs, error: fetchError } = await supabase
-      .from('workspace_notifications')
-      .select('user_id, id, title, message, type, category, created_at')
-      .eq('is_read', false)
-      .order('created_at', { ascending: false })
-      .limit(500);
+    // Atomic fetch + cleanup in a single RPC call (process_notifications_queue
+    // returns unread rows and deletes expired ones in the same transaction).
+    const { data: unreadNotifs, error: fetchError } = await supabase.rpc(
+      'process_notifications_queue',
+      { p_limit: 500 }
+    );
 
     if (fetchError) throw fetchError;
 
     if (!unreadNotifs || unreadNotifs.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           processed: 0,
           message: 'No unread notifications to process'
         }),
@@ -48,31 +41,41 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. Group by user
-    const byUser = new Map<string, typeof unreadNotifs>();
-    for (const notif of unreadNotifs) {
+    // Group by user
+    type NotifRow = { user_id: string; id: string; title: string; message: string; type: string; category: string; created_at: string };
+    const byUser = new Map<string, NotifRow[]>();
+    for (const notif of (unreadNotifs as NotifRow[])) {
       const existing = byUser.get(notif.user_id) || [];
       existing.push(notif);
       byUser.set(notif.user_id, existing);
     }
 
+    // Confirm delivery — sets dispatched_at and clears the lease on each row.
+    // If this call fails the lease will expire and the batch will be re-claimed,
+    // giving at-least-once delivery semantics.
+    const notifIds = (unreadNotifs as NotifRow[]).map((n) => n.id);
+    const { error: confirmError } = await supabase.rpc('confirm_notifications_dispatched', {
+      p_ids: notifIds,
+    });
+    if (confirmError) {
+      console.error('[process-queue] confirm_notifications_dispatched failed:', confirmError);
+    }
+
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         processed: byUser.size,
         users_with_unread: byUser.size,
         total_unread: unreadNotifs.length,
-        cleanup_ran: !cleanupError,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Queue processing error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return safeErrorResponse(error, {
+      corsHeaders,
+      publicMessage: 'queue_processing_failed',
+      logLabel: 'Queue processing error:',
+    });
   }
 });

@@ -12,7 +12,6 @@ import { waitFor } from "@testing-library/react";
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    functions: { invoke: vi.fn() },
     auth: {
       getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
       onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
@@ -20,20 +19,23 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
+vi.mock("@/lib/db/postgrest", () => ({
+  dbInvoke: vi.fn(),
+}));
+
 import { renderHookWithProviders } from "../_helpers/render-hook-providers";
-import { supabase } from "@/integrations/supabase/client";
+import { dbInvoke } from "@/lib/db/postgrest";
 import { useTecnicasList } from "@/hooks/tecnicas/useTecnicasList";
 import { TECNICA_ROW_PT, TECNICA_ROW_EN, TECNICA_ROW_HYBRID } from "../../fixtures/personalization-payloads";
+
+const mockedDbInvoke = dbInvoke as unknown as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
 function mockBridgeRecords(records: unknown[]) {
-  (supabase.functions.invoke as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-    data: { success: true, data: { records } },
-    error: null,
-  });
+  mockedDbInvoke.mockResolvedValue({ records, count: records.length });
 }
 
 describe("useTecnicasList (smoke)", () => {

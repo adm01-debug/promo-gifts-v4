@@ -1,7 +1,12 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useIPValidation } from "@/hooks/admin/useIPValidation";
+import { useIPValidation } from '@/hooks/admin/useIPValidation';
 import { supabase } from '@/integrations/supabase/client';
+
+type ValidationResult = Awaited<
+  ReturnType<ReturnType<typeof useIPValidation>['validateIPForAuthenticatedUser']>
+>;
 
 // Mock Supabase
 vi.mock('@/integrations/supabase/client', () => ({
@@ -20,6 +25,7 @@ describe('useIPValidation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default mock: successful get-visitor-info
+    // eslint-disable-next-line @typescript-eslint/require-await
     vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
       if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
       return { data: null, error: null };
@@ -38,8 +44,12 @@ describe('useIPValidation', () => {
     });
 
     it('falls back to ipify when get-visitor-info fails', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({ data: null, error: { message: 'Failed' } });
+      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Failed' },
+      });
       mockFetch.mockResolvedValueOnce({
+        // eslint-disable-next-line @typescript-eslint/require-await
         json: async () => ({ ip: '5.6.7.8' }),
       });
 
@@ -47,11 +57,17 @@ describe('useIPValidation', () => {
       const ip = await result.current.fetchCurrentIP();
 
       expect(ip).toBe('5.6.7.8');
-      expect(mockFetch).toHaveBeenCalledWith('https://api.ipify.org?format=json');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.ipify.org?format=json',
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      );
     });
 
     it('returns null when both methods fail', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({ data: null, error: { message: 'Failed' } });
+      vi.mocked(supabase.functions.invoke).mockResolvedValueOnce({
+        data: null,
+        error: { message: 'Failed' },
+      });
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
       const { result } = renderHook(() => useIPValidation());
@@ -63,15 +79,17 @@ describe('useIPValidation', () => {
 
   describe('validateIPForAuthenticatedUser', () => {
     it('returns isAllowed true when IP is whitelisted', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
-        if (fnName === 'validate-access') return { data: { allowed: true, reason: 'whitelisted' }, error: null };
+        if (fnName === 'validate-access')
+          return { data: { allowed: true, reason: 'whitelisted' }, error: null };
         return { data: null, error: null };
       });
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -84,15 +102,17 @@ describe('useIPValidation', () => {
     });
 
     it('returns isAllowed false when IP is blocked', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
-        if (fnName === 'validate-access') return { data: { allowed: false, reason: 'ip_not_whitelisted' }, error: null };
+        if (fnName === 'validate-access')
+          return { data: { allowed: false, reason: 'ip_not_whitelisted' }, error: null };
         return { data: null, error: null };
       });
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -106,15 +126,17 @@ describe('useIPValidation', () => {
     });
 
     it('fails open when edge function errors', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
-        if (fnName === 'validate-access') return { data: null, error: { message: 'Function error' } };
+        if (fnName === 'validate-access')
+          return { data: null, error: { message: 'Function error' } };
         return { data: null, error: null };
       });
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -124,12 +146,15 @@ describe('useIPValidation', () => {
     });
 
     it('returns error when current IP cannot be identified', async () => {
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({ data: null, error: { message: 'Network' } });
+      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+        data: null,
+        error: { message: 'Network' },
+      });
       mockFetch.mockRejectedValueOnce(new Error('Fetch failed'));
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -142,22 +167,24 @@ describe('useIPValidation', () => {
     });
 
     it('handles city_not_whitelisted reason correctly', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
-        if (fnName === 'validate-access') return {
-          data: {
-            allowed: false,
-            reason: 'city_not_whitelisted',
-            details: { detected_city: 'São Paulo' },
-          },
-          error: null,
-        };
+        if (fnName === 'validate-access')
+          return {
+            data: {
+              allowed: false,
+              reason: 'city_not_whitelisted',
+              details: { detected_city: 'São Paulo' },
+            },
+            error: null,
+          };
         return { data: null, error: null };
       });
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -167,22 +194,24 @@ describe('useIPValidation', () => {
     });
 
     it('handles too_many_attempts reason correctly', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
-        if (fnName === 'validate-access') return {
-          data: {
-            allowed: false,
-            reason: 'too_many_attempts',
-            details: { lockout_minutes: 30 },
-          },
-          error: null,
-        };
+        if (fnName === 'validate-access')
+          return {
+            data: {
+              allowed: false,
+              reason: 'too_many_attempts',
+              details: { lockout_minutes: 30 },
+            },
+            error: null,
+          };
         return { data: null, error: null };
       });
 
       const { result } = renderHook(() => useIPValidation());
 
-      let validationResult;
+      let validationResult: ValidationResult | undefined;
       await act(async () => {
         validationResult = await result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -192,21 +221,23 @@ describe('useIPValidation', () => {
     });
 
     it('manages isValidating state correctly', async () => {
-      let resolveInvoke: (value: any) => void;
-      const invokePromise = new Promise((resolve) => {
+      type InvokeReturn = Awaited<ReturnType<typeof supabase.functions.invoke>>;
+      let resolveInvoke: (value: InvokeReturn) => void;
+      const invokePromise = new Promise<InvokeReturn>((resolve) => {
         resolveInvoke = resolve;
       });
 
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: { ip: '1.2.3.4' }, error: null };
-        return await invokePromise;
+        return invokePromise;
       });
 
       const { result } = renderHook(() => useIPValidation());
 
       expect(result.current.isValidating).toBe(false);
 
-      let validationPromise;
+      let validationPromise: Promise<ValidationResult> | undefined;
+      // eslint-disable-next-line @typescript-eslint/require-await
       await act(async () => {
         validationPromise = result.current.validateIPForAuthenticatedUser('user-123');
       });
@@ -229,6 +260,7 @@ describe('useIPValidation', () => {
 
   describe('logLoginAttempt', () => {
     it('calls log-login-attempt even if fetchCurrentIP fails', async () => {
+      // eslint-disable-next-line @typescript-eslint/require-await
       vi.mocked(supabase.functions.invoke).mockImplementation(async (fnName) => {
         if (fnName === 'get-visitor-info') return { data: null, error: { message: 'Failed' } };
         return { data: { success: true }, error: null };

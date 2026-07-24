@@ -3,25 +3,36 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
-export type StockStatus = 'in-stock' | 'low-stock' | 'out-of-stock' | 'pre-order' | 'incoming';
+export type StockStatus = 'in-stock' | 'incoming' | 'low-stock' | 'out-of-stock' | 'pre-order';
+
+const STOCK_INDICATOR_DOT_COLORS: Record<StockStatus, string> = {
+  'in-stock': 'bg-primary',
+  'low-stock': 'bg-warning',
+  'out-of-stock': 'bg-destructive',
+  'pre-order': 'bg-primary',
+  incoming: 'bg-primary/70',
+} as const;
 
 interface StockBadgeProps {
   status: StockStatus;
   quantity?: number;
   showQuantity?: boolean;
   showIcon?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'lg' | 'md' | 'sm';
   expectedDate?: string;
   className?: string;
 }
 
-const statusConfig: Record<StockStatus, {
-  label: string;
-  shortLabel: string;
-  icon: typeof Package;
-  className: string;
-  bgClass: string;
-}> = {
+const statusConfig: Record<
+  StockStatus,
+  {
+    label: string;
+    shortLabel: string;
+    icon: typeof Package;
+    className: string;
+    bgClass: string;
+  }
+> = {
   'in-stock': {
     label: 'Em Estoque',
     shortLabel: 'Disponível',
@@ -31,7 +42,7 @@ const statusConfig: Record<StockStatus, {
   },
   'low-stock': {
     label: 'Estoque Baixo',
-    shortLabel: 'Baixo',
+    shortLabel: 'Estoque baixo',
     icon: AlertTriangle,
     className: 'text-warning dark:text-warning',
     bgClass: 'bg-warning/10 dark:bg-warning/15 border-warning/20 dark:border-warning/40',
@@ -41,7 +52,8 @@ const statusConfig: Record<StockStatus, {
     shortLabel: 'Indisponível',
     icon: XCircle,
     className: 'text-destructive dark:text-destructive',
-    bgClass: 'bg-destructive/10 dark:bg-destructive/20 border-destructive/20 dark:border-destructive/40',
+    bgClass:
+      'bg-destructive/10 dark:bg-destructive/20 border-destructive/20 dark:border-destructive/40',
   },
   'pre-order': {
     label: 'Pré-venda',
@@ -50,7 +62,7 @@ const statusConfig: Record<StockStatus, {
     className: 'text-primary',
     bgClass: 'bg-primary/10 border-primary/20',
   },
-  'incoming': {
+  incoming: {
     label: 'Chegando',
     shortLabel: 'Em trânsito',
     icon: Clock,
@@ -98,19 +110,17 @@ export function StockBadge({
     <Badge
       variant="outline"
       className={cn(
-        'font-medium inline-flex items-center border transition-all',
+        'inline-flex items-center border font-medium transition-all',
         config.bgClass,
         config.className,
         sizeStyles.badge,
-        className
+        className,
       )}
     >
       {showIcon && <Icon className={sizeStyles.icon} />}
       <span>
         {showQuantity && quantity !== undefined ? (
-          <>
-            {formatQuantity(quantity)} un.
-          </>
+          <>{formatQuantity(quantity)} un.</>
         ) : (
           config.shortLabel
         )}
@@ -122,18 +132,14 @@ export function StockBadge({
   if (expectedDate || (quantity !== undefined && !showQuantity)) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild>
-          {badgeContent}
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{badgeContent}</TooltipTrigger>
         <TooltipContent>
-          <div className="text-xs space-y-1">
+          <div className="space-y-1 text-xs">
             <p className="font-medium">{config.label}</p>
             {quantity !== undefined && (
               <p>Quantidade: {quantity.toLocaleString('pt-BR')} unidades</p>
             )}
-            {expectedDate && (
-              <p>Previsão: {new Date(expectedDate).toLocaleDateString('pt-BR')}</p>
-            )}
+            {expectedDate && <p>Previsão: {new Date(expectedDate).toLocaleDateString('pt-BR')}</p>}
           </div>
         </TooltipContent>
       </Tooltip>
@@ -157,29 +163,19 @@ interface StockIndicatorProps {
 }
 
 export function StockIndicator({ status, className }: StockIndicatorProps) {
-  const dotColor = {
-    'in-stock': 'bg-primary',
-    'low-stock': 'bg-warning',
-    'out-of-stock': 'bg-destructive',
-    'pre-order': 'bg-primary',
-    'incoming': 'bg-primary/70',
-  };
-
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span 
+        <span
           className={cn(
-            'inline-block w-2.5 h-2.5 rounded-full',
-            dotColor[status],
+            'inline-block h-2.5 w-2.5 rounded-full',
+            STOCK_INDICATOR_DOT_COLORS[status],
             status === 'low-stock' && 'animate-pulse',
-            className
+            className,
           )}
         />
       </TooltipTrigger>
-      <TooltipContent>
-        {statusConfig[status].label}
-      </TooltipContent>
+      <TooltipContent>{statusConfig[status].label}</TooltipContent>
     </Tooltip>
   );
 }

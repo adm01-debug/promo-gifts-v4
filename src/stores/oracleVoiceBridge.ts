@@ -2,7 +2,7 @@
  * Shared state between Voice Agent and Flow IA.
  * Allows voice commands to open the Flow chat and send messages.
  */
-import { create } from "zustand";
+import { create } from 'zustand';
 
 interface OracleVoiceBridge {
   /** Whether the Flow dialog should be open */
@@ -20,10 +20,7 @@ interface OracleVoiceBridge {
 export const useOracleVoiceBridge = create<OracleVoiceBridge>((set) => ({
   isOracleOpen: false,
   pendingMessage: null,
-  openOracle: (message?: string) =>
-    set({ isOracleOpen: true, pendingMessage: message || null }),
-  closeOracle: () =>
-    set({ isOracleOpen: false, pendingMessage: null }),
-  consumePendingMessage: () =>
-    set({ pendingMessage: null }),
+  openOracle: (message?: string) => set({ isOracleOpen: true, pendingMessage: message || null }),
+  closeOracle: () => set({ isOracleOpen: false, pendingMessage: null }),
+  consumePendingMessage: () => set({ pendingMessage: null }),
 }));

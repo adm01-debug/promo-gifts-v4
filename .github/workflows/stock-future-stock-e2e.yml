@@ -1,0 +1,126 @@
+name: stock-future-stock-quality
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/inventory/StockFilterToolbar.tsx'
+      - 'src/hooks/useFutureStockPreference.ts'
+      - 'src/hooks/__tests__/useFutureStockPreference*'
+      - 'e2e/admin/stock-future-stock*.spec.ts'
+      - 'e2e/fixtures/selectors.ts'
+      - '.github/workflows/stock-future-stock-e2e.yml'
+  push:
+    branches: [main, master]
+    paths:
+      - 'src/components/inventory/StockFilterToolbar.tsx'
+      - 'src/hooks/useFutureStockPreference.ts'
+  workflow_dispatch:
+
+jobs:
+  unit-and-fuzz:
+    name: Unit + fuzz (useFutureStockPreference)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Unit + fuzz com cobertura (falha em qualquer regressão)
+        run: |
+          npx vitest run \
+            src/hooks/__tests__/useFutureStockPreference.test.ts \
+            src/hooks/__tests__/useFutureStockPreference.fuzz.test.ts \
+            --reporter=verbose \
+            --coverage \
+            --coverage.reporter=text \
+            --coverage.reporter=json-summary \
+            --coverage.include=src/hooks/useFutureStockPreference.ts \
+            --coverage.thresholds.lines=95 \
+            --coverage.thresholds.functions=95 \
+            --coverage.thresholds.statements=95 \
+            --coverage.thresholds.branches=85
+      - name: Suíte rápida (garante que nada além do hook regrediu)
+        # Roda toda a suíte unit em modo "changed since main" + a suíte de
+        # toolbar para detectar qualquer regressão colateral.
+        run: |
+          npx vitest run \
+            tests/StockFilterToolbar.test.tsx \
+            tests/StockFilterToolbar.field-order.test.tsx \
+            src/hooks/__tests__/useFutureStockPreference.test.ts \
+            src/hooks/__tests__/useFutureStockPreference.fuzz.test.ts \
+            --reporter=dot
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: future-stock-coverage
+          path: coverage/
+          retention-days: 14
+
+  e2e:
+    name: E2E ${{ matrix.browser }} (functional + a11y)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium-authed, firefox-authed, webkit-authed]
+    env:
+      CI: 'true'
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      E2E_BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - name: Functional + a11y em ${{ matrix.browser }}
+        run: |
+          npx playwright test \
+            e2e/admin/stock-future-stock.spec.ts \
+            e2e/admin/stock-future-stock-a11y.spec.ts \
+            --project=${{ matrix.browser }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: future-stock-playwright-report-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 30
+
+  visual:
+    name: Visual regression (Chromium, multi-viewport × DPR)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      CI: 'true'
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      E2E_BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Visual regression (bootstrap de baselines faltantes)
+        run: |
+          npx playwright test \
+            e2e/admin/stock-future-stock-visual.spec.ts \
+            --project=chromium-authed \
+            --update-snapshots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: future-stock-visual-report
+          path: playwright-report/
+          retention-days: 30

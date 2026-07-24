@@ -5,7 +5,7 @@
  * Único ponto de acesso ao BD externo para tabelas.
  */
 
-import { invokeExternalDb } from '@/lib/external-db';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { transformRawToTabelas, rawToTabelaPrecoTecnica } from '../transformers';
 import type { TabelaPrecoTecnica, CustomizationPriceTableRaw } from '@/types/tecnica-unificada';
 import { logger } from '@/lib/logger';
@@ -26,11 +26,11 @@ export interface PriceTableFilters {
 
 export interface PriceTableOrderBy {
   column:
-    | 'table_code'
-    | 'table_code_option'
-    | 'max_colors'
+    | 'created_at'
     | 'customization_type_name'
-    | 'created_at';
+    | 'max_colors'
+    | 'table_code_option'
+    | 'table_code';
   ascending?: boolean;
 }
 
@@ -70,7 +70,7 @@ export async function findAll(options: PriceTableQueryOptions = {}): Promise<Tab
     dbFilters.table_code_option = filters.tableCodeOption;
   }
 
-  const result = await invokeExternalDb<CustomizationPriceTableRaw>({
+  const result = await dbInvoke<CustomizationPriceTableRaw>({
     table: 'customization_price_tables',
     operation: 'select',
     filters: Object.keys(dbFilters).length > 0 ? dbFilters : undefined,
@@ -103,7 +103,7 @@ export async function findAll(options: PriceTableQueryOptions = {}): Promise<Tab
  * Busca tabela por ID
  */
 export async function findById(id: string): Promise<TabelaPrecoTecnica | null> {
-  const result = await invokeExternalDb<CustomizationPriceTableRaw>({
+  const result = await dbInvoke<CustomizationPriceTableRaw>({
     table: 'customization_price_tables',
     operation: 'select',
     filters: { id },
@@ -118,7 +118,7 @@ export async function findById(id: string): Promise<TabelaPrecoTecnica | null> {
  * Busca tabela por código de opção
  */
 export async function findByCodeOption(codeOption: string): Promise<TabelaPrecoTecnica | null> {
-  const result = await invokeExternalDb<CustomizationPriceTableRaw>({
+  const result = await dbInvoke<CustomizationPriceTableRaw>({
     table: 'customization_price_tables',
     operation: 'select',
     filters: { table_code_option: codeOption },
@@ -183,7 +183,7 @@ export async function findBestMatch(params: {
  * Lista nomes de técnicas únicos
  */
 export async function findTechniqueNames(): Promise<string[]> {
-  const result = await invokeExternalDb<{ customization_type_name: string }>({
+  const result = await dbInvoke<{ customization_type_name: string }>({
     table: 'customization_price_tables',
     operation: 'select',
     select: 'customization_type_name',
@@ -198,7 +198,7 @@ export async function findTechniqueNames(): Promise<string[]> {
  * Lista códigos de tabela únicos
  */
 export async function findTableCodes(): Promise<string[]> {
-  const result = await invokeExternalDb<{ table_code: string }>({
+  const result = await dbInvoke<{ table_code: string }>({
     table: 'customization_price_tables',
     operation: 'select',
     select: 'table_code',

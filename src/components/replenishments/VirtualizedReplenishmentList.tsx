@@ -1,9 +1,9 @@
-import { useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { type ReplenishmentWithDetails, type replenishmentToProduct } from "@/hooks/products";
-import { ProductListItem } from "@/components/products/ProductListItem";
-import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
-import { cn } from "@/lib/utils";
+import { useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { type ReplenishmentWithDetails, type replenishmentToProduct } from '@/hooks/products';
+import { ProductListItem } from '@/components/products/ProductListItem';
+import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
+import { cn } from '@/lib/utils';
 
 interface VirtualizedListProps {
   products: ReplenishmentWithDetails[];
@@ -18,6 +18,11 @@ interface VirtualizedListProps {
   onToggleCompare: (id: string) => { added: boolean; isFull: boolean };
   canAddToCompare: boolean;
 }
+
+const SCROLL_CONTAINER_STYLE = {
+  maxHeight:
+    'calc(100vh - var(--header-h, 56px) - var(--breadcrumb-h, 0px) - var(--replenishment-sticky-h, 180px) - 1rem)',
+} as const;
 
 export function VirtualizedReplenishmentList({
   products,
@@ -39,21 +44,22 @@ export function VirtualizedReplenishmentList({
     getScrollElement: () => parentRef.current,
     estimateSize: () => 80,
     overscan: 8,
+    measureElement: (el) => el?.getBoundingClientRect().height ?? 80,
   });
 
   return (
     <div
       ref={parentRef}
       className="overflow-auto"
-      style={{ maxHeight: "calc(100vh - 280px)" }}
+      style={SCROLL_CONTAINER_STYLE}
       role="list"
       aria-label="Lista de produtos repostos"
     >
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
-          width: "100%",
-          position: "relative",
+          width: '100%',
+          position: 'relative',
         }}
       >
         {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -65,31 +71,47 @@ export function VirtualizedReplenishmentList({
           return (
             <div
               key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
               role="listitem"
               style={{
-                position: "absolute",
+                position: 'absolute',
                 top: 0,
                 left: 0,
-                width: "100%",
-                height: `${virtualRow.size}px`,
+                width: '100%',
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <div className={cn("flex items-center gap-1", isSelected && "ring-2 ring-primary rounded-xl")}>
+              <div
+                className={cn(
+                  'flex items-center gap-1',
+                  isSelected && 'rounded-xl ring-2 ring-primary',
+                )}
+              >
                 {selectionMode && (
-                  <div className="flex-shrink-0 ml-1">
-                    <SelectionCheckbox checked={isSelected} onChange={() => onToggleSelect(item.product_id)} size="md" aria-label={`Selecionar ${item.product_name}`} />
+                  <div className="ml-1 flex-shrink-0">
+                    <SelectionCheckbox
+                      checked={isSelected}
+                      onChange={() => onToggleSelect(item.product_id)}
+                      size="md"
+                      aria-label={`Selecionar ${item.product_name}`}
+                    />
                   </div>
                 )}
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <ProductListItem
                     product={prod}
-                    onClick={() => selectionMode ? onToggleSelect(item.product_id) : onProductClick(item.product_id)}
+                    onClick={() =>
+                      selectionMode
+                        ? onToggleSelect(item.product_id)
+                        : onProductClick(item.product_id)
+                    }
                     isFavorited={isFavorite(item.product_id)}
                     onToggleFavorite={toggleFavorite}
                     isInCompare={isInCompare(item.product_id)}
                     onToggleCompare={onToggleCompare}
                     canAddToCompare={canAddToCompare}
+                    priority={virtualRow.index < 6}
                   />
                 </div>
               </div>

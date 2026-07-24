@@ -1,7 +1,6 @@
 // Hook para buscar dados do simulador do banco externo Promobrind
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
-import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/lib/logger';
 import {
   createProductFuseOptions,
@@ -88,7 +87,7 @@ interface ProductImageRecord {
 // FUNÇÕES AUXILIARES
 // ============================================
 
-async function invokeExternalDb<T>(
+async function dbInvokeLocal<T>(
   table: string,
   operation: 'select',
   options?: {
@@ -97,19 +96,13 @@ async function invokeExternalDb<T>(
     orderBy?: { column: string; ascending?: boolean };
     limit?: number;
   },
-): Promise<{ records: T[]; count: number }> {
-  const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-    body: {
-      table,
-      operation,
-      ...options,
-    },
+): Promise<{ records: T[]; count: number | null }> {
+  const { dbInvoke } = await import('@/lib/db/postgrest');
+  return dbInvoke<T>({
+    table,
+    operation,
+    ...options,
   });
-
-  if (error) throw new Error(error.message);
-  if (!data.success) throw new Error(data.error || 'Erro desconhecido');
-
-  return data.data as { records: T[]; count: number };
 }
 
 // ============================================
@@ -130,8 +123,12 @@ export function useExternalProductSearch(searchQuery: string) {
       const normalizedSearch = searchQuery.trim();
       if (!normalizedSearch || normalizedSearch.length < 2) return [];
 
-      const [prefixResult, broadResult] = await Promise.all([
-        invokeExternalDb<ExternalProduct>('products', 'select', {
+      // Two-layer search: prefix (fast "starts-with" on name/sku/supplier_reference)
+      // + broad (FTS on search_vector). allSettled — NOT all — so one layer failing
+      // degrades gracefully instead of nuking every result (the prefix 400 that
+      // produced "0 produtos encontrados"). Mirrors the quote builder's resilience.
+      const [prefixSettled, broadSettled] = await Promise.allSettled([
+        dbInvokeLocal<ExternalProduct>('products', 'select', {
           filters: {
             _name_prefix: normalizedSearch,
             active: true,
@@ -140,7 +137,7 @@ export function useExternalProductSearch(searchQuery: string) {
           limit: 200,
           orderBy: { column: 'name', ascending: true },
         }),
-        invokeExternalDb<ExternalProduct>('products', 'select', {
+        dbInvokeLocal<ExternalProduct>('products', 'select', {
           filters: {
             _search: normalizedSearch,
             active: true,
@@ -151,7 +148,17 @@ export function useExternalProductSearch(searchQuery: string) {
         }),
       ]);
 
-      const mergedProducts = dedupeById([...prefixResult.records, ...broadResult.records]);
+      if (prefixSettled.status === 'rejected') {
+        logger.warn('[simulator-search] prefix layer failed:', prefixSettled.reason);
+      }
+      if (broadSettled.status === 'rejected') {
+        logger.warn('[simulator-search] broad layer failed:', broadSettled.reason);
+      }
+
+      const prefixRecords = prefixSettled.status === 'fulfilled' ? prefixSettled.value.records : [];
+      const broadRecords = broadSettled.status === 'fulfilled' ? broadSettled.value.records : [];
+
+      const mergedProducts = dedupeById([...prefixRecords, ...broadRecords]);
       const fuse = new Fuse(mergedProducts, createProductFuseOptions<ExternalProduct>());
       const products = rankProductSearchResults(mergedProducts, normalizedSearch, fuse);
 
@@ -160,16 +167,12 @@ export function useExternalProductSearch(searchQuery: string) {
         const productIds = products.map((p) => p.id);
 
         try {
-          const imagesResult = await invokeExternalDb<ProductImageRecord>(
-            'product_images',
-            'select',
-            {
-              filters: { product_id: productIds, is_active: true },
-              select: 'product_id, url_cdn, image_type, is_primary, display_order',
-              orderBy: { column: 'display_order', ascending: true },
-              limit: Math.max(productIds.length * 8, 100),
-            },
-          );
+          const imagesResult = await dbInvokeLocal<ProductImageRecord>('product_images', 'select', {
+            filters: { product_id: productIds, is_active: true },
+            select: 'product_id, url_cdn, image_type, is_primary, display_order',
+            orderBy: { column: 'display_order', ascending: true },
+            limit: Math.max(productIds.length * 8, 100),
+          });
 
           // Agrupar imagens por product_id
           const imagesByProduct = new Map<string, ProductImageRecord[]>();
@@ -219,7 +222,7 @@ export function useExternalProduct(productId: string | null) {
     queryFn: async () => {
       if (!productId) return null;
 
-      const result = await invokeExternalDb<ExternalProduct>('products', 'select', {
+      const result = await dbInvokeLocal<ExternalProduct>('products', 'select', {
         filters: { id: productId },
         select: PRODUCT_SELECT,
         limit: 1,
@@ -230,16 +233,12 @@ export function useExternalProduct(productId: string | null) {
       // Buscar imagens da nova tabela product_images
       if (product) {
         try {
-          const imagesResult = await invokeExternalDb<ProductImageRecord>(
-            'product_images',
-            'select',
-            {
-              filters: { product_id: productId, is_active: true },
-              select: 'product_id, url_cdn, image_type, is_primary, display_order',
-              orderBy: { column: 'display_order', ascending: true },
-              limit: 100,
-            },
-          );
+          const imagesResult = await dbInvokeLocal<ProductImageRecord>('product_images', 'select', {
+            filters: { product_id: productId, is_active: true },
+            select: 'product_id, url_cdn, image_type, is_primary, display_order',
+            orderBy: { column: 'display_order', ascending: true },
+            limit: 100,
+          });
 
           if (imagesResult.records.length > 0) {
             const sortedImages = imagesResult.records.sort(
@@ -338,7 +337,7 @@ export function useExternalProductsList(options?: {
   return useQuery({
     queryKey: ['external-products-list', options],
     queryFn: async () => {
-      const result = await invokeExternalDb<ExternalProduct>('products', 'select', {
+      const result = await dbInvokeLocal<ExternalProduct>('products', 'select', {
         filters: {
           active: true,
         },
@@ -354,16 +353,12 @@ export function useExternalProductsList(options?: {
         const productIds = products.map((p) => p.id);
 
         try {
-          const imagesResult = await invokeExternalDb<ProductImageRecord>(
-            'product_images',
-            'select',
-            {
-              filters: { is_active: true },
-              select: 'product_id, url_cdn, image_type, is_primary, display_order',
-              orderBy: { column: 'display_order', ascending: true },
-              limit: 2000,
-            },
-          );
+          const imagesResult = await dbInvokeLocal<ProductImageRecord>('product_images', 'select', {
+            filters: { is_active: true },
+            select: 'product_id, url_cdn, image_type, is_primary, display_order',
+            orderBy: { column: 'display_order', ascending: true },
+            limit: 2000,
+          });
 
           // Agrupar imagens por product_id
           const imagesByProduct = new Map<string, ProductImageRecord[]>();

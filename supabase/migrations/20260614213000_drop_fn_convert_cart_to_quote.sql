@@ -1,0 +1,26 @@
+-- 20260614213000_drop_fn_convert_cart_to_quote.sql
+--
+-- Remove a RPC public.fn_convert_cart_to_quote(uuid) — agora ÓRFÃ.
+--
+-- Contexto: a conversão "Carrinho → Orçamento" passou a ser um HANDOFF de
+-- pré-preenchimento no frontend. O botão "Gerar Orçamento" (página de carrinhos
+-- e mini-carrinho do header) agora navega para /orcamentos/novo com
+--   location.state = { fromCart, companyId, companyName, companyLocation, items[] };
+-- o QuoteBuilder (useQuoteBuilderState) já tem o handler "Pre-fill from cart"
+-- que faz setClientId + setItems SEM persistir. O orçamento só se torna real
+-- (linha em quotes + número oficial) quando o vendedor preenche
+-- gravação/pagamento/entrega e clica em Salvar.
+--
+-- A função antiga MATERIALIZAVA o orçamento na hora (INSERT em quotes com
+-- status 'draft' + número via trigger), criava os quote_items e ainda
+-- executava DELETE FROM seller_carts — comportamento indesejado.
+--
+-- Sem chamadores restantes: o frontend foi migrado no commit 226afed; nenhuma
+-- edge function / workflow n8n referencia a função.
+--
+-- Reversível: a definição original foi preservada em
+--   public._backup_fn_convert_cart_to_quote_20260614
+-- e permanece versionada na migration
+--   20260614210000_fix_convert_cart_to_quote_organization_id.sql
+
+DROP FUNCTION IF EXISTS public.fn_convert_cart_to_quote(uuid);

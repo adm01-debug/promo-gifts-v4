@@ -15,7 +15,7 @@
 //
 // Segurança: comparação em tempo constante. Logs estruturados sem expor secret.
 
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2.49.4";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
@@ -159,24 +159,6 @@ export async function authorizeDispatcher(
       return { ok: false, response: jsonResponse({ error: "missing_token" }, 401, corsHeaders) };
     }
 
-    if (SERVICE_KEY && constantTimeEqual(token, SERVICE_KEY)) {
-      if (requireUserContext) {
-        logAuthEvent({ outcome: "denied", reason: "service_role_not_allowed_in_user_only_mode" });
-        return {
-          ok: false,
-          response: jsonResponse({ error: "user_context_required" }, 403, corsHeaders),
-        };
-      }
-      logAuthEvent({ outcome: "allowed", mode: "secret", via: "service_role_bearer" });
-      return {
-        ok: true,
-        mode: "secret",
-        supabaseAdmin: createClient(SUPABASE_URL, SERVICE_KEY, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        }),
-      };
-    }
-
     const supabaseUser = createClient(SUPABASE_URL, ANON_KEY, {
       global: { headers: { Authorization: `Bearer ${token}` } },
       auth: { persistSession: false, autoRefreshToken: false },
@@ -240,7 +222,8 @@ export async function authorizeDispatcher(
   // Antes aceitávamos chamada anônima como retrocompat ("legacy_no_auth"),
   // o que abria webhook-dispatcher para qualquer caller quando o secret
   // não estava configurado (clones de staging/dev, vault revogado, etc.).
-  // Agora devolvemos 503 explícito — exige configuração para operar.
+  // Retornamos 401 (não 503): a causa é ausência de credencial configurada,
+  // não indisponibilidade do serviço. Fail-closed é mantido.
   if (!expectedSecret) {
     logAuthEvent({
       outcome: "denied",
@@ -254,7 +237,7 @@ export async function authorizeDispatcher(
           error: "service_misconfigured",
           message: "WEBHOOK_DISPATCHER_SECRET não configurado. Configure no vault (integration_credentials) ou env antes de invocar.",
         },
-        503,
+        401,
         corsHeaders,
       ),
     };
@@ -293,7 +276,9 @@ export async function authorizeCron(
 
   // Fail-closed: secret obrigatório (auditoria SEC-003). Antes aceitávamos
   // crons anônimos como retrocompat — risco de qualquer caller acionar jobs
-  // quando o secret não estivesse setado no vault E no env. Agora 503.
+  // quando o secret não estivesse setado no vault E no env.
+  // Retornamos 401 (não 503): ausência de credencial configurada é falha de
+  // autorização, não indisponibilidade de serviço. Fail-closed é mantido.
   if (!expectedSecret) {
     logAuthEvent({
       outcome: "denied",
@@ -307,7 +292,7 @@ export async function authorizeCron(
           error: "service_misconfigured",
           message: `${secretEnvName} não configurado em vault nem env. Configure antes de invocar este cron.`,
         },
-        503,
+        401,
         corsHeaders,
       ),
     };

@@ -9,7 +9,7 @@
  * Uso:
  *   const visible = filterByRoutePermission(items, (i) => i.path, roles);
  */
-import { canNavigateTo, isDevOnlyPath, isAdminOnlyPath } from "@/lib/navigation/restricted-routes";
+import { canNavigateTo, isDevOnlyPath, isAdminOnlyPath } from '@/lib/navigation/restricted-routes';
 
 export interface RouteAccessRoles {
   isDev: boolean;

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Conta erros de telemetria nas últimas 1h e 24h.
@@ -7,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
  * Auto-refresh a cada 30s.
  */
 export function useErrorCounters() {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 2 HEAD requests com refetchInterval=30s sem guard.
+  const { rolesLoaded, isAdmin } = useAuth();
   const query = useQuery({
     queryKey: ['query-telemetry-error-counters'],
     queryFn: async () => {
@@ -35,8 +38,11 @@ export function useErrorCounters() {
         errors24h: r24h.count ?? 0,
       };
     },
+    enabled: rolesLoaded && Boolean(isAdmin),
     refetchInterval: 30_000,
     staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   return {

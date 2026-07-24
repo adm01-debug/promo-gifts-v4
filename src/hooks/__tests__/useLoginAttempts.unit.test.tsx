@@ -1,9 +1,10 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useLoginAttempts } from "@/hooks/auth/useLoginAttempts";
+import { useLoginAttempts } from '@/hooks/auth/useLoginAttempts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock implementation that actually returns itself
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockQuery: any = {
   select: vi.fn().mockImplementation(() => mockQuery),
   order: vi.fn().mockImplementation(() => mockQuery),
@@ -16,6 +17,12 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: vi.fn(() => mockQuery),
   },
+}));
+
+// useLoginAttempts é admin-guarded (BUG-HEAD-GUARD FIX 2026-06-23):
+// enabled = rolesLoaded && isAdmin. Sem este mock a query fica gated e nunca resolve.
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ rolesLoaded: true, isAdmin: true }),
 }));
 
 const queryClient = new QueryClient({

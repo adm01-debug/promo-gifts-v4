@@ -58,7 +58,7 @@ test.describe('Regressão Visual - Product Hero', () => {
     
     for (const skin of skins) {
       await page.evaluate((s) => {
-        localStorage.setItem('gifts-store-theme-config', JSON.stringify({ presetId: s, radius: 14, mode: 'light' }));
+        localStorage.setItem('gifts-store-theme-config', JSON.stringify({ presetId: s, radius: 14, mode: 'dark' }));
         window.location.reload();
       }, skin);
       await page.waitForSelector('h1[data-testid="product-name"]', { timeout: 10000 });

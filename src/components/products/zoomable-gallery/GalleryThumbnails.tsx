@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl, deriveOriginalUrl } from '@/utils/imageProxy';
 
 interface GalleryThumbnailsProps {
   images: string[];
@@ -8,36 +9,46 @@ interface GalleryThumbnailsProps {
   className?: string;
 }
 
-function BlurThumb({ src, alt }: { src: string; alt: string }) {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <img
-      src={src}
-      alt={alt}
-      className={cn(
-        "w-full h-full object-cover transition-all duration-500 ease-out",
-        loaded ? "opacity-100 blur-0" : "opacity-40 blur-sm"
-      )}
-      onLoad={() => setLoaded(true)}
-    />
-  );
+/**
+ * Deriva a URL de fallback para uma imagem da galeria.
+ * 1. Tenta derivar URL original SPOT a partir do CF ID
+ * 2. Cai de volta para a própria URL (que pode ser raw de fornecedor)
+ * 3. Proxia via edge function se for domínio de fornecedor
+ *
+ * BUG-GALLERY-CORS FIX (2026-06-23):
+ * GalleryThumbnails não tinha urlOriginal → sem fallback quando CF falha.
+ * Agora toda thumbnail tem fallback proxiado para supplier CDN.
+ */
+function getThumbFallback(image: string): string | null {
+  return getProxiedImageUrl(deriveOriginalUrl(image) ?? image) ?? null;
 }
 
-export function GalleryThumbnails({ images, currentIndex, onSelect, className }: GalleryThumbnailsProps) {
+export function GalleryThumbnails({
+  images,
+  currentIndex,
+  onSelect,
+  className,
+}: GalleryThumbnailsProps) {
   return (
-    <div className={cn("flex gap-2 overflow-x-auto pb-2 scrollbar-thin", className)}>
+    <div className={cn('scrollbar-thin flex gap-2 overflow-x-auto pb-2', className)}>
       {images.map((image, index) => (
         <button
           key={image || index}
           onClick={() => onSelect(index)}
           className={cn(
-            "shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
+            'h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all',
             index === currentIndex
-              ? "border-primary ring-2 ring-primary/30"
-              : "border-transparent hover:border-primary/50"
+              ? 'border-primary ring-2 ring-primary/30'
+              : 'border-transparent hover:border-primary/50',
           )}
         >
-          <BlurThumb src={image} alt={`Thumbnail ${index + 1}`} />
+          <OptimizedImage
+            src={image}
+            alt={`Thumbnail ${index + 1}`}
+            className="object-cover"
+            containerClassName="h-full w-full"
+            urlOriginal={getThumbFallback(image)}
+          />
         </button>
       ))}
     </div>
@@ -46,23 +57,27 @@ export function GalleryThumbnails({ images, currentIndex, onSelect, className }:
 
 export function FullscreenThumbnails({ images, currentIndex, onSelect }: GalleryThumbnailsProps) {
   return (
-    <div className="flex gap-2 justify-center overflow-x-auto">
+    <div className="flex justify-center gap-2 overflow-x-auto">
       {images.map((image, index) => (
         <button
           key={image || index}
           onClick={() => onSelect(index)}
           className={cn(
-            "shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all",
+            'h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all',
             index === currentIndex
-              ? "border-primary ring-2 ring-primary/30"
-              : "border-transparent hover:border-primary/50 opacity-60 hover:opacity-100"
+              ? 'border-primary ring-2 ring-primary/30'
+              : 'border-transparent opacity-60 hover:border-primary/50 hover:opacity-100',
           )}
         >
-          <BlurThumb src={image} alt={`Thumbnail ${index + 1}`} />
+          <OptimizedImage
+            src={image}
+            alt={`Thumbnail ${index + 1}`}
+            className="object-cover"
+            containerClassName="h-full w-full"
+            urlOriginal={getThumbFallback(image)}
+          />
         </button>
       ))}
     </div>
   );
 }
-
-export { BlurThumb };

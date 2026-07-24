@@ -13,7 +13,9 @@ test.describe('Módulo Novidades - Testes E2E Exaustivos', () => {
   test('Deve carregar e exibir a estrutura principal da página de novidades', async ({ page }) => {
     // Verifica título e descrição
     await expect(page.locator('h1')).toContainText('Novidades');
-    await expect(page.locator('p:text("Produtos recém-chegados ao catálogo nos últimos 30 dias")')).toBeVisible();
+    await expect(
+      page.locator('p:text("Produtos recém-chegados, destacados como novidade pelos fornecedores")'),
+    ).toBeVisible();
 
     // Verifica presença dos componentes principais
     await expect(page.locator('.grid-cols-1')).toBeVisible(); // Layout grid principal

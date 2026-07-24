@@ -3,23 +3,30 @@
  * semelhantes ao kit atual (overlap >=30% por SKU).
  */
 import { useNavigate } from 'react-router-dom';
-import * as Lucide from 'lucide-react';
+import {
+  Package, Sparkles,
+  Gift, Heart, Star, Crown, Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSimilarKits } from '@/hooks/kit-builder';
 import { formatCurrency } from '@/lib/kit-builder';
-import { Sparkles } from 'lucide-react';
 
 interface Props {
   currentSkus: string[];
   excludeId?: string;
 }
 
-function getIcon(name: string) {
-  const I = (Lucide as unknown as Record<string, Lucide.LucideIcon>)[name];
-  return I ?? Lucide.Package;
+/** Lookup estático dos ícones do PRESET_ICONS — evita namespace import. */
+const ICON_MAP: Record<string, LucideIcon | undefined> = {
+  Package, Gift, Heart, Star, Crown, Sparkles,
+  Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+};
+
+function getIcon(name: string): LucideIcon {
+  return ICON_MAP[name] ?? Package;
 }
 
 export function SimilarKitsWidget({ currentSkus, excludeId }: Props) {
@@ -31,7 +38,7 @@ export function SimilarKitsWidget({ currentSkus, excludeId }: Props) {
   return (
     <Card className="border-dashed">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm flex items-center gap-1.5">
+        <CardTitle className="flex items-center gap-1.5 text-sm">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           Kits semelhantes
         </CardTitle>
@@ -54,25 +61,26 @@ export function SimilarKitsWidget({ currentSkus, excludeId }: Props) {
             <button
               key={template.id}
               onClick={() => navigate(`/montar-kit?template=${template.id}`)}
-              className="w-full text-left rounded-md border p-2 hover:bg-accent/50 transition-colors flex items-center gap-2"
+              className="flex w-full items-center gap-2 rounded-md border p-2 text-left transition-colors hover:bg-accent/50"
             >
               <div
-                className="h-8 w-8 rounded-md flex items-center justify-center shrink-0"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
                 style={{ backgroundColor: `${template.color}22`, color: template.color }}
               >
                 <Icon className="h-4 w-4" />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
-                  <p className="text-xs font-medium truncate">{template.name}</p>
+                  <p className="truncate text-xs font-medium">{template.name}</p>
                   {template.tag && (
-                    <Badge variant="outline" className="text-[9px] h-4 px-1">
+                    <Badge variant="outline" className="h-4 px-1 text-[9px]">
                       {template.tag}
                     </Badge>
                   )}
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  {Math.round(ratio * 100)}% em comum · {overlap} itens · {formatCurrency(template.total_price)}
+                  {Math.round(ratio * 100)}% em comum · {overlap} itens ·{' '}
+                  {formatCurrency(template.total_price)}
                 </p>
               </div>
             </button>

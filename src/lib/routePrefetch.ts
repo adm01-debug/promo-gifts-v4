@@ -19,7 +19,7 @@ const routeImportMap: Record<string, () => Promise<unknown>> = {
   '/orcamentos/novo': () => import('@/pages/quotes/QuoteBuilderPage'),
   '/orcamentos/kanban': () => import('@/pages/quotes/QuotesKanbanPage'),
   '/orcamentos/dashboard': () => import('@/pages/quotes/QuotesDashboardPage'),
-  '/orcamentos/templates': () => import('@/pages/quotes/QuoteTemplatesPage'),
+  
   '/simulador': () => import('@/pages/tools/SimuladorWizard'),
   '/simulador-precos': () => import('@/pages/tools/PriceSimulatorPage'),
   '/estoque': () => import('@/pages/admin/StockDashboardPage'),
@@ -51,9 +51,10 @@ export function prefetchRoute(path: string): void {
 
   prefetched.add(path);
   // Use requestIdleCallback when available for non-blocking prefetch
-  const schedule = typeof requestIdleCallback === 'function'
-    ? requestIdleCallback
-    : (fn: () => void) => setTimeout(fn, 0);
+  const schedule =
+    typeof requestIdleCallback === 'function'
+      ? requestIdleCallback
+      : (fn: () => void) => setTimeout(fn, 0);
 
   schedule(() => {
     importer().catch(() => {

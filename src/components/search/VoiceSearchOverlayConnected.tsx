@@ -6,10 +6,10 @@
  *   const LazyVoice = lazy(() => import("./VoiceSearchOverlayConnected"));
  *   {voiceOpen && <Suspense fallback={null}><LazyVoice isOpen onClose={...} onAction={...} /></Suspense>}
  */
-import React, { useCallback } from "react";
-import { useVoiceAgent, type VoiceAgentAction } from "@/hooks/intelligence";
-import { useVoiceHistory } from "@/hooks/voice/useVoiceHistory";
-import { VoiceSearchOverlay } from "./VoiceSearchOverlay";
+import { useCallback } from 'react';
+import { useVoiceAgent, type VoiceAgentAction } from '@/hooks/intelligence';
+import { useVoiceHistory } from '@/hooks/voice/useVoiceHistory';
+import { VoiceSearchOverlay } from './VoiceSearchOverlay';
 
 interface Props {
   isOpen: boolean;
@@ -21,19 +21,26 @@ interface Props {
 function VoiceSearchOverlayConnected({ isOpen, onClose, onAction, onError }: Props) {
   const { history, addEntry } = useVoiceHistory();
 
-  const handleAction = useCallback((action: VoiceAgentAction) => {
-    // Save to local history
-    if (action.action !== "answer") {
-      addEntry(action.response, action);
-    }
-    onAction?.(action);
-  }, [addEntry, onAction]);
+  const handleAction = useCallback(
+    (action: VoiceAgentAction) => {
+      // Save to local history
+      if (action.action !== 'answer') {
+        addEntry(action.response, action);
+      }
+      onAction?.(action);
+    },
+    [addEntry, onAction],
+  );
 
   const voice = useVoiceAgent({ onAction: handleAction, onError });
 
-  const handleCommandSelect = useCallback((command: string) => {
-    voice.simulateCommand(command);
-  }, [voice.simulateCommand]);
+  const handleCommandSelect = useCallback(
+    (command: string) => {
+      voice.simulateCommand(command);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [voice.simulateCommand],
+  );
 
   return (
     <VoiceSearchOverlay
@@ -45,7 +52,10 @@ function VoiceSearchOverlayConnected({ isOpen, onClose, onAction, onError }: Pro
       error={voice.error}
       recentCommands={history}
       currentAction={voice.currentAction}
-      onClose={() => { onClose(); voice.reset(); }}
+      onClose={() => {
+        onClose();
+        voice.reset();
+      }}
       onStartListening={voice.startListening}
       onStopListening={voice.stopListening}
       onStopSpeaking={voice.stopSpeaking}

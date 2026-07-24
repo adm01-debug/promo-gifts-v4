@@ -18,6 +18,8 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: (...args: any[]) => mockFrom(...args),
   },
+  SUPABASE_URL: 'https://test.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'test-anon-key',
 }));
 
 vi.mock('sonner', () => ({

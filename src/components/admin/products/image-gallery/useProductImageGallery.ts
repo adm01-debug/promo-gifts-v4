@@ -6,6 +6,8 @@
 import { useState, useRef, useCallback, useMemo, type ChangeEvent, type DragEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { dbInvoke } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import {
@@ -14,7 +16,7 @@ import {
   type FilterMode,
   type VariantInfo,
   type GalleryStats,
-} from "./types";
+} from './types';
 
 interface UseProductImageGalleryProps {
   images: string[];
@@ -49,7 +51,7 @@ export function useProductImageGallery({
 
   // Delete confirmation state
   const [deleteConfirm, setDeleteConfirm] = useState<{
-    type: 'single' | 'bulk';
+    type: 'bulk' | 'single';
     url?: string;
   } | null>(null);
 
@@ -57,17 +59,18 @@ export function useProductImageGallery({
   const { data: externalImages = [], isLoading: isLoadingExt } = useQuery<ExternalImage[]>({
     queryKey: ['product-images-ext', productId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
+      try {
+        const { records } = await dbInvoke<ExternalImage>({
           table: 'product_images',
           operation: 'select',
-          filters: { product_id: productId },
+          filters: { product_id: productId, is_active: true },
           limit: 200,
           orderBy: { column: 'display_order', ascending: true },
-        },
-      });
-      if (error) return [];
-      return data?.data?.records || [];
+        });
+        return records;
+      } catch {
+        return [];
+      }
     },
     enabled: !!productId,
     staleTime: 2 * 60 * 1000,
@@ -77,18 +80,20 @@ export function useProductImageGallery({
   const { data: variants = [] } = useQuery<VariantInfo[]>({
     queryKey: ['product-variants-for-gallery', productId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
+      let records: Record<string, unknown>[] = [];
+      try {
+        const result = await dbInvoke<Record<string, unknown>>({
           table: 'product_variants',
           operation: 'select',
           select: 'id, name, color_name, color_hex, color_code',
           filters: { product_id: productId, is_active: true },
           limit: 200,
           orderBy: { column: 'name', ascending: true },
-        },
-      });
-      if (error) return [];
-      const records = data?.data?.records || [];
+        });
+        records = result.records;
+      } catch {
+        return [];
+      }
       return records.map((r: Record<string, unknown>) => ({
         id: String(r.id),
         name: String(r.name ?? r.color_name ?? 'Variação'),
@@ -115,14 +120,29 @@ export function useProductImageGallery({
     const byVariant = new Map<string, number>();
     let withAlt = 0;
     let withoutVariant = 0;
+    let cfVerified = 0;
+    let cfPending = 0;
+    let withBlurhash = 0;
     externalImages.forEach((img) => {
       byType.set(img.image_type || 'untyped', (byType.get(img.image_type || 'untyped') || 0) + 1);
       const varKey = img.supplier_code || img.variant_id;
       if (varKey) byVariant.set(varKey, (byVariant.get(varKey) || 0) + 1);
       else withoutVariant++;
       if (img.alt_text) withAlt++;
+      if (img.cf_sync_status === 'verified') cfVerified++;
+      else if (!img.cf_sync_status || img.cf_sync_status === 'pending') cfPending++;
+      if (img.blurhash) withBlurhash++;
     });
-    return { byType, byVariant, withAlt, withoutVariant, total: externalImages.length };
+    return {
+      byType,
+      byVariant,
+      withAlt,
+      withoutVariant,
+      total: externalImages.length,
+      cfVerified,
+      cfPending,
+      withBlurhash,
+    };
   }, [externalImages]);
 
   const variantMap = useMemo(() => {
@@ -176,25 +196,20 @@ export function useProductImageGallery({
         return;
       }
       try {
-        const { error } = await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'product_images',
-            operation: 'update',
-            id: ext.id,
-            data: {
-              alt_text: data.alt_text.trim() || null,
-              image_type: data.image_type || 'main',
-              caption: data.caption.trim() || null,
-            },
-          },
-        });
+        const { error } = await untypedFrom('product_images')
+          .update({
+            alt_text: data.alt_text.trim() || null,
+            image_type: data.image_type || 'main',
+            caption: data.caption.trim() || null,
+          })
+          .eq('id', ext.id);
         if (error) throw new Error(error.message);
         toast.success('Metadados atualizados');
         setEditingIndex(null);
         if (productId)
           queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');
+      } catch {
+        toast.error('Erro ao atualizar');
       }
     },
     [extImageMap, productId, queryClient],
@@ -249,7 +264,9 @@ export function useProductImageGallery({
   const removeStorageFileByUrl = useCallback(async (url: string) => {
     const parts = url.split('/personalization-images/');
     if (parts.length < 2) return;
-    await supabase.storage.from('personalization-images').remove([decodeURIComponent(parts[1])]);
+    // BUG-IMAGEGALLERY-STORAGE-REMOVE-SILENT-FAIL FIX: storage.remove returns { data, error } — not throws.
+    const { error: storageErr } = await supabase.storage.from('personalization-images').remove([decodeURIComponent(parts[1])]);
+    if (storageErr) logger.warn('[useProductImageGallery] storage remove failed:', storageErr);
   }, []);
 
   const createExternalImageRecord = useCallback(
@@ -258,7 +275,7 @@ export function useProductImageGallery({
       variantCode: string,
       imageType: string,
       shouldBePrimary: boolean,
-    ): Promise<{ ok: true } | { ok: false; error: string }> => {
+    ): Promise<{ ok: false; error: string } | { ok: true }> => {
       if (!productId) return { ok: true };
       try {
         const variant = variantCode !== 'none' ? variantMap.get(variantCode) : null;
@@ -266,28 +283,20 @@ export function useProductImageGallery({
           externalImages.length > 0
             ? Math.max(...externalImages.map((i) => i.display_order || 0)) + 1
             : 0;
-        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'product_images',
-            operation: 'insert',
-            data: {
-              product_id: productId,
-              url_cdn: url,
-              url_original: url,
-              image_type: imageType,
-              is_primary: shouldBePrimary,
-              is_og_image: false,
-              display_order: nextOrder,
-              is_active: true,
-              supplier_code: variant?.supplier_code || null,
-              variant_id: variant?.id || null,
-              alt_text: null,
-            },
-          },
+        const { error } = await untypedFrom('product_images').insert({
+          product_id: productId,
+          url_cdn: url,
+          url_original: url,
+          image_type: imageType,
+          is_primary: shouldBePrimary,
+          is_og_image: false,
+          display_order: nextOrder,
+          is_active: true,
+          supplier_code: variant?.supplier_code || null,
+          variant_id: variant?.id || null,
+          alt_text: null,
         });
         if (error) throw new Error(error.message || 'Falha ao registrar imagem no banco externo');
-        if (!data?.success)
-          throw new Error(data?.error || 'Falha ao registrar imagem no banco externo');
         return { ok: true };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao criar registro no BD externo';
@@ -396,15 +405,12 @@ export function useProductImageGallery({
       const ext = extImageMap.get(url);
       if (ext?.id && productId) {
         try {
-          await supabase.functions.invoke('external-db-bridge', {
-            body: {
-              table: 'product_images',
-              operation: 'update',
-              id: ext.id,
-              data: { is_active: false },
-            },
-          });
-          queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
+          // BUG-IMAGE-REMOVE-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+          const { error: deactivateErr } = await untypedFrom('product_images')
+            .update({ is_active: false })
+            .eq('id', ext.id);
+          if (deactivateErr) logger.warn('Erro ao desativar imagem no BD externo:', deactivateErr);
+          else queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         } catch (err) {
           logger.warn('Erro ao desativar imagem no BD externo:', err);
         }
@@ -432,26 +438,20 @@ export function useProductImageGallery({
           // Clear is_primary from all images for this product
           const currentPrimary = externalImages.find((img) => img.is_primary);
           if (currentPrimary?.id) {
-            await supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: currentPrimary.id,
-                data: { is_primary: false },
-              },
-            });
+            // BUG-IMAGE-CLEAR-PRIMARY-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+            const { error: clearPrimaryErr } = await untypedFrom('product_images')
+              .update({ is_primary: false })
+              .eq('id', currentPrimary.id);
+            if (clearPrimaryErr) logger.warn('Erro ao limpar imagem principal:', clearPrimaryErr);
           }
           // Set new primary
           const newPrimaryExt = extImageMap.get(url);
           if (newPrimaryExt?.id) {
-            await supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: newPrimaryExt.id,
-                data: { is_primary: true, display_order: 0 },
-              },
-            });
+            // BUG-IMAGE-SET-PRIMARY-SILENT-FAIL FIX: bare untypedFrom await swallowed RLS errors.
+            const { error: setPrimaryErr } = await untypedFrom('product_images')
+              .update({ is_primary: true, display_order: 0 })
+              .eq('id', newPrimaryExt.id);
+            if (setPrimaryErr) logger.warn('Erro ao definir imagem principal:', setPrimaryErr);
           }
           queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         } catch (err) {
@@ -473,18 +473,17 @@ export function useProductImageGallery({
       });
       if (updates.length === 0) return;
       try {
-        await Promise.all(
+        // BUG-IMAGEGALLERY-REORDER-SILENT-FAIL FIX: Promise.all resolves to array of { data, error };
+        // bare await discarded errors — reorder appeared to succeed even when DB updates failed.
+        const reorderResults = await Promise.all(
           updates.map(({ id, display_order: displayOrder }) =>
-            supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id,
-                data: { display_order: displayOrder },
-              },
-            }),
+            untypedFrom('product_images').update({ display_order: displayOrder }).eq('id', id),
           ),
         );
+        const reorderErrors = reorderResults.filter((r) => r.error);
+        if (reorderErrors.length > 0) {
+          throw new Error(reorderErrors[0].error?.message || 'Erro ao reordenar imagens');
+        }
         queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         toast.success('Ordem salva automaticamente');
       } catch (err) {
@@ -547,28 +546,22 @@ export function useProductImageGallery({
       const results = await Promise.all(
         urls.map((url) => {
           const d = resolveData(url);
-          return supabase.functions.invoke('external-db-bridge', {
-            body: {
-              table: 'product_images',
-              operation: 'insert',
-              data: {
-                product_id: productId,
-                url_cdn: url,
-                url_original: url,
-                image_type: d.image_type,
-                is_primary: Math.max(images.indexOf(url), 0) === 0,
-                is_og_image: false,
-                display_order: Math.max(images.indexOf(url), 0),
-                is_active: true,
-                supplier_code: d.supplier_code,
-                variant_id: d.variant_id,
-                alt_text: null,
-              },
-            },
+          return untypedFrom('product_images').insert({
+            product_id: productId,
+            url_cdn: url,
+            url_original: url,
+            image_type: d.image_type,
+            is_primary: Math.max(images.indexOf(url), 0) === 0,
+            is_og_image: false,
+            display_order: Math.max(images.indexOf(url), 0),
+            is_active: true,
+            supplier_code: d.supplier_code,
+            variant_id: d.variant_id,
+            alt_text: null,
           });
         }),
       );
-      return results.filter(({ data, error }) => !error && data?.success).length;
+      return results.filter(({ error }) => !error).length;
     },
     [images, productId],
   );
@@ -586,18 +579,15 @@ export function useProductImageGallery({
           .map((url) => extImageMap.get(url))
           .filter((ext): ext is ExternalImage => !!ext?.id);
         const missingUrls = selectedList.filter((url) => !extImageMap.get(url)?.id);
-        await Promise.all(
+        const updateResults = await Promise.all(
           updates.map((ext) =>
-            supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: ext.id,
-                data: { image_type: newType },
-              },
-            }),
+            untypedFrom('product_images').update({ image_type: newType }).eq('id', ext.id),
           ),
         );
+        const updateErrors = updateResults.filter((r) => r.error);
+        if (updateErrors.length > 0) {
+          throw new Error(updateErrors[0].error?.message || 'Erro ao atualizar tipo em lote');
+        }
         const insertedCount = await createMissingExternalRecords(missingUrls, () => ({
           image_type: newType,
           supplier_code: null,
@@ -640,21 +630,20 @@ export function useProductImageGallery({
           .map((url) => extImageMap.get(url))
           .filter((ext): ext is ExternalImage => !!ext?.id);
         const missingUrls = selectedList.filter((url) => !extImageMap.get(url)?.id);
-        await Promise.all(
+        const updateResults = await Promise.all(
           updates.map((ext) =>
-            supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: ext.id,
-                data: {
-                  supplier_code: variant?.supplier_code || null,
-                  variant_id: variant?.id || null,
-                },
-              },
-            }),
+            untypedFrom('product_images')
+              .update({
+                supplier_code: variant?.supplier_code || null,
+                variant_id: variant?.id || null,
+              })
+              .eq('id', ext.id),
           ),
         );
+        const updateErrors = updateResults.filter((r) => r.error);
+        if (updateErrors.length > 0) {
+          throw new Error(updateErrors[0].error?.message || 'Erro ao atualizar variação em lote');
+        }
         const insertedCount = await createMissingExternalRecords(missingUrls, (url) => ({
           image_type: images.indexOf(url) === 0 ? 'main' : 'gallery',
           supplier_code: variant?.supplier_code || null,
@@ -693,18 +682,15 @@ export function useProductImageGallery({
       const extUpdates = toRemove
         .map((url) => extImageMap.get(url))
         .filter((ext): ext is ExternalImage => !!ext?.id);
-      await Promise.all(
+      const deactivateResults = await Promise.all(
         extUpdates.map((ext) =>
-          supabase.functions.invoke('external-db-bridge', {
-            body: {
-              table: 'product_images',
-              operation: 'update',
-              id: ext.id,
-              data: { is_active: false },
-            },
-          }),
+          untypedFrom('product_images').update({ is_active: false }).eq('id', ext.id),
         ),
       );
+      const deactivateErrors = deactivateResults.filter((r) => r.error);
+      if (deactivateErrors.length > 0) {
+        throw new Error(deactivateErrors[0].error?.message || 'Erro ao desativar imagens no banco');
+      }
       onChange(images.filter((url) => !selectedUrls.has(url)));
       if (productId) queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
       toast.success(`${toRemove.length} imagem(ns) removida(s)`);
@@ -757,7 +743,7 @@ export function useProductImageGallery({
         const updates = selectedList
           .map((url) => extImageMap.get(url))
           .filter((ext): ext is ExternalImage => !!ext?.id);
-        await Promise.all(
+        const altResults = await Promise.all(
           updates.map((ext, i) => {
             const typeLabel =
               IMAGE_TYPES.find((t) => t.value === ext.image_type)?.label ||
@@ -765,22 +751,21 @@ export function useProductImageGallery({
               'Imagem';
             const variantLabel =
               ext.supplier_code || ext.variant_id
-                ? variantMap.get(ext.supplier_code || ext.variant_id || '')?.color_name || ''
+                ? (variantMap.get(ext.supplier_code || ext.variant_id || '')?.color_name ?? '')
                 : '';
             const altText = template
               .replace('{tipo}', typeLabel)
               .replace('{cor}', variantLabel)
               .replace('{n}', String(i + 1));
-            return supabase.functions.invoke('external-db-bridge', {
-              body: {
-                table: 'product_images',
-                operation: 'update',
-                id: ext.id,
-                data: { alt_text: altText.trim() || null },
-              },
-            });
+            return untypedFrom('product_images')
+              .update({ alt_text: altText.trim() || null })
+              .eq('id', ext.id);
           }),
         );
+        const altErrors = altResults.filter((r) => r.error);
+        if (altErrors.length > 0) {
+          throw new Error(altErrors[0].error?.message || 'Erro ao atualizar alt text em lote');
+        }
         queryClient.invalidateQueries({ queryKey: ['product-images-ext', productId] });
         toast.success(`Alt text atualizado em ${updates.length} imagem(ns)`);
         clearSelection();

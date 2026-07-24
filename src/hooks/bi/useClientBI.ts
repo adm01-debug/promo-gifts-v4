@@ -3,9 +3,9 @@
  * Tenta dados reais (orders); se vazio, retorna mock com flag `isMock: true`.
  * Sprint 3: também calcula deltas vs período anterior (90d atual vs 90d anteriores).
  */
-import { useMemo } from "react";
-import { useClientOrdersHistory } from "@/hooks/bi/useClientOrdersHistory";
-import { MOCK_CLIENT_STATS } from "@/lib/bi/mockData";
+import { useMemo } from 'react';
+import { useClientOrdersHistory } from '@/hooks/bi/useClientOrdersHistory';
+import { MOCK_CLIENT_STATS } from '@/lib/bi/mockData';
 
 export interface PeriodDelta {
   ltvDeltaPct: number;
@@ -91,7 +91,7 @@ export function useClientBI(clientId?: string): ClientBI {
     const now = Date.now();
     const cutCurrent = now - 90 * DAY_MS;
     const cutPrevious = now - 180 * DAY_MS;
-    const valid = data.orders.filter((o) => o.status !== "cancelled");
+    const valid = data.orders.filter((o) => o.status !== 'cancelled');
 
     const inCurrent = valid.filter((o) => {
       const t = new Date(o.created_at).getTime();
@@ -127,9 +127,7 @@ export function useClientBI(clientId?: string): ClientBI {
         const totals = valid.map((o) => o.total ?? 0).filter((t) => t > 0);
         const mean = totals.length > 0 ? totals.reduce((s, v) => s + v, 0) / totals.length : 0;
         const variance =
-          totals.length > 1
-            ? totals.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / totals.length
-            : 0;
+          totals.length > 1 ? totals.reduce((s, v) => s + (v - mean) ** 2, 0) / totals.length : 0;
         const sigma = Math.sqrt(variance);
         return data.orders.slice(0, 5).map((o) => {
           const total = o.total ?? 0;
@@ -139,7 +137,7 @@ export function useClientBI(clientId?: string): ClientBI {
             date: o.created_at,
             total,
             itemsCount: 1,
-            productPreview: o.notes?.slice(0, 60) ?? "Pedido",
+            productPreview: o.notes?.slice(0, 60) ?? 'Pedido',
             isAnomaly: Math.abs(dev) > 2 && totals.length >= 4,
             deviation: Math.round(dev * 10) / 10,
           };

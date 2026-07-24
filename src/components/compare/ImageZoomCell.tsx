@@ -1,16 +1,20 @@
 /**
  * ImageZoomCell (C6 #6) — Hover ativa lupa flutuante 2× sobre a imagem.
  */
-import { useRef, useState } from "react";
+import { useRef, useState } from 'react';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
 interface Props {
   src: string;
   alt: string;
+  /** URL original do fornecedor para fallback quando CF CDN falha (BUG-ZOOM-CORS FIX) */
+  urlOriginal?: string | null;
   className?: string;
   zoomLevel?: number;
 }
 
-export function ImageZoomCell({ src, alt, className = "", zoomLevel = 2 }: Props) {
+export function ImageZoomCell({ src, alt, urlOriginal, className = '', zoomLevel = 2 }: Props) {
   const [show, setShow] = useState(false);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const ref = useRef<HTMLDivElement>(null);
@@ -31,14 +35,20 @@ export function ImageZoomCell({ src, alt, className = "", zoomLevel = 2 }: Props
       onMouseLeave={() => setShow(false)}
       onMouseMove={onMove}
     >
-      <img src={src} alt={alt} loading="lazy" className="w-full h-full object-contain" />
+      <OptimizedImage
+        src={src}
+        alt={alt}
+        className="object-contain"
+        containerClassName="h-full w-full"
+        urlOriginal={urlOriginal ?? getProxiedImageUrl(src) ?? null}
+      />
       {show && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 transition-opacity"
           style={{
             backgroundImage: `url(${src})`,
-            backgroundRepeat: "no-repeat",
+            backgroundRepeat: 'no-repeat',
             backgroundSize: `${zoomLevel * 100}%`,
             backgroundPosition: `${pos.x}% ${pos.y}%`,
           }}

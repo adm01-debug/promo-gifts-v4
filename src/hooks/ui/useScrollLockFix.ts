@@ -1,87 +1,79 @@
-import { useEffect } from "react";
-
 /**
- * Scroll-lock fix v9 — Minimal observer, no layout thrashing.
- * 
- * Only listens for `data-state` attribute changes (not childList)
- * to detect overlay close transitions. Avoids getComputedStyle to
- * prevent forced reflows.
+ * Scroll-lock fix v11 — global watchdog against Radix's stuck body lock.
  */
+import { useEffect } from 'react';
+import { releaseScrollLockIfIdle, isRootInert, forceRootInteractive } from '@/lib/dom/scroll-lock';
 
-function hasActiveOverlay(): boolean {
-  const selectors = [
-    '[data-state="open"][role="dialog"]',
-    '[data-state="open"][role="alertdialog"]',
-    '[vaul-drawer][data-state="open"]',
-  ];
-
-  for (const sel of selectors) {
-    if (document.querySelector(sel)) return true;
-  }
-
-  return false;
-}
-
-function cleanupScrollLock() {
-  if (hasActiveOverlay()) return;
-
-  for (const el of [document.documentElement, document.body]) {
-    el.removeAttribute('data-scroll-locked');
-
-    const s = el.style;
-    if (s.overflow === 'hidden') s.overflow = '';
-    if (s.overflowY === 'hidden') s.overflowY = '';
-    if (s.position === 'fixed') s.position = '';
-    if (s.marginRight) s.marginRight = '';
-    if (s.paddingRight) s.paddingRight = '';
-    if (s.touchAction === 'none') s.touchAction = '';
-    if (s.pointerEvents === 'none') s.pointerEvents = '';
-    if (s.top && s.position !== 'fixed') s.top = '';
-    if (s.width === '100%' && el === document.body) s.width = '';
-  }
-
-  document.body.classList.forEach(cls => {
-    if (cls.startsWith('block-interactivity-')) {
-      document.body.classList.remove(cls);
-    }
-  });
-}
-
+import { logger } from '@/lib/logger';
 export function useScrollLockFix() {
   useEffect(() => {
+    if (typeof document === 'undefined') return;
+
     let scheduled = false;
 
     const scheduleCleanup = () => {
       if (scheduled) return;
       scheduled = true;
       requestAnimationFrame(() => {
-        cleanupScrollLock();
         scheduled = false;
+        if (isRootInert()) {
+          logger.warn('[ScrollLockFix] Detected stuck inert root, forcing recovery');
+          forceRootInteractive();
+        } else {
+          releaseScrollLockIfIdle();
+        }
       });
     };
 
-    // Only watch data-state attribute changes — no childList to reduce noise
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (mutation.attributeName === 'data-state') {
+        if (mutation.type === 'childList') {
+          scheduleCleanup();
+          return;
+        }
+
+        const attr = mutation.attributeName;
+        if (attr === 'data-state') {
           const target = mutation.target as HTMLElement;
           if (target.getAttribute('data-state') === 'closed') {
             scheduleCleanup();
-            break;
+            return;
           }
+        } else if (attr === 'style' || attr === 'class') {
+          scheduleCleanup();
+          return;
         }
       }
     });
 
     observer.observe(document.body, {
       subtree: true,
+      childList: true,
       attributes: true,
       attributeFilter: ['data-state'],
     });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['style', 'class'],
+    });
 
-    // One-time initial cleanup
-    cleanupScrollLock();
+    const selfHeal = () => {
+      if (isRootInert()) {
+        logger.warn('[ScrollLockFix] Interactive click blocked by inert root — healing');
+        forceRootInteractive();
+      }
+    };
+    window.addEventListener('pointerdown', selfHeal, { capture: true });
 
-    return () => observer.disconnect();
+    forceRootInteractive();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('pointerdown', selfHeal, { capture: true });
+    };
   }, []);
 }

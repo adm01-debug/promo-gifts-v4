@@ -7,15 +7,16 @@ import { sanitizeHtml } from '@/lib/security/validation';
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
 
-export type ChartConfig = {
-  [k in string]: {
+export type ChartConfig = Record<
+  string,
+  {
     label?: React.ReactNode;
     icon?: React.ComponentType;
   } & (
-    | { color?: string; theme?: never }
     | { color?: never; theme: Record<keyof typeof THEMES, string> }
-  );
-};
+    | { color?: string; theme?: never }
+  )
+>;
 
 type ChartContextProps = {
   config: ChartConfig;
@@ -63,7 +64,9 @@ const ChartContainer = React.forwardRef<
 ChartContainer.displayName = 'Chart';
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
-  const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color);
+  const colorConfig = Object.entries(config).filter(
+    ([_, itemConfig]) => itemConfig.theme || itemConfig.color,
+  );
 
   if (!colorConfig.length) {
     return null;
@@ -81,9 +84,16 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
                 .map(([key, itemConfig]) => {
                   const color =
                     itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-                  // Validation: Only allow safe color values (hex, rgb, hsl, or named colors)
-                  // This is a simple regex to block injection of closing braces or other CSS properties
-                  if (!color || !/^#?[a-zA-Z0-9(),.\s%]+$/.test(color)) return null;
+                  // Strict whitelist: only hex, rgb/rgba, hsl/hsla, or short CSS named colors.
+                  // The old regex allowed `()`, spaces, and `%` in combination — enough for
+                  // `expression(...)` or `url(...)` injections in legacy IE/edge parsers.
+                  if (
+                    !color ||
+                    !/^(#[0-9a-fA-F]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)|rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*[\d.]+\s*\)|hsl\(\s*[\d.]+\s*,\s*[\d.]+%\s*,\s*[\d.]+%\s*\)|hsla\(\s*[\d.]+\s*,\s*[\d.]+%\s*,\s*[\d.]+%\s*,\s*[\d.]+\s*\)|[a-zA-Z]{2,30})$/.test(
+                      color,
+                    )
+                  )
+                    return null;
                   return `  --color-${key}: ${color};`;
                 })
                 .filter(Boolean)
@@ -101,11 +111,11 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<'div'> & {
+  React.ComponentProps<'div'> &
+    React.ComponentProps<typeof RechartsPrimitive.Tooltip> & {
       hideLabel?: boolean;
       hideIndicator?: boolean;
-      indicator?: 'line' | 'dot' | 'dashed';
+      indicator?: 'dashed' | 'dot' | 'line';
       nameKey?: string;
       labelKey?: string;
     }
@@ -166,7 +176,7 @@ const ChartTooltipContent = React.forwardRef<
       <div
         ref={ref}
         className={cn(
-          'grid min-w-[8rem] items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl',
+          'text-tooltip grid min-w-[9rem] items-start gap-1.5 rounded-md border border-white/10 bg-black/90 px-3 py-2 text-white shadow-2xl backdrop-blur-md',
           className,
         )}
       >
@@ -247,8 +257,8 @@ const ChartLegend = RechartsPrimitive.Legend;
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<'div'> &
-    Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
+  Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> &
+    React.ComponentProps<'div'> & {
       hideIcon?: boolean;
       nameKey?: string;
     }

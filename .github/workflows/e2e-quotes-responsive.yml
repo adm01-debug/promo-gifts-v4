@@ -1,0 +1,82 @@
+name: E2E Quotes Responsive
+
+# Roda o spec responsivo da lista de orçamentos em matriz de viewports
+# (mobile, tablet, desktop). Snapshots visuais são publicados como artefatos
+# para revisão / atualização manual via `--update-snapshots`.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/components/quotes/QuotesConfigurableList.tsx'
+      - 'src/components/quotes/QuoteItemsTable.tsx'
+      - 'src/lib/quotes/quotesLayout.ts'
+      - 'e2e/helpers/quotes-layout.ts'
+      - 'e2e/routes/quotes/quote-list-responsive.spec.ts'
+      - 'e2e/quotes/quote-items-table-header-radius.spec.ts'
+      - '.github/workflows/e2e-quotes-responsive.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/components/quotes/QuotesConfigurableList.tsx'
+      - 'src/components/quotes/QuoteItemsTable.tsx'
+      - 'src/lib/quotes/quotesLayout.ts'
+      - 'e2e/helpers/quotes-layout.ts'
+      - 'e2e/routes/quotes/quote-list-responsive.spec.ts'
+      - 'e2e/quotes/quote-items-table-header-radius.spec.ts'
+      - '.github/workflows/e2e-quotes-responsive.yml'
+  workflow_dispatch:
+
+jobs:
+  responsive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [mobile, tablet, desktop]
+    env:
+      CI: "true"
+      FORCE_COLOR: "0"
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      E2E_VIEWPORT_FILTER: ${{ matrix.viewport }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: "npm"
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+      - run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run responsive spec (${{ matrix.viewport }})
+        run: |
+          npx playwright test e2e/routes/quotes/quote-list-responsive.spec.ts \
+            --grep "${{ matrix.viewport }}|mirror E2E|desktop mostra mais"
+
+      - name: Run header-radius spec (${{ matrix.viewport }}) · Chromium + Firefox + WebKit
+        run: |
+          npx playwright test e2e/quotes/quote-items-table-header-radius.spec.ts \
+            --project=chromium-public --project=firefox-public --project=webkit-public \
+            --grep "\[${{ matrix.viewport }}\]"
+
+
+
+      - name: Upload report + snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quotes-responsive-${{ matrix.viewport }}
+          path: |
+            playwright-report
+            test-results
+            e2e/routes/quotes/quote-list-responsive.spec.ts-snapshots
+          retention-days: 14

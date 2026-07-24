@@ -1,7 +1,7 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { untypedFrom } from '@/lib/supabase-untyped';
-import { invokeExternalDb } from '@/lib/external-db';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
@@ -154,7 +154,7 @@ export function usePersonalizationData(selectedProduct: string | null) {
   const { data: techniques } = useQuery({
     queryKey: ['techniques-external'],
     queryFn: async () => {
-      const result = await invokeExternalDb<Technique>({
+      const result = await dbInvoke<Technique>({
         table: 'personalization_techniques',
         operation: 'select',
         select: 'id, code, name',
@@ -189,10 +189,16 @@ export function usePersonalizationData(selectedProduct: string | null) {
 
   // ── Mutations ──
   const toggleGroupRulesMutation = useMutation({
-    mutationFn: async ({ id, use_group_rules }: { id: string; use_group_rules: boolean }) => {
+    mutationFn: async ({
+      id,
+      use_group_rules: useGroupRules,
+    }: {
+      id: string;
+      use_group_rules: boolean;
+    }) => {
       const { error } = await supabase
         .from('product_group_members')
-        .update({ use_group_rules })
+        .update({ use_group_rules: useGroupRules })
         .eq('id', id);
       if (error) throw error;
     },
@@ -361,10 +367,10 @@ export function usePersonalizationData(selectedProduct: string | null) {
   });
 
   const getLocationsForComponent = (componentId: string) =>
-    locations?.filter((l) => l.component_id === componentId) || [];
+    locations?.filter((l) => l.component_id === componentId) ?? [];
 
   const getTechniquesForLocation = (locationId: string) =>
-    locationTechniques?.filter((lt) => lt.component_location_id === locationId) || [];
+    locationTechniques?.filter((lt) => lt.component_location_id === locationId) ?? [];
 
   return {
     products,

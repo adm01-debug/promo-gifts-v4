@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useRef, useState } from 'react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 // Animated counter hook
 function useCountUp(target: number, duration = 600) {
@@ -19,7 +21,7 @@ function useCountUp(target: number, duration = 600) {
     const step = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = 1 - (1 - progress) ** 3;
       setValue(Math.round(from + (to - from) * eased));
       if (progress < 1) raf = requestAnimationFrame(step);
     };
@@ -36,12 +38,15 @@ interface StatCardProps {
   value: number | string;
   icon: React.ReactNode;
   trend?: { value: number; label: string };
-  variant?: 'default' | 'success' | 'warning' | 'error';
+  variant?: 'default' | 'error' | 'success' | 'warning';
   onClick?: () => void;
   clickHint?: string;
   isActive?: boolean;
   subtitle?: string;
+  /** Tooltip nativo (atributo `title` no botão) — útil para esclarecer unidade (variações vs produtos). */
+  tooltip?: string;
 }
+
 
 const variantStyles = {
   default: {
@@ -82,33 +87,54 @@ const variantStyles = {
   },
 };
 
-export function StatCard({ title, value, icon, trend, variant = 'default', onClick, clickHint, isActive, subtitle }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  icon,
+  trend,
+  variant = 'default',
+  onClick,
+  clickHint,
+  isActive,
+  subtitle,
+  tooltip,
+}: StatCardProps) {
+
   const styles = variantStyles[variant];
 
   const numericValue = typeof value === 'string' ? parseInt(value.replace(/\D/g, ''), 10) : value;
-  const isNumeric = typeof numericValue === 'number' && !isNaN(numericValue) && typeof value !== 'string' || (typeof value === 'string' && /^\d/.test(value));
+  const isNumeric =
+    (typeof numericValue === 'number' && !isNaN(numericValue) && typeof value !== 'string') ||
+    (typeof value === 'string' && /^\d/.test(value));
   const animatedValue = useCountUp(isNumeric ? numericValue : 0);
-  
-  const displayValue = isNumeric
-    ? animatedValue.toLocaleString('pt-BR')
-    : value;
 
-  return (
+  const displayValue = isNumeric ? animatedValue.toLocaleString('pt-BR') : value;
+
+  const slug = title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  const cardButton = (
     <button
       type="button"
+      data-testid="stock-stat-card"
+      data-stat-slug={slug}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         onClick?.();
       }}
       className={cn(
-        "group relative w-full overflow-hidden rounded-xl border text-left",
-        "transition-all duration-300 ease-out",
+        'group relative w-full overflow-hidden rounded-xl border text-left',
+        'transition-all duration-300 ease-out',
         styles.base,
-        onClick && "cursor-pointer",
+        onClick && 'cursor-pointer',
         styles.hover,
-        "active:scale-[0.97]",
-        isActive && "ring-2 ring-offset-2 ring-offset-background shadow-lg scale-[1.02]",
+        'active:scale-[0.97]',
+        isActive && 'scale-[1.02] shadow-lg ring-2 ring-offset-2 ring-offset-background',
         isActive && styles.active,
         isActive && styles.glowColor,
       )}
@@ -116,46 +142,82 @@ export function StatCard({ title, value, icon, trend, variant = 'default', onCli
       aria-pressed={isActive}
     >
       {/* Top accent line */}
-      <div className={cn(
-        "absolute top-0 left-0 right-0 h-[3px] transition-all duration-300",
-        styles.accentLine,
-        isActive ? "opacity-100" : "opacity-0 group-hover:opacity-60",
-      )} />
+      <div
+        className={cn(
+          'absolute left-0 right-0 top-0 h-[3px] transition-all duration-300',
+          styles.accentLine,
+          isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-60',
+        )}
+      />
 
-      <div className="p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="space-y-1 text-left min-w-0 flex-1">
-            <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{title}</p>
-            <p className="text-2xl font-bold tabular-nums tracking-tight">{displayValue}</p>
+      <div className="px-3 py-2.5 sm:px-4">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
+          <div className="min-w-0 flex-1 space-y-0.5 text-left sm:space-y-1">
+            <p
+              data-testid="stock-stat-card-title"
+              className="truncate text-[11px] font-medium uppercase leading-tight tracking-wider text-muted-foreground"
+            >
+              {title}
+            </p>
+            <p
+              data-testid="stock-stat-card-value"
+              className="truncate text-xl font-bold tabular-nums leading-tight tracking-tight sm:text-2xl"
+            >
+              {displayValue}
+            </p>
             {subtitle && (
-              <p className="text-[10px] text-muted-foreground/70 truncate">{subtitle}</p>
+              <p
+                data-testid="stock-stat-card-subtitle"
+                className="truncate text-[10px] leading-tight text-muted-foreground/70"
+              >
+                {subtitle}
+              </p>
             )}
             {trend && (
-              <p className={cn(
-                "text-xs flex items-center gap-1 font-medium",
-                trend.value >= 0 ? "text-success" : "text-destructive"
-              )}>
-                {trend.value >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+              <p
+                data-testid="stock-stat-card-trend"
+                className={cn(
+                  'flex items-center gap-1 text-[11px] font-medium leading-tight sm:text-xs',
+                  trend.value >= 0 ? 'text-success' : 'text-destructive',
+                )}
+              >
+                {trend.value >= 0 ? (
+                  <TrendingUp className="h-3 w-3 shrink-0" />
+                ) : (
+                  <TrendingDown className="h-3 w-3 shrink-0" />
+                )}
                 <span className="truncate">{trend.label}</span>
               </p>
             )}
           </div>
-          <div className={cn(
-            "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300",
-            isActive ? `${styles.iconBg} shadow-sm` : "bg-muted/50 group-hover:scale-110",
-            styles.iconColor,
-          )} aria-hidden="true">
+          <div
+            className={cn(
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-300 sm:h-12 sm:w-12',
+              isActive ? `${styles.iconBg} shadow-sm` : 'bg-muted/50 group-hover:scale-110',
+              styles.iconColor,
+            )}
+            aria-hidden="true"
+          >
             {icon}
           </div>
         </div>
       </div>
-
-      {/* Click hint on hover */}
-      {clickHint && onClick && (
-        <div className="absolute bottom-0 left-0 right-0 text-center text-[9px] text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors pb-1">
-          {clickHint}
-        </div>
-      )}
     </button>
   );
+
+  if (!tooltip) return cardButton;
+
+  return (
+    <TooltipProvider delayDuration={250}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex w-full">{cardButton}</span>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-[240px] text-xs leading-snug">
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
+

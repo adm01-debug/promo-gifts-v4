@@ -1,27 +1,23 @@
-import { useRef, useCallback, useEffect, useState, useMemo, memo, type RefObject } from 'react';
+import { memo, useMemo, useCallback, type RefObject } from 'react';
 import type { ActiveColorFilter } from '@/utils/color-image-resolver';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import { Loader2, ArrowUp, AlertCircle } from 'lucide-react';
-import { useProductsContextSafe } from '@/contexts/ProductsContext';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
-
-import { ProductGrid } from '@/components/products/ProductGrid';
-import { ProductList } from '@/components/products/ProductList';
 import { ProductTableView } from '@/components/products/ProductTableView';
-import { ProductCardSkeleton } from '@/components/products/ProductCardSkeleton';
-import { ProductListItemSkeleton } from '@/components/products/ProductListItemSkeleton';
-import { ProductTableSkeleton } from '@/components/products/ProductTableSkeleton';
+import { swatchSizeStyle } from '@/components/products/swatchSizing';
+import { VirtualizedProductGrid } from '@/components/products/VirtualizedProductGrid';
+import {
+  ProductCardSkeleton,
+  ProductGridSkeleton,
+  ProductTableSkeleton,
+} from '@/components/loading/ModernSkeletons';
 import { EmptyState } from '@/components/common/EmptyState';
-import { SelectionCheckbox } from '@/components/common/SelectionCheckbox';
 import { CatalogBulkModals } from './CatalogBulkModals';
 import { useCatalogSelection } from './useCatalogSelection';
-import { cn } from '@/lib/utils';
-import { type Product, type ViewMode } from "@/hooks/products";
+import type { Product } from '@/types/product-catalog';
+import type { ViewMode } from '@/hooks/products/useCatalogState';
 import type { ColumnCount } from '@/components/products/ColumnSelector';
-import { SparklineSalesProvider } from '@/hooks/intelligence';
-import { ScrollToTopButton } from '@/components/common/ScrollToTopButton';
+import { SparklineSalesProvider } from '@/hooks/intelligence/useSparklineSales';
+import { ProductLeafCategoryProvider } from '@/hooks/products/useProductLeafCategories';
 
 interface CatalogContentProps {
   viewMode: ViewMode;
@@ -52,189 +48,210 @@ interface CatalogContentProps {
   activeColorFilter?: ActiveColorFilter | null;
   activeProductId?: string | null;
   setActiveProductId?: (id: string | null) => void;
+  hideCategoryBadges?: boolean;
+  // Novas props para controle de filtro e sort vindos do catalog state
+  sortBy?: string;
+  onSortChange?: (v: string) => void;
+  onOpenFilters?: () => void;
+  activeFiltersCount?: number;
+  onViewModeChange?: (mode: ViewMode) => void;
+  /** BUG-SCROLL-01 FIX: chave de reset de scroll — ver useCatalogState e VirtualizedProductGrid */
+  scrollResetKey?: string;
 }
 
-export const CatalogContent = memo(function CatalogContent({
-  viewMode,
-  shouldShowCatalogSkeleton,
-  shouldShowEmptyState,
-  hasActiveCatalogConstraints,
-  paginatedProducts,
-  filteredProducts,
-  gridColumns,
-  hasMoreProducts,
-  isLoadingMore,
-  totalEstimate,
-  loadMoreRef,
-  itemsPerPage,
-  navigate,
-  handleViewProduct,
-  handleShareProduct,
-  handleFavoriteProduct,
-  isFavorite,
-  toggleFavorite,
-  isInCompare,
-  onToggleCompare,
-  canAddToCompare,
-  onLoadMore,
-  onResetFilters,
-  selectionMode,
-  onSelectedCountChange,
-  activeColorFilter,
-  activeProductId,
-  setActiveProductId,
-}: CatalogContentProps) {
-  const selection = useCatalogSelection(
+export const CatalogContent = memo(
+  ({
+    viewMode,
+    shouldShowCatalogSkeleton,
+    shouldShowEmptyState,
+    hasActiveCatalogConstraints,
     paginatedProducts,
+    filteredProducts,
+    gridColumns,
+    hasMoreProducts,
+    isLoadingMore,
+    totalEstimate,
+    loadMoreRef,
+    itemsPerPage: _itemsPerPage,
+    navigate,
+    handleViewProduct: _handleViewProduct,
+    handleShareProduct,
+    handleFavoriteProduct: _handleFavoriteProduct,
+    isFavorite,
+    toggleFavorite,
+    isInCompare,
+    onToggleCompare,
+    canAddToCompare,
+    onLoadMore,
+    onResetFilters,
     selectionMode,
-    onSelectedCountChange
-  );
-  const { selectedIds, toggleSelect: onToggleSelect } = selection;
+    onSelectedCountChange,
+    activeColorFilter,
+    activeProductId: _activeProductId,
+    setActiveProductId: _setActiveProductId,
+    hideCategoryBadges = false,
+    sortBy = 'name',
+    onSortChange,
+    onOpenFilters,
+    activeFiltersCount = 0,
+    onViewModeChange,
+    scrollResetKey,
+  }: CatalogContentProps) => {
+    const selection = useCatalogSelection(paginatedProducts, selectionMode, onSelectedCountChange);
+    const { selectedIds, toggleSelect: onToggleSelect } = selection;
 
-  if (shouldShowCatalogSkeleton) {
-    if (viewMode === "list") {
+    const handleProductClick = useCallback(
+      (pid: string) => navigate(`/produto/${pid}`),
+      [navigate],
+    );
+
+    const productIds = useMemo(() => paginatedProducts.map((p) => p.id), [paginatedProducts]);
+
+    if (shouldShowCatalogSkeleton) {
+      if (viewMode === 'list') {
+        return (
+          <div className="space-y-2" data-testid="catalog-list-skeleton">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="duration-300 animate-in fade-in slide-in-from-left-2"
+                style={{ animationDelay: `${i * 30}ms` }}
+              >
+                <ProductCardSkeleton variant="compact" selectionMode={selectionMode} />
+              </div>
+            ))}
+          </div>
+        );
+      }
+      if (viewMode === 'table') {
+        return (
+          <div data-testid="catalog-table-skeleton">
+            <ProductTableSkeleton rows={10} selectionMode={selectionMode} />
+          </div>
+        );
+      }
       return (
-        <div className="space-y-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="animate-in fade-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 30}ms` }}>
-              <ProductListItemSkeleton />
-            </div>
-          ))}
+        <div data-testid="catalog-grid-skeleton">
+          <ProductGridSkeleton
+            count={12}
+            columns={gridColumns}
+            variant="default"
+            hideCategoryBadges={hideCategoryBadges}
+            selectionMode={selectionMode}
+          />
         </div>
       );
     }
-    if (viewMode === "table") {
-      return <ProductTableSkeleton rows={10} />;
+
+    if (shouldShowEmptyState) {
+      return (
+        <EmptyState
+          variant="products"
+          title="Nenhum produto encontrado"
+          description={
+            hasActiveCatalogConstraints
+              ? 'Tente ajustar seus filtros para ver mais resultados.'
+              : 'Explore nosso catálogo completo para encontrar o que procura.'
+          }
+          action={
+            onResetFilters
+              ? {
+                  label: 'Limpar todos os filtros',
+                  onClick: onResetFilters,
+                }
+              : undefined
+          }
+        />
+      );
     }
+
+    // Se estivermos em um destes modos, usamos o grid virtualizado para melhor performance
+    if (viewMode === 'grid' || viewMode === 'list') {
+      return (
+        <SparklineSalesProvider productIds={productIds}>
+          <ProductLeafCategoryProvider productIds={productIds}>
+            <div className="h-[calc(100vh-var(--header-h,56px)-var(--breadcrumb-h,0px)-200px)] min-h-[500px] w-full" style={swatchSizeStyle(viewMode, gridColumns)}>
+              <VirtualizedProductGrid
+                products={paginatedProducts}
+                isLoading={isLoadingMore}
+                hasMore={hasMoreProducts}
+                onLoadMore={onLoadMore}
+                columns={gridColumns}
+                viewMode={viewMode}
+                onProductClick={handleProductClick}
+                isFavorited={isFavorite}
+                onToggleFavorite={toggleFavorite}
+                isInCompare={isInCompare}
+                onToggleCompare={onToggleCompare}
+                canAddToCompare={canAddToCompare}
+                onShare={handleShareProduct}
+                activeColorFilter={activeColorFilter}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={onToggleSelect}
+                sortBy={sortBy}
+                onSortChange={onSortChange}
+                onOpenFilters={onOpenFilters}
+                onClearFilters={onResetFilters}
+                scrollResetKey={scrollResetKey}
+                showFilterBar={false}
+                activeFiltersCount={activeFiltersCount}
+                onViewModeChange={onViewModeChange}
+              />
+            </div>
+            <CatalogBulkModals
+              sel={selection}
+              selectionMode={selectionMode}
+              totalCount={totalEstimate || filteredProducts.length}
+            />
+          </ProductLeafCategoryProvider>
+        </SparklineSalesProvider>
+      );
+    }
+
     return (
-      <div className={cn("grid", {
-        "grid-cols-2 sm:grid-cols-3": gridColumns === 3,
-        "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4": gridColumns === 4,
-        "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5": gridColumns === 5,
-        "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6": gridColumns === 6,
-        "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8": gridColumns === 8,
-      }, gridColumns >= 8 ? 'gap-x-4 gap-y-8' : gridColumns >= 6 ? 'gap-x-6 gap-y-8' : 'gap-x-4 sm:gap-x-6 lg:gap-x-8 gap-y-8')}>
-        {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="animate-in fade-in duration-300" style={{ animationDelay: `${i * 40}ms` }}>
-            <ProductCardSkeleton />
+      <div
+        className={cn(
+          'relative space-y-8 px-4 pb-12 duration-500 animate-in fade-in sm:px-6',
+          isLoadingMore && 'opacity-80 transition-opacity',
+        )}
+        style={swatchSizeStyle(viewMode, gridColumns)}
+      >
+        <SparklineSalesProvider productIds={productIds}>
+          <ProductLeafCategoryProvider productIds={productIds}>
+            {viewMode === 'table' && (
+              <ProductTableView
+                scrollResetKey={scrollResetKey}
+                products={paginatedProducts}
+                isLoading={isLoadingMore}
+                onProductClick={handleProductClick}
+                onShareProduct={handleShareProduct}
+                isFavorite={isFavorite}
+                onToggleFavorite={toggleFavorite}
+                isInCompare={isInCompare}
+                onToggleCompare={onToggleCompare}
+                canAddToCompare={canAddToCompare}
+                activeColorFilter={activeColorFilter}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={onToggleSelect}
+              />
+            )}
+          </ProductLeafCategoryProvider>
+        </SparklineSalesProvider>
+
+        {hasMoreProducts && viewMode === 'table' && (
+          <div ref={loadMoreRef} className="pt-4" data-testid="load-more-trigger">
+            <ProductTableSkeleton rows={5} selectionMode={selectionMode} />
           </div>
-        ))}
+        )}
+
+        <CatalogBulkModals
+          sel={selection}
+          selectionMode={selectionMode}
+          totalCount={totalEstimate || filteredProducts.length}
+        />
       </div>
     );
-  }
-
-  if (shouldShowEmptyState) {
-    return (
-      <EmptyState
-        variant="products"
-        title="Nenhum produto encontrado"
-        description={
-          hasActiveCatalogConstraints
-            ? "Tente ajustar seus filtros para ver mais resultados."
-            : "Explore nosso catálogo completo para encontrar o que procura."
-        }
-        action={{
-          label: "Limpar todos os filtros",
-          onClick: onResetFilters,
-        }}
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-8 pb-12 relative animate-in fade-in duration-500">
-      <SparklineSalesProvider>
-        {viewMode === "grid" && (
-          <ProductGrid
-            products={paginatedProducts}
-            isLoading={isLoadingMore}
-            onProductClick={(pid) => navigate(`/produto/${pid}`)}
-            onViewProduct={handleViewProduct}
-            onShareProduct={handleShareProduct}
-            onFavoriteProduct={handleFavoriteProduct}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            isInCompare={isInCompare}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            columns={gridColumns}
-            activeColorFilter={activeColorFilter}
-            selectionMode={selectionMode}
-            selectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        )}
-
-        {viewMode === "list" && (
-          <ProductList
-            products={paginatedProducts}
-            isLoading={isLoadingMore}
-            onProductClick={(pid) => navigate(`/produto/${pid}`)}
-            onViewProduct={handleViewProduct}
-            onShareProduct={handleShareProduct}
-            onFavoriteProduct={handleFavoriteProduct}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            isInCompare={isInCompare}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            activeColorFilter={activeColorFilter}
-            selectionMode={selectionMode}
-            externalSelectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        )}
-
-        {viewMode === "table" && (
-          <ProductTableView
-            products={paginatedProducts}
-            isLoading={isLoadingMore}
-            onProductClick={(pid) => navigate(`/produto/${pid}`)}
-            onShareProduct={handleShareProduct}
-            isFavorite={isFavorite}
-            onToggleFavorite={toggleFavorite}
-            isInCompare={isInCompare}
-            onToggleCompare={onToggleCompare}
-            canAddToCompare={canAddToCompare}
-            activeColorFilter={activeColorFilter}
-            selectionMode={selectionMode}
-            selectedIds={selectedIds}
-            onToggleSelect={onToggleSelect}
-          />
-        )}
-      </SparklineSalesProvider>
-
-      {hasMoreProducts && (
-        <div
-          ref={loadMoreRef}
-          className="flex justify-center py-8"
-        >
-          {isLoadingMore ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex gap-1.5">
-                <Skeleton className="h-2 w-2 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <Skeleton className="h-2 w-2 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <Skeleton className="h-2 w-2 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
-              <p className="text-xs text-muted-foreground font-medium animate-pulse">
-                Carregando mais produtos...
-              </p>
-            </div>
-          ) : (
-            <div className="text-center text-sm text-muted-foreground">
-              Exibindo {Math.min(paginatedProducts.length, totalEstimate || filteredProducts.length)} de {totalEstimate || filteredProducts.length} produtos
-            </div>
-          )}
-        </div>
-      )}
-
-      <CatalogBulkModals
-        sel={selection}
-        selectionMode={selectionMode}
-        totalCount={totalEstimate || filteredProducts.length}
-      />
-      
-      <ScrollToTopButton className="fixed bottom-6 right-6 z-50" />
-    </div>
-  );
-});
+  },
+);

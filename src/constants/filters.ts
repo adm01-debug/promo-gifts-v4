@@ -16,8 +16,11 @@ export const defaultAdvancedFilters: AdvancedFilterState = {
   endomarketing: [],
   ramosAtividade: [],
   segmentosAtividade: [],
-  priceRange: [0, 1000],
-  quantityRange: [1, 10000],
+  // FIX-11: era [0, 1000] — inconsistente com defaultFilters.priceRange [0, 9999]
+  // e com a lógica de filtro que usa 9999 como "sem limite superior".
+  priceRange: [0, 9999],
+  // BUG-SF-16 FIX: quantityRange removido — era campo orphaned (não aparecia na UI,
+  // não era serializado na URL, não era aplicado ao filtro). Ver advancedFilters.ts.
   stockStatus: 'all',
   minStock: 0,
   isKit: false,
@@ -26,7 +29,7 @@ export const defaultAdvancedFilters: AdvancedFilterState = {
   hasPersonalization: false,
   gender: [],
   maxLeadTimeDays: null,
-  sortBy: 'name',
+  sortBy: 'newest',
 };
 
 export const STOCK_FILTER_OPTIONS: StockFilterOption[] = [
@@ -38,12 +41,11 @@ export const STOCK_FILTER_OPTIONS: StockFilterOption[] = [
 ];
 
 export const SORT_OPTIONS = [
-  { value: 'relevance', label: 'Relevância (Busca)' },
+  { value: 'newest', label: 'Mais Recentes' },
   { value: 'name', label: 'Nome (A-Z)' },
-  { value: 'price-asc', label: 'Menor Preço' },
-  { value: 'price-desc', label: 'Maior Preço' },
-  { value: 'newest', label: 'Lançamentos' },
+  { value: 'price-asc', label: 'Preço (Menor → Maior)' },
+  { value: 'price-desc', label: 'Preço (Maior → Menor)' },
   { value: 'stock', label: 'Maior Estoque' },
-  { value: 'best-seller-supplier', label: '+ Vendidos (Indústria)' },
-  { value: 'best-seller-promo', label: '+ Vendidos (Promo)' },
+  { value: 'best-seller-supplier', label: '+ Vendidos Fornecedores' },
+  { value: 'best-seller-promo', label: '+ Vendidos Promo Brindes' },
 ];

@@ -14,10 +14,10 @@
  * Captura erros de renderização e oferece retry com feedback visual.
  */
 
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { PureComponent, type ErrorInfo, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { reportError } from '@/lib/error-reporter';
 import { logger } from '@/lib/logger';
 
@@ -34,14 +34,14 @@ interface State {
   errorCount: number;
 }
 
-export class SimulatorErrorBoundary extends Component<Props, State> {
+export class SimulatorErrorBoundary extends PureComponent<Props, State> {
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { hasError: true, error };
+  }
+
   constructor(props: Props) {
     super(props);
     this.state = { hasError: false, error: null, errorCount: 0 };
-  }
-
-  static getDerivedStateFromError(error: Error): Partial<State> {
-    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -58,10 +58,10 @@ export class SimulatorErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
-    this.setState(prev => ({ 
-      hasError: false, 
-      error: null, 
-      errorCount: prev.errorCount + 1 
+    this.setState((prev) => ({
+      hasError: false,
+      error: null,
+      errorCount: prev.errorCount + 1,
     }));
     this.props.onReset?.();
   };
@@ -78,26 +78,26 @@ export class SimulatorErrorBoundary extends Component<Props, State> {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-lg mx-auto text-center py-16 px-4"
+        className="mx-auto max-w-lg px-4 py-16 text-center"
       >
-        <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-destructive/10 flex items-center justify-center">
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
           <AlertTriangle className="h-8 w-8 text-destructive" />
         </div>
 
-        <h3 className="font-display text-xl font-bold mb-2">{fallbackTitle}</h3>
-        <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
+        <h3 className="mb-2 font-display text-xl font-bold">{fallbackTitle}</h3>
+        <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
           {tooManyRetries
             ? 'O erro persiste após várias tentativas. Tente recarregar a página ou voltar ao início.'
             : 'Ocorreu um erro inesperado. Isso pode ser uma falha temporária de conexão.'}
         </p>
 
         {this.state.error?.message && (
-          <div className="mb-6 p-3 rounded-lg bg-muted text-xs font-mono text-muted-foreground text-left break-all">
+          <div className="mb-6 break-all rounded-lg bg-muted p-3 text-left font-mono text-xs text-muted-foreground">
             {this.state.error.message}
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3 justify-center">
+        <div className="flex flex-wrap justify-center gap-3">
           {!tooManyRetries && (
             <Button onClick={this.handleRetry} className="gap-2">
               <RefreshCw className="h-4 w-4" />

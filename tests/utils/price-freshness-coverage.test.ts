@@ -7,8 +7,8 @@
  * default e thresholds customizados.
  *
  * Aqui travamos:
- *   1. Bordas exatas do threshold (limite inferior do aging, limite superior
- *      antes do stale, e o salto para stale no dia seguinte ao threshold).
+ *   1. Bordas exatas do threshold (limite inferior do aging e o salto para
+ *      stale exatamente no threshold — BUG-008: days >= threshold).
  *   2. Rótulos pt-BR canônicos: "hoje", "há 1 dia" (singular), "há N dias"
  *      (plural) e o copy curto unificado entre PDP e Quick View.
  *   3. Tooltip sempre em pt-BR longo ("DD de <mês> de AAAA") e contendo a
@@ -41,9 +41,9 @@ describe("getPriceFreshness — bordas de threshold", () => {
     expect(getPriceFreshness(daysAgo(31), 60).status).toBe("aging");
   });
 
-  it("dia exatamente no threshold ainda é 'aging' (ainda não passou)", () => {
-    // Regra: stale só quando days > threshold.
-    expect(getPriceFreshness(daysAgo(60), 60).status).toBe("aging");
+  it("dia exatamente no threshold já é 'stale' (BUG-008: days >= threshold)", () => {
+    // Regra (BUG-008): stale quando days >= threshold.
+    expect(getPriceFreshness(daysAgo(60), 60).status).toBe("stale");
   });
 
   it("um dia acima do threshold vira 'stale'", () => {

@@ -1,1 +1,1 @@
-export { AuditHistory } from "./AuditHistory";
+export { AuditHistory } from './AuditHistory';

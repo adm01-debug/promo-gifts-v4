@@ -15,16 +15,16 @@
  * O acesso à página /admin/conexoes já é protegido por DevRoute.
  */
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { untypedFrom } from '@/lib/supabase-untyped';
+import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
-// Cast tático: ai_providers / ai_models / ai_function_routing ainda não estão
-// em `database.types.ts` (regen pendente). Após regenerar via
-// `supabase gen types typescript`, remover este cast — as interfaces abaixo
-// já refletem o schema real.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sb: any = supabase;
+// As tabelas de AI (ai_providers, ai_models, ai_function_routing) existem no
+// schema gerado, mas as interfaces hand-written abaixo são o ground truth do
+// app. Usamos untypedFrom para o builder permissivo e evitar fricção de
+// excess-property entre as interfaces e os tipos Insert/Update gerados.
+const sb = { from: untypedFrom };
 
 // ============================================================
 // Types — SCHEMA REAL (ground truth)
@@ -34,11 +34,7 @@ const sb: any = supabase;
  * api_format usa underscore no banco (não kebab-case).
  * Valores válidos vêm da migration original (CHECK constraint no banco).
  */
-export type AiApiFormat =
-  | "openai_compatible"
-  | "anthropic_native"
-  | "google_native"
-  | "custom";
+export type AiApiFormat = 'anthropic_native' | 'custom' | 'google_native' | 'openai_compatible';
 
 export interface AiProvider {
   id: string;
@@ -98,7 +94,7 @@ export interface AiModel {
   created_at: string;
   updated_at: string;
   /** Hidratado via select com !inner — opcional para UIs mais simples */
-  provider?: Pick<AiProvider, "id" | "slug" | "display_name" | "api_format" | "is_active">;
+  provider?: Pick<AiProvider, 'api_format' | 'display_name' | 'id' | 'is_active' | 'slug'>;
 }
 
 export interface AiFunctionRouting {
@@ -119,8 +115,8 @@ export interface AiFunctionRouting {
   created_at: string;
   updated_at: string;
   /** Hidratado via select — primary model com slug e provider para mostrar na UI */
-  primary_model?: Pick<AiModel, "id" | "model_id" | "display_name" | "provider_id"> & {
-    provider?: Pick<AiProvider, "slug" | "display_name">;
+  primary_model?: Pick<AiModel, 'display_name' | 'id' | 'model_id' | 'provider_id'> & {
+    provider?: Pick<AiProvider, 'display_name' | 'slug'>;
   };
 }
 
@@ -130,20 +126,22 @@ export interface AiFunctionRouting {
 
 export type ProviderInput = Omit<
   AiProvider,
-  | "id"
-  | "created_at" | "created_by"
-  | "updated_at" | "updated_by"
-  | "last_test_at" | "last_test_ok" | "last_test_message" | "last_latency_ms"
+  | 'created_at'
+  | 'created_by'
+  | 'id'
+  | 'last_latency_ms'
+  | 'last_test_at'
+  | 'last_test_message'
+  | 'last_test_ok'
+  | 'updated_at'
+  | 'updated_by'
 >;
 
-export type ModelInput = Omit<
-  AiModel,
-  "id" | "created_at" | "updated_at" | "provider"
->;
+export type ModelInput = Omit<AiModel, 'created_at' | 'id' | 'provider' | 'updated_at'>;
 
 export type RoutingInput = Omit<
   AiFunctionRouting,
-  "id" | "created_at" | "updated_at" | "primary_model"
+  'created_at' | 'id' | 'primary_model' | 'updated_at'
 >;
 
 // ============================================================
@@ -151,10 +149,10 @@ export type RoutingInput = Omit<
 // ============================================================
 
 const QK = {
-  providers: ["ai-router", "providers"] as const,
-  models: ["ai-router", "models"] as const,
-  routing: ["ai-router", "routing"] as const,
-};
+  providers: ['ai-router', 'providers'] as const,
+  models: ['ai-router', 'models'] as const,
+  routing: ['ai-router', 'routing'] as const,
+} as const;
 
 // ============================================================
 // Providers
@@ -165,13 +163,16 @@ export function useAiProviders() {
     queryKey: QK.providers,
     queryFn: async (): Promise<AiProvider[]> => {
       const { data, error } = await sb
-        .from("ai_providers")
-        .select("*")
-        .order("priority", { ascending: true })
-        .order("slug", { ascending: true });
+        .from('ai_providers')
+        .select('*')
+        .order('priority', { ascending: true })
+        .order('slug', { ascending: true });
       if (error) throw error;
       return (data ?? []) as AiProvider[];
     },
+    staleTime: 10 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 
@@ -180,42 +181,52 @@ export function useAiProviderMutations() {
 
   const createProvider = useMutation({
     mutationFn: async (input: ProviderInput): Promise<AiProvider> => {
-      const { data, error } = await sb.from("ai_providers").insert(input).select().single();
+      const { data, error } = await sb.from('ai_providers').insert(input).select().single();
       if (error) throw error;
       return data as AiProvider;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.providers });
-      toast.success("Provider criado.");
+      toast.success('Provider criado.');
     },
-    onError: (e: Error) => toast.error("Erro ao criar provider", { description: e.message }),
+    onError: (e: Error) => toast.error('Erro ao criar provider', { description: sanitizeError(e) }),
   });
 
   const updateProvider = useMutation({
-    mutationFn: async ({ id, ...patch }: Partial<AiProvider> & { id: string }): Promise<AiProvider> => {
-      const { data, error } = await sb.from("ai_providers").update(patch).eq("id", id).select().single();
+    mutationFn: async ({
+      id,
+      ...patch
+    }: Partial<AiProvider> & { id: string }): Promise<AiProvider> => {
+      const { data, error } = await sb
+        .from('ai_providers')
+        .update(patch)
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
       return data as AiProvider;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.providers });
-      toast.success("Provider atualizado.");
+      toast.success('Provider atualizado.');
     },
-    onError: (e: Error) => toast.error("Erro ao atualizar provider", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error('Erro ao atualizar provider', { description: sanitizeError(e) }),
   });
 
   const deleteProvider = useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const { error } = await sb.from("ai_providers").delete().eq("id", id);
+      const { error } = await sb.from('ai_providers').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.providers });
       qc.invalidateQueries({ queryKey: QK.models });
       qc.invalidateQueries({ queryKey: QK.routing });
-      toast.success("Provider removido.");
+      toast.success('Provider removido.');
     },
-    onError: (e: Error) => toast.error("Erro ao remover provider", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error('Erro ao remover provider', { description: sanitizeError(e) }),
   });
 
   return { createProvider, updateProvider, deleteProvider };
@@ -230,12 +241,15 @@ export function useAiModels() {
     queryKey: QK.models,
     queryFn: async (): Promise<AiModel[]> => {
       const { data, error } = await sb
-        .from("ai_models")
-        .select("*, provider:ai_providers!inner(id,slug,display_name,api_format,is_active)")
-        .order("model_id", { ascending: true });
+        .from('ai_models')
+        .select('*, provider:ai_providers!inner(id,slug,display_name,api_format,is_active)')
+        .order('model_id', { ascending: true });
       if (error) throw error;
       return (data ?? []) as AiModel[];
     },
+    staleTime: 10 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 
@@ -244,44 +258,50 @@ export function useAiModelMutations() {
 
   const createModel = useMutation({
     mutationFn: async (input: ModelInput): Promise<AiModel> => {
-      const { data, error } = await sb.from("ai_models").insert(input).select().single();
+      const { data, error } = await sb.from('ai_models').insert(input).select().single();
       if (error) throw error;
       return data as AiModel;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.models });
-      toast.success("Modelo criado.");
+      toast.success('Modelo criado.');
     },
-    onError: (e: Error) => toast.error("Erro ao criar modelo", { description: e.message }),
+    onError: (e: Error) => toast.error('Erro ao criar modelo', { description: sanitizeError(e) }),
   });
 
   const updateModel = useMutation({
     mutationFn: async ({ id, ...patch }: Partial<AiModel> & { id: string }): Promise<AiModel> => {
       const cleanPatch: Record<string, unknown> = { ...patch };
       delete cleanPatch.provider;
-      const { data, error } = await sb.from("ai_models").update(cleanPatch).eq("id", id).select().single();
+      const { data, error } = await sb
+        .from('ai_models')
+        .update(cleanPatch)
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
       return data as AiModel;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.models });
       qc.invalidateQueries({ queryKey: QK.routing });
-      toast.success("Modelo atualizado.");
+      toast.success('Modelo atualizado.');
     },
-    onError: (e: Error) => toast.error("Erro ao atualizar modelo", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error('Erro ao atualizar modelo', { description: sanitizeError(e) }),
   });
 
   const deleteModel = useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const { error } = await sb.from("ai_models").delete().eq("id", id);
+      const { error } = await sb.from('ai_models').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.models });
       qc.invalidateQueries({ queryKey: QK.routing });
-      toast.success("Modelo removido.");
+      toast.success('Modelo removido.');
     },
-    onError: (e: Error) => toast.error("Erro ao remover modelo", { description: e.message }),
+    onError: (e: Error) => toast.error('Erro ao remover modelo', { description: sanitizeError(e) }),
   });
 
   return { createModel, updateModel, deleteModel };
@@ -296,7 +316,7 @@ export function useAiRouting() {
     queryKey: QK.routing,
     queryFn: async (): Promise<AiFunctionRouting[]> => {
       const { data, error } = await sb
-        .from("ai_function_routing")
+        .from('ai_function_routing')
         .select(
           `*,
           primary_model:ai_models!primary_model_id(
@@ -304,10 +324,13 @@ export function useAiRouting() {
             provider:ai_providers!inner(slug, display_name)
           )`,
         )
-        .order("function_name", { ascending: true });
+        .order('function_name', { ascending: true });
       if (error) throw error;
       return (data ?? []) as AiFunctionRouting[];
     },
+    staleTime: 10 * 60 * 1000,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
   });
 }
 
@@ -316,42 +339,53 @@ export function useAiRoutingMutations() {
 
   const createRouting = useMutation({
     mutationFn: async (input: RoutingInput): Promise<AiFunctionRouting> => {
-      const { data, error } = await sb.from("ai_function_routing").insert(input).select().single();
+      const { data, error } = await sb.from('ai_function_routing').insert(input).select().single();
       if (error) throw error;
       return data as AiFunctionRouting;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.routing });
-      toast.success("Roteamento criado.");
+      toast.success('Roteamento criado.');
     },
-    onError: (e: Error) => toast.error("Erro ao criar roteamento", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error('Erro ao criar roteamento', { description: sanitizeError(e) }),
   });
 
   const updateRouting = useMutation({
-    mutationFn: async ({ id, ...patch }: Partial<AiFunctionRouting> & { id: string }): Promise<AiFunctionRouting> => {
+    mutationFn: async ({
+      id,
+      ...patch
+    }: Partial<AiFunctionRouting> & { id: string }): Promise<AiFunctionRouting> => {
       const cleanPatch: Record<string, unknown> = { ...patch };
       delete cleanPatch.primary_model;
-      const { data, error } = await sb.from("ai_function_routing").update(cleanPatch).eq("id", id).select().single();
+      const { data, error } = await sb
+        .from('ai_function_routing')
+        .update(cleanPatch)
+        .eq('id', id)
+        .select()
+        .single();
       if (error) throw error;
       return data as AiFunctionRouting;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.routing });
-      toast.success("Roteamento atualizado.");
+      toast.success('Roteamento atualizado.');
     },
-    onError: (e: Error) => toast.error("Erro ao atualizar roteamento", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error('Erro ao atualizar roteamento', { description: sanitizeError(e) }),
   });
 
   const deleteRouting = useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      const { error } = await sb.from("ai_function_routing").delete().eq("id", id);
+      const { error } = await sb.from('ai_function_routing').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: QK.routing });
-      toast.success("Roteamento removido.");
+      toast.success('Roteamento removido.');
     },
-    onError: (e: Error) => toast.error("Erro ao remover roteamento", { description: e.message }),
+    onError: (e: Error) =>
+      toast.error('Erro ao remover roteamento', { description: sanitizeError(e) }),
   });
 
   return { createRouting, updateRouting, deleteRouting };
@@ -367,12 +401,11 @@ export function useAiRoutingMutations() {
  * - Banco usa Record<string, boolean>
  */
 export function capabilitiesToArray(caps: Record<string, boolean>): string[] {
-  return Object.entries(caps).filter(([, v]) => v === true).map(([k]) => k);
+  return Object.entries(caps)
+    .filter(([, v]) => v)
+    .map(([k]) => k);
 }
 
 export function capabilitiesFromArray(keys: string[]): Record<string, boolean> {
-  return keys.reduce<Record<string, boolean>>((acc, k) => {
-    acc[k] = true;
-    return acc;
-  }, {});
+  return Object.fromEntries(keys.map((k) => [k, true]));
 }

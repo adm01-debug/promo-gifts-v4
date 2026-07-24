@@ -1,20 +1,29 @@
 /**
- * Pre-warming do banco externo para evitar cold starts.
+ * Pre-warming de conexões PostgREST nativas — Caminho B.
  *
- * Estratégia (pós-otimização):
- *  1. Um ping leve (sem I/O de BD) acorda a edge function — completa em ~80ms quando
- *     ela já está quente via cron keep-alive (job `external-db-bridge-keepalive`).
- *  2. Em seguida, dispara todas as tabelas EM PARALELO (Promise.allSettled),
- *     reusando a mesma conexão já aberta no pool. Reduz o tempo total de ~5s
- *     (sequencial 800ms × 6) para ~1.5s no pior caso.
+ * Após a descontinuação do `external-db-bridge` (PRs #230-232), o prewarm
+ * passou a consultar o PostgREST nativo diretamente via `supabase.from(table)`.
+ * Isso reutiliza o connection pool já ativo do cliente Supabase — sem invoke,
+ * sem edge function, sem overhead TLS extra.
  *
- * Cooldown de 5 min impede thrashing entre navegações.
+ * Comportamento idêntico ao anterior:
+ *  - Cooldown de 5 min entre prewarms
+ *  - oncePerSession via sessionStorage
+ *  - Promise.allSettled para paralelismo
  */
-import { supabase } from '@/integrations/supabase/client';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { logger } from '@/lib/logger';
-import { waitForBridgeReady } from '@/lib/external-db/health-check';
 
-const PREWARM_TABLES = [
+type PrewarmTable =
+  | 'categories'
+  | 'color_groups'
+  | 'product_images'
+  | 'product_variants'
+  | 'products'
+  | 'suppliers';
+
+// Tabelas principais que convém ter no pool antes do primeiro uso
+const PREWARM_TABLES: readonly PrewarmTable[] = [
   'products',
   'product_images',
   'product_variants',
@@ -24,90 +33,43 @@ const PREWARM_TABLES = [
 ];
 
 let lastPrewarmAt = 0;
-const PREWARM_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutos entre pre-warms
+const PREWARM_COOLDOWN_MS = 5 * 60 * 1000;
 const SESSION_KEY = '__pg_prewarm_done__';
 
 /**
- * Acorda o crm-db-bridge em paralelo (cold start ~80–250ms).
- * Usa o endpoint de ping sem I/O no CRM para não transformar prewarm em erro 500
- * quando credenciais externas ainda estão propagando/recarregando no isolate.
+ * Aquece as tabelas via PostgREST nativo (Caminho B — sem bridge).
+ * SELECT id LIMIT 1 é suficiente para abrir a conexão no pool.
  */
-async function pingCrmBridge(): Promise<{ ok: boolean; ms: number }> {
+async function warmAllTables(
+  tables: readonly PrewarmTable[],
+): Promise<Array<{ table: PrewarmTable; ok: boolean; ms: number; err?: string }>> {
   const t0 = performance.now();
-  try {
-    const { error } = await supabase.functions.invoke('crm-db-bridge', {
-      body: { operation: 'ping' },
-    });
-    return { ok: !error, ms: Math.round(performance.now() - t0) };
-  } catch {
-    return { ok: false, ms: Math.round(performance.now() - t0) };
-  }
-}
 
-/**
- * Acorda a edge function via health-check compartilhado (`waitForBridgeReady`).
- * O helper já faz polling com backoff e cacheia "ready" — então UI e prewarm
- * convergem na mesma promise quando rodam próximos no tempo.
- */
-async function pingBridge(): Promise<{ ok: boolean; ms: number; attempts: number }> {
-  const t0 = performance.now();
-  const res = await waitForBridgeReady(5000);
-  return {
-    ok: res.ok,
-    ms: res.ms || Math.round(performance.now() - t0),
-    attempts: 1,
-  };
-}
+  const results = await Promise.allSettled(
+    tables.map((table) => untypedFrom(table).select('id').limit(1)),
+  );
 
-/**
- * Coalesce as 6 tabelas em UMA única chamada `operation: 'batch'`.
- *
- * Antes: 6 invokes paralelos = 6 round-trips TLS, 6 entradas no rate-limit,
- * 6 fan-outs no PostgREST. Mesmo com singleton + warm-up, cada request paga
- * o overhead de Cloudflare → Supabase Edge → bridge handler.
- *
- * Depois: 1 invoke. A bridge expande o batch em `Promise.all` interno
- * (handleBatch, supabase/functions/external-db-bridge/index.ts:499) reusando
- * o mesmo client cacheado. Resultado: ~1.5s → ~250ms no warm path.
- */
-async function warmAllTables(tables: string[]): Promise<Array<{ table: string; ok: boolean; ms: number; err?: string }>> {
-  const t0 = performance.now();
-  try {
-    const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-      body: {
-        operation: 'batch',
-        queries: tables.map((table) => ({
-          table,
-          select: 'id',
-          limit: 1,
-          countMode: 'none',
-        })),
-      },
-    });
-    const totalMs = Math.round(performance.now() - t0);
-    if (error) {
-      // Falha global do batch — reporta como falha em todas as tabelas
-      return tables.map((table) => ({ table, ok: false, ms: totalMs, err: error.message }));
+  const totalMs = Math.round(performance.now() - t0);
+
+  return tables.map((table, idx) => {
+    const r = results[idx];
+    if (r.status === 'rejected') {
+      return { table, ok: false, ms: totalMs, err: String(r.reason) };
     }
-    // handleBatch retorna { results: [{ success, data?, error? }, ...] }
-    const results = (data?.results ?? []) as Array<{ success: boolean; error?: string }>;
-    return tables.map((table, idx) => {
-      const r = results[idx];
-      if (!r) return { table, ok: false, ms: totalMs, err: 'missing batch slot' };
-      return { table, ok: !!r.success, ms: totalMs, err: r.success ? undefined : r.error };
-    });
-  } catch (err) {
-    const totalMs = Math.round(performance.now() - t0);
-    return tables.map((table) => ({ table, ok: false, ms: totalMs, err: (err as Error)?.message }));
-  }
+    return {
+      table,
+      ok: !r.value.error,
+      ms: totalMs,
+      err: r.value.error?.message,
+    };
+  });
 }
 
 /**
  * Opções do prewarm.
  *  - `force`: ignora cooldown E sessionStorage (uso interno/debug)
- *  - `oncePerSession`: respeita flag em sessionStorage (default true). Quando true,
- *    o prewarm dispara no máximo 1x por sessão de browser — ideal para gatilho
- *    no login. Outros call-sites (ex.: navegação) devem passar `false`.
+ *  - `oncePerSession`: respeita flag em sessionStorage (default false).
+ *    Quando true, dispara no máximo 1x por sessão de browser.
  */
 export async function prewarmExternalDb(opts: { force?: boolean; oncePerSession?: boolean } = {}) {
   const { force = false, oncePerSession = false } = opts;
@@ -131,67 +93,32 @@ export async function prewarmExternalDb(opts: { force?: boolean; oncePerSession?
   lastPrewarmAt = now;
 
   const totalStart = performance.now();
-  logger.log('[Prewarm] Warming up external DB connections (parallel)...');
+  logger.log('[Prewarm] Warming up PostgREST connections (Caminho B — native)...');
 
-  // 1) Acorda a edge function com um ping leve (sem BD). Aguardamos
-  //    explicitamente até receber 200 — só então liberamos o leque paralelo.
-  const ping = await pingBridge();
-
-  if (!ping.ok) {
-    // Isolate não respondeu nem após 3 tentativas. Disparar 6 chamadas paralelas
-    // agora só amplificaria o problema — aborta e libera o cooldown para um
-    // novo prewarm na próxima navegação.
-    lastPrewarmAt = 0;
-    const totalMs = Math.round(performance.now() - totalStart);
-    logger.warn(
-      `[Prewarm] ⛔ Aborted — bridge ping failed after ${ping.attempts} attempts in ${ping.ms}ms (total ${totalMs}ms). Skipping parallel fan-out.`,
-    );
-    return;
-  }
-
-  // 2) Isolate confirmadamente quente — dispara batch único + crm-bridge EM PARALELO
-  //    (apenas 2 invokes totais: 1 batch das 6 tabelas + 1 ping CRM)
-  const [crmPing, batchResult] = await Promise.allSettled([
-    pingCrmBridge(),
-    warmAllTables(PREWARM_TABLES),
-  ]);
+  const batchResults = await warmAllTables(PREWARM_TABLES);
 
   const totalMs = Math.round(performance.now() - totalStart);
   let okCount = 0;
   let failCount = 0;
 
-  if (batchResult.status === 'fulfilled') {
-    for (const r of batchResult.value) {
-      if (r.ok) {
-        okCount++;
-        logger.log(`[Prewarm] ✅ ${r.table} warmed (batch ${r.ms}ms)`);
-      } else {
-        failCount++;
-        logger.warn(`[Prewarm] ⚠️ ${r.table} failed: ${r.err}`);
-      }
+  for (const r of batchResults) {
+    if (r.ok) {
+      okCount++;
+      logger.log(`[Prewarm] ✅ ${r.table} warmed (${r.ms}ms)`);
+    } else {
+      failCount++;
+      logger.warn(`[Prewarm] ⚠️ ${r.table} failed: ${r.err}`);
     }
-  } else {
-    failCount += PREWARM_TABLES.length;
-    logger.warn(`[Prewarm] ⚠️ batch rejected:`, batchResult.reason);
   }
 
-  const crmInfo =
-    crmPing.status === 'fulfilled'
-      ? `crm=${crmPing.value.ok ? '✅' : '⚠️'} (${crmPing.value.ms}ms)`
-      : 'crm=⚠️ rejected';
-
-  // Marca a sessão como aquecida — evita prewarm duplicado se outro gatilho disparar
   try {
     sessionStorage.setItem(SESSION_KEY, '1');
   } catch {
     /* ignore */
   }
 
-  logger.log(
-    `[Prewarm] Done in ${totalMs}ms — ping=${ping.ms}ms (${ping.attempts}x) ${crmInfo} external_ok=${okCount} fail=${failCount} (1 batch invoke)`,
-  );
+  logger.log(`[Prewarm] Done in ${totalMs}ms — ok=${okCount} fail=${failCount} (PostgREST native)`);
 }
-
 
 /**
  * Limpa o flag de sessão. Útil em logout para garantir prewarm no próximo login.

@@ -6,10 +6,10 @@
  * `BundleSuggestions`, `ClientAffinityProducts`) para destacar/filtrar a
  * categoria escolhida em todo o painel. Botão "Limpar foco" no header.
  */
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import type { BICategorySlug } from "@/lib/bi/categoryResolver";
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import type { BICategorySlug } from '@/lib/bi/categoryResolver';
 
-export type FocusedCategorySlug = BICategorySlug | "outros" | null;
+export type FocusedCategorySlug = BICategorySlug | 'outros' | null;
 
 interface BICategoryFocusContextValue {
   focusedSlug: FocusedCategorySlug;

@@ -1,11 +1,11 @@
 /**
  * ThemeCustomization — controles para customizar tema visual da personalização (skin do simulador/mockup).
  */
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
-import { Palette } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Palette } from 'lucide-react';
 
 export interface ThemeCustomizationValue {
   borderRadius: number;

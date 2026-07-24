@@ -51,6 +51,7 @@ import {
 import { Plus, Trash2, Loader2, Layers, MapPin, Check, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import { InlineEditField } from './InlineEditField';
 import { ImageUploadButton } from './ImageUploadButton';
 import { SortableItem } from './SortableItem';
@@ -145,7 +146,7 @@ export function ProductPersonalizationManager() {
   const handleAddTechnique = () => {
     if (!selectedLocationId || !newTechniqueId) return;
     // lookup below
-    const allLocs = components?.flatMap((c) => getLocationsForComponent(c.id)) || [];
+    const allLocs = components?.flatMap((c) => getLocationsForComponent(c.id)) ?? [];
     const loc = allLocs.find((l) => l.id === selectedLocationId);
     const comp = components?.find((c) => c.id === loc?.component_id);
     const tech = techniques?.find((t) => t.id === newTechniqueId);
@@ -155,7 +156,7 @@ export function ProductPersonalizationManager() {
         component_location_id: selectedLocationId,
         technique_id: newTechniqueId,
         composed_code: `${comp.component_code}-${loc.location_code}-${tech.code}`,
-        max_colors: newMaxColors ? parseInt(newMaxColors) : undefined,
+        max_colors: newMaxColors ? parseInt(newMaxColors, 10) : undefined,
       },
       {
         onSuccess: () => {
@@ -175,10 +176,18 @@ export function ProductPersonalizationManager() {
     const reordered = arrayMove(components, oldIndex, newIndex);
     for (let i = 0; i < reordered.length; i++) {
       if (reordered[i].sort_order !== i) {
-        await supabase
+        // BUG-REORDER-SORT-SILENT-FAIL FIX: bare await swallowed RLS errors and
+        // still showed toast.success to the user even when the DB update failed.
+        const { error: sortErr } = await supabase
           .from('product_components')
           .update({ sort_order: i })
           .eq('id', reordered[i].id);
+        if (sortErr) {
+          logger.warn('[product-reorder] sort_order update failed at index', i, ':', sortErr);
+          toast.error('Erro ao reordenar componentes');
+          queryClient.invalidateQueries({ queryKey: ['product-components'] });
+          return;
+        }
       }
     }
     queryClient.invalidateQueries({ queryKey: ['product-components'] });
@@ -528,7 +537,7 @@ export function ProductPersonalizationManager() {
                                             Larg. (cm)
                                           </Label>
                                           <InlineEditField
-                                            value={location.max_width_cm?.toString() || ''}
+                                            value={location.max_width_cm?.toString() ?? ''}
                                             onSave={(v) =>
                                               updateLocationMutation.mutate({
                                                 id: location.id,
@@ -544,7 +553,7 @@ export function ProductPersonalizationManager() {
                                             Alt. (cm)
                                           </Label>
                                           <InlineEditField
-                                            value={location.max_height_cm?.toString() || ''}
+                                            value={location.max_height_cm?.toString() ?? ''}
                                             onSave={(v) =>
                                               updateLocationMutation.mutate({
                                                 id: location.id,
@@ -560,7 +569,7 @@ export function ProductPersonalizationManager() {
                                             Área (cm²)
                                           </Label>
                                           <InlineEditField
-                                            value={location.max_area_cm2?.toString() || ''}
+                                            value={location.max_area_cm2?.toString() ?? ''}
                                             onSave={(v) =>
                                               updateLocationMutation.mutate({
                                                 id: location.id,

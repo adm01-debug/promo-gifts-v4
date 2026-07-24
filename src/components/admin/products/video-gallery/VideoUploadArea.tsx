@@ -8,8 +8,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Upload, Loader2, Plus, FileVideo, Palette, Youtube } from 'lucide-react';
-import { type VideoVariant, VIDEO_TYPES } from "./types";
+import { Upload, Loader2, Plus, FileVideo, Palette, Video } from 'lucide-react';
+import { type VideoVariant, VIDEO_TYPES } from './types';
 
 interface Props {
   productId?: string;
@@ -54,8 +54,6 @@ export function VideoUploadArea({
   addYoutubeVideo,
   isAddingYoutube,
 }: Props) {
-  const _activeType = VIDEO_TYPES.find((t) => t.value === uploadVideoType);
-
   return (
     <div
       className={cn(
@@ -188,7 +186,7 @@ export function VideoUploadArea({
           className="flex items-center gap-2 border-t border-border/30 bg-muted/20 px-3 py-2.5"
           onClick={(e) => e.stopPropagation()}
         >
-          <Youtube className="h-4 w-4 shrink-0 text-destructive" />
+          <Video className="h-4 w-4 shrink-0 text-destructive" />
           <Input
             value={youtubeUrl}
             onChange={(e) => setYoutubeUrl(e.target.value)}

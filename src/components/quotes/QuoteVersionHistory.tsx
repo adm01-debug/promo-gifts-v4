@@ -1,19 +1,18 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { GitBranch, GitCompare, Plus, Eye, Check, Clock, FileText } from "lucide-react";
-import { QuoteVersionCompare } from "./QuoteVersionCompare";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuoteVersions, type QuoteVersion } from "@/hooks/quotes";
-import { QUOTE_STATUS_CONFIG } from "@/lib/quote-status-config";
-import { formatCurrency } from "@/lib/format";
-
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { GitBranch, GitCompare, Plus, Eye, Clock, FileText } from 'lucide-react';
+import { QuoteVersionCompare } from './QuoteVersionCompare';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useQuoteVersions } from '@/hooks/quotes';
+import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
+import { formatCurrency } from '@/lib/format';
 
 interface QuoteVersionHistoryProps {
   quoteId: string;
@@ -21,14 +20,20 @@ interface QuoteVersionHistoryProps {
   onCreateVersion?: () => void;
 }
 
-export function QuoteVersionHistory({ quoteId, currentQuoteId, onCreateVersion }: QuoteVersionHistoryProps) {
+export function QuoteVersionHistory({
+  quoteId,
+  currentQuoteId,
+  onCreateVersion,
+}: QuoteVersionHistoryProps) {
   const navigate = useNavigate();
-  const { versions, isLoading, fetchVersions, createNewVersion, hasMultipleVersions } = useQuoteVersions(quoteId);
+  const { versions, isLoading, fetchVersions, createNewVersion, hasMultipleVersions } =
+    useQuoteVersions(quoteId);
   const [isCreating, setIsCreating] = useState(false);
   const [showCompare, setShowCompare] = useState(false);
 
   useEffect(() => {
     fetchVersions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quoteId]);
 
   const handleCreateVersion = async () => {
@@ -37,18 +42,20 @@ export function QuoteVersionHistory({ quoteId, currentQuoteId, onCreateVersion }
     setIsCreating(false);
     if (newQuote?.id) {
       onCreateVersion?.();
+      // Refresh version list so it includes the new version when the user
+      // navigates back to the parent quote (avoids stale list).
+      await fetchVersions();
       navigate(`/orcamentos/${newQuote.id}`);
     }
   };
-
 
   if (isLoading && versions.length === 0) {
     return (
       <Card>
         <CardContent className="p-4">
           <div className="animate-pulse space-y-2">
-            <div className="h-4 bg-muted rounded w-1/3" />
-            <div className="h-8 bg-muted rounded" />
+            <div className="h-4 w-1/3 rounded bg-muted" />
+            <div className="h-8 rounded bg-muted" />
           </div>
         </CardContent>
       </Card>
@@ -59,7 +66,7 @@ export function QuoteVersionHistory({ quoteId, currentQuoteId, onCreateVersion }
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <GitBranch className="h-4 w-4 text-primary" />
             Versões do Orçamento
             {hasMultipleVersions && (
@@ -76,7 +83,7 @@ export function QuoteVersionHistory({ quoteId, currentQuoteId, onCreateVersion }
                     size="sm"
                     variant="outline"
                     onClick={() => setShowCompare(true)}
-                    className="h-7 text-xs gap-1"
+                    className="h-7 gap-1 text-xs"
                   >
                     <GitCompare className="h-3 w-3" />
                     Comparar
@@ -92,7 +99,7 @@ export function QuoteVersionHistory({ quoteId, currentQuoteId, onCreateVersion }
                   variant="outline"
                   onClick={handleCreateVersion}
                   disabled={isCreating}
-                  className="h-7 text-xs gap-1"
+                  className="h-7 gap-1 text-xs"
                 >
                   <Plus className="h-3 w-3" />
                   Nova Versão
@@ -113,7 +120,8 @@ export function QuoteVersionHistory({ quoteId, currentQuoteId, onCreateVersion }
             <div className="space-y-2">
               {versions.map((version, idx) => {
                 const isCurrent = version.id === currentQuoteId;
-                const statusCfg = QUOTE_STATUS_CONFIG[version.status as keyof typeof QUOTE_STATUS_CONFIG];
+                const statusCfg =
+                  QUOTE_STATUS_CONFIG[version.status as keyof typeof QUOTE_STATUS_CONFIG];
 
                 return (
                   <div key={version.id}>
@@ -121,43 +129,47 @@ export function QuoteVersionHistory({ quoteId, currentQuoteId, onCreateVersion }
                     <button
                       onClick={() => !isCurrent && navigate(`/orcamentos/${version.id}`)}
                       disabled={isCurrent}
-                      className={`w-full text-left p-2 rounded-md transition-colors ${
+                      className={`w-full rounded-md p-2 text-left transition-colors ${
                         isCurrent
-                          ? "bg-primary/10 border border-primary/20"
-                          : "hover:bg-muted/50 cursor-pointer"
+                          ? 'border border-primary/20 bg-primary/10'
+                          : 'cursor-pointer hover:bg-muted/50'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-xs font-mono font-bold text-primary">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-primary">
                             v{version.version}
                           </span>
-                          <span className="text-xs text-muted-foreground truncate">
+                          <span className="truncate text-xs text-muted-foreground">
                             {version.quote_number}
                           </span>
                           {version.is_latest_version && (
-                            <Badge variant="default" className="text-[10px] h-4 px-1">
+                            <Badge variant="default" className="h-4 px-1 text-[10px]">
                               Atual
                             </Badge>
                           )}
-                          {isCurrent && (
-                            <Eye className="h-3 w-3 text-primary flex-shrink-0" />
-                          )}
+                          {isCurrent && <Eye className="h-3 w-3 flex-shrink-0 text-primary" />}
                         </div>
                         <Badge
-                          variant={(statusCfg?.badgeVariant as "secondary" | "default" | "destructive" | "outline") || "secondary"}
-                          className="text-[10px] h-4 px-1 flex-shrink-0"
+                          variant={
+                            (statusCfg?.badgeVariant as
+                              | 'default'
+                              | 'destructive'
+                              | 'outline'
+                              | 'secondary') || 'secondary'
+                          }
+                          className="h-4 flex-shrink-0 px-1 text-[10px]"
                         >
                           {statusCfg?.label || version.status}
                         </Badge>
                       </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <div className="mt-1 flex items-center justify-between">
+                        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                           <Clock className="h-2.5 w-2.5" />
-                          {format(new Date(version.created_at), "dd/MM/yy HH:mm", { locale: ptBR })}
+                          {format(new Date(version.created_at), 'dd/MM/yy HH:mm', { locale: ptBR })}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                             <FileText className="h-2.5 w-2.5" />
                             {version.items_count || 0} itens
                           </span>

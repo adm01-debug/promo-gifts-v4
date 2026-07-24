@@ -1,17 +1,21 @@
 // src/lib/sw-register.ts
 
 import { logger } from '@/lib/logger';
+import { swConfirmedStaleUrls } from '@/lib/chunk-recovery';
+
+// Guard: prevents concurrent reload loops if multiple SW_STALE_CHUNK messages arrive.
+let _staleChunkReloadScheduled = false;
 
 /**
  * Registra Service Worker para PWA
- * 
+ *
  * Deve ser chamado no main.tsx após setupLocale()
  */
 export async function registerServiceWorker(): Promise<void> {
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
+        scope: '/',
       });
 
       logger.log('✅ Service Worker registrado:', registration.scope);
@@ -20,18 +24,61 @@ export async function registerServiceWorker(): Promise<void> {
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
-        newWorker.addEventListener('statechange', () => {
+          newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               logger.log('🔄 Nova versão do Service Worker disponível');
-              // Reload automático removido para evitar auto-refresh intermitente
+              // Reload automático removido para evitar auto-refresh intermitente.
+              // O SW v3.2.0 usa Network First para navegação, garantindo HTML
+              // atualizado sem precisar recarregar a aba atual.
             }
           });
         }
       });
 
-      // Controllerchange listener removido para evitar auto-refresh
-      logger.log('✅ Service Worker configurado sem auto-reload');
+      // ── SW_STALE_CHUNK recovery listener ──────────────────────────────────
+      // Escuta mensagens do SW. Quando um chunk hashed retorna 404 do CDN
+      // (deploy novo substituiu os hashes dos chunks), o SW:
+      //   1. Invalida /index.html do cache
+      //   2. Envia SW_STALE_CHUNK para todos os tabs abertos
+      // Ao receber, recarregamos a página para obter o novo HTML com os
+      // hashes corretos. O reload é throttled (no máximo 1 vez por 10s)
+      // para evitar loops de refresh em caso de problemas persistentes.
+      //
+      // Diferença vs. controllerchange: este reload só ocorre quando o
+      // app está QUEBRADO (chunk 404), não em toda atualização do SW.
+      navigator.serviceWorker.addEventListener('message', (event: MessageEvent) => {
+        if (event.data?.type === 'SW_STALE_CHUNK') {
+          // BUG-CR-2 FIX: registra URL stale ANTES do reload para que
+          // probeAsset() pule o HEAD request — eliminando as mensagens
+          // "Falha ao carregar Buscar: HEAD" no DevTools do browser.
+          // Race window: se lazyWithRetry.attemptChunkRecovery() disparar
+          // antes do reload em 300ms, encontrará a URL no set e skip o probe.
+          const staleUrl = event.data?.url as string | undefined;
+          if (staleUrl) {
+            swConfirmedStaleUrls.add(staleUrl);
+            logger.log('[SW] chunk stale confirmado — URL registrada:', staleUrl);
+          }
+          logger.log(
+            '🔄 [SW] Chunk desatualizado detectado — recarregando para obter chunks atualizados:',
+            event.data.url,
+          );
+          // Throttle: apenas 1 reload por 10s para evitar loops.
+          if (!_staleChunkReloadScheduled) {
+            _staleChunkReloadScheduled = true;
+            // Aguarda 300ms para deixar o React registrar o erro (se houver)
+            // antes do reload. Isso facilita a depuração em logs de Sentry.
+            setTimeout(() => {
+              window.location.reload();
+            }, 300);
+            // Reset do guard após 10s (caso o reload falhe por alguma razão)
+            setTimeout(() => {
+              _staleChunkReloadScheduled = false;
+            }, 10_000);
+          }
+        }
+      });
 
+      logger.log('✅ Service Worker configurado: Network First + stale chunk recovery ativo');
     } catch (error) {
       logger.error('❌ Falha ao registrar Service Worker:', error);
     }
@@ -54,11 +101,31 @@ export async function unregisterServiceWorker(): Promise<void> {
 }
 
 /**
- * Verifica se app está instalado como PWA
+ * Verifica se app está instalado como PWA.
+ *
+ * BUG-SW-REG-1 FIX: window.navigator.standalone é uma propriedade não-standard
+ * exclusiva do iOS Safari — TypeScript (TS2339) e Chrome DevTools a flagam como
+ * inexistente no tipo Navigator. Fix: acesso via type assertion seguro.
+ *
+ * Cobre todos os modos PWA registrados no manifest.json:
+ *  - standalone + minimal-ui (Android Chrome, Edge, Samsung Internet)
+ *  - fullscreen          (algumas versões do Chrome)
+ *  - window-controls-overly (Chrome desktop)
+ *  - navigator.standalone     (iOS Safari — não-standard, acessado com cast)
  */
 export function isPWA(): boolean {
-  return window.matchMedia('(display-mode: standalone)').matches ||
-         window.navigator.standalone === true;
+  const standaloneQuery =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: minimal-ui)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.matchMedia('(display-mode: window-controls-overlay)').matches;
+
+  // iOS Safari: navigator.standalone é boolean quando instalado como PWA.
+  // Cast necessário: propriedade não-standard ausente do tipo Navigator TS.
+  const iosStandalone =
+    Boolean((window.navigator as unknown as Record<string, unknown>).standalone);
+
+  return standaloneQuery || iosStandalone;
 }
 
 /**

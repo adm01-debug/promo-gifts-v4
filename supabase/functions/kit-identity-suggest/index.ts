@@ -1,4 +1,5 @@
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { safeErrorResponse } from "../_shared/error-response.ts";
 // ============================================================
 // EDGE FUNCTION: kit-identity-suggest
 // Recebe nome + lista de itens do kit e sugere identidade visual
@@ -134,8 +135,6 @@ Escolha o que melhor combina com o tema. Tag deve ser MARKETING, ex.: ONBOARDING
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: (err as Error).message ?? 'Erro' }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return safeErrorResponse(err, { corsHeaders, publicMessage: 'internal_error', logLabel: 'kit-identity-suggest error:' });
   }
 });

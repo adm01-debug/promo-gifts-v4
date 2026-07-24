@@ -1,5 +1,5 @@
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, Code2, ShieldCheck, Shield, KeyRound } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Users, Code2, ShieldCheck, Shield, KeyRound } from 'lucide-react';
 
 interface UserStatsCardsProps {
   total: number;
@@ -9,7 +9,13 @@ interface UserStatsCardsProps {
   pendingCount: number;
 }
 
-export function UserStatsCards({ total, devCount, supervisorCount, agenteCount, pendingCount }: UserStatsCardsProps) {
+export function UserStatsCards({
+  total,
+  devCount,
+  supervisorCount,
+  agenteCount,
+  pendingCount,
+}: UserStatsCardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-5">
       <Card className="border-border/50">

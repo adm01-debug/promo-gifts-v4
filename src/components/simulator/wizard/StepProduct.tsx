@@ -1,6 +1,6 @@
 /**
  * StepProduct - Passo 1: Seleção de Produto + Quantidade
- * 
+ *
  * Design: Layout premium com virtualização para 15k+ produtos
  */
 
@@ -9,15 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Package, 
-  Search, 
-  X, 
-  ChevronRight,
-  Sparkles,
-  Clock,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Package, Search, X, ChevronRight, Sparkles, Clock } from 'lucide-react';
+import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useExternalProductSearch } from '@/hooks/simulation';
@@ -31,10 +24,13 @@ interface StepProductProps {
 }
 
 const QUANTITY_PRESETS = [50, 100, 250, 500, 1000];
+const ITEM_HEIGHT = 100;
+const ROW_GAP = 12;
+const COLUMNS = 3;
 
 export function StepProduct({ wizard }: StepProductProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const { drafts } = useWizardDrafts();
 
   // Server-side search — same parallel prefix+broad pattern as the quote builder
@@ -43,7 +39,7 @@ export function StepProduct({ wizard }: StepProductProps) {
   // Map external products to the format StepProduct expects
   const filteredProducts = useMemo(() => {
     if (!externalProducts || externalProducts.length === 0) return [];
-    return externalProducts.map(p => ({
+    return externalProducts.map((p) => ({
       id: p.id,
       name: p.name,
       sku: p.sku,
@@ -52,13 +48,20 @@ export function StepProduct({ wizard }: StepProductProps) {
       category_name: null as string | null,
       categoryName: null as string | null,
       brand: p.brand || null,
-      colors: [] as Array<{ name: string; hex: string; code?: string; sku?: string; stock?: number; image?: string }>,
+      colors: [] as Array<{
+        name: string;
+        hex: string;
+        code?: string;
+        sku?: string;
+        stock?: number;
+        image?: string;
+      }>,
     }));
   }, [externalProducts]);
 
   // formatCurrency imported from @/lib/format
 
-  const handleSelectProduct = (product: typeof filteredProducts[0]) => {
+  const handleSelectProduct = (product: (typeof filteredProducts)[0]) => {
     wizard.selectProduct({
       id: product.id,
       name: product.name,
@@ -73,11 +76,9 @@ export function StepProduct({ wizard }: StepProductProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
   // Virtualizer for large product lists
-  const ITEM_HEIGHT = 100;
-  const ROW_GAP = 12;
-  const COLUMNS = 3;
+
   const rowCount = Math.ceil(filteredProducts.length / COLUMNS);
-  
+
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
@@ -86,24 +87,24 @@ export function StepProduct({ wizard }: StepProductProps) {
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Top Row: Quantity + Header inline */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-8">
         {/* Quantity Section - compact inline */}
-        <div className="p-4 rounded-2xl bg-card border flex items-center gap-4 shrink-0">
-          <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+        <div className="flex shrink-0 items-center gap-4 rounded-2xl border bg-card p-4">
+          <h4 className="whitespace-nowrap text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Quantidade
           </h4>
           <div className="flex gap-1.5">
-            {QUANTITY_PRESETS.map(qty => (
+            {QUANTITY_PRESETS.map((qty) => (
               <Button
                 key={qty}
                 variant={wizard.quantity === qty ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => wizard.setQuantity(qty)}
                 className={cn(
-                  'min-w-[44px] rounded-xl h-9',
-                  wizard.quantity === qty && 'shadow-lg shadow-primary/20'
+                  'h-9 min-w-[44px] rounded-xl',
+                  wizard.quantity === qty && 'shadow-lg shadow-primary/20',
                 )}
               >
                 {qty >= 1000 ? `${qty / 1000}k` : qty}
@@ -113,20 +114,20 @@ export function StepProduct({ wizard }: StepProductProps) {
           <Input
             type="number"
             value={wizard.quantity}
-            onChange={e => wizard.setQuantity(parseInt(e.target.value) || 1)}
+            onChange={(e) => wizard.setQuantity(parseInt(e.target.value, 10) || 1)}
             min={1}
-            className="text-center text-lg font-bold h-9 w-24 rounded-xl"
+            className="h-9 w-24 rounded-xl text-center text-lg font-bold"
           />
         </div>
 
         {/* Section Header */}
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5">
+          <div className="rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 p-2.5">
             <Package className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h3 className="font-display text-lg font-bold">Escolha o Produto</h3>
-            <p className="text-muted-foreground text-sm">Busque pelo nome, SKU ou categoria</p>
+            <p className="text-sm text-muted-foreground">Busque pelo nome, SKU ou categoria</p>
           </div>
         </div>
       </div>
@@ -134,41 +135,47 @@ export function StepProduct({ wizard }: StepProductProps) {
       {/* Recent Drafts */}
       {!wizard.selectedProduct && drafts.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-          <span className="text-xs text-muted-foreground shrink-0">Recentes:</span>
+          <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          <span className="shrink-0 text-xs text-muted-foreground">Recentes:</span>
           {drafts.slice(0, 4).map((draft) => (
             <Button
               key={draft.id}
               variant="outline"
               size="sm"
-              className="h-7 text-xs gap-1.5 shrink-0 rounded-lg"
+              className="h-7 shrink-0 gap-1.5 rounded-lg text-xs"
               onClick={() => {
                 if (draft.product_data) {
-                  wizard.selectProduct(draft.product_data);
-                  wizard.setQuantity(draft.quantity);
+                  wizard.loadDraft({
+                    product: draft.product_data,
+                    quantity: draft.quantity,
+                    personalizations: draft.personalizations ?? [],
+                  });
                 }
               }}
             >
-              <span className="truncate max-w-[120px]">{draft.title}</span>
-              <Badge variant="secondary" className="text-[9px] h-4 px-1">{draft.quantity}un</Badge>
+              <span className="max-w-[120px] truncate">{draft.title}</span>
+              <Badge variant="secondary" className="h-4 px-1 text-[9px]">
+                {draft.quantity}un
+              </Badge>
             </Button>
           ))}
         </div>
       )}
 
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Pesquisar por nome, SKU ou categoria..."
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="pl-12 pr-12 h-14 text-base rounded-2xl bg-muted/30 border-0 focus-visible:ring-2 focus-visible:ring-primary/40 shadow-sm"
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="h-14 rounded-2xl border-0 bg-muted/30 pl-12 pr-12 text-base shadow-sm focus-visible:ring-2 focus-visible:ring-primary/40"
         />
         {searchTerm && (
           <Button
             variant="ghost"
-            size="icon" aria-label="Fechar"
-            className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+            size="icon"
+            aria-label="Fechar"
+            className="absolute right-3 top-1/2 h-8 w-8 -translate-y-1/2 rounded-full"
             onClick={() => setSearchTerm('')}
           >
             <X className="h-4 w-4" />
@@ -176,45 +183,49 @@ export function StepProduct({ wizard }: StepProductProps) {
         )}
       </div>
 
-
       {/* Results count */}
       {!isLoading && searchTerm.trim().length >= 2 && (
         <p className="text-sm text-muted-foreground">
           {filteredProducts.length} produtos encontrados
-          {searchTerm && <span> para "<span className="font-semibold">{searchTerm}</span>"</span>}
+          {searchTerm && (
+            <span>
+              {' '}
+              para "<span className="font-semibold">{searchTerm}</span>"
+            </span>
+          )}
         </p>
       )}
 
       {/* Products Grid - Virtualized */}
-      <div ref={parentRef} className="h-[520px] overflow-auto pr-2 rounded-xl" style={{ contain: 'strict' }}>
+      <div
+        ref={parentRef}
+        className="h-[520px] overflow-auto rounded-xl pr-2"
+        style={{ contain: 'strict' }}
+      >
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map(i => (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <Skeleton key={i} className="h-20 w-full rounded-2xl" />
             ))}
           </div>
         ) : searchTerm.trim().length < 2 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <div className="p-5 rounded-2xl bg-primary/5 border border-primary/10 mb-5">
+            <div className="mb-5 rounded-2xl border border-primary/10 bg-primary/5 p-5">
               <Search className="h-12 w-12 text-primary/40" />
             </div>
-            <p className="font-display font-semibold text-xl text-foreground mb-1">Escolha o produto</p>
-            <p className="text-sm mb-6 max-w-xs text-center">Busque pelo nome, SKU ou categoria para iniciar a simulação de preços</p>
+            <p className="mb-1 font-display text-xl font-semibold text-foreground">
+              Escolha o produto
+            </p>
+            <p className="mb-6 max-w-xs text-center text-sm">
+              Busque pelo nome, SKU ou categoria para iniciar a simulação de preços
+            </p>
             <div className="flex flex-wrap justify-center gap-2">
-              {["Caneta", "Caderno", "Camiseta", "Garrafa", "Mochila"].map(tip => (
+              {['Caneta', 'Caderno', 'Camiseta', 'Garrafa', 'Mochila'].map((tip) => (
                 <button
                   key={tip}
                   type="button"
-                  onClick={() => {
-                    const input = document.querySelector<HTMLInputElement>('[data-simulator-search]');
-                    if (input) {
-                      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
-                      nativeInputValueSetter?.call(input, tip);
-                      input.dispatchEvent(new Event('input', { bubbles: true }));
-                      input.focus();
-                    }
-                  }}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-muted hover:bg-primary/10 hover:text-primary border border-border hover:border-primary/30 transition-all"
+                  onClick={() => setSearchTerm(tip)}
+                  className="rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-medium transition-all hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
                 >
                   {tip}
                 </button>
@@ -223,15 +234,19 @@ export function StepProduct({ wizard }: StepProductProps) {
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-            <div className="p-4 rounded-full bg-muted/50 mb-4">
+            <div className="mb-4 rounded-full bg-muted/50 p-4">
               <Package className="h-10 w-10 opacity-30" />
             </div>
-            <p className="font-semibold text-lg">Nenhum produto encontrado</p>
-            <p className="text-sm mt-1">Tente outro termo de busca</p>
+            <p className="text-lg font-semibold">Nenhum produto encontrado</p>
+            <p className="mt-1 text-sm">Tente outro termo de busca</p>
           </div>
         ) : (
           <div
-            style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
           >
             {virtualizer.getVirtualItems().map((virtualRow) => {
               const startIdx = virtualRow.index * COLUMNS;
@@ -254,57 +269,60 @@ export function StepProduct({ wizard }: StepProductProps) {
                 >
                   {rowProducts.map((product) => {
                     const isSelected = wizard.selectedProduct?.id === product.id;
-                    
+
                     return (
                       <button
                         key={product.id}
                         onClick={() => handleSelectProduct(product)}
                         className={cn(
-                          'w-full p-4 rounded-2xl text-left transition-all duration-200',
-                          'flex items-center gap-4 group',
-                          isSelected 
-                            ? 'bg-primary/10 ring-2 ring-primary shadow-lg shadow-primary/10'
-                            : 'bg-card hover:bg-muted/60 hover:shadow-md border border-transparent hover:border-border/50'
+                          'w-full rounded-2xl p-4 text-left transition-all duration-200',
+                          'group flex items-center gap-4',
+                          isSelected
+                            ? 'bg-primary/10 shadow-lg shadow-primary/10 ring-2 ring-primary'
+                            : 'border border-transparent bg-card hover:border-border/50 hover:bg-muted/60 hover:shadow-md',
                         )}
                       >
                         {/* Image */}
-                        <div className={cn(
-                          'w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden transition-transform',
-                          'bg-gradient-to-br from-muted to-muted/50',
-                          'group-hover:scale-105'
-                        )}>
+                        <div
+                          className={cn(
+                            'h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl transition-transform',
+                            'bg-gradient-to-br from-muted to-muted/50',
+                            'group-hover:scale-105',
+                          )}
+                        >
                           {product.imageUrl ? (
-                            <img src={product.imageUrl} 
+                            <img
+                              src={product.imageUrl}
                               alt={product.name}
-                              className="w-full h-full object-cover"
+                              className="h-full w-full object-cover"
                               loading="lazy"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center">
+                            <div className="flex h-full w-full items-center justify-center">
                               <Package className="h-5 w-5 text-muted-foreground/40" />
                             </div>
                           )}
                         </div>
 
                         {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm line-clamp-2 leading-tight">
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-2 text-sm font-semibold leading-tight">
                             {product.name}
                           </p>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <Badge variant="secondary" className="text-[10px] font-mono h-5">
+                          <div className="mt-1.5 flex items-center gap-2">
+                            <Badge variant="secondary" className="h-5 font-mono text-[10px]">
                               {product.sku}
                             </Badge>
                           </div>
                         </div>
 
                         {/* Price & Check */}
-                        <div className="text-right shrink-0">
+                        <div className="shrink-0 text-right">
                           <p className="text-base font-bold text-primary">
                             {formatCurrency(product.price)}
                           </p>
                           {isSelected && (
-                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center mt-1 ml-auto">
+                            <div className="ml-auto mt-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                               <Sparkles className="h-3 w-3 text-primary-foreground" />
                             </div>
                           )}
@@ -328,33 +346,40 @@ export function StepProduct({ wizard }: StepProductProps) {
         >
           {/* Color variants */}
           {wizard.selectedProduct.colors && wizard.selectedProduct.colors.length > 0 && (
-            <div className="p-4 rounded-2xl bg-card border">
+            <div className="rounded-2xl border bg-card p-4">
               <ProductColorGrid colors={wizard.selectedProduct.colors} />
             </div>
           )}
 
           {/* CTA bar */}
-          <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+          <div className="flex items-center justify-between rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 to-primary/5 p-5">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden">
+              <div className="h-12 w-12 overflow-hidden rounded-xl bg-muted">
                 {wizard.selectedProduct.imageUrl ? (
-                  
-<img src={wizard.selectedProduct.imageUrl} alt="" className="w-full h-full object-cover"  loading="lazy"/>
+                  <img
+                    src={wizard.selectedProduct.imageUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
+                  <div className="flex h-full w-full items-center justify-center">
                     <Package className="h-5 w-5 text-muted-foreground/40" />
                   </div>
                 )}
               </div>
               <div>
-                <p className="font-bold text-sm line-clamp-1">{wizard.selectedProduct.name}</p>
+                <p className="line-clamp-1 text-sm font-bold">{wizard.selectedProduct.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {wizard.quantity} un. × {formatCurrency(wizard.effectivePrice)} = <span className="font-bold text-primary">{formatCurrency(wizard.effectivePrice * wizard.quantity)}</span>
+                  {wizard.quantity} un. × {formatCurrency(wizard.effectivePrice)} ={' '}
+                  <span className="font-bold text-primary">
+                    {formatCurrency(wizard.effectivePrice * wizard.quantity)}
+                  </span>
                 </p>
               </div>
             </div>
             <Button
-              className="h-12 px-8 text-base gap-2 rounded-2xl shadow-lg shadow-primary/20"
+              className="h-12 gap-2 rounded-2xl px-8 text-base shadow-lg shadow-primary/20"
               size="lg"
               disabled={!wizard.canProceed}
               onClick={wizard.nextStep}

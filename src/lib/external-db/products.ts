@@ -1,20 +1,16 @@
 /**
  * Fetch products with full enrichment (colors, images, variants, suppliers).
  */
+import { dbInvoke, type InvokeOptions, type InvokeResult } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
-import {
-  invokeExternalDb,
-  invokeBatchBridge,
-  type BatchQuery,
-  type BatchResult,
-  type InvokeResult,
-} from './bridge';
 import {
   type PromobrindProduct,
   PRODUCT_SELECT_FIELDS_WITH_SALE,
-  PRODUCT_SELECT_FIELDS_LEGACY,
+  PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD,
+  PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD,
   shouldFallbackSelect,
 } from './product-types';
+import { TECHNICAL_IMAGE_TYPES } from '@/utils/image-utils';
 
 // Row shapes for external_db_bridge results (untyped at runtime; assertions below).
 type VariantRow = {
@@ -43,6 +39,7 @@ type ImageRow = {
   supplier_code: string | null;
   alt_text: string | null;
   title_text: string | null;
+  blurhash: string | null;
 };
 type SupplierRow = { id: string; name: string; code: string };
 type ColorVariationRow = { id: string; name: string; slug: string; group_id: string };
@@ -54,6 +51,7 @@ export async function fetchPromobrindProducts(options?: {
   offset?: number;
   orderBy?: { column: string; ascending?: boolean };
   filters?: Record<string, unknown>;
+  signal?: AbortSignal;
 }): Promise<PromobrindProduct[]>;
 export async function fetchPromobrindProducts(options?: {
   search?: string;
@@ -62,6 +60,7 @@ export async function fetchPromobrindProducts(options?: {
   orderBy?: { column: string; ascending?: boolean };
   filters?: Record<string, unknown>;
   returnCount?: true;
+  signal?: AbortSignal;
 }): Promise<{ products: PromobrindProduct[]; count: number | null }>;
 export async function fetchPromobrindProducts(options?: {
   search?: string;
@@ -70,6 +69,7 @@ export async function fetchPromobrindProducts(options?: {
   orderBy?: { column: string; ascending?: boolean };
   filters?: Record<string, unknown>;
   returnCount?: boolean;
+  signal?: AbortSignal;
 }): Promise<PromobrindProduct[] | { products: PromobrindProduct[]; count: number | null }> {
   const filters: Record<string, unknown> = {
     ...(options?.filters?.active === undefined && options?.filters?.is_active === undefined
@@ -89,9 +89,10 @@ export async function fetchPromobrindProducts(options?: {
 
   if (typeof options?.limit === 'number' && options.limit > 0) {
     const fetchOffset = options?.offset ?? 0;
+    const signal = options.signal;
     let result: InvokeResult<PromobrindProduct>;
     try {
-      result = await invokeExternalDb<PromobrindProduct>({
+      result = await dbInvoke<PromobrindProduct>({
         table: 'products',
         operation: 'select',
         filters,
@@ -100,34 +101,51 @@ export async function fetchPromobrindProducts(options?: {
         limit: options.limit,
         offset: fetchOffset,
         countMode: shouldRequestCount ? 'planned' : 'none',
+        signal,
       });
     } catch (err) {
       if (!shouldFallbackSelect(err)) throw err;
-      result = await invokeExternalDb<PromobrindProduct>({
-        table: 'products',
-        operation: 'select',
-        filters,
-        select: PRODUCT_SELECT_FIELDS_LEGACY,
-        orderBy,
-        limit: options.limit,
-        offset: fetchOffset,
-        countMode: shouldRequestCount ? 'planned' : 'none',
-      });
+      try {
+        result = await dbInvoke<PromobrindProduct>({
+          table: 'products',
+          operation: 'select',
+          filters,
+          select: PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD,
+          orderBy,
+          limit: options.limit,
+          offset: fetchOffset,
+          countMode: shouldRequestCount ? 'planned' : 'none',
+          signal,
+        });
+      } catch (fallbackErr) {
+        if (!shouldFallbackSelect(fallbackErr)) throw fallbackErr;
+        result = await dbInvoke<PromobrindProduct>({
+          table: 'products',
+          operation: 'select',
+          filters,
+          select: PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD,
+          orderBy,
+          limit: options.limit,
+          offset: fetchOffset,
+          countMode: shouldRequestCount ? 'planned' : 'none',
+          signal,
+        });
+      }
     }
-    products = result.records;
-    totalCount = result.count;
+    products = result?.records ?? [];
+    totalCount = result?.count ?? null;
   } else {
     const BASE_PAGE_SIZE = 200;
     let offset = 0;
     let loopCount: number | null = null;
     let consecutiveErrors = 0;
-    const MAX_CONSECUTIVE_ERRORS = 2; // Reduced from 3 — fail faster
+    const MAX_CONSECUTIVE_ERRORS = 2;
     const HARD_MAX = 200000;
     const PAGINATION_START = Date.now();
-    const PAGINATION_TIMEOUT_MS = 30_000; // 30s total budget for full pagination
+    const PAGINATION_TIMEOUT_MS = 30_000;
 
     while (offset < HARD_MAX) {
-      // Time-budget check: stop if we've been paginating too long
+      if (options?.signal?.aborted) break;
       if (Date.now() - PAGINATION_START > PAGINATION_TIMEOUT_MS) {
         logger.warn(
           `[external-db] Pagination time budget exceeded (${PAGINATION_TIMEOUT_MS}ms). Got ${products.length} products at offset=${offset}.`,
@@ -135,12 +153,11 @@ export async function fetchPromobrindProducts(options?: {
         break;
       }
 
-      // Reduce page size aggressively because the external products table is timing out under larger ranges
       const pageSize = offset >= 1000 ? 125 : BASE_PAGE_SIZE;
-      const countMode: 'planned' | 'none' = shouldRequestCount && offset === 0 ? 'planned' : 'none';
+      const countMode: 'none' | 'planned' = shouldRequestCount && offset === 0 ? 'planned' : 'none';
       let page: InvokeResult<PromobrindProduct>;
       try {
-        page = await invokeExternalDb<PromobrindProduct>({
+        page = await dbInvoke<PromobrindProduct>({
           table: 'products',
           operation: 'select',
           filters,
@@ -168,16 +185,19 @@ export async function fetchPromobrindProducts(options?: {
           logger.warn(
             `[external-db] Timeout at offset=${offset}, retrying (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS})...`,
           );
-          await new Promise((r) => setTimeout(r, 1000 * consecutiveErrors));
+          const retryDelay1 = 1000 * consecutiveErrors;
+          await new Promise((r) => {
+            setTimeout(r, retryDelay1);
+          });
           continue;
         }
         if (!shouldFallbackSelect(err)) throw err;
         try {
-          page = await invokeExternalDb<PromobrindProduct>({
+          page = await dbInvoke<PromobrindProduct>({
             table: 'products',
             operation: 'select',
             filters,
-            select: PRODUCT_SELECT_FIELDS_LEGACY,
+            select: PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD,
             orderBy,
             limit: pageSize,
             offset,
@@ -194,10 +214,27 @@ export async function fetchPromobrindProducts(options?: {
               );
               break;
             }
-            await new Promise((r) => setTimeout(r, 1000 * consecutiveErrors));
+            const retryDelay2 = 1000 * consecutiveErrors;
+            await new Promise((r) => {
+              setTimeout(r, retryDelay2);
+            });
             continue;
           }
-          throw fallbackErr;
+          if (shouldFallbackSelect(fallbackErr)) {
+            page = await dbInvoke<PromobrindProduct>({
+              table: 'products',
+              operation: 'select',
+              filters,
+              select: PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD,
+              orderBy,
+              limit: pageSize,
+              offset,
+              countMode,
+            });
+            consecutiveErrors = 0;
+          } else {
+            throw fallbackErr;
+          }
         }
       }
 
@@ -211,7 +248,6 @@ export async function fetchPromobrindProducts(options?: {
     totalCount = loopCount;
   }
 
-  // Enrich products
   if (products.length > 0) {
     await enrichProducts(products, options);
   }
@@ -231,7 +267,8 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
   const uniqueSupplierIds = [
     ...new Set(products.map((p) => p.supplier_id).filter(Boolean)),
   ] as string[];
-  const shouldRunHeavyEnrichment = products.length <= 500 || typeof options?.limit === 'number';
+
+  const shouldRunHeavyEnrichment = products.length <= 5000 || typeof options?.limit === 'number';
 
   if (!shouldRunHeavyEnrichment) {
     logger.info(
@@ -245,7 +282,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     idChunks.push(productIds.slice(i, i + CHUNK_SIZE));
   }
 
-  const batchQueries: BatchQuery[] = [];
+  const batchQueries: InvokeOptions[] = [];
   const queryMap: Record<string, number[]> = {
     variants: [],
     images: [],
@@ -259,6 +296,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       queryMap.variants.push(batchQueries.length);
       batchQueries.push({
         table: 'product_variants',
+        operation: 'select',
         select:
           'product_id, color_name, color_hex, color_code, color_id, sku, stock_quantity, images, selected_thumbnail',
         filters: { is_active: true, product_id: chunk },
@@ -270,8 +308,9 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       queryMap.images.push(batchQueries.length);
       batchQueries.push({
         table: 'product_images',
+        operation: 'select',
         select:
-          'product_id, url_cdn, url_original, filename, image_type, is_primary, is_og_image, applies_to_color, display_order, alt_text, title_text, supplier_code, variant_id',
+          'product_id, url_cdn, url_original, filename, image_type, is_primary, is_og_image, applies_to_color, display_order, alt_text, title_text, supplier_code, variant_id, blurhash',
         filters: { is_active: true, product_id: chunk },
         limit: 1000,
         offset: 0,
@@ -280,20 +319,20 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     queryMap.colorVariations.push(batchQueries.length);
     batchQueries.push({
       table: 'color_variations',
+      operation: 'select',
       select: 'id, name, slug, group_id',
       filters: { is_active: true },
       limit: 500,
       offset: 0,
-      cacheKey: 'ref:color_variations',
     });
     queryMap.colorGroups.push(batchQueries.length);
     batchQueries.push({
       table: 'color_groups',
+      operation: 'select',
       select: 'id, name, slug',
       filters: { is_active: true },
       limit: 100,
       offset: 0,
-      cacheKey: 'ref:color_groups',
     });
   }
 
@@ -301,6 +340,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     queryMap.suppliers.push(batchQueries.length);
     batchQueries.push({
       table: 'suppliers',
+      operation: 'select',
       select: 'id, name, code',
       filters: { id: uniqueSupplierIds },
       limit: Math.max(uniqueSupplierIds.length, 1),
@@ -308,45 +348,42 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     });
   }
 
-  let batchResults: BatchResult[] = [];
+  let batchResults: InvokeResult<unknown>[] = [];
   try {
-    batchResults = await invokeBatchBridge(batchQueries);
+    batchResults = await Promise.all(batchQueries.map((q) => dbInvoke(q)));
   } catch (err) {
     logger.warn('[external-db] Batch enrichment failed, products will have basic data:', err);
     return;
   }
 
-  // Extract results
   const variantsRecords: VariantRow[] = [];
   for (const idx of queryMap.variants) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records) variantsRecords.push(...(r.data.records as VariantRow[]));
+    if (r?.records) variantsRecords.push(...(r.records as VariantRow[]));
   }
   const imagesRecords: ImageRow[] = [];
   for (const idx of queryMap.images) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records) imagesRecords.push(...(r.data.records as ImageRow[]));
+    if (r?.records) imagesRecords.push(...(r.records as ImageRow[]));
   }
   const suppliersRecords: SupplierRow[] = [];
   for (const idx of queryMap.suppliers) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records) suppliersRecords.push(...(r.data.records as SupplierRow[]));
+    if (r?.records) suppliersRecords.push(...(r.records as SupplierRow[]));
   }
 
   let colorVariationsRecords: ColorVariationRow[] = [];
   for (const idx of queryMap.colorVariations) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records)
-      colorVariationsRecords = r.data.records as ColorVariationRow[];
+    if (r?.records) colorVariationsRecords = r.records as ColorVariationRow[];
   }
   let colorGroupsRecords: ColorGroupRow[] = [];
   for (const idx of queryMap.colorGroups) {
     const r = batchResults[idx];
-    if (r?.success && r.data?.records) colorGroupsRecords = r.data.records as ColorGroupRow[];
+    if (r?.records) colorGroupsRecords = r.records as ColorGroupRow[];
   }
 
   const suppliersMap = new Map(suppliersRecords.map((s) => [s.id, s.name]));
-  // Popula cache de imutáveis para reaproveitar em telas de detalhe sem ida ao bridge.
   try {
     const { putInCacheSafe } = await import('./immutableCache');
     for (const s of suppliersRecords) {
@@ -362,7 +399,6 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     colorGroupsRecords.map((g) => [g.id, { name: g.name, slug: g.slug }]),
   );
 
-  // Build image map
   const productIdSet = new Set(productIds);
   const imagesByProduct = new Map<
     string,
@@ -379,6 +415,7 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       altText: string | null;
       titleText: string | null;
       variantId: string | null;
+      blurhash: string | null;
     }>
   >();
 
@@ -399,10 +436,10 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
       altText: img.alt_text || null,
       titleText: img.title_text || null,
       variantId: img.variant_id || null,
+      blurhash: img.blurhash || null,
     });
   });
 
-  // Build color map
   const colorsByProduct = new Map<
     string,
     Array<{
@@ -427,13 +464,23 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
 
     const productImgs = imagesByProduct.get(variant.product_id) || [];
     const byVariantId = productImgs
-      .filter((img) => img.variantId === variant.id && !img.isPrimary && !img.isOgImage)
+      .filter(
+        (img) =>
+          img.variantId === variant.id &&
+          !img.isPrimary &&
+          !img.isOgImage &&
+          !TECHNICAL_IMAGE_TYPES.has(img.type),
+      )
       .sort((a, b) => a.order - b.order)
       .map((img) => img.url);
     const byCode = variant.color_code
       ? productImgs
           .filter(
-            (img) => img.supplierCode === variant.color_code && !img.isPrimary && !img.isOgImage,
+            (img) =>
+              img.supplierCode === variant.color_code &&
+              !img.isPrimary &&
+              !img.isOgImage &&
+              !TECHNICAL_IMAGE_TYPES.has(img.type),
           )
           .sort((a, b) => a.order - b.order)
           .map((img) => img.url)
@@ -485,18 +532,24 @@ async function enrichProducts(products: PromobrindProduct[], options?: { limit?:
     });
   });
 
-  // Apply enrichments to products
   products.forEach((product) => {
     const productImages = imagesByProduct.get(product.id);
     if (productImages && productImages.length > 0) {
       productImages.sort((a, b) => a.order - b.order);
-      const colorImages = productImages.filter((img) => img.supplierCode && img.type !== 'box');
-      const generalImages = productImages.filter((img) => !img.supplierCode && img.type !== 'box');
+      // Excluir tipos técnicos: não são fotos de produto (ver TECHNICAL_IMAGE_TYPES).
+      // Alinhado com trigger trg_sync_product_images e backfill de 2026-06-01.
+      const colorImages = productImages.filter(
+        (img) => img.supplierCode && !TECHNICAL_IMAGE_TYPES.has(img.type),
+      );
+      const generalImages = productImages.filter(
+        (img) => !img.supplierCode && !TECHNICAL_IMAGE_TYPES.has(img.type),
+      );
       const mainImages = [...colorImages, ...generalImages];
       const primaryImage = mainImages.find((img) => img.isPrimary) || mainImages[0];
       if (primaryImage) {
         product.primary_image_url = primaryImage.url;
         product.image_url = primaryImage.url;
+        product.primary_image_blurhash = primaryImage.blurhash || null;
       }
       const ogImage =
         mainImages.find((img) => img.isOgImage) ||

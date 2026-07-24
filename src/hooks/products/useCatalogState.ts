@@ -1,8 +1,19 @@
 /**
  * useCatalogState — all catalog page state & logic extracted from Index.tsx
  */
-import React, { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue } from 'react';
-import { useCatalogRealStats, useColorEnrichment, useExternalCategoriesQuery, useProductFuzzySearch, useProductsByCategory, useProductsByMaterial, useProductsCatalog, useSupplierSalesRanking, type Product } from "@/hooks/products";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useCatalogRealStats } from '@/hooks/products/useCatalogRealStats';
+import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
+import { useExternalCategoriesQuery } from '@/hooks/products/useExternalCategoriesQuery';
+import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
+import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
+import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
+import { useProductsByColor } from '@/hooks/products/useProductsByColor';
+import { useProductsByMetadata } from '@/hooks/products/useProductsByMetadata';
+import { useProductsBySize } from '@/hooks/products/useProductsBySize';
+import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
+import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
+import type { Product } from '@/types/product-catalog';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, Heart, Users, Palette, FolderTree } from 'lucide-react';
 
@@ -13,27 +24,94 @@ import {
   type ColumnCount,
 } from '@/components/products/ColumnSelector';
 import { useProductsContext } from '@/contexts/ProductsContext';
-import { useDebounce, useSearch } from "@/hooks/common";
+import { useDebounce } from '@/hooks/common/useDebounce';
+import { useSearch } from '@/hooks/common/useSearch';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import { useFavoriteQuickAdd } from '@/hooks/favorites';
 import { useComparisonStore } from '@/stores/useComparisonStore';
-import { useToast } from '@/hooks/ui';
-import { usePromoSalesRanking } from '@/hooks/intelligence';
-import { useCatalogFiltering } from "@/hooks/products/useCatalogFiltering";
+import { useToast } from '@/hooks/ui/use-toast';
+import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
+import { usePromoSales90dByProduct } from '@/hooks/intelligence/usePromoSales90dByProduct';
+import { useCatalogFiltering } from '@/hooks/products/useCatalogFiltering';
+import { useCatalogPreferences } from '@/hooks/products/useCatalogPreferences';
+import { useProductAnalytics } from '@/hooks/products/useProductAnalytics';
+// BUG-SORT-01 FIX: importar SORT_OPTIONS para derivar VALID_SORT_VALUES e
+// validar sort params de URL/localStorage antes de aplicar ao state.
+import { SORT_OPTIONS } from '@/constants/filters';
+// Reset diário de defaults do catálogo (regra do PO): no primeiro acesso
+// do dia, viewMode='grid', colunas=6, sortBy='newest'.
+import { ensureDailyCatalogDefaults } from '@/hooks/products/dailyCatalogDefaults';
 
 export type ViewMode = 'grid' | 'list' | 'table';
 export type SortOption =
-  | 'relevance'
+  | 'best-seller-promo'
+  | 'best-seller-supplier'
+  | 'color-match'
   | 'name'
+  | 'newest'
   | 'price-asc'
   | 'price-desc'
-  | 'stock'
-  | 'newest'
-  | 'color-match'
-  | 'best-seller-supplier'
-  | 'best-seller-promo';
+  | 'stock';
 
 const VIEW_MODE_KEY = 'catalog-view-mode';
+const SORT_SESSION_KEY = 'catalog:sortBy';
+
+// BUG-SORT-01 FIX: Conjunto dos valores válidos derivado do SSOT (SORT_OPTIONS).
+// Declarado fora do hook para não ser recriado a cada render.
+const VALID_SORT_VALUES = new Set<string>(SORT_OPTIONS.map((o) => o.value));
+
+function getSessionSortPreference(): string | null {
+  try {
+    return typeof window !== 'undefined' ? window.sessionStorage.getItem(SORT_SESSION_KEY) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setSessionSortPreference(sortBy: SortOption): void {
+  try {
+    if (typeof window !== 'undefined') window.sessionStorage.setItem(SORT_SESSION_KEY, sortBy);
+  } catch {
+    /* sessionStorage indisponivel — mantém somente em memoria */
+  }
+}
+
+/**
+ * BUG-SORT-09 FIX: Mapa de aliases conhecidos → valores canônicos de SortOption.
+ * Permite que sistemas externos (voice agent, URL compartilhada) usem nomes
+ * alternativos que são normalizados antes de ser aplicados ao state.
+ * Sem este mapa, validateSortOption rejeitava aliases e o URL sync effect revertia
+ * silenciosamente o sort para 'name', descartando a intenção do voice agent.
+ * Ex: voice agent envia sortBy='popularity' → normaliza para 'best-seller-promo'.
+ */
+const SORT_ALIASES: Readonly<Record<string, SortOption>> = {
+  popularity: 'best-seller-promo', // alias do voice agent
+  relevance: 'name', // valor legado da versão anterior do app
+} as const;
+
+/**
+ * BUG-SORT-01 FIX: Valida e normaliza um sort value arbitrário.
+ * BUG-SORT-09 FIX: Normaliza aliases conhecidos para o valor canônico antes
+ * de validar no SSOT. Retorna 'newest' (default seguro) para qualquer valor
+ * inválido, nulo ou ausente. Previne que URL params corrompidos ou aliases
+ * de voice agent quebrem o Select UI e o URL sync loop.
+ */
+export function validateSortOption(s: string | null | undefined): SortOption {
+  if (!s) return 'newest';
+  // BUG-SORT-09 FIX: normalizar alias → canonical antes de validar no SSOT.
+  // BUG-SORT-12 FIX (prototype pollution): NAO usar o operador `in` aqui — ele
+  // percorre a cadeia de prototipos, entao `?sort=toString`/`?sort=constructor`
+  // resolviam para Object.prototype.toString / Object (uma FUNCAO), que vazava
+  // para o state, URL sync e <Select value>. Object.hasOwn seria ideal mas e
+  // ES2022 e o tsconfig.app usa lib ES2020; hasOwnProperty.call e ES5, sempre
+  // tipado, e considera apenas chaves proprias do objeto literal.
+  // eslint-disable-next-line prefer-object-has-own -- tsconfig.app targets ES2020; Object.hasOwn is ES2022
+  if (Object.prototype.hasOwnProperty.call(SORT_ALIASES, s)) {
+    return SORT_ALIASES[s as keyof typeof SORT_ALIASES];
+  }
+  if (VALID_SORT_VALUES.has(s)) return s as SortOption;
+  return 'newest';
+}
 
 function getPersistedViewMode(): ViewMode {
   try {
@@ -45,29 +123,65 @@ function getPersistedViewMode(): ViewMode {
   return 'grid';
 }
 
-const ITEMS_PER_PAGE = 36;
+const ITEMS_PER_PAGE = 500;
 
 export function useCatalogState() {
+  // PO rule: primeiro acesso do dia → grid 6 colunas + sort 'Mais recentes'.
+  // Roda ANTES dos useState para que os inicializadores leiam os defaults.
+  // Idempotente após o primeiro acesso do dia (marca em localStorage).
+  ensureDailyCatalogDefaults();
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const { isFavorite, toggleFavorite, favoriteCount } = useFavoritesStore();
+  const isFavorite = useFavoritesStore((s) => s.isFavorite);
+  const baseToggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
   const favQuickAdd = useFavoriteQuickAdd();
-  const { isInCompare, toggleCompare, canAddMore } = useComparisonStore();
+  const isInCompare = useComparisonStore((s) => s.isInCompare);
+  const baseToggleCompare = useComparisonStore((s) => s.toggleCompare);
+  const canAddMore = useComparisonStore((s) => s.canAddMore);
+
+  const toggleFavorite = useCallback(
+    (productId: string) => {
+      baseToggleFavorite(productId);
+    },
+    [baseToggleFavorite],
+  );
+
+  const toggleCompare = useCallback(
+    (productId: string) => {
+      return baseToggleCompare(productId);
+    },
+    [baseToggleCompare],
+  );
   const { registerProducts } = useProductsContext();
   const { data: promoSalesMap } = usePromoSalesRanking();
+  const { data: promoSales90dMap } = usePromoSales90dByProduct();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
+  const { updatePreferences } = useCatalogPreferences();
+  // GAP-2 v2 (Copilot review PR #690): ref em vez de useState — snapshot não
+  // dispara render extra (ref não re-renderiza) e a escrita via effect é
+  // concurrent-safe. O valor só é LIDO quando isTransitioning=true.
+  const lastNonTransitionedProductsRef = useRef<Product[]>([]);
+  const { trackSort, trackSearch } = useProductAnalytics();
 
   const searchQueryFromUrl = searchParams.get('search') || '';
 
+  // Refs para furar a TDZ (temporal dead zone): tanto `setSortBy` quanto o
+  // effect de `searchQueryFromUrl` precisam de `filteredProducts`/`searchQuery`,
+  // mas ambos são declarados MAIS ABAIXO neste hook. Referenciar a const
+  // diretamente (mesmo só nas deps) dispara "Cannot access 'filteredProducts'
+  // before initialization" e derruba a página. Lemos via ref — sempre o valor
+  // atual, sincronizado por effect após as declarações reais.
+  const filteredProductsRef = useRef<Product[]>([]);
+  const searchQueryRef = useRef('');
+
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [viewMode, setViewModeState] = useState<ViewMode>(getPersistedViewMode);
+
   const setViewMode = useCallback((mode: ViewMode) => {
-    setIsTransitioning(true);
-    React.startTransition(() => {
-      setViewModeState(mode);
-      setIsTransitioning(false);
-    });
+    setViewModeState(mode);
     try {
       localStorage.setItem(VIEW_MODE_KEY, mode);
     } catch {
@@ -76,25 +190,96 @@ export function useCatalogState() {
   }, []);
   const [gridColumns, setGridColumnsState] = useState<ColumnCount>(getDefaultColumns);
   const setGridColumns = useCallback((cols: ColumnCount) => {
-    setIsTransitioning(true);
-    React.startTransition(() => {
-      setGridColumnsState(cols);
-      setIsTransitioning(false);
-    });
+    setGridColumnsState(cols);
     try {
       localStorage.setItem(GRID_COLUMNS_KEY, String(cols));
     } catch {
       /* empty */
     }
   }, []);
-  const [sortBy, setSortByState] = useState<SortOption>('relevance');
-  const setSortBy = useCallback((s: SortOption) => {
-    setIsTransitioning(true);
-    React.startTransition(() => {
-      setSortByState(s);
-      setIsTransitioning(false);
+
+  // BUG-SORT-01 FIX: Validar o sort param da URL e o valor de preferência antes
+  // de usá-los como estado inicial. O cast `as SortOption` anterior não tinha
+  // runtime check — valores stale (ex: 'relevance') ou corrompidos eram aceitos.
+  const rawUrlSort = searchParams.get('sort');
+  const initialSortBy: SortOption = rawUrlSort
+    ? validateSortOption(rawUrlSort)
+    : validateSortOption(getSessionSortPreference());
+
+  const [sortBy, setSortByState] = useState<SortOption>(initialSortBy);
+  const pendingLocalSortRef = useRef<SortOption | null>(null);
+
+  // Sync sortBy with the current browser session only.
+  // PO rule: a fresh login/tab starts in "Mais Recentes"; old cloud/local prefs must not override it.
+  useEffect(() => {
+    const storedSort = getSessionSortPreference();
+    if (storedSort && !searchParams.get('sort')) {
+      setSortByState(validateSortOption(storedSort));
+    }
+  }, [searchParams]);
+
+  const setSortBy = useCallback(
+    (s: SortOption | string) => {
+      // Valida/normaliza na borda: aceita string de qualquer caller (FilterBar,
+      // voice agent, URL) e aplica apenas valores canônicos de SortOption.
+      // Resolve TS2322 em Index.tsx (onSortChange espera (v: string) => void)
+      // e protege o state contra valores inválidos em runtime.
+      const validated = validateSortOption(s);
+      if (validated === sortBy) return;
+      setIsTransitioning(true);
+      pendingLocalSortRef.current = validated;
+      setSessionSortPreference(validated);
+      setSortByState(validated);
+    },
+    [sortBy],
+  );
+
+  // BUG-G10 FIX: Consolidate side-effects (URL, Preferences, Analytics)
+  // into a single effect reactive to sortBy changes.
+  const lastSortByRef = useRef<SortOption>(initialSortBy);
+  useEffect(() => {
+    if (sortBy === lastSortByRef.current) return;
+
+    const previousSort = lastSortByRef.current;
+    lastSortByRef.current = sortBy;
+
+    // 1. Update Preferences
+    updatePreferences({ sortBy });
+
+    // 2. Update URL
+    const newParams = new URLSearchParams(window.location.search);
+    if (sortBy === 'newest') {
+      // BUG-SORT-04 FIX [CRÍTICO]: Remover o param 'sort' ao reverter para o default.
+      // Antes: bloco vazio deixava '?sort=price-asc' na URL quando o usuário
+      // selecionava 'Mais Recentes'. O URL sync effect lia o param stale e revertia
+      // o state imediatamente — tornando impossível selecionar o item default.
+      newParams.delete('sort');
+    } else {
+      newParams.set('sort', sortBy);
+    }
+    const newPath = `${window.location.pathname}${newParams.toString() ? `?${newParams.toString()}` : ''}`;
+    navigate(newPath, { replace: true });
+
+    // 3. Analytics
+    trackSort({
+      sortBy,
+      previousSortBy: previousSort,
+      resultsCount: filteredProductsRef.current.length,
+      hasSearch: !!searchQueryRef.current.trim(),
     });
-  }, []);
+
+    setIsTransitioning(false);
+  }, [sortBy, updatePreferences, navigate, trackSort]);
+
+  // BUG-SORTBY-SYNC FIX: When sortBy state changes via the CatalogToolbar sort
+  // dropdown (or URL navigation), sync it into filters.sortBy so that:
+  // 1. The FilterPanel ordenacao section shows the correct selected option.
+  // 2. sectionCounts.ordenacao badge lights up when sort ≠ 'newest'.
+  // No loop risk: setFilters does not update sortBy state.
+  useEffect(() => {
+    setFilters((prev) => (prev.sortBy !== sortBy ? { ...prev, sortBy } : prev));
+  }, [sortBy]);
+
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedCount, setSelectedCount] = useState(0);
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
@@ -106,20 +291,25 @@ export function useCatalogState() {
     });
   }, []);
 
-  // Responsive clamp
+  // Responsive clamp: garante que o numero de colunas nao ultrapasse o disponivel
+  // para a largura atual da tela, mantendo a consistencia visual.
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
-      if (w < 640 && gridColumns > 1) {
-        setGridColumnsState(1);
-      } else if (w >= 640 && w < 768 && gridColumns > 2) {
-        setGridColumnsState(2);
+      let maxCols: ColumnCount = 3;
+      if (w >= 1536) maxCols = 8;
+      else if (w >= 1280) maxCols = 6;
+      else if (w >= 1024) maxCols = 5;
+      else if (w >= 768) maxCols = 4;
+
+      if (gridColumns > maxCols) {
+        setGridColumns(maxCols);
       }
     };
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [gridColumns]);
+  }, [gridColumns, setGridColumns]);
 
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(searchQueryFromUrl);
@@ -128,7 +318,13 @@ export function useCatalogState() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const debouncedServerSearch = useDebounce(searchQuery, 400);
+  // Mantém searchQueryRef sincronizado (consumido por setSortBy via ref).
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
+
+  const debouncedSearch = useDebounce(searchQuery, 400);
+  const debouncedServerSearch = debouncedSearch;
 
   const {
     data: catalogData,
@@ -138,7 +334,12 @@ export function useCatalogState() {
     hasNextPage,
     fetchNextPage,
     refetch: refetchCatalog,
-  } = useProductsCatalog(debouncedServerSearch ? { search: debouncedServerSearch } : undefined);
+  } = useProductsCatalog({
+    search: debouncedServerSearch,
+    categories: filters.categories,
+    suppliers: filters.suppliers,
+    sortBy,
+  });
 
   const realProducts = useMemo(() => {
     if (!catalogData?.pages) return [] as Product[];
@@ -147,13 +348,38 @@ export function useCatalogState() {
 
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
 
+  // BUG-CS-03 FIX: Guard against multiple simultaneous prefetch calls.
+  // Original enqueued a new requestIdleCallback every time hasNextPage changed,
+  // causing duplicated fetchNextPage calls.
+  const prefetchScheduledRef = useRef(false);
+
   useEffect(() => {
-    if (hasNextPage && !isFetchingNextPage) {
+    if (hasNextPage && !isFetchingNextPage && !prefetchScheduledRef.current) {
+      prefetchScheduledRef.current = true;
       if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => fetchNextPage());
-      } else {
-        setTimeout(() => fetchNextPage(), 1000);
+        // BUG-CS-04 FIX (2026-06-21): capturar handle para cancelar no cleanup.
+        // Sem isto, se o componente desmontar enquanto o callback está pendente,
+        // fetchNextPage() é chamado após desmontagem. React-query tolera, mas
+        // cancelar é mais correto e evita trabalho desnecessário.
+        const idleHandle = window.requestIdleCallback(() => {
+          fetchNextPage().finally(() => {
+            prefetchScheduledRef.current = false;
+          });
+        });
+        return () => {
+          window.cancelIdleCallback(idleHandle);
+          prefetchScheduledRef.current = false;
+        };
       }
+      const prefetchTimer = setTimeout(() => {
+        fetchNextPage().finally(() => {
+          prefetchScheduledRef.current = false;
+        });
+      }, 1000);
+      return () => {
+        clearTimeout(prefetchTimer);
+        prefetchScheduledRef.current = false;
+      };
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
@@ -168,6 +394,7 @@ export function useCatalogState() {
     productIds: materialFilteredProductIds,
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
+    error: materialFilterError,
   } = useProductsByMaterial({
     materialGroupSlugs: filters.materialGroups || [],
     materialTypeSlugs: filters.materialTypes || [],
@@ -177,27 +404,131 @@ export function useCatalogState() {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
     isLoading: isLoadingCategoryFilter,
+    error: categoryFilterError,
   } = useProductsByCategory({
-    categoryIds: filters.categories?.map(String) || [],
+    categoryIds: filters.categories?.map(String) ?? [],
     includeDescendants: true,
   });
+
+  // BUG-COLOR-01 FIX: o catálogo (Index) filtrava cor inspecionando p.colors, mas
+  // realProducts vêm do lightweight com colors:[] (enriquecimento de cor roda DEPOIS
+  // da filtragem) → qualquer filtro de cor zerava a grade. Resolvido server-side via
+  // useProductsByColor, simétrico a categoria/material (mesmo padrão do FiltersPage).
+  const {
+    productIds: colorFilteredProductIds,
+    hasFilter: hasColorFilter,
+    isLoading: isLoadingColorFilter,
+    error: colorFilterError,
+  } = useProductsByColor({
+    colorGroups: filters.colorGroups || [],
+    colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
+    colors: filters.colors || [],
+  });
+
+  // BUG-META-01 FIX: wiring de useProductsByMetadata — filtros de metadados
+  // (público-alvo, datas comemorativas, ramos/segmentos, tags) existiam no
+  // FilterState e eram contados em activeFiltersCount mas NUNCA aplicados à grade
+  // porque este hook nunca era chamado aqui. Padrão idêntico ao de cor/categoria/material.
+  const {
+    productIds: metadataFilteredProductIds,
+    hasFilter: hasMetadataFilter,
+    isLoading: isLoadingMetadataFilter,
+    error: metadataFilterError,
+  } = useProductsByMetadata({
+    datas: filters.datasComemorativas,
+    tags: filters.tags,
+    ramos: filters.ramosAtividade,
+    segmentos: filters.segmentosAtividade,
+    publico: filters.publicoAlvo,
+    endomarketing: filters.endomarketing,
+  });
+
+  // BUG-CATALOG-SIZES FIX: filtro de tamanho estava disponível no painel de
+  // filtros (seção Tamanhos) mas nunca era aplicado no catálogo principal —
+  // o hook useProductsBySize existia apenas para o Super Filtro (/filtros).
+  // Padrão idêntico a cor/categoria/material: query server-side em product_variants.
+  const {
+    productIds: sizeFilteredProductIds,
+    hasFilter: hasSizeFilter,
+    isLoading: isLoadingSizeFilter,
+    error: sizeFilterError,
+  } = useProductsBySize(filters.sizes || []);
 
   useExternalCategoriesQuery();
   const { data: realStats } = useCatalogRealStats();
 
-  const isLoading = isLoadingProducts || isLoadingMaterialFilter || isLoadingCategoryFilter;
+  const isLoading =
+    isLoadingProducts ||
+    isLoadingMaterialFilter ||
+    isLoadingCategoryFilter ||
+    isLoadingColorFilter ||
+    isLoadingMetadataFilter ||
+    isLoadingSizeFilter;
   const isInitialCatalogLoad =
     (isLoadingProducts || isFetchingProducts) && realProducts.length === 0;
 
   useEffect(() => {
     setSearchQuery(searchQueryFromUrl);
-  }, [searchQueryFromUrl]);
+    if (searchQueryFromUrl.trim()) {
+      // resultsCount via ref para evitar TDZ (filteredProducts é declarado abaixo)
+      trackSearch({
+        searchTerm: searchQueryFromUrl,
+        resultsCount: filteredProductsRef.current.length,
+        filtersUsed: { sortBy },
+      });
+      updatePreferences({
+        lastSearchTerm: searchQueryFromUrl,
+        lastSearchSortBy: sortBy,
+      });
+    }
+  }, [searchQueryFromUrl, trackSearch, sortBy, updatePreferences]);
 
+  // BUG-SORT-01 FIX: Validar o sort param da URL antes de sincronizar com o state.
+  // BUG-URL-01 FIX: Normalizar a URL — remover param default (?sort=newest) e
+  // canonicalizar aliases (?sort=popularity → ?sort=best-seller-promo).
   useEffect(() => {
-    React.startTransition(() => {
-      setDisplayCount(ITEMS_PER_PAGE);
-    });
-  }, [filters, sortBy, searchQuery]);
+    const urlSort = searchParams.get('sort');
+    const pendingLocalSort = pendingLocalSortRef.current;
+    if (pendingLocalSort) {
+      const urlMatchesPendingSort =
+        pendingLocalSort === 'newest' ? !urlSort : validateSortOption(urlSort) === pendingLocalSort;
+
+      if (!urlMatchesPendingSort) return;
+      pendingLocalSortRef.current = null;
+    }
+
+    if (urlSort) {
+      const validated = validateSortOption(urlSort);
+
+      // Sincronizar state se o valor validado diferir do atual
+      if (validated !== sortBy) {
+        setSortByState(validated);
+      }
+
+      // Normalizar URL: remover sort=default ou substituir alias por canonical.
+      // Cobre dois casos:
+      //   1. ?sort=newest      → remover (é o default; param redundante)
+      //   2. ?sort=popularity  → substituir por ?sort=best-seller-promo (canonical)
+      const urlNeedsNormalization = validated === 'newest' || urlSort !== validated;
+      if (urlNeedsNormalization) {
+        const newParams = new URLSearchParams(window.location.search);
+        if (validated === 'newest') {
+          newParams.delete('sort');
+        } else {
+          newParams.set('sort', validated);
+        }
+        const newPath = `${window.location.pathname}${newParams.toString() ? `?${newParams.toString()}` : ''}`;
+        navigate(newPath, { replace: true });
+      }
+    }
+  }, [searchParams, sortBy, navigate]);
+
+  // BUG-CS-06 FIX: Reset displayCount without startTransition wrapper.
+  // Depends on debouncedServerSearch to avoid resetting on every keystroke.
+  useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE);
+  }, [filters, sortBy, debouncedSearch]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -215,15 +546,35 @@ export function useCatalogState() {
     if (filters.materialGroups?.length) count += filters.materialGroups.length;
     if (filters.materialTypes?.length) count += filters.materialTypes.length;
     if (filters.materiais.length) count += filters.materiais.length;
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 500) count += 1;
+    // BUG-22 FIX: era < 500, deve ser < 9999 para contar filtro de preco corretamente.
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count += 1;
     if (filters.inStock) count += 1;
     if (filters.isKit) count += 1;
     if (filters.featured) count += 1;
+    // BUG-COUNT-01 FIX: isNew, hasPersonalization, onSale, hasCommercialPackaging eram
+    // aplicados no pipeline de filtragem (useCatalogFiltering) mas nunca contados aqui,
+    // fazendo o badge de filtros ativos mostrar número menor que o real.
+    if (filters.isNew) count += 1;
+    if (filters.hasPersonalization) count += 1;
+    if (filters.onSale) count += 1;
+    if (filters.hasCommercialPackaging) count += 1;
     if (filters.gender?.length) count += filters.gender.length;
+    // BUG-META-01 FIX: tags eram filtráveis via seção Tags mas não contadas aqui.
+    if (filters.tags?.length) count += filters.tags.length;
+    // BUG-CATALOG-SIZES FIX: sizes era selecionável no painel mas não contado.
+    if (filters.sizes?.length) count += filters.sizes.length;
+    // BUG-VENDAS-COUNT-ACTIVE FIX: vendas thresholds eram mostrados no painel mas
+    // nunca contados no badge global "N filtros ativos".
+    if (filters.minSupplierSales90d > 0) count += 1;
+    if (filters.minPromoSales90d > 0) count += 1;
+    // BUG-MINSTOCK-COUNT FIX: minStock era filtrado no Super Filtro mas não contado aqui.
+    if (filters.minStock > 0) count += 1;
+    // BUG-TECHNIQUES-COUNT FIX: técnicas selecionadas não eram contadas no badge global.
+    if (filters.techniques?.length) count += filters.techniques.length;
     return count;
   }, [filters]);
 
-  const debouncedSearchQuery = useDebounce(searchQuery, 350);
+  const debouncedSearchQuery = debouncedSearch;
   const { results: fuzzySearchResults, hasSearch: hasFuzzySearch } = useProductFuzzySearch(
     realProducts,
     debouncedSearchQuery,
@@ -238,39 +589,85 @@ export function useCatalogState() {
     hasMaterialFilter,
     materialFilteredProductIds,
     isLoadingMaterialFilter,
+    materialFilterError,
     hasCategoryFilter,
     categoryFilteredProductIds,
     isLoadingCategoryFilter,
+    categoryFilterError,
+    hasColorFilter,
+    colorFilteredProductIds,
+    isLoadingColorFilter,
+    colorFilterError,
+    hasMetadataFilter,
+    metadataFilteredProductIds,
+    isLoadingMetadataFilter,
+    metadataFilterError,
+    hasSizeFilter,
+    sizeFilteredProductIds,
+    isLoadingSizeFilter,
+    sizeFilterError,
     promoSalesMap,
+    promoSales90dMap,
     supplierSalesMap,
   });
 
-  const [lastNonTransitionedProducts, setLastNonTransitionedProducts] = useState<Product[]>([]);
-  const deferredIsTransitioning = useDeferredValue(isTransitioning);
-
+  // Mantém filteredProductsRef sincronizado (consumido por setSortBy e pelo
+  // effect de busca via ref, ambos declarados acima desta linha).
   useEffect(() => {
-    if (!deferredIsTransitioning) {
-      setLastNonTransitionedProducts(filteredProducts);
+    filteredProductsRef.current = filteredProducts;
+  }, [filteredProducts]);
+
+  // GAP-2 FIX (PR #689 review): snapshot dos produtos exibidos enquanto NÃO há
+  // transição. Antes, o snapshot ficava [] para sempre e displayFilteredProducts
+  // virava lista vazia durante transições de sort — flash de empty state.
+  // Timing: o effect roda APÓS cada render estável (ref = última lista estável);
+  // quando setIsTransitioning(true) dispara o render seguinte, o display lê o
+  // ref congelado (effects deste render não escrevem pois isTransitioning=true).
+  useEffect(() => {
+    if (!isTransitioning) {
+      lastNonTransitionedProductsRef.current = filteredProducts;
     }
-  }, [filteredProducts, deferredIsTransitioning]);
+  }, [isTransitioning, filteredProducts]);
 
-  const displayFilteredProducts = isTransitioning ? lastNonTransitionedProducts : filteredProducts;
+  const displayFilteredProducts = isTransitioning
+    ? lastNonTransitionedProductsRef.current
+    : filteredProducts;
 
-  const rawPaginatedProducts = useMemo(
-    () => displayFilteredProducts.slice(0, displayCount),
-    [displayFilteredProducts, displayCount],
-  );
+  const rawPaginatedProducts = useMemo(() => {
+    // Deduplica por ID antes de fatiar — produtos duplicados podem surgir em
+    // páginas adjacentes quando o sort não tem tiebreaker único (ex: name + id).
+    const seen = new Set<string>();
+    const deduped = displayFilteredProducts.filter((p) => {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+    return deduped.slice(0, displayCount);
+  }, [displayFilteredProducts, displayCount]);
 
+  // BUG-NUANCE-ENRICH-01 FIX: incluir colorNuances e colors no guard. Sem isto,
+  // filtrar por matiz (nuance only) mantinha hasColorFilterActive=false e o mapa de
+  // enrichment nunca era aplicado → produtos mostravam imagem padrão em vez da
+  // imagem específica da variante da cor/matiz selecionada.
   const hasColorFilterActive =
-    (filters.colorGroups?.length || 0) > 0 || (filters.colorVariations?.length || 0) > 0;
+    (filters.colorGroups?.length || 0) > 0 ||
+    (filters.colorVariations?.length || 0) > 0 ||
+    (filters.colorNuances?.length || 0) > 0 ||
+    (filters.colors?.length || 0) > 0;
   const paginatedProductIds = useMemo(
     () => rawPaginatedProducts.map((p) => p.id),
+    [rawPaginatedProducts],
+  );
+  const paginatedProductMinQtys = useMemo(
+    () => new Map(rawPaginatedProducts.map((p) => [p.id, p.minQuantity])),
     [rawPaginatedProducts],
   );
   const { data: catalogColorEnrichmentMap } = useColorEnrichment({
     productIds: paginatedProductIds,
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
+    productMinQuantities: paginatedProductMinQtys,
   });
 
   const paginatedProducts = useMemo(() => {
@@ -315,27 +712,44 @@ export function useCatalogState() {
     filters.colorVariations,
   ]);
 
+  // BUG-SCROLL-01 FIX: chave estável derivada de sortBy + filters + debouncedSearch
+  // + viewMode. Muda SOMENTE quando o conjunto de produtos muda qualitativamente
+  // (filter/sort/search/viewMode), NUNCA quando displayCount aumenta via loadMore().
+  // Passada ao VirtualizedProductGrid para rolar ao topo apenas nas mudanças certas.
+  const scrollResetKey = useMemo(() => {
+    // GAP-COLISÃO FIX: serializa tudo via JSON.stringify de um array. Concatenar
+    // com '|' abria uma colisão teórica: um search contendo '|' poderia, em tese,
+    // produzir a mesma string que outra combinação. Empacotar em array +
+    // JSON.stringify escapa qualquer caractere especial (aspas, pipe, emoji) de
+    // forma inequívoca. JSON.stringify só recomputa quando uma dep muda — custo mínimo.
+    return JSON.stringify([sortBy, debouncedSearch, viewMode, filters]);
+  }, [sortBy, debouncedSearch, viewMode, filters]);
+
+  const hasActiveCatalogConstraints = useMemo(
+    () => activeFiltersCount > 0 || searchQuery.trim() !== '',
+    [activeFiltersCount, searchQuery],
+  );
+
+  // FIX: Se estivermos em transição de sortBy, NÃO mostramos o skeleton global
+  // que reseta o scroll e o layout. Mantemos o `displayFilteredProducts` (estável)
+  // visível até o novo sort processar.
   const shouldShowCatalogSkeleton =
-    isInitialCatalogLoad ||
-    (isLoading && paginatedProducts.length === 0 && !hasActiveCatalogConstraints);
-  const hasActiveCatalogConstraints = activeFiltersCount > 0 || searchQuery.trim().length > 0;
+    !isTransitioning &&
+    (isInitialCatalogLoad ||
+      (isLoading && paginatedProducts.length === 0 && !hasActiveCatalogConstraints));
   const shouldShowEmptyState =
     !shouldShowCatalogSkeleton && paginatedProducts.length === 0 && !isFetchingNextPage;
 
   const hasMoreProducts = useMemo(() => {
-    return paginatedProducts.length < filteredProducts.length || !!hasNextPage;
-  }, [paginatedProducts, filteredProducts, hasNextPage]);
-
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  const isUpdatingRef = useRef(false);
+    // BUG-CS-02: Se displayCount for menor que filteredProducts, temos mais localmente.
+    // Se for maior ou igual, dependemos de hasNextPage no servidor.
+    return filteredProducts.length > displayCount || !!hasNextPage;
+  }, [filteredProducts.length, displayCount, hasNextPage]);
 
   const loadMore = useCallback(() => {
-    if (isUpdatingRef.current) return;
     if (isLoading || isLoadingMore || isFetchingNextPage) return;
     if (!hasMoreProducts) return;
 
-    isUpdatingRef.current = true;
     setIsLoadingMore(true);
 
     const nextDisplayCount = displayCount + ITEMS_PER_PAGE;
@@ -345,18 +759,13 @@ export function useCatalogState() {
       fetchNextPage().finally(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 100);
       });
     } else {
+      // Virtual loading for local products
       setTimeout(() => {
         setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
         setIsLoadingMore(false);
-        setTimeout(() => {
-          isUpdatingRef.current = false;
-        }, 100);
-      }, 150);
+      }, 50);
     }
   }, [
     isLoading,
@@ -368,29 +777,24 @@ export function useCatalogState() {
     hasNextPage,
     fetchNextPage,
   ]);
-
+  // loadMoreRef: sentinel <div> que dispara loadMore() via IntersectionObserver
+  // quando o usuário rola até o final da lista de produtos.
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    if (isLoading) return;
-    if (observerRef.current) observerRef.current.disconnect();
-
-    observerRef.current = new IntersectionObserver(
+    const el = loadMoreRef.current;
+    if (!el || !hasMoreProducts || isLoadingMore || isFetchingNextPage) return;
+    const observer = new IntersectionObserver(
       (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting && hasMoreProducts && !isLoadingMore && !isUpdatingRef.current) {
-          loadMore();
-        }
+        if (entries[0]?.isIntersecting) loadMore();
       },
-      { threshold: 0.1, rootMargin: '200px' },
+      { rootMargin: '200px', threshold: 0 },
     );
-
-    if (loadMoreRef.current) observerRef.current.observe(loadMoreRef.current);
-    return () => {
-      observerRef.current?.disconnect();
-    };
-  }, [isLoading, hasMoreProducts, isLoadingMore, loadMore]);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMoreProducts, isLoadingMore, isFetchingNextPage, loadMore]);
 
   const statBadges = useMemo(() => {
-    const hasActiveFilters = activeFiltersCount > 0 || searchQuery.trim().length > 0;
+    const hasActiveFilters = activeFiltersCount > 0 || searchQuery.trim() !== '';
     const seen = new Set<string>();
     const deduped = filteredProducts.filter((p) => {
       if (seen.has(p.id)) return false;
@@ -400,8 +804,7 @@ export function useCatalogState() {
 
     const productCount = hasActiveFilters ? deduped.length : totalEstimate || deduped.length;
     const localVariants = deduped.reduce((sum, p) => {
-      const colorCount =
-        p.colors?.filter((c: Record<string, string>) => c.name?.trim()).length || 0;
+      const colorCount = p.colors?.filter((c) => (c as { name?: string }).name?.trim()).length || 0;
       const variationCount = !colorCount && p.variations?.length ? p.variations.length : 0;
       return sum + colorCount + variationCount;
     }, 0);
@@ -427,20 +830,22 @@ export function useCatalogState() {
       ? uniqueSuppliers.size
       : (realStats?.totalSuppliers ?? uniqueSuppliers.size);
 
-    const contextualFavoriteCount = isFavorite
+    // BUG-CS-01 FIX: isFavorite is a *function* reference — always truthy in ternary condition.
+    // The favoriteCount branch was never reached. Correct gate is hasActiveFilters.
+    const contextualFavoriteCount = hasActiveFilters
       ? deduped.filter((p) => isFavorite(p.id)).length
       : favoriteCount;
 
     return [
       {
         id: 'products',
-        label: 'Produtos Únicos',
+        label: 'Produtos Unicos',
         value: productCount,
         icon: React.createElement(Package, { className: 'h-4 w-4' }),
       },
       {
         id: 'variants',
-        label: 'Variações',
+        label: 'Variacoes',
         value: totalVariants,
         icon: React.createElement(Palette, { className: 'h-4 w-4' }),
       },
@@ -470,16 +875,16 @@ export function useCatalogState() {
     activeFiltersCount,
     searchQuery,
     totalEstimate,
-    hasNextPage,
+    // BUG-STAT-01 FIX: hasNextPage removido — causava recalculo desnecessario a cada page fetch
     realStats,
   ]);
 
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setSortBy('name');
+    setSortBy('newest');
     setSearchQuery('');
     navigate('/', { replace: true });
-  }, [navigate]);
+  }, [navigate, setSortBy]);
 
   const handleViewProduct = useCallback(
     (product: Product) => {
@@ -503,7 +908,7 @@ export function useCatalogState() {
           void favQuickAdd.addToList(target.id, product);
           toast({
             title: 'Adicionado aos Favoritos',
-            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrão sem confirmação.`,
+            description: `Salvo em "${target.name}". Use Shift+clique para confirmar a lista padrao sem confirmacao.`,
           });
         } else {
           toggleFavorite(product.id);
@@ -513,12 +918,29 @@ export function useCatalogState() {
     [favQuickAdd, toggleFavorite, toast],
   );
 
+  // BUG-KBD-01 FIX: handleFavoriteProduct estava nas deps do keyboard useEffect.
+  // Como depende de favQuickAdd/toggleFavorite/toast, era recriada com frequencia,
+  // causando re-registro desnecessario do listener a cada render do catalogo.
+  // Solucao: capturar a versao mais recente em ref sem adicionar deps instaveis.
+  const handleFavoriteProductRef = useRef(handleFavoriteProduct);
+  useEffect(() => {
+    handleFavoriteProductRef.current = handleFavoriteProduct;
+  }, [handleFavoriteProduct]);
+
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // FIX: cleanup searchDebounceRef no unmount
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, []);
   const handleSearch = useCallback(
     (query: string) => {
       setIsSearching(true);
       setSearchQuery(query);
       if (query) addToHistory(query);
-      setTimeout(() => setIsSearching(false), 300);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      searchDebounceRef.current = setTimeout(() => setIsSearching(false), 300);
     },
     [addToHistory],
   );
@@ -563,7 +985,8 @@ export function useCatalogState() {
           if (activeProductId) {
             e.preventDefault();
             const product = paginatedProducts.find((p) => p.id === activeProductId);
-            if (product) handleFavoriteProduct(product);
+            // BUG-KBD-01 FIX: usa ref em vez da funcao diretamente nas deps
+            if (product) handleFavoriteProductRef.current(product);
           }
           break;
         case 'Escape':
@@ -580,7 +1003,9 @@ export function useCatalogState() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeProductId, paginatedProducts, navigate, handleFavoriteProduct, selectionMode]);
+    // BUG-KBD-01 FIX: handleFavoriteProduct removido das deps — era instavel.
+    // handleFavoriteProductRef.current e sempre atual sem triggerar re-registro.
+  }, [activeProductId, paginatedProducts, navigate, selectionMode]);
 
   return {
     filters,
@@ -636,5 +1061,12 @@ export function useCatalogState() {
     quickSuggestions,
     searchHistory: history,
     clearHistory,
+    // Navigation & pagination
+    navigate,
+    isTransitioning,
+    hasMoreProducts,
+    ITEMS_PER_PAGE,
+    loadMore,
+    scrollResetKey,
   };
 }

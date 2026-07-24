@@ -9,9 +9,6 @@ verify_jwt = false
 [functions.external-db-inspect]
 verify_jwt = false
 
-[functions.external-db-bridge]
-verify_jwt = false
-
 [functions.image-proxy]
 verify_jwt = false
 
@@ -30,9 +27,14 @@ verify_jwt = false
 [functions.e2e-cleanup]
 verify_jwt = false
 
-# Cron functions — autenticadas via x-cron-secret (vault-based, ver _shared/dispatcher-auth.ts)
-# Não usam JWT do Supabase Auth porque pg_cron não tem usuário/sessão.
-# Segurança: header x-cron-secret comparado em tempo constante com vault.CRON_SECRET.
+# get-visitor-info: chamada antes do login para detectar IP/geo do visitante.
+# verify_jwt=false porque usuarios anonimos nao tem sessao JWT ativa.
+[functions.get-visitor-info]
+verify_jwt = false
+
+# Cron functions - autenticadas via x-cron-secret (vault-based, ver _shared/dispatcher-auth.ts)
+# Nao usam JWT do Supabase Auth porque pg_cron nao tem usuario/sessao.
+# Seguranca: header x-cron-secret comparado em tempo constante com vault.CRON_SECRET.
 
 [functions.cleanup-notifications]
 verify_jwt = false
@@ -74,6 +76,76 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.sync-external-db]
+verify_jwt = false
+
+[functions.log-login-attempt]
+verify_jwt = false
+
+[functions.check-login]
+verify_jwt = false
+
+[functions.asia-ingestion]
+verify_jwt = false
+
+[functions.backfill-image-dimensions]
+verify_jwt = false
+
+# CRM callback receiver: auth via x-api-key header (timing-safe compare).
+# JWT do gateway não se aplica — o CRM Promo Champions não tem JWT do Supabase.
+[functions.receive-crm-callback]
+verify_jwt = false
+
+# Reprocessa dead-letters de crm_callback_events (auth admin/dev inline).
+[functions.crm-callback-reprocess]
+verify_jwt = false
+
+# Monitor de alertas: cron 1x/min (agendar em cron.job no canônico).
+[functions.crm-callback-alerts]
+verify_jwt = false
+
+[functions.word-magic]
+verify_jwt = true
+
+# Mockup module: pin gateway JWT enforcement so the in-function authenticateRequest()
+# is backed by gateway-level verify_jwt (defense-in-depth) and the posture is explicit
+# in source — protects against silent drift/reverts of these production endpoints.
+[functions.generate-mockup]
+verify_jwt = true
+
+[functions.analyze-logo-colors]
+verify_jwt = true
+
+# ============================================================================
+# Módulo Magazine (2026-07-12) — FIX CRÍTICO pós-validação exaustiva
+# ============================================================================
+# GAP ENCONTRADO: as 5 edges do módulo Magazine foram deployadas SEM entrada
+# neste config.toml, então caíram no default verify_jwt=true. Isso quebrava
+# 100% do fluxo público (visitante anônimo lendo revista publicada) porque o
+# gateway do Supabase rejeita com 401 ANTES do código da função rodar — e o
+# front-end (useMagazineReaderState.ts, magazine-import-local caller) não
+# envia nenhum header Authorization para essas 4 rotas públicas.
+
+# Leitura pública de revista por token — SEM login (visitante anônimo)
+[functions.magazine-public-view]
+verify_jwt = false
+
+# Reações anônimas (like/love/fire/idea) — SEM login
+[functions.magazine-public-react]
+verify_jwt = false
+
+# Leitura do estado do leitor (bookmarks/last-page) — SEM login
+[functions.magazine-reader-state-read]
+verify_jwt = false
+
+# Escrita do estado do leitor — SEM login
+[functions.magazine-reader-state-write]
+verify_jwt = false
+
+# Import de localStorage->Gold: precisa de usuário autenticado (grava como
+# o próprio dono via RLS). Validação do JWT feita in-code via
+# userClient.auth.getUser() — gateway em false para evitar
+# UNAUTHORIZED_ASYMMETRIC_JWT enquanto o projeto ainda usa chaves HS256.
+[functions.magazine-import-local]
 verify_jwt = false
 
 [auth]

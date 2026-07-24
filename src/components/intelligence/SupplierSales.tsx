@@ -38,7 +38,7 @@ export function SupplierSales({
           <Skeleton className="h-5 w-48" />
         </CardHeader>
         <CardContent className="space-y-2">
-          {[...Array(5)].map((_, i) => (
+          {Array.from({ length: 5 }, (_, i) => (
             <Skeleton key={i} className="h-10 rounded" />
           ))}
         </CardContent>

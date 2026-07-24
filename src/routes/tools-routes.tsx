@@ -1,11 +1,16 @@
-import { Navigate, Route } from "react-router-dom";
+import { Navigate, Route } from 'react-router-dom';
 import {
   AdvancedPriceSearchPage,
   BusinessIntelligencePage,
   ClientComparatorPage,
+  CoverageInsightsDashboardPage,
   CommercialIntelligencePage,
   DropboxBrowserPage,
   KitBuilderPage,
+  MagazineEditorPage,
+  MagazineListPage,
+  MagazinePrintPage,
+  MagazineTemplatesGalleryPage,
   MagicUp,
   MeusKitsPage,
   MockupGenerator,
@@ -15,13 +20,19 @@ import {
   SimuladorWizard,
   StockDashboardPage,
   SimulationPage,
-} from "./lazy-pages";
+  VisualSearchPage,
+  PromoFlixPlayground,
+} from './lazy-pages';
 
 /**
  * Tools routes — simulador, mockup, BI, magic-up, kit builder, dropbox,
  * advanced search and stock.
  *
  * Mounted under ProtectedRoute.
+ *
+ * Note: /debug/images (OptimizedImageDemo) was intentionally moved to
+ * AppRoutes.tsx outside ProtectedRoute so E2E tests and local tooling
+ * can access it without authentication.
  */
 export const toolsRoutes = (
   <>
@@ -43,5 +54,14 @@ export const toolsRoutes = (
     <Route path="/match" element={<ProductMatchPage />} />
     <Route path="/dropbox" element={<DropboxBrowserPage />} />
     <Route path="/simulacao" element={<SimulationPage />} />
+    <Route path="/ferramentas/cobertura" element={<CoverageInsightsDashboardPage />} />
+    <Route path="/raio-x" element={<VisualSearchPage />} />
+    <Route path="/magazine" element={<MagazineListPage />} />
+    <Route path="/magazine/templates" element={<MagazineTemplatesGalleryPage />} />
+    <Route path="/magazine/:id" element={<MagazineEditorPage />} />
+    <Route path="/magazine/:id/print" element={<MagazinePrintPage />} />
+    <Route path="/magazine/print" element={<MagazinePrintPage />} />
+    <Route path="/promoflix-playground" element={<PromoFlixPlayground />} />
+
   </>
 );

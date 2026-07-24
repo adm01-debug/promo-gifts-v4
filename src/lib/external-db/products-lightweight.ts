@@ -2,15 +2,21 @@
  * Lightweight product fetch — minimal fields, no enrichment.
  * Used for selectors and catalog listing.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
-import { invokeExternalDb, invokeBatchBridge, type InvokeResult } from './bridge';
+import { type InvokeResult } from './bridge';
 
-const PRODUCT_SELECT_LIGHTWEIGHT = 'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, gender';
-const LIGHTWEIGHT_PAGE_SIZE = 500;          // antes 100 — reduz round-trips em 5x
-const LIGHTWEIGHT_MAX_CONCURRENCY = 3;       // antes 2 — bridge tem singleton + warmup
+const PRODUCT_SELECT_LIGHTWEIGHT =
+  'id, name, sku, supplier_reference, sale_price, cost_price, primary_image_url, primary_image_fallback_url, set_image_url, supplier_id, category_id, main_category_id, brand, is_active, active, stock_quantity, min_quantity, is_kit, is_new, is_featured, is_bestseller, is_on_sale, allows_personalization, has_commercial_packaging, created_at, gender, short_description, ai_title, ai_description, ai_summary, ai_version, ai_generated_at, ' +
+  // 2026-06-22: Color Swatches V2 — pré-computados por fn_rebuild_color_swatches (P1→P4).
+  // 7.153 produtos / 16.631 swatches / 97,4% CF CDN. Consumido por ColorSwatchPicker.
+  // v_products_public atualizada para expor estes campos (migration 20260622).
+  'color_swatches, has_colors';
+const LIGHTWEIGHT_PAGE_SIZE = 500;
+const LIGHTWEIGHT_MAX_CONCURRENCY = 3;
 const LIGHTWEIGHT_MIN_SPLIT_PAGE_SIZE = 125;
 const LIGHTWEIGHT_MAX_TOTAL = 15000;
-const LIGHTWEIGHT_INITIAL_BURST = 4;         // 1ª onda paralela; depois sequencial até esvaziar
+const LIGHTWEIGHT_INITIAL_BURST = 4;
 
 export interface LightweightProduct {
   id: string;
@@ -21,25 +27,64 @@ export interface LightweightProduct {
   cost_price?: number | null;
   image_url: string | null;
   primary_image_url: string | null;
+  primary_image_fallback_url?: string | null;
+  /**
+   * URL da imagem "set" (todas as cores juntas) no Cloudflare Images.
+   * Sem sufixo de variante — concatenar /public para exibição.
+   * null = produto não tem imagem set (hover não acontece no card).
+   * Adicionado em 2026-06-02: SPOT original + XBZ d1 reclassificado.
+   */
+  set_image_url: string | null;
   supplier_id: string | null;
   category_id: string | null;
   main_category_id: string | null;
+  /** Leaf category (mais profunda) — preenchido por mv_product_leaf_category na view v_products_public. */
+  // FIX BUG-D (2026-06-18): campos pré-computados em v_products_public via mv_product_leaf_category.
+  leaf_category_id?: string | null;
+  leaf_category_name?: string | null;
+  leaf_category_level?: number | null;
   brand: string | null;
   is_active: boolean;
   active: boolean;
   stock_quantity?: number | null;
   min_quantity?: number | null;
   is_kit?: boolean | null;
+  is_new?: boolean | null;
+  // Quick-option flags exibidos no Super Filtro. Antes ausentes do SELECT/tipo,
+  // tornavam os toggles "Destaques", "Promoções", "Com Personalização" e
+  // "Com Embalagem Nativa" inertes (sempre 0 resultados). Mapeados em
+  // mapLightweightToProduct espelhando product-mapper.ts.
+  is_featured?: boolean | null;
+  is_bestseller?: boolean | null;
+  is_on_sale?: boolean | null;
+  allows_personalization?: boolean | null;
+  has_commercial_packaging?: boolean | null;
+  created_at?: string | null;
   gender?: string | null;
-  /** SSOT da idade do preço — trigger no BD externo. */
+  short_description?: string | null;
   price_updated_at?: string | null;
-  /** Não existe ainda no BD externo; reservado para quando for criada. */
   price_freshness_threshold_days?: number | null;
+  // Word Magic — campos gerados por IA (adicionados para suporte ao toggle global)
+  ai_title?: string | null;
+  ai_description?: string | null;
+  ai_summary?: string | null;
+  ai_version?: number | null;
+  ai_generated_at?: string | null;
+  /**
+   * Color Swatches V2 (2026-06-22) — JSONB pré-computado por fn_rebuild_color_swatches.
+   * Hierarquia de imagem P1(CF CDN/variant_id)→P2(CF CDN/color_id)→P3(supplier)→P4(primary).
+   * stock_quantity = SUM por color_id (correto para produtos multi-tamanho).
+   * Consumido por useProductColorSwatch + ColorSwatchPicker quando useColorSwatchesV2=true.
+   */
+  color_swatches?: unknown[] | null;
+  has_colors?: boolean | null;
 }
 
 function isTimeoutError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error ?? '');
-  return /(statement timeout|canceling statement|57014|bad gateway|boot_error|function failed to start)/i.test(message);
+  return /(statement timeout|canceling statement|57014|bad gateway|boot_error|function failed to start)/i.test(
+    message,
+  );
 }
 
 async function fetchPage(params: {
@@ -47,14 +92,26 @@ async function fetchPage(params: {
   orderBy: { column: string; ascending?: boolean };
   limit: number;
   offset: number;
-  countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  countMode?: 'estimated' | 'exact' | 'none' | 'planned';
 }): Promise<InvokeResult<LightweightProduct>> {
-  return invokeExternalDb<LightweightProduct>({
-    table: 'products', operation: 'select',
-    filters: params.filters, select: PRODUCT_SELECT_LIGHTWEIGHT,
-    orderBy: params.orderBy, limit: params.limit,
-    offset: params.offset, countMode: params.countMode ?? 'none',
-  });
+  try {
+    return await dbInvoke<LightweightProduct>({
+      table: 'products',
+      operation: 'select',
+      filters: params.filters,
+      select: PRODUCT_SELECT_LIGHTWEIGHT,
+      orderBy: params.orderBy,
+      limit: params.limit,
+      offset: params.offset,
+      countMode: params.countMode ?? 'none',
+    });
+  } catch (err) {
+    if (err instanceof Error && (err.message.includes('410') || err.message.includes('Gone'))) {
+      logger.warn('[lightweight] Bridge deprecated (410) for products');
+      return { records: [], count: 0 };
+    }
+    throw err;
+  }
 }
 
 async function fetchPageResilient(params: {
@@ -62,7 +119,7 @@ async function fetchPageResilient(params: {
   orderBy: { column: string; ascending?: boolean };
   limit: number;
   offset: number;
-  countMode?: 'exact' | 'planned' | 'estimated' | 'none';
+  countMode?: 'estimated' | 'exact' | 'none' | 'planned';
 }): Promise<InvokeResult<LightweightProduct>> {
   try {
     return await fetchPage(params);
@@ -70,14 +127,21 @@ async function fetchPageResilient(params: {
     if (!isTimeoutError(error) || params.limit <= LIGHTWEIGHT_MIN_SPLIT_PAGE_SIZE) throw error;
     const firstHalf = Math.ceil(params.limit / 2);
     const secondHalf = params.limit - firstHalf;
-    logger.warn(`[lightweight] Timeout at offset=${params.offset}, splitting ${params.limit} -> ${firstHalf}+${secondHalf}`);
+    logger.warn(
+      `[lightweight] Timeout at offset=${params.offset}, splitting ${params.limit} -> ${firstHalf}+${secondHalf}`,
+    );
     const [left, right] = await Promise.all([
       fetchPageResilient({ ...params, limit: firstHalf, countMode: 'none' }),
-      fetchPageResilient({ ...params, offset: params.offset + firstHalf, limit: secondHalf, countMode: 'none' }),
+      fetchPageResilient({
+        ...params,
+        offset: params.offset + firstHalf,
+        limit: secondHalf,
+        countMode: 'none',
+      }),
     ]);
     return {
       records: [...left.records, ...right.records],
-      count: params.countMode === 'none' ? null : left.count ?? right.count ?? null,
+      count: params.countMode === 'none' ? null : (left.count ?? right.count ?? null),
     };
   }
 }
@@ -95,35 +159,36 @@ export async function fetchPromobrindProductsLightweight(options?: {
   const baseOffset = options?.offset ?? 0;
 
   if (typeof options?.limit === 'number' && options.limit > 0) {
-    const result = await fetchPageResilient({ filters, orderBy, limit: options.limit, offset: baseOffset, countMode: 'none' });
+    const result = await fetchPageResilient({
+      filters,
+      orderBy,
+      limit: options.limit,
+      offset: baseOffset,
+      countMode: 'none',
+    });
     return result.records;
   }
 
   const maxTotal = LIGHTWEIGHT_MAX_TOTAL;
 
-  // Estratégia em 2 fases (substitui o batch fixo de 150 queries × 100 records):
-  //   Fase 1 — burst inicial paralelo de LIGHTWEIGHT_INITIAL_BURST páginas × 500 records.
-  //            Cobre 2k registros (suficiente para 1ª tela em todas as UIs hoje).
-  //   Fase 2 — paginação sequencial até esgotar, com early-exit assim que uma
-  //            página retornar < LIGHTWEIGHT_PAGE_SIZE.
-  //
-  // Ganhos: 4 round-trips iniciais em vez de 150, mantendo concurrency segura;
-  // sem novo protocolo entre client e bridge; sem mudança de ordenação.
-
   const initialBatch = Array.from({ length: LIGHTWEIGHT_INITIAL_BURST }, (_, i) => ({
-    table: 'products', operation: 'select' as const,
-    select: PRODUCT_SELECT_LIGHTWEIGHT, filters, orderBy,
-    limit: LIGHTWEIGHT_PAGE_SIZE, offset: baseOffset + i * LIGHTWEIGHT_PAGE_SIZE,
+    table: 'products',
+    operation: 'select' as const,
+    select: PRODUCT_SELECT_LIGHTWEIGHT,
+    filters,
+    orderBy,
+    limit: LIGHTWEIGHT_PAGE_SIZE,
+    offset: baseOffset + i * LIGHTWEIGHT_PAGE_SIZE,
   }));
 
   const products: LightweightProduct[] = [];
   let lastBurstPageSize = LIGHTWEIGHT_PAGE_SIZE;
 
   try {
-    const batchResults = await invokeBatchBridge(initialBatch);
+    const batchResults = await Promise.all(initialBatch.map((q) => dbInvoke<unknown>(q)));
     for (const result of batchResults) {
-      if (result.success && result.data?.records) {
-        const records = result.data.records as LightweightProduct[];
+      if (result.records) {
+        const records = result.records as LightweightProduct[];
         products.push(...records);
         lastBurstPageSize = records.length;
       }
@@ -133,20 +198,25 @@ export async function fetchPromobrindProductsLightweight(options?: {
     return fetchSequential(filters, orderBy, baseOffset, maxTotal);
   }
 
-  // Early-exit: se a última página do burst veio incompleta, não há mais dados.
   if (lastBurstPageSize < LIGHTWEIGHT_PAGE_SIZE) return products;
   if (products.length >= maxTotal) return products.slice(0, maxTotal);
 
-  // Fase 2: continuar sequencialmente a partir do último offset coberto.
   let nextOffset = baseOffset + LIGHTWEIGHT_INITIAL_BURST * LIGHTWEIGHT_PAGE_SIZE;
   while (products.length < maxTotal) {
     let page: InvokeResult<LightweightProduct>;
     try {
       page = await fetchPageResilient({
-        filters, orderBy, limit: LIGHTWEIGHT_PAGE_SIZE, offset: nextOffset, countMode: 'none',
+        filters,
+        orderBy,
+        limit: LIGHTWEIGHT_PAGE_SIZE,
+        offset: nextOffset,
+        countMode: 'none',
       });
     } catch (err) {
-      logger.warn(`[lightweight] Fase 2 abortada em offset=${nextOffset} (${products.length} produtos):`, err);
+      logger.warn(
+        `[lightweight] Fase 2 abortada em offset=${nextOffset} (${products.length} produtos):`,
+        err,
+      );
       break;
     }
     if (page.records.length === 0) break;
@@ -164,12 +234,20 @@ async function fetchSequential(
   baseOffset: number,
   maxTotal: number,
 ): Promise<LightweightProduct[]> {
-  const firstPage = await fetchPageResilient({ filters, orderBy, limit: LIGHTWEIGHT_PAGE_SIZE, offset: baseOffset, countMode: 'planned' });
+  const firstPage = await fetchPageResilient({
+    filters,
+    orderBy,
+    limit: LIGHTWEIGHT_PAGE_SIZE,
+    offset: baseOffset,
+    countMode: 'planned',
+  });
   const products: LightweightProduct[] = [...firstPage.records];
   if (firstPage.records.length < LIGHTWEIGHT_PAGE_SIZE) return products;
 
-  const estimatedTotal = typeof firstPage.count === 'number' && firstPage.count > firstPage.records.length
-    ? Math.min(firstPage.count, maxTotal) : maxTotal;
+  const estimatedTotal =
+    typeof firstPage.count === 'number' && firstPage.count > firstPage.records.length
+      ? Math.min(firstPage.count, maxTotal)
+      : maxTotal;
   const remaining = estimatedTotal - products.length;
   if (remaining <= 0) return products;
 
@@ -181,7 +259,15 @@ async function fetchSequential(
   for (let i = 0; i < offsets.length; i += LIGHTWEIGHT_MAX_CONCURRENCY) {
     const batch = offsets.slice(i, i + LIGHTWEIGHT_MAX_CONCURRENCY);
     const pages = await Promise.all(
-      batch.map(offset => fetchPageResilient({ filters, orderBy, limit: LIGHTWEIGHT_PAGE_SIZE, offset, countMode: 'none' })),
+      batch.map((offset) =>
+        fetchPageResilient({
+          filters,
+          orderBy,
+          limit: LIGHTWEIGHT_PAGE_SIZE,
+          offset,
+          countMode: 'none',
+        }),
+      ),
     );
     for (const page of pages) products.push(...page.records);
     if (pages[pages.length - 1]?.records.length < LIGHTWEIGHT_PAGE_SIZE) break;

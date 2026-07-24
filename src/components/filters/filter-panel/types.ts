@@ -7,6 +7,7 @@ import {
   DollarSign,
   Truck,
   Users,
+  User,
   Calendar,
   Briefcase,
   Gem,
@@ -18,6 +19,7 @@ import {
   Target,
   TrendingUp,
   Zap,
+  Ruler,
 } from 'lucide-react';
 
 // ============================================
@@ -49,10 +51,14 @@ export interface FilterState {
   featured: boolean;
   isNew: boolean;
   hasPersonalization: boolean;
+  onSale: boolean;
   hasCommercialPackaging: boolean;
   gender: string[];
   sizes: string[];
   sortBy: string;
+  // COMERCIAL — Filtros por vendas (somente Super Filtro) — janela padronizada 90d
+  minSupplierSales90d: number; // mín. unidades vendidas pelo fornecedor nos últimos 90 dias
+  minPromoSales90d: number; // mín. unidades vendidas em pedidos fechados nos últimos 90 dias
 }
 
 export interface FilterPanelProps {
@@ -95,10 +101,13 @@ export const defaultFilters: FilterState = {
   featured: false,
   isNew: false,
   hasPersonalization: false,
+  onSale: false,
   hasCommercialPackaging: false,
   gender: [],
   sizes: [],
-  sortBy: 'name',
+  sortBy: 'newest',
+  minSupplierSales90d: 0,
+  minPromoSales90d: 0,
 };
 
 export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNode }> = {
@@ -107,10 +116,14 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     title: 'Categorias',
     icon: React.createElement(LayoutGrid, { className: 'h-4 w-4' }),
   },
-  estoque: { title: 'Estoque', icon: React.createElement(Package, { className: 'h-4 w-4' }) },
+
   preco: {
     title: 'Faixa de Preço',
     icon: React.createElement(DollarSign, { className: 'h-4 w-4' }),
+  },
+  estoque: {
+    title: 'Estoque',
+    icon: React.createElement(Package, { className: 'h-4 w-4' }),
   },
   fornecedores: {
     title: 'Fornecedores',
@@ -134,8 +147,18 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
     title: 'Técnicas de Gravação',
     icon: React.createElement(Paintbrush, { className: 'h-4 w-4' }),
   },
-  genero: { title: 'Gênero', icon: React.createElement(Users, { className: 'h-4 w-4' }) },
-  tamanhos: { title: 'Tamanhos', icon: React.createElement(Package, { className: 'h-4 w-4' }) },
+  'vendas-fornecedor': {
+    title: 'Vendas Fornecedor (90d)',
+    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
+  },
+  'vendas-promo': {
+    title: 'Vendas Promo Brindes (90d)',
+    icon: React.createElement(TrendingUp, { className: 'h-4 w-4' }),
+  },
+  // BUG-SF-18 FIX: genero usava Users (igual a publico), tamanhos usava Package (igual a estoque).
+  // Ícones mais semânticos: User (singular) para gênero, Ruler para tamanhos.
+  genero: { title: 'Gênero', icon: React.createElement(User, { className: 'h-4 w-4' }) },
+  tamanhos: { title: 'Tamanhos', icon: React.createElement(Ruler, { className: 'h-4 w-4' }) },
   tags: { title: 'Tags', icon: React.createElement(Tag, { className: 'h-4 w-4' }) },
   'opcoes-rapidas': {
     title: 'Opções Rápidas',
@@ -147,14 +170,25 @@ export const SECTION_CONFIG: Record<string, { title: string; icon: React.ReactNo
 export const SECTION_GROUPS = [
   {
     label: 'PRODUTO',
-    sections: ['cores', 'categorias', 'estoque', 'preco', 'materiais', 'genero', 'tamanhos'],
+    // SF-E FIX: 'tamanhos' reabilitada — useProductsBySize consulta product_variants
+    // server-side e retorna Set<product_id>; catalogo leve nao precisa de variations.
+    sections: ['cores', 'categorias', 'preco', 'estoque', 'materiais', 'genero', 'tamanhos'],
     icon: Package,
   },
-  { label: 'COMERCIAL', sections: ['fornecedores', 'tecnicas'], icon: TrendingUp },
+  {
+    label: 'COMERCIAL',
+    sections: ['fornecedores', 'vendas-fornecedor', 'vendas-promo', 'tecnicas'],
+    icon: TrendingUp,
+  },
   {
     label: 'MARKETING',
-    sections: ['publico', 'datas-comemorativas', 'endomarketing', 'ramos-atividade'],
+    // BUG-DB-05: 'endomarketing' removido — secao redundante/vazia. 'Endomarketing' e na
+    // verdade uma TAG (2.760 produtos), filtravel na secao Tags; nao ha sub-opcoes proprias.
+    sections: ['publico', 'datas-comemorativas', 'ramos-atividade'],
     icon: Target,
   },
-  { label: 'ATALHOS', sections: ['tags', 'opcoes-rapidas'], icon: Zap },
+  // BUG-SF-03 FIX: 'ordenacao' estava definido em SECTION_CONFIG e sectionRenderers
+  // mas NUNCA aparecia no sidebar porque não estava em nenhum SECTION_GROUPS.
+  // Adicionado ao grupo 'ATALHOS' para renderizar a seção de ordenação no painel lateral.
+  { label: 'ATALHOS', sections: ['tags', 'opcoes-rapidas', 'ordenacao'], icon: Zap },
 ];

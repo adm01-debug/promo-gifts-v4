@@ -1,0 +1,18 @@
+{
+  "canonical": "https://promogifts.com.br/schemas/ssot-report.schema.json",
+  "endpoints": [
+    "https://promogifts.com.br/schemas/ssot-report.schema.json",
+    "https://www.promogifts.com.br/schemas/ssot-report.schema.json",
+    "https://https-www-promogifts-com-br.lovable.app/schemas/ssot-report.schema.json"
+  ],
+  "latest": "2.0.0",
+  "latestPath": "/schemas/ssot-report.schema.json",
+  "versions": [
+    {
+      "version": "2.0.0",
+      "path": "/schemas/ssot-report.v2.0.0.schema.json",
+      "immutable": true
+    }
+  ],
+  "generatedAt": "2026-07-20T22:59:02.614Z"
+}

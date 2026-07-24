@@ -99,7 +99,18 @@ export function useCustomizationPricing() {
   const calc = usePrecoCalculation();
 
   return {
-    priceTables: [], // Legado - não mais usado
+    // Derivado de `techniques` (SSOT: tabelas de preço ativas). Consumido por
+    // QuantityComparisonTable para casar técnica→tabela. Antes era `[]` fixo, o
+    // que fazia toda a tabela de comparação renderizar "N/D".
+    priceTables: calc.techniques.map((t) => ({
+      table_code: t.code,
+      customization_type_name: t.name,
+      price_by_color: t.priceByColor,
+    })) as Array<{
+      table_code: string;
+      customization_type_name: string;
+      price_by_color?: boolean | null;
+    }>,
     techniques: calc.techniques,
     standardQuantities: calc.standardQuantities,
     isLoading: calc.isLoading,

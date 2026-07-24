@@ -9,7 +9,6 @@ import { act, waitFor } from "@testing-library/react";
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    functions: { invoke: vi.fn() },
     auth: {
       getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
       onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
@@ -17,12 +16,16 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 
+vi.mock("@/lib/db/postgrest", () => ({
+  dbInvoke: vi.fn(),
+}));
+
 vi.mock("@/lib/external-rpc", () => ({
   invokeExternalRpc: vi.fn(),
 }));
 
 import { renderHookWithProviders } from "../hooks/_helpers/render-hook-providers";
-import { supabase } from "@/integrations/supabase/client";
+import { dbInvoke } from "@/lib/db/postgrest";
 import { useTecnicasList } from "@/hooks/tecnicas/useTecnicasList";
 import { useCustomizationPriceCalculator } from "@/hooks/simulation/useCustomizationPrice";
 import {
@@ -33,6 +36,7 @@ import {
 
 import { invokeExternalRpc } from "@/lib/external-rpc";
 const mockedRpc = invokeExternalRpc as unknown as ReturnType<typeof vi.fn>;
+const mockedDbInvoke = dbInvoke as unknown as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -42,9 +46,9 @@ describe("Integração técnicas → cálculo de preço", () => {
   it("carrega técnicas mistas e calcula preço para cada uma sem erros", async () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    (supabase.functions.invoke as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { success: true, data: { records: [TECNICA_ROW_PT, TECNICA_ROW_EN] } },
-      error: null,
+    mockedDbInvoke.mockResolvedValue({
+      records: [TECNICA_ROW_PT, TECNICA_ROW_EN],
+      count: 2,
     });
     mockedRpc.mockResolvedValue(PRICE_PAYLOAD_PT_V6);
 

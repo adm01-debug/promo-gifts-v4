@@ -1,6 +1,6 @@
 /**
  * Types: Simulation
- * 
+ *
  * @deprecated Use tipos de src/types/domain/simulation
  * Este arquivo mantém compatibilidade com código legado.
  */
@@ -16,8 +16,8 @@ export type {
   SimulatorState,
   SimulationScenario,
   SimulationResult,
-  ProductColor,
 } from './domain';
+export type { ProductColor } from './product';
 
 // ============================================
 // TIPOS LEGADOS (para compatibilidade)

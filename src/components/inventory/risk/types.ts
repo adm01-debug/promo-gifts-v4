@@ -1,9 +1,9 @@
 /**
  * Tipos compartilhados do painel de risco de fornecedor.
  */
-import { type StockStatus, type ProductStockSummary } from "@/types/stock";
+import { type StockStatus, type ProductStockSummary } from '@/types/stock';
 
-export type RiskSeverity = 'critical' | 'warning' | 'ok';
+export type RiskSeverity = 'critical' | 'ok' | 'warning';
 
 export interface RiskProduct {
   id: string;
@@ -30,9 +30,19 @@ export function deriveSeverity(p: ProductStockSummary): RiskSeverity {
   if (p.overallStatus === 'incoming') return 'warning';
   if (p.overallStatus === 'out_of_stock' || p.overallStatus === 'critical') return 'critical';
   // #15 fix: guard against Infinity — only trigger if finite AND below threshold
-  if (p.daysUntilFullStockout !== null && Number.isFinite(p.daysUntilFullStockout) && p.daysUntilFullStockout < 7) return 'critical';
+  if (
+    typeof p.daysUntilFullStockout === 'number' &&
+    Number.isFinite(p.daysUntilFullStockout) &&
+    p.daysUntilFullStockout < 7
+  )
+    return 'critical';
   if (p.overallStatus === 'low_stock') return 'warning';
-  if (p.daysUntilFullStockout !== null && Number.isFinite(p.daysUntilFullStockout) && p.daysUntilFullStockout < 15) return 'warning';
+  if (
+    typeof p.daysUntilFullStockout === 'number' &&
+    Number.isFinite(p.daysUntilFullStockout) &&
+    p.daysUntilFullStockout < 15
+  )
+    return 'warning';
   if (p.variantsOutOfStock > 0 || p.variantsCritical > 0) return 'warning';
   return 'ok';
 }

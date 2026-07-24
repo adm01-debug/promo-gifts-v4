@@ -27,12 +27,43 @@ import {
   type Step,
   type ColumnMapping,
   type ValidationResult,
-} from "./bulk-import/types";
+} from './bulk-import/types';
 import { StepUpload } from './bulk-import/StepUpload';
 import { StepMapping } from './bulk-import/StepMapping';
 import { StepPreview } from './bulk-import/StepPreview';
 import { StepImporting, StepComplete } from './bulk-import/StepComplete';
 import { logger } from '@/lib/logger';
+
+const NUMERIC_FIELDS = [
+  'sale_price',
+  'cost_price',
+  'stock_quantity',
+  'min_quantity',
+  'height_cm',
+  'width_cm',
+  'length_cm',
+  'diameter_cm',
+  'weight_g',
+  'capacity_ml',
+  'box_width_mm',
+  'box_height_mm',
+  'box_length_mm',
+  'box_weight_kg',
+  'box_quantity',
+  'box_volume_cm3',
+] as const;
+
+const BOOLEAN_FIELDS = [
+  'is_active',
+  'is_featured',
+  'is_bestseller',
+  'is_new',
+  'is_on_sale',
+  'is_kit',
+  'has_commercial_packaging',
+] as const;
+
+const URL_FIELDS = ['image_url', 'primary_image_url', 'og_image_url', 'box_image'] as const;
 
 interface BulkImportDialogProps {
   open: boolean;
@@ -111,23 +142,6 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
         }
       }
 
-      const NUMERIC_FIELDS = [
-        'cost_price',
-        'stock_quantity',
-        'min_quantity',
-        'height_cm',
-        'width_cm',
-        'length_cm',
-        'diameter_cm',
-        'weight_g',
-        'capacity_ml',
-        'box_width_mm',
-        'box_height_mm',
-        'box_length_mm',
-        'box_weight_kg',
-        'box_quantity',
-        'box_volume_cm3',
-      ] as const;
       for (const numField of NUMERIC_FIELDS) {
         if (mapped[numField] !== undefined && mapped[numField] !== '') {
           const val = parseFloat(String(mapped[numField]).replace(',', '.'));
@@ -142,15 +156,6 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
         }
       }
 
-      const BOOLEAN_FIELDS = [
-        'is_active',
-        'is_featured',
-        'is_bestseller',
-        'is_new',
-        'is_on_sale',
-        'is_kit',
-        'has_commercial_packaging',
-      ] as const;
       for (const boolField of BOOLEAN_FIELDS) {
         if (mapped[boolField] !== undefined && mapped[boolField] !== '') {
           const raw = String(mapped[boolField]).toLowerCase().trim();
@@ -158,7 +163,6 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
         }
       }
 
-      const URL_FIELDS = ['image_url', 'primary_image_url', 'og_image_url', 'box_image'] as const;
       for (const urlField of URL_FIELDS) {
         if (mapped[urlField] && typeof mapped[urlField] === 'string') {
           const url = String(mapped[urlField]).trim();
@@ -180,9 +184,11 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
       const skuCount = allSkus.filter((s) => s === sku).length;
       if (skuCount > 1) warnings.push('SKU duplicado dentro do arquivo');
 
+      // `mapped` holds CSV/Excel values typed as `unknown`; they are coerced above,
+      // so assert the assembled row to the typed ImportRow shape.
       const importRow: ImportRow | undefined =
         errors.length === 0
-          ? {
+          ? ({
               sku,
               name: String(mapped.name).trim(),
               sale_price: mapped.sale_price ?? 0,
@@ -227,7 +233,7 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
               is_kit: mapped.is_kit ?? null,
               gender: mapped.gender || null,
               dimensions: mapped.dimensions || null,
-            }
+            } as unknown as ImportRow)
           : undefined;
 
       results.push({
@@ -263,11 +269,11 @@ export function BulkImportDialog({ open, onOpenChange, onComplete }: BulkImportD
   const executeImport = useCallback(async () => {
     let rowsToImport: ImportRow[];
     if (importMode === 'insert') {
-      rowsToImport = validationResults
-        .filter((r) => r.valid && r.data && !r.existsInDb)
-        .map((r) => r.data!);
+      rowsToImport = validationResults.flatMap((r) =>
+        r.valid && r.data && !r.existsInDb ? [r.data] : [],
+      );
     } else {
-      rowsToImport = validationResults.filter((r) => r.valid && r.data).map((r) => r.data!);
+      rowsToImport = validationResults.flatMap((r) => (r.valid && r.data ? [r.data] : []));
     }
     if (rowsToImport.length === 0) {
       toast.error('Nenhuma linha para importar');

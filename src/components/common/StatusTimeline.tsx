@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -16,17 +15,17 @@ import {
 import { cn } from '@/lib/utils';
 
 type TimelineStatus =
-  | 'created'
-  | 'sent'
-  | 'viewed'
   | 'approved'
-  | 'rejected'
+  | 'cancelled'
+  | 'comment'
+  | 'created'
+  | 'delivered'
   | 'paid'
   | 'production'
+  | 'rejected'
+  | 'sent'
   | 'shipped'
-  | 'delivered'
-  | 'cancelled'
-  | 'comment';
+  | 'viewed';
 
 interface TimelineEvent {
   id: string;
@@ -35,7 +34,7 @@ interface TimelineEvent {
   description?: string;
   timestamp: Date | string;
   user?: string;
-  metadata?: Record<string, string | number | boolean>;
+  metadata?: Record<string, boolean | number | string>;
 }
 
 interface StatusTimelineProps {
@@ -120,13 +119,7 @@ export function StatusTimeline({ events, className, showConnector = true }: Stat
           typeof event.timestamp === 'string' ? new Date(event.timestamp) : event.timestamp;
 
         return (
-          <motion.div
-            key={event.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="relative flex gap-4"
-          >
+          <div key={event.id} className="relative flex gap-4">
             {/* Connector line */}
             {showConnector && !isLast && (
               <div
@@ -174,7 +167,7 @@ export function StatusTimeline({ events, className, showConnector = true }: Stat
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         );
       })}
     </div>
@@ -206,10 +199,7 @@ export function HorizontalStatusBar({ steps, className }: HorizontalStatusBarPro
           <div key={index} className="flex items-center">
             {/* Step */}
             <div className="flex flex-col items-center">
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: index * 0.1 }}
+              <div
                 className={cn(
                   'flex h-8 w-8 items-center justify-center rounded-full',
                   step.completed ? config.bgColor : 'bg-muted',
@@ -221,7 +211,7 @@ export function HorizontalStatusBar({ steps, className }: HorizontalStatusBarPro
                 ) : (
                   <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
                 )}
-              </motion.div>
+              </div>
               <span
                 className={cn(
                   'mt-1 whitespace-nowrap text-xs',

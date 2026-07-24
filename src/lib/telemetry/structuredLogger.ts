@@ -16,7 +16,7 @@
 import { captureException } from '@/lib/sentry';
 import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
 
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type LogLevel = 'debug' | 'error' | 'info' | 'warn';
 
 export interface ClientLogger {
   scope: string;
@@ -67,15 +67,25 @@ function emit(
 
   const isDev = import.meta.env.DEV;
   const tag = `[${scope}:${event}]`;
+
+  // DEV: console nativo por nível — info/debug não poluem o painel de warnings.
+  // PROD: apenas warn/error — o build de produção stripa console.log/info/debug
+  // (vite.config esbuild.pure), então info/debug em PROD precisam sair via warn
+  // ou o JSON nunca chega aos collectors.
+  /* eslint-disable no-console */
   if (isDev) {
-    const fn = level === 'warn' ? console.warn : level === 'error' ? console.error : console.log;
-    fn(tag, payload);
+    if (level === 'error') console.error(tag, payload);
+    else if (level === 'warn') console.warn(tag, payload);
+    else if (level === 'info') console.info(tag, payload);
+    else console.debug(tag, payload);
   } else {
     const json = JSON.stringify(payload);
     if (level === 'error') console.error(json);
     else if (level === 'warn') console.warn(json);
-    else console.log(json);
+    else if (level === 'info') console.log(json);
+    else console.debug(json);
   }
+  /* eslint-enable no-console */
 
   // Sentry forwarding
   if (level === 'error') {

@@ -1,29 +1,28 @@
-import { type ExternalTechnique } from "@/types/external-db";
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { invokeExternalDb } from "@/lib/external-db";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Slider } from "@/components/ui/slider";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { 
-  Clock, 
-  Palette, 
+import { dbInvoke } from '@/lib/db/postgrest';
+import { type ExternalTechnique } from '@/types/external-db';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Slider } from '@/components/ui/slider';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Clock,
+  Palette,
   Search,
   Zap,
   AlertTriangle,
   CheckCircle2,
-  DollarSign,
   Package,
   Filter,
   X,
-  Info
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+  Info,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Technique {
   id: string;
@@ -46,25 +45,40 @@ interface TechniqueSelectorProps {
   compact?: boolean;
 }
 
-type SLAFilter = "all" | "express" | "standard" | "extended";
+type SLAFilter = 'all' | 'express' | 'extended' | 'standard';
 
-const SLA_OPTIONS: { value: SLAFilter; label: string; maxDays: number | null; icon: React.ReactNode }[] = [
-  { value: "all", label: "Todos", maxDays: null, icon: <Palette className="h-3 w-3" /> },
-  { value: "express", label: "Express (≤3 dias)", maxDays: 3, icon: <Zap className="h-3 w-3" /> },
-  { value: "standard", label: "Normal (4-7 dias)", maxDays: 7, icon: <Clock className="h-3 w-3" /> },
-  { value: "extended", label: "Estendido (8+ dias)", maxDays: null, icon: <AlertTriangle className="h-3 w-3" /> },
+const SLA_OPTIONS: {
+  value: SLAFilter;
+  label: string;
+  maxDays: number | null;
+  icon: React.ReactNode;
+}[] = [
+  { value: 'all', label: 'Todos', maxDays: null, icon: <Palette className="h-3 w-3" /> },
+  { value: 'express', label: 'Express (≤3 dias)', maxDays: 3, icon: <Zap className="h-3 w-3" /> },
+  {
+    value: 'standard',
+    label: 'Normal (4-7 dias)',
+    maxDays: 7,
+    icon: <Clock className="h-3 w-3" />,
+  },
+  {
+    value: 'extended',
+    label: 'Estendido (8+ dias)',
+    maxDays: null,
+    icon: <AlertTriangle className="h-3 w-3" />,
+  },
 ];
 
 function formatCurrency(value: number | null): string {
-  if (!value) return "—";
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+  if (!value) return '—';
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 }
 
 function getSLABadgeStyle(days: number | null): string {
-  if (!days) return "bg-muted text-muted-foreground";
-  if (days <= 3) return "bg-primary/10 text-primary border-primary/30";
-  if (days <= 7) return "bg-warning/10 text-warning border-warning/30";
-  return "bg-destructive/10 text-destructive border-destructive/30";
+  if (!days) return 'bg-muted text-muted-foreground';
+  if (days <= 3) return 'bg-primary/10 text-primary border-primary/30';
+  if (days <= 7) return 'bg-warning/10 text-warning border-warning/30';
+  return 'bg-destructive/10 text-destructive border-destructive/30';
 }
 
 export function TechniqueSelector({
@@ -75,27 +89,30 @@ export function TechniqueSelector({
   showFilters = true,
   compact = false,
 }: TechniqueSelectorProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [slaFilter, setSlaFilter] = useState<SLAFilter>("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [slaFilter, setSlaFilter] = useState<SLAFilter>('all');
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [showActiveFilters, setShowActiveFilters] = useState(false);
 
   const { data: techniques, isLoading } = useQuery({
-    queryKey: ["techniques-selector-external"],
+    queryKey: ['techniques-selector-external'],
     queryFn: async () => {
-      const result = await invokeExternalDb<Technique>({
-        table: "personalization_techniques",
-        operation: "select",
+      const result = await dbInvoke<Technique>({
+        table: 'personalization_techniques',
+        operation: 'select',
         filters: { is_active: true },
-        orderBy: { column: "name", ascending: true },
+        orderBy: { column: 'name', ascending: true },
         limit: 100,
       });
       // Mapear campos do BD externo para interface
-      return result.records.map(t => ({
-        ...t,
-        setup_cost: (t as ExternalTechnique).setup_price ?? t.setup_cost ?? null,
-        unit_cost: (t as ExternalTechnique).handling_price ?? t.unit_cost ?? null,
-      }));
+      return result.records.map((t) => {
+        const ext = t as Pick<ExternalTechnique, 'handling_price' | 'setup_price'> & Technique;
+        return {
+          ...t,
+          setup_cost: ext.setup_price ?? t.setup_cost ?? null,
+          unit_cost: ext.handling_price ?? t.unit_cost ?? null,
+        };
+      });
     },
     staleTime: 10 * 60 * 1000, // 10 minutos
   });
@@ -114,11 +131,11 @@ export function TechniqueSelector({
       }
 
       // SLA filter
-      if (slaFilter !== "all") {
+      if (slaFilter !== 'all') {
         const days = t.estimated_days || 999;
-        if (slaFilter === "express" && days > 3) return false;
-        if (slaFilter === "standard" && (days < 4 || days > 7)) return false;
-        if (slaFilter === "extended" && days < 8) return false;
+        if (slaFilter === 'express' && days > 3) return false;
+        if (slaFilter === 'standard' && (days < 4 || days > 7)) return false;
+        if (slaFilter === 'extended' && days < 8) return false;
       }
 
       // Max days filter (from prop)
@@ -135,14 +152,14 @@ export function TechniqueSelector({
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (searchQuery) count++;
-    if (slaFilter !== "all") count++;
+    if (slaFilter !== 'all') count++;
     if (priceRange[0] > 0 || priceRange[1] < 1000) count++;
     return count;
   }, [searchQuery, slaFilter, priceRange]);
 
   const clearFilters = () => {
-    setSearchQuery("");
-    setSlaFilter("all");
+    setSearchQuery('');
+    setSlaFilter('all');
     setPriceRange([0, 1000]);
   };
 
@@ -162,7 +179,7 @@ export function TechniqueSelector({
         <div className="space-y-3">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar técnica..."
               value={searchQuery}
@@ -173,8 +190,8 @@ export function TechniqueSelector({
               <Button
                 variant="ghost"
                 size="sm"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
-                onClick={() => setSearchQuery("")}
+                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
+                onClick={() => setSearchQuery('')}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -186,7 +203,7 @@ export function TechniqueSelector({
             {SLA_OPTIONS.map((option) => (
               <Button
                 key={option.value}
-                variant={slaFilter === option.value ? "default" : "outline"}
+                variant={slaFilter === option.value ? 'default' : 'outline'}
                 size="sm"
                 className="h-8"
                 onClick={() => setSlaFilter(option.value)}
@@ -205,10 +222,10 @@ export function TechniqueSelector({
               className="text-muted-foreground"
               onClick={() => setShowActiveFilters(!showActiveFilters)}
             >
-              <Filter className="h-4 w-4 mr-1" />
+              <Filter className="mr-1 h-4 w-4" />
               Super Filtro
               {activeFiltersCount > 0 && (
-                <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 justify-center">
+                <Badge variant="secondary" className="ml-2 h-5 w-5 justify-center p-0">
                   {activeFiltersCount}
                 </Badge>
               )}
@@ -221,7 +238,7 @@ export function TechniqueSelector({
                 className="text-muted-foreground hover:text-destructive"
                 onClick={clearFilters}
               >
-                <X className="h-4 w-4 mr-1" />
+                <X className="mr-1 h-4 w-4" />
                 Limpar Filtros
               </Button>
             )}
@@ -229,7 +246,7 @@ export function TechniqueSelector({
 
           {/* Advanced filters panel */}
           {showActiveFilters && (
-            <div className="p-4 bg-muted/50 rounded-lg space-y-4">
+            <div className="space-y-4 rounded-lg bg-muted/50 p-4">
               <div>
                 <Label className="text-sm">Faixa de Preço (p/ {quantity} un.)</Label>
                 <div className="mt-2 px-2">
@@ -240,7 +257,7 @@ export function TechniqueSelector({
                     step={50}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <div className="mt-1 flex justify-between text-xs text-muted-foreground">
                     <span>{formatCurrency(priceRange[0])}</span>
                     <span>{formatCurrency(priceRange[1])}</span>
                   </div>
@@ -254,7 +271,8 @@ export function TechniqueSelector({
       {/* Results count */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <span>
-          {filteredTechniques.length} técnica{filteredTechniques.length !== 1 ? "s" : ""} encontrada{filteredTechniques.length !== 1 ? "s" : ""}
+          {filteredTechniques.length} técnica{filteredTechniques.length !== 1 ? 's' : ''} encontrada
+          {filteredTechniques.length !== 1 ? 's' : ''}
         </span>
         <span className="flex items-center gap-1">
           <Info className="h-3 w-3" />
@@ -280,36 +298,32 @@ export function TechniqueSelector({
             <TooltipProvider key={technique.id}>
               <div
                 className={cn(
-                  "relative flex items-center gap-3 p-3 rounded-lg border transition-all",
+                  'relative flex items-center gap-3 rounded-lg border p-3 transition-all',
                   isSelected
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50",
-                  !minQtyMet && "opacity-60 pointer-events-none",
-                  compact ? "p-2" : "p-3"
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50',
+                  !minQtyMet && 'pointer-events-none opacity-60',
+                  compact ? 'p-2' : 'p-3',
                 )}
               >
-                <RadioGroupItem 
-                  value={technique.id} 
-                  id={technique.id}
-                  disabled={!minQtyMet}
-                />
-                
+                <RadioGroupItem value={technique.id} id={technique.id} disabled={!minQtyMet} />
+
                 <Label
                   htmlFor={technique.id}
-                  className="flex-1 flex items-center justify-between cursor-pointer"
+                  className="flex flex-1 cursor-pointer items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{technique.name}</span>
                         {technique.code && (
-                          <Badge variant="outline" className="text-[10px] font-mono">
+                          <Badge variant="outline" className="font-mono text-[10px]">
                             {technique.code}
                           </Badge>
                         )}
                       </div>
                       {!compact && technique.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                        <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
                           {technique.description}
                         </p>
                       )}
@@ -320,9 +334,9 @@ export function TechniqueSelector({
                     {technique.estimated_days && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Badge 
-                            variant="outline" 
-                            className={cn("gap-1", getSLABadgeStyle(technique.estimated_days))}
+                          <Badge
+                            variant="outline"
+                            className={cn('gap-1', getSLABadgeStyle(technique.estimated_days))}
                           >
                             {technique.estimated_days <= 3 ? (
                               <Zap className="h-3 w-3" />
@@ -343,28 +357,24 @@ export function TechniqueSelector({
                     {technique.min_quantity && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className={cn(
-                            "text-xs flex items-center gap-1",
-                            minQtyMet ? "text-muted-foreground" : "text-destructive"
-                          )}>
+                          <span
+                            className={cn(
+                              'flex items-center gap-1 text-xs',
+                              minQtyMet ? 'text-muted-foreground' : 'text-destructive',
+                            )}
+                          >
                             <Package className="h-3 w-3" />
                             {technique.min_quantity}+
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent>
-                          Mínimo: {technique.min_quantity} unidades
-                        </TooltipContent>
+                        <TooltipContent>Mínimo: {technique.min_quantity} unidades</TooltipContent>
                       </Tooltip>
                     )}
 
                     <div className="text-right">
-                      <div className="font-semibold text-sm">
-                        {formatCurrency(totalCost)}
-                      </div>
+                      <div className="text-sm font-semibold">{formatCurrency(totalCost)}</div>
                       {!compact && (
-                        <div className="text-[10px] text-muted-foreground">
-                          p/ {quantity} un.
-                        </div>
+                        <div className="text-[10px] text-muted-foreground">p/ {quantity} un.</div>
                       )}
                     </div>
                   </div>
@@ -380,16 +390,11 @@ export function TechniqueSelector({
       </RadioGroup>
 
       {filteredTechniques.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <Palette className="h-12 w-12 mx-auto mb-4 opacity-50" />
+        <div className="py-8 text-center text-muted-foreground">
+          <Palette className="mx-auto mb-4 h-12 w-12 opacity-50" />
           <p>Nenhuma técnica encontrada</p>
           {activeFiltersCount > 0 && (
-            <Button
-              variant="link-primary"
-              size="sm"
-              className="mt-2"
-              onClick={clearFilters}
-            >
+            <Button variant="link" size="sm" className="mt-2" onClick={clearFilters}>
               Limpar filtros
             </Button>
           )}

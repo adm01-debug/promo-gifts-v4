@@ -25,19 +25,33 @@ const mockCompanies = [
 ];
 
 const mockHistory = [
-  { id: '1', label: 'Alpha Corp', type: 'company', metadata: { cnpj: '111' }, timestamp: Date.now() },
-  { id: '2', label: 'Beta Solutions', type: 'company', metadata: { cnpj: '22.222.222/0001-22' }, timestamp: Date.now() },
+  {
+    id: '1',
+    label: 'Alpha Corp',
+    type: 'company',
+    metadata: { cnpj: '111' },
+    timestamp: Date.now(),
+  },
+  {
+    id: '2',
+    label: 'Beta Solutions',
+    type: 'company',
+    metadata: { cnpj: '22.222.222/0001-22' },
+    timestamp: Date.now(),
+  },
 ];
 
 describe('CompanySearchDropdown', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useQuery as any).mockReturnValue({
       data: mockCompanies,
       isLoading: false,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useSearchHistory as any).mockReturnValue({
       history: mockHistory,
       addToHistory: vi.fn(),
@@ -53,7 +67,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -72,7 +86,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -96,7 +110,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -107,7 +121,8 @@ describe('CompanySearchDropdown', () => {
       const results = screen.getAllByRole('button');
       // Should find Alpha Corp via history CNPJ match
       expect(results[1]).toHaveTextContent('Alpha Corp');
-      expect(results[1]).toHaveTextContent('111');
+      // CNPJ '111' is rendered as masked '11.1' by maskCnpj()
+      expect(results[1]).toHaveTextContent('11.1');
     });
   });
 
@@ -118,7 +133,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -158,7 +173,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null} // Not showing the "selected" state card to keep dropdown open
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
@@ -178,13 +193,13 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');
     fireEvent.focus(input);
     fireEvent.change(input, { target: { value: 'NonExistent' } });
-    
+
     await waitFor(() => {
       expect(screen.queryByTestId('history-item-1')).not.toBeInTheDocument();
     });
@@ -200,6 +215,7 @@ describe('CompanySearchDropdown', () => {
 
   it('should maintain highlighted state and show history while loading new results', async () => {
     // 1. Setup mock to simulate slow search
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (useQuery as any).mockImplementation((options: any) => {
       if (options.queryKey[0] === 'quote-companies-search') {
         return { data: [], isLoading: true }; // Always loading
@@ -213,7 +229,7 @@ describe('CompanySearchDropdown', () => {
         selectedCompany={null}
         onSelectCompany={vi.fn()}
         onClearCompany={vi.fn()}
-      />
+      />,
     );
 
     const input = screen.getByTestId('company-search-input');

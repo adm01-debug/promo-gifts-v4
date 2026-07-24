@@ -7,10 +7,10 @@ describe('Daily Scenario: Navigation & Access RBAC Simulation', () => {
     // Exact match
     expect(isNavItemActive('/', '/')).toBe(true);
     expect(isNavItemActive('/orcamentos', '/')).toBe(false);
-    
+
     // Subpath match (e.g. quote detail)
     expect(isNavItemActive('/orcamentos/123', '/orcamentos')).toBe(true);
-    
+
     // False positive prevention
     expect(isNavItemActive('/orcamentos-v2', '/orcamentos')).toBe(false);
   });
@@ -19,7 +19,7 @@ describe('Daily Scenario: Navigation & Access RBAC Simulation', () => {
     // Technical routes should be dev-only
     expect(isDevOnlyPath('/admin/telemetria')).toBe(true);
     expect(isDevOnlyPath('/admin/conexoes')).toBe(true);
-    
+
     // Non-technical admin routes
     expect(isDevOnlyPath('/admin/usuarios')).toBe(false);
     expect(isAdminOnlyPath('/admin/usuarios')).toBe(true);

@@ -25,6 +25,13 @@ vi.mock("@/lib/external-db/invoke", () => ({
   extractFunctionErrorMessage: vi.fn(() => "erro"),
 }));
 
+vi.mock("@/lib/db/postgrest", () => ({
+  dbInvoke: vi.fn().mockResolvedValue({ records: [], count: 0 }),
+  dbInvokeSingle: vi.fn().mockResolvedValue({}),
+  dbInvokeDelete: vi.fn().mockResolvedValue(undefined),
+  dbBatch: vi.fn().mockResolvedValue([]),
+}));
+
 vi.mock("@/contexts/ProductsContext", () => ({
   useProductsContext: () => ({ getProductById: vi.fn(() => null), products: [] }),
   ProductsProvider: ({ children }: { children: React.ReactNode }) => children,

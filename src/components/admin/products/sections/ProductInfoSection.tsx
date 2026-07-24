@@ -16,7 +16,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 
 interface Props extends FormSectionProps {
-  skuStatus: 'idle' | 'checking' | 'valid' | 'duplicate';
+  skuStatus: 'checking' | 'duplicate' | 'idle' | 'valid';
   duplicateName: string;
   skuManuallyEdited: boolean;
   onSkuManualEdit: () => void;
@@ -38,7 +38,6 @@ export function ProductInfoSection({
   const supplierRefValue = watch('supplier_reference') || '';
   const descValue = watch('description') || '';
   const shortDescValue = watch('short_description') || '';
-  const _categoryId = watch('category_id');
 
   return (
     <SectionCard
@@ -121,9 +120,7 @@ export function ProductInfoSection({
                   <TooltipTrigger asChild>
                     <AlertCircle className="h-3.5 w-3.5 text-destructive" />
                   </TooltipTrigger>
-                  <TooltipContent className="text-xs">
-                    SKU já usado em "{duplicateName}"
-                  </TooltipContent>
+                  <TooltipContent>SKU já usado em "{duplicateName}"</TooltipContent>
                 </Tooltip>
               )}
             </div>
@@ -234,7 +231,7 @@ export function ProductInfoSection({
             Modo de Fornecimento
           </FieldLabel>
           <Select
-            value={watch?.('supply_mode') || ''}
+            value={watch?.('supply_mode') ?? ''}
             onValueChange={(v) => setValue?.('supply_mode', v)}
           >
             <SelectTrigger className="h-9">

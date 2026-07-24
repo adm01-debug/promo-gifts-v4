@@ -3,9 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import type { PromobrindProduct } from '@/lib/external-db';
 
+import { logger } from '@/lib/logger';
 // Re-export extracted hooks for backwards compatibility
-export { useProductInsights } from "@/hooks/products/useProductInsights";
-export { useClientTopProducts } from "@/hooks/crm/useClientTopProducts";
+export { useProductInsights } from '@/hooks/products/useProductInsights';
+export { useClientTopProducts } from '@/hooks/crm/useClientTopProducts';
 
 interface ProductRecommendation {
   id: string;
@@ -60,7 +61,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
 
       if (relatedError || !relatedItems?.length) return [];
 
-      const productCounts = relatedItems.reduce(
+      const productCounts = relatedItems.reduce<Record<string, FrequentlyBoughtTogether>>(
         (acc, item) => {
           const key = item.product_sku || item.product_id;
           if (!key) return acc;
@@ -78,7 +79,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
           acc[key].timesOrderedTogether++;
           return acc;
         },
-        {} as Record<string, FrequentlyBoughtTogether>,
+        {},
       );
 
       return Object.values(productCounts)
@@ -103,7 +104,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
 
       if (viewsError) return [];
 
-      const viewedSkus = recentViews?.map((v) => v.product_sku).filter(Boolean) || [];
+      const viewedSkus = recentViews?.map((v) => v.product_sku).filter(Boolean) ?? [];
 
       try {
         const { fetchPromobrindProducts, getProductPrice, getProductImageUrl } =
@@ -151,7 +152,7 @@ export function useProductRecommendations(productId?: string, productSku?: strin
           .slice(0, 6)
           .map((p) => mapProduct(p, 80, 'Baseado no seu histórico'));
       } catch (error) {
-        console.error('Error fetching recommendations:', error);
+        logger.error('Error fetching recommendations:', error);
         return [];
       }
     },
@@ -172,23 +173,21 @@ export function useProductRecommendations(productId?: string, productSku?: strin
 
       if (error || !recentQuoteItems?.length) return [];
 
-      const productCounts = recentQuoteItems.reduce(
-        (acc, item) => {
-          const key = item.product_sku || item.product_name;
-          if (!acc[key]) {
-            acc[key] = {
-              sku: item.product_sku,
-              name: item.product_name,
-              image: item.product_image_url,
-              price: item.unit_price,
-              count: 0,
-            };
-          }
-          acc[key].count++;
-          return acc;
-        },
-        {} as Record<string, ProductCount>,
-      );
+      const productCounts = recentQuoteItems.reduce<Record<string, ProductCount>>((acc, item) => {
+        const key = item.product_sku || item.product_name;
+        if (!key) return acc;
+        if (!acc[key]) {
+          acc[key] = {
+            sku: item.product_sku,
+            name: item.product_name,
+            image: item.product_image_url,
+            price: item.unit_price,
+            count: 0,
+          };
+        }
+        acc[key].count++;
+        return acc;
+      }, {});
 
       const sorted = Object.values(productCounts)
         .sort((a, b) => b.count - a.count)
@@ -201,7 +200,8 @@ export function useProductRecommendations(productId?: string, productSku?: strin
         const { fetchPromobrindProducts, getProductPrice, getProductImageUrl } =
           await import('@/lib/external-db');
         const productsData = await fetchPromobrindProducts({ limit: 500 });
-        const matchedProducts = productsData.filter((p) => skus.includes(p.sku));
+        const skuSet = new Set(skus);
+        const matchedProducts = productsData.filter((p) => skuSet.has(p.sku));
 
         return matchedProducts.map((p) => {
           const imageUrl = getProductImageUrl(p);
@@ -216,8 +216,8 @@ export function useProductRecommendations(productId?: string, productSku?: strin
             reason: 'Em alta nas cotações',
           };
         });
-      } catch (error) {
-        console.error('Error fetching trending products:', error);
+      } catch (fetchErr) {
+        logger.error('Error fetching trending products:', fetchErr);
         return [];
       }
     },

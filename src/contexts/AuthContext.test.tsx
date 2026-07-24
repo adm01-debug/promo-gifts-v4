@@ -40,9 +40,7 @@ vi.mock('@/services/authService', async (importOriginal) => {
   return {
     authService: {
       ...actual.authService,
-      fetchAAL: vi
-        .fn()
-        .mockResolvedValue({ currentLevel: 'aal1', nextLevel: 'aal1', hasMFA: false }),
+      fetchAAL: vi.fn().mockResolvedValue({ currentAAL: 'aal1', nextAAL: 'aal1', hasMFA: false }),
       fetchProfile: vi.fn().mockResolvedValue({ data: null, error: null }),
       queryRoles: vi.fn().mockResolvedValue({ data: [], error: null }),
     },
@@ -64,14 +62,16 @@ describe('AuthContext', () => {
 
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
-      } as unknown);
+      } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>);
       vi.mocked(supabase.auth.signOut).mockRejectedValue(new Error('Network error'));
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       // Wait for initialization
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => {
+          setTimeout(resolve, 0);
+        });
       });
 
       // Verify initial state (mocked)
@@ -98,12 +98,14 @@ describe('AuthContext', () => {
       const mockSession = { user: mockUser };
       vi.mocked(supabase.auth.getSession).mockResolvedValue({
         data: { session: mockSession },
-      } as unknown);
+      } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => {
+          setTimeout(resolve, 0);
+        });
       });
 
       await act(async () => {

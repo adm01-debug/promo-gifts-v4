@@ -18,7 +18,11 @@
  *   - `gravacao_altura_max`   ← `print_max_height`
  */
 
-import type { CustomizationOptionsResponse, GravacaoLocation, TechniqueOption } from '@/types/customization';
+import type {
+  CustomizationOptionsResponse,
+  GravacaoLocation,
+  TechniqueOption,
+} from '@/types/customization';
 import { validateRpcPayload } from '@/lib/personalization/rpc-validator';
 import { OPTIONS_CONTRACT } from '@/lib/personalization/rpc-contracts';
 
@@ -74,7 +78,7 @@ function adaptOption(raw: Raw): TechniqueOption {
       maxHeight,
     ),
 
-    shape: (pick<string>(raw, 'shape') ?? 'rectangle') as 'rectangle' | 'circle',
+    shape: (pick<string>(raw, 'shape') ?? 'rectangle') as 'circle' | 'rectangle',
     is_curved: toBool(pick(raw, 'is_curved', 'curved', 'curved_surface')),
 
     usa_dimensao: toBool(pick(raw, 'usa_dimensao', 'uses_dimension', 'price_by_area')),

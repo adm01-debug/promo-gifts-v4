@@ -6,7 +6,7 @@ import { sortByColorGroup, sortVariationsByColor, sortColorSummary } from "@/uti
 
 describe("colorSorting", () => {
   describe("sortByColorGroup", () => {
-    it("sorts by color group order (preto first, cinza last)", () => {
+    it("sorts by color group order (preto > branco > cinza > azul)", () => {
       const items = [
         { name: "Azul Royal" },
         { name: "Preto" },
@@ -16,7 +16,8 @@ describe("colorSorting", () => {
       const sorted = sortByColorGroup(items, i => i.name);
       expect(sorted[0].name).toBe("Preto");
       expect(sorted[1].name).toBe("Branco");
-      expect(sorted[2].name).toBe("Azul Royal");
+      expect(sorted[2].name).toBe("Cinza");
+      expect(sorted[3].name).toBe("Azul Royal");
     });
 
     it("sorts dark before light within same group", () => {

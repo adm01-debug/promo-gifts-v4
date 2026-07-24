@@ -13,7 +13,7 @@ const items: Item[] = [
   { id: "telemetry", path: "/admin/telemetria" },
   { id: "connections", path: "/admin/conexoes/status" },
   { id: "rbac", path: "/admin/rbac-rotas" },
-  { id: "theme-toggle" }, // sem path → sempre visível
+  { id: "settings", path: "/configuracoes" },
 ];
 
 describe("filterByRoutePermission", () => {
@@ -22,7 +22,7 @@ describe("filterByRoutePermission", () => {
       isDev: false,
       isAdmin: false,
     });
-    expect(out.map((i) => i.id)).toEqual(["home", "quotes", "theme-toggle"]);
+    expect(out.map((i) => i.id)).toEqual(["home", "quotes", "settings"]);
   });
 
   it("admin vê admin + autenticadas, mas NÃO vê dev-only", () => {
@@ -45,11 +45,11 @@ describe("filterByRoutePermission", () => {
     expect(out).toHaveLength(items.length);
   });
 
-  it("itens sem path nunca são filtrados", () => {
+  it("itens com path válido para o papel são incluídos", () => {
     const out = filterByRoutePermission(items, (i) => i.path, {
       isDev: false,
       isAdmin: false,
     });
-    expect(out.find((i) => i.id === "theme-toggle")).toBeTruthy();
+    expect(out.find((i) => i.id === "settings")).toBeTruthy();
   });
 });

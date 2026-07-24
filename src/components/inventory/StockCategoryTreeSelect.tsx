@@ -2,13 +2,12 @@
  * StockCategoryTreeSelect — Compact hierarchical category selector for stock filters.
  * Uses useCategoriesTree to show full tree with expand/collapse.
  */
-import { useState, useMemo } from "react";
-import { ChevronRight, FolderTree, Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { useCategoriesTree, type CategoryNode } from "@/hooks/products";
-import { motion } from "framer-motion";
+import { useState, useMemo } from 'react';
+import { ChevronRight, FolderTree, Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { useCategoriesTree, type CategoryNode } from '@/hooks/products';
+import { m as motion } from 'framer-motion';
 
 interface StockCategoryTreeSelectProps {
   value: string | undefined;
@@ -43,7 +42,7 @@ function TreeNodeItem({
     : true;
 
   const childrenMatch = searchTerm
-    ? node.children?.some(c => nodeOrDescendantsMatch(c, searchTerm))
+    ? node.children?.some((c) => nodeOrDescendantsMatch(c, searchTerm))
     : false;
 
   if (searchTerm && !matchesSearch && !childrenMatch) return null;
@@ -52,9 +51,9 @@ function TreeNodeItem({
     <div>
       <div
         className={cn(
-          "flex items-center gap-1.5 py-1.5 px-2 rounded cursor-pointer transition-all text-xs",
-          "hover:bg-accent/60",
-          isSelected && "bg-primary/15 text-primary font-semibold"
+          'flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 text-xs transition-all',
+          'hover:bg-accent/60',
+          isSelected && 'bg-primary/15 font-semibold text-primary',
         )}
         style={{ paddingLeft: `${level * 14 + 8}px` }}
         onClick={(e) => {
@@ -67,22 +66,22 @@ function TreeNodeItem({
           <motion.div
             animate={{ rotate: isExpanded ? 90 : 0 }}
             transition={{ duration: 0.15 }}
-            className="text-muted-foreground shrink-0"
+            className="shrink-0 text-muted-foreground"
           >
-            <ChevronRight className="w-3 h-3" />
+            <ChevronRight className="h-3 w-3" />
           </motion.div>
         ) : (
           <span className="w-3 shrink-0" />
         )}
 
-        {node.icon && <span className="text-xs shrink-0">{node.icon}</span>}
+        {node.icon && <span className="shrink-0 text-xs">{node.icon}</span>}
 
-        <span className="truncate flex-1">{node.name}</span>
+        <span className="flex-1 truncate">{node.name}</span>
       </div>
 
       {hasChildren && (isExpanded || (searchTerm && childrenMatch)) && (
         <div>
-          {node.children.map(child => (
+          {node.children.map((child) => (
             <TreeNodeItem
               key={child.id}
               node={child}
@@ -102,22 +101,22 @@ function TreeNodeItem({
 
 function nodeOrDescendantsMatch(node: CategoryNode, term: string): boolean {
   if (node.name.toLowerCase().includes(term.toLowerCase())) return true;
-  return node.children?.some(c => nodeOrDescendantsMatch(c, term)) || false;
+  return node.children?.some((c) => nodeOrDescendantsMatch(c, term)) || false;
 }
 
 export function StockCategoryTreeSelect({ value, onChange }: StockCategoryTreeSelectProps) {
   const { tree, isLoading, categories } = useCategoriesTree();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   const selectedName = useMemo(() => {
     if (!value) return null;
-    const cat = categories.find(c => c.id === value || c.name === value);
+    const cat = categories.find((c) => c.id === value || c.name === value);
     return cat?.name || value;
   }, [value, categories]);
 
   const handleToggle = (id: string) => {
-    setExpandedIds(prev => {
+    setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -136,9 +135,9 @@ export function StockCategoryTreeSelect({ value, onChange }: StockCategoryTreeSe
   if (isLoading) {
     return (
       <div className="space-y-1.5">
-        <div className="h-3 w-20 bg-muted animate-pulse rounded" />
-        <div className="h-3 w-32 bg-muted animate-pulse rounded" />
-        <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+        <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+        <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+        <div className="h-3 w-24 animate-pulse rounded bg-muted" />
       </div>
     );
   }
@@ -147,10 +146,14 @@ export function StockCategoryTreeSelect({ value, onChange }: StockCategoryTreeSe
     <div className="space-y-2">
       {/* Selected indicator */}
       {selectedName && (
-        <div className="flex items-center gap-1.5 text-xs bg-primary/10 text-primary rounded px-2 py-1">
+        <div className="flex items-center gap-1.5 rounded bg-primary/10 px-2 py-1 text-xs text-primary">
           <FolderTree className="h-3 w-3 shrink-0" />
-          <span className="truncate flex-1">{selectedName}</span>
-          <button onClick={() => onChange(undefined)} className="hover:text-foreground">
+          <span className="flex-1 truncate">{selectedName}</span>
+          <button
+            type="button"
+            onClick={() => onChange(undefined)}
+            className="hover:text-foreground"
+          >
             <X className="h-3 w-3" />
           </button>
         </div>
@@ -158,29 +161,33 @@ export function StockCategoryTreeSelect({ value, onChange }: StockCategoryTreeSe
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+        <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar categoria..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-7 text-xs pl-7 pr-6"
+          className="h-7 pl-7 pr-6 text-xs"
         />
         {search && (
-          <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
             <X className="h-3 w-3" />
           </button>
         )}
       </div>
 
       {/* Tree */}
-      <div className="h-52 overflow-y-auto border border-border/40 rounded-md scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent">
+      <div className="scrollbar-thin scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent h-52 overflow-y-auto rounded-md border border-border/40">
         <div className="space-y-0.5">
           {/* "Todas" option */}
           <div
             className={cn(
-              "flex items-center gap-1.5 py-1.5 px-2 rounded cursor-pointer transition-all text-xs",
-              "hover:bg-accent/60",
-              !value && "bg-primary/15 text-primary font-semibold"
+              'flex cursor-pointer items-center gap-1.5 rounded px-2 py-1.5 text-xs transition-all',
+              'hover:bg-accent/60',
+              !value && 'bg-primary/15 font-semibold text-primary',
             )}
             onClick={() => onChange(undefined)}
           >
@@ -188,7 +195,7 @@ export function StockCategoryTreeSelect({ value, onChange }: StockCategoryTreeSe
             <span>Todas as categorias</span>
           </div>
 
-          {tree.map(node => (
+          {tree.map((node) => (
             <TreeNodeItem
               key={node.id}
               node={node}

@@ -10,14 +10,12 @@
  * Para auditoria server-side mais forte (ex.: alimentar `admin_audit_log`),
  * use uma edge function com service role — fora do escopo deste helper.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
 
-const THROTTLE_KEY = "access_denied_throttle";
+const THROTTLE_KEY = 'access_denied_throttle';
 const THROTTLE_MS = 30_000;
 
-interface ThrottleMap {
-  [key: string]: number;
-}
+type ThrottleMap = Record<string, number>;
 
 function loadThrottle(): ThrottleMap {
   try {
@@ -39,7 +37,7 @@ function saveThrottle(map: ThrottleMap) {
 export interface LogAccessDeniedInput {
   userId: string;
   blockedPath: string;
-  requiredRole: "admin" | "dev";
+  requiredRole: 'admin' | 'dev';
   userRole?: string | null;
 }
 
@@ -52,14 +50,15 @@ export async function logAccessDenied(input: LogAccessDeniedInput): Promise<void
   saveThrottle(map);
 
   // 1) Notificação visível ao próprio usuário (UX)
+  const supabase = await getSupabaseClient();
   const notify = supabase
-    .from("workspace_notifications")
+    .from('workspace_notifications')
     .insert({
       user_id: input.userId,
-      title: "Acesso negado a rota técnica",
+      title: 'Acesso negado a rota técnica',
       message: `Tentativa de acesso a ${input.blockedPath} bloqueada (requer ${input.requiredRole}).`,
-      type: "warning",
-      category: "access_denied",
+      type: 'warning',
+      category: 'access_denied',
       action_url: input.blockedPath,
       metadata: {
         blocked_path: input.blockedPath,
@@ -69,18 +68,24 @@ export async function logAccessDenied(input: LogAccessDeniedInput): Promise<void
         http_status_equivalent: 403,
       },
     })
-    .then(() => undefined, () => undefined);
+    .then(
+      () => undefined,
+      () => undefined,
+    );
 
   // 2) Trilha server-side em admin_audit_log via RPC security-definer
   //    (essencial para tentativas a /admin/telemetria, /admin/seguranca, /admin/conexoes etc.)
   const audit = supabase
-    .rpc("log_access_denied", {
+    .rpc('log_access_denied', {
       _blocked_path: input.blockedPath,
       _required_role: input.requiredRole,
-      _user_role: input.userRole ?? null,
-      _reason: "frontend_guard_block",
+      _user_role: input.userRole ?? undefined,
+      _reason: 'frontend_guard_block',
     })
-    .then(() => undefined, () => undefined);
+    .then(
+      () => undefined,
+      () => undefined,
+    );
 
   await Promise.all([notify, audit]);
 }

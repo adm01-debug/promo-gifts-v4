@@ -3,6 +3,7 @@ import { render, RenderOptions } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
+import { SellerCartProvider } from '@/contexts/SellerCartContext';
 
 const createTestQueryClient = () => new QueryClient({
   defaultOptions: {
@@ -22,7 +23,9 @@ const AllTheProviders = ({ children }: WrapperProps) => {
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          {children}
+          <SellerCartProvider>
+            {children}
+          </SellerCartProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </HelmetProvider>

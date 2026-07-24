@@ -1,0 +1,21 @@
+-- ════════════════════════════════════════════════════════════════
+-- MEDALLION — Fase 9: fixes expostos pelo passo de robustez (erros reais
+-- presos em silêncio no staging) + corpo final do cron.
+-- ════════════════════════════════════════════════════════════════
+-- (1) fn_promote_variants_of_parent:
+--     a) limpa process_errors ao marcar a raw 'processed' (promoção
+--        bem-sucedida supera erro anterior; respeita o CHECK
+--        chk_spr_no_processed_with_errors — antes violava p/ raws com erro).
+--     b) só grava variant_supplier_sources quando cost_price > 0
+--        (respeita chk_vss_cost_price_not_zero; custo 0 do fornecedor =
+--        variante promovida SEM source de custo).
+-- (2) process_pending_batches (corpo final): fluxo principal (standardize+
+--     promote p/ fornecedores com raw pendente) + robustez (promove pads
+--     órfãos via fn_promote_supplier E variantes órfãs cujo pai já está
+--     promoted via fn_promote_variants_of_parent direto).
+-- Validado em produção: drenagem total (pad/padvar/raw = 0), 11 órfãos
+-- pré-existentes de 06-09 reparados via fallback idempotente
+-- (variant_id → variantes reais), invariante promoted-sem-vid = 0.
+-- Corpo completo aplicado via MCP (MCP-first, ADR 0006) — migrations
+-- fase9_01b_fix_ambiguous_status_qualify_columns e
+-- fase9_02_fix_promote_variants_checks_and_orphan_variants.

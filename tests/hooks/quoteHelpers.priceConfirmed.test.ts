@@ -19,6 +19,7 @@ function makeItem(overrides: Partial<QuoteItem> = {}): QuoteItem {
     product_sku: "CAN-001",
     quantity: 100,
     unit_price: 5,
+    color_name: "Azul", // cor obrigatória em buildItemsInsertPayload
     ...overrides,
   };
 }

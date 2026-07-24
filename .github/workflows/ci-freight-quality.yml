@@ -1,0 +1,163 @@
+name: Freight & Quote Quality Gate
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/kit-builder/**'
+      - 'src/hooks/quotes/**'
+      - 'supabase/functions/quote-sync/**'
+      - 'supabase/functions/webhook-*/**'
+      - 'tests/components/kit-builder/**'
+      - 'tests/hooks/quotes/**'
+      - 'tests/contracts/webhook-scenario-matrix.test.ts'
+      - 'tests/edge-functions/integration/**'
+      - 'e2e/flows/33-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freight-unit:
+    name: Freight Unit Tests + Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run FreightEstimator + quoteHelpers tests with coverage
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/components/kit-builder/FreightEstimator.test.tsx \
+            tests/hooks/quotes/quoteHelpers.freight.test.ts \
+            --coverage \
+            --coverage.include='src/components/kit-builder/FreightEstimator.tsx' \
+            --coverage.include='src/hooks/quotes/quoteHelpers.ts' \
+            --coverage.reporter=json-summary \
+            --coverage.thresholds.lines=75 \
+            --reporter=dot
+      - name: Check critical path coverage thresholds
+        run: node scripts/check-critical-path-coverage.mjs
+        env:
+          COVERAGE_JSON_PATH: coverage/coverage-summary.json
+
+  webhook-matrix:
+    name: Webhook Scenario Matrix (≥200 cenários, 0 HTTP)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run webhook contract matrix
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/contracts/webhook-scenario-matrix.test.ts \
+            --reporter=verbose
+
+  edge-integration-suite:
+    name: Edge Function Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run all edge integration tests
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/edge-functions/integration/ \
+            --reporter=dot
+
+  edge-coverage-gate:
+    name: Edge Coverage Gate (≥60%)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - name: Check edge integration coverage percentage
+        run: node scripts/check-edge-integration-coverage.mjs
+        env:
+          EDGE_COVERAGE_THRESHOLD: '60'
+
+  freight-e2e:
+    name: E2E Freight Flow
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: Run freight E2E flow
+        run: |
+          npx playwright test e2e/flows/33-quote-freight-delivery.spec.ts \
+            --reporter=dot
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL || 'http://localhost:5173' }}
+        continue-on-error: true
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-freight-report
+          path: playwright-report/
+          retention-days: 7
+
+  load-advisory:
+    name: Load Test (advisory — não bloqueia)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run massive load test
+        run: node scripts/massive-load-test.mjs
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_TEST_BYPASS_TOKEN: ${{ secrets.SUPABASE_TEST_BYPASS_TOKEN }}
+          LOAD_TOTAL_REQUESTS: 5000
+
+  massive-fuzzing:
+    name: Massive Fuzzing Session
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run 1000 fuzzing scenarios
+        run: npx vitest run tests/integration/massive-fuzzing.test.ts
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

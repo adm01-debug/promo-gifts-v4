@@ -4,8 +4,10 @@
  * Responsável por: Lógica de cálculo e simulação de preços
  */
 import { useState, useCallback, useMemo } from 'react';
-import { useTabelasPreco } from "@/hooks/tecnicas/useTabelasPreco";
+import { useTabelasPreco } from '@/hooks/tecnicas/useTabelasPreco';
 import type { TabelaPrecoTecnica, ResultadoCalculoPreco } from '@/types/tecnica-unificada';
+
+const STANDARD_QUANTITIES = [50, 100, 250, 500, 1000, 2500, 5000, 10000] as const;
 
 // ============================================
 // TIPOS DE COMPATIBILIDADE
@@ -229,12 +231,10 @@ export function usePrecoCalculation() {
     }));
   }, [tabelas]);
 
-  const standardQuantities = useMemo(() => [50, 100, 250, 500, 1000, 2500, 5000, 10000], []);
-
   return {
     tabelas,
     techniques,
-    standardQuantities,
+    standardQuantities: STANDARD_QUANTITIES,
     isLoading,
     error: error?.message ?? null,
     refetch,
@@ -247,7 +247,7 @@ export function usePrecoCalculation() {
 /**
  * Hook para simulador de preços
  */
-export function usePriceSimulator(productBasePrice: number = 0) {
+export function usePriceSimulator(productBasePrice = 0) {
   const { tabelas: _tabelas, isLoading, error, calculateAllPrices } = usePrecoCalculation();
   const [quantity, setQuantity] = useState(100);
   const [selectedTechniqueCode, setSelectedTechniqueCode] = useState<string | null>(null);

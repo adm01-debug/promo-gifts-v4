@@ -12,28 +12,43 @@
  *  - role.promote   → edge function manage-users
  *  - role.demote    → edge function manage-users
  */
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { formatDistanceToNow, format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Loader2, History, ArrowRight, RefreshCw } from "lucide-react";
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { formatDistanceToNow, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Loader2, History, ArrowRight, RefreshCw } from 'lucide-react';
 
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RoleBadge } from "@/components/RoleBadge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { RoleBadge } from '@/components/RoleBadge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 const ROLE_ACTIONS = [
-  "role.granted",
-  "role.changed",
-  "role.revoked",
-  "role.promote",
-  "role.demote",
+  'role.granted',
+  'role.changed',
+  'role.revoked',
+  'role.promote',
+  'role.demote',
 ] as const;
 
 type RoleAction = (typeof ROLE_ACTIONS)[number];
@@ -41,7 +56,7 @@ type RoleAction = (typeof ROLE_ACTIONS)[number];
 interface RoleAuditEntry {
   id: string;
   created_at: string;
-  user_id: string;     // ator
+  user_id: string; // ator
   action: RoleAction;
   resource_id: string | null; // alvo
   source: string | null;
@@ -54,30 +69,33 @@ interface ProfileLite {
   email: string | null;
 }
 
-const ACTION_LABEL: Record<RoleAction, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  "role.granted": { label: "Concedido", variant: "default" },
-  "role.changed": { label: "Alterado", variant: "secondary" },
-  "role.revoked": { label: "Revogado", variant: "destructive" },
-  "role.promote": { label: "Promovido", variant: "default" },
-  "role.demote":  { label: "Rebaixado", variant: "outline" },
+const ACTION_LABEL: Record<
+  RoleAction,
+  { label: string; variant: 'default' | 'destructive' | 'outline' | 'secondary' }
+> = {
+  'role.granted': { label: 'Concedido', variant: 'default' },
+  'role.changed': { label: 'Alterado', variant: 'secondary' },
+  'role.revoked': { label: 'Revogado', variant: 'destructive' },
+  'role.promote': { label: 'Promovido', variant: 'default' },
+  'role.demote': { label: 'Rebaixado', variant: 'outline' },
 };
 
 export function RoleAuditLogPanel() {
-  const [search, setSearch] = useState("");
-  const [actionFilter, setActionFilter] = useState<"all" | RoleAction>("all");
+  const [search, setSearch] = useState('');
+  const [actionFilter, setActionFilter] = useState<RoleAction | 'all'>('all');
 
   const { data, isLoading, refetch, isFetching } = useQuery({
-    queryKey: ["role-audit-log", actionFilter],
+    queryKey: ['role-audit-log', actionFilter],
     queryFn: async () => {
       let query = supabase
-        .from("admin_audit_log")
-        .select("id, created_at, user_id, action, resource_id, source, details")
-        .in("action", ROLE_ACTIONS as unknown as string[])
-        .order("created_at", { ascending: false })
+        .from('admin_audit_log')
+        .select('id, created_at, user_id, action, resource_id, source, details')
+        .in('action', [...ROLE_ACTIONS])
+        .order('created_at', { ascending: false })
         .limit(200);
 
-      if (actionFilter !== "all") {
-        query = query.eq("action", actionFilter);
+      if (actionFilter !== 'all') {
+        query = query.eq('action', actionFilter);
       }
 
       const { data: entries, error } = await query;
@@ -91,11 +109,19 @@ export function RoleAuditLogPanel() {
 
       const profilesMap = new Map<string, ProfileLite>();
       if (ids.size > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, full_name, email")
-          .in("user_id", Array.from(ids));
-        (profiles ?? []).forEach((p) => profilesMap.set(p.user_id, p));
+        // BUG-ROLEAUDIT-PROFILES-SELECT-SILENT-FAIL FIX: error not checked — RLS failure
+        // silently left profilesMap empty, showing raw UUIDs instead of names/emails.
+        const { data: profiles, error: profErr } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, email')
+          .in('user_id', Array.from(ids));
+        if (profErr) {
+          logger.warn('[role-audit] profile enrichment failed — displaying user IDs:', profErr);
+        } else {
+          (profiles ?? []).forEach((p) => {
+            if (p.user_id) profilesMap.set(p.user_id, { ...p, user_id: p.user_id });
+          });
+        }
       }
 
       return { entries: (entries ?? []) as RoleAuditEntry[], profilesMap };
@@ -104,8 +130,8 @@ export function RoleAuditLogPanel() {
     refetchInterval: 30_000,
   });
 
-  const entries = data?.entries ?? [];
-  const profilesMap = data?.profilesMap ?? new Map<string, ProfileLite>();
+  const entries = useMemo(() => data?.entries ?? [], [data]);
+  const profilesMap = useMemo(() => data?.profilesMap ?? new Map<string, ProfileLite>(), [data]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -114,10 +140,10 @@ export function RoleAuditLogPanel() {
       const actor = profilesMap.get(e.user_id);
       const target = e.resource_id ? profilesMap.get(e.resource_id) : null;
       return (
-        (actor?.full_name || "").toLowerCase().includes(q) ||
-        (actor?.email || "").toLowerCase().includes(q) ||
-        (target?.full_name || "").toLowerCase().includes(q) ||
-        (target?.email || "").toLowerCase().includes(q)
+        (actor?.full_name ?? '').toLowerCase().includes(q) ||
+        (actor?.email ?? '').toLowerCase().includes(q) ||
+        (target?.full_name ?? '').toLowerCase().includes(q) ||
+        (target?.email ?? '').toLowerCase().includes(q)
       );
     });
   }, [entries, profilesMap, search]);
@@ -125,10 +151,11 @@ export function RoleAuditLogPanel() {
   const renderUser = (uid: string | null) => {
     if (!uid) return <span className="text-muted-foreground">—</span>;
     const p = profilesMap.get(uid);
-    if (!p) return <span className="text-muted-foreground font-mono text-xs">{uid.slice(0, 8)}…</span>;
+    if (!p)
+      return <span className="font-mono text-xs text-muted-foreground">{uid.slice(0, 8)}…</span>;
     return (
       <div className="flex flex-col">
-        <span className="text-sm font-medium">{p.full_name || "Sem nome"}</span>
+        <span className="text-sm font-medium">{p.full_name || 'Sem nome'}</span>
         {p.email && <span className="text-[11px] text-muted-foreground">{p.email}</span>}
       </div>
     );
@@ -138,13 +165,14 @@ export function RoleAuditLogPanel() {
     <Card className="border-border/50">
       <CardHeader className="flex flex-row items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
+          <div className="rounded-lg bg-primary/10 p-2">
             <History className="h-5 w-5 text-primary" />
           </div>
           <div>
             <CardTitle>Auditoria de Roles</CardTitle>
             <CardDescription>
-              Histórico completo de mudanças de papel — capturado automaticamente pelo trigger no banco e pela função de promoção.
+              Histórico completo de mudanças de papel — capturado automaticamente pelo trigger no
+              banco e pela função de promoção.
             </CardDescription>
           </div>
         </div>
@@ -155,27 +183,32 @@ export function RoleAuditLogPanel() {
           disabled={isFetching}
           className="gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+          <RefreshCw className={cn('h-4 w-4', isFetching && 'animate-spin')} />
           Atualizar
         </Button>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             placeholder="Buscar por nome ou email…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="max-w-sm"
           />
-          <Select value={actionFilter} onValueChange={(v) => setActionFilter(v as typeof actionFilter)}>
+          <Select
+            value={actionFilter}
+            onValueChange={(v) => setActionFilter(v as typeof actionFilter)}
+          >
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Tipo de ação" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as ações</SelectItem>
               {ROLE_ACTIONS.map((a) => (
-                <SelectItem key={a} value={a}>{ACTION_LABEL[a].label}</SelectItem>
+                <SelectItem key={a} value={a}>
+                  {ACTION_LABEL[a].label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -186,11 +219,11 @@ export function RoleAuditLogPanel() {
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            Nenhuma alteração de role registrada {search ? "para esta busca" : "ainda"}.
+          <div className="py-12 text-center text-sm text-muted-foreground">
+            Nenhuma alteração de role registrada {search ? 'para esta busca' : 'ainda'}.
           </div>
         ) : (
-          <div className="rounded-md border border-border overflow-x-auto">
+          <div className="overflow-x-auto rounded-md border border-border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -216,11 +249,16 @@ export function RoleAuditLogPanel() {
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <span className="text-xs text-muted-foreground">
-                              {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true, locale: ptBR })}
+                              {formatDistanceToNow(new Date(entry.created_at), {
+                                addSuffix: true,
+                                locale: ptBR,
+                              })}
                             </span>
                           </TooltipTrigger>
                           <TooltipContent>
-                            {format(new Date(entry.created_at), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })}
+                            {format(new Date(entry.created_at), 'dd/MM/yyyy HH:mm:ss', {
+                              locale: ptBR,
+                            })}
                           </TooltipContent>
                         </Tooltip>
                       </TableCell>
@@ -230,25 +268,33 @@ export function RoleAuditLogPanel() {
                       </TableCell>
                       <TableCell>{renderUser(target)}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {oldRole ? <RoleBadge role={oldRole} /> : <span className="text-xs text-muted-foreground">—</span>}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {oldRole ? (
+                            <RoleBadge role={oldRole} />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                           <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                          {newRole ? <RoleBadge role={newRole} /> : <span className="text-xs text-muted-foreground">—</span>}
+                          {newRole ? (
+                            <RoleBadge role={newRole} />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                           {reason && (
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Badge variant="outline" className="text-[10px] cursor-help">
+                                <Badge variant="outline" className="cursor-help text-[10px]">
                                   motivo
                                 </Badge>
                               </TooltipTrigger>
-                              <TooltipContent className="max-w-xs">{reason}</TooltipContent>
+                              <TooltipContent>{reason}</TooltipContent>
                             </Tooltip>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-[11px] text-muted-foreground font-mono">
-                          {entry.source || "—"}
+                        <span className="font-mono text-[11px] text-muted-foreground">
+                          {entry.source || '—'}
                         </span>
                       </TableCell>
                     </TableRow>

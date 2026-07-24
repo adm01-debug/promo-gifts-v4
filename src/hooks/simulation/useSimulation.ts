@@ -1,23 +1,23 @@
+import { dbInvoke } from '@/lib/db/postgrest';
 import { type ExternalTechnique } from '@/types/external-db';
 // src/hooks/useSimulation.ts
 // Hook centralizado para lógica do simulador — refactored
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  invokeExternalDb,
-  fetchPromobrindProducts,
-  getProductPrice,
-  getProductImageUrl,
-} from '@/lib/external-db';
+import { untypedFrom } from '@/lib/supabase-untyped';
+import type { Json } from '@/integrations/supabase/types';
+import { fetchPromobrindProducts, getProductPrice, getProductImageUrl } from '@/lib/external-db';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
-import { useMultipleTechniquePricing } from "@/hooks/simulation/useTechniquePricingOptions";
-import { useSimulatorPreferences } from "@/hooks/simulation/useSimulatorPreferences";
-import { fetchAllOptions } from "@/hooks/simulation/simulationPriceFetcher";
-import { copyOptionToClipboard, copyAllOptionsToClipboard } from "@/hooks/simulation/simulationClipboard";
+import { useMultipleTechniquePricing } from '@/hooks/simulation/useTechniquePricingOptions';
+import { useSimulatorPreferences } from '@/hooks/simulation/useSimulatorPreferences';
+import { fetchAllOptions } from '@/hooks/simulation/simulationPriceFetcher';
+import {
+  copyOptionToClipboard,
+  copyAllOptionsToClipboard,
+} from '@/hooks/simulation/simulationClipboard';
 import type {
   Product,
   Client,
@@ -71,6 +71,7 @@ export function useSimulation() {
         setTechniqueSettingsState(preferences.lastTechniqueSettings);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preferencesLoaded]);
 
   // Wrapped setters with persistence
@@ -122,7 +123,7 @@ export function useSimulation() {
     queryFn: async () => {
       const raw = await fetchPromobrindProducts({ limit: 500 });
       return raw
-        .filter((p) => p.active !== false && p.is_active !== false)
+        .filter((p) => p.active && p.is_active)
         .map((p) => ({
           id: p.id,
           name: p.name,
@@ -164,42 +165,45 @@ export function useSimulation() {
   const { data: techniques, isLoading: techniquesLoading } = useQuery({
     queryKey: ['simulator-techniques-external'],
     queryFn: async () => {
-      const result = await invokeExternalDb<Technique>({
+      const result = await dbInvoke<Technique>({
         table: 'personalization_techniques',
         operation: 'select',
         filters: { is_active: true },
         orderBy: { column: 'name', ascending: true },
         limit: 100,
       });
-      return result.records.map((t) => ({
-        ...t,
-        setup_cost: (t as ExternalTechnique).setup_price ?? t.setup_cost,
-        unit_cost: (t as ExternalTechnique).handling_price ?? t.unit_cost,
-      }));
+      return result.records.map((t) => {
+        const ext = t as unknown as ExternalTechnique;
+        return {
+          ...t,
+          setup_cost: ext.setup_price ?? t.setup_cost,
+          unit_cost: ext.handling_price ?? t.unit_cost,
+        };
+      });
     },
   });
 
   const techniqueCodes = useMemo(
-    () => techniques?.map((t) => t.code).filter(Boolean) || [],
+    () => techniques?.map((t) => t.code).filter(Boolean) ?? [],
     [techniques],
   );
   const { isLoading: pricingLoading, getPricingInfo } = useMultipleTechniquePricing(techniqueCodes);
 
-  const { data: savedSimulations, isLoading: savedSimulationsLoading } = useQuery({
+  const { data: _savedSimulations, isLoading: savedSimulationsLoading } = useQuery({
     queryKey: ['saved-simulations'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('personalization_simulations')
-        .select(`*, bitrix_clients (id, name, ramo)`)
+      const { data, error } = await untypedFrom('personalization_simulations')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
       return (data || []).map((item) => ({
         ...item,
         simulation_data: item.simulation_data as unknown as SimulationOption[],
-      })) as SavedSimulation[];
+      }));
     },
   });
+  const savedSimulations = (_savedSimulations ?? []) as unknown as SavedSimulation[];
 
   // ─── Derived ──────────────────────────────────────────────
   const selectedProduct = useMemo(
@@ -232,7 +236,7 @@ export function useSimulation() {
     (code: string) => {
       const info = getPricingInfo(code);
       if (info.hasPriceByColor) return true;
-      const c = code?.toUpperCase() || '';
+      const c = code?.toUpperCase() ?? '';
       return (
         c.includes('SILK') ||
         c.includes('SERIGRAFIA') ||
@@ -247,7 +251,7 @@ export function useSimulation() {
     (code: string) => {
       const info = getPricingInfo(code);
       if (info.hasPriceByArea) return true;
-      const c = code?.toUpperCase() || '';
+      const c = code?.toUpperCase() ?? '';
       return (
         c.includes('DTF') ||
         c.includes('SUB') ||
@@ -368,6 +372,7 @@ export function useSimulation() {
       }
     }, 500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedProduct?.id,
     selectedTechniques,
@@ -453,11 +458,11 @@ export function useSimulation() {
   }, []);
 
   // ─── Mutations ────────────────────────────────────────────
-  const saveSimulationMutation = useMutation({
+  const saveSimulationMutation = useMutation<undefined, Error, undefined>({
     mutationFn: async () => {
       if (!user || !selectedProduct || simulationOptions.length === 0)
         throw new Error('Dados incompletos');
-      const { error } = await supabase.from('personalization_simulations').insert([
+      const { error } = await untypedFrom('personalization_simulations').insert([
         {
           seller_id: user.id,
           client_id: selectedClientId,
@@ -466,7 +471,7 @@ export function useSimulation() {
           product_sku: selectedProduct.sku,
           quantity,
           product_unit_price: effectiveProductPrice,
-          simulation_data: JSON.parse(JSON.stringify(simulationOptions)),
+          simulation_data: structuredClone(simulationOptions) as unknown as Json,
           notes: simulationNotes || null,
         },
       ]);
@@ -484,9 +489,9 @@ export function useSimulation() {
     },
   });
 
-  const deleteSimulationMutation = useMutation({
+  const deleteSimulationMutation = useMutation<undefined, Error, string>({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('personalization_simulations').delete().eq('id', id);
+      const { error } = await untypedFrom('personalization_simulations').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -597,4 +602,4 @@ export function useSimulation() {
 // Re-export for backward compatibility with legacy simulator imports.
 // Keep the source of truth in the shared formatter module to avoid runtime
 // module-export errors during Vite ESM loading.
-export { formatCurrency } from "@/lib/format";
+export { formatCurrency } from '@/lib/format';

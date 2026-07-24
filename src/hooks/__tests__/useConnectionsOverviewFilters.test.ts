@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { applyFilters, type OverviewFilters } from "@/hooks/intelligence/useConnectionsOverviewFilters";
-import { type OverviewRow } from "@/hooks/intelligence/useConnectionsOverview";
+import {
+  applyFilters,
+  type OverviewFilters,
+} from '@/hooks/intelligence/useConnectionsOverviewFilters';
+import { type OverviewRow } from '@/hooks/intelligence/useConnectionsOverview';
 
 describe('useConnectionsOverviewFilters regression tests', () => {
   const mockRows: OverviewRow[] = [

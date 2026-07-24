@@ -16,7 +16,7 @@
  * Para hooks fora do contexto React (services), aceitar `scope` + `userId`
  * como parâmetros e delegar ao helper.
  */
-import type { SalesScope } from "./visibility-scope";
+import type { SalesScope } from './visibility-scope';
 
 // Tipo mínimo para suportar PostgrestFilterBuilder genérico sem importar o tipo
 // (a chamada `.eq` retorna o próprio builder, então preservamos o tipo de entrada).
@@ -31,9 +31,9 @@ export interface SellerScopeOptions {
 
 export function applySellerScope<T extends { eq: (col: string, val: string) => T }>(
   query: T,
-  { scope, userId, column = "seller_id" }: SellerScopeOptions,
+  { scope, userId, column = 'seller_id' }: SellerScopeOptions,
 ): T {
-  if (scope === "self" && userId) {
+  if (scope === 'self' && userId) {
     return (query as EqCapable<T>).eq(column, userId);
   }
   return query;
@@ -48,5 +48,5 @@ export function shouldShortCircuitForSelf(
   scope: SalesScope,
   userId: string | null | undefined,
 ): boolean {
-  return scope === "self" && !userId;
+  return scope === 'self' && !userId;
 }

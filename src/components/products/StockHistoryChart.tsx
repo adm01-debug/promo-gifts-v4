@@ -18,6 +18,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  Tooltip as TooltipUI,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip';
+import {
   Target,
   DollarSign,
   TrendingDown,
@@ -135,40 +141,65 @@ export function StockHistoryChart({ productId }: StockHistoryChartProps) {
           </div>
           <div className="flex items-center gap-2">
             {effectiveIntelligence?.abc_classification && (
-              <Badge
-                variant="outline"
-                className={cn(
-                  'text-xs font-bold',
-                  effectiveIntelligence.abc_classification === 'A'
-                    ? 'border-orange/30 bg-orange/15 text-orange'
-                    : effectiveIntelligence.abc_classification === 'B'
-                      ? 'border-success/30 bg-success/15 text-success'
-                      : 'border-border bg-muted text-muted-foreground',
-                )}
-              >
-                {effectiveIntelligence.abc_classification === 'A'
-                  ? '🔥 Best-Seller'
-                  : effectiveIntelligence.abc_classification === 'B'
-                    ? '⚡ Popular'
-                    : '📦 Normal'}
-              </Badge>
+              <TooltipProvider>
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'cursor-help text-xs font-bold',
+                        effectiveIntelligence.abc_classification === 'A'
+                          ? 'border-brand-primary/30 bg-brand-primary/15 text-brand-primary'
+                          : effectiveIntelligence.abc_classification === 'B'
+                            ? 'border-success/30 bg-success/15 text-success'
+                            : 'border-border bg-muted text-muted-foreground',
+                      )}
+                    >
+                      {effectiveIntelligence.abc_classification === 'A'
+                        ? '🔥 Best-Seller'
+                        : effectiveIntelligence.abc_classification === 'B'
+                          ? '⚡ Popular'
+                          : '📦 Normal'}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Classificação ABC baseada no volume de vendas e relevância comercial deste
+                    produto no mercado.
+                  </TooltipContent>
+                </TooltipUI>
+              </TooltipProvider>
             )}
             {trend !== null && trend > 1.3 && (
-              <Badge
-                variant="outline"
-                className="border-primary/30 bg-primary/15 text-xs font-bold text-primary"
-              >
-                🚀 Emergente
-              </Badge>
+              <TooltipProvider>
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className="cursor-help border-primary/30 bg-primary/15 text-xs font-bold text-primary"
+                    >
+                      🚀 Emergente
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Este produto está com uma curva de crescimento acelerada nos últimos dias.
+                  </TooltipContent>
+                </TooltipUI>
+              </TooltipProvider>
             )}
             {showTurnover && (
-              <Badge
-                variant="secondary"
-                className="font-mono text-xs"
-                title="Potencial comercial: quanto maior, mais o mercado compra"
-              >
-                Potencial: {Math.round(turnoverScore ?? 0)}
-              </Badge>
+              <TooltipProvider>
+                <TooltipUI>
+                  <TooltipTrigger asChild>
+                    <Badge variant="secondary" className="cursor-help font-mono text-xs">
+                      Potencial: {Math.round(turnoverScore ?? 0)}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Potencial comercial: quanto maior este índice, mais o mercado está absorvendo
+                    este produto no momento.
+                  </TooltipContent>
+                </TooltipUI>
+              </TooltipProvider>
             )}
           </div>
         </div>
@@ -213,6 +244,17 @@ export function StockHistoryChart({ productId }: StockHistoryChartProps) {
             sub="un/dia (média 7d)"
             highlight={marketDemandLevel === 'very-high' || marketDemandLevel === 'high'}
             ariaLabel={`Vendas no mercado: ${safeNumber(bestVelocity?.avg_daily_depletion_7d)?.toFixed(1) ?? 'indisponível'} unidades por dia`}
+            tooltip={
+              <>
+                Velocidade média de saída do produto considerando a janela dos últimos 7 dias entre
+                todos os fornecedores monitorados.
+                <br />
+                <br />
+                <span className="font-semibold italic text-primary">Como usar:</span> quanto maior o
+                número, mais aquecido está o giro — bom indicador para garantir lote antes do
+                fornecedor esgotar.
+              </>
+            }
           />
           <KpiCard
             icon={BarChart3}
@@ -230,6 +272,17 @@ export function StockHistoryChart({ productId }: StockHistoryChartProps) {
             highlight={marketDemandLevel === 'very-high'}
             customValueColor={demandLabel[marketDemandLevel].color}
             ariaLabel={`Demanda: ${demandLabel[marketDemandLevel].text}`}
+            tooltip={
+              <>
+                Nível de interesse atual:{' '}
+                <span className="font-bold">{demandLabel[marketDemandLevel].text}</span>.
+                <br />
+                <br />
+                <span className="font-semibold italic text-primary">Leitura comercial:</span>{' '}
+                combina volume de saídas com a tendência da semana — útil para priorizar combos
+                quando a procura está alta.
+              </>
+            }
           />
           <KpiCard
             icon={
@@ -244,6 +297,17 @@ export function StockHistoryChart({ productId }: StockHistoryChartProps) {
             sub={trendDisplay.sub}
             highlight={trend !== null && trend > 1.3}
             ariaLabel={`Tendência: ${trendDisplay.value} ${trendDisplay.sub}`}
+            tooltip={
+              <>
+                Variação da procura: <span className="font-bold">{trendDisplay.value}</span> (
+                {trendDisplay.sub}).
+                <br />
+                <br />
+                <span className="font-semibold italic text-primary">Como agir:</span> alta de
+                procura indica janela para garantir lote antes de eventual ajuste de preço; queda
+                cria espaço para negociar condições.
+              </>
+            }
           />
           <KpiCard
             icon={Star}
@@ -251,6 +315,16 @@ export function StockHistoryChart({ productId }: StockHistoryChartProps) {
             value={effectiveIntelligence?.total_current_stock?.toLocaleString('pt-BR') ?? '—'}
             sub={supplierText}
             ariaLabel={`Disponível: ${effectiveIntelligence?.total_current_stock ?? 'indisponível'} unidades ${supplierText}`}
+            tooltip={
+              <>
+                Estoque total disponível considerando{' '}
+                <span className="font-bold">{supplierText}</span>.
+                <br />
+                <br />
+                <span className="font-semibold italic text-primary">Dica:</span> diversificação de
+                fornecedores reduz risco de ruptura e dá margem para negociar prazo e custo.
+              </>
+            }
           />
         </div>
 
@@ -292,15 +366,7 @@ export function StockHistoryChart({ productId }: StockHistoryChartProps) {
                 width={50}
               />
               <YAxis yAxisId="flow" orientation="right" hide />
-              <Tooltip
-                content={({
-                  active,
-                  payload,
-                }: {
-                  active?: boolean;
-                  payload?: { payload: Record<string, number> }[];
-                }) => <MarketTooltip active={active} payload={payload} showCost={showCost} />}
-              />
+              <Tooltip content={<MarketTooltip showCost={showCost} />} />
               <Legend
                 wrapperStyle={{ fontSize: '10px', paddingTop: '4px' }}
                 iconSize={8}

@@ -57,9 +57,13 @@ export function KitHealthCard({ kitState, kitQuantity, className }: KitHealthCar
   // Sem custo direto exposto: margem é estimada como razão personalização/preço (proxy)
   // Estratégia: margem ~ 1 - (custo_estimado / preço). Usamos 65% baseline.
   const estimatedCostRatio = 0.65;
-  const grossMargin = totalPrice > 0 ? ((totalPrice - totalPrice * estimatedCostRatio) / totalPrice) * 100 : 0;
+  const grossMargin =
+    totalPrice > 0 ? ((totalPrice - totalPrice * estimatedCostRatio) / totalPrice) * 100 : 0;
 
-  const sortedHist = (history ?? []).map((r) => Number(r.total_price)).filter((n) => n > 0).sort((a, b) => a - b);
+  const sortedHist = (history ?? [])
+    .map((r) => Number(r.total_price))
+    .filter((n) => n > 0)
+    .sort((a, b) => a - b);
   const avg = sortedHist.length ? sortedHist.reduce((s, n) => s + n, 0) / sortedHist.length : 0;
   const p25 = percentile(sortedHist, 25);
   const p75 = percentile(sortedHist, 75);
@@ -70,20 +74,21 @@ export function KitHealthCard({ kitState, kitQuantity, className }: KitHealthCar
   const belowRange = p25 > 0 && totalPrice < p25 && totalPrice > 0;
 
   const healthScore =
-    totalPrice <= 0 ? 0 :
-    inRange ? 90 :
-    aboveRange ? Math.max(40, 90 - (diffVsAvg - 20)) :
-    Math.max(50, 70 - Math.abs(diffVsAvg) / 2);
+    totalPrice <= 0
+      ? 0
+      : inRange
+        ? 90
+        : aboveRange
+          ? Math.max(40, 90 - (diffVsAvg - 20))
+          : Math.max(50, 70 - Math.abs(diffVsAvg) / 2);
 
-  const scoreColor =
-    healthScore >= 75 ? 'success' :
-    healthScore >= 50 ? 'warning' : 'destructive';
+  const scoreColor = healthScore >= 75 ? 'success' : healthScore >= 50 ? 'warning' : 'destructive';
 
   return (
     <Card className={className}>
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="space-y-3 p-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-display font-semibold text-sm flex items-center gap-2">
+          <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
             <Activity className="h-4 w-4 text-primary" />
             Saúde do Kit
           </h3>
@@ -93,7 +98,7 @@ export function KitHealthCard({ kitState, kitQuantity, className }: KitHealthCar
               'text-[10px]',
               scoreColor === 'success' && 'border-success text-success',
               scoreColor === 'warning' && 'border-warning text-warning',
-              scoreColor === 'destructive' && 'border-destructive text-destructive'
+              scoreColor === 'destructive' && 'border-destructive text-destructive',
             )}
           >
             {healthScore.toFixed(0)}/100
@@ -112,7 +117,7 @@ export function KitHealthCard({ kitState, kitQuantity, className }: KitHealthCar
         </div>
 
         {sortedHist.length >= 5 && (
-          <div className="space-y-2 pt-2 border-t">
+          <div className="space-y-2 border-t pt-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Média histórica ({kitState.kitType})</span>
               <span className="font-medium">{formatCurrency(avg)}</span>
@@ -126,13 +131,13 @@ export function KitHealthCard({ kitState, kitQuantity, className }: KitHealthCar
 
             {inRange && totalPrice > 0 && (
               <div className="flex items-start gap-2 rounded-md bg-success/10 p-2 text-xs text-success">
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>Preço dentro do range competitivo do mercado.</span>
               </div>
             )}
             {aboveRange && (
               <div className="flex items-start gap-2 rounded-md bg-warning/10 p-2 text-xs text-warning-foreground">
-                <TrendingUp className="h-3.5 w-3.5 shrink-0 mt-0.5 text-warning" />
+                <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
                 <span>
                   Acima da faixa competitiva ({diffVsAvg > 0 ? '+' : ''}
                   {diffVsAvg.toFixed(0)}% vs. média). Considere reduzir itens ou ajustar margem.
@@ -141,9 +146,10 @@ export function KitHealthCard({ kitState, kitQuantity, className }: KitHealthCar
             )}
             {belowRange && (
               <div className="flex items-start gap-2 rounded-md bg-destructive/10 p-2 text-xs text-destructive">
-                <TrendingDown className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                <TrendingDown className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
-                  Abaixo da faixa competitiva ({diffVsAvg.toFixed(0)}% vs. média). Risco de margem baixa.
+                  Abaixo da faixa competitiva ({diffVsAvg.toFixed(0)}% vs. média). Risco de margem
+                  baixa.
                 </span>
               </div>
             )}
@@ -152,7 +158,7 @@ export function KitHealthCard({ kitState, kitQuantity, className }: KitHealthCar
 
         {sortedHist.length < 5 && totalPrice > 0 && (
           <div className="flex items-start gap-2 rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>Histórico insuficiente para comparativo competitivo.</span>
           </div>
         )}

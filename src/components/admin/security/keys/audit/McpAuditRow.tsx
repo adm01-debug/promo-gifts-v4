@@ -99,7 +99,7 @@ export function McpAuditRow({ row }: Props) {
         </div>
       )}
 
-      {(d.target_repo || d.target_tool || d.expires_at || (row.is_full && d.justification)) && (
+      {!!(d.target_repo || d.target_tool || d.expires_at || (row.is_full && d.justification)) && (
         <div className="mt-2 grid grid-cols-1 gap-x-3 gap-y-1 text-xs sm:grid-cols-2">
           {d.target_repo ? (
             <div>

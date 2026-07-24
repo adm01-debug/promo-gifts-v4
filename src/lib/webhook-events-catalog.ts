@@ -18,43 +18,63 @@ export interface WebhookEventGroup {
 
 export const WEBHOOK_EVENTS_CATALOG: WebhookEventGroup[] = [
   {
-    category: "quote",
-    label: "Orçamentos",
+    category: 'quote',
+    label: 'Orçamentos',
     events: [
-      { key: "quote.created", label: "Criado", description: "Novo orçamento gerado pelo vendedor" },
-      { key: "quote.updated", label: "Atualizado", description: "Itens, descontos ou notas alterados" },
-      { key: "quote.sent", label: "Enviado", description: "Link público enviado ao cliente" },
-      { key: "quote.approved", label: "Aprovado", description: "Cliente aprovou o orçamento" },
-      { key: "quote.rejected", label: "Rejeitado", description: "Cliente rejeitou o orçamento" },
-      { key: "quote.expired", label: "Expirado", description: "Prazo de validade venceu" },
+      { key: 'quote.created', label: 'Criado', description: 'Novo orçamento gerado pelo vendedor' },
+      {
+        key: 'quote.updated',
+        label: 'Atualizado',
+        description: 'Itens, descontos ou notas alterados',
+      },
+      { key: 'quote.sent', label: 'Enviado', description: 'Link público enviado ao cliente' },
+      { key: 'quote.approved', label: 'Aprovado', description: 'Cliente aprovou o orçamento' },
+      { key: 'quote.rejected', label: 'Rejeitado', description: 'Cliente rejeitou o orçamento' },
+      { key: 'quote.expired', label: 'Expirado', description: 'Prazo de validade venceu' },
     ],
   },
   {
-    category: "order",
-    label: "Pedidos",
+    category: 'order',
+    label: 'Pedidos',
     events: [
-      { key: "order.created", label: "Criado", description: "Pedido gerado a partir de orçamento aprovado" },
-      { key: "order.approved", label: "Aprovado", description: "Aprovado por gestor/admin" },
-      { key: "order.fulfilled", label: "Concluído", description: "Entregue / faturado" },
-      { key: "order.cancelled", label: "Cancelado", description: "Cancelamento do pedido" },
+      {
+        key: 'order.created',
+        label: 'Criado',
+        description: 'Pedido gerado a partir de orçamento aprovado',
+      },
+      { key: 'order.approved', label: 'Aprovado', description: 'Aprovado por gestor/admin' },
+      { key: 'order.fulfilled', label: 'Concluído', description: 'Entregue / faturado' },
+      { key: 'order.cancelled', label: 'Cancelado', description: 'Cancelamento do pedido' },
     ],
   },
   {
-    category: "discount",
-    label: "Descontos",
+    category: 'discount',
+    label: 'Descontos',
     events: [
-      { key: "discount.requested", label: "Solicitado", description: "Vendedor pediu aprovação de desconto acima da alçada" },
-      { key: "discount.approved", label: "Aprovado", description: "Admin aprovou o desconto" },
-      { key: "discount.rejected", label: "Rejeitado", description: "Admin rejeitou o desconto" },
+      {
+        key: 'discount.requested',
+        label: 'Solicitado',
+        description: 'Vendedor pediu aprovação de desconto acima da alçada',
+      },
+      { key: 'discount.approved', label: 'Aprovado', description: 'Admin aprovou o desconto' },
+      { key: 'discount.rejected', label: 'Rejeitado', description: 'Admin rejeitou o desconto' },
     ],
   },
   {
-    category: "kit",
-    label: "Kits",
+    category: 'kit',
+    label: 'Kits',
     events: [
-      { key: "kit.created", label: "Criado", description: "Novo kit personalizado salvo" },
-      { key: "kit.shared", label: "Compartilhado", description: "Link público gerado para cliente" },
-      { key: "kit.viewed", label: "Visualizado", description: "Cliente abriu o link compartilhado" },
+      { key: 'kit.created', label: 'Criado', description: 'Novo kit personalizado salvo' },
+      {
+        key: 'kit.shared',
+        label: 'Compartilhado',
+        description: 'Link público gerado para cliente',
+      },
+      {
+        key: 'kit.viewed',
+        label: 'Visualizado',
+        description: 'Cliente abriu o link compartilhado',
+      },
     ],
   },
 ];

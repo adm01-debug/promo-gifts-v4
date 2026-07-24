@@ -1,5 +1,20 @@
 // Palavras que devem permanecer em minúsculo (preposições, artigos, conjunções)
-const LOWERCASE_WORDS = ['e', 'de', 'da', 'do', 'das', 'dos', 'em', 'na', 'no', 'nas', 'nos', 'para', 'por', 'com'];
+const LOWERCASE_WORDS = [
+  'e',
+  'de',
+  'da',
+  'do',
+  'das',
+  'dos',
+  'em',
+  'na',
+  'no',
+  'nas',
+  'nos',
+  'para',
+  'por',
+  'com',
+];
 
 /**
  * Formata string em Title Case (Primeira Maiúscula, exceto preposições)

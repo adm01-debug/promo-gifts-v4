@@ -12,17 +12,18 @@
  *    (30 eventos/min/usuário).
  *  - Falhas são engolidas: telemetria nunca pode quebrar a UX.
  */
-import { supabase } from "@/integrations/supabase/client";
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { logger } from '@/lib/logger';
 
 export type DevRouteUxEvent =
-  | "view"
-  | "back"
-  | "retry"
-  | "fallback"
-  | "request_access"
-  | "copy_link"
-  | "mail"
-  | "abandon";
+  | 'abandon'
+  | 'back'
+  | 'copy_link'
+  | 'fallback'
+  | 'mail'
+  | 'request_access'
+  | 'retry'
+  | 'view';
 
 interface RecordParams {
   event: DevRouteUxEvent;
@@ -49,22 +50,21 @@ function shouldDrop(key: string): boolean {
   return false;
 }
 
-export async function recordDevRouteTelemetry(
-  params: RecordParams,
-): Promise<void> {
+export async function recordDevRouteTelemetry(params: RecordParams): Promise<void> {
   const key = `${params.event}:${params.blockedPath}`;
   if (shouldDrop(key)) return;
 
   try {
-    await supabase.rpc("record_dev_route_telemetry", {
+    const supabase = await getSupabaseClient();
+    // BUG-DEVTELEMETRY-SILENT-FAIL FIX: bare RPC await swallowed DB errors.
+    const { error: telemetryErr } = await supabase.rpc('record_dev_route_telemetry', {
       _event_type: params.event,
       _blocked_path: params.blockedPath,
       _user_role: params.userRole ?? undefined,
       _duration_ms:
-        typeof params.durationMs === "number"
-          ? Math.round(params.durationMs)
-          : undefined,
+        typeof params.durationMs === 'number' ? Math.round(params.durationMs) : undefined,
     });
+    if (telemetryErr) logger.warn('[dev-route-telemetry] RPC failed:', telemetryErr);
   } catch {
     // Telemetria não pode quebrar UX — engole erro silenciosamente.
   }

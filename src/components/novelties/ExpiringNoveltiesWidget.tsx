@@ -1,31 +1,26 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Flame, Sparkles, ChevronRight, Package, Building2 } from "lucide-react";
-import { useNoveltiesWithDetails } from "@/hooks/products";
-import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Flame, Sparkles, ChevronRight, Package, Building2, Hourglass } from 'lucide-react';
+import { useExpiringNovelties, useNoveltiesWithDetails, useNoveltyStats } from '@/hooks/products';
+import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { useMemo, useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatDaysAgoFromTs, getRecencyVariant } from '@/lib/novelty-dates';
 
-function formatDaysAgo(createdAt: string): string {
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-  if (days === 0) return "Hoje!";
-  if (days === 1) return "Ontem";
-  return `${days}d atrás`;
-}
-
-function getRecencyVariant(createdAt: string): "hot" | "warm" | "normal" {
-  const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000);
-  if (days <= 2) return "hot";
-  if (days <= 5) return "warm";
-  return "normal";
+/** Rótulo curto de quanto tempo resta como novidade. */
+function formatDaysLeft(daysRemaining: number): string {
+  if (daysRemaining <= 0) return 'Expira hoje';
+  if (daysRemaining === 1) return 'Resta 1 dia';
+  return `Restam ${daysRemaining} dias`;
 }
 
 const recencyStyles = {
-  hot: "text-orange",
-  warm: "text-warning",
-  normal: "text-muted-foreground",
+  hot: 'text-brand-primary',
+  warm: 'text-warning',
+  normal: 'text-muted-foreground',
 };
 
 interface SupplierBreakdown {
@@ -37,32 +32,54 @@ interface SupplierBreakdown {
 
 export function ExpiringNoveltiesWidget() {
   const navigate = useNavigate();
-  const { data: allNovelties, isLoading } = useNoveltiesWithDetails({ limit: 200 });
+  // BUG-HEAD-3 FIX (2026-06-25): guard de autenticação para evitar GETs abortados.
+  // ANTI-REGRESSÃO fix_version=v4.1443b: não remover isReadyToFetch nem isPending alias.
+  const { user, rolesLoaded } = useAuth();
+  const isReadyToFetch = rolesLoaded && !!user;
+
+  // GAP-FIX: remover limit:200 compartilha a cache key ['novelties-details','all',false] com
+  // NoveltyProductGrid — elimina a segunda round-trip ao servidor. O componente usa apenas
+  // os top-10 mais recentes, mas o React Query devolve os dados já carregados pelo grid.
+  // isPending:isLoading alias cobre enabled=false (rolesLoaded=false) → skeleton correto.
+  const { data: allNovelties, isPending: isLoading } = useNoveltiesWithDetails({ enabled: isReadyToFetch });
+
+  // ISSUE-34 FIX: tick a cada 60s para recalcular recência — sem isso, uma
+  // novidade detectada "há 2 dias" continuaria mostrando badge 'hot' enquanto a
+  // página fica aberta, mesmo depois de virar 'warm' (dias 3-5).
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Novidades que estão prestes a sair da janela (≤ 7 dias restantes). Fonte:
+  // expiração REAL da pipeline (novelty_expires_at). Renderizado só quando há
+  // itens — sem ruído quando nada está expirando.
+  const { data: expiring = [] } = useExpiringNovelties(7);
+  const expiringItems = useMemo(() => expiring.slice(0, 8), [expiring]);
 
   const recentItems = useMemo(() => {
     if (!allNovelties) return [];
-    return [...allNovelties]
-      .sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime())
-      .slice(0, 10);
+    // ISSUE-19 FIX: Schwartzian transform — pré-computa getTime() uma vez por
+    // item (O(n)) em vez de criar new Date() a cada chamada do comparador
+    // (O(n log n) alocações). Relevante quando allNovelties tem centenas de itens.
+    return allNovelties
+      .map((n) => [n, new Date(n.detected_at).getTime()] as const)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([n]) => n);
   }, [allNovelties]);
 
-  // Supplier breakdown
-  const supplierBreakdown = useMemo<SupplierBreakdown[]>(() => {
-    if (!allNovelties || allNovelties.length === 0) return [];
-    const supMap = new Map<string, { id: string; name: string; count: number }>();
-    allNovelties.forEach(p => {
-      if (p.supplier_id && p.supplier_name) {
-        const existing = supMap.get(p.supplier_id);
-        if (existing) existing.count++;
-        else supMap.set(p.supplier_id, { id: p.supplier_id, name: p.supplier_name, count: 1 });
-      }
-    });
-    const total = allNovelties.length;
-    return [...supMap.values()]
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5)
-      .map(s => ({ ...s, percentage: Math.round((s.count / total) * 100) }));
-  }, [allNovelties]);
+  // FIX (auditoria Novidades, P1-A): o ranking "Por Fornecedor" vem agora do
+  // useNoveltyStats — calculado server-side sobre TODAS as novidades da janela
+  // (nao sobre os 200 itens carregados aqui). Antes este painel contradizia o
+  // card "Top Fornecedor" (ex.: dizia "Só Marcas 54%" quando a verdade, sobre o
+  // conjunto completo, era "XBZ 58%"). Fonte de verdade unica.
+  const { data: noveltyStats } = useNoveltyStats();
+  const supplierBreakdown: SupplierBreakdown[] = (noveltyStats?.supplierBreakdown ?? []).slice(
+    0,
+    5,
+  );
 
   const handleClick = (productId: string) => {
     navigate(`/produto/${productId}`);
@@ -70,16 +87,77 @@ export function ExpiringNoveltiesWidget() {
 
   return (
     <div className="space-y-3">
+      {/* Expirando em breve — só aparece quando há novidades saindo da janela */}
+      {expiringItems.length > 0 && (
+        <Card className="border-warning/40 bg-gradient-to-br from-warning/10 via-warning/5 to-transparent ring-1 ring-warning/20">
+          <CardHeader className="px-3 pb-1.5 pt-3">
+            <CardTitle className="flex items-center gap-1.5 text-sm">
+              <Hourglass className="h-4 w-4 text-warning" />
+              <span className="font-bold text-warning">Expirando em breve</span>
+              {/* ISSUE-14 FIX: mostra total real (expiring.length) — não o cap de 8 */}
+              <Badge
+                variant="secondary"
+                className="border border-warning/30 bg-warning/20 px-1.5 py-0 text-[9px] font-bold tabular-nums text-warning"
+              >
+                {expiring.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-3 pb-3 pt-0">
+            <ScrollArea className="h-auto max-h-[220px]">
+              <div className="space-y-1">
+                {expiringItems.map((item) => (
+                  <button
+                    type="button"
+                    key={item.novelty_id}
+                    aria-label={`Abrir produto ${item.product_name}`}
+                    className="group flex w-full items-center gap-2 rounded-md border border-warning/20 bg-warning/5 p-1.5 text-left transition-all duration-150 hover:border-warning/40 hover:bg-warning/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning"
+                    onClick={() => handleClick(item.product_id)}
+                  >
+                    <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded bg-muted">
+                      {item.product_image ? (
+                        <img
+                          src={item.product_image}
+                          alt={item.product_name}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
+                          <Package className="h-3 w-3" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-1 text-[11px] font-medium transition-colors group-hover:text-primary">
+                        {item.product_name}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <Hourglass className="h-2.5 w-2.5 text-warning" />
+                        <span className="text-[10px] font-medium text-warning">
+                          {formatDaysLeft(item.days_remaining)}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-warning" />
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+
       {/* + Recentes widget */}
       <Card className="border-success/40 bg-gradient-to-br from-success/10 via-success/5 to-transparent shadow-[0_0_20px_hsl(var(--success)/0.15)] ring-1 ring-success/20">
-        <CardHeader className="pb-1.5 px-3 pt-3">
-          <CardTitle className="text-sm flex items-center gap-1.5">
-            <Flame className="h-4 w-4 text-success animate-pulse drop-shadow-[0_0_6px_hsl(var(--success)/0.6)]" />
-            <span className="text-success font-bold">+ Recentes</span>
+        <CardHeader className="px-3 pb-1.5 pt-3">
+          <CardTitle className="flex items-center gap-1.5 text-sm">
+            <Flame className="h-4 w-4 animate-pulse text-success drop-shadow-[0_0_6px_hsl(var(--success)/0.6)]" />
+            <span className="font-bold text-success">+ Recentes</span>
             {recentItems.length > 0 && (
-              <Badge 
-                variant="secondary" 
-                className="bg-success/20 text-success border border-success/30 text-[9px] tabular-nums px-1.5 py-0 font-bold"
+              <Badge
+                variant="secondary"
+                className="border border-success/30 bg-success/20 px-1.5 py-0 text-[9px] font-bold tabular-nums text-success"
               >
                 {recentItems.length}
               </Badge>
@@ -87,73 +165,78 @@ export function ExpiringNoveltiesWidget() {
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="pt-0 px-3 pb-3">
+        <CardContent className="px-3 pb-3 pt-0">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-6 gap-2">
-              <div className="w-4 h-4 border-2 border-primary/40 border-t-transparent rounded-full animate-spin" />
+            <div className="flex flex-col items-center justify-center gap-2 py-6">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary/40 border-t-transparent" />
               <span className="text-[10px] text-muted-foreground/50">carregando...</span>
             </div>
           ) : recentItems.length > 0 ? (
             <ScrollArea className="h-auto max-h-[280px]">
               <div className="space-y-1">
                 {recentItems.map((item, idx) => {
-                   const isVeryNew = idx < 3;
-                   const variant = getRecencyVariant(item.detected_at);
-                   return (
-                     <div
-                       key={item.novelty_id}
-                       className={cn(
-                         "group flex items-center gap-2 p-1.5 rounded-md cursor-pointer",
-                         "hover:bg-success/10 transition-all duration-150",
-                         isVeryNew 
-                           ? "border border-success/20 hover:border-success/40 bg-success/5" 
-                           : "border border-transparent",
-                       )}
+                  const isVeryNew = idx < 3;
+                  const variant = getRecencyVariant(item.detected_at);
+                  return (
+                    // ISSUE-11 FIX: usa <button> em vez de <div> para acessibilidade
+                    // por teclado. Div+onClick não é alcançável com Tab nem ativável
+                    // com Enter/Space por leitores de tela (WCAG 2.1 SC 2.1.1).
+                    <button
+                      key={item.novelty_id}
+                      type="button"
+                      aria-label={`Abrir novidade: ${item.product_name}`}
+                      className={cn(
+                        'group flex w-full cursor-pointer items-center gap-2 rounded-md p-1.5 text-left',
+                        'transition-all duration-150 hover:bg-success/10',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success',
+                        isVeryNew
+                          ? 'border border-success/20 bg-success/5 hover:border-success/40'
+                          : 'border border-transparent',
+                      )}
                       onClick={() => handleClick(item.product_id)}
                     >
-                      <div className="shrink-0 w-8 h-8 rounded bg-muted overflow-hidden relative">
+                      <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded bg-muted">
                         {item.product_image ? (
-                          <img src={item.product_image} 
+                          <img
+                            src={item.product_image}
                             alt={item.product_name}
-                            className="w-full h-full object-cover"
+                            className="h-full w-full object-cover"
                             loading="lazy"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                          <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
                             <Package className="h-3 w-3" />
                           </div>
                         )}
                         {isVeryNew && (
-                          <div className="absolute -top-0.5 -right-0.5">
+                          <div className="absolute -right-0.5 -top-0.5">
                             <Flame className="h-2.5 w-2.5 text-success drop-shadow-[0_0_4px_hsl(var(--success)/0.5)]" />
                           </div>
                         )}
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-medium line-clamp-1 group-hover:text-primary transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-1 text-[11px] font-medium transition-colors group-hover:text-primary">
                           {item.product_name}
                         </p>
                         <div className="flex items-center gap-1">
-                          <Sparkles className={cn("h-2.5 w-2.5", recencyStyles[variant])} />
-                          <span className={cn("text-[10px] font-medium", recencyStyles[variant])}>
-                            {formatDaysAgo(item.detected_at)}
+                          <Sparkles className={cn('h-2.5 w-2.5', recencyStyles[variant])} />
+                          <span className={cn('text-[10px] font-medium', recencyStyles[variant])}>
+                            {formatDaysAgoFromTs(item.detected_at)}
                           </span>
                         </div>
                       </div>
 
-                      <ChevronRight className="h-3 w-3 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
-                    </div>
+                      <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-primary" />
+                    </button>
                   );
                 })}
               </div>
             </ScrollArea>
           ) : (
-            <div className="text-center py-4">
-              <Sparkles className="h-6 w-6 mx-auto text-muted-foreground/30 mb-1.5" />
-              <p className="text-[11px] text-muted-foreground">
-                Nenhuma novidade recente
-              </p>
+            <div className="py-4 text-center">
+              <Sparkles className="mx-auto mb-1.5 h-6 w-6 text-muted-foreground/30" />
+              <p className="text-[11px] text-muted-foreground">Nenhuma novidade recente</p>
             </div>
           )}
         </CardContent>
@@ -162,39 +245,39 @@ export function ExpiringNoveltiesWidget() {
       {/* Supplier Breakdown widget */}
       {supplierBreakdown.length > 0 && (
         <Card className="border-info/30 bg-gradient-to-br from-info/5 to-transparent">
-          <CardHeader className="pb-1.5 px-3 pt-3">
-            <CardTitle className="text-sm flex items-center gap-1.5">
+          <CardHeader className="px-3 pb-1.5 pt-3">
+            <CardTitle className="flex items-center gap-1.5 text-sm">
               <Building2 className="h-4 w-4 text-info" />
               Por Fornecedor
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0 px-3 pb-3">
+          <CardContent className="px-3 pb-3 pt-0">
             <div className="space-y-2">
               {supplierBreakdown.map((sup, idx) => (
                 <div key={sup.id}>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="font-medium text-[11px] truncate max-w-[120px]">{sup.name}</span>
+                  <div className="mb-0.5 flex items-center justify-between">
+                    <span className="max-w-[120px] truncate text-[11px] font-medium">
+                      {sup.name}
+                    </span>
                     <div className="flex items-center gap-1">
-                      <Badge variant="secondary" className="text-[9px] tabular-nums px-1 py-0">
+                      <Badge variant="secondary" className="px-1 py-0 text-[9px] tabular-nums">
                         {sup.count}
                       </Badge>
-                      <span className="text-[9px] text-muted-foreground tabular-nums w-7 text-right">
+                      <span className="w-7 text-right text-[9px] tabular-nums text-muted-foreground">
                         {sup.percentage}%
                       </span>
                     </div>
                   </div>
-                  <div className="h-1 rounded-full bg-muted overflow-hidden">
+                  <div className="h-1 overflow-hidden rounded-full bg-muted">
                     <div
                       className={cn(
-                        "h-full rounded-full transition-all duration-700 ease-out",
-                        idx === 0 ? "bg-info" : "bg-info/50"
+                        'h-full rounded-full transition-all duration-700 ease-out',
+                        idx === 0 ? 'bg-info' : 'bg-info/50',
                       )}
                       style={{ width: `${sup.percentage}%` }}
                     />
                   </div>
-                  {idx < supplierBreakdown.length - 1 && (
-                    <Separator className="mt-2 opacity-20" />
-                  )}
+                  {idx < supplierBreakdown.length - 1 && <Separator className="mt-2 opacity-20" />}
                 </div>
               ))}
             </div>

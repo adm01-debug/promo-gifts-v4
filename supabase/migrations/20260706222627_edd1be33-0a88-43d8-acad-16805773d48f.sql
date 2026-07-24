@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS request_rate_limits_identifier_endpoint_key ON public.request_rate_limits (identifier, endpoint);

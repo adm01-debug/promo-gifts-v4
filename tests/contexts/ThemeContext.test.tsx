@@ -43,75 +43,53 @@ describe('ThemeContext', () => {
     vi.clearAllMocks();
   });
 
-  it('deve inicializar com o tema light por padrão se não houver preferência', () => {
+  it('deve inicializar com o tema dark sempre', () => {
     const { result } = renderHook(() => useTheme(), {
-      wrapper: ({ children }) => <ThemeProvider defaultTheme="light">{children}</ThemeProvider>,
-    });
-
-    expect(result.current.theme).toBe('light');
-    expect(result.current.actualTheme).toBe('light');
-    expect(document.documentElement.classList.contains('light')).toBe(true);
-  });
-
-  it('deve permitir trocar o tema manualmente', () => {
-    const { result } = renderHook(() => useTheme(), {
-      wrapper: ({ children }) => <ThemeProvider defaultTheme="light">{children}</ThemeProvider>,
-    });
-
-    act(() => {
-      result.current.setTheme('dark');
+      wrapper: ({ children }) => <ThemeProvider>{children}</ThemeProvider>,
     });
 
     expect(result.current.theme).toBe('dark');
     expect(result.current.actualTheme).toBe('dark');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
-    expect(window.localStorage.getItem('gifts-store-theme')).toBe('dark');
+    expect(document.documentElement.classList.contains('light')).toBe(false);
   });
 
-  it('deve alternar entre light e dark ao chamar toggleTheme', () => {
+  it('não deve permitir trocar o tema manualmente (sempre dark)', () => {
     const { result } = renderHook(() => useTheme(), {
-      wrapper: ({ children }) => <ThemeProvider defaultTheme="light">{children}</ThemeProvider>,
+      wrapper: ({ children }) => <ThemeProvider>{children}</ThemeProvider>,
     });
 
     act(() => {
-      result.current.toggleTheme();
+      // @ts-expect-error - Theme is only 'dark' now
+      result.current.setTheme('light');
     });
 
-    expect(result.current.actualTheme).toBe('dark');
-    
-    act(() => {
-      result.current.toggleTheme();
-    });
-
-    expect(result.current.actualTheme).toBe('light');
-  });
-
-  it('deve usar o tema do sistema quando configurado como auto', () => {
-    // Simular que o sistema prefere dark
-    (window.matchMedia as any).mockImplementation((query: string) => ({
-      matches: query === '(prefers-color-scheme: dark)',
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    }));
-
-    const { result } = renderHook(() => useTheme(), {
-      wrapper: ({ children }) => <ThemeProvider defaultTheme="auto">{children}</ThemeProvider>,
-    });
-
-    expect(result.current.theme).toBe('auto');
+    expect(result.current.theme).toBe('dark');
     expect(result.current.actualTheme).toBe('dark');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 
-  it('deve retornar fallback se usado fora do provider sem quebrar', () => {
+  it('não deve fazer nada ao chamar toggleTheme', () => {
+    const { result } = renderHook(() => useTheme(), {
+      wrapper: ({ children }) => <ThemeProvider>{children}</ThemeProvider>,
+    });
+
+    act(() => {
+      result.current.toggleTheme();
+    });
+
+    expect(result.current.actualTheme).toBe('dark');
+  });
+
+  it('deve retornar fallback dark se usado fora do provider sem quebrar', () => {
     // Silenciar o console.warn para o teste de fallback
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     
     const { result } = renderHook(() => useTheme());
 
     expect(result.current.isFallback).toBe(true);
-    expect(result.current.theme).toBe('light');
+    expect(result.current.theme).toBe('dark');
+    expect(result.current.actualTheme).toBe('dark');
     
     spy.mockRestore();
   });

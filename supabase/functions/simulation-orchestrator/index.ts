@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
 import { parseContract } from "../_shared/contracts/index.ts";
@@ -6,6 +5,9 @@ import {
   SimulationOrchestratorSchemas,
 } from "../_shared/contracts/schemas/simulation-orchestrator.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
+import { getCredential } from "../_shared/credentials.ts";
+import { createStructuredLogger } from '../_shared/structured-logger.ts';
+import { getOrCreateRequestId } from '../_shared/request-id.ts';
 
 const corsHeaders = buildPublicCorsHeaders();
 
@@ -42,7 +44,10 @@ function generateFuzzedPayload(type: string) {
   return { [String(item)]: item };
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
+  const __reqId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'simulation-orchestrator', requestId: __reqId, req });
+  log.info('request_start');
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const startTime = performance.now();
@@ -59,7 +64,7 @@ serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const n8nSecret = Deno.env.get("N8N_PRODUCT_WEBHOOK_SECRET") || "sim-secret";
+    const n8nSecret = await getCredential("N8N_PRODUCT_WEBHOOK_SECRET") ?? "sim-secret";
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const { data: run } = await supabase
@@ -78,6 +83,7 @@ serve(async (req) => {
       endTime: "",
       consistencyChecks: { passed: 0, failed: 0 },
       latencies: [] as number[],
+      pendingLogs: [] as any[],
     };
 
     const { data: simEndpoint } = await supabase
@@ -107,7 +113,7 @@ serve(async (req) => {
         report.latencies.push(latency);
         
         if (run?.id) {
-          await supabase.from("simulation_logs").insert({
+          report.pendingLogs.push({
             run_id: run.id,
             fn_name: fnName,
             status_code: status,
@@ -132,7 +138,7 @@ serve(async (req) => {
         report.failures++;
         report.totalScenarios++;
         if (run?.id) {
-          await supabase.from("simulation_logs").insert({
+          report.pendingLogs.push({
             run_id: run.id,
             fn_name: fnName,
             error_message: String(err),
@@ -151,13 +157,11 @@ serve(async (req) => {
       const currentBatch = Math.min(batchSize, finalCount - i);
       
       for (let j = 0; j < currentBatch; j++) {
-        // 1. External DB Bridge (Standard Resilience)
         if (targetFunctions.includes("external-db-bridge")) {
           const payload = mode === "fuzzing" ? generateFuzzedPayload("bridge") : { operation: "select", table: "products", limit: 1 };
           promises.push(runScenario("external-db-bridge", payload, [200, 400, 401, 404, 422]));
         }
 
-        // 2. Webhook Inbound (Consistency + Security)
         if (targetFunctions.includes("webhook-inbound")) {
           promises.push((async () => {
             const payload = mode === "fuzzing" ? generateFuzzedPayload("webhook") : { event: "simulation", id: `sim-${crypto.randomUUID()}` };
@@ -177,10 +181,16 @@ serve(async (req) => {
               if (data) report.consistencyChecks.passed++;
               else report.consistencyChecks.failed++;
             }
+            
+            if (mode === "fuzzing") {
+              const maliciousPayloads = [{ id: "not-a-uuid" }, { id: null }];
+              for (const p of maliciousPayloads) {
+                await runScenario("webhook-inbound", p, [400, 422]);
+              }
+            }
           })());
         }
 
-        // 3. Product Webhook (Data Integrity)
         if (targetFunctions.includes("product-webhook")) {
           const payload = mode === "fuzzing" ? 
             { action: "upsert", product: generateFuzzedPayload("product") } : 
@@ -193,6 +203,10 @@ serve(async (req) => {
       }
       
       await Promise.all(promises);
+      if (report.pendingLogs.length > 0) {
+        await supabase.from("simulation_logs").insert(report.pendingLogs);
+        report.pendingLogs = [];
+      }
       if (performance.now() - startTime > 55000) break;
     }
 
@@ -201,8 +215,6 @@ serve(async (req) => {
     if (run?.id) {
       const sortedLatencies = [...report.latencies].sort((a, b) => a - b);
       const p50 = sortedLatencies[Math.floor(sortedLatencies.length * 0.5)] || 0;
-      const p90 = sortedLatencies[Math.floor(sortedLatencies.length * 0.9)] || 0;
-      const p99 = sortedLatencies[Math.floor(sortedLatencies.length * 0.99)] || 0;
       const avg = report.latencies.reduce((a, b) => a + b, 0) / (report.latencies.length || 1);
 
       await supabase.from("simulation_runs").update({
@@ -212,20 +224,18 @@ serve(async (req) => {
         failures: report.failures,
         avg_latency_ms: avg,
         p50_latency_ms: p50,
-        p90_latency_ms: p90,
-        p99_latency_ms: p99,
         metadata: { consistency: report.consistencyChecks }
       }).eq("id", run.id);
     }
     
     return new Response(JSON.stringify(report), {
-      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, ...responseHeaders, "Content-Type": "application/json", "X-Request-Id": __reqId },
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json", "X-Request-Id": __reqId },
       status: 400,
     });
   }

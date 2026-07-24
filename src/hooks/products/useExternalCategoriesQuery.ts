@@ -1,11 +1,11 @@
 /**
- * Hook para buscar categorias do banco externo com React Query
- * 
- * Usa cache persistente para evitar re-fetches em remontagens
+ * Hook para buscar categorias do banco externo com React Query.
+ * Migrated from supabase.functions.invoke('external-db-bridge') to dbInvoke
+ * (2026-05-30) — uses REST native PostgREST path, zero Edge Function calls.
  */
-
+import { useMemo } from 'react';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { CACHE_TIMES, GC_TIMES } from '@/lib/query-config';
 
 export interface ExternalCategory {
@@ -23,71 +23,43 @@ export interface ExternalCategory {
   products_count?: number;
 }
 
-interface QueryResult {
-  records: ExternalCategory[];
-  count: number | null;
-}
-
-// Query key para invalidação
 export const EXTERNAL_CATEGORIES_QUERY_KEY = ['external-categories'] as const;
 
-/**
- * Busca todas as categorias ativas do banco externo
- */
 async function fetchExternalCategories(): Promise<ExternalCategory[]> {
-  const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-    body: {
-      table: 'categories',
-      operation: 'select',
-      filters: { is_active: true },
-      limit: 1000,
-      orderBy: { column: 'name', ascending: true },
-      countMode: 'none',
-    },
+  const result = await dbInvoke<ExternalCategory>({
+    table: 'categories',
+    operation: 'select',
+    filters: { is_active: true },
+    limit: 1000,
+    orderBy: { column: 'name', ascending: true },
   });
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  if (!data.success) {
-    throw new Error(data.error || 'Erro ao buscar categorias');
-  }
-
-  const result = data.data as QueryResult;
   return result.records || [];
 }
 
-/**
- * Hook principal - usa React Query para cache persistente
- */
 export function useExternalCategoriesQuery() {
   return useQuery({
     queryKey: EXTERNAL_CATEGORIES_QUERY_KEY,
     queryFn: fetchExternalCategories,
-    staleTime: CACHE_TIMES.STABLE, // 10 minutos - categorias raramente mudam
-    gcTime: GC_TIMES.TECNICAS, // 30 minutos no garbage collector
+    staleTime: CACHE_TIMES.STABLE,
+    gcTime: GC_TIMES.TECNICAS,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });
 }
 
-/**
- * Hook auxiliar para buscar uma categoria por ID
- */
 export function useCategoryById(categoryId: string | undefined) {
   const { data: categories = [] } = useExternalCategoriesQuery();
-  
-  if (!categoryId) return null;
-  return categories.find(cat => cat.id === categoryId) || null;
+  return useMemo(
+    () => (categoryId ? (categories.find((cat) => cat.id === categoryId) ?? null) : null),
+    [categoryId, categories],
+  );
 }
 
-/**
- * Hook auxiliar para buscar categorias por IDs
- */
 export function useCategoriesByIds(categoryIds: string[]) {
   const { data: categories = [] } = useExternalCategoriesQuery();
-  
-  if (!categoryIds.length) return [];
-  return categories.filter(cat => categoryIds.includes(cat.id));
+  return useMemo(() => {
+    if (!categoryIds.length) return [];
+    const idSet = new Set(categoryIds);
+    return categories.filter((cat) => idSet.has(cat.id));
+  }, [categoryIds, categories]);
 }

@@ -1,6 +1,6 @@
-import { useEffect } from "react";
-import { Navigate } from "react-router-dom";
-import { toast } from "sonner";
+import { useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface DeprecatedRouteProps {
   /** Mensagem amigável exibida no toast */
@@ -14,9 +14,9 @@ interface DeprecatedRouteProps {
  * e redireciona para destino sugerido. Mantém UX amigável para usuários
  * que tinham bookmarks de features removidas.
  */
-export const DeprecatedRoute = ({ message, redirectTo = "/" }: DeprecatedRouteProps) => {
+export const DeprecatedRoute = ({ message, redirectTo = '/' }: DeprecatedRouteProps) => {
   useEffect(() => {
-    toast.info("Funcionalidade descontinuada", {
+    toast.info('Funcionalidade descontinuada', {
       description: message,
       duration: 6000,
     });

@@ -1,16 +1,12 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Layers, ChevronDown, ChevronUp, Copy } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { AreaCard } from "./AreaCard";
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Layers, ChevronDown, ChevronUp, Copy } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AreaCard } from './AreaCard';
 
 export interface PersonalizationArea {
   id: string;
@@ -62,50 +58,83 @@ export function MultiAreaManager({
 
   const applyLogoToAllAreas = () => {
     const activeArea = areas.find((a) => a.id === activeAreaId);
-    if (!activeArea?.logoPreview) { toast.error("Selecione uma área com logo primeiro"); return; }
-    onAreasChange(areas.map((a) => ({ ...a, logoPreview: activeArea.logoPreview })));
+    if (!activeArea?.logoPreview) {
+      toast.error('Selecione uma área com logo primeiro');
+      return;
+    }
+    onAreasChange(
+      areas.map((a) => ({
+        ...a,
+        logoPreview: activeArea.logoPreview,
+        logoFile: activeArea.logoFile ?? null,
+      })),
+    );
     toast.success(`Logo aplicado em ${areas.length} áreas`);
   };
 
   return (
     <Card
-      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingOver(true); }}
-      onDragLeave={(e) => { e.preventDefault(); setIsDraggingOver(false); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingOver(true);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        setIsDraggingOver(false);
+      }}
       onDrop={(e) => {
         e.preventDefault();
         setIsDraggingOver(false);
         const file = e.dataTransfer.files?.[0];
-        if (file && file.type.startsWith("image/")) {
-          const targetAreaId = activeAreaId || areas[0]?.id;
-          if (targetAreaId) {
-            onLogoUpload(targetAreaId, file);
-            toast.success(`Logo aplicado na área "${areas.find(a => a.id === targetAreaId)?.name || "ativa"}"`);
-          }
+        if (!file) return;
+        // SVG excluded: the generate-mockup edge function rejects SVGs (assertNotSvg),
+        // so accepting them here would succeed at upload but fail at generation — confusing UX.
+        const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+        const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+        if (!ALLOWED_TYPES.includes(file.type)) {
+          toast.error('Formato não suportado. Use JPG, PNG ou WebP.');
+          return;
+        }
+        if (file.size > MAX_SIZE_BYTES) {
+          toast.error('Arquivo muito grande. Tamanho máximo: 10 MB.');
+          return;
+        }
+        const targetAreaId = activeAreaId || areas[0]?.id;
+        if (targetAreaId) {
+          onLogoUpload(targetAreaId, file);
+          toast.success(
+            `Logo aplicado na área "${areas.find((a) => a.id === targetAreaId)?.name || 'ativa'}"`,
+          );
         }
       }}
       className={cn(
-        "transition-all duration-200 border-border/30",
-        isDraggingOver && "ring-2 ring-primary border-primary bg-primary/5"
+        'border-border/30 transition-all duration-200',
+        isDraggingOver && 'border-primary bg-primary/5 ring-2 ring-primary',
       )}
     >
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <CardHeader className="pb-3">
           <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between cursor-pointer hover:opacity-80">
+            <div className="flex cursor-pointer items-center justify-between hover:opacity-80">
               <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" />
+                <Layers className="h-4 w-4 text-primary" aria-hidden="true" />
                 <CardTitle className="text-base">Áreas de Personalização</CardTitle>
                 <Badge variant="secondary" className="text-xs">
-                  {areas.length} {areas.length === 1 ? "área" : "áreas"}
+                  {areas.length} {areas.length === 1 ? 'área' : 'áreas'}
                 </Badge>
               </div>
-              {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              )}
             </div>
           </CollapsibleTrigger>
           <CardDescription className="text-xs">
             {isDraggingOver
-              ? "🎯 Solte a imagem para aplicar como logo"
-              : areas.some(a => a.maxWidthCm !== null || a.techniquesAvailable !== null)
+              ? '🎯 Solte a imagem para aplicar como logo'
+              : areas.some((a) => a.maxWidthCm !== null || a.techniquesAvailable !== null)
                 ? `${areas.length} ${areas.length === 1 ? 'área oficial do produto' : 'áreas oficiais do produto'}`
                 : `${areas.length} ${areas.length === 1 ? 'local configurado' : 'locais configurados'} para este produto`}
           </CardDescription>
@@ -121,16 +150,14 @@ export function MultiAreaManager({
                   area={area}
                   index={index}
                   isActive={activeAreaId === area.id}
-                  isReadOnly={true}
+                  isReadOnly
                   canRemove={false}
                   onSelect={() => onActiveAreaChange(area.id)}
                   onNameChange={() => {}}
                   onLogoUpload={(file) => onLogoUpload(area.id, file)}
                   onLogoRemove={() => {
-                    const updated = areas.map(a =>
-                      a.id === area.id
-                        ? { ...a, logoData: null, logoPreview: null }
-                        : a
+                    const updated = areas.map((a) =>
+                      a.id === area.id ? { ...a, logoPreview: null, logoFile: null } : a,
                     );
                     onAreasChange(updated);
                     onLogoRemove?.(area.id);
@@ -141,8 +168,13 @@ export function MultiAreaManager({
             </div>
 
             {areas.length > 1 && activeAreaHasLogo && (
-              <Button variant="secondary" size="sm" onClick={applyLogoToAllAreas} className="w-full">
-                <Copy className="h-4 w-4 mr-1" /> Aplicar Logo em Todas as Áreas
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={applyLogoToAllAreas}
+                className="w-full"
+              >
+                <Copy className="mr-1 h-4 w-4" aria-hidden="true" /> Aplicar Logo em Todas as Áreas
               </Button>
             )}
           </CardContent>

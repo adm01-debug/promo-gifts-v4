@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { dbInvoke } from '@/lib/db/postgrest';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -21,13 +22,12 @@ import {
 } from './simulator';
 import { EngravingList } from './simulator/EngravingList';
 import { MultiEngravingResult } from './simulator/MultiEngravingResult';
-import { invokeExternalDb } from '@/lib/external-db';
 
 interface ProductPriceSimulatorProps {
   className?: string;
 }
 
-type SimulatorMode = 'list' | 'adding';
+type SimulatorMode = 'adding' | 'list';
 
 // ── Progress bar conectada (#4) ──
 function StepProgressBar({
@@ -38,32 +38,36 @@ function StepProgressBar({
   currentStep: number;
 }) {
   return (
-    <div className="flex items-center w-full pb-4 border-b border-border overflow-x-auto gap-0">
+    <div className="flex w-full items-center gap-0 overflow-x-auto border-b border-border pb-4">
       {steps.map((step, idx) => {
         const isComplete = step.number < currentStep;
         const isActive = step.number === currentStep;
         const Icon = step.icon;
 
         return (
-          <div key={step.number} className="flex items-center flex-1 min-w-0 last:flex-none">
+          <div key={step.number} className="flex min-w-0 flex-1 items-center last:flex-none">
             {/* Step circle */}
-            <div className="flex flex-col items-center gap-1 shrink-0">
+            <div className="flex shrink-0 flex-col items-center gap-1">
               <div
                 className={cn(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300',
+                  'flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300',
                   isComplete
                     ? 'bg-success text-success-foreground'
                     : isActive
-                    ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30'
-                    : 'bg-muted text-muted-foreground'
+                      ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary/30'
+                      : 'bg-muted text-muted-foreground',
                 )}
               >
-                {isComplete ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                {isComplete ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
               </div>
               <span
                 className={cn(
-                  'text-[10px] font-medium hidden md:block transition-colors whitespace-nowrap',
-                  isActive ? 'text-foreground' : isComplete ? 'text-success' : 'text-muted-foreground'
+                  'hidden whitespace-nowrap text-[10px] font-medium transition-colors md:block',
+                  isActive
+                    ? 'text-foreground'
+                    : isComplete
+                      ? 'text-success'
+                      : 'text-muted-foreground',
                 )}
               >
                 {step.label}
@@ -72,11 +76,10 @@ function StepProgressBar({
 
             {/* Connector line */}
             {idx < steps.length - 1 && (
-              <div className="flex-1 h-0.5 mx-2 rounded-full transition-colors duration-300"
+              <div
+                className="mx-2 h-0.5 flex-1 rounded-full transition-colors duration-300"
                 style={{
-                  background: isComplete
-                    ? 'hsl(var(--success))'
-                    : 'hsl(var(--border))',
+                  background: isComplete ? 'hsl(var(--success))' : 'hsl(var(--border))',
                 }}
               />
             )}
@@ -93,17 +96,17 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
   // Estado do produto
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  
+
   // Lista de gravações configuradas
   const [engravings, setEngravings] = useState<ConfiguredEngraving[]>([]);
-  
+
   // Estado para adicionar nova gravação
   const [mode, setMode] = useState<SimulatorMode>('list');
   const [currentTechnique, setCurrentTechnique] = useState<ProductTechnique | null>(null);
   const [currentColors, setCurrentColors] = useState(1);
   const [currentSizeOption, setCurrentSizeOption] = useState<string | null>(null);
   const [currentTableCode, setCurrentTableCode] = useState<string | null>(null);
-  
+
   // Quantidade
   const [quantity, setQuantity] = useState(100);
 
@@ -114,24 +117,23 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
     queryKey: ['simulator-variants', selectedProduct?.id],
     queryFn: async () => {
       if (!selectedProduct) return [];
-      const result = await invokeExternalDb<{
+      const result = await dbInvoke<{
         id: string;
         color_name: string | null;
         color_hex: string | null;
         color_code: string | null;
         size_code: string | null;
         stock_quantity: number | null;
-        sale_price: number | null;
         sku: string | null;
       }>({
         table: 'product_variants',
         operation: 'select',
-        select: 'id, color_name, color_hex, color_code, size_code, stock_quantity, sale_price, sku',
+        select: 'id, color_name, color_hex, color_code, size_code, stock_quantity, sku',
         filters: { product_id: selectedProduct.id, is_active: true },
         limit: 200,
         orderBy: { column: 'color_name', ascending: true },
       });
-      return result.records.filter(v => v.color_name);
+      return result.records.filter((v) => v.color_name);
     },
     enabled: !!selectedProduct?.id,
     staleTime: 5 * 60 * 1000,
@@ -139,13 +141,12 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
 
   const productVariants: ProductVariant[] = useMemo(() => {
     if (dbVariants && dbVariants.length > 0) {
-      return dbVariants.map(v => ({
+      return dbVariants.map((v) => ({
         code: v.id,
         name: v.color_name || 'Padrão',
         hex: v.color_hex || undefined,
         stock: v.stock_quantity ?? undefined,
         size_code: v.size_code,
-        sale_price: v.sale_price,
       }));
     }
     if (!selectedProduct?.colors) return [];
@@ -157,7 +158,7 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
     }));
   }, [dbVariants, selectedProduct]);
 
-  const hasSizes = useMemo(() => productVariants.some(v => v.size_code), [productVariants]);
+  const hasSizes = useMemo(() => productVariants.some((v) => v.size_code), [productVariants]);
   const hasVariants = productVariants.length > 0;
   const needsVariantSelection = hasVariants && !selectedVariant;
 
@@ -255,7 +256,7 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
     <Card className={className}>
       <CardHeader className="pb-4">
         <div className="flex items-center gap-2">
-          <Calculator className="w-5 h-5 text-primary" />
+          <Calculator className="h-5 w-5 text-primary" />
           <CardTitle className="font-display">Simulador por Produto</CardTitle>
         </div>
         <CardDescription>
@@ -268,10 +269,10 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
         <StepProgressBar steps={steps} currentStep={currentStep} />
 
         {/* Step 1: Produto */}
-        <div className="space-y-3 animate-fade-in">
+        <div className="animate-fade-in space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-display font-medium flex items-center gap-2">
-              <Package className="w-4 h-4 text-primary" />
+            <h3 className="flex items-center gap-2 font-display font-medium">
+              <Package className="h-4 w-4 text-primary" />
               1. Selecione o Produto
             </h3>
             {selectedProduct && (
@@ -284,10 +285,10 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
             <ProductSearch onSelect={handleProductSelect} selectedProduct={selectedProduct} />
           )}
           {selectedProduct && (
-            <div className="p-3 rounded-lg bg-muted/50 flex items-center gap-3">
-              <Check className="w-5 h-5 text-success shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="font-medium truncate block">{selectedProduct.name}</span>
+            <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
+              <Check className="h-5 w-5 shrink-0 text-success" />
+              <div className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{selectedProduct.name}</span>
                 <span className="text-xs text-muted-foreground">SKU: {selectedProduct.sku}</span>
               </div>
               <Badge variant="secondary">{formatCurrency(selectedProduct.price)}</Badge>
@@ -297,10 +298,10 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
 
         {/* Step 2: Variação/Cor */}
         {selectedProduct && hasVariants && (
-          <div className="space-y-3 animate-fade-in">
+          <div className="animate-fade-in space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-display font-medium flex items-center gap-2">
-                <Palette className="w-4 h-4 text-primary" />
+              <h3 className="flex items-center gap-2 font-display font-medium">
+                <Palette className="h-4 w-4 text-primary" />
                 2. {hasSizes ? 'Selecione Cor e Tamanho' : 'Selecione a Cor do Produto'}
               </h3>
             </div>
@@ -315,10 +316,10 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
 
         {/* Step 3: Gravações */}
         {selectedProduct && (!hasVariants || selectedVariant) && (
-          <div className="space-y-3 animate-fade-in">
+          <div className="animate-fade-in space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-display font-medium flex items-center gap-2">
-                <Paintbrush className="w-4 h-4 text-primary" />
+              <h3 className="flex items-center gap-2 font-display font-medium">
+                <Paintbrush className="h-4 w-4 text-primary" />
                 {hasVariants ? '3' : '2'}. Personalizações
               </h3>
             </div>
@@ -334,11 +335,11 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
             )}
 
             {mode === 'adding' && (
-              <div className="space-y-4 p-4 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 animate-scale-in">
+              <div className="animate-scale-in space-y-4 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-medium">Nova Gravação</h4>
                   <Button variant="ghost" size="sm" onClick={handleCancelAddEngraving}>
-                    <X className="w-4 h-4 mr-1" />
+                    <X className="mr-1 h-4 w-4" />
                     Cancelar
                   </Button>
                 </div>
@@ -352,11 +353,11 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
                 )}
 
                 {currentTechnique && (
-                  <div className="space-y-4 animate-fade-in">
-                    <div className="p-3 rounded-lg bg-background border flex items-center gap-3">
-                      <Check className="w-5 h-5 text-success shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{currentTechnique.techniqueName}</p>
+                  <div className="animate-fade-in space-y-4">
+                    <div className="flex items-center gap-3 rounded-lg border bg-background p-3">
+                      <Check className="h-5 w-5 shrink-0 text-success" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">{currentTechnique.techniqueName}</p>
                         <p className="text-xs text-muted-foreground">
                           {currentTechnique.componentName} → {currentTechnique.locationName}
                         </p>
@@ -367,8 +368,8 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="text-sm font-medium flex items-center gap-2">
-                        <Palette className="w-4 h-4 text-primary" />
+                      <h4 className="flex items-center gap-2 text-sm font-medium">
+                        <Palette className="h-4 w-4 text-primary" />
                         Opções de Personalização
                       </h4>
                       <CustomizationOptions
@@ -382,7 +383,7 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
                     </div>
 
                     <Button className="w-full" onClick={handleConfirmEngraving}>
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="mr-2 h-4 w-4" />
                       Adicionar Gravação
                     </Button>
                   </div>
@@ -394,9 +395,9 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
 
         {/* Step 4: Resultados */}
         {showResults && mode === 'list' && (
-          <div className="space-y-4 animate-fade-in">
-            <h3 className="font-display font-medium flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-primary" />
+          <div className="animate-fade-in space-y-4">
+            <h3 className="flex items-center gap-2 font-display font-medium">
+              <Calculator className="h-4 w-4 text-primary" />
               {hasVariants ? '4' : '3'}. Quantidade e Resultado
             </h3>
             <MultiEngravingResult
@@ -412,7 +413,7 @@ export function ProductPriceSimulator({ className }: ProductPriceSimulatorProps)
               className="w-full gap-2 font-display font-semibold"
               onClick={handleCreateQuote}
             >
-              <FileText className="w-5 h-5" />
+              <FileText className="h-5 w-5" />
               Criar Orçamento a partir desta Simulação
             </Button>
           </div>

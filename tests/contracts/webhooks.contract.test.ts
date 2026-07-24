@@ -8,14 +8,20 @@ import { makeRequest, expectContractError } from './_helpers';
 
 describe('contract: webhook-inbound v1 (passthrough)', () => {
   it('aceita qualquer objeto (compat com produção)', async () => {
-    const req = makeRequest({ body: { hello: 'world', random: 42 } });
+    const req = makeRequest({
+      headers: { 'accept-version': '1' },
+      body: { hello: 'world', random: 42 },
+    });
     const r = await parseContract(req, WebhookInboundSchemas);
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.version).toBe('1');
   });
 
   it('aceita array (compat — v1 é any)', async () => {
-    const req = makeRequest({ body: [1, 2, 3] });
+    const req = makeRequest({
+      headers: { 'accept-version': '1' },
+      body: [1, 2, 3],
+    });
     const r = await parseContract(req, WebhookInboundSchemas);
     expect(r.ok).toBe(true);
   });
@@ -107,6 +113,39 @@ describe('contract: webhook-inbound v2 (envelope strict)', () => {
       });
     }
   });
+
+  it('data ausente -> 422', async () => {
+    const { data: _data, ...rest } = validV2;
+    const req = makeRequest({
+      headers: { 'accept-version': '2' },
+      body: rest,
+    });
+    const r = await parseContract(req, WebhookInboundSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['data'],
+      });
+    }
+  });
+
+  it('data precisa ser objeto -> 422', async () => {
+    const req = makeRequest({
+      headers: { 'accept-version': '2' },
+      body: { ...validV2, data: 'raw payload' },
+    });
+    const r = await parseContract(req, WebhookInboundSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['data'],
+      });
+    }
+  });
 });
 
 // ─── webhook-dispatcher ────────────────────────────────────
@@ -129,6 +168,24 @@ describe('contract: webhook-dispatcher v1 (compat)', () => {
     });
     const r = await parseContract(req, WebhookDispatcherSchemas);
     expect(r.ok).toBe(true);
+  });
+
+  it('rejeita replay_delivery_id que nao e UUID', async () => {
+    const req = makeRequest({
+      body: {
+        event: 'noop',
+        replay_delivery_id: 'not-a-uuid',
+      },
+    });
+    const r = await parseContract(req, WebhookDispatcherSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['replay_delivery_id'],
+      });
+    }
   });
 
   it('event vazio → 422', async () => {
@@ -155,6 +212,22 @@ describe('contract: webhook-dispatcher v2 (discriminated union)', () => {
     expect(r.ok).toBe(true);
   });
 
+  it("mode='dispatch' exige payload", async () => {
+    const req = makeRequest({
+      headers: { 'accept-version': '2' },
+      body: { mode: 'dispatch', event: 'order.created' },
+    });
+    const r = await parseContract(req, WebhookDispatcherSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['payload'],
+      });
+    }
+  });
+
   it("mode='replay' válido apenas com UUID", async () => {
     const ok = makeRequest({
       headers: { 'accept-version': '2' },
@@ -178,6 +251,27 @@ describe('contract: webhook-dispatcher v2 (discriminated union)', () => {
     const req = makeRequest({
       headers: { 'accept-version': '2' },
       body: { mode: 'test', event: 'x', payload: {} },
+    });
+    const r = await parseContract(req, WebhookDispatcherSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['test_webhook_id'],
+      });
+    }
+  });
+
+  it("mode='test' rejeita test_webhook_id invalido", async () => {
+    const req = makeRequest({
+      headers: { 'accept-version': '2' },
+      body: {
+        mode: 'test',
+        event: 'x',
+        payload: {},
+        test_webhook_id: 'not-a-uuid',
+      },
     });
     const r = await parseContract(req, WebhookDispatcherSchemas);
     expect(r.ok).toBe(false);

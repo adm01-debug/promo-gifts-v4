@@ -1,0 +1,153 @@
+name: Edge Integration Tests — All Functions
+
+# Roda testes de integração mocked para TODAS as 18+ edge functions cobertas.
+# Bloqueia merges se qualquer função crítica falhar.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: edge-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TZ: America/Sao_Paulo
+
+jobs:
+  edge-integration:
+    name: Edge Function Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Gate bloqueante: toda edge function deployada precisa de teste LIVE.
+      - name: Gate — cobertura LIVE de edge functions
+        run: npm run check:edge-live-coverage
+
+      # Gate estático: log-login-attempt NUNCA pode retornar 5xx.
+      - name: Gate — log-login-attempt contrato nunca-5xx
+        run: npm run check:log-login-contract
+
+      # Handler-direct Deno tests para log-login-attempt (fecha gap G1).
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Run Deno handler-direct tests (log-login-attempt)
+        run: deno test --allow-env --allow-net --allow-read supabase/functions/log-login-attempt/index_test.ts
+
+      # Roda todos os 18+ testes de integração de edge functions (mocked).
+      # Cada teste valida: status codes, shapes de resposta, CORS, auth, inputs adversariais.
+      - name: Run all edge function integration tests
+        run: |
+          npx vitest run tests/edge-functions/integration/ \
+            --reporter=verbose \
+            --coverage \
+            --coverage.reporter=json-summary \
+            --coverage.reporter=text \
+            --coverage.thresholds.lines=0 \
+            --coverage.thresholds.functions=0 \
+            --coverage.thresholds.branches=0 \
+            --coverage.thresholds.statements=0
+
+      # Testes LIVE — skip silencioso sem segredos; rodam de fato com eles.
+      - name: Run all edge function integration tests (LIVE)
+        run: npx vitest run tests/edge-functions/live/ --reporter=verbose
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+          E2E_DEV_EMAIL: ${{ secrets.E2E_DEV_EMAIL }}
+          E2E_DEV_PASSWORD: ${{ secrets.E2E_DEV_PASSWORD }}
+
+      - name: Generate coverage summary for edge tests
+        if: always()
+        run: node scripts/generate-coverage-report.mjs || true
+
+      - name: Upload edge integration coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-integration-coverage-${{ github.run_id }}
+          path: coverage/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  edge-fuzz-dry-run:
+    name: Fuzz Testing — Dry Run (sem credenciais)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: edge-integration
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run base fuzz tests (dry-run)
+        run: node scripts/fuzz-testing.mjs
+        env:
+          FUZZ_CONCURRENCY: "3"
+
+      - name: Run upload + webhook fuzz tests (dry-run)
+        run: node scripts/fuzz-edge-uploads.mjs
+
+  edge-fuzz-live:
+    name: Fuzz Testing — Live (com credenciais)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: edge-integration
+    # NOTA: `secrets` NÃO é permitido em `if:` de job (compila o workflow inteiro
+    # como inválido → startup_failure, 0 jobs). Gate só no `vars` (permitido) e a
+    # presença do secret é checada por step via `env`.
+    if: vars.SUPABASE_URL != ''
+    env:
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run fuzz tests against live Supabase
+        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
+        run: node scripts/fuzz-testing.mjs
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          FUZZ_CONCURRENCY: "3"
+
+      - name: Run upload fuzz tests against live Supabase
+        if: env.SUPABASE_SERVICE_ROLE_KEY != ''
+        run: node scripts/fuzz-edge-uploads.mjs
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}

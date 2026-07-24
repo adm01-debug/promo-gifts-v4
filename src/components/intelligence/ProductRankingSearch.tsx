@@ -47,12 +47,13 @@ export function ProductRankingSearch() {
   const rankedProducts = products ?? [];
   const hasActiveFilters = !!(supplierId || categoryId || debouncedSearch);
 
-  const formatCurrency = (v: number) =>
+  // FIX TS2322: RankingResultRowProps.formatCurrency expects (v: number | null | undefined) => string
+  const formatCurrency = (v: number | null | undefined) =>
     new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       maximumFractionDigits: 0,
-    }).format(v);
+    }).format(v ?? 0);
 
   const summary = useMemo(() => {
     if (!products?.length) return null;
@@ -168,7 +169,7 @@ export function ProductRankingSearch() {
 
         {isLoading && (
           <div className="space-y-2">
-            {[...Array(5)].map((_, i) => (
+            {Array.from({ length: 5 }, (_, i) => (
               <Skeleton key={i} className="h-14 rounded-lg" />
             ))}
           </div>
@@ -195,7 +196,7 @@ export function ProductRankingSearch() {
           <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
             <div className="hidden grid-cols-[2rem_2.5rem_1fr_4.5rem_5rem_5rem_4rem] gap-2 bg-muted/40 px-3 py-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:grid">
               <span>#</span>
-              <span></span>
+              <span />
               <span>Produto</span>
               <span className="text-right">Qtd</span>
               <span className="text-right">Receita</span>

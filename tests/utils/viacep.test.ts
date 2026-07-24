@@ -23,7 +23,10 @@ describe('fetchAddressByCep', () => {
     } as Response);
 
     await fetchAddressByCep('01001-000');
-    expect(fetchSpy).toHaveBeenCalledWith('https://viacep.com.br/ws/01001000/json/');
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://viacep.com.br/ws/01001000/json/',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it('should return address data on success', async () => {

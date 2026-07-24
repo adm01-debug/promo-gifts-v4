@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { Clickable } from '@/components/shared/Clickable';
 
 interface CategoryTreeNavigationProps {
   onSelectCategory?: (category: CategoryTreeItem) => void;
@@ -38,11 +39,14 @@ function TreeNode({
 
   return (
     <div>
-      <div
+      <Clickable
+        isSelected={isSelected}
+        isExpanded={hasChildren ? isExpanded : undefined}
+        showFocusRing
         className={cn(
-          "flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer transition-colors",
-          "hover:bg-accent/50",
-          isSelected && "bg-primary/10 text-primary font-medium"
+          'flex items-center gap-1 rounded-md px-2 py-1.5 transition-colors',
+          'hover:bg-accent/50',
+          isSelected && 'bg-primary/10 font-medium text-primary',
         )}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={() => onSelect(node)}
@@ -54,12 +58,12 @@ function TreeNode({
               e.stopPropagation();
               onToggle(node.id);
             }}
-            className="p-0.5 hover:bg-muted rounded"
+            className="rounded p-0.5 hover:bg-muted"
           >
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
             )}
           </button>
         ) : (
@@ -69,13 +73,13 @@ function TreeNode({
         {/* Ícone de pasta */}
         {hasChildren ? (
           isExpanded ? (
-            <FolderOpen className="w-4 h-4 text-warning" />
+            <FolderOpen className="h-4 w-4 text-warning" />
           ) : (
-            <Folder className="w-4 h-4 text-warning" />
+            <Folder className="h-4 w-4 text-warning" />
           )
         ) : (
-          <div className="w-4 h-4 flex items-center justify-center">
-            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+          <div className="flex h-4 w-4 items-center justify-center">
+            <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
           </div>
         )}
 
@@ -84,16 +88,16 @@ function TreeNode({
 
         {/* Badge com contagem de filhos */}
         {hasChildren && (
-          <Badge variant="secondary" className="ml-auto text-xs px-1.5 py-0">
+          <Badge variant="secondary" className="ml-auto px-1.5 py-0 text-xs">
             {node.children.length}
           </Badge>
         )}
-      </div>
+      </Clickable>
 
       {/* Filhos */}
       {hasChildren && isExpanded && (
         <div>
-          {node.children.map(child => (
+          {node.children.map((child) => (
             <TreeNode
               key={child.id}
               node={child}
@@ -121,27 +125,26 @@ function SearchResult({
   onSelect: () => void;
 }) {
   return (
-    <div
+    <Clickable
+      isSelected={isSelected}
       className={cn(
-        "flex items-center gap-2 py-2 px-3 rounded-md cursor-pointer transition-colors",
-        "hover:bg-accent/50",
-        isSelected && "bg-primary/10 text-primary"
+        'flex items-center gap-2 rounded-md px-3 py-2 transition-colors',
+        'hover:bg-accent/50',
+        isSelected && 'bg-primary/10 text-primary',
       )}
       onClick={onSelect}
     >
-      <Folder className="w-4 h-4 text-warning flex-shrink-0" />
+      <Folder className="h-4 w-4 flex-shrink-0 text-warning" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium truncate">{category.name}</p>
+        <p className="truncate text-sm font-medium">{category.name}</p>
         {category.tree_structure && (
-          <p className="text-xs text-muted-foreground truncate">
-            {category.tree_structure}
-          </p>
+          <p className="truncate text-xs text-muted-foreground">{category.tree_structure}</p>
         )}
       </div>
       <Badge variant="outline" className="text-xs">
         Nível {category.level}
       </Badge>
-    </div>
+    </Clickable>
   );
 }
 
@@ -149,7 +152,7 @@ export function CategoryTreeNavigation({
   onSelectCategory,
   selectedCategoryId,
   showSearch = true,
-  maxHeight = "400px",
+  maxHeight = '400px',
   className,
 }: CategoryTreeNavigationProps) {
   const { tree, searchCategories, isLoading, error, stats } = useCategoriesTree();
@@ -159,7 +162,7 @@ export function CategoryTreeNavigation({
 
   // Toggle expandir/colapsar
   const handleToggle = useCallback((id: string) => {
-    setExpandedIds(prev => {
+    setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
@@ -171,19 +174,25 @@ export function CategoryTreeNavigation({
   }, []);
 
   // Selecionar categoria
-  const handleSelect = useCallback((category: CategoryNode | CategoryTreeItem) => {
-    onSelectCategory?.(category);
-  }, [onSelectCategory]);
+  const handleSelect = useCallback(
+    (category: CategoryNode | CategoryTreeItem) => {
+      onSelectCategory?.(category);
+    },
+    [onSelectCategory],
+  );
 
   // Buscar
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-    if (query.trim()) {
-      setSearchResults(searchCategories(query));
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchCategories]);
+  const handleSearch = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
+      if (query.trim()) {
+        setSearchResults(searchCategories(query));
+      } else {
+        setSearchResults([]);
+      }
+    },
+    [searchCategories],
+  );
 
   // Limpar busca
   const clearSearch = useCallback(() => {
@@ -195,7 +204,7 @@ export function CategoryTreeNavigation({
   const expandAll = useCallback(() => {
     const allIds = new Set<string>();
     const addIds = (nodes: CategoryNode[]) => {
-      nodes.forEach(node => {
+      nodes.forEach((node) => {
         if (node.children.length > 0) {
           allIds.add(node.id);
           addIds(node.children);
@@ -214,7 +223,7 @@ export function CategoryTreeNavigation({
   // Loading state
   if (isLoading) {
     return (
-      <div className={cn("space-y-2 p-4", className)}>
+      <div className={cn('space-y-2 p-4', className)}>
         <Skeleton className="h-8 w-full" />
         <Skeleton className="h-6 w-3/4" />
         <Skeleton className="h-6 w-1/2" />
@@ -226,7 +235,7 @@ export function CategoryTreeNavigation({
   // Error state
   if (error) {
     return (
-      <div className={cn("p-4 text-center text-destructive", className)}>
+      <div className={cn('p-4 text-center text-destructive', className)}>
         <p className="text-sm">Erro ao carregar categorias</p>
         <p className="text-xs text-muted-foreground">{error}</p>
       </div>
@@ -236,18 +245,18 @@ export function CategoryTreeNavigation({
   // Empty state
   if (tree.length === 0) {
     return (
-      <div className={cn("p-4 text-center text-muted-foreground", className)}>
-        <Folder className="w-12 h-12 mx-auto mb-2 opacity-50" />
+      <div className={cn('p-4 text-center text-muted-foreground', className)}>
+        <Folder className="mx-auto mb-2 h-12 w-12 opacity-50" />
         <p className="text-sm">Nenhuma categoria encontrada</p>
       </div>
     );
   }
 
   return (
-    <div className={cn("flex flex-col", className)}>
+    <div className={cn('flex flex-col', className)}>
       {/* Header com busca */}
       {showSearch && (
-        <div className="p-3 border-b space-y-2">
+        <div className="space-y-2 border-b p-3">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -257,17 +266,20 @@ export function CategoryTreeNavigation({
               className="pl-8 pr-8"
             />
             {searchQuery && (
-              <button aria-label="Fechar"
+              <button
+                aria-label="Fechar"
                 onClick={clearSearch}
                 className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
-               aria-label="Fechar">
+              >
                 <X className="h-4 w-4" />
               </button>
             )}
           </div>
-          
+
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{stats.total} categorias em {stats.levels} níveis</span>
+            <span>
+              {stats.total} categorias em {stats.levels} níveis
+            </span>
             <div className="flex gap-1">
               <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={expandAll}>
                 Expandir
@@ -286,10 +298,10 @@ export function CategoryTreeNavigation({
           {/* Resultados de busca */}
           {searchQuery && searchResults.length > 0 ? (
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground px-2 mb-2">
+              <p className="mb-2 px-2 text-xs text-muted-foreground">
                 {searchResults.length} resultado{searchResults.length !== 1 ? 's' : ''}
               </p>
-              {searchResults.map(cat => (
+              {searchResults.map((cat) => (
                 <SearchResult
                   key={cat.id}
                   category={cat}
@@ -299,14 +311,14 @@ export function CategoryTreeNavigation({
               ))}
             </div>
           ) : searchQuery && searchResults.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <div className="py-8 text-center text-muted-foreground">
+              <Search className="mx-auto mb-2 h-8 w-8 opacity-50" />
               <p className="text-sm">Nenhuma categoria encontrada</p>
               <p className="text-xs">Tente outra busca</p>
             </div>
           ) : (
             /* Árvore de categorias */
-            tree.map(node => (
+            tree.map((node) => (
               <TreeNode
                 key={node.id}
                 node={node}

@@ -3,24 +3,22 @@
  */
 
 export {
-  SkeletonShimmer,
-  TextSkeleton,
-  CardSkeleton,
-  TableRowSkeleton,
-  TableSkeleton,
-  AvatarSkeleton,
-  StatsCardSkeleton,
-  ChartSkeleton,
   ProductCardSkeleton,
-  ListItemSkeleton,
-  FormSkeleton,
+  ProductGridSkeleton,
+  QuoteCardSkeleton,
+  QuoteListSkeleton,
+  TableSkeleton,
+  TableRowSkeleton,
+  StatCardSkeleton,
+  StatsCardSkeleton,
+  StatsGridSkeleton,
+  ClientCardSkeleton,
+  OrderTimelineSkeleton,
+  DashboardSkeleton,
   PageHeaderSkeleton,
-  PageSkeleton
-} from "./SkeletonShimmer";
+  ProductTableSkeleton,
+  ProductListItemSkeleton,
+  ProductListSkeleton,
+} from './ModernSkeletons';
 
-export {
-  LoadingOverlay,
-  Spinner,
-  LoadingDots,
-  ProgressLoader
-} from "./LoadingOverlay";
+export { LoadingOverlay, Spinner, LoadingDots, ProgressLoader } from './LoadingOverlay';

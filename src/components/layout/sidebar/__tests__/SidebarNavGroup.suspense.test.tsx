@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Garante que o destaque do "Novo Orçamento" e a expansão do grupo
  * "Orçamentos" NÃO piscam durante carregamento assíncrono — seja quando a
@@ -17,13 +18,10 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
-import {
-  createMemoryRouter,
-  RouterProvider,
-  Outlet,
-  useLocation,
-  type Router,
-} from 'react-router-dom';
+import { createMemoryRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
+// react-router-dom exports `Router` as a component value, not a type. Derive the
+// data-router type from the factory's return instead.
+type Router = ReturnType<typeof createMemoryRouter>;
 import { Plus, FileText, ShoppingCart } from 'lucide-react';
 import { type NavGroup, SidebarNavGroup } from '../SidebarNavGroup';
 import { isNavItemActive } from '@/lib/navigation/active-match';
@@ -126,7 +124,7 @@ function getNavLink(label: string): HTMLAnchorElement {
   return screen.getByRole('link', { name: new RegExp(label, 'i') }) as HTMLAnchorElement;
 }
 function isLinkActive(label: string): boolean {
-  return getNavLink(label).className.includes('bg-orange/[0.03]');
+  return getNavLink(label).className.includes('bg-primary/10');
 }
 function getHeader(): HTMLButtonElement {
   return screen.getByRole('button', { name: /alternar grupo|orçamentos/i }) as HTMLButtonElement;
@@ -216,6 +214,7 @@ describe('SidebarNavGroup — sem flicker em navegações rápidas em sequência
   it('dois pushes consecutivos /carrinhos -> /orcamentos/novo aplicam só o destaque final, sem estado intermediário inconsistente', async () => {
     const { router, resolve } = setupRouterWithSuspense('/dashboard', '/orcamentos/novo');
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       // dispara DUAS navegações no mesmo tick — apenas a última deve valer.
       router.navigate('/carrinhos');
@@ -318,6 +317,7 @@ describe('SidebarNavGroup — sem flicker quando metadata da página resolve dep
     expect(screen.getByTestId('metadata-loading')).toBeInTheDocument();
 
     // Avança timers até a metadata resolver. Estado visual da sidebar NÃO muda.
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       vi.advanceTimersByTime(60);
     });
@@ -342,6 +342,7 @@ describe('SidebarNavGroup — sem flicker quando metadata da página resolve dep
     expect(isLinkActive('Novo Orçamento')).toBe(false);
     expect(isGroupExpanded()).toBe(true);
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       vi.advanceTimersByTime(60);
     });

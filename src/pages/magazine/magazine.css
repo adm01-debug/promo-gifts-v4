@@ -1,0 +1,146 @@
+/**
+ * Estilos globais escopados para páginas de Magazine (usa .mag-page).
+ * Aplicado apenas dentro dos previews/print — não vaza para o resto do app.
+ *
+ * Sistema de tokens inspirado no Catálogo Abreez 2026:
+ *  - 14 cores categóricas para SidebarChrome/PageNumberBadge
+ *  - 5 cores de marca "Editorial" (capa/contracapa/callout)
+ *  - Fontes premium (@fontsource): Playfair Display + Great Vibes + Inter + DM Serif Display
+ */
+
+/* Fontes premium — importadas locais via @fontsource */
+@import '@fontsource/playfair-display/400.css';
+@import '@fontsource/playfair-display/700.css';
+@import '@fontsource/playfair-display/900.css';
+@import '@fontsource/dm-serif-display/400.css';
+@import '@fontsource/great-vibes/400.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+
+.mag-scope {
+  --mag-page-w: 1920px;
+  --mag-page-h: 2716px;
+
+  /* ============ Cores de marca "Editorial" (Abreez-inspired) ============ */
+  --mag-brand-green: #2e4a3a;      /* fundo capa/contracapa/TOC */
+  --mag-brand-coral: #e86f2e;      /* CTA / call-out */
+  --mag-brand-mint: #b6d9c5;       /* background secundário */
+  --mag-brand-cream: #f1efe7;      /* photo backdrop */
+  --mag-brand-charcoal: #1a1a1a;   /* SKU pill / títulos */
+  --mag-hairline: rgba(0, 0, 0, 0.12);
+
+  /* ============ Paleta categórica (14 tokens) ============ */
+  --mag-cat-technology: #2e4c60;
+  --mag-cat-drinkwares: #5b7684;
+  --mag-cat-general: #6e2c39;
+  --mag-cat-wearables: #d25a2f;
+  --mag-cat-pins: #3e6b70;
+  --mag-cat-awards: #5d3e70;
+  --mag-cat-packaging: #2c3e64;
+  --mag-cat-stationery: #b34e3a;
+  --mag-cat-bags: #7c9a5e;
+  --mag-cat-clocks: #9e6e2e;
+  --mag-cat-signs: #5c6b48;
+  --mag-cat-id: #4e6274;
+  --mag-cat-giftsets: #2f6c6c;
+  --mag-cat-customized: #4e547a;
+
+  /* Categoria ativa — o editor sobrescreve --mag-category-color via style inline */
+  --mag-category-color: var(--mag-cat-technology);
+}
+
+.mag-scope .mag-page {
+  width: var(--mag-page-w);
+  height: var(--mag-page-h);
+  overflow: hidden;
+  position: relative;
+  color: var(--mag-text, #0f172a);
+  font-family: var(--mag-body, 'Inter', system-ui, sans-serif);
+  break-inside: avoid;
+  page-break-inside: avoid;
+  page-break-after: always;
+  break-after: page;
+}
+
+.mag-scope .mag-page:last-child {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+.mag-preview-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1920 / 2716;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.mag-preview-wrapper > .mag-page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
+/* Script accent — usado com Great Vibes, discretamente */
+.mag-script {
+  font-family: 'Great Vibes', 'Allura', cursive;
+  font-weight: 400;
+}
+
+.mag-serif-display {
+  font-family: 'Playfair Display', 'DM Serif Display', 'Instrument Serif', serif;
+}
+
+/* Escrita vertical para SidebarChrome */
+.mag-vertical-writing {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+/* DotMap pattern usado na contracapa */
+.mag-dotmap-bg {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.32) 1.5px, transparent 1.5px);
+  background-size: 18px 18px;
+}
+
+/* Print — cada página vira uma folha A4 sem margens/sombras */
+@media print {
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  .mag-print-only {
+    display: block !important;
+  }
+  .mag-hide-in-print {
+    display: none !important;
+  }
+  .mag-scope .mag-page {
+    width: 100vw;
+    height: 100vh;
+    transform: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .mag-preview-wrapper {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    page-break-after: always;
+    break-after: page;
+  }
+  .mag-preview-wrapper:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+}
+

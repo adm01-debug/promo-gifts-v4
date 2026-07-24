@@ -179,7 +179,7 @@ export async function fetchOptionForTechnique(
     );
   }
 
-  const cobraPorCor = area.cobra_por_cor !== false;
+  const cobraPorCor = area.cobra_por_cor;
   const effectiveColors =
     !cobraPorCor || (area.max_colors ?? 0) <= 1 ? 1 : Math.max(1, settings.colors);
 
@@ -189,7 +189,10 @@ export async function fetchOptionForTechnique(
     p_num_cores: effectiveColors,
   };
 
-  if (settings.width > 0 && settings.height > 0) {
+  // Só envia dimensões para tabelas que usam faixa dimensional. Enviar largura/altura
+  // a uma técnica não-dimensional (ex.: Serigrafia/UV em caneta) faz o RPC não
+  // retornar preço → caía no fallback heurístico em vez do preço oficial.
+  if (area.usa_dimensao && settings.width > 0 && settings.height > 0) {
     rpcParams.p_largura_cm = settings.width;
     rpcParams.p_altura_cm = settings.height;
   }
@@ -203,13 +206,19 @@ export async function fetchOptionForTechnique(
     );
   } catch (err) {
     rpcError = err instanceof Error ? err.message : 'Erro desconhecido na RPC';
-    logger.warn('[simulationPriceFetcher] RPC fn_get_customization_price falhou — usando fallback legado', err);
+    logger.warn(
+      '[simulationPriceFetcher] RPC fn_get_customization_price falhou — usando fallback legado',
+      err,
+    );
   }
 
   if (!result?.success) {
     const reason =
       rpcError ??
-      (typeof result === 'object' && result && 'error' in result && typeof (result as { error?: unknown }).error === 'string'
+      (typeof result === 'object' &&
+      result &&
+      'error' in result &&
+      typeof (result as { error?: unknown }).error === 'string'
         ? (result as { error: string }).error
         : 'RPC fn_get_customization_price não retornou preço para esta combinação');
     return buildLegacyFallbackOption(
@@ -287,8 +296,12 @@ export async function fetchAllOptions({
   const tasks = selectedTechniqueIds.map(async (techId) => {
     const technique = techniques.find((t) => t.id === techId);
     if (!technique) return null;
-    const settings =
-      techniqueSettings[techId] ?? { colors: 1, width: 10, height: 10, positions: 1 };
+    const settings = techniqueSettings[techId] ?? {
+      colors: 1,
+      width: 10,
+      height: 10,
+      positions: 1,
+    };
     try {
       return await fetchOptionForTechnique(
         technique,

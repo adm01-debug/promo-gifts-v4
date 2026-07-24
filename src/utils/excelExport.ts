@@ -31,7 +31,7 @@ export interface ExcelColumn {
   /** Largura da coluna (em caracteres) */
   width?: number;
   /** Função de formatação customizada */
-  format?: (value: unknown, row: Record<string, unknown>) => string | number;
+  format?: (value: unknown, row: Record<string, unknown>) => number | string;
 }
 
 /**
@@ -44,7 +44,7 @@ export async function exportToExcel(config: ExcelExportConfig): Promise<void> {
     const XLSX = await getXLSX();
     // 1. Preparar dados formatados
     const formattedData = data.map((row) => {
-      const formattedRow: Record<string, string | number> = {};
+      const formattedRow: Record<string, number | string> = {};
 
       columns.forEach((col) => {
         const value = getNestedValue(row, col.key);
@@ -79,7 +79,7 @@ export async function exportToExcel(config: ExcelExportConfig): Promise<void> {
     // 4. Aplicar estilos no cabeçalho (se possível)
     const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
     for (let C = range.s.c; C <= range.e.c; ++C) {
-      const address = XLSX.utils.encode_col(C) + '1';
+      const address = `${XLSX.utils.encode_col(C)}1`;
       if (!worksheet[address]) continue;
       if (worksheet[address].s) {
         worksheet[address].s.font = { bold: true };
@@ -117,7 +117,7 @@ export async function exportMultipleSheets(
 
     sheets.forEach(({ sheetName, columns, data }) => {
       const formattedData = data.map((row) => {
-        const formattedRow: Record<string, string | number> = {};
+        const formattedRow: Record<string, number | string> = {};
         columns.forEach((col) => {
           const value = getNestedValue(row, col.key);
           formattedRow[col.header] = col.format ? col.format(value, row) : formatValue(value);
@@ -153,7 +153,7 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 }
 
 // Formata valor automaticamente
-function formatValue(value: unknown): string | number {
+function formatValue(value: unknown): number | string {
   if (value instanceof Date) {
     return formatDateTime(value);
   }
@@ -169,8 +169,6 @@ function formatValue(value: unknown): string | number {
 /**
  * Formata moeda brasileira
  */
-import { formatCurrency } from "@/lib/format";
-
 
 /**
  * Formata porcentagem
@@ -182,18 +180,18 @@ export function formatPercentage(value: number): string {
 /**
  * Formata status com emoji
  */
-export function formatStatus(status: string): string {
-  const statusMap: Record<string, string> = {
-    draft: '📝 Rascunho',
-    sent: '📤 Enviado',
-    approved: '✅ Aprovado',
-    rejected: '❌ Rejeitado',
-    expired: '⏰ Expirado',
-    pending: '⏳ Pendente',
-    processing: '🔄 Processando',
-    completed: '✅ Concluído',
-    cancelled: '🚫 Cancelado',
-  };
+const EXPORT_STATUS_MAP: Record<string, string> = {
+  draft: '📝 Rascunho',
+  sent: '📤 Enviado',
+  approved: '✅ Aprovado',
+  rejected: '❌ Rejeitado',
+  expired: '⏰ Expirado',
+  pending: '⏳ Pendente',
+  processing: '🔄 Processando',
+  completed: '✅ Concluído',
+  cancelled: '🚫 Cancelado',
+} as const;
 
-  return statusMap[status] || status;
+export function formatStatus(status: string): string {
+  return EXPORT_STATUS_MAP[status] || status;
 }

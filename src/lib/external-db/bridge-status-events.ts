@@ -1,20 +1,19 @@
 /**
- * Event bus leve para sinalizar indisponibilidade do external-db-bridge à UI.
+ * Bridge status event bus — STUBBED (bridge decommissioned 2026-05-30).
  *
- * Disparos:
- *  - `degraded`: 1ª tentativa retornou 503/cold-start, mas o retry vai cobrir.
- *  - `unavailable`: retries esgotados; o usuário precisa saber.
- *  - `recovered`: chamada subsequente voltou a 200 após `degraded`/`unavailable`.
+ * The external-db-bridge is permanently OFF (kill-switch enabled=false, rollout=100%).
+ * No events are ever emitted. These stubs keep all export signatures intact so that
+ * error-reporter.ts and invoke.ts compile without changes.
  *
- * Listeners (toast/banner) decidem como apresentar — este módulo só
- * publica eventos, sem dependências de UI.
+ * Phase 4B (2026-06-01): replaced live event bus with no-op stubs.
+ * Phase 4A (2026-05-31): removed all UI consumers (BridgeStatusBanner, etc.).
  */
 
-export type BridgeStatusType = 'degraded' | 'unavailable' | 'recovered';
+// ── Types (preserved for compatibility) ──────────────────────────────────────
+export type BridgeStatusType = 'degraded' | 'recovered' | 'unavailable';
 
 export interface BridgeStatusEventBase {
   type: BridgeStatusType;
-  /** Timestamp do evento para correlação em logs. */
   ts: number;
 }
 
@@ -23,11 +22,8 @@ export interface BridgeDegradedEvent extends BridgeStatusEventBase {
   attempt: number;
   maxAttempts: number;
   delayMs: number;
-  /** Backoff base (sem jitter). */
   baseDelayMs?: number;
-  /** Componente aleatório. */
   jitterMs?: number;
-  /** Motivo amigável (ex: "Cold start detectado"). */
   reason: string;
 }
 
@@ -41,42 +37,41 @@ export interface BridgeRecoveredEvent extends BridgeStatusEventBase {
   type: 'recovered';
 }
 
-export type BridgeStatusEvent =
-  | BridgeDegradedEvent
-  | BridgeUnavailableEvent
-  | BridgeRecoveredEvent;
+export type BridgeStatusEvent = BridgeDegradedEvent | BridgeRecoveredEvent | BridgeUnavailableEvent;
 
-type Listener = (e: BridgeStatusEvent) => void;
-const listeners = new Set<Listener>();
+type BridgeStatusEventInput = BridgeStatusEvent extends infer Event
+  ? Event extends BridgeStatusEvent
+    ? Omit<Event, 'ts'> & { ts?: number }
+    : never
+  : never;
 
-export function onBridgeStatus(fn: Listener): () => void {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
+// ── Stubs — no-ops, bridge is permanently OFF ─────────────────────────────────
+
+/** @deprecated No-op — bridge decommissioned 2026-05-30. */
+export function onBridgeStatus(_fn: (e: BridgeStatusEvent) => void): () => void {
+  return () => {};
 }
 
-export function emitBridgeStatus(e: Omit<BridgeStatusEvent, 'ts'> & { ts?: number }): void {
-  const event: BridgeStatusEvent = {
-    ...e,
-    ts: e.ts ?? Date.now(),
-  } as BridgeStatusEvent;
-
-  for (const fn of listeners) {
-    try { fn(event); } catch { /* noop */ }
-  }
+/** @deprecated No-op — bridge decommissioned 2026-05-30. */
+export function emitBridgeStatus(_e: BridgeStatusEventInput): void {
+  // no-op: bridge is permanently OFF, events are never emitted.
 }
 
-const COLD_START_PATTERNS = [
-  'supabase_edge_runtime_error',
-  'service is temporarily unavailable',
-  'boot_error',
-  '503',
-  '502',
-  '504',
-  'bad gateway',
-  'function failed to start',
-];
-
+/**
+ * Returns false — bridge is permanently OFF so cold-start signals never occur.
+ * Preserved because error-reporter.ts uses this to classify transient errors;
+ * it still matches patterns from other edge functions (crm-db-bridge, etc.).
+ */
 export function isColdStartSignal(message: string): boolean {
   const lower = message.toLowerCase();
-  return COLD_START_PATTERNS.some(p => lower.includes(p));
+  return (
+    lower.includes('supabase_edge_runtime_error') ||
+    lower.includes('service is temporarily unavailable') ||
+    lower.includes('boot_error') ||
+    lower.includes('503') ||
+    lower.includes('502') ||
+    lower.includes('504') ||
+    lower.includes('bad gateway') ||
+    lower.includes('function failed to start')
+  );
 }

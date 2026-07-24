@@ -41,6 +41,10 @@ vi.mock("framer-motion", () => {
   };
   return {
     motion: new Proxy({}, handler),
+    m: new Proxy({}, handler),
+    LazyMotion: ({ children }: any) => <>{children}</>,
+    domMax: {},
+    domAnimation: {},
     AnimatePresence: ({ children }: any) => <>{children}</>,
   };
 });
@@ -97,7 +101,7 @@ describe("VoiceSearchOverlay", () => {
   describe("Rendering", () => {
     it("renders when open", () => {
       render(<VoiceSearchOverlay {...defaultProps} />);
-      expect(screen.getByRole("dialog", { name: "Assistente de Voz" })).toBeDefined();
+      expect(screen.getByRole("dialog", { name: "Fale com o Flow" })).toBeDefined();
     });
 
     it("does not render when closed", () => {
@@ -108,7 +112,7 @@ describe("VoiceSearchOverlay", () => {
     it("renders overlay backdrop when open", () => {
       const { container } = render(<VoiceSearchOverlay {...defaultProps} />);
       // Should have a backdrop/overlay element
-      expect(container.querySelector("[aria-label='Assistente de Voz']")).toBeDefined();
+      expect(container.querySelector("[aria-label='Fale com o Flow']")).toBeDefined();
     });
 
     it("shows ESC instruction", () => {
@@ -402,7 +406,7 @@ describe("VoiceSearchOverlay", () => {
     it("has dialog role with accessible name", () => {
       render(<VoiceSearchOverlay {...defaultProps} />);
       const dialog = screen.getByRole("dialog");
-      expect(dialog.getAttribute("aria-label")).toBe("Assistente de Voz");
+      expect(dialog.getAttribute("aria-label")).toBe("Fale com o Flow");
     });
 
     it("responds to keyboard Escape for closing", () => {

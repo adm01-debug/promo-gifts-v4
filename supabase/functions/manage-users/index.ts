@@ -3,13 +3,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
 import { safeJson } from "../_shared/json-parser.ts";
+import { getOrCreateRequestId, REQUEST_ID_HEADER } from "../_shared/request-id.ts";
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
 
 const uuidSchema = z.string().uuid();
 const emailSchema = z.string().email().max(255);
 // Hierarquia atual: dev > supervisor > vendedor (=agente). admin/manager
 // permanecem aceitos como aliases legados de supervisor.
-const roleSchema = z.enum(['dev', 'supervisor', 'vendedor', 'admin', 'manager']);
-const promotionRoleSchema = z.enum(['supervisor', 'vendedor']);
+const roleSchema = z.enum(['dev', 'supervisor', 'coordenador', 'agente', 'vendedor', 'admin', 'manager']);
+const promotionRoleSchema = z.enum(['supervisor', 'coordenador', 'agente', 'vendedor']);
 
 const CreateSchema = z.object({
   action: z.literal('create'),
@@ -68,6 +70,9 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const requestId = getOrCreateRequestId(req);
+  const log = createStructuredLogger({ fn: 'manage-users', requestId, req });
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;

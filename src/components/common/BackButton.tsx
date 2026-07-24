@@ -1,29 +1,28 @@
-import { forwardRef, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { forwardRef, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 const routeLabels: Record<string, string> = {
-  "/": "Início",
-  "/produtos": "Produtos",
-  "/filtros": "Super Filtro",
-  "/novidades": "Novidades",
-  "/colecoes": "Coleções",
-  "/orcamentos": "Orçamentos",
-  "/simulador": "Simulador",
-  "/simulador-precos": "Preços por Tiragem",
-  "/mockup-generator": "Gerador de Mockups",
-  "/magic-up": "Magic Up",
-  "/favoritos": "Favoritos",
-  "/comparar": "Comparar",
-  
-  "/configuracoes": "Configurações",
-  "/admin": "Administração",
-  "/seguranca": "Segurança",
-  "/estoque": "Estoque",
+  '/': 'Início',
+  '/produtos': 'Produtos',
+  '/filtros': 'Super Filtro',
+  '/novidades': 'Novidades',
+  '/colecoes': 'Coleções',
+  '/orcamentos': 'Orçamentos',
+  '/simulador': 'Simulador',
+  '/simulador-precos': 'Preços por Tiragem',
+  '/mockup-generator': 'Gerador de Mockups',
+  '/magic-up': 'Magic Up',
+  '/favoritos': 'Favoritos',
+  '/comparar': 'Comparar',
+
+  '/configuracoes': 'Configurações',
+  '/admin': 'Administração',
+  '/seguranca': 'Segurança',
+  '/estoque': 'Estoque',
 };
 
 interface BackButtonProps {
@@ -32,13 +31,13 @@ interface BackButtonProps {
 }
 
 export const BackButton = forwardRef<HTMLButtonElement, BackButtonProps>(
-  function BackButton({ className, fallbackPath }: BackButtonProps, ref) {
+  ({ className, fallbackPath }: BackButtonProps, ref) => {
     const navigate = useNavigate();
     const location = useLocation();
 
     const getParentPath = useCallback(() => {
-      const pathParts = location.pathname.split("/").filter(Boolean);
-      if (pathParts.length <= 1) return "/";
+      const pathParts = location.pathname.split('/').filter(Boolean);
+      if (pathParts.length <= 1) return '/';
 
       const lastPart = pathParts[pathParts.length - 1];
       const isId =
@@ -46,15 +45,15 @@ export const BackButton = forwardRef<HTMLButtonElement, BackButtonProps>(
         /^\d+$/.test(lastPart);
 
       if (isId && pathParts.length > 2) {
-        return "/" + pathParts.slice(0, -2).join("/");
+        return `/${pathParts.slice(0, -2).join('/')}`;
       }
-      return "/" + pathParts.slice(0, -1).join("/");
+      return `/${pathParts.slice(0, -1).join('/')}`;
     }, [location.pathname]);
 
-    if (location.pathname === "/") return null;
+    if (location.pathname === '/') return null;
 
     const targetPath = fallbackPath || getParentPath();
-    const parentLabel = routeLabels[targetPath] || targetPath.split("/").pop() || "Início";
+    const parentLabel = routeLabels[targetPath] || targetPath.split('/').pop() || 'Início';
 
     const handleBack = () => {
       if (window.history.length > 2) {
@@ -69,11 +68,7 @@ export const BackButton = forwardRef<HTMLButtonElement, BackButtonProps>(
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <motion.div
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-          >
+          <div className="animate-fade-in">
             <Button
               ref={ref}
               variant="ghost"
@@ -81,21 +76,19 @@ export const BackButton = forwardRef<HTMLButtonElement, BackButtonProps>(
               onClick={handleBack}
               aria-label={ariaLabel}
               className={cn(
-                "gap-1.5 text-muted-foreground hover:text-foreground -ml-2 h-8 px-2 group",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                className
+                'group -ml-2 h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground',
+                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                className,
               )}
             >
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-              <span className="text-sm hidden sm:inline">Voltar para {parentLabel}</span>
+              <span className="hidden text-sm sm:inline">Voltar para {parentLabel}</span>
               <span className="text-sm sm:hidden">Voltar</span>
             </Button>
-          </motion.div>
+          </div>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="text-xs">
-          {ariaLabel}
-        </TooltipContent>
+        <TooltipContent side="bottom">{ariaLabel}</TooltipContent>
       </Tooltip>
     );
-  }
+  },
 );

@@ -1,8 +1,8 @@
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
-import { useSearchParams } from "react-router-dom";
-import type { SecretStatus } from "@/hooks/admin";
+import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import type { SecretStatus } from '@/hooks/admin';
 
-export type CredentialSource = "all" | "db" | "env" | "none";
+export type CredentialSource = 'all' | 'db' | 'env' | 'none';
 
 interface Ctx {
   filter: CredentialSource;
@@ -12,24 +12,23 @@ interface Ctx {
 
 const CredentialsSourceFilterContext = createContext<Ctx | null>(null);
 
-function resolveSource(status?: SecretStatus): "db" | "env" | "none" {
-  if (!status) return "none";
+function resolveSource(status?: SecretStatus): 'db' | 'env' | 'none' {
+  if (!status) return 'none';
   if (status.source) return status.source;
-  if (status.env_fallback_active) return "env";
-  return status.has_value ? "db" : "none";
+  if (status.env_fallback_active) return 'env';
+  return status.has_value ? 'db' : 'none';
 }
 
 export function CredentialsSourceFilterProvider({ children }: { children: ReactNode }) {
   const [params, setParams] = useSearchParams();
-  const raw = params.get("source");
-  const filter: CredentialSource =
-    raw === "db" || raw === "env" || raw === "none" ? raw : "all";
+  const raw = params.get('source');
+  const filter: CredentialSource = raw === 'db' || raw === 'env' || raw === 'none' ? raw : 'all';
 
   const setFilter = useCallback(
     (next: CredentialSource) => {
       const np = new URLSearchParams(params);
-      if (next === "all") np.delete("source");
-      else np.set("source", next);
+      if (next === 'all') np.delete('source');
+      else np.set('source', next);
       setParams(np, { replace: true });
     },
     [params, setParams],
@@ -37,13 +36,16 @@ export function CredentialsSourceFilterProvider({ children }: { children: ReactN
 
   const matchesFilter = useCallback(
     (status?: SecretStatus) => {
-      if (filter === "all") return true;
+      if (filter === 'all') return true;
       return resolveSource(status) === filter;
     },
     [filter],
   );
 
-  const value = useMemo(() => ({ filter, setFilter, matchesFilter }), [filter, setFilter, matchesFilter]);
+  const value = useMemo(
+    () => ({ filter, setFilter, matchesFilter }),
+    [filter, setFilter, matchesFilter],
+  );
   return (
     <CredentialsSourceFilterContext.Provider value={value}>
       {children}
@@ -56,7 +58,7 @@ export function useCredentialsSourceFilter(): Ctx {
   if (!ctx) {
     // Safe no-op fallback when used outside provider
     return {
-      filter: "all",
+      filter: 'all',
       setFilter: () => {},
       matchesFilter: () => true,
     };

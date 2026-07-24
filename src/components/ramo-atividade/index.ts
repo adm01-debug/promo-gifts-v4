@@ -1,4 +1,4 @@
 // Componentes de Ramo de Atividade
-export { RamoAtividadeBadge, CompactRamoAtividadeBadge } from "./RamoAtividadeBadge";
-export { SegmentoCheckbox } from "./SegmentoCheckbox";
-export { RamoAtividadeGroupAccordion } from "./RamoAtividadeGroupAccordion";
+export { RamoAtividadeBadge } from './RamoAtividadeBadge';
+export { SegmentoCheckbox } from './SegmentoCheckbox';
+export { RamoAtividadeGroupAccordion } from './RamoAtividadeGroupAccordion';

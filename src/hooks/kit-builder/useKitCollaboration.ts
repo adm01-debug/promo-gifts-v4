@@ -6,12 +6,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
+import { logger } from '@/lib/logger';
 
 export interface KitCollaboratorRow {
   id: string;
   kit_id: string;
   user_id: string;
-  permission: 'view' | 'edit';
+  permission: 'edit' | 'view';
   invited_email: string | null;
   created_at: string;
 }
@@ -46,7 +48,7 @@ export function useKitCollaborators(kitId: string | undefined) {
   });
 
   const invite = useMutation({
-    mutationFn: async ({ email, permission }: { email: string; permission: 'view' | 'edit' }) => {
+    mutationFn: async ({ email, permission }: { email: string; permission: 'edit' | 'view' }) => {
       if (!kitId) throw new Error('Kit não definido');
       // Resolve email -> user_id via profiles
       const { data: profile, error: pErr } = await supabase
@@ -55,7 +57,7 @@ export function useKitCollaborators(kitId: string | undefined) {
         .eq('email', email)
         .maybeSingle();
       if (pErr) throw pErr;
-      if (!profile) throw new Error('Usuário não encontrado para esse email');
+      if (!profile?.user_id) throw new Error('Usuário não encontrado para esse email');
       const { error } = await supabase.from('kit_collaborators').insert({
         kit_id: kitId,
         user_id: profile.user_id,
@@ -64,8 +66,11 @@ export function useKitCollaborators(kitId: string | undefined) {
       });
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: key }); toast.success('Colaborador convidado'); },
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: key });
+      toast.success('Colaborador convidado');
+    },
+    onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
 
   const remove = useMutation({
@@ -73,7 +78,9 @@ export function useKitCollaborators(kitId: string | undefined) {
       const { error } = await supabase.from('kit_collaborators').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: key }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: key });
+    },
   });
 
   return { collaborators, isLoading, invite: invite.mutateAsync, remove: remove.mutateAsync };
@@ -103,15 +110,36 @@ export function useKitComments(kitId: string | undefined) {
   useEffect(() => {
     if (!kitId) return;
     const channel = supabase
-      .channel(`kit-comments-${kitId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'kit_comments', filter: `kit_id=eq.${kitId}` },
-        () => qc.invalidateQueries({ queryKey: key }))
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      // BUG-RT-CHANNEL FIX: sufixo único por montagem (kitId sozinho colide se dois painéis
+      // do mesmo kit montarem em paralelo → .on() após subscribe() → crash de render).
+      .channel(`kit-comments-${kitId}-${crypto.randomUUID()}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'kit_comments', filter: `kit_id=eq.${kitId}` },
+        () => qc.invalidateQueries({ queryKey: key }),
+      )
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[useKitCollaboration] realtime channel error', { status, err });
+          qc.invalidateQueries({ queryKey: key });
+        }
+      });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitId, qc]);
 
   const post = useMutation({
-    mutationFn: async ({ body, parentId, anchor }: { body: string; parentId?: string; anchor?: string }) => {
+    mutationFn: async ({
+      body,
+      parentId,
+      anchor,
+    }: {
+      body: string;
+      parentId?: string;
+      anchor?: string;
+    }) => {
       if (!kitId || !user?.id) throw new Error('Kit ou usuário inválido');
       const { error } = await supabase.from('kit_comments').insert({
         kit_id: kitId,
@@ -122,7 +150,7 @@ export function useKitComments(kitId: string | undefined) {
       });
       if (error) throw error;
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error('Operação falhou', { description: sanitizeError(e) }),
   });
 
   const resolve = useMutation({
@@ -132,5 +160,10 @@ export function useKitComments(kitId: string | undefined) {
     },
   });
 
-  return { comments, isLoading, postComment: post.mutateAsync, resolveComment: resolve.mutateAsync };
+  return {
+    comments,
+    isLoading,
+    postComment: post.mutateAsync,
+    resolveComment: resolve.mutateAsync,
+  };
 }

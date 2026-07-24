@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 // Importa direto do arquivo para evitar carregar o barrel @/hooks/products
@@ -31,6 +32,7 @@ vi.mock('@/hooks/products', () => ({
   useSupplierSalesRanking: vi.fn(() => ({ data: new Map() })),
   useColorEnrichment: vi.fn(() => ({ data: new Map() })),
   useProductFuzzySearch: vi.fn(() => ({ results: [], hasSearch: false })),
+  noveltyToProduct: vi.fn(),
 }));
 
 // useCatalogState importa useCatalogFiltering por path direto, não pelo barrel.
@@ -79,22 +81,30 @@ vi.mock('@/integrations/supabase/client', () => ({
       invoke: vi.fn(),
     },
   },
+  SUPABASE_URL: 'https://placeholder.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY: 'placeholder-key',
 }));
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
+  readonly root: Document | Element | null = null;
+  readonly rootMargin: string = '';
+  readonly thresholds: ReadonlyArray<number> = [];
   disconnect() {}
   observe() {}
   unobserve() {}
-};
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+} as unknown as typeof IntersectionObserver;
 
 // TODO: hook cresceu demais — cascata de imports (Supabase + ProductsContext +
 // favorites/comparison stores + intelligence) estoura memória do worker vitest
 // (ERR_WORKER_OUT_OF_MEMORY após 121s). Mockar TUDO é frágil. Para reabilitar:
-// extrair as deps via DI/injection no próprio hook OU rodar com
-// --pool=forks --poolOptions.forks.maxForks=1 isolado. Mantendo skip explícito
-// até refactor dedicado para não esconder sob baseline.
+// 2026-06-11: --pool=forks também foi testado e NÃO resolve (worker trava e é
+// terminado por timeout após ~254s). A única saída é extrair as deps via
+// DI/injection no próprio hook. Mantendo skip explícito até refactor dedicado
+// para não esconder sob baseline.
 describe.skip('useCatalogState', () => {
   let queryClient: QueryClient;
 
@@ -133,6 +143,7 @@ describe.skip('useCatalogState', () => {
   it('should update search query correctly', async () => {
     const { result } = renderHook(() => useCatalogState(), { wrapper });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       result.current.handleSearch('test search');
     });
@@ -143,17 +154,19 @@ describe.skip('useCatalogState', () => {
   it('should reset filters correctly', async () => {
     const { result } = renderHook(() => useCatalogState(), { wrapper });
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       result.current.setFilters({
         ...result.current.filters,
         inStock: true,
-        categories: [123],
+        categories: ['123'],
       });
     });
 
-    // categories is an array of numbers in FilterState
+    // categories is an array of strings in FilterState
     expect(result.current.activeFiltersCount).toBe(2); // inStock + 1 category
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       result.current.resetFilters();
     });

@@ -1,14 +1,22 @@
 /**
- * CartTabsRich - Tabs de carrinhos com status dot colorido, contador inteligente,
- * indicador de follow-up e botão "+" para criar novo.
+ * CartTabsRich - Tabs de carrinhos com status dot colorido, contador inteligente
+ * e botão "+" para criar novo.
  */
-import { type SellerCart } from "@/hooks/products";
-import { Building2, Plus, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { differenceInDays } from "date-fns";
-import { getStatusCfg } from "@/components/cart/CartUtilComponents";
-import { Skeleton } from "@/components/ui/skeleton";
-import { motion } from "framer-motion";
+import { useRef, useCallback, useState } from 'react';
+import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
+import { type SellerCart } from '@/hooks/products';
+import { Building2, Plus, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { getStatusCfg } from '@/components/cart/CartUtilComponents';
+import { Skeleton } from '@/components/ui/skeleton';
+import { MAX_SELLER_CARTS, SELLER_CART_LIMIT_REACHED_SHORT } from '@/hooks/products/useSellerCarts';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface CartTabsRichProps {
   carts: SellerCart[];
@@ -19,18 +27,54 @@ interface CartTabsRichProps {
   isLoading?: boolean;
 }
 
-export function CartTabsRich({ carts, activeCartId, canCreateCart, onSelect, onNew, isLoading }: CartTabsRichProps) {
+export function CartTabsRich({
+  carts,
+  activeCartId,
+  canCreateCart,
+  onSelect,
+  onNew,
+  isLoading,
+}: CartTabsRichProps) {
+  const tablistRef = useRef<HTMLDivElement>(null);
+  // Scroll horizontal via mouse wheel nos tabs (fix_version horizontal-scroll-hook-v1)
+  useHorizontalScroll(tablistRef);
+  const [limitDetailsOpen, setLimitDetailsOpen] = useState(false);
+
+
+  // WCAG 2.1 AA: arrow key navigation for role="tablist" (roving tabindex pattern)
+  const handleTablistKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+      e.preventDefault();
+      const tabs = tablistRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+      if (!tabs || tabs.length === 0) return;
+      const current = Array.from(tabs).findIndex((t) => t === document.activeElement);
+      let next = current;
+      if (e.key === 'ArrowRight') next = (current + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = tabs.length - 1;
+      tabs[next]?.focus();
+      const cartId = tabs[next]?.dataset.cartId;
+      if (cartId) onSelect(cartId);
+    },
+    [onSelect],
+  );
+
   if (isLoading) {
     return (
-      <div className="flex gap-2 overflow-x-auto pb-1 animate-pulse">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl border border-border/30 bg-muted/5 w-[180px] flex-shrink-0">
-            <Skeleton className="w-7 h-7 rounded-lg opacity-40" />
-            <div className="flex flex-col gap-1.5 flex-1">
+      <div className="flex animate-pulse gap-2 overflow-x-auto pb-1">
+        {Array.from({ length: 3 }, (_, i) => (
+          <div
+            key={i}
+            className="flex w-[180px] flex-shrink-0 items-center gap-2.5 rounded-xl border border-border/30 bg-muted/5 px-3.5 py-2"
+          >
+            <Skeleton className="h-7 w-7 rounded-lg opacity-40" />
+            <div className="flex flex-1 flex-col gap-1.5">
               <Skeleton className="h-3 w-2/3 opacity-30" />
               <Skeleton className="h-2 w-1/3 opacity-20" />
             </div>
-            <Skeleton className="w-5 h-5 rounded-full opacity-30" />
+            <Skeleton className="h-5 w-5 rounded-full opacity-30" />
           </div>
         ))}
       </div>
@@ -38,93 +82,184 @@ export function CartTabsRich({ carts, activeCartId, canCreateCart, onSelect, onN
   }
 
   return (
-    <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory px-1">
-      {carts.map(cart => {
-        const isActive = cart.id === activeCartId;
-        const statusCfg = getStatusCfg(cart.status);
-        const ageDays = differenceInDays(new Date(), new Date(cart.created_at));
-        const needsFollowUp = ageDays >= 3 && cart.items.length > 0;
-        const hasItems = cart.items.length > 0;
-        return (
-          <button
-            key={cart.id}
-            onClick={() => onSelect(cart.id)}
-            data-testid="cart-tab"
-            data-cart-id={cart.id}
-            data-active={isActive ? "true" : "false"}
-            role="tab"
-            aria-selected={isActive}
-            className={cn(
-              "group relative flex items-center gap-3 px-4 py-2.5 rounded-2xl border transition-all whitespace-nowrap flex-shrink-0 animate-in fade-in slide-in-from-left-4 duration-500 snap-start",
-              isActive
-                ? "border-primary/40 bg-primary/10 text-primary shadow-lg ring-2 ring-primary/10 scale-[1.03] z-10"
-                : "border-border/30 bg-card hover:border-border/60 hover:bg-muted/30 hover:translate-y-[-1px] shadow-sm"
-            )}
-          >
-            <div className={cn(
-              "absolute inset-x-4 -bottom-[1px] h-0.5 bg-primary transition-all duration-500 rounded-full",
-              isActive ? "scale-x-100 opacity-100" : "scale-x-0 opacity-0"
-            )} />
-            {cart.company_logo_url ? (
-              <img src={cart.company_logo_url} alt="" className="w-8 h-8 rounded-full object-cover bg-background border border-border/40 flex-shrink-0 group-hover:scale-110 transition-transform" loading="lazy" />
-            ) : (
-              <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
-                isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground group-hover:bg-muted/80"
-              )}>
-                <Building2 className="h-4 w-4" />
-              </div>
-            )}
-            <div className="flex flex-col items-start gap-0.5 leading-none">
-              <span className="text-sm font-bold max-w-[150px] truncate tracking-tight group-hover:text-primary transition-colors">{cart.company_name}</span>
-              <div className="flex items-center gap-2 opacity-80">
-                <span className={cn("w-2 h-2 rounded-full ring-2 ring-background shadow-sm", statusCfg.color.split(" ")[0])} aria-hidden />
-                <span className="text-[10px] text-muted-foreground font-bold tracking-tight uppercase opacity-60">{statusCfg.label}</span>
-              </div>
-            </div>
-            <span
-              data-testid="cart-tab-count"
-              data-count={cart.items.length}
-              className={cn(
-                "ml-1 inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-full text-[10px] font-black tabular-nums transition-all duration-500",
-                hasItems
-                  ? (isActive ? "bg-primary text-primary-foreground scale-110 shadow-lg" : "bg-primary/15 text-primary")
-                  : "bg-muted text-muted-foreground opacity-50"
-              )}>
-              {cart.items.length}
-            </span>
-            {needsFollowUp && (
-              <motion.span
-                data-testid="cart-tab-followup"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-warning text-warning-foreground flex items-center justify-center shadow-md border-2 border-background z-20"
-                title={`Sem movimento há ${ageDays} dias`}
-              >
-                <Clock className="h-3 w-3" />
-              </motion.span>
-            )}
-          </button>
-        );
-      })}
+    <div className="flex items-center gap-2">
+      {/* tablist contains ONLY role="tab" children — "Novo" button lives outside to satisfy WCAG 4.1.2 */}
+      <div
+        ref={tablistRef}
+        role="tablist"
+        aria-label="Carrinhos"
+        onKeyDown={handleTablistKeyDown}
+        className="scrollbar-none flex min-w-0 flex-1 snap-x snap-mandatory gap-2.5 overflow-x-auto px-1 pb-2"
+      >
+        {carts.map((cart) => {
+          const isActive = cart.id === activeCartId;
+          const statusCfg = getStatusCfg(cart.status);
+          const hasItems = cart.items.length > 0;
 
-      {canCreateCart && (
+          return (
+            <button
+              key={cart.id}
+              onClick={() => onSelect(cart.id)}
+              data-testid="cart-tab"
+              data-cart-id={cart.id}
+              data-active={isActive ? 'true' : 'false'}
+              role="tab"
+              aria-selected={isActive}
+              tabIndex={isActive ? 0 : -1}
+              className={cn(
+                'group relative flex flex-shrink-0 snap-start items-center gap-3 whitespace-nowrap rounded-2xl border px-4 py-2.5 transition-all duration-500 animate-in fade-in slide-in-from-left-4',
+                isActive
+                  ? 'z-10 scale-[1.03] border-primary/40 bg-primary/10 text-primary shadow-lg ring-2 ring-primary/10'
+                  : 'border-border/30 bg-card shadow-sm hover:translate-y-[-1px] hover:border-border/60 hover:bg-muted/30',
+              )}
+            >
+              <div
+                className={cn(
+                  'absolute inset-x-4 -bottom-[1px] h-0.5 rounded-full bg-primary transition-all duration-500',
+                  isActive ? 'scale-x-100 opacity-100' : 'scale-x-0 opacity-0',
+                )}
+              />
+              {cart.company_logo_url ? (
+                <img
+                  src={cart.company_logo_url}
+                  alt=""
+                  className="h-8 w-8 flex-shrink-0 rounded-full border border-border/40 bg-background object-cover transition-transform group-hover:scale-110"
+                  loading="lazy"
+                />
+              ) : (
+                <div
+                  className={cn(
+                    'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full transition-all',
+                    isActive
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-muted text-muted-foreground group-hover:bg-muted/80',
+                  )}
+                >
+                  <Building2 aria-hidden="true" className="h-4 w-4" />
+                </div>
+              )}
+              <div className="flex flex-col items-start gap-0.5 leading-none">
+                <span className="max-w-[150px] truncate text-sm font-bold tracking-tight transition-colors group-hover:text-primary">
+                  {cart.company_name}
+                </span>
+                <div className="flex items-center gap-2 opacity-80">
+                  <span
+                    className={cn(
+                      'h-2 w-2 rounded-full shadow-sm ring-2 ring-background',
+                      statusCfg.color.split(' ')[0],
+                    )}
+                    aria-hidden
+                  />
+                  <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground opacity-60">
+                    {statusCfg.label}
+                  </span>
+                </div>
+              </div>
+              <span
+                data-testid="cart-tab-count"
+                data-count={cart.items.length}
+                className={cn(
+                  'ml-1 inline-flex h-6 min-w-[24px] items-center justify-center rounded-full px-2 text-[10px] font-black tabular-nums transition-all duration-500',
+                  hasItems
+                    ? isActive
+                      ? 'scale-110 bg-primary text-primary-foreground shadow-lg'
+                      : 'bg-primary/15 text-primary'
+                    : 'bg-muted text-muted-foreground opacity-50',
+                )}
+              >
+                {cart.items.length}
+              </span>
+            </button>
+          );
+        })}
+
+      </div>
+
+      <div className="flex flex-shrink-0 items-center gap-2 pb-2 pr-1">
         <button
           data-testid="cart-tab-new"
-          onClick={onNew}
+          onClick={canCreateCart ? onNew : undefined}
+          disabled={!canCreateCart}
+          title={
+            !canCreateCart
+              ? `${SELLER_CART_LIMIT_REACHED_SHORT} (${carts.length}/${MAX_SELLER_CARTS}). Exclua um carrinho para criar outro.`
+              : `Criar novo carrinho (${carts.length}/${MAX_SELLER_CARTS})`
+          }
           className={cn(
-            "flex items-center gap-2 px-5 py-2.5 rounded-2xl border-2 border-dashed border-border/40 transition-all flex-shrink-0 group/new",
-            "hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-95",
-            "text-sm font-bold text-muted-foreground/60"
+            'group/new flex items-center gap-2 rounded-2xl border-2 border-dashed px-5 py-2.5 transition-all',
+            canCreateCart
+              ? 'border-border/40 text-muted-foreground/60 hover:border-primary/50 hover:bg-primary/5 hover:text-primary active:scale-95'
+              : 'cursor-not-allowed border-border/20 text-muted-foreground/30 opacity-50',
+            'text-sm font-bold',
           )}
-          aria-label="Criar novo carrinho"
+          aria-label={canCreateCart ? 'Criar novo carrinho' : SELLER_CART_LIMIT_REACHED_SHORT}
         >
-          <div className="w-6 h-6 rounded-lg bg-muted/40 flex items-center justify-center group-hover/new:bg-primary/20 transition-colors">
-            <Plus className="h-4 w-4 group-hover/new:rotate-90 transition-transform duration-300" />
+          <div
+            className={cn(
+              'flex h-6 w-6 items-center justify-center rounded-lg bg-muted/40 transition-colors',
+              canCreateCart && 'group-hover/new:bg-primary/20',
+            )}
+          >
+            <Plus
+              aria-hidden="true"
+              className={cn(
+                'h-4 w-4 transition-transform duration-300',
+                canCreateCart && 'group-hover/new:rotate-90',
+              )}
+            />
           </div>
           <span>Novo</span>
+          <span
+            data-testid="cart-tab-new-counter"
+            className={cn(
+              'ml-1 inline-flex min-w-[2.5rem] items-center justify-center rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tabular-nums',
+              canCreateCart
+                ? 'border-border/40 bg-muted/20 text-muted-foreground'
+                : 'border-destructive/40 bg-destructive/10 text-destructive',
+            )}
+            aria-label={`${carts.length} de ${MAX_SELLER_CARTS} carrinhos usados`}
+          >
+            {carts.length}/{MAX_SELLER_CARTS}
+          </span>
         </button>
-      )}
+        {!canCreateCart && (
+          <button
+            type="button"
+            data-testid="cart-limit-details-link"
+            onClick={() => setLimitDetailsOpen(true)}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+          >
+            <Info aria-hidden="true" className="h-3 w-3" />
+            Ver detalhes do limite
+          </button>
+        )}
+      </div>
+
+      <Dialog open={limitDetailsOpen} onOpenChange={setLimitDetailsOpen}>
+        <DialogContent data-testid="cart-limit-details-modal" className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Limite de {MAX_SELLER_CARTS} carrinhos ativos</DialogTitle>
+            <DialogDescription className="space-y-2 pt-2 text-sm leading-relaxed">
+              <span className="block">
+                Você está usando{' '}
+                <strong className="text-foreground">
+                  {carts.length} de {MAX_SELLER_CARTS}
+                </strong>{' '}
+                carrinhos simultâneos no menu lateral.
+              </span>
+              <span className="block">
+                O atalho rápido do menu lateral fica indisponível ao atingir o limite, para manter o
+                fluxo organizado. <strong>Exclua um carrinho</strong> ou finalize um orçamento para
+                liberar a criação por aqui novamente.
+              </span>
+              <span className="block text-muted-foreground">
+                Você pode continuar criando carrinhos normalmente pela página{' '}
+                <strong>Carrinhos</strong> — o limite vale apenas para este atalho.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,9 +1,9 @@
-import { BarChart3, Filter } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { BarChart3, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface StatItem {
   id: string;
@@ -28,17 +28,19 @@ export function StatsPopover({ stats, isFiltered = false }: StatsPopoverProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5 h-8 bg-card/40 backdrop-blur-md"
+                className="h-8 gap-1.5 bg-card/40 backdrop-blur-md"
                 aria-label="Resumo de estatísticas do catálogo"
               >
                 <BarChart3 className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline text-xs">Resumo</span>
+                <span className="hidden text-xs sm:inline">Resumo</span>
               </Button>
             </PopoverTrigger>
           </span>
         </TooltipTrigger>
         <TooltipContent>
-          {isFiltered ? "Resumo dos resultados filtrados" : "Resumo geral do catálogo (totais, categorias, etc.)"}
+          {isFiltered
+            ? 'Resumo dos resultados filtrados'
+            : 'Resumo geral do catálogo (totais, categorias, etc.)'}
         </TooltipContent>
       </Tooltip>
       <PopoverContent
@@ -52,7 +54,10 @@ export function StatsPopover({ stats, isFiltered = false }: StatsPopoverProps) {
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Estatísticas</p>
             {isFiltered && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 gap-1 border-primary/30 text-primary">
+              <Badge
+                variant="outline"
+                className="h-4 gap-1 border-primary/30 px-1.5 py-0 text-[10px] text-primary"
+              >
                 <Filter className="h-2.5 w-2.5" />
                 Filtrado
               </Badge>
@@ -62,19 +67,23 @@ export function StatsPopover({ stats, isFiltered = false }: StatsPopoverProps) {
           {stats.map((stat) => (
             <div
               key={stat.id}
-              className="flex items-center justify-between py-1.5 group"
+              className="group flex items-center justify-between py-1.5"
               role="listitem"
-              aria-label={`${stat.label}: ${stat.value.toLocaleString("pt-BR")}`}
+              aria-label={`${stat.label}: ${stat.value.toLocaleString('pt-BR')}`}
             >
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className="text-primary transition-transform group-hover:scale-110">{stat.icon}</span>
+                <span className="text-primary transition-transform group-hover:scale-110">
+                  {stat.icon}
+                </span>
                 {stat.label}
               </div>
-              <span className={cn(
-                "text-sm font-bold tabular-nums transition-colors",
-                stat.value === 0 ? "text-muted-foreground/50" : "text-foreground"
-              )}>
-                {stat.value.toLocaleString("pt-BR")}
+              <span
+                className={cn(
+                  'text-sm font-bold tabular-nums transition-colors',
+                  stat.value === 0 ? 'text-muted-foreground/50' : 'text-foreground',
+                )}
+              >
+                {stat.value.toLocaleString('pt-BR')}
               </span>
             </div>
           ))}

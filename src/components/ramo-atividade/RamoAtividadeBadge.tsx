@@ -1,4 +1,4 @@
-import { EntityBadge } from "@/components/common/EntityBadge";
+import { EntityBadge } from '@/components/common/EntityBadge';
 
 /**
  * Badge for displaying a Ramo de Atividade (Hotel, Restaurante, Imobiliária, etc).
@@ -12,8 +12,8 @@ interface RamoAtividadeBadgeProps {
   ramoName?: string;
   hexCode?: string | null;
   icon?: string | null;
-  size?: "sm" | "md" | "lg";
-  variant?: "default" | "outline" | "solid" | "ghost";
+  size?: 'lg' | 'md' | 'sm';
+  variant?: 'default' | 'ghost' | 'outline' | 'solid';
   showRamo?: boolean;
   onClick?: () => void;
   onRemove?: () => void;
@@ -23,9 +23,9 @@ interface RamoAtividadeBadgeProps {
 }
 
 const RAMO_MAX_WIDTH = {
-  sm: "max-w-[100px]",
-  md: "max-w-[140px]",
-  lg: "max-w-[180px]",
+  sm: 'max-w-[100px]',
+  md: 'max-w-[140px]',
+  lg: 'max-w-[180px]',
 };
 
 export function RamoAtividadeBadge({
@@ -33,8 +33,8 @@ export function RamoAtividadeBadge({
   ramoName,
   hexCode,
   icon,
-  size = "md",
-  variant = "default",
+  size = 'md',
+  variant = 'default',
   showRamo = false,
   onClick,
   onRemove,

@@ -1,6 +1,6 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-const STORAGE_KEY = "product-comparison";
+const STORAGE_KEY = 'product-comparison';
 const MAX_COMPARE_ITEMS = 4;
 
 export interface CompareVariantInfo {
@@ -35,7 +35,10 @@ interface ComparisonActions {
   addToCompare: (productId: string, variant?: CompareVariantInfo) => boolean;
   removeFromCompare: (productId: string, variantId?: string | null) => void;
   removeByIndex: (index: number) => void;
-  toggleCompare: (productId: string, variant?: CompareVariantInfo) => { added: boolean; isFull: boolean };
+  toggleCompare: (
+    productId: string,
+    variant?: CompareVariantInfo,
+  ) => { added: boolean; isFull: boolean };
   isInCompare: (productId: string, variantId?: string | null) => boolean;
   clearCompare: () => void;
   getCompareVariant: (productId: string) => CompareVariantInfo | undefined;
@@ -52,11 +55,20 @@ function loadFromStorage(): CompareItem[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return [];
     const parsed = JSON.parse(stored);
-    // Migrate old format (string[]) to new format (CompareItem[])
-    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'string') {
+    // Corrupted/legacy non-array payload (e.g. `{}`) would crash at store init
+    // when `.map` runs over it — fall back to empty instead of white-screening.
+    if (!Array.isArray(parsed)) return [];
+    // BUG-CMP-01 FIX (2026-06-21): verificar TODOS os elementos, não apenas parsed[0].
+    // Array misto [{productId:'x'}, 'legacy_id'] falhava silenciosamente: parsed[0]
+    // é objeto → typeof !== 'string' → migração pulada → string retornada como
+    // CompareItem → .productId undefined em toda a UI de comparação.
+    if (parsed.length > 0 && parsed.every((item: unknown) => typeof item === 'string')) {
       return parsed.map((id: string) => ({ productId: id }));
     }
-    return parsed;
+    // Filtrar entradas inválidas para tolerar payload corrompido/parcialmente migrado.
+    return parsed.filter(
+      (item: unknown) => typeof item === 'object' && item !== null && 'productId' in item,
+    ) as CompareItem[];
   } catch {
     return [];
   }
@@ -73,7 +85,7 @@ function saveToStorage(items: CompareItem[]) {
 function applyState(next: CompareItem[]) {
   return {
     compareItems: next,
-    compareIds: next.map(i => i.productId),
+    compareIds: next.map((i) => i.productId),
     compareCount: next.length,
     canAddMore: next.length < MAX_COMPARE_ITEMS,
   };
@@ -89,7 +101,10 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
     addToCompare: (productId: string, variant?: CompareVariantInfo) => {
       const { compareItems } = get();
       const key = itemKey(productId, variant);
-      if (compareItems.some(i => itemKeyFromItem(i) === key) || compareItems.length >= MAX_COMPARE_ITEMS) {
+      if (
+        compareItems.some((i) => itemKeyFromItem(i) === key) ||
+        compareItems.length >= MAX_COMPARE_ITEMS
+      ) {
         return false;
       }
       const next = [...compareItems, { productId, variant }];
@@ -99,24 +114,16 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
     },
 
     removeFromCompare: (productId: string, variantId?: string | null) => {
-      const key = variantId ? `${productId}::${variantId}` : productId;
-      const next = get().compareItems.filter((i) => {
-        const iKey = itemKeyFromItem(i);
-        // If removing by composite key, match exactly
-        if (variantId) return iKey !== key;
-        // If removing by productId only, remove first match with that productId
-        return true;
-      });
-      // Fallback: if variantId not provided, remove first occurrence of productId
-      if (!variantId) {
-        const idx = get().compareItems.findIndex(i => i.productId === productId);
-        if (idx >= 0) {
-          const items = [...get().compareItems];
-          items.splice(idx, 1);
-          saveToStorage(items);
-          set(applyState(items));
-          return;
-        }
+      const items = get().compareItems;
+      let next: CompareItem[];
+      if (variantId) {
+        const key = `${productId}::${variantId}`;
+        next = items.filter((i) => itemKeyFromItem(i) !== key);
+      } else {
+        const idx = items.findIndex((i) => i.productId === productId);
+        if (idx < 0) return;
+        next = [...items];
+        next.splice(idx, 1);
       }
       saveToStorage(next);
       set(applyState(next));
@@ -136,9 +143,9 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
       const key = itemKey(productId, variant);
       // If no variant provided, match by productId only (first occurrence)
       const existingIdx = variant
-        ? compareItems.findIndex(i => itemKeyFromItem(i) === key)
-        : compareItems.findIndex(i => i.productId === productId);
-      
+        ? compareItems.findIndex((i) => itemKeyFromItem(i) === key)
+        : compareItems.findIndex((i) => i.productId === productId);
+
       if (existingIdx >= 0) {
         const next = compareItems.filter((_, idx) => idx !== existingIdx);
         saveToStorage(next);
@@ -158,7 +165,7 @@ export const useComparisonStore = create<ComparisonStore>((set, get) => {
       const items = get().compareItems;
       if (variantId) {
         const key = `${productId}::${variantId}`;
-        return items.some(i => itemKeyFromItem(i) === key);
+        return items.some((i) => itemKeyFromItem(i) === key);
       }
       return items.some((i) => i.productId === productId);
     },

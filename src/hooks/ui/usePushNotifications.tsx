@@ -9,6 +9,18 @@ interface NotificationPermissionState {
   isEnabled: boolean;
 }
 
+// `vibrate` faz parte da Notification API em runtime, mas foi removido do
+// tipo padrão `NotificationOptions` do lib.dom. Estendemos localmente.
+interface ExtendedNotificationOptions extends NotificationOptions {
+  vibrate?: number[];
+}
+
+const SECURITY_ALERT_ICONS: Record<string, string> = {
+  info: '🔵',
+  warning: '🟡',
+  critical: '🔴',
+} as const;
+
 export function usePushNotifications() {
   const { user } = useAuth();
   const [state, setState] = useState<NotificationPermissionState>({
@@ -55,14 +67,20 @@ export function usePushNotifications() {
       if (!state.isEnabled) {
         return null;
       }
+      // Re-check live permission — state.isEnabled may be stale if the user
+      // revoked permission in browser settings after we last synced.
+      if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+        return null;
+      }
 
       try {
-        const notification = new Notification(title, {
+        const notificationOptions: ExtendedNotificationOptions = {
           icon: '/favicon.ico',
           badge: '/favicon.ico',
           vibrate: [200, 100, 200],
           ...options,
-        });
+        };
+        const notification = new Notification(title, notificationOptions);
 
         notification.onclick = () => {
           window.focus();
@@ -71,7 +89,7 @@ export function usePushNotifications() {
 
         return notification;
       } catch (error) {
-        console.error('Error showing notification:', error);
+        logger.error('Error showing notification:', error);
         return null;
       }
     },
@@ -79,14 +97,8 @@ export function usePushNotifications() {
   );
 
   const showSecurityAlert = useCallback(
-    (title: string, message: string, type: 'info' | 'warning' | 'critical' = 'warning') => {
-      const icons: Record<string, string> = {
-        info: '🔵',
-        warning: '🟡',
-        critical: '🔴',
-      };
-
-      return showNotification(`${icons[type]} ${title}`, {
+    (title: string, message: string, type: 'critical' | 'info' | 'warning' = 'warning') => {
+      return showNotification(`${SECURITY_ALERT_ICONS[type]} ${title}`, {
         body: message,
         tag: 'security-alert',
         requireInteraction: type === 'critical',
@@ -101,7 +113,10 @@ export function usePushNotifications() {
     if (!user || !state.isEnabled) return;
 
     const channel = supabase
-      .channel('security-notifications')
+      // BUG-RT-CHANNEL FIX: tópico único por montagem. O effect re-roda quando isEnabled vira
+      // true (permissão concedida) e o nome estático reaproveitava o canal ainda em teardown,
+      // aplicando .on('postgres_changes') após subscribe() → crash.
+      .channel(`security-notifications:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {
@@ -167,7 +182,11 @@ export function usePushNotifications() {
           }
         },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          logger.warn('[usePushNotifications] security realtime channel error', { status, err });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);

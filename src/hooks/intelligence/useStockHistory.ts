@@ -3,9 +3,10 @@
  * Consome: stock_daily_summary, mv_stock_velocity, mv_product_intelligence
  * via external-db-bridge no banco externo.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import { logger } from '@/lib/logger';
+import { dbQueryRetry } from '@/lib/db-retry';
 
 // ---------- Types ----------
 
@@ -88,7 +89,7 @@ export function useStockDailySummary(productId: string | undefined, days = 90) {
     queryFn: async (): Promise<StockDailySummary[]> => {
       if (!productId) return [];
 
-      const result = await invokeExternalDb<StockDailySummary>({
+      const result = await dbInvoke<StockDailySummary>({
         table: 'stock_daily_summary',
         operation: 'select',
         filters: { product_id: productId },
@@ -113,7 +114,7 @@ export function useStockVelocity(productId: string | undefined) {
       if (!productId) return [];
 
       try {
-        const result = await invokeExternalDb<StockVelocity>({
+        const result = await dbInvoke<StockVelocity>({
           table: 'mv_stock_velocity',
           operation: 'select',
           filters: { product_id: productId },
@@ -131,10 +132,11 @@ export function useStockVelocity(productId: string | undefined) {
     },
     enabled: !!productId,
     staleTime: 30 * 60 * 1000,
-    retry: (failureCount, error: unknown) => {
-      const msg = error instanceof Error ? error.message : '';
-      if (msg.includes('not been populated')) return false;
-    },
+    // FIX 2026-07-17: 'not been populated' era a UNICA parada. Um 403
+    // (permission denied) nao casa e era retentado 3x — com ~96 produtos x 2
+    // hooks isso gerou ~768 requests condenados. dbQueryRetry so retenta
+    // falha transitoria (rede/timeout/5xx).
+    retry: dbQueryRetry,
   });
 }
 
@@ -148,7 +150,7 @@ export function useProductIntelligenceData(productId: string | undefined) {
       if (!productId) return null;
 
       try {
-        const result = await invokeExternalDb<ProductIntelligenceData>({
+        const result = await dbInvoke<ProductIntelligenceData>({
           table: 'mv_product_intelligence',
           operation: 'select',
           filters: { product_id: productId },
@@ -165,22 +167,23 @@ export function useProductIntelligenceData(productId: string | undefined) {
     },
     enabled: !!productId,
     staleTime: 30 * 60 * 1000,
-    retry: (failureCount, error: unknown) => {
-      const msg = error instanceof Error ? error.message : '';
-      if (msg.includes('not been populated')) return false;
-    },
+    // FIX 2026-07-17: 'not been populated' era a UNICA parada. Um 403
+    // (permission denied) nao casa e era retentado 3x — com ~96 produtos x 2
+    // hooks isso gerou ~768 requests condenados. dbQueryRetry so retenta
+    // falha transitoria (rede/timeout/5xx).
+    retry: dbQueryRetry,
   });
 }
 
 // ---------- Helpers ----------
 
-export type IntelligenceFlag = 
-  | 'hot-product'
-  | 'stockout-risk'
-  | 'stagnant'
-  | 'negotiation-opportunity'
+export type IntelligenceFlag =
+  | 'class-a'
   | 'frequent-restock'
-  | 'class-a';
+  | 'hot-product'
+  | 'negotiation-opportunity'
+  | 'stagnant'
+  | 'stockout-risk';
 
 export function getActiveFlags(data: ProductIntelligenceData | null): IntelligenceFlag[] {
   if (!data) return [];
@@ -199,17 +202,20 @@ export function getActiveFlags(data: ProductIntelligenceData | null): Intelligen
  * Opcionalmente filtra por supplier_id.
  */
 export function aggregateDailySummaryByDate(summaries: StockDailySummary[], supplierId?: string) {
-  const filtered = supplierId ? summaries.filter(s => s.supplier_id === supplierId) : summaries;
-  const map = new Map<string, {
-    date: string;
-    stockClose: number;
-    depleted: number;
-    restocked: number;
-    restockDetected: boolean;
-    costPriceClose: number | null;
-    _costWeightedSum: number;
-    _costWeightedCount: number;
-  }>();
+  const filtered = supplierId ? summaries.filter((s) => s.supplier_id === supplierId) : summaries;
+  const map = new Map<
+    string,
+    {
+      date: string;
+      stockClose: number;
+      depleted: number;
+      restocked: number;
+      restockDetected: boolean;
+      costPriceClose: number | null;
+      _costWeightedSum: number;
+      _costWeightedCount: number;
+    }
+  >();
 
   for (const s of filtered) {
     const existing = map.get(s.summary_date);
@@ -248,5 +254,5 @@ export function aggregateDailySummaryByDate(summaries: StockDailySummary[], supp
  * Extrai supplier_ids únicos dos summaries.
  */
 export function extractUniqueSupplierIds(summaries: StockDailySummary[]): string[] {
-  return [...new Set(summaries.map(s => s.supplier_id).filter(Boolean))];
+  return [...new Set(summaries.map((s) => s.supplier_id).filter(Boolean))];
 }

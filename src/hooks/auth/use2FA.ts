@@ -2,7 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import * as OTPAuth from 'otpauth';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
+import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface TwoFactorSettings {
   id: string;
   user_id: string;
@@ -26,16 +29,15 @@ export function use2FA(targetUserId?: string) {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('user_2fa_settings')
+      const { data, error } = await untypedFrom('user_2fa_settings')
         .select('id, user_id, is_enabled, enabled_at, created_at')
         .eq('user_id', effectiveUserId)
         .maybeSingle();
 
       if (error) throw error;
-      setSettings(data);
+      setSettings(data as TwoFactorSettings | null);
     } catch (error) {
-      console.error('Error fetching 2FA settings:', error);
+      logger.error('Error fetching 2FA settings:', error);
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +49,7 @@ export function use2FA(targetUserId?: string) {
 
   const generateSecret = useCallback((email: string): { secret: string; uri: string } => {
     const totp = new OTPAuth.TOTP({
-       issuer: 'Promo Gifts',
+      issuer: 'Promo Gifts',
       label: email,
       algorithm: 'SHA1',
       digits: 6,
@@ -57,7 +59,7 @@ export function use2FA(targetUserId?: string) {
 
     const secret = totp.secret.base32;
     const uri = totp.toString();
-    
+
     setPendingSecret(secret);
     return { secret, uri };
   }, []);
@@ -72,7 +74,7 @@ export function use2FA(targetUserId?: string) {
         period: 30,
         secret: OTPAuth.Secret.fromBase32(secret),
       });
-      
+
       const delta = totp.validate({ token, window: 1 });
       return delta !== null;
     } catch {
@@ -80,25 +82,22 @@ export function use2FA(targetUserId?: string) {
     }
   }, []);
 
-  const enable2FA = useCallback(async (token: string): Promise<{ success: boolean; error?: string }> => {
-    if (!effectiveUserId || !pendingSecret) {
-      return { success: false, error: 'Nenhum secret pendente' };
-    }
+  const enable2FA = useCallback(
+    async (token: string): Promise<{ success: boolean; error?: string }> => {
+      if (!effectiveUserId || !pendingSecret) {
+        return { success: false, error: 'Nenhum secret pendente' };
+      }
 
-    // Verificar token antes de salvar
-    if (!verifyToken(pendingSecret, token)) {
-      return { success: false, error: 'Código inválido' };
-    }
+      if (!verifyToken(pendingSecret, token)) {
+        return { success: false, error: 'Codigo invalido' };
+      }
 
-    try {
-      // Gerar códigos de backup
-      const backupCodes = Array.from({ length: 8 }, () => 
-        Math.random().toString(36).substring(2, 10).toUpperCase()
-      );
+      try {
+        const backupCodes = Array.from({ length: 8 }, () =>
+          Math.random().toString(36).substring(2, 10).toUpperCase(),
+        );
 
-      const { error } = await supabase
-        .from('user_2fa_settings')
-        .upsert({
+        const { error } = await untypedFrom('user_2fa_settings').upsert({
           user_id: effectiveUserId,
           totp_secret: pendingSecret,
           is_enabled: true,
@@ -106,61 +105,79 @@ export function use2FA(targetUserId?: string) {
           enabled_at: new Date().toISOString(),
         });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setPendingSecret(null);
-      await fetchSettings();
-      
-      return { success: true };
-    } catch (error: unknown) {
-      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
-    }
-  }, [effectiveUserId, pendingSecret, verifyToken, fetchSettings]);
+        setPendingSecret(null);
+        await fetchSettings();
 
-  const disable2FA = useCallback(async (token?: string): Promise<{ success: boolean; error?: string }> => {
-    if (!effectiveUserId) {
-      return { success: false, error: 'Usuário não autenticado' };
-    }
+        return { success: true };
+      } catch (error: unknown) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        };
+      }
+    },
+    [effectiveUserId, pendingSecret, verifyToken, fetchSettings],
+  );
 
-    try {
-      // Buscar secret atual
-      const { data: currentSettings } = await supabase
-        .from('user_2fa_settings')
-        .select('totp_secret')
-        .eq('user_id', effectiveUserId)
-        .single();
-
-      if (!currentSettings?.totp_secret) {
-        return { success: false, error: '2FA não está habilitado' };
+  const disable2FA = useCallback(
+    async (token?: string): Promise<{ success: boolean; error?: string }> => {
+      if (!effectiveUserId) {
+        return { success: false, error: 'Usuario nao autenticado' };
       }
 
-      // Se token fornecido, verificar. Admin pode desativar sem token se targetUserId diferente
-      if (token) {
-        if (!verifyToken(currentSettings.totp_secret, token)) {
-          return { success: false, error: 'Código inválido' };
-        }
-      } else if (!targetUserId) {
+      // Admin bypass: pode desativar sem token se targetUserId for explicito
+      if (!token && !targetUserId) {
         return { success: false, error: 'Código necessário' };
       }
 
-      const { error } = await supabase
-        .from('user_2fa_settings')
-        .update({
-          is_enabled: false,
-          totp_secret: null,
-          backup_codes: null,
-          enabled_at: null,
-        })
-        .eq('user_id', effectiveUserId);
+      /**
+       * BUG-10 FIX: Delegar verificacao do token para o servidor.
+       *
+       * PROBLEMA ORIGINAL: `disable2FA` buscava `totp_secret` via SELECT e verificava
+       * o TOTP token no cliente. O secret chegava em plaintext na resposta de rede,
+       * expondo-o a ataques XSS -- qualquer script injetado podia captura-lo e gerar
+       * tokens validos indefinidamente.
+       *
+       * SOLUCAO: a verificacao e feita inteiramente na Edge Function `verify-2fa-token`
+       * (action: "disable"). O secret NUNCA chega ao cliente.
+       *
+       * PRE-REQUISITO: deploy da Edge Function `verify-2fa-token` com suporte a action
+       * "disable". Enquanto nao deployada, a funcao retornara erro e disable2FA falhara
+       * graciosamente com mensagem de erro ao inves de expor o secret.
+       */
+      try {
+        const { data, error } = await invokeEdge<{ success: boolean; error?: string }>(
+          'verify-2fa-token',
+          {
+            body: {
+              action: 'disable',
+              target_user_id: effectiveUserId,
+              token: token ?? null,
+              is_admin_bypass: !!targetUserId && !token,
+            },
+          },
+        );
 
-      if (error) throw error;
+        if (error || !data?.success) {
+          return {
+            success: false,
+            error: data?.error || 'Codigo invalido ou erro ao desabilitar 2FA',
+          };
+        }
 
-      await fetchSettings();
-      return { success: true };
-    } catch (error: unknown) {
-      return { success: false, error: error instanceof Error ? error.message : 'Erro desconhecido' };
-    }
-  }, [effectiveUserId, targetUserId, verifyToken, fetchSettings]);
+        await fetchSettings();
+        return { success: true };
+      } catch (error: unknown) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Erro desconhecido',
+        };
+      }
+    },
+    [effectiveUserId, targetUserId, fetchSettings],
+  );
 
   return {
     settings,

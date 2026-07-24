@@ -1,0 +1,210 @@
+name: PDF Quality Gate
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/pdf/**'
+      - 'scripts/qa/generate-proposal-pdf.mjs'
+      - 'qa/pdf-color-allowlist.json'
+      - '.github/workflows/pdf-quality.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/components/pdf/**'
+      - 'scripts/qa/generate-proposal-pdf.mjs'
+      - 'qa/pdf-color-allowlist.json'
+  workflow_dispatch:
+    inputs:
+      fixture_id:
+        description: 'ID da fixture a renderizar (ex: 10015-26, minimal-00001-26, complex-99999-26). Use "all" para gerar todas.'
+        required: false
+        default: 'all'
+        type: string
+
+jobs:
+  pdf-suite:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ─── Playwright cache determinístico ──────────────────────────────
+      # A versão do browser é fixada pela versão do pacote `playwright`
+      # instalado; usamos ela como chave para invalidar quando bumpar.
+      - name: Resolve Playwright version
+        id: pw
+        run: |
+          version=$(node -p "require('./node_modules/playwright/package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install Playwright Chromium (com deps do SO se cache miss)
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            # Cache do bundle já presente — só garante dependências do SO.
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      # ─── Fontes usadas pelo PDF (Roboto + Montserrat) ─────────────────
+      # Instalar fontes localmente evita variação de rendering entre runs
+      # e reduz dependência da rede do Google Fonts em cada CI.
+      - name: Install PDF fonts (Roboto + Montserrat)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends fonts-roboto fonts-montserrat fontconfig
+          fc-cache -f
+          fc-list | grep -Ei 'roboto|montserrat' | head -5 || true
+
+      # ─── Suítes vitest (snapshots + WCAG + allowlist) ─────────────────
+      - name: Run PDF test suites (snapshots + WCAG + hardcoded-colors allowlist)
+        id: pdf-tests
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          set +e
+          TZ=America/Sao_Paulo npx vitest run src/components/pdf 2>&1 | tee pdf-tests.log
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      # No workflow_dispatch, precisamos só gerar HTMLs — export test basta.
+      - name: Render HTML samples (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        run: TZ=America/Sao_Paulo npx vitest run src/components/pdf/proposal/__tests__/exportSampleProposal.test.tsx
+
+      # ─── PDF headless ────────────────────────────────────────────────
+      - name: Generate headless PDFs
+        if: always()
+        env:
+          PROPOSAL_FIXTURE_ID: >-
+            ${{ github.event_name == 'workflow_dispatch' && inputs.fixture_id != 'all' && inputs.fixture_id || '' }}
+        run: node scripts/qa/generate-proposal-pdf.mjs
+        continue-on-error: ${{ github.event_name != 'workflow_dispatch' }}
+
+      # ─── Artifacts ────────────────────────────────────────────────────
+      - name: Upload PDF + HTML + contrast report as artifacts
+        if: always()
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: proposal-pdf-quality
+          path: |
+            qa/exports/proposal-*.html
+            qa/exports/proposal-*.pdf
+            qa/reports/pdf-contrast-report.md
+            pdf-tests.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      # ─── Comentário no PR quando falhar ──────────────────────────────
+      - name: Comment contrast report on PR when tests fail
+        if: always() && github.event_name == 'pull_request' && steps.pdf-tests.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        env:
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        with:
+          script: |
+            const fs = require('fs');
+            const MARKER = '<!-- pdf-quality-comment:v1 -->';
+            const reportPath = 'qa/reports/pdf-contrast-report.md';
+            const report = fs.existsSync(reportPath)
+              ? fs.readFileSync(reportPath, 'utf8')
+              : '_(relatório de contraste não foi gerado)_';
+
+            const logPath = 'pdf-tests.log';
+            const rawLog = fs.existsSync(logPath) ? fs.readFileSync(logPath, 'utf8') : '';
+            const failLines = rawLog
+              .split('\n')
+              .filter((l) => /FAIL|×|✖|Error:/.test(l))
+              .slice(0, 40)
+              .join('\n');
+
+            // Lista de arquivos empacotados no artifact — vira link direto.
+            const exportsDir = 'qa/exports';
+            const files = fs.existsSync(exportsDir)
+              ? fs.readdirSync(exportsDir).filter((f) => /^proposal-.+\.(html|pdf)$/.test(f)).sort()
+              : [];
+
+            const { owner, repo } = context.repo;
+            const runId = context.runId;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}`;
+            const artifactId = process.env.ARTIFACT_ID;
+            const artifactUrl =
+              process.env.ARTIFACT_URL ||
+              (artifactId ? `${runUrl}/artifacts/${artifactId}` : runUrl);
+
+            const filesList = files.length
+              ? files.map((f) => `- \`${f}\``).join('\n')
+              : '_(nenhum arquivo gerado)_';
+
+            const body = [
+              MARKER,
+              '## ❌ PDF Quality Gate falhou',
+              '',
+              'A suíte de PDF (`src/components/pdf`) reportou falhas — snapshot, contraste WCAG ou allowlist de cores.',
+              '',
+              '### 📎 Artifacts',
+              '',
+              `- **Baixar tudo (ZIP):** [\`proposal-pdf-quality\`](${artifactUrl})`,
+              `- **Run completo:** [Actions #${runId}](${runUrl})`,
+              '',
+              '<details><summary>📁 Arquivos incluídos</summary>',
+              '',
+              filesList,
+              '',
+              '- `qa/reports/pdf-contrast-report.md`',
+              '- `pdf-tests.log`',
+              '',
+              '</details>',
+              '',
+              '<details><summary>🔴 Trecho do log de teste</summary>',
+              '',
+              '```',
+              failLines || '(sem linhas de falha capturadas — ver artifact `pdf-tests.log`)',
+              '```',
+              '',
+              '</details>',
+              '',
+              '<details open><summary>📊 Relatório WCAG (<code>qa/reports/pdf-contrast-report.md</code>)</summary>',
+              '',
+              report,
+              '',
+              '</details>',
+              '',
+              `> Atualizado em ${new Date().toISOString()}.`,
+            ].join('\n');
+
+            const issue_number = context.payload.pull_request.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner, repo, issue_number, per_page: 100,
+            });
+            const existing = comments.find((c) => c.body?.includes(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      - name: Fail job if PDF suites failed
+        if: github.event_name != 'workflow_dispatch' && steps.pdf-tests.outputs.exit_code != '0'
+        run: |
+          echo "PDF test suite failed (exit ${{ steps.pdf-tests.outputs.exit_code }})"
+          exit 1

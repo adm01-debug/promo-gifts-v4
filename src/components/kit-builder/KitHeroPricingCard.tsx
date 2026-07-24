@@ -8,6 +8,10 @@ import { TrendingUp, Sparkles } from 'lucide-react';
 import { formatCurrency } from '@/lib/kit-builder';
 import { cn } from '@/lib/utils';
 
+const GLOW_STYLE = {
+  background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)',
+} as const;
+
 interface KitHeroPricingCardProps {
   unitPrice: number;
   total: number;
@@ -16,15 +20,21 @@ interface KitHeroPricingCardProps {
   hasContent: boolean;
 }
 
-export function KitHeroPricingCard({ unitPrice, total, kitQuantity, isValid, hasContent }: KitHeroPricingCardProps) {
+export function KitHeroPricingCard({
+  unitPrice,
+  total,
+  kitQuantity,
+  isValid,
+  hasContent,
+}: KitHeroPricingCardProps) {
   if (!hasContent) {
     return (
-      <Card className="border-dashed border-2 border-border/60 bg-gradient-to-br from-muted/30 to-transparent">
-        <CardContent className="p-5 text-center space-y-2">
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+      <Card className="border-2 border-dashed border-border/60 bg-gradient-to-br from-muted/30 to-transparent">
+        <CardContent className="space-y-2 p-5 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
-          <p className="text-sm font-display font-semibold">Comece seu kit</p>
+          <p className="font-display text-sm font-semibold">Comece seu kit</p>
           <p className="text-xs text-muted-foreground">Selecione uma caixa para ver o preço</p>
         </CardContent>
       </Card>
@@ -34,22 +44,24 @@ export function KitHeroPricingCard({ unitPrice, total, kitQuantity, isValid, has
   return (
     <Card
       className={cn(
-        'overflow-hidden border-primary/20 dark:border-primary/30 relative',
+        'relative overflow-hidden border-primary/20 dark:border-primary/30',
         'bg-gradient-to-br from-card via-card to-primary/[0.04] dark:to-primary/[0.10]',
         'shadow-[0_8px_32px_-8px_hsl(var(--primary)/0.25)] dark:shadow-[0_8px_32px_-8px_hsl(var(--primary)/0.35)]',
       )}
     >
       {/* Subtle decorative glow */}
       <div
-        className="absolute -top-12 -right-12 w-40 h-40 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)' }}
+        className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full opacity-20 blur-3xl"
+        style={GLOW_STYLE}
         aria-hidden
       />
-      <CardContent className="p-5 relative space-y-3">
+      <CardContent className="relative space-y-3 p-5">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Preço por kit</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Preço por kit
+          </p>
           {isValid && (
-            <Badge className="bg-success/15 text-success border-success/30 hover:bg-success/20 text-[10px] h-5 gap-1">
+            <Badge className="h-5 gap-1 border-success/30 bg-success/15 text-[10px] text-success hover:bg-success/20">
               <TrendingUp className="h-2.5 w-2.5" /> Pronto
             </Badge>
           )}
@@ -59,10 +71,10 @@ export function KitHeroPricingCard({ unitPrice, total, kitQuantity, isValid, has
             {formatCurrency(unitPrice)}
           </span>
         </div>
-        <div className="pt-3 border-t border-border/40 space-y-1.5">
+        <div className="space-y-1.5 border-t border-border/40 pt-3">
           <div className="flex items-baseline justify-between text-xs">
             <span className="text-muted-foreground">Total ({kitQuantity}x)</span>
-            <span className="font-display font-bold text-base tabular-nums text-primary">
+            <span className="font-display text-base font-bold tabular-nums text-primary">
               {formatCurrency(total)}
             </span>
           </div>

@@ -87,6 +87,29 @@ Processa aprovações de orçamentos via token.
 
 ---
 
+
+## Matriz padronizada de status por endpoint
+
+> Referência para testes de contrato das Edge Functions principais.
+
+| Endpoint | Sucesso | Validação | Auth | Não encontrado | Conflito | Erro interno |
+|---|---:|---:|---:|---:|---:|---:|
+| `ai-recommendations` | 200 | 400/422 | 401/403 | 404 | 409 | 500 |
+| `bitrix-sync` | 200/202 | 400/422 | 401/403 | 404 | 409 | 500 |
+| `expert-chat` | 200 | 400/422 | 401/403 | 404 | 409 | 500 |
+| `quote-approval` | 200 | 400/422 | 401/403 | 404 | 409 | 500 |
+
+### Regras de aplicação
+
+- **Sucesso (2xx):** processamento concluído (ou aceito para processamento assíncrono em `bitrix-sync`).
+- **Validação (400/422):** payload ausente, inválido ou semanticamente inconsistente.
+- **Auth (401/403):** token ausente/inválido ou sem role/permissão exigida.
+- **Não encontrado (404):** recurso/token/identificador não localizado.
+- **Conflito (409):** idempotência, duplicidade ou estado concorrente incompatível.
+- **Erro interno (500):** falha não tratada no servidor.
+
+---
+
 ## Schemas de Banco
 
 ### Produtos (products)

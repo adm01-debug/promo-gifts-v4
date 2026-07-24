@@ -51,7 +51,7 @@ import { InstrumentationToggleButton } from '@/components/admin/telemetry/Instru
 // para evitar CLS).
 //
 // Cards selecionados por peso: TelemetryCharts (recharts), HighLimitTelemetryCard
-// (recharts + agregações), ColdStartRetriesPanel, OptimizationQueuePanel
+// (recharts + agregações), OptimizationQueuePanel
 // (tabela com mutations), ResolveProductsSelectComparisonCard.
 // ============================================================================
 const TelemetryCharts = lazy(() =>
@@ -89,34 +89,19 @@ const OptimizationQueuePanel = lazy(() =>
     default: m.OptimizationQueuePanel,
   })),
 );
-const PlatformFailureCards = lazy(() =>
-  import('@/components/admin/telemetry/PlatformFailureCards').then((m) => ({
-    default: m.PlatformFailureCards,
-  })),
-);
-const PlatformFailureAlertBanner = lazy(() =>
-  import('@/components/admin/telemetry/PlatformFailureAlertBanner').then((m) => ({
-    default: m.PlatformFailureAlertBanner,
-  })),
-);
 const AppHealthDashboard = lazy(() =>
   import('@/components/admin/telemetry/AppHealthDashboard').then((m) => ({
     default: m.AppHealthDashboard,
   })),
 );
-const ColdStartRetriesPanel = lazy(() =>
-  import('@/components/admin/telemetry/ColdStartRetriesPanel').then((m) => ({
-    default: m.ColdStartRetriesPanel,
+const EdgeInvokeLivePanel = lazy(() =>
+  import('@/components/admin/telemetry/EdgeInvokeLivePanel').then((m) => ({
+    default: m.EdgeInvokeLivePanel,
   })),
 );
-const BridgesLiveCard = lazy(() =>
-  import('@/components/admin/telemetry/BridgesLiveCard').then((m) => ({
-    default: m.BridgesLiveCard,
-  })),
-);
-const BridgeAlertsCard = lazy(() =>
-  import('@/components/admin/telemetry/BridgeAlertsCard').then((m) => ({
-    default: m.BridgeAlertsCard,
+const QuoteBuilderHandoffCard = lazy(() =>
+  import('@/components/admin/telemetry/QuoteBuilderHandoffCard').then((m) => ({
+    default: m.QuoteBuilderHandoffCard,
   })),
 );
 const ColdVsWarmCrmCard = lazy(() =>
@@ -129,12 +114,6 @@ const BreakerStatusCard = lazy(() =>
     default: m.BreakerStatusCard,
   })),
 );
-const EdgeFunctionLogsPanel = lazy(() =>
-  import('@/components/admin/telemetry/EdgeFunctionLogsPanel').then((m) => ({
-    default: m.EdgeFunctionLogsPanel,
-  })),
-);
-
 const getSeverityBadge = (severity: string) => {
   switch (severity) {
     case 'very_slow':
@@ -239,9 +218,20 @@ export default function AdminTelemetriaPage() {
           <AppHealthDashboard />
         </Suspense>
 
+        {/* Onda 21 — Painel live in-memory da superfície invokeEdgeSafe (sessão atual) */}
+        <Suspense fallback={<CardSkeleton height={360} label="Carregando edge invokes live" />}>
+          <EdgeInvokeLivePanel />
+        </Suspense>
+
         {/* Guardrail automático: interrompe regressões antes que afetem usuários */}
         <Suspense fallback={<BannerSkeleton />}>
           <RegressionGuardrailBanner />
+        </Suspense>
+
+        {/* Auditoria dos handoffs do QuoteBuilder — confirma que carrinho/coleção/simulador/URL
+             continuam alimentando o QuoteBuilder após deploy e sem regressões do autosave. */}
+        <Suspense fallback={<CardSkeleton height={320} label="Carregando handoffs do QuoteBuilder" />}>
+          <QuoteBuilderHandoffCard />
         </Suspense>
 
         {/* Fila automática de otimizações — executa todas em sequência sem pausas */}
@@ -303,38 +293,6 @@ export default function AdminTelemetriaPage() {
             );
           })}
         </div>
-
-        {/* Banner de alerta + log central quando taxa de 503/cold-start excede o limite configurado */}
-        <Suspense fallback={<BannerSkeleton />}>
-          <PlatformFailureAlertBanner windowMinutes={60} />
-        </Suspense>
-
-        {/* KPIs de falhas de plataforma (503 / cold-start) — janela móvel de 60min */}
-        <Suspense fallback={<GridCardsSkeleton count={4} height={100} />}>
-          <PlatformFailureCards windowMinutes={60} />
-        </Suspense>
-
-        {/* Resumo por tentativa (attempt, base, jitter, delay, motivo) dos cold-starts em tempo real */}
-        <Suspense fallback={<CardSkeleton height={180} label="Carregando retries de cold-start" />}>
-          <ColdStartRetriesPanel />
-        </Suspense>
-
-        {/* Telemetria client-side ao vivo das chamadas às bridges (external/CRM) */}
-        <Suspense
-          fallback={<CardSkeleton height={260} label="Carregando telemetria das bridges" />}
-        >
-          <BridgesLiveCard />
-        </Suspense>
-
-        {/* Logs ao vivo das edge functions com correlação por request_id */}
-        <Suspense fallback={<CardSkeleton height={520} label="Carregando logs edge functions" />}>
-          <EdgeFunctionLogsPanel />
-        </Suspense>
-
-        {/* Alertas configuráveis por bridge — limiares de p95 e payload */}
-        <Suspense fallback={<CardSkeleton height={200} label="Carregando alertas das bridges" />}>
-          <BridgeAlertsCard />
-        </Suspense>
 
         {/* Cold vs Warm path do isolate atual do crm-db-bridge (poll ?op=diag) */}
         <Suspense fallback={<CardSkeleton height={260} label="Carregando snapshot cold/warm" />}>

@@ -10,13 +10,13 @@
  * Specific hooks (useNoveltiesSelectionMode, useReplenishmentsSelectionMode)
  * remain as thin wrappers that supply the entity-to-Product converter.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import type { Product } from "@/hooks/products";
-import type { BulkVariantSelection, BulkWizardMode } from "@/components/catalog/BulkVariantWizard";
-import { useFavoritesStore } from "@/stores/useFavoritesStore";
-import { useComparisonStore } from "@/stores/useComparisonStore";
-import { toast } from "sonner";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { Product } from '@/hooks/products';
+import type { BulkVariantSelection, BulkWizardMode } from '@/components/catalog/BulkVariantWizard';
+import { useFavoritesStore } from '@/stores/useFavoritesStore';
+import { useComparisonStore } from '@/stores/useComparisonStore';
+import { toast } from 'sonner';
 
 /**
  * Minimal contract for entities backed by this hook. Both
@@ -43,7 +43,7 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
   const [cartModalOpen, setCartModalOpen] = useState(false);
   const [variantWizardOpen, setVariantWizardOpen] = useState(false);
-  const [wizardMode, setWizardMode] = useState<BulkWizardMode>("cart");
+  const [wizardMode, setWizardMode] = useState<BulkWizardMode>('cart');
   const [wizardSelections, setWizardSelections] = useState<BulkVariantSelection[]>([]);
 
   const selectedCount = selectedIds.size;
@@ -79,32 +79,32 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
 
   const handleBulkFavorite = useCallback(() => {
-    setWizardMode("favorite");
+    setWizardMode('favorite');
     setVariantWizardOpen(true);
   }, []);
   const handleBulkCompare = useCallback(() => {
-    setWizardMode("compare");
+    setWizardMode('compare');
     setVariantWizardOpen(true);
   }, []);
   const handleBulkCollection = useCallback(() => {
-    setWizardMode("collection");
+    setWizardMode('collection');
     setVariantWizardOpen(true);
   }, []);
   const handleBulkCart = useCallback(() => {
-    setWizardMode("cart");
+    setWizardMode('cart');
     setVariantWizardOpen(true);
   }, []);
   const handleBulkQuote = useCallback(() => {
-    setWizardMode("quote");
+    setWizardMode('quote');
     setVariantWizardOpen(true);
   }, []);
 
   const handleWizardComplete = useCallback(
     (selections: BulkVariantSelection[]) => {
-      if (wizardMode === "cart") {
+      if (wizardMode === 'cart') {
         setWizardSelections(selections);
         setCartModalOpen(true);
-      } else if (wizardMode === "quote") {
+      } else if (wizardMode === 'quote') {
         if (selections.length === 0) return;
         const params = selections
           .map(
@@ -113,9 +113,9 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
                 JSON.stringify({
                   product_id: s.product.id,
                   product_name: s.product.name,
-                  product_sku: s.product.sku || "",
+                  product_sku: s.product.sku || '',
                   product_price: s.product.price,
-                  product_image: s.variant?.selected_thumbnail || s.product.images?.[0] || "",
+                  product_image: s.variant?.selected_thumbnail || s.product.images?.[0] || '',
                   quantity: 1,
                   color_name: s.variant?.color_name || null,
                   color_hex: s.variant?.color_hex || null,
@@ -123,15 +123,15 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
                 }),
               )}`,
           )
-          .join("&");
+          .join('&');
         navigate(`/orcamentos/novo?${params}`);
         toast.success(
-          `${selections.length} produto${selections.length > 1 ? "s" : ""} enviado${
-            selections.length > 1 ? "s" : ""
+          `${selections.length} produto${selections.length > 1 ? 's' : ''} enviado${
+            selections.length > 1 ? 's' : ''
           } para orçamento`,
         );
         clearSelection();
-      } else if (wizardMode === "favorite") {
+      } else if (wizardMode === 'favorite') {
         const { addFavorite, isFavorite: isFav } = useFavoritesStore.getState();
         let added = 0;
         selections.forEach((s) => {
@@ -151,9 +151,9 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
             added++;
           }
         });
-        toast.success(`${added} produto${added > 1 ? "s" : ""} favoritado${added > 1 ? "s" : ""}`);
+        toast.success(`${added} produto${added > 1 ? 's' : ''} favoritado${added > 1 ? 's' : ''}`);
         clearSelection();
-      } else if (wizardMode === "compare") {
+      } else if (wizardMode === 'compare') {
         const { addToCompare, isInCompare: isComp } = useComparisonStore.getState();
         let added = 0;
         selections.slice(0, 4).forEach((s) => {
@@ -174,10 +174,10 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
           }
         });
         toast.success(
-          `${added} produto${added > 1 ? "s" : ""} adicionado${added > 1 ? "s" : ""} à comparação`,
+          `${added} produto${added > 1 ? 's' : ''} adicionado${added > 1 ? 's' : ''} à comparação`,
         );
         clearSelection();
-      } else if (wizardMode === "collection") {
+      } else if (wizardMode === 'collection') {
         setWizardSelections(selections);
         setCollectionModalOpen(true);
       }
@@ -185,25 +185,20 @@ export function useEntitySelectionMode<TEntity extends SelectableEntity>({
     [wizardMode, navigate, clearSelection],
   );
 
-  const bulkCartProducts = useMemo(() => {
-    const ids = Array.from(selectedIds);
-    return filteredProducts
-      .filter((p) => ids.includes(p.product_id))
-      .map(entityToProduct);
-  }, [selectedIds, filteredProducts, entityToProduct]);
-
-  const selectedProducts = useMemo(() => {
-    const ids = Array.from(selectedIds);
-    return filteredProducts
-      .filter((p) => ids.includes(p.product_id))
-      .map(entityToProduct);
-  }, [selectedIds, filteredProducts, entityToProduct]);
-
-  const firstSelectedId =
-    selectedIds.size > 0 ? Array.from(selectedIds)[0] : "";
-  const firstSelectedProduct = filteredProducts.find(
-    (p) => p.product_id === firstSelectedId,
+  // BUG-09 FIX: previously bulkCartProducts and selectedProducts were two
+  // separate useMemo calls with identical code and deps — double computation
+  // on every render with active selection. Now selectedProducts is the single
+  // source of truth and bulkCartProducts is a plain alias with zero overhead.
+  const selectedProducts = useMemo(
+    () => filteredProducts.filter((p) => selectedIds.has(p.product_id)).map(entityToProduct),
+    [selectedIds, filteredProducts, entityToProduct],
   );
+
+  // Alias for backward compatibility with consumers expecting bulkCartProducts
+  const bulkCartProducts = selectedProducts;
+
+  const firstSelectedId = selectedIds.size > 0 ? Array.from(selectedIds)[0] : '';
+  const firstSelectedProduct = filteredProducts.find((p) => p.product_id === firstSelectedId);
 
   return {
     selectedIds,

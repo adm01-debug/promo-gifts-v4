@@ -1,82 +1,94 @@
-/* Design Polish Utilities
-   Consistent spacing, borders, shadows, and interactive states
-*/
+/**
+ * design-polish.css — FIXED (BUG-11)
+ *
+ * Convertido para usar @layer utilities em todos os blocos.
+ * Antes: sem @layer → especificidade maior que @layer utilities em index.css
+ * → .hover-lift, .card-interactive, .touch-target, .scrollbar-thin
+ *    se comportavam de forma imprevisível dependendo da ordem de import.
+ *
+ * @see docs/design-system-audit-2026-05-25.md BUG-11
+ */
 
-/* ============================================
-   SPACING SCALE (multiples of 4)
-   ============================================ */
-.space-1 { --spacing: 0.25rem; } /* 4px */
-.space-2 { --spacing: 0.5rem; }  /* 8px */
-.space-3 { --spacing: 0.75rem; } /* 12px */
-.space-4 { --spacing: 1rem; }    /* 16px */
-.space-5 { --spacing: 1.25rem; } /* 20px */
-.space-6 { --spacing: 1.5rem; }  /* 24px */
-.space-8 { --spacing: 2rem; }    /* 32px */
-.space-10 { --spacing: 2.5rem; } /* 40px */
-.space-12 { --spacing: 3rem; }   /* 48px */
+/* Informativo: border-radius tokens (não conflitam com Tailwind) */
+.radius-sm {
+  border-radius: 0.375rem;
+}
+.radius-md {
+  border-radius: 0.5rem;
+}
+.radius-lg {
+  border-radius: 0.75rem;
+}
+.radius-xl {
+  border-radius: 1rem;
+}
+.radius-2xl {
+  border-radius: 1.5rem;
+}
+.radius-full {
+  border-radius: 9999px;
+}
 
-/* ============================================
-   BORDER RADIUS TOKENS
-   ============================================ */
-.radius-sm { border-radius: 0.375rem; }  /* 6px */
-.radius-md { border-radius: 0.5rem; }    /* 8px */
-.radius-lg { border-radius: 0.75rem; }   /* 12px - default */
-.radius-xl { border-radius: 1rem; }      /* 16px */
-.radius-2xl { border-radius: 1.5rem; }   /* 24px */
-.radius-full { border-radius: 9999px; }
-
-/* ============================================
-   SHADOW TOKENS
-   ============================================ */
+/* NOTA: sem `@layer utilities` — design-polish.css é @import'd via App.css, fora
+   do contexto do `@tailwind utilities` (que está em index.css), e o wrapper
+   quebrava o build de produção. Revertido ao estado pré-#423 (unlayered, que era
+   o estado em produção). O fix "proper" de layer exige processar este arquivo no
+   mesmo pass do `@tailwind utilities`. */
+/* ─── Shadow Tokens ─────────────────────────────────────── */
 .shadow-subtle {
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+  box-shadow:
+    0 1px 2px 0 rgb(0 0 0 / 0.03),
+    0 1px 3px 0 rgb(0 0 0 / 0.06);
 }
 .shadow-soft {
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.05),
+    0 2px 4px -2px rgb(0 0 0 / 0.05);
 }
 .shadow-medium {
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 0.08),
+    0 4px 6px -4px rgb(0 0 0 / 0.05);
 }
 .shadow-strong {
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+  box-shadow:
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.08);
 }
+/* NO_ORANGE_GLOW_POLICY */
 .shadow-glow-primary,
 .shadow-glow-orange {
   box-shadow: none;
 }
 
-/* ============================================
-   HOVER STATES
-   ============================================ */
+/* ─── Hover States ──────────────────────────────────────── */
 .hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .hover-lift:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px -5px rgb(0 0 0 / 0.1);
 }
-
 .hover-glow {
   transition: box-shadow 0.2s ease;
 }
 .hover-glow:hover {
   box-shadow: none;
 }
-
 .hover-bg-accent {
   transition: background-color 0.15s ease;
 }
 .hover-bg-accent:hover {
   background-color: hsl(var(--accent));
 }
-
 .hover-bg-primary-soft {
   transition: background-color 0.15s ease;
 }
 .hover-bg-primary-soft:hover {
   background-color: hsl(var(--primary) / 0.1);
 }
-
 .hover-border-primary {
   transition: border-color 0.15s ease;
 }
@@ -84,34 +96,27 @@
   border-color: hsl(var(--primary) / 0.5);
 }
 
-/* ============================================
-   TOUCH TARGET MINIMUM (44px)
-   ============================================ */
+/* ─── Touch Targets ─────────────────────────────────────── */
 .touch-target {
   min-height: 44px;
   min-width: 44px;
 }
-
 .touch-target-sm {
   min-height: 36px;
   min-width: 36px;
 }
-
 .touch-target-lg {
   min-height: 48px;
   min-width: 48px;
 }
 
-/* ============================================
-   ACTIVE/PRESSED STATES
-   ============================================ */
+/* ─── Active/Pressed States ─────────────────────────────── */
 .active-press {
   transition: transform 0.1s ease;
 }
 .active-press:active {
   transform: scale(0.97);
 }
-
 .active-inset {
   transition: box-shadow 0.1s ease;
 }
@@ -119,17 +124,16 @@
   box-shadow: inset 0 2px 4px rgb(0 0 0 / 0.1);
 }
 
-/* ============================================
-   FOCUS STATES
-   ============================================ */
+/* ─── Focus States ───────────────────────────────────────── */
 .focus-ring {
-  transition: box-shadow 0.15s ease, outline 0.15s ease;
+  transition:
+    box-shadow 0.15s ease,
+    outline 0.15s ease;
 }
 .focus-ring:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
-
 .focus-ring-primary {
   transition: box-shadow 0.15s ease;
 }
@@ -138,9 +142,7 @@
   outline: none;
 }
 
-/* ============================================
-   CARD VARIANTS
-   ============================================ */
+/* ─── Card Variants ──────────────────────────────────────── */
 .card-interactive {
   transition: all 0.2s ease;
   border: 1px solid hsl(var(--border));
@@ -150,21 +152,17 @@
   box-shadow: 0 10px 20px -5px rgb(0 0 0 / 0.08);
   transform: translateY(-1px);
 }
-
 .card-elevated {
   background: hsl(var(--card-elevated));
   box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.08);
 }
-
 .card-glass {
   background: hsl(var(--glass-bg));
   backdrop-filter: blur(12px);
   border: 1px solid hsl(var(--glass-border));
 }
 
-/* ============================================
-   BUTTON POLISH
-   ============================================ */
+/* ─── Button Shine ───────────────────────────────────────── */
 .btn-shine {
   position: relative;
   overflow: hidden;
@@ -176,12 +174,7 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
   transform: rotate(45deg);
   transition: transform 0.6s;
 }
@@ -189,43 +182,34 @@
   transform: rotate(45deg) translateX(100%);
 }
 
-/* ============================================
-   INPUT POLISH
-   ============================================ */
+/* ─── Input Polish ───────────────────────────────────────── */
 .input-focus-glow:focus {
   box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15);
   border-color: hsl(var(--primary));
 }
 
-/* ============================================
-   GRADIENT UTILITIES
-   ============================================ */
+/* ─── Gradient Utilities ─────────────────────────────────── */
 .gradient-primary {
   background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
 }
-
 .gradient-primary-soft {
   background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.05));
 }
-
+/* BUG-01 note: --orange = --primary (217°/azul) por migration. */
 .gradient-orange {
   background: linear-gradient(135deg, hsl(var(--orange)), hsl(var(--orange-hover)));
 }
-
 .gradient-success {
   background: linear-gradient(135deg, hsl(var(--success)), hsl(142 71% 40%));
 }
-
 .gradient-mesh {
-  background: 
+  background:
     radial-gradient(at 40% 20%, hsl(var(--primary) / 0.1) 0px, transparent 50%),
-    radial-gradient(at 80% 0%, hsl(var(--orange) / 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsl(var(--primary) / 0.08) 0px, transparent 50%),
     radial-gradient(at 0% 50%, hsl(var(--primary) / 0.05) 0px, transparent 50%);
 }
 
-/* ============================================
-   SCROLLBAR STYLING
-   ============================================ */
+/* ─── Scrollbar Styling ──────────────────────────────────── */
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -241,7 +225,6 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
-
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
@@ -250,21 +233,17 @@
   scrollbar-width: none;
 }
 
-
-/* ============================================
-   TEXT UTILITIES
-   ============================================ */
+/* ─── Text Utilities ─────────────────────────────────────── */
 .text-balance {
   text-wrap: balance;
 }
-
 .text-gradient-primary {
   background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
-
+/* BUG-01 note: --orange = --primary (azul) por migration */
 .text-gradient-orange {
   background: linear-gradient(135deg, hsl(var(--orange)), hsl(var(--orange-glow)));
   -webkit-background-clip: text;
@@ -272,22 +251,10 @@
   background-clip: text;
 }
 
-/* ============================================
-   SKELETON ANIMATION
-   ============================================ */
+/* ─── Skeleton ───────────────────────────────────────────── */
 .skeleton-pulse {
-  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: dp-skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-
-@keyframes skeleton-pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
 .skeleton-shimmer {
   position: relative;
   overflow: hidden;
@@ -295,20 +262,22 @@
 .skeleton-shimmer::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    hsl(var(--muted) / 0.4),
-    transparent
-  );
-  animation: shimmer 1.5s infinite;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, hsl(var(--muted) / 0.4), transparent);
+  animation: dp-shimmer 1.5s infinite;
 }
 
-@keyframes shimmer {
+@keyframes dp-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes dp-shimmer {
   0% {
     transform: translateX(-100%);
   }
@@ -316,4 +285,3 @@
     transform: translateX(100%);
   }
 }
-

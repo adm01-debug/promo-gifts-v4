@@ -1,0 +1,140 @@
+name: cart-header-quality-gate
+
+# Roda o fuzzer estrutural (rápido, vitest) + spec de edge cases +
+# gera relatório automático de invariantes. Também roda os testes
+# de confidencialidade das notas internas (seller_carts.notes) e o
+# teste de RLS via Deno quando as credenciais estão disponíveis.
+# Falha o PR se qualquer invariante regredir.
+
+on:
+  pull_request:
+    paths:
+      - 'src/pages/products/SellerCartsPage.tsx'
+      - 'src/pages/products/seller-carts/**'
+      - 'src/lib/carts/shipping-deadline.ts'
+      - 'src/pages/products/__tests__/CartHeader*.test.ts'
+      - 'src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts'
+      - 'src/pages/products/__tests__/CartNotesInternalOnly.test.ts'
+      - 'src/pages/products/__tests__/CartNotesLeakGuards.test.tsx'
+      - 'src/pages/products/seller-carts/cartViewModePrefs.ts'
+      - 'src/pages/products/seller-carts/cartViewModeTelemetry.ts'
+      - 'src/pages/products/seller-carts/useMidnightReset.ts'
+      - 'src/pages/products/seller-carts/__tests__/cartViewModePrefs.test.ts'
+      - 'src/pages/products/seller-carts/__tests__/useMidnightReset.test.tsx'
+      - 'scripts/qa/smoke-cart-view-mode-prefs.ts'
+      - 'src/hooks/products/useSellerCarts.ts'
+      - 'src/hooks/products/useDebouncedCartItemActions.ts'
+      - 'src/hooks/products/__tests__/useDebouncedCartItemActions.test.tsx'
+      - 'src/contexts/SellerCartContext.tsx'
+      - 'src/contexts/__tests__/SellerCartContext.test.tsx'
+      - 'src/components/cart/CartHeaderButton.tsx'
+      - 'src/components/cart/CartItemErrorAlert.tsx'
+      - 'src/components/cart/__tests__/CartItemErrorAlert.test.tsx'
+      - 'src/components/cart/cartCompanyCnpj.ts'
+      - 'src/components/cart/__tests__/cartCompanyCnpj.test.ts'
+      - 'src/components/cart/__tests__/cartCompanyCnpjMaskContract.test.ts'
+      - 'src/utils/masks.ts'
+      - 'e2e/carrinhos/popover-cnpj-display.spec.ts'
+      - 'e2e/carrinhos/popover-cnpj-mobile.spec.ts'
+      - 'e2e/carrinhos/popover-cnpj-toggle-stability.spec.ts'
+      - 'e2e/carrinhos/popover-optimistic-latency.spec.ts'
+      - 'e2e/carrinhos/popover-plus-minus-alternate.spec.ts'
+      - 'e2e/carrinhos/popover-retry-after-error.spec.ts'
+      - 'e2e/carrinhos/popover-jittered-latency.spec.ts'
+      - 'src/components/pdf/**'
+      - 'src/utils/proposalPdfReactGenerator.ts'
+      - 'supabase/functions/quote-public-*/**'
+      - 'supabase/functions/tests/seller-carts-rls_test.ts'
+      - 'scripts/qa/cart-header-fuzz-report.mjs'
+      - '.github/workflows/cart-header-quality-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/products/SellerCartsPage.tsx'
+      - 'src/lib/carts/shipping-deadline.ts'
+      - 'src/pages/products/__tests__/CartNotesInternalOnly.test.ts'
+      - 'src/pages/products/__tests__/CartNotesLeakGuards.test.tsx'
+
+concurrency:
+  group: cart-header-qg-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: CartHeader fuzz + notas internas
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Rodar fuzz + edge cases + guarda de vazamento (timeout 6min)
+        timeout-minutes: 6
+        run: |
+          bunx vitest run \
+            src/pages/products/__tests__/CartShippingDeadlineLayout.test.ts \
+            src/pages/products/__tests__/CartHeaderExhaustiveFuzz.test.ts \
+            src/pages/products/__tests__/CartHeaderEdgeCases.test.ts \
+            src/pages/products/__tests__/CartNotesInternalOnly.test.ts \
+            src/pages/products/__tests__/CartNotesLeakGuards.test.tsx \
+            src/pages/products/seller-carts/__tests__/cartViewModePrefs.test.ts \
+            src/pages/products/seller-carts/__tests__/useMidnightReset.test.tsx \
+            src/components/cart/__tests__/cartCompanyCnpj.test.ts \
+            src/components/cart/__tests__/cartCompanyCnpjMaskContract.test.ts \
+            src/hooks/products/__tests__/useDebouncedCartItemActions.test.tsx \
+            src/contexts/__tests__/SellerCartContext.test.tsx \
+            src/components/cart/__tests__/CartItemErrorAlert.test.tsx \
+            --reporter=verbose
+
+      - name: Smoke — cartViewModePrefs carrega sem storage disponível
+        run: node_modules/.bin/tsx scripts/qa/smoke-cart-view-mode-prefs.ts
+
+      - name: Gerar relatório de invariantes
+        if: always()
+        run: node scripts/qa/cart-header-fuzz-report.mjs
+
+      - name: Publicar relatório como artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-header-fuzz-report
+          path: qa/reports/cart-header-fuzz-report.md
+          retention-days: 30
+
+      - name: Publicar sumário no job
+        if: always()
+        run: |
+          if [ -f qa/reports/cart-header-fuzz-report.md ]; then
+            cat qa/reports/cart-header-fuzz-report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+  rls-integration:
+    name: seller_carts RLS (Deno, skip-graceful sem credenciais)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    # Só executa quando os segredos existirem. Sem eles o job é pulado
+    # (não falha), mantendo o gate estável em PRs de contribuidores externos.
+    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      TEST_SELLER_A_JWT: ${{ secrets.TEST_SELLER_A_JWT }}
+      TEST_SELLER_B_JWT: ${{ secrets.TEST_SELLER_B_JWT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Rodar teste de RLS
+        run: deno test --allow-net --allow-env supabase/functions/tests/seller-carts-rls_test.ts

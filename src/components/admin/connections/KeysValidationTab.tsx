@@ -23,7 +23,7 @@ import { Progress } from '@/components/ui/progress';
 import { useSecretsManager, type SecretStatus } from '@/hooks/admin';
 import { cn } from '@/lib/utils';
 
-type Severity = 'required' | 'recommended' | 'optional';
+type Severity = 'optional' | 'recommended' | 'required';
 
 type ExpectedKey = {
   name: string;
@@ -162,7 +162,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
 type EvalRow = {
   group: FeatureGroup;
   expected: ExpectedKey;
-  status: 'ok' | 'empty' | 'missing';
+  status: 'empty' | 'missing' | 'ok';
   source: SecretStatus['source'] | null;
   maskedSuffix: string | null;
 };
@@ -205,7 +205,7 @@ const STATUS_META: Record<
 };
 
 export function KeysValidationTab() {
-  const { secrets, list, loading } = useSecretsManager();
+  const { secrets, list, isLoading: loading } = useSecretsManager();
   const [filter, setFilter] = useState('');
   const [onlyIssues, setOnlyIssues] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());

@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.fn_process_raw_v2(uuid, integer);

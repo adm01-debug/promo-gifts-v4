@@ -5,26 +5,26 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 export type AuditAction =
-  | 'mcp_key.issued'
-  | 'mcp_key.rotated'
-  | 'mcp_key.updated'
-  | 'mcp_key.revoked'
-  | 'mcp_key.scope_escalated'
   | 'mcp_key.auto_revoked'
-
   | 'mcp_key.issue_denied'
   | 'mcp_key.issue_error'
+  | 'mcp_key.issued'
   | 'mcp_key.revoke_denied'
   | 'mcp_key.revoke_error'
-  | 'mcp_key.update_denied'
-  | 'mcp_key.update_error'
+  | 'mcp_key.revoked'
   | 'mcp_key.rotate_denied'
   | 'mcp_key.rotate_error'
-  | 'mcp_tool.granted'
+  | 'mcp_key.rotated'
+  | 'mcp_key.scope_escalated'
+  | 'mcp_key.update_denied'
+  | 'mcp_key.update_error'
+  | 'mcp_key.updated'
   | 'mcp_tool.denied'
-  | 'mcp_tool.error';
+  | 'mcp_tool.error'
+  | 'mcp_tool.granted';
 
 export interface AuditFeedRow {
   id: string;
@@ -40,7 +40,7 @@ export interface AuditFeedRow {
   started_at?: string | null;
   finished_at?: string | null;
   duration_ms?: number | null;
-  status?: 'success' | 'error' | 'denied' | 'partial' | null;
+  status?: 'denied' | 'error' | 'partial' | 'success' | null;
   payload_summary?: Record<string, unknown> | null;
   source?: string | null;
   // Derivados
@@ -52,7 +52,7 @@ export interface AuditFeedRow {
 }
 
 export interface AuditFilters {
-  action: 'all' | AuditAction;
+  action: AuditAction | 'all';
   query: string;
   onlyFull: boolean;
   keyId?: string;
@@ -93,23 +93,29 @@ export function useMcpAuditFeed() {
     }
 
     const base = (data ?? []) as AuditFeedRow[];
-    const userIds = Array.from(new Set(base.map((r) => r.user_id).filter(Boolean))) as string[];
+    const userIds = [...new Set(base.map((r) => r.user_id).filter(Boolean))] as string[];
     const profiles: Record<string, { email?: string | null; full_name?: string | null }> = {};
     if (userIds.length > 0) {
-      const { data: profs } = await supabase
+      // BUG-MCPAUDITFEED-PROFILES-SELECT-SILENT-FAIL FIX: { data: profs } without error
+      // check — RLS failure silently left actor_email/actor_name null on all feed rows.
+      const { data: profs, error: profsErr } = await supabase
         .from('profiles')
         .select('user_id, email, full_name')
         .in('user_id', userIds);
-      (profs ?? []).forEach(
-        (p: { user_id: string; email?: string | null; full_name?: string | null }) => {
-          profiles[p.user_id] = { email: p.email, full_name: p.full_name };
-        },
-      );
+      if (profsErr) {
+        logger.warn('[useMcpAuditFeed] profile enrichment failed — actor info unavailable:', profsErr);
+      } else {
+        (profs ?? []).forEach(
+          (p: { user_id: string | null; email?: string | null; full_name?: string | null }) => {
+            if (p.user_id) profiles[p.user_id] = { email: p.email, full_name: p.full_name };
+          },
+        );
+      }
     }
 
     const enriched = base.map<AuditFeedRow>((r) => {
       const d = (r.details ?? {}) as Record<string, unknown>;
-      const scopes = (d.scopes ?? d.after?.['scopes'] ?? []) as string[];
+      const scopes = (d.scopes ?? (d.after as Record<string, unknown>)?.scopes ?? []) as string[];
       const isFull = (Array.isArray(scopes) && scopes.includes('*')) || d.is_full_access === true;
       const escalated = d.escalated_to_full === true || r.action === 'mcp_key.scope_escalated';
       const prof = r.user_id ? profiles[r.user_id] : undefined;

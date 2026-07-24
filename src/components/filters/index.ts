@@ -1,8 +1,8 @@
 /**
  * Filter components for data management
  */
-export { 
-  SavedFilters, 
+export {
+  SavedFilters,
   useSavedFilters,
   FilterChip,
   ActiveFiltersBar,
@@ -10,4 +10,4 @@ export {
   type SavedFiltersProps,
   type FilterChipProps,
   type ActiveFiltersBarProps,
-} from "./SavedFilters";
+} from './SavedFilters';

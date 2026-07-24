@@ -12,10 +12,11 @@
  *                  ou auto-test parado há >2x intervalo.
  *  - P2 (info):    tudo verde / informacional.
  */
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
-export type PulseSeverity = "P0" | "P1" | "P2";
+export type PulseSeverity = 'P0' | 'P1' | 'P2';
 
 export interface PulseBarStatus {
   severity: PulseSeverity;
@@ -38,43 +39,55 @@ async function fetchStatus(): Promise<PulseBarStatus> {
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
 
+  // BUG-PULSEBAR-PARALLEL-QUERIES-SILENT-FAIL FIX: all 8 Promise.all results destructured
+  // only { count } or { data } — error was silently discarded. RLS failure returned 0/null
+  // for every KPI, making the dashboard appear fully green when infra was actually broken.
   const [
-    { count: activeWebhooks },
-    { count: totalWebhooks },
-    { data: deliveries24h },
-    { data: lastSuccess },
-    { count: failingConnections },
-    { data: rotations },
-    { count: autoDisabledWebhooks },
-    { data: lastAutoTest },
+    { count: activeWebhooks, error: e1 },
+    { count: totalWebhooks, error: e2 },
+    { data: deliveries24h, error: e3 },
+    { data: lastSuccess, error: e4 },
+    { count: failingConnections, error: e5 },
+    { data: rotations, error: e6 },
+    { count: autoDisabledWebhooks, error: e7 },
+    { data: lastAutoTest, error: e8 },
   ] = await Promise.all([
-    supabase.from("outbound_webhooks").select("id", { count: "exact", head: true }).eq("active", true),
-    supabase.from("outbound_webhooks").select("id", { count: "exact", head: true }),
-    supabase.from("webhook_deliveries").select("success").gte("delivered_at", since24h),
     supabase
-      .from("webhook_deliveries")
-      .select("delivered_at")
-      .eq("success", true)
-      .order("delivered_at", { ascending: false })
+      .from('outbound_webhooks')
+      .select('id', { count: 'exact', head: true })
+      .eq('active', true),
+    supabase.from('outbound_webhooks').select('id', { count: 'exact', head: true }),
+    supabase.from('webhook_deliveries').select('success').gte('delivered_at', since24h),
+    supabase
+      .from('webhook_deliveries')
+      .select('delivered_at')
+      .eq('success', true)
+      .order('delivered_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
     supabase
-      .from("external_connections")
-      .select("id", { count: "exact", head: true })
-      .eq("last_test_ok", false),
-    supabase.from("secret_rotation_log").select("secret_name, rotated_at").order("rotated_at", { ascending: false }),
+      .from('external_connections')
+      .select('id', { count: 'exact', head: true })
+      .eq('last_test_ok', false),
     supabase
-      .from("outbound_webhooks")
-      .select("id", { count: "exact", head: true })
-      .not("auto_disabled_at", "is", null),
+      .from('secret_rotation_log')
+      .select('secret_name, rotated_at')
+      .order('rotated_at', { ascending: false }),
     supabase
-      .from("connection_test_history")
-      .select("tested_at")
-      .eq("triggered_by", "cron")
-      .order("tested_at", { ascending: false })
+      .from('outbound_webhooks')
+      .select('id', { count: 'exact', head: true })
+      .not('auto_disabled_at', 'is', null),
+    supabase
+      .from('connection_test_history')
+      .select('tested_at')
+      .eq('triggered_by', 'cron')
+      .order('tested_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
   ]);
+
+  const firstError = e1 ?? e2 ?? e3 ?? e4 ?? e5 ?? e6 ?? e7 ?? e8;
+  if (firstError) throw firstError;
 
   const total = deliveries24h?.length ?? 0;
   const success = deliveries24h?.filter((d) => d.success).length ?? 0;
@@ -94,7 +107,7 @@ async function fetchStatus(): Promise<PulseBarStatus> {
 
   if (autoDisabled > 0) {
     reasonsP0.push(
-      `${autoDisabled} webhook${autoDisabled === 1 ? "" : "s"} desativado${autoDisabled === 1 ? "" : "s"} pelo circuit breaker (pausado após muitas falhas)`,
+      `${autoDisabled} webhook${autoDisabled === 1 ? '' : 's'} desativado${autoDisabled === 1 ? '' : 's'} pelo circuit breaker (pausado após muitas falhas)`,
     );
   }
   if (rate !== null && rate < 70) {
@@ -102,28 +115,28 @@ async function fetchStatus(): Promise<PulseBarStatus> {
   }
   if (failing > 0) {
     // Falhas pontuais sem janela de continuidade ⇒ P1; janela é avaliada no banner separado.
-    reasonsP1.push(`${failing} conexão${failing === 1 ? "" : "ões"} com último teste falhando`);
+    reasonsP1.push(`${failing} conexão${failing === 1 ? '' : 'ões'} com último teste falhando`);
   }
   if (rate !== null && rate >= 70 && rate < 95) {
     reasonsP1.push(`Sucesso 24h em atenção: ${rate.toFixed(1)}% (alvo ≥95%)`);
   }
   if (staleSecrets > 0) {
     reasonsP1.push(
-      `${staleSecrets} credencial${staleSecrets === 1 ? "" : "is"} sem rotação há >90 dias (rotation overdue)`,
+      `${staleSecrets} credencial${staleSecrets === 1 ? '' : 'is'} sem rotação há >90 dias (rotation overdue)`,
     );
   }
 
-  let severity: PulseSeverity = "P2";
-  let headline = "Todas as integrações operando dentro do esperado";
+  let severity: PulseSeverity = 'P2';
+  let headline = 'Todas as integrações operando dentro do esperado';
   let reasons: string[] = [];
 
   if (reasonsP0.length > 0) {
-    severity = "P0";
-    headline = "Incidente crítico em integrações — ação imediata";
+    severity = 'P0';
+    headline = 'Incidente crítico em integrações — ação imediata';
     reasons = [...reasonsP0, ...reasonsP1];
   } else if (reasonsP1.length > 0) {
-    severity = "P1";
-    headline = "Sinais de degradação — monitorar de perto";
+    severity = 'P1';
+    headline = 'Sinais de degradação — monitorar de perto';
     reasons = reasonsP1;
   }
 
@@ -146,10 +159,16 @@ async function fetchStatus(): Promise<PulseBarStatus> {
 }
 
 export function usePulseBarStatus() {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 4 HEAD requests sem JWT validado.
+  // enabled: rolesLoaded && isAdmin bloqueia até JWT pronto.
+  const { rolesLoaded, isAdmin } = useAuth();
   return useQuery({
-    queryKey: ["connections-pulse-bar"],
+    queryKey: ['connections-pulse-bar'],
     queryFn: fetchStatus,
+    enabled: rolesLoaded && Boolean(isAdmin),
     refetchInterval: 60_000,
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

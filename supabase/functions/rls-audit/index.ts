@@ -1,8 +1,11 @@
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { safeErrorResponse } from "../_shared/error-response.ts";
 // RLS Audit: testa SELECT/INSERT/UPDATE/DELETE em quotes, orders e
 // discount_approval_requests usando o JWT do usuário logado (vendedor).
 // Cada cenário retorna ✅/❌ + detalhe para evidência de auditoria.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.0";
+// BULK-SDK-FIX: Changed from esm.sh URL to npm: direct.
+// Version upgraded @2.95.0 → @2.49.4 to align with project standard (supabase-js@2.49.4).
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 
 interface ScenarioResult {
   table: string;
@@ -359,9 +362,6 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (e) {
-    return new Response(
-      JSON.stringify({ error: "internal", detail: String((e as Error).message) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return safeErrorResponse(e, { corsHeaders, publicMessage: "internal", logLabel: "rls-audit error:" });
   }
 });

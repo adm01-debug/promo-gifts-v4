@@ -23,21 +23,21 @@ export function KitPersonalizationPreview({ kitState, className }: KitPersonaliz
 
   const boxPers = kitState.personalization.box;
   const itemPersEntries = Object.entries(kitState.personalization.items).filter(
-    ([, p]) => p?.enabled
+    ([, p]) => p?.enabled,
   );
 
   const hasAnyPersonalization = boxPers?.enabled || itemPersEntries.length > 0;
 
   return (
     <Card className={cn('overflow-hidden', className)}>
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="space-y-3 p-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-display font-semibold text-sm flex items-center gap-2">
+          <h3 className="flex items-center gap-2 font-display text-sm font-semibold">
             <Sparkles className="h-4 w-4 text-primary" />
             Personalização ao vivo
           </h3>
           <div className="flex items-center gap-2">
-            <Label htmlFor="pers-toggle" className="text-xs text-muted-foreground cursor-pointer">
+            <Label htmlFor="pers-toggle" className="cursor-pointer text-xs text-muted-foreground">
               {showPersonalization ? 'Com logo' : 'Sem logo'}
             </Label>
             <Switch
@@ -61,7 +61,7 @@ export function KitPersonalizationPreview({ kitState, className }: KitPersonaliz
               <div
                 className={cn(
                   'flex items-center justify-between rounded-md border p-2 transition-opacity',
-                  !showPersonalization && 'opacity-30'
+                  !showPersonalization && 'opacity-30',
                 )}
               >
                 <div className="flex items-center gap-2 text-sm">
@@ -74,7 +74,7 @@ export function KitPersonalizationPreview({ kitState, className }: KitPersonaliz
                   )}
                 </div>
                 {boxPers.estimatedPrice ? (
-                  <span className="text-xs text-primary font-medium">
+                  <span className="text-xs font-medium text-primary">
                     +{formatCurrency(boxPers.estimatedPrice)}
                   </span>
                 ) : null}
@@ -89,19 +89,19 @@ export function KitPersonalizationPreview({ kitState, className }: KitPersonaliz
                   key={itemId}
                   className={cn(
                     'flex items-center justify-between rounded-md border p-2 transition-opacity',
-                    !showPersonalization && 'opacity-30'
+                    !showPersonalization && 'opacity-30',
                   )}
                 >
-                  <div className="flex items-center gap-2 text-sm min-w-0">
-                    <span className="font-medium truncate">{item.name}</span>
+                  <div className="flex min-w-0 items-center gap-2 text-sm">
+                    <span className="truncate font-medium">{item.name}</span>
                     {p?.techniqueName && (
-                      <Badge variant="outline" className="text-[10px] shrink-0">
+                      <Badge variant="outline" className="shrink-0 text-[10px]">
                         {p.techniqueName}
                       </Badge>
                     )}
                   </div>
                   {p?.estimatedPrice ? (
-                    <span className="text-xs text-primary font-medium shrink-0">
+                    <span className="shrink-0 text-xs font-medium text-primary">
                       +{formatCurrency(p.estimatedPrice)}
                     </span>
                   ) : null}
@@ -109,7 +109,7 @@ export function KitPersonalizationPreview({ kitState, className }: KitPersonaliz
               );
             })}
 
-            <div className="flex items-center justify-between pt-2 border-t text-xs">
+            <div className="flex items-center justify-between border-t pt-2 text-xs">
               <span className="text-muted-foreground">Acréscimo total/kit</span>
               <span className="font-semibold text-primary">
                 {formatCurrency(kitState.personalizationPrice)}

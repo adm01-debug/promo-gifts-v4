@@ -1,0 +1,241 @@
+name: Cart Quality — Typecheck, Unit & E2E
+
+# Pipeline unificado de qualidade do módulo Cart.
+# Consolida os antigos workflows `cart-unit.yml` e `e2e-carrinhos.yml`.
+#
+# IMPORTANTE: o job `carrinhos` PRESERVA o nome exato porque é required check
+# no Branch Protection (ver .github/required-checks.json → ruleset "main").
+# Não renomeie sem atualizar required-checks.json e o ruleset no GitHub.
+#
+# Roteamento (per-job via dorny/paths-filter):
+#   required-checks-drift → SEMPRE (gate da SSOT)
+#   typecheck-unit         → quando QUALQUER coisa que afete CartSidebar muda
+#                            (CartSidebar.tsx, components/cart/**, contexto,
+#                             hook, tests, workflow)
+#   carrinhos (E2E)        → SOMENTE quando seller-carts/** OU components/cart/**
+#                            mudarem (escopo enxuto, evita E2E em PRs de teste)
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'src/components/cart/**'
+      - 'src/pages/products/seller-carts/**'
+      - 'src/pages/products/**'
+      - 'src/contexts/SellerCartContext.tsx'
+      - 'src/contexts/__tests__/SellerCartContext.test.tsx'
+      - 'src/hooks/products/useSellerCarts.ts'
+      - 'tests/components/cart/**'
+      - 'e2e/carrinhos/**'
+      - 'e2e/helpers/cart-mock.ts'
+      - '.github/workflows/cart-quality.yml'
+      - '.github/required-checks.json'
+      - 'scripts/check-required-checks.mjs'
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - 'src/components/cart/**'
+      - 'src/pages/products/seller-carts/**'
+      - 'src/pages/products/**'
+      - 'src/contexts/SellerCartContext.tsx'
+      - 'src/contexts/__tests__/SellerCartContext.test.tsx'
+      - 'src/hooks/products/useSellerCarts.ts'
+      - 'tests/components/cart/**'
+      - 'e2e/carrinhos/**'
+      - 'e2e/helpers/cart-mock.ts'
+      - '.github/workflows/cart-quality.yml'
+      - '.github/required-checks.json'
+      - 'scripts/check-required-checks.mjs'
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────
+  # 0) Classifica o diff em buckets para ligar/desligar jobs por escopo real.
+  # ─────────────────────────────────────────────────────────────────────────
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      unit: ${{ steps.filter.outputs.unit }}
+      e2e: ${{ steps.filter.outputs.e2e }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            unit:
+              - 'src/pages/products/seller-carts/CartSidebar.tsx'
+              - 'src/pages/products/seller-carts/**'
+              - 'src/components/cart/**'
+              - 'src/contexts/SellerCartContext.tsx'
+              - 'src/contexts/__tests__/SellerCartContext.test.tsx'
+              - 'src/hooks/products/useSellerCarts.ts'
+              - 'tests/components/cart/**'
+              - '.github/workflows/cart-quality.yml'
+            e2e:
+              - 'src/pages/products/seller-carts/**'
+              - 'src/components/cart/**'
+              - 'e2e/carrinhos/**'
+              - 'e2e/helpers/cart-mock.ts'
+              - '.github/workflows/cart-quality.yml'
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 1) Gate SSOT: required check ainda aponta para este workflow + job carrinhos
+  # ─────────────────────────────────────────────────────────────────────────
+  required-checks-drift:
+    name: required-checks-drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Validar SSOT de required checks (cart-quality → carrinhos)
+        run: node scripts/check-required-checks.mjs
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 2) Typecheck + Unit Tests — dispara em qualquer mudança que afete o sidebar
+  # ─────────────────────────────────────────────────────────────────────────
+  typecheck-unit:
+    name: typecheck-unit
+    needs: changes
+    # PR: só roda se o bucket "unit" mudou. push/dispatch: sempre roda.
+    if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.unit == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+      VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (baseline gate)
+        run: node scripts/check-tsc-baseline.mjs
+
+      - name: Verificar ausência de símbolos removidos do CartSidebar
+        run: |
+          set -e
+          echo "Procurando referências residuais a SmartSuggestions / ActionHistoryPanel / CartHealthChecklist em src/..."
+          if rg -n "SmartSuggestions|ActionHistoryPanel|CartHealthChecklist|recordAction|getActionHistory|clearActionHistory|SuggestionSkeleton" \
+               -g '!src/components/kit-builder/**' \
+               -g '!src/components/cart/CartUtilComponents.tsx' \
+               src/; then
+            echo "❌ Encontradas referências a símbolos removidos do módulo Cart."
+            exit 1
+          fi
+          echo "✅ Nenhuma referência residual."
+
+      - name: Testes unitários focados em Cart
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            src/pages/products/seller-carts/__tests__/ \
+            src/contexts/__tests__/SellerCartContext.test.tsx \
+            tests/components/cart/ \
+            --reporter=default
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # 3) E2E carrinhos — escopo enxuto: só roda quando o módulo Cart muda
+  # ─────────────────────────────────────────────────────────────────────────
+  carrinhos:
+    name: carrinhos
+    needs: [changes, typecheck-unit]
+    # PR: só roda se o bucket "e2e" mudou. push/dispatch: sempre roda.
+    if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.e2e == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: 'true'
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npm run test:e2e:install
+
+      # Smoke rápido do sidebar (sem painéis legados). Falha cedo se alguém
+      # reintroduzir "Saúde do carrinho" / "Inteligência de vendas" / etc.
+      - name: E2E smoke — CartSidebar sem painéis legados
+        run: npx playwright test e2e/carrinhos/sidebar-no-legacy-labels.spec.ts --project=chromium-authed --retries=1
+
+      # Smoke do header/sidebar refletindo apenas o carrinho ativo.
+      # Falha cedo se voltarmos a exibir agregados globais no detalhe.
+      - name: E2E smoke — Header e sidebar refletem carrinho ativo (Chromium)
+        run: |
+          npx playwright test \
+            e2e/carrinhos/header-reflects-active-cart.spec.ts \
+            e2e/carrinhos/sidebar-reflects-active-cart.spec.ts \
+            e2e/carrinhos/active-cart-edge-cases.spec.ts \
+            e2e/carrinhos/active-cart-refresh-consistency.spec.ts \
+            e2e/carrinhos/active-cart-parallel-actions.spec.ts \
+            e2e/carrinhos/active-cart-network-failure.spec.ts \
+            --project=chromium-authed --retries=1
+
+      # Repete os mesmos invariants em Firefox — falha o build se qualquer
+      # invariant do header quebrar em engine diferente (regex NBSP, locale,
+      # ordem de eventos, hidratação).
+      - name: Install Playwright Firefox
+        run: npx playwright install --with-deps firefox
+      - name: E2E smoke — Header e sidebar refletem carrinho ativo (Firefox)
+        run: |
+          npx playwright test \
+            e2e/carrinhos/header-reflects-active-cart.spec.ts \
+            e2e/carrinhos/sidebar-reflects-active-cart.spec.ts \
+            e2e/carrinhos/active-cart-edge-cases.spec.ts \
+            e2e/carrinhos/active-cart-refresh-consistency.spec.ts \
+            e2e/carrinhos/active-cart-parallel-actions.spec.ts \
+            e2e/carrinhos/active-cart-network-failure.spec.ts \
+            --project=firefox-authed --retries=1
+
+      # Smoke dos handoffs Carrinho/URL → QuoteBuilder (BUG-CART-HANDOFF).
+      # Falha cedo se o autosave voltar a sobrescrever dados vindos do carrinho
+      # ou de URL params ao trocar de aba ou recarregar a página.
+      - name: E2E smoke — Handoffs QuoteBuilder (carrinho + URL params)
+        run: |
+          npx playwright test \
+            e2e/carrinhos/cart-to-quote-handoff.spec.ts \
+            e2e/carrinhos/cart-to-quote-handoff-persistence.spec.ts \
+            e2e/carrinhos/quote-handoff-url-params.spec.ts \
+            --project=chromium-authed --retries=1
+
+      # Suíte completa de carrinhos (popover footer matrix, limite 10, etc.).
+      # Falha = merge bloqueado pelo branch protection (required check).
+      - name: Run E2E — Carrinhos (suíte completa)
+        run: npm run test:e2e:carrinhos -- --retries=2
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-carrinhos
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload snapshot diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-popover-snapshot-diffs
+          path: |
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace.zip
+          retention-days: 14
+          if-no-files-found: ignore

@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useDevGate } from "@/hooks/admin/useDevGate";
+import { useDevGate } from '@/hooks/admin/useDevGate';
 import { useAuth } from '@/contexts/AuthContext';
 import { devInfraGate } from '@/lib/system/dev-gate/DevInfraGate';
 
@@ -47,6 +48,7 @@ describe('useDevGate Hook — Unit Tests', () => {
     const spy = vi.spyOn(devInfraGate, 'shouldShow').mockReturnValue(false);
 
     vi.useFakeTimers();
+    // eslint-disable-next-line @typescript-eslint/require-await
     await act(async () => {
       devInfraGate.invalidateCache();
       vi.advanceTimersByTime(100);

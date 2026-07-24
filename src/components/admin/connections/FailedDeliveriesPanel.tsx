@@ -15,9 +15,12 @@ import {
 } from '@/components/ui/table';
 import { RefreshCw, RotateCw, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ExportButton } from './ExportButton';
+import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface FailedDelivery {
   id: string;
@@ -51,9 +54,9 @@ export function FailedDeliveriesPanel() {
         .order('delivered_at', { ascending: false })
         .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
       if (eventFilter.trim()) q = q.ilike('event', `%${eventFilter.trim()}%`);
-      const { data, count, error } = await q;
+      const { data: rows, count, error } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as unknown as FailedDelivery[], count: count ?? 0 };
+      return { rows: (rows ?? []) as FailedDelivery[], count: count ?? 0 };
     },
     refetchInterval: 30_000,
   });
@@ -61,7 +64,9 @@ export function FailedDeliveriesPanel() {
   const replay = async (id: string) => {
     setReplayingId(id);
     try {
-      const { data: result, error } = await supabase.functions.invoke('webhook-dispatcher', {
+      const { data: result, error } = await invokeEdge<{
+        results?: Array<{ status: string; attempts?: number }>;
+      }>('webhook-dispatcher', {
         body: { event: '__replay__', replay_delivery_id: id },
       });
       if (error) throw error;
@@ -74,7 +79,9 @@ export function FailedDeliveriesPanel() {
       qc.invalidateQueries({ queryKey: ['failed-deliveries'] });
       qc.invalidateQueries({ queryKey: ['integrations-health'] });
     } catch (err) {
-      toast.error('Falha ao reenviar', { description: (err as Error).message });
+      toast.error('Falha ao reenviar', {
+        description: toErrorMessage(err),
+      });
     } finally {
       setReplayingId(null);
     }
@@ -122,7 +129,7 @@ export function FailedDeliveriesPanel() {
               formats={['csv', 'json']}
             />
             <Button size="sm" variant="ghost" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw className={cn('h-3 w-3', isFetching && 'animate-spin')} />
             </Button>
           </div>
         </div>

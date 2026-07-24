@@ -1,0 +1,1 @@
+CREATE POLICY IF NOT EXISTS collections_own_select ON public.collections FOR SELECT TO authenticated USING ((user_id = ( SELECT auth.uid() AS uid)) OR is_supervisor_or_above(( SELECT auth.uid() AS uid)))

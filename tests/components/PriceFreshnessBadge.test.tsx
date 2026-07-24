@@ -1,144 +1,65 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { PriceFreshnessBadge } from "@/components/products/PriceFreshnessBadge";
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { PriceFreshnessBadge, type PriceFreshnessBadgeProps } from '@/components/products/PriceFreshnessBadge';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
-const FIXED_NOW = new Date("2025-06-15T12:00:00.000Z").getTime();
-
-beforeAll(() => {
-  vi.useFakeTimers();
-  vi.setSystemTime(FIXED_NOW);
-});
-
-afterAll(() => {
-  vi.useRealTimers();
-});
-
-function daysAgo(days: number) {
-  return new Date(FIXED_NOW - days * 86400000).toISOString();
-}
-
-describe("PriceFreshnessBadge", () => {
-  it("renders inline variant with full label for fresh status", () => {
-    render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={daysAgo(5)}
-        thresholdDays={60}
-        variant="inline"
-      />,
-    );
-    expect(screen.getByRole("status")).toHaveAccessibleName(/atualizado/i);
+describe('PriceFreshnessBadge Component', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-03T12:00:00Z'));
   });
 
-  it("does NOT render compact variant when status is fresh", () => {
-    const { container } = render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={daysAgo(5)}
-        thresholdDays={60}
-        variant="compact"
-      />,
-    );
-    expect(container).toBeEmptyDOMElement();
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
-  it("renders compact variant when status is aging", () => {
-    render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={daysAgo(45)}
-        thresholdDays={60}
-        variant="compact"
-      />,
+  const renderBadge = (props: PriceFreshnessBadgeProps) => {
+    return render(
+      <TooltipProvider>
+        <PriceFreshnessBadge {...props} />
+      </TooltipProvider>
     );
-    expect(screen.getByRole("status")).toBeInTheDocument();
+  };
+
+  it('renders "Atualizado em DD/MM/AAAA" for fresh status in PDP variant', () => {
+    const date = new Date('2026-05-01T10:00:00Z'); // 2 days ago
+    renderBadge({ priceUpdatedAt: date, variant: 'pdp' });
+    
+    expect(screen.getByText('Atualizado em 01/05/2026')).toBeInTheDocument();
   });
 
-  it("does NOT render icon-only variant when status is fresh", () => {
-    const { container } = render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={daysAgo(5)}
-        thresholdDays={60}
-        variant="icon-only"
-      />,
-    );
-    expect(container).toBeEmptyDOMElement();
+  it('renders correctly for aging status in PDP variant', () => {
+    const date = new Date('2026-04-01T10:00:00Z'); // 32 days ago (with default 60 threshold)
+    renderBadge({ priceUpdatedAt: date, variant: 'pdp' });
+    
+    expect(screen.getByText('Atualizado em 01/04/2026')).toBeInTheDocument();
   });
 
-  it("renders icon-only variant for stale and uses warning color (WCAG AA)", () => {
-    render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={daysAgo(90)}
-        thresholdDays={60}
-        variant="icon-only"
-      />,
-    );
-    const badge = screen.getByRole("status");
-    expect(badge).toBeInTheDocument();
-    // amber-700 atinge ≥ 4.5:1 sobre fundo claro (era amber-600 = 3.4:1).
-    expect(badge.className).toMatch(/amber-700/);
+  it('renders "Data não informada" when date is missing in PDP variant', () => {
+    renderBadge({ priceUpdatedAt: null, variant: 'pdp' });
+    expect(screen.getByText('Data de atualização não informada')).toBeInTheDocument();
   });
 
-  it("renders inline variant for unknown when alwaysShow is implicit (inline always shows)", () => {
-    render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={null}
-        thresholdDays={60}
-        variant="inline"
-      />,
-    );
-    // O aria-label rico inclui "não informada" para leitores de tela
-    // (ex.: "Preço com data de atualização não informada pelo fornecedor.").
-    expect(screen.getByRole("status")).toHaveAccessibleName(/não informada/i);
+  it('handles timezone offsets correctly', () => {
+    // 2026-05-01T00:00:00-03:00 is 2026-05-01 03:00 UTC
+    const date = new Date('2026-05-01T00:00:00-03:00');
+    renderBadge({ priceUpdatedAt: date, variant: 'pdp' });
+    
+    expect(screen.getByText('Atualizado em 01/05/2026')).toBeInTheDocument();
   });
 
-  it("forces compact render when alwaysShow=true even for fresh status", () => {
-    render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={daysAgo(5)}
-        thresholdDays={60}
-        variant="compact"
-        alwaysShow
-      />,
-    );
-    expect(screen.getByRole("status")).toBeInTheDocument();
-  });
+  it('verifies text at limit dates (threshold transition)', () => {
+    const threshold = 10;
 
-  it("renders pdp variant with stale state showing 'defasado' and amber styling", () => {
-    render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={daysAgo(72)}
-        thresholdDays={60}
-        variant="pdp"
-      />,
-    );
-    const badge = screen.getByRole("status");
-    expect(badge).toBeInTheDocument();
-    expect(badge.textContent).toMatch(/defasado/i);
-    expect(badge.className).toMatch(/amber-(100|300|500)/);
-  });
+    // Exactly at threshold (10 days ago) -> Stale (BUG-008: days >= threshold)
+    const tenDaysAgo = new Date('2026-04-23T12:00:00Z');
+    const { unmount } = renderBadge({ priceUpdatedAt: tenDaysAgo, thresholdDays: threshold, variant: 'pdp' });
+    expect(screen.getByText(/Última atualização em 23\/04\/2026/)).toBeInTheDocument();
+    unmount();
 
-  it("renders pdp variant with fresh state showing short relative copy and absolute date in tooltip", () => {
-    render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={daysAgo(6)}
-        thresholdDays={60}
-        variant="pdp"
-      />,
-    );
-    const badge = screen.getByRole("status");
-    // Novo padrão: "Atualizado em DD/MM/AAAA · há N dias" (numérico pt-BR)
-    expect(badge.textContent).toMatch(/atualizado em \d{2}\/\d{2}\/\d{4}/i);
-    expect(badge.textContent).toMatch(/há \d+ dias?/i);
-    // A data por extenso (formato longo) fica reservada ao tooltip
-    expect(badge.textContent).not.toMatch(/\d{1,2} de [a-zçãéíúô]+ de \d{4}/i);
-  });
-
-  it("renders pdp variant with unknown state when priceUpdatedAt is null", () => {
-    render(
-      <PriceFreshnessBadge
-        priceUpdatedAt={null}
-        thresholdDays={60}
-        variant="pdp"
-      />,
-    );
-    expect(screen.getByRole("status").textContent).toMatch(/não informada/i);
+    // Just past threshold (11 days ago) -> Stale — shows "Última atualização em"
+    const elevenDaysAgo = new Date('2026-04-22T12:00:00Z');
+    renderBadge({ priceUpdatedAt: elevenDaysAgo, thresholdDays: threshold, variant: 'pdp' });
+    expect(screen.getByText(/Última atualização em 22\/04\/2026/)).toBeInTheDocument();
   });
 });

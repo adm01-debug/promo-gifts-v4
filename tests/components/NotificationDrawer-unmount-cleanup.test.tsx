@@ -27,6 +27,18 @@ vi.mock("@/hooks/ui", () => ({
     clearAll: vi.fn(),
     refresh: vi.fn(),
     prefetch: prefetchMock,
+    page: 1,
+    totalCount: 0,
+    search: "",
+    category: "all",
+    unreadOnly: false,
+    dateRange: { from: undefined, to: undefined },
+    setPage: vi.fn(),
+    setSearch: vi.fn(),
+    setCategory: vi.fn(),
+    setUnreadOnly: vi.fn(),
+    setDateRange: vi.fn(),
+    undoMarkAsRead: vi.fn(),
     push: {},
   }),
 }));
@@ -50,6 +62,10 @@ vi.mock("framer-motion", () => {
     });
   return {
     motion: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof JSX.IntrinsicElements) }),
+    m: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof JSX.IntrinsicElements) }),
+    LazyMotion: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    domMax: {},
+    domAnimation: {},
     AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   };
 });

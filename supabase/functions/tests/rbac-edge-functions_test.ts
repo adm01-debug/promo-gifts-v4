@@ -76,8 +76,6 @@ const PRIVILEGED_FUNCTIONS: GateExpectation[] = [
 for (const { fn, patterns, description } of PRIVILEGED_FUNCTIONS) {
   Deno.test({
     name: `[gate] ${fn} (${description}) exige perfil dev`,
-    sanitizeOps: false,
-    sanitizeResources: false,
     fn: async () => {
       const path = new URL(`../${fn}/index.ts`, import.meta.url);
       const source = await Deno.readTextFile(path);
@@ -154,8 +152,6 @@ const TECHNICAL_TABLES = [
 for (const table of TECHNICAL_TABLES) {
   Deno.test({
     name: `[rls] ${table}: SELECT/ALL para authenticated exige is_dev`,
-    sanitizeOps: false,
-    sanitizeResources: false,
     ignore: !pool,
     fn: async () => {
       const policies = await getPolicies(table);
@@ -193,8 +189,6 @@ for (const table of TECHNICAL_TABLES) {
 // ============================================================
 Deno.test({
   name: "[regressão] query_telemetry NÃO deve mais ter policy is_admin",
-  sanitizeOps: false,
-  sanitizeResources: false,
   ignore: !pool,
   fn: async () => {
     const policies = await getPolicies("query_telemetry");

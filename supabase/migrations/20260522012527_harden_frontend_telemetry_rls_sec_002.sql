@@ -1,4 +1,5 @@
 BEGIN;
+DROP POLICY IF EXISTS "Anyone can insert telemetry" ON public.frontend_telemetry;
 DROP POLICY IF EXISTS frontend_telemetry_insert_anon ON public.frontend_telemetry;
 DROP POLICY IF EXISTS frontend_telemetry_insert_authenticated ON public.frontend_telemetry;
 CREATE POLICY frontend_telemetry_insert_anon ON public.frontend_telemetry FOR INSERT TO anon

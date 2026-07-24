@@ -1,0 +1,92 @@
+name: E2E — CRM Callback (approved → V4 → CRM)
+
+# Executa o spec e2e/flows/28-crm-callback-approved.spec.ts sem mocking,
+# usando o CRM_CALLBACK_API_KEY real. Falha explicitamente se o secret
+# estiver ausente — este workflow NÃO pode passar em modo "skip".
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "e2e/flows/28-crm-callback-approved.spec.ts"
+      - "supabase/functions/receive-crm-callback/**"
+      - ".github/workflows/e2e-crm-callback-approved.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "e2e/flows/28-crm-callback-approved.spec.ts"
+      - "supabase/functions/receive-crm-callback/**"
+      - ".github/workflows/e2e-crm-callback-approved.yml"
+  workflow_dispatch:
+  schedule:
+    # Smoke diário 06:00 UTC (03:00 America/Sao_Paulo)
+    - cron: "0 6 * * *"
+
+concurrency:
+  group: e2e-crm-callback-approved-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-crm-callback:
+    name: approved → V4 → CRM (no-mock)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      # Preview/staging Supabase — SSOT canônico (doufsxqlfjyuvxuezpln)
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      # Segredos reais — o job falha antes do Playwright rodar se ausentes.
+      CRM_CALLBACK_API_KEY: ${{ secrets.CRM_CALLBACK_API_KEY }}
+      V4_CALLBACK_URL: ${{ secrets.V4_CALLBACK_URL }}
+      E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+      E2E_BASE_URL: http://localhost:8080
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Guard — CRM_CALLBACK_API_KEY é obrigatório (sem skip)
+        run: |
+          missing=0
+          for var in CRM_CALLBACK_API_KEY E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD; do
+            if [ -z "${!var}" ]; then
+              echo "::error::Secret obrigatório ausente: $var"
+              missing=1
+            fi
+          done
+          if [ "$missing" = "1" ]; then
+            echo "::error::Este workflow exige os secrets reais — não é permitido rodar em modo skip."
+            exit 1
+          fi
+          echo "✅ Todos os secrets obrigatórios presentes."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E — approved → V4 → CRM (sem mocking)
+        run: npx playwright test e2e/flows/28-crm-callback-approved.spec.ts --project=chromium-smoke --retries=1 --workers=1
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-crm-callback
+          path: |
+            playwright-report/
+            test-results/**/trace.zip
+            test-results/**/*.png
+            test-results/**/*.webm
+          retention-days: 30
+          if-no-files-found: ignore

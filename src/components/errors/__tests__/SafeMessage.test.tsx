@@ -30,11 +30,7 @@ describe('SafeMessage', () => {
   it('showRawForDev=false força saneamento mesmo para dev', () => {
     gateState.isAllowed = true;
     render(
-      <SafeMessage
-        error={new Error('Failed to fetch')}
-        showRawForDev={false}
-        data-testid="m"
-      />,
+      <SafeMessage error={new Error('Failed to fetch')} showRawForDev={false} data-testid="m" />,
     );
     expect(screen.getByTestId('m').textContent).not.toMatch(/Failed to fetch/);
   });

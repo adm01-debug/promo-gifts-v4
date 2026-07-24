@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Schema detection — Identifica a versão do payload de gravação.
  *
@@ -11,7 +12,7 @@
  *    sabermos quando podemos remover tradutores antigos.
  */
 
-export type PriceSchemaVersion = 'v5.9-nested' | 'v6.x-flat' | 'v7-new' | 'unknown';
+export type PriceSchemaVersion = 'unknown' | 'v5.9-nested' | 'v6.x-flat' | 'v7-new';
 
 export type SchemaStats = Record<PriceSchemaVersion, number>;
 
@@ -47,7 +48,7 @@ const MAX_RECENT = 20;
 const warnedKeys = new Set<string>();
 
 function publishStats() {
-  if (typeof window !== 'undefined') {
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
     (
       window as unknown as { __personalizationSchemaStats?: FullSchemaStats }
     ).__personalizationSchemaStats = {
@@ -139,7 +140,7 @@ export function warnUnknownSchemaOnce(key: string, payload?: unknown): void {
   if (warnedKeys.has(key)) return;
   warnedKeys.add(key);
 
-  console.warn(
+  logger.warn(
     `[personalization/adapters] Payload com schema desconhecido (${key}). ` +
       'Verifique se o backend mudou a estrutura — adapter está caindo no fallback v6.x-flat.',
     payload,

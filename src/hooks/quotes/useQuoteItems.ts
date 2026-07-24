@@ -9,8 +9,12 @@ interface Product {
   sku: string;
   price: number;
   images: string[] | null;
+  /** Quantidade mínima de pedido do fornecedor (B2B). Usada como qty inicial. */
+  minQuantity?: number;
   priceUpdatedAt?: string;
   priceFreshnessThresholdDays?: number;
+  categoryId?: string | null;
+  categoryName?: string | null;
 }
 
 export function useQuoteItems(initialItems: QuoteItem[] = []) {
@@ -52,20 +56,26 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
             idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item,
           );
           setActiveItemIndex(existingIndex);
-          // Auto-expand existing item too
           setExpandedItems((p) => new Set(p).add(existingIndex));
           toast.info(`Quantidade de "${product.name}" aumentada.`);
           return newItems;
         }
 
+        // B2B: respeita a quantidade mínima do fornecedor como qty inicial.
+        // Antes começava sempre em 1 (mesmo para produtos com mínimo de 50/100),
+        // permitindo enviar orçamento com quantidade inviável. Adicionar via busca
+        // passa a iniciar no mínimo; cliques subsequentes incrementam de 1 em 1.
+        const initialQuantity = Math.max(1, Math.floor(product.minQuantity ?? 1));
         const newItems = [
           ...prev,
           {
             product_id: product.id,
             product_name: product.name,
-            product_sku: product.sku,
+            // Persistir o SKU composto da variante (ex.: "94297-7.1") quando
+            // houver variante selecionada. Cai no SKU base se não houver.
+            product_sku: variant?.sku || product.sku,
             product_image_url: imageUrl,
-            quantity: 1,
+            quantity: initialQuantity,
             unit_price: product.price,
             color_name: colorName,
             color_hex: colorHex,
@@ -73,12 +83,13 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
             bitrix_product_id: variant?.bitrix_product_id ?? null,
             price_updated_at: product.priceUpdatedAt ?? null,
             price_freshness_threshold_days: product.priceFreshnessThresholdDays ?? null,
+            product_category_id: product.categoryId ?? null,
+            product_category_name: product.categoryName ?? null,
             personalizations: [],
           },
         ];
         const newIdx = newItems.length - 1;
         setActiveItemIndex(newIdx);
-        // Auto-expand new item so personalization is immediately visible
         setExpandedItems((p) => new Set(p).add(newIdx));
         return newItems;
       });
@@ -86,15 +97,17 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
     [],
   );
 
-
   const updateItemQuantity = useCallback((index: number, quantity: number) => {
     if (quantity < 1) return;
     setItems((prev) => prev.map((item, idx) => (idx === index ? { ...item, quantity } : item)));
   }, []);
 
   const updateItemPrice = useCallback((index: number, price: number) => {
+    // Clamp defensivo: preço nunca negativo nem NaN (espelha CHECK unit_price >= 0 no banco
+    // e evita que um valor inválido só estoure no momento do save).
+    const safePrice = Math.max(0, Number.isFinite(price) ? price : 0);
     setItems((prev) =>
-      prev.map((item, idx) => (idx === index ? { ...item, unit_price: price } : item)),
+      prev.map((item, idx) => (idx === index ? { ...item, unit_price: safePrice } : item)),
     );
   }, []);
 
@@ -104,6 +117,23 @@ export function useQuoteItems(initialItems: QuoteItem[] = []) {
       if (prev === index) return null;
       if (prev !== null && prev > index) return prev - 1;
       return prev;
+    });
+    /**
+     * BUG-03 FIX: reindexar expandedItems após remoção.
+     *
+     * PROBLEMA ORIGINAL: o Set<number> não era atualizado ao remover um item.
+     * Itens em posições > removedIndex ficavam com índices desalinhados com o
+     * array real. Resultado visual: painel de personalização aparecia expandido
+     * para o item errado após uma remoção no meio da lista.
+     */
+    setExpandedItems((prev) => {
+      const next = new Set<number>();
+      prev.forEach((i) => {
+        if (i < index) next.add(i);
+        else if (i > index) next.add(i - 1); // reindexar índices subsequentes
+        // i === index: descartar (item removido)
+      });
+      return next;
     });
   }, []);
 

@@ -1,76 +1,65 @@
-import { type ReactNode, useEffect, useState, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useOnboardingContext } from "@/contexts/OnboardingContext";
-import { AlertTriangle, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { type ReactNode, useEffect, useState } from 'react';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { isSupabaseLighthousePlaceholder } from '@/lib/env/supabase-placeholder';
 
+import { logger } from '@/lib/logger';
 /**
- * AppBootstrap — Responsável por inicializações globais que dependem de autenticação.
+ * AppBootstrap — shell global com fallback de manutenção sem bloquear o boot público.
  */
 export function AppBootstrap({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
-  const [bootstrapped, setBootstrapped] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [checkingMaintenance, setCheckingMaintenance] = useState(true);
 
-  
-  // Acessa o tour se disponível para garantir que possamos reiniciar via "?"
-  // mas aqui o objetivo é garantir que o preview "abra" com os dados certos.
-  
   useEffect(() => {
+    if (isSupabaseLighthousePlaceholder()) return;
+
     const checkMaintenance = async () => {
       try {
-        const { data } = await supabase
+        const supabase = await getSupabaseClient();
+        const { data, error } = await supabase
           .from('system_settings')
           .select('value')
           .eq('key', 'maintenance_mode')
           .maybeSingle();
-        
-        if (data && data.value === 'true') {
+
+        if (error) {
+          logger.error('[AppBootstrap] Failed to fetch maintenance mode:', error);
+          return;
+        }
+
+        if (data?.value === 'true') {
           setMaintenanceMode(true);
         }
       } catch (e) {
-        console.error("Maintenance check failed:", e);
-      } finally {
-        setCheckingMaintenance(false);
+        logger.error('[AppBootstrap] Error during maintenance check:', e);
       }
     };
 
     checkMaintenance();
-
-    if (!loading) {
-      setBootstrapped(true);
-    }
-  }, [loading]);
+  }, []);
 
   if (maintenanceMode) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <div className="max-w-md w-full text-center space-y-6">
-          <div className="w-20 h-20 bg-warning/10 rounded-3xl flex items-center justify-center mx-auto">
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="w-full max-w-md space-y-6 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-warning/10">
             <AlertTriangle className="h-10 w-10 text-warning" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold font-display">Sistema em Manutenção</h1>
-            <p className="text-muted-foreground">Estamos realizando melhorias programadas. Voltaremos em breve!</p>
+            <h1 className="font-display text-2xl font-bold">Sistema em Manutenção</h1>
+            <p className="text-muted-foreground">
+              Estamos realizando melhorias programadas. Voltaremos em breve!
+            </p>
           </div>
-          <Button 
-            className="w-full gap-2" 
+          <button
+            type="button"
+            className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-primary/20 bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-all duration-300 ease-out hover:bg-primary-hover"
             onClick={() => window.location.reload()}
           >
             <RefreshCw className="h-4 w-4" />
             Tentar novamente
-          </Button>
+          </button>
         </div>
-      </div>
-    );
-  }
-
-  if (!bootstrapped || checkingMaintenance) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }

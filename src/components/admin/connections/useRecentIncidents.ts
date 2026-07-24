@@ -17,6 +17,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export type IncidentSeverity = 'P0' | 'P1' | 'P2';
 export type IncidentSource = 'notification' | 'test_history';
@@ -71,6 +72,8 @@ function severityFromTestKind(errorKind: string | null): IncidentSeverity {
   if (['auth', 'http_5xx', 'platform_error'].includes(errorKind)) return 'P0';
   return 'P1';
 }
+
+const INCIDENT_SEV_WEIGHT: Record<IncidentSeverity, number> = { P0: 3, P1: 2, P2: 1 } as const;
 
 async function fetchIncidents(): Promise<IncidentItem[]> {
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
@@ -131,9 +134,8 @@ async function fetchIncidents(): Promise<IncidentItem[]> {
   }
 
   // Ordena por severidade desc (P0>P1>P2) e depois por timestamp desc.
-  const sevWeight: Record<IncidentSeverity, number> = { P0: 3, P1: 2, P2: 1 };
   items.sort((a, b) => {
-    const s = sevWeight[b.severity] - sevWeight[a.severity];
+    const s = INCIDENT_SEV_WEIGHT[b.severity] - INCIDENT_SEV_WEIGHT[a.severity];
     if (s !== 0) return s;
     return new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime();
   });
@@ -142,10 +144,19 @@ async function fetchIncidents(): Promise<IncidentItem[]> {
 }
 
 export function useRecentIncidents() {
+  // BUG-INCIDENT-403 FIX (2026-06-22): adicionado rolesLoaded + isAdmin guard.
+  // Sem guard, fetchIncidents disparava durante o boot com JWT não validado,
+  // causando requests desnecessários a workspace_notifications e
+  // connection_test_history antes da sessão estar pronta.
+  // Incidentes são dados de admin — sem isAdmin o resultado seria [] de qualquer forma.
+  const { rolesLoaded, isAdmin } = useAuth();
   return useQuery({
     queryKey: ['connections-recent-incidents'],
     queryFn: fetchIncidents,
+    enabled: rolesLoaded && isAdmin,  // garante JWT pronto + permissão admin
     refetchInterval: 60_000,
     staleTime: 30_000,
+    retry: 0,
+    retryOnMount: false,
   });
 }

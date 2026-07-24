@@ -1,0 +1,62 @@
+diff --git a/src/services/magazineService.ts b/src/services/magazineService.ts
+--- a/src/services/magazineService.ts
++++ b/src/services/magazineService.ts
+@@ -5,9 +5,10 @@
+  * (tabelas `magazines`, `magazine_items`) + edge `magazine-public-view`
+  * para leitura anônima. Toda a API passa a ser assíncrona.
+  *
+- * A camada usa `untypedFrom<Row>()` porque as tabelas magazine_* ainda
+- * não estão em src/integrations/supabase/types.ts (regeneração pendente).
++ * 2026-07-XX (PR tipagem): tabelas presentes em types.ts após regeneração;
++ * migrado para `supabase.from()` tipado. `untypedFrom` removido deste módulo.
+  */
+ 
+ import type {
+   Magazine,
+@@ -17,49 +18,20 @@ import type {
+   MagazineProductSnapshot,
+   MagazineTemplateId,
+ } from '@/types/magazine';
+ import { DEFAULT_BRANDING, DEFAULT_MAGAZINE_CONTENT } from '@/types/magazine';
+ import type { Product } from '@/types/product-catalog';
+-import { untypedFrom } from '@/lib/supabase-untyped';
+ import { supabase } from '@/integrations/supabase/client';
++import type { Database } from '@/integrations/supabase/types';
+ import { logger } from '@/lib/logger';
+ import { newRequestId, REQUEST_ID_HEADER } from '@/lib/telemetry/requestId';
+ 
+ // ---------------------------------------------------------------------------
+ // Row shapes (mapeamento do BD Gold)
+ // ---------------------------------------------------------------------------
+ 
+-interface MagazineRow {
+-  id: string;
+-  owner_id: string;
+-  organization_id: string | null;
+-  title: string;
+-  subtitle: string | null;
+-  template_id: MagazineTemplateId;
+-  branding: MagazineClientBranding;
+-  content_settings: MagazineContentSettings;
+-  page_order: number[] | null;
+-  status: Magazine['status'];
+-  public_token: string | null;
+-  pdf_url: string | null;
+-  published_at: string | null;
+-  created_at: string;
+-  updated_at: string;
+-  deleted_at: string | null;
+-}
+-
+-interface MagazineItemRow {
+-  id: string;
+-  magazine_id: string;
+-  product_id: string;
+-  product_snapshot: MagazineProductSnapshot;
+-  variant_color_name: string | null;
+-  position: number;
+-  page_number: number | null;
+-  overrides: Partial<MagazineContentSettings>;
+-}
++type MagazineRow = Database['public']['Tables']['magazines']['Row'];
++type MagazineItemRow = Database['public']['Tables']['magazine_items']['Row'];

@@ -1,10 +1,15 @@
 // supabase/functions/_shared/rate-limiter.ts
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient } from "npm:@supabase/supabase-js@2.49.4"; // fix_version=2026-07-09-rate-limiter-esm-sh ANTI-REGRESSÃO
 
 interface RateLimitConfig {
   maxRequests: number;
   windowMs: number;
   keyPrefix?: string;
+  /**
+   * When true, DB errors block the request (fail-closed). Use for auth/sensitive endpoints.
+   * When false (default), DB errors allow the request (fail-open). Use for non-critical endpoints.
+   */
+  failClosed?: boolean;
 }
 
 /**
@@ -33,7 +38,11 @@ export class RateLimiter {
 
       if (error) {
         console.error(`[rate-limiter] Error checking rate limit for ${key}:`, error);
-        // Fallback to allow (fail-open for UX, but log error)
+        if (this.config.failClosed) {
+          // Fail-closed: block the request when rate limit DB is unavailable (auth endpoints).
+          return { allowed: false, remaining: 0, resetAt: Date.now() + this.config.windowMs };
+        }
+        // Fail-open: allow the request (non-critical endpoints, prioritize availability).
         return { allowed: true, remaining: 1, resetAt: Date.now() + this.config.windowMs };
       }
 
@@ -55,6 +64,9 @@ export class RateLimiter {
       };
     } catch (err) {
       console.error(`[rate-limiter] Fatal error checking rate limit for ${key}:`, err);
+      if (this.config.failClosed) {
+        return { allowed: false, remaining: 0, resetAt: Date.now() + this.config.windowMs };
+      }
       return { allowed: true, remaining: 1, resetAt: Date.now() + this.config.windowMs };
     }
   }
@@ -76,11 +88,12 @@ export const rateLimiters = {
     keyPrefix: 'search'
   }),
 
-  // Approval: 5 req/min per token (avoid brute force)
+  // Approval: 5 req/min per token (avoid brute force) — fail-closed: block on DB error
   approval: new RateLimiter({
     maxRequests: 5,
     windowMs: 60 * 1000,
-    keyPrefix: 'approval'
+    keyPrefix: 'approval',
+    failClosed: true,
   })
 };
 

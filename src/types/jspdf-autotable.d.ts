@@ -2,9 +2,10 @@
  * Type declarations for jspdf-autotable plugin.
  * Eliminates doc.lastAutoTable pattern.
  */
-import { jsPDF } from "jspdf";
+import 'jspdf';
 
-declare module "jspdf" {
+declare module 'jspdf' {
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   interface jsPDF {
     lastAutoTable: {
       finalY: number;

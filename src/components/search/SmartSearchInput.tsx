@@ -1,204 +1,274 @@
 /**
  * SmartSearchInput — Search with autocomplete, voice, keyboard nav
- * 
+ *
  * v2: Result rendering extracted to SearchResultGroups
  */
-import { useState, useEffect, useRef, useCallback, forwardRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import {
-  Search, X, Clock, TrendingUp, Loader2,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useDebounce, useSearch, useSearchHistory, type SearchResult } from "@/hooks/common";
-import { useSpeechRecognition } from "@/hooks/intelligence";
-import { GroupedSearchResults } from "./SearchResultGroups";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Search, X, Clock, TrendingUp, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useDebounce, useSearch, useSearchHistory, type SearchResult } from '@/hooks/common';
+import { type Product } from '@/hooks/products';
+import { useSpeechRecognition } from '@/hooks/intelligence';
+import { GroupedSearchResults } from './SearchResultGroups';
 
 interface SmartSearchInputProps {
+  /** Unique id for the underlying <input>. Defaults to 'search'.
+   *  Must be unique per page — pass a custom value when rendering
+   *  multiple instances simultaneously (e.g. desktop + mobile). */
+  inputId?: string;
   placeholder?: string;
   onSelect?: (result: SearchResult) => void;
   onSearch?: (query: string) => void;
   className?: string;
   autoFocus?: boolean;
+  /** Produto já carregados para autocomplete preciso de categoria/fornecedor (#4). */
+  products?: Product[];
 }
 
-export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps>(function SmartSearchInput({
-  placeholder = "Buscar produtos, categorias, fornecedores...",
-  onSelect,
-  onSearch,
-  className,
-  autoFocus = false,
-}, _ref) {
-  const navigate = useNavigate();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps>(
+  (
+    {
+      placeholder = 'Buscar produtos, categorias, fornecedores...',
+      onSelect,
+      onSearch,
+      className,
+      autoFocus = false,
+      inputId = 'search',
+      products,
+    },
+    _ref,
+  ) => {
+    const navigate = useNavigate();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
-  const [isFocused, setIsFocused] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [isSearching, setIsSearching] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
+    const [isSearching, setIsSearching] = useState(false);
+    // ── Tooltip state ──────────────────────────────────────────────────────────
+    // Always controlled (always boolean) so Radix never sees `undefined`.
+    // The previous pattern  open={!isFocused ? undefined : false}  toggled
+    // between controlled↔uncontrolled on every focus/blur, generating:
+    //   "Tooltip is changing from uncontrolled to controlled (or vice versa)"
+    // Fix: keep a dedicated boolean state; `open` is ALWAYS a boolean:
+    //   • focused   → !isFocused=false → open = false  (suppress while typing)
+    //   • unfocused → !isFocused=true  → open = tooltipVisible (hover as usual)
+    const [tooltipVisible, setTooltipVisible] = useState(false);
+    // ──────────────────────────────────────────────────────────────────────────
 
-  const {
-    query, setQuery, suggestions, quickSuggestions,
-    clearHistory,
-  } = useSearch();
+    const { query, setQuery, suggestions, quickSuggestions, clearHistory, totalProductMatches } =
+      useSearch(products);
 
-  const { history, addToHistory, removeFromHistory } = useSearchHistory("general");
+    const { history, addToHistory, removeFromHistory } = useSearchHistory('general');
 
-  const debouncedQuery = useDebounce(query, 150);
+    const debouncedQuery = useDebounce(query, 150);
 
-  const handleVoiceResult = useCallback((transcript: string) => {
-    setQuery(transcript);
-    inputRef.current?.focus();
-  }, [setQuery]);
+    const handleVoiceResult = useCallback(
+      (transcript: string) => {
+        setQuery(transcript);
+        inputRef.current?.focus();
+      },
+      [setQuery],
+    );
 
-  const { isListening } = useSpeechRecognition({
-    onResult: handleVoiceResult,
-    language: "pt-BR",
-  });
+    const { isListening } = useSpeechRecognition({
+      onResult: handleVoiceResult,
+      language: 'pt-BR',
+    });
 
-  useEffect(() => {
-    if (debouncedQuery) {
-      setIsSearching(true);
-      const timer = setTimeout(() => setIsSearching(false), 200);
-      return () => clearTimeout(timer);
-    }
-    setIsSearching(false);
-  }, [debouncedQuery]);
+    useEffect(() => {
+      if (debouncedQuery) {
+        setIsSearching(true);
+        const timer = setTimeout(() => setIsSearching(false), 200);
+        return () => clearTimeout(timer);
+      }
+      setIsSearching(false);
+    }, [debouncedQuery]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    useEffect(() => {
+      const handleClickOutside = (e: MouseEvent) => {
+        if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+          setIsFocused(false);
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    useEffect(() => {
+      setSelectedIndex(-1);
+    }, [suggestions]);
+
+    const handleSelectResult = useCallback(
+      (result: SearchResult) => {
+        if (result.type !== 'history') {
+          addToHistory({ id: `history-${result.label}`, label: result.label, type: 'general' });
+        }
+        setQuery('');
         setIsFocused(false);
+        setSelectedIndex(-1);
+
+        if (onSelect) {
+          onSelect(result);
+          return;
+        }
+
+        switch (result.type) {
+          case 'product':
+            navigate(`/produto/${result.id}`);
+            break;
+          case 'category':
+            navigate(`/?categoria=${result.id}`);
+            break;
+          case 'supplier':
+            navigate(`/?fornecedor=${result.id}`);
+            break;
+          case 'history':
+            setQuery(result.label);
+            addToHistory({ id: `history-${result.label}`, label: result.label, type: 'general' });
+            navigate(`/?search=${encodeURIComponent(result.label)}`);
+            break;
+        }
+      },
+      [addToHistory, setQuery, onSelect, navigate],
+    );
+
+    const submitSearch = useCallback(
+      (q: string) => {
+        if (!q.trim()) return;
+        addToHistory({ id: `history-${q}`, label: q, type: 'general' });
+        if (onSearch) {
+          onSearch(q);
+        } else {
+          navigate(`/?search=${encodeURIComponent(q)}`);
+        }
+        setIsFocused(false);
+      },
+      [addToHistory, onSearch, navigate],
+    );
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      const maxIndex = suggestions.length - 1;
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          setSelectedIndex((p) => (p < maxIndex ? p + 1 : 0));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setSelectedIndex((p) => (p > 0 ? p - 1 : maxIndex));
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+            handleSelectResult(suggestions[selectedIndex]);
+          } else if (query.trim()) {
+            submitSearch(query);
+          }
+          break;
+        case 'Escape':
+          setIsFocused(false);
+          inputRef.current?.blur();
+          break;
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
-  useEffect(() => { setSelectedIndex(-1); }, [suggestions]);
+    const showDropdown =
+      isFocused && (suggestions.length > 0 || quickSuggestions.length > 0 || history.length > 0);
 
-  const handleSelectResult = useCallback((result: SearchResult) => {
-    if (result.type !== "history") {
-      addToHistory({ id: `history-${result.label}`, label: result.label, type: "general" });
-    }
-    setQuery("");
-    setIsFocused(false);
-    setSelectedIndex(-1);
+    return (
+      <div ref={containerRef} className={cn('relative w-full', className)}>
+        {/*
+         * Tooltip always controlled — open is always boolean, never undefined.
+         *   open={!isFocused && tooltipVisible}
+         *   onOpenChange={setTooltipVisible}
+         */}
+        <Tooltip open={!isFocused && tooltipVisible} onOpenChange={setTooltipVisible}>
+          <TooltipTrigger asChild>
+            <div className="group relative">
+              <button
+                type="button"
+                className="absolute left-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer border-none bg-transparent p-0 transition-colors hover:text-primary"
+                onClick={() => {
+                  if (query.trim()) submitSearch(query);
+                }}
+                tabIndex={-1}
+                aria-label="Buscar"
+              >
+                <Search
+                  className={cn(
+                    'h-4 w-4 transition-colors duration-200',
+                    isFocused ? 'text-primary' : 'text-muted-foreground group-hover:text-primary',
+                  )}
+                />
+              </button>
 
-    if (onSelect) { onSelect(result); return; }
+              <Input
+                ref={inputRef}
+                id={inputId}
+                data-testid="catalog-search-input"
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+                autoFocus={autoFocus}
+                aria-label="Campo de busca"
+                aria-expanded={showDropdown}
+                aria-haspopup="listbox"
+                role="combobox"
+                autoComplete="off"
+                className={cn(
+                  'h-11 border-muted-foreground/20 bg-background/80 pl-10 pr-20 backdrop-blur-sm transition-all duration-300 ease-out',
+                  isFocused
+                    ? 'border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.1)] ring-0'
+                    : 'hover:border-muted-foreground/40',
+                  isListening && 'animate-pulse ring-2 ring-primary ring-offset-2',
+                )}
+              />
 
-    switch (result.type) {
-      case "product": navigate(`/produto/${result.id}`); break;
-      case "category": navigate(`/?categoria=${result.id}`); break;
-      case "supplier": navigate(`/?fornecedor=${result.id}`); break;
-      case "history":
-        setQuery(result.label);
-        addToHistory({ id: `history-${result.label}`, label: result.label, type: "general" });
-        navigate(`/?search=${encodeURIComponent(result.label)}`);
-        break;
-    }
-  }, [addToHistory, setQuery, onSelect, navigate]);
-
-  const submitSearch = useCallback((q: string) => {
-    if (!q.trim()) return;
-    addToHistory({ id: `history-${q}`, label: q, type: "general" });
-    if (onSearch) { onSearch(q); } else { navigate(`/?search=${encodeURIComponent(q)}`); }
-    setIsFocused(false);
-  }, [addToHistory, onSearch, navigate]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    const maxIndex = suggestions.length - 1;
-    switch (e.key) {
-      case "ArrowDown": e.preventDefault(); setSelectedIndex((p) => (p < maxIndex ? p + 1 : 0)); break;
-      case "ArrowUp": e.preventDefault(); setSelectedIndex((p) => (p > 0 ? p - 1 : maxIndex)); break;
-      case "Enter":
-        e.preventDefault();
-        if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-          handleSelectResult(suggestions[selectedIndex]);
-        } else if (query.trim()) {
-          submitSearch(query);
-        }
-        break;
-      case "Escape": setIsFocused(false); inputRef.current?.blur(); break;
-    }
-  };
-
-  const showDropdown = isFocused && (suggestions.length > 0 || quickSuggestions.length > 0 || history.length > 0);
-
-  return (
-    <div ref={containerRef} className={cn("relative w-full", className)}>
-      <Tooltip delayDuration={400} open={!isFocused ? undefined : false}>
-        <TooltipTrigger asChild>
-          <div className="relative group">
-            <button
-              type="button"
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-0 bg-transparent border-none cursor-pointer hover:text-primary transition-colors"
-              onClick={() => { if (query.trim()) submitSearch(query); }}
-              tabIndex={-1}
-              aria-label="Buscar"
-            >
-              <Search className={cn("h-4 w-4 transition-colors duration-200", isFocused ? "text-primary" : "text-muted-foreground group-hover:text-primary")} />
-            </button>
-
-            <Input
-              ref={inputRef}
-              id="search"
-              data-testid="catalog-search-input"
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onFocus={() => setIsFocused(true)}
-              onKeyDown={handleKeyDown}
-              placeholder={placeholder}
-              autoFocus={autoFocus}
-              aria-label="Campo de busca"
-              aria-expanded={showDropdown}
-              aria-haspopup="listbox"
-              role="combobox"
-              autoComplete="off"
-              className={cn(
-                "pl-10 pr-20 h-11 bg-background/80 backdrop-blur-sm border-muted-foreground/20 transition-all duration-300 ease-out",
-                isFocused ? "border-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.1)] ring-0" : "hover:border-muted-foreground/40",
-                isListening && "ring-2 ring-primary ring-offset-2 animate-pulse"
-              )}
-            />
-
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              {isSearching && (
-                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                </motion.div>
-              )}
-              {query && (
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive" onClick={() => { setQuery(""); onSearch?.(""); }}>
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
+              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+                {isSearching && (
+                  <div className="duration-150 animate-in fade-in zoom-in-75">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  </div>
+                )}
+                {query && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => {
+                      setQuery('');
+                      onSearch?.('');
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="bg-card border-border text-xs">
-          Busca inteligente <kbd className="ml-1 px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">⌘K</kbd>
-        </TooltipContent>
-      </Tooltip>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            Busca inteligente{' '}
+            <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[5px]">⌘K</kbd>
+          </TooltipContent>
+        </Tooltip>
 
-      <AnimatePresence>
         {showDropdown && (
-          <motion.div
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute top-full left-0 right-0 mt-2 z-50 bg-popover border border-border rounded-xl shadow-xl overflow-hidden"
+          <div
+            className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-border bg-popover shadow-xl duration-150 animate-in fade-in zoom-in-[0.98] slide-in-from-top-1"
             role="listbox"
           >
-            <ScrollArea className="max-h-[420px]">
+            <ScrollArea className="max-h-[520px]">
               {query && suggestions.length > 0 && (
                 <GroupedSearchResults
                   suggestions={suggestions}
@@ -218,29 +288,42 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
                           <Clock className="h-3 w-3" />
                           Buscas Recentes
                         </span>
-                        <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground hover:text-destructive" onClick={(e) => { e.stopPropagation(); clearHistory(); }}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 text-xs text-muted-foreground hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearHistory();
+                          }}
+                        >
                           Limpar
                         </Button>
                       </div>
                       {history.slice(0, 5).map((item, index) => (
-                        <motion.div
+                        <div
                           key={item.id}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.03 }}
-                          className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted group cursor-pointer transition-colors"
-                          onClick={() => { addToHistory(item); submitSearch(item.label); }}
+                          className="group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors animate-in fade-in slide-in-from-left-1 hover:bg-muted"
+                          style={{ animationDelay: `${index * 30}ms`, animationFillMode: 'both' }}
+                          onClick={() => {
+                            addToHistory(item);
+                            submitSearch(item.label);
+                          }}
                         >
                           <Clock className="h-4 w-4 text-muted-foreground" />
                           <span className="flex-1 truncate text-sm">{item.label}</span>
                           <Button
-                            variant="ghost" size="sm"
-                            className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => { e.stopPropagation(); removeFromHistory(item.id); }}
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeFromHistory(item.id);
+                            }}
                           >
                             <X className="h-3 w-3" />
                           </Button>
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -254,15 +337,21 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
                     </div>
                     <div className="flex flex-wrap gap-2 px-2 py-2">
                       {quickSuggestions.map((suggestion, index) => (
-                        <motion.div key={suggestion.label} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.04 }}>
+                        <div
+                          key={suggestion.id ?? suggestion.label}
+                          className="animate-in fade-in zoom-in-90"
+                          style={{ animationDelay: `${index * 40}ms`, animationFillMode: 'both' }}
+                        >
                           <Badge
                             variant="secondary"
-                            className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-200 hover:scale-105"
-                            onClick={() => submitSearch(suggestion.label)}
+                            className="cursor-pointer transition-all duration-200 hover:scale-105 hover:bg-primary hover:text-primary-foreground"
+                            // FIX 2026-06-15: handleSelectResult com type:'category' + UUID
+                            // → onSelect em FiltersPage aplica filtro real (não busca textual).
+                            onClick={() => handleSelectResult(suggestion)}
                           >
                             {suggestion.icon} {suggestion.label}
                           </Badge>
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -270,31 +359,66 @@ export const SmartSearchInput = forwardRef<HTMLDivElement, SmartSearchInputProps
               )}
 
               {query && suggestions.length === 0 && !isSearching && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 text-center text-muted-foreground">
-                  <Search className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                  <p className="font-medium">Nenhum resultado para "<span className="text-foreground">{query}</span>"</p>
-                  <p className="text-xs mt-1.5 text-muted-foreground/70">Tente buscar por nome, SKU ou categoria</p>
-                  <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => submitSearch(query)}>
-                    <Search className="h-3 w-3 mr-1.5" />
+                <div className="p-8 text-center text-muted-foreground duration-200 animate-in fade-in">
+                  <Search className="mx-auto mb-2 h-8 w-8 opacity-30" />
+                  <p className="font-medium">
+                    Nenhum resultado para "<span className="text-foreground">{query}</span>"
+                  </p>
+                  <p className="mt-1.5 text-xs text-muted-foreground/70">
+                    Tente buscar por nome, SKU ou categoria
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 text-xs"
+                    onClick={() => submitSearch(query)}
+                  >
+                    <Search className="mr-1.5 h-3 w-3" />
                     Buscar "{query}" no catálogo completo
                   </Button>
-                </motion.div>
+                </div>
+              )}
+              {/* Rodapé: quando Fuse encontrou mais de 30, oferece 'ver todos' */}
+              {query.trim().length >= 2 && totalProductMatches > 30 && (
+                <div className="border-t border-border/40 bg-muted/20 px-3 py-2">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    onClick={() => submitSearch(query)}
+                  >
+                    <span>
+                      Ver todos <strong className="text-foreground">{totalProductMatches}</strong>{' '}
+                      resultados para &ldquo;<span className="text-primary">{query}</span>&rdquo;
+                    </span>
+                    <span className="text-sm text-primary">→</span>
+                  </button>
+                </div>
               )}
             </ScrollArea>
 
-            <div className="border-t border-border/50 bg-muted/30 px-3 py-1.5 flex items-center justify-between text-[10px] text-muted-foreground/70">
+            <div className="flex items-center justify-between border-t border-border/50 bg-muted/30 px-3 py-1.5 text-[10px] text-muted-foreground/70">
               <div className="flex items-center gap-3">
-                <span><kbd className="px-1 py-0.5 bg-muted rounded text-[9px] font-mono">↑↓</kbd> navegar</span>
-                <span><kbd className="px-1 py-0.5 bg-muted rounded text-[9px] font-mono">Enter</kbd> selecionar</span>
-                <span><kbd className="px-1 py-0.5 bg-muted rounded text-[9px] font-mono">Esc</kbd> fechar</span>
+                <span>
+                  <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[9px]">↑↓</kbd>{' '}
+                  navegar
+                </span>
+                <span>
+                  <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[9px]">Enter</kbd>{' '}
+                  selecionar
+                </span>
+                <span>
+                  <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[9px]">Esc</kbd>{' '}
+                  fechar
+                </span>
               </div>
               <span className="flex items-center gap-1">
-                <kbd className="px-1 py-0.5 bg-muted rounded text-[10px] font-mono">⌘K</kbd> busca global
+                <kbd className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">⌘K</kbd> busca
+                global
               </span>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </div>
-  );
-});
+      </div>
+    );
+  },
+);

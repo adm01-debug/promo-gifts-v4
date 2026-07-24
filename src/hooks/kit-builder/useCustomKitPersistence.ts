@@ -8,7 +8,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { KitState } from '@/lib/kit-builder';
+import type { Json } from '@/integrations/supabase/types';
+import { logger } from '@/lib/logger';
 
 // ============================================
 // TYPES
@@ -86,9 +89,9 @@ export function useCustomKitPersistence() {
         name: kitState.name || 'Kit sem nome',
         status: kitState.isValid ? 'complete' : 'draft',
         kit_type: kitState.kitType || 'montado',
-        box_data: kitState.box ? JSON.parse(JSON.stringify(kitState.box)) : null,
-        items_data: JSON.parse(JSON.stringify(kitState.items)),
-        personalization_data: JSON.parse(JSON.stringify(kitState.personalization)),
+        box_data: kitState.box ? (structuredClone(kitState.box) as unknown as Json) : null,
+        items_data: structuredClone(kitState.items) as unknown as Json,
+        personalization_data: structuredClone(kitState.personalization) as unknown as Json,
         kit_quantity: kitQuantity,
         box_price: kitState.boxPrice,
         items_price: kitState.itemsPrice,
@@ -111,11 +114,11 @@ export function useCustomKitPersistence() {
           .eq('user_id', user.id)
           .select()
           .single();
-        if (error) throw error;
+        if (error || !data) throw error ?? new Error('Kit not found');
         return data;
       }
       const { data, error } = await supabase.from('custom_kits').insert(payload).select().single();
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Failed to create kit');
       return data;
     },
     onSuccess: () => {
@@ -123,7 +126,7 @@ export function useCustomKitPersistence() {
       toast.success('Kit salvo com sucesso!');
     },
     onError: (err: Error) => {
-      toast.error(`Erro ao salvar kit: ${err.message}`);
+      toast.error('Erro ao salvar kit', { description: sanitizeError(err) });
     },
   });
 
@@ -143,7 +146,7 @@ export function useCustomKitPersistence() {
       toast.success('Kit removido');
     },
     onError: (err: Error) => {
-      toast.error(`Erro ao remover: ${err.message}`);
+      toast.error('Erro ao remover', { description: sanitizeError(err) });
     },
   });
 
@@ -162,16 +165,17 @@ export function useCustomKitPersistence() {
   const bumpLastUsed = useCallback(
     async (kitId: string) => {
       if (!user?.id) return;
-      try {
-        await supabase
-          .from('custom_kits')
-          .update({ last_used_at: new Date().toISOString() } as never)
-          .eq('id', kitId)
-          .eq('user_id', user.id);
-        queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-      } catch {
-        /* best-effort */
+      // BUG-KITPERSISTENCE-BUMP-SILENT-FAIL FIX: bare await swallowed RLS errors.
+      const { error: bumpErr } = await supabase
+        .from('custom_kits')
+        .update({ last_used_at: new Date().toISOString() })
+        .eq('id', kitId)
+        .eq('user_id', user.id);
+      if (bumpErr) {
+        logger.warn('[kit-persistence] bumpLastUsed failed (non-fatal):', bumpErr);
+        return;
       }
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
     },
     [user?.id, queryClient],
   );
@@ -182,22 +186,27 @@ export function useCustomKitPersistence() {
       if (!user?.id) return;
       try {
         if (value) {
-          // Desfixa qualquer outro kit fixado primeiro
-          await supabase
+          // BUG-KITPERSISTENCE-UNPIN-SILENT-FAIL FIX: bare await swallowed RLS errors —
+          // if unpin-others fails, we must not proceed to pin the target (would create
+          // multiple pinned kits violating the "only 1 pinned" invariant).
+          const { error: unpinErr } = await supabase
             .from('custom_kits')
-            .update({ is_pinned: false } as never)
+            .update({ is_pinned: false })
             .eq('user_id', user.id)
             .eq('is_pinned', true);
+          if (unpinErr) throw unpinErr;
         }
-        await supabase
+        // BUG-KITPERSISTENCE-PIN-SILENT-FAIL FIX: bare await swallowed RLS errors.
+        const { error: pinErr } = await supabase
           .from('custom_kits')
-          .update({ is_pinned: value } as never)
+          .update({ is_pinned: value })
           .eq('id', kitId)
           .eq('user_id', user.id);
+        if (pinErr) throw pinErr;
         queryClient.invalidateQueries({ queryKey: QUERY_KEY });
         toast.success(value ? 'Kit fixado em destaque' : 'Kit desafixado');
-      } catch {
-        toast.error('Erro ao alterar destaque');
+      } catch (err) {
+        toast.error('Erro ao alterar destaque', { description: sanitizeError(err) });
       }
     },
     [user?.id, queryClient],

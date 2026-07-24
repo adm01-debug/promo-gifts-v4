@@ -1,0 +1,90 @@
+-- ============================================================================
+-- Fase 6 (Follow-up Pós-Colapso 2026-05-24)
+-- ============================================================================
+-- Fecha 2 dos 3 itens P0/P1 pendentes documentados em:
+--   docs/RELATORIO_COLAPSO_2026-05-24.md
+--
+-- Achados endereçados:
+--   #3  Conexões PostgREST idle persistem por dias (causa raiz #3 do colapso)
+--       idle_session_timeout = 0  ->  10 min
+--       idle_in_transaction_session_timeout = 0  ->  60 s
+--
+--   #10 Queries lentas não eram logadas (forense pós-mortem ficava cego)
+--       log_min_duration_statement = -1  ->  2000 ms
+--
+-- ----------------------------------------------------------------------------
+-- Contexto da decisão técnica
+-- ----------------------------------------------------------------------------
+-- Os ALTER DATABASE abaixo passam normalmente para o role da aplicação.
+--
+-- log_min_duration_statement, porém, tem Context: superuser no Postgres.
+-- ALTER DATABASE postgres SET log_min_duration_statement = '2000' RETORNA
+-- ERROR 42501 (permission denied). A doc oficial do Supabase documenta que
+-- a extensão supautils libera essa modificação APENAS no nível de ROLE:
+--
+--   https://supabase.com/docs/guides/database/custom-postgres-config
+--   #superuser-settings
+--
+-- Por isso este parâmetro usa ALTER ROLE em vez de ALTER DATABASE.
+--
+-- ----------------------------------------------------------------------------
+-- Aplicado via MCP em 2026-05-25 13:00-13:20 UTC
+-- Executor: Abner Silva (TI Promo Brindes)
+-- Esta migration registra a mudança no histórico do repo. Como os 3 ALTERs
+-- são idempotentes, a reaplicação pelo pipeline é segura.
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Achado #3 - Settings de timeout para conexões idle
+-- ----------------------------------------------------------------------------
+-- Aplica a NOVAS conexões. Sessões já abertas mantêm o valor antigo até serem
+-- recicladas. Validação imediata da aplicação no banco mostrou:
+--   - PID 2376 (PostgREST idle há 10.9 dias) foi eliminado automaticamente
+--   - Conexões idle totais: 8 -> 4
+--   - Idle > 1 dia: 1 -> 0
+-- ----------------------------------------------------------------------------
+ALTER DATABASE postgres SET idle_session_timeout = '600000';                 -- 10 min em ms
+ALTER DATABASE postgres SET idle_in_transaction_session_timeout = '60000';   -- 60 s em ms
+
+-- ----------------------------------------------------------------------------
+-- Achado #10 - Logar queries com duração > 2 s
+-- ----------------------------------------------------------------------------
+-- Persistido em pg_roles.rolconfig. Validação imediata:
+--   SELECT rolconfig FROM pg_roles WHERE rolname = 'postgres';
+--   -- retorna ["search_path=...", "log_min_duration_statement=2000"]
+-- ----------------------------------------------------------------------------
+ALTER ROLE "postgres" SET "log_min_duration_statement" TO '2000';            -- 2 s em ms
+
+-- ============================================================================
+-- Validação esperada pós-deploy (rodar manualmente no SQL Editor)
+-- ============================================================================
+--
+-- -- Settings persistidos no level DATABASE:
+-- SELECT split_part(unnest(setconfig), '=', 1) AS setting,
+--        split_part(unnest(setconfig), '=', 2) AS valor
+--   FROM pg_db_role_setting
+--  WHERE setdatabase = (SELECT oid FROM pg_database WHERE datname='postgres');
+-- -- Esperado:
+-- --   idle_session_timeout = 600000
+-- --   idle_in_transaction_session_timeout = 60000
+--
+-- -- Setting persistido no level ROLE:
+-- SELECT rolname, rolconfig FROM pg_roles WHERE rolname = 'postgres';
+-- -- rolconfig deve conter "log_min_duration_statement=2000"
+--
+-- -- Conexões idle de longa duração (deve ser zero ou muito poucas):
+-- SELECT pid, application_name,
+--        round(EXTRACT(EPOCH FROM (now() - state_change)) / 60)::int AS idle_min
+--   FROM pg_stat_activity
+--  WHERE state = 'idle'
+--    AND state_change < now() - interval '1 hour'
+--    AND backend_type = 'client backend'
+--  ORDER BY state_change ASC;
+--
+-- ============================================================================
+-- Pendência remanescente do RELATORIO_COLAPSO_2026-05-24
+-- ============================================================================
+-- #6 Auth Connection Strategy: Absolute (10) -> Percentage (15%)
+--    Não pode ser feito por SQL. Caminho: Supabase Dashboard ->
+--    Authentication -> Settings -> Database Connection Strategy.
+-- ============================================================================

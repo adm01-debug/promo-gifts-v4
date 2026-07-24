@@ -1,23 +1,24 @@
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { logger } from '@/lib/logger';
+import { useAuth } from '@/contexts/AuthContext';
+import { untypedFrom } from '@/lib/supabase-untyped';
 
-export type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE';
+export type AuditAction = 'DELETE' | 'INSERT' | 'UPDATE';
 
-export type AuditEntityType = 
-  | 'products' 
-  | 'product_variants' 
-  | 'product_images'
-  | 'product_videos'
-  | 'quotes' 
-  | 'quote_items'
-  | 'orders' 
-  | 'order_items'
-  | 'suppliers' 
+export type AuditEntityType =
   | 'categories'
-  | 'material_types'
   | 'color_variations'
   | 'companies'
-  | 'company_contacts';
+  | 'company_contacts'
+  | 'material_types'
+  | 'order_items'
+  | 'orders'
+  | 'product_images'
+  | 'product_variants'
+  | 'product_videos'
+  | 'products'
+  | 'quote_items'
+  | 'quotes'
+  | 'suppliers';
 
 interface AuditLogParams {
   action: AuditAction;
@@ -59,28 +60,28 @@ export function useAuditLog() {
     entityType,
     entityId,
     oldValues = null,
-    newValues = null
+    newValues = null,
   }: AuditLogParams): Promise<{ success: boolean; error?: Error }> => {
     try {
-      const { error } = await supabase.from('audit_log').insert({
+      const { error } = await untypedFrom<AuditLogEntry>('audit_log').insert({
         user_id: user?.id || null,
         action,
         entity_type: entityType,
         entity_id: entityId,
         old_values: oldValues,
         new_values: newValues,
-        ip_address: null, // Pode ser capturado via API externa se necessário
-        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null
+        ip_address: null,
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
       });
 
       if (error) {
-        console.error('Erro ao registrar audit log:', error);
+        logger.error('Erro ao registrar audit log:', error);
         return { success: false, error: new Error(error.message) };
       }
 
       return { success: true };
     } catch (error) {
-      console.error('Erro ao registrar audit log:', error);
+      logger.error('Erro ao registrar audit log:', error);
       return { success: false, error: error as Error };
     }
   };
@@ -90,18 +91,18 @@ export function useAuditLog() {
    */
   const getChangedFields = (
     oldRecord: Record<string, unknown>,
-    newRecord: Record<string, unknown>
+    newRecord: Record<string, unknown>,
   ): { oldFields: Record<string, unknown>; newFields: Record<string, unknown> } => {
     const oldFields: Record<string, unknown> = {};
     const newFields: Record<string, unknown> = {};
 
-    Object.keys(newRecord).forEach(key => {
+    Object.keys(newRecord).forEach((key) => {
       // Ignorar campos de timestamp que mudam automaticamente
       if (['updated_at', 'created_at'].includes(key)) return;
-      
+
       const oldValue = oldRecord[key];
       const newValue = newRecord[key];
-      
+
       // Comparar valores (convertendo para JSON para comparar objetos/arrays)
       if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
         oldFields[key] = oldValue;
@@ -118,17 +119,17 @@ export function useAuditLog() {
   const auditedInsert = async <T extends Record<string, unknown>>(
     table: AuditEntityType,
     data: T,
-    insertFn: () => Promise<{ data: (T & { id: string }) | null; error: Error | null }>
+    insertFn: () => Promise<{ data: (T & { id: string }) | null; error: Error | null }>,
   ): Promise<{ data: (T & { id: string }) | null; error: Error | null }> => {
     const result = await insertFn();
-    
+
     if (result.data && !result.error) {
       await logAction({
         action: 'INSERT',
         entityType: table,
         entityId: result.data.id,
         oldValues: null,
-        newValues: data
+        newValues: data,
       });
     }
 
@@ -143,13 +144,13 @@ export function useAuditLog() {
     entityId: string,
     oldRecord: T,
     updates: Partial<T>,
-    updateFn: () => Promise<{ data: T | null; error: Error | null }>
+    updateFn: () => Promise<{ data: T | null; error: Error | null }>,
   ): Promise<{ data: T | null; error: Error | null }> => {
     const result = await updateFn();
-    
+
     if (result.data && !result.error) {
       const { oldFields, newFields } = getChangedFields(oldRecord, updates);
-      
+
       // Só registra se houve mudanças reais
       if (Object.keys(newFields).length > 0) {
         await logAction({
@@ -157,7 +158,7 @@ export function useAuditLog() {
           entityType: table,
           entityId,
           oldValues: oldFields,
-          newValues: newFields
+          newValues: newFields,
         });
       }
     }
@@ -172,17 +173,17 @@ export function useAuditLog() {
     table: AuditEntityType,
     entityId: string,
     oldRecord: T,
-    deleteFn: () => Promise<{ error: Error | null }>
+    deleteFn: () => Promise<{ error: Error | null }>,
   ): Promise<{ error: Error | null }> => {
     const result = await deleteFn();
-    
+
     if (!result.error) {
       await logAction({
         action: 'DELETE',
         entityType: table,
         entityId,
         oldValues: oldRecord,
-        newValues: null
+        newValues: null,
       });
     }
 
@@ -194,7 +195,7 @@ export function useAuditLog() {
     getChangedFields,
     auditedInsert,
     auditedUpdate,
-    auditedDelete
+    auditedDelete,
   };
 }
 
@@ -203,23 +204,24 @@ export function useAuditLog() {
  */
 export async function fetchAuditHistory(
   entityType: AuditEntityType,
-  entityId: string
+  entityId: string,
 ): Promise<AuditLogEntry[]> {
-  const { data, error } = await supabase
-    .from('audit_log')
-    .select(`
+  const { data, error } = await untypedFrom<AuditLogEntry>('audit_log')
+    .select(
+      `
       *,
       profiles:user_id (
         full_name,
         email
       )
-    `)
+    `,
+    )
     .eq('entity_type', entityType)
     .eq('entity_id', entityId)
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Erro ao buscar histórico de auditoria:', error);
+    logger.error('Erro ao buscar histórico de auditoria:', error);
     return [];
   }
 
@@ -237,17 +239,18 @@ export async function fetchAllAuditLogs(
     startDate?: Date;
     endDate?: Date;
   },
-  limit = 100
+  limit = 100,
 ): Promise<AuditLogEntry[]> {
-  let query = supabase
-    .from('audit_log')
-    .select(`
+  let query = untypedFrom<AuditLogEntry>('audit_log')
+    .select(
+      `
       *,
       profiles:user_id (
         full_name,
         email
       )
-    `)
+    `,
+    )
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -270,7 +273,7 @@ export async function fetchAllAuditLogs(
   const { data, error } = await query;
 
   if (error) {
-    console.error('Erro ao buscar logs de auditoria:', error);
+    logger.error('Erro ao buscar logs de auditoria:', error);
     return [];
   }
 

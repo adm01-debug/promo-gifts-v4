@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * useDebouncedFilters — guarda um estado interno "rápido" (UI imediata)

@@ -1,11 +1,14 @@
 /**
  * PromobrindProduct type + helper functions.
  */
+import { toErrorMessage } from '@/lib/to-error-message';
 
 export interface PromobrindProduct {
   id: string;
   name: string;
   sku: string;
+  /** Código público do produto-pai (sem sufixo de variante). Ex: 'ER143B', '51736'. */
+  sku_promo?: string | null;
   sale_price?: number | null;
   /** @deprecated Use sale_price */
   base_price?: number | null;
@@ -13,6 +16,9 @@ export interface PromobrindProduct {
   image_url?: string | null;
   images: string[] | null;
   primary_image_url: string | null;
+  primary_image_blurhash?: string | null;
+  primary_image_fallback_url?: string | null;
+  set_image_url?: string | null;
   og_image_url?: string | null;
   category_id: string | null;
   main_category_id: string | null;
@@ -28,7 +34,7 @@ export interface PromobrindProduct {
   active: boolean;
   stock_quantity?: number | null;
   colors?: Array<string | { name: string; hex?: string; stock?: number }> | null;
-  materials?: Array<string | Record<string, unknown>> | null;
+  materials?: Array<Record<string, unknown> | string> | null;
   dimensions?: string | null;
   min_quantity?: number | null;
   created_at?: string | null;
@@ -37,6 +43,7 @@ export interface PromobrindProduct {
   width_cm?: number | null;
   length_cm?: number | null;
   diameter_cm?: number | null;
+  circumference_cm?: number | null;
   weight_g?: number | null;
   capacity_ml?: number | null;
   packing_type?: string | null;
@@ -74,14 +81,38 @@ export interface PromobrindProduct {
   price_updated_at?: string | null;
   price_freshness_threshold_days?: number | null;
   kit_components?: Array<{
-    id: string; component_name: string | null; component_code: string | null;
-    component_product_id: string | null; component_sku: string | null;
-    quantity: number | null; display_order: number | null;
-    is_optional: boolean | null; is_packaging: boolean | null;
-    is_replaceable: boolean | null; allows_personalization: boolean | null;
-    material: string | null; primary_image_url: string | null;
-    height_mm: number | null; width_mm: number | null; length_mm: number | null;
-    weight_g: number | null; notes: string | null;
+    id: string;
+    component_name: string | null;
+    component_code: string | null;
+    component_product_id: string | null;
+    component_sku: string | null;
+    quantity: number | null;
+    display_order: number | null;
+    is_optional: boolean | null;
+    is_packaging: boolean | null;
+    is_replaceable: boolean | null;
+    allows_personalization: boolean | null;
+    material: string | null;
+    primary_image_url: string | null;
+    primary_image_fallback_url?: string | null;
+    height_mm: number | null;
+    width_mm: number | null;
+    length_mm: number | null;
+    weight_g: number | null;
+    notes: string | null;
+    // Campos provenientes do join `product_kit_components` × `products`
+    // (vide JSON_BUILD_OBJECT em supabase/migrations/20250103070000…).
+    // Podem vir ausentes em produtos mais antigos sem catálogo completo.
+    component_type_code?: string | null;
+    supplier_component_code?: string | null;
+    component_description?: string | null;
+    personalization_notes?: string | null;
+    color?: string | null;
+    // Galeria + dimensões circulares (kits nativos do fornecedor).
+    images?: unknown | null; // jsonb[] heterogêneo — normalizado no mapper
+    diameter_mm?: number | null;
+    circumference_mm?: number | null;
+    capacity_ml?: number | null;
   }> | null;
 
   // ------------------------------------------------------------------
@@ -124,6 +155,9 @@ export interface PromobrindProduct {
   ipi_rate?: number | null;
   country_of_origin?: string | null;
   origin_country?: string | null;
+  // Edit-form round-trip fields (present in v_products_public; previously untyped).
+  supplier_product_url?: string | null;
+  box_inner_quantity?: number | null;
   cfop?: string | null;
   csosn?: string | null;
   icms_rate?: number | null;
@@ -156,6 +190,16 @@ export interface PromobrindProduct {
   // Nomes denormalizados (fallback de exibição)
   category?: string | null;
   supplier?: string | null;
+  // Word Magic — campos gerados por IA (word-magic Edge Function)
+  ai_title?: string | null;
+  ai_description?: string | null;
+  ai_summary?: string | null;
+  ai_version?: number | null;
+  ai_generated_at?: string | null;
+  // Color swatches V2 — JSONB populado por trigger no BD externo (fn_rebuild_color_swatches).
+  // Cada item: { variant_id, sku, color_id, color_name, color_hex, stock_quantity, image_url, is_in_stock }.
+  color_swatches?: unknown[] | null;
+  has_colors?: boolean | null;
 }
 
 export function getProductImageUrl(product: PromobrindProduct): string | null {
@@ -173,40 +217,76 @@ export function getProductStock(product: PromobrindProduct): number {
 // Select field constants
 // NOTE: `price_updated_at` is the SSOT for price freshness — populated via
 // trigger on the external Promobrind DB whenever any price field changes.
-// `price_freshness_threshold_days` does NOT exist in the external DB and was
-// removed from all selects to eliminate "column does not exist" errors.
+// `price_freshness_threshold_days` é opcional durante a transição de schema.
+// Não selecionamos a coluna por padrão para evitar 400/tela branca quando o
+// schema do BD externo ainda não foi aplicado; consumidores usam default 60d.
 export const PRODUCT_SELECT_FIELDS_WITH_SALE =
-  'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at, color_swatches, has_colors';
+
+export const PRODUCT_SELECT_FIELDS_WITH_SALE_NO_THRESHOLD =
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, gender, ' +
-  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at, color_swatches, has_colors';
 
 export const PRODUCT_SELECT_FIELDS_LEGACY =
-  'id, name, sku, cost_price, images, primary_image_url, ' +
+  'id, name, sku, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at, color_swatches, has_colors';
+
+export const PRODUCT_SELECT_FIELDS_LEGACY_NO_THRESHOLD =
+  'id, name, sku, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, ' +
-  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at, color_swatches, has_colors';
 
 export const PRODUCT_SELECT_FIELDS_DETAIL =
-  'id, name, sku, sale_price, cost_price, images, primary_image_url, ' +
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
+  'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
+  'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
+  'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
+  'price_freshness_threshold_days, ' +
+  'is_featured, is_bestseller, is_new, is_on_sale, is_kit, tags, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
+  'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at, color_swatches, has_colors';
+
+export const PRODUCT_SELECT_FIELDS_DETAIL_NO_THRESHOLD =
+  'id, name, sku, sale_price, cost_price, images, primary_image_url, primary_image_fallback_url, set_image_url, ' +
   'category_id, main_category_id, supplier_id, supplier_reference, description, ' +
   'short_description, meta_description, brand, is_active, active, stock_quantity, colors, ' +
   'materials, dimensions, min_quantity, created_at, updated_at, price_updated_at, ' +
   'is_featured, is_bestseller, is_new, is_on_sale, is_kit, tags, ' +
-  'height_cm, width_cm, length_cm, diameter_cm, weight_g, capacity_ml, ' +
+  'height_cm, width_cm, length_cm, diameter_cm, circumference_cm, weight_g, capacity_ml, ' +
   'packing_type, packing_classification, has_commercial_packaging, repacking_type, packaging_context, ' +
-  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3';
+  'box_image, box_width_mm, box_height_mm, box_length_mm, box_weight_kg, box_quantity, box_volume_cm3, ai_title, ai_description, ai_summary, ai_version, ai_generated_at, color_swatches, has_colors';
 
 // #2: also trigger fallback when orderBy hits a missing column
 export function shouldFallbackSelect(err: unknown) {
-  const msg = err instanceof Error ? err.message : String(err);
-  return /(sale_price|base_price|image_url|supplier_name|category_name|product_videos|selected_images|gender|price_updated_at|price_freshness_threshold_days|does not exist|não existe|undefined column|column .+ does not exist|could not identify an ordering operator|order by)/i.test(msg);
+  const msg = toErrorMessage(err);
+  return /(sale_price|base_price|image_url|supplier_name|category_name|product_videos|selected_images|gender|price_updated_at|price_freshness_threshold_days|does not exist|não existe|undefined column|column .+ does not exist|could not identify an ordering operator|order by)/i.test(
+    msg,
+  );
 }

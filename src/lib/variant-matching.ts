@@ -10,10 +10,10 @@ interface ColorLike {
 
 /** Normaliza nome de cor para comparação (lowercase, sem acentos). */
 export function normalizeColorName(name?: string | null): string {
-  if (!name) return "";
+  if (!name) return '';
   return name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
 }
@@ -31,7 +31,7 @@ export function hexDistance(hexA?: string | null, hexB?: string | null): number 
 }
 
 function parseHex(hex: string): { r: number; g: number; b: number } | null {
-  const clean = hex.replace("#", "").trim();
+  const clean = hex.replace('#', '').trim();
   if (clean.length !== 6) return null;
   const r = parseInt(clean.slice(0, 2), 16);
   const g = parseInt(clean.slice(2, 4), 16);
@@ -49,7 +49,7 @@ export function findMatchingColorIndex(target: ColorLike, colors: ColorLike[]): 
   // 1) Match exato por nome
   const targetName = normalizeColorName(target.name);
   if (targetName) {
-    const idx = colors.findIndex(c => normalizeColorName(c.name) === targetName);
+    const idx = colors.findIndex((c) => normalizeColorName(c.name) === targetName);
     if (idx >= 0) return idx;
   }
   // 2) Match por hex próximo (distância < 30)

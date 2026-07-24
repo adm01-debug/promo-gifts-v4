@@ -16,6 +16,9 @@ import { parseContract } from "../_shared/contracts/index.ts";
 import { WebhookDispatcherSchemas } from "../_shared/contracts/schemas/webhook-dispatcher.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeDispatcher } from "../_shared/dispatcher-auth.ts";
+import { assertSwitchEnabled } from "../_shared/kill_switch.ts";
+import { getCredential } from "../_shared/credentials.ts";
+import { getBreaker } from "../_shared/circuit-breaker.ts";
 
 const corsHeaders = buildPublicCorsHeaders({ allowMethods: "POST, OPTIONS" });
 
@@ -42,8 +45,12 @@ async function payloadHash(payload: string): Promise<string> {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const killResponse = await assertSwitchEnabled('edge_webhook_dispatcher', req, corsHeaders);
+  if (killResponse) return killResponse;
+
   // Guard: require X-Dispatcher-Secret to prevent unauthorized invocations
-  const dispatcherSecret = Deno.env.get("WEBHOOK_DISPATCHER_SECRET");
+  // fix: ssot-bypass — credential vault
+  const dispatcherSecret = await getCredential("WEBHOOK_DISPATCHER_SECRET");
   if (dispatcherSecret) {
     const incoming = req.headers.get("x-dispatcher-secret");
     if (!incoming || incoming !== dispatcherSecret) {
@@ -130,10 +137,12 @@ Deno.serve(async (req) => {
           status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      const hookContractVersion: string = (hook as { contract_version?: string }).contract_version ?? "v1";
       const bodyJson = JSON.stringify({
         event,
         timestamp: new Date().toISOString(),
         test: true,
+        version: hookContractVersion,
         data: payload ?? null,
       });
       const headers: Record<string, string> = {
@@ -142,9 +151,12 @@ Deno.serve(async (req) => {
         "X-Event": event,
         "X-Webhook-Id": hook.id,
         "X-Test-Mode": "1",
+        "X-Contract-Version": hookContractVersion,
       };
       const secret = hook.secret_ref ? Deno.env.get(hook.secret_ref) : null;
-      if (secret) headers["X-Signature-256"] = "sha256=" + await hmacSign(bodyJson, secret);
+      // fix_version=2026-07-09-webhook-header-compat: lê signature_header do registro (x-webhook-signature para Champions V2)
+      const _sigHdr = ((hook as {signature_header?: string}).signature_header) ?? "X-Signature-256";
+      if (secret) headers[_sigHdr] = "sha256=" + await hmacSign(bodyJson, secret);
       const start = Date.now();
       try {
         const res = await fetch(hook.url, { method: "POST", headers, body: bodyJson });
@@ -207,23 +219,75 @@ Deno.serve(async (req) => {
       });
     }
 
-    const bodyJson = JSON.stringify({
+    // bodyJson is rebuilt per-hook below so we can stamp the hook's
+    // configured `contract_version` into the payload + signature.
+    const baseEnvelope = {
       event,
       timestamp: new Date().toISOString(),
       data: payload ?? null,
-    });
-    const phash = await payloadHash(bodyJson);
+    };
     const results: Array<Record<string, unknown>> = [];
 
     for (const hook of hooks) {
+      // Per-hook contract version: each outbound endpoint can be pinned to v1
+      // (legacy) or v2 (new schema) — column lands in the same migration that
+      // ships parseVersionedBody in product-webhook. Defaults to v1.
+      const hookContractVersion: string = (hook as { contract_version?: string }).contract_version ?? "v1";
+      const bodyJson = JSON.stringify({
+        ...baseEnvelope,
+        version: hookContractVersion,
+      });
+      const phash = await payloadHash(bodyJson);
       const policy = hook.retry_policy ?? { max_attempts: 3, backoff_seconds: [5, 30, 120] };
       const max = Math.max(1, Math.min(5, Number(policy.max_attempts ?? 3)));
       const backoff = Array.isArray(policy.backoff_seconds) ? policy.backoff_seconds : [5, 30, 120];
       let success = false;
       let attempt = 0;
+      let deliveryRowInserted = false;
+
+      // Atomic delivery claim: claim_webhook_delivery inserts a lock row within
+      // its own transaction via INSERT ... ON CONFLICT DO NOTHING. The unique
+      // constraint on (webhook_id, payload_hash) ensures only one concurrent
+      // invocation acquires the lock — the other receives FALSE and skips.
+      // This closes the race that existed with check_webhook_dedup, where the
+      // advisory lock was released before the delivery INSERT happened.
+      const { data: claimed, error: claimErr } = await supabase.rpc('claim_webhook_delivery', {
+        p_webhook_id: hook.id,
+        p_payload_hash: phash ?? null,
+      });
+      if (claimErr) {
+        // Fail closed: without a confirmed claim we have no dedup guarantee.
+        // Logging and continuing would re-open the race we just closed.
+        console.warn('[webhook-dispatcher] claim_webhook_delivery error (skipping delivery):', claimErr);
+        results.push({ webhook_id: hook.id, status: 'skipped_claim_error' });
+        continue;
+      } else if (!claimed) {
+        results.push({ webhook_id: hook.id, status: 'skipped_duplicate' });
+        continue;
+      }
+
+      // Per-endpoint circuit breaker (in-memory por isolate). Chave = hostname
+      // do webhook: várias URLs do mesmo host compartilham o breaker, e um host
+      // instável não trava dispatchers de outros hosts.
+      let breakerHost = "unknown";
+      try { breakerHost = new URL(hook.url).host; } catch { /* url malformada — cai no fetch e falha */ }
+      const breaker = getBreaker(`webhook:${breakerHost}`);
 
       while (attempt < max && !success) {
         attempt++;
+
+        // Se o circuito está aberto para este host, não tenta a chamada HTTP:
+        // registramos falha "circuit_open" na tabela de deliveries e saímos do
+        // loop para não desperdiçar retries em endpoint sabidamente derrubado.
+        if (!breaker.canRequest()) {
+          await supabase.from("webhook_deliveries").insert({
+            webhook_id: hook.id, event, payload: payload ?? null, payload_hash: phash,
+            status_code: null, response_body_truncated: "circuit_open",
+            attempt, success: false, error_message: `circuit_open:${breakerHost}`,
+          });
+          break;
+        }
+
         try {
           const headers: Record<string, string> = {
             "Content-Type": "application/json",
@@ -231,14 +295,17 @@ Deno.serve(async (req) => {
             "X-Event": event,
             "X-Webhook-Id": hook.id,
             "X-Delivery-Attempt": String(attempt),
+            "X-Contract-Version": hookContractVersion,
           };
           const secret = hook.secret_ref ? Deno.env.get(hook.secret_ref) : null;
-          if (secret) headers["X-Signature-256"] = "sha256=" + await hmacSign(bodyJson, secret);
+          // fix_version=2026-07-09-webhook-header-compat: lê signature_header do registro (x-webhook-signature para Champions V2)
+          const _sigHdr = ((hook as {signature_header?: string}).signature_header) ?? "X-Signature-256";
+          if (secret) headers[_sigHdr] = "sha256=" + await hmacSign(bodyJson, secret);
 
           const res = await fetch(hook.url, { method: "POST", headers, body: bodyJson });
           const respText = (await res.text()).slice(0, 4000);
 
-          await supabase.from("webhook_deliveries").insert({
+          const { error: insertErr } = await supabase.from("webhook_deliveries").insert({
             webhook_id: hook.id,
             event,
             payload: payload ?? null,
@@ -251,6 +318,15 @@ Deno.serve(async (req) => {
           });
 
           if (res.ok) {
+            breaker.recordSuccess();
+            if (!insertErr) {
+              deliveryRowInserted = true;
+            } else {
+              // Delivery succeeded but the dedup row was not written — log at
+              // critical level so an on-call can investigate. The lock is NOT
+              // released in this case so the dedup window remains active.
+              console.error('[webhook-dispatcher] CRITICAL: delivery row INSERT failed after 2xx; lock will not be released', insertErr);
+            }
             success = true;
             await supabase.from("outbound_webhooks").update({
               last_triggered_at: new Date().toISOString(),
@@ -258,12 +334,19 @@ Deno.serve(async (req) => {
               consecutive_failures: 0,
             }).eq("id", hook.id);
             results.push({ webhook_id: hook.id, status: "success", attempt });
-          } else if (attempt < max) {
-            const delay = (backoff[attempt - 1] ?? backoff[backoff.length - 1] ?? 30) * 1000;
-            await new Promise((r) => setTimeout(r, delay));
+          } else {
+            // HTTP 5xx conta pro breaker; 4xx é problema do payload/rota,
+            // não instabilidade de infra — não penaliza o host.
+            if (res.status >= 500) breaker.recordFailure();
+            if (attempt < max) {
+              const delay = (backoff[attempt - 1] ?? backoff[backoff.length - 1] ?? 30) * 1000;
+              await new Promise((r) => setTimeout(r, delay));
+            }
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : "Erro desconhecido";
+          // Falha de rede/timeout = candidato clássico ao circuit breaker.
+          breaker.recordFailure();
           await supabase.from("webhook_deliveries").insert({
             webhook_id: hook.id, event, payload: payload ?? null, payload_hash: phash,
             status_code: null, response_body_truncated: msg.slice(0, 4000),
@@ -274,6 +357,24 @@ Deno.serve(async (req) => {
             await new Promise((r) => setTimeout(r, delay));
           }
         }
+      }
+
+
+      // Release delivery lock so failed deliveries can be retried by the next
+      // dispatcher invocation. On success the delivery row acts as the dedup;
+      // on failure releasing the lock allows a future retry cycle to proceed.
+      // Release the lock only when it is safe to do so:
+      //  - On failure: always release so the next retry cycle can re-claim.
+      //  - On success: release only after the delivery row was durably written.
+      //    If the INSERT failed after a 2xx response the lock is intentionally
+      //    kept so the dedup window stays active (no delivery row = no proof of
+      //    delivery; keeping the lock prevents an immediate re-dispatch).
+      if (phash && !claimErr && (!success || deliveryRowInserted)) {
+        const { error: releaseErr } = await supabase.rpc('release_webhook_delivery_lock', {
+          p_webhook_id: hook.id,
+          p_payload_hash: phash,
+        });
+        if (releaseErr) console.warn('[webhook-dispatcher] release_webhook_delivery_lock error:', releaseErr);
       }
 
       if (!success) {

@@ -1,4 +1,2 @@
--- Reset cirurgico: comercial01 para teste
-UPDATE auth.users
-SET encrypted_password = crypt('@Promobrindes2021', gen_salt('bf')), updated_at = now()
-WHERE email = 'comercial01@promobrindes.com.br';
+-- Historical one-off password reset removed to keep migration replay safe.
+-- No-op migration intentionally left in place for history consistency.

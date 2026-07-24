@@ -18,12 +18,19 @@ export default {
       },
     },
     extend: {
+      screens: {
+        'xs': '480px',
+        'ultra-wide': '1920px',
+      },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         display: ["var(--font-display)", "system-ui", "sans-serif"],
       },
       colors: {
-        border: "hsl(var(--border))",
+        border: {
+          DEFAULT: "hsl(var(--border))",
+          strong: "hsl(var(--border-strong))",
+        },
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
@@ -51,6 +58,14 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        "neon-blue": {
+          DEFAULT: "hsl(var(--neon-blue))",
+          foreground: "hsl(var(--neon-blue-foreground))",
+        },
+        "neon-green": {
+          DEFAULT: "hsl(var(--neon-green))",
+          foreground: "hsl(var(--neon-green-foreground))",
+        },
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
@@ -60,12 +75,16 @@ export default {
           hover: "hsl(var(--cart-hover))",
           foreground: "hsl(var(--cart-foreground))",
         },
-        orange: {
-          DEFAULT: "hsl(var(--orange))",
-          hover: "hsl(var(--orange-hover))",
-          active: "hsl(var(--orange-active))",
-          glow: "hsl(var(--orange-glow))",
-          foreground: "hsl(var(--orange-foreground))",
+        // Brand aliases (Etapa 17) — enables bg-brand-primary, text-brand-primary,
+        // border-brand-primary, etc. Coexists with the orange.* tokens during the
+        // 3-phase migration. CSS vars defined in src/styles/brand-tokens.css.
+        // Use brand-primary in all new code.
+        "brand-primary": {
+          DEFAULT: "hsl(var(--brand-primary))",
+          hover: "hsl(var(--brand-primary-hover))",
+          active: "hsl(var(--brand-primary-active))",
+          glow: "hsl(var(--brand-primary-glow))",
+          foreground: "hsl(var(--brand-primary-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -190,6 +209,7 @@ export default {
         "glow-success": "0 0 25px hsl(var(--success) / 0.3)",
         "glow-warning": "0 0 25px hsl(var(--warning) / 0.3)",
         "glow-orange": "var(--shadow-glow)",
+        "glow-brand": "var(--shadow-glow)",
         "glow-cart": "0 0 25px hsl(var(--cart) / 0.4)",
         header: "var(--shadow-header)",
         elevated: "var(--shadow-premium)",
@@ -270,6 +290,14 @@ export default {
         "border-glow": {
           "0%, 100%": { borderColor: "hsl(var(--primary) / 0.3)" },
           "50%": { borderColor: "hsl(var(--primary) / 0.8)" },
+        },
+        "preview-breath": {
+          "0%, 100%": { boxShadow: "0 0 4px hsl(var(--primary) / 0.18)" },
+          "50%": { boxShadow: "0 0 10px hsl(var(--primary) / 0.32)" },
+        },
+        "preview-breath-border": {
+          "0%, 100%": { borderColor: "hsl(var(--primary) / 0.25)" },
+          "50%": { borderColor: "hsl(var(--primary) / 0.45)" },
         },
         wiggle: {
           "0%, 100%": { transform: "rotate(-3deg)" },

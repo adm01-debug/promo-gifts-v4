@@ -18,4 +18,8 @@ regexes = [
   '''sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU''',
   # URL do projeto Supabase (pública — aparece em todas as chamadas de rede)
   '''doufsxqlfjyuvxuezpln\.supabase\.co''',
+  # JWT anon key (role: anon) que estava hardcoded em client.ts antes do commit a9a667ff.
+  # Substituído por VITE_SUPABASE_PUBLISHABLE_KEY em 2026-05-23.
+  # Chave anon é pública por design (role sem privilégios, embutida nos bundles).
+  '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRvdWZzeHFsZmp5dXZ4dWV6cGxuIiwicm9sZSI6ImFub24i''',
 ]

@@ -1,0 +1,46 @@
+name: stock-rupture-fuzz
+
+on:
+  pull_request:
+    paths:
+      - 'src/lib/inventory/**'
+      - 'src/types/stock.ts'
+      - 'src/components/inventory/**'
+      - '.github/workflows/stock-rupture-fuzz.yml'
+  workflow_dispatch:
+  schedule:
+    # Nightly 04:11 UTC — varredura adicional
+    - cron: '11 4 * * *'
+
+jobs:
+  fuzz:
+    name: Risco de Ruptura — fuzz (800 sims, 10 invariantes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run rupture-risk fuzz suite
+        run: |
+          mkdir -p .fuzz-artifacts
+          npx vitest run \
+            src/lib/inventory/__tests__/stock-filter.rupture-risk.fuzz.test.ts \
+            src/lib/inventory/__tests__/stock-filter.rupture-risk.test.ts \
+            --reporter=verbose 2>&1 | tee .fuzz-artifacts/fuzz.log
+        env:
+          CI: 'true'
+
+      - name: Upload fuzz logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-rupture-fuzz-${{ github.run_id }}
+          path: .fuzz-artifacts/
+          retention-days: 30

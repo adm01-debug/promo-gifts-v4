@@ -25,21 +25,27 @@ describe('logger', () => {
   it('logger.error should always log (even in production)', async () => {
     const { logger } = await import('@/lib/logger');
     logger.error('test error');
-    // Logger prepends [ERROR] timestamp prefix
+    // Logger outputs structured JSON via console.error
     expect(console.error).toHaveBeenCalledWith(
-      expect.stringMatching(/^\[ERROR\] .+$/),
-      'test error'
+      expect.stringMatching(/"level":"error"/)
     );
+    const [jsonStr] = (console.error as ReturnType<typeof vi.fn>).mock.calls[0];
+    const parsed = JSON.parse(jsonStr as string);
+    expect(parsed.level).toBe('error');
+    expect(parsed.message).toBe('test error');
+    expect(parsed.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   it('logger methods should accept multiple arguments', async () => {
     const { logger } = await import('@/lib/logger');
     logger.error('msg', { data: 1 }, [1, 2]);
-    expect(console.error).toHaveBeenCalledWith(
-      expect.stringMatching(/^\[ERROR\] .+$/),
-      'msg',
-      { data: 1 },
-      [1, 2]
-    );
+    expect(console.error).toHaveBeenCalled();
+    const [jsonStr] = (console.error as ReturnType<typeof vi.fn>).mock.calls[0];
+    const parsed = JSON.parse(jsonStr as string);
+    expect(parsed.level).toBe('error');
+    expect(parsed.message).toBe('msg');
+    // Multiple extra args → extractData returns { details: [...] } → stored under data
+    expect(parsed.data).toBeDefined();
+    expect(parsed.data.details).toEqual([{ data: 1 }, [1, 2]]);
   });
 });

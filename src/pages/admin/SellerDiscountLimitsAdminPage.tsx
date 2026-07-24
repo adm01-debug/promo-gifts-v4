@@ -8,6 +8,7 @@
  *  • Painel de requisições recentes que excederam o limite
  */
 import { useMemo, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
@@ -31,6 +32,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 const DEFAULT_LIMIT = 5;
 
@@ -64,11 +66,14 @@ interface ExceededRequest {
 
 export default function SellerDiscountLimitsAdminPage() {
   const qc = useQueryClient();
+  const { isAdmin, rolesLoaded } = useAuth(); // FIX 2026-06-18: guard de auth
   const [edits, setEdits] = useState<Record<string, { percent?: number; notes?: string }>>({});
 
   // ---------- Vendedores + limites ----------
   const { data: sellers, isLoading: loadingSellers } = useQuery({
     queryKey: ['admin-seller-discount-limits'],
+    enabled: rolesLoaded && Boolean(isAdmin),
+    retry: 0,
     queryFn: async (): Promise<SellerRow[]> => {
       const { data: profiles, error: pErr } = await supabase
         .from('profiles')
@@ -78,7 +83,10 @@ export default function SellerDiscountLimitsAdminPage() {
         .order('full_name');
       if (pErr) throw pErr;
 
-      const ids = (profiles ?? []).map((p) => p.user_id);
+      const sellerProfiles = (profiles ?? []).filter(
+        (p): p is typeof p & { user_id: string } => p.user_id !== null,
+      );
+      const ids = sellerProfiles.map((p) => p.user_id);
       if (!ids.length) return [];
 
       const { data: limits } = await supabase
@@ -93,7 +101,7 @@ export default function SellerDiscountLimitsAdminPage() {
         ]),
       );
 
-      return (profiles ?? []).map((p) => {
+      return sellerProfiles.map((p) => {
         const lim = byId.get(p.user_id);
         return {
           user_id: p.user_id,
@@ -110,6 +118,8 @@ export default function SellerDiscountLimitsAdminPage() {
   // ---------- Impacto: agregados de discount_approval_requests ----------
   const { data: impact } = useQuery({
     queryKey: ['admin-discount-impact'],
+    enabled: rolesLoaded && Boolean(isAdmin),
+    retry: 0,
     queryFn: async (): Promise<Map<string, ImpactRow>> => {
       const { data, error } = await supabase
         // rls-allow: admin-only; RLS filtra
@@ -147,6 +157,8 @@ export default function SellerDiscountLimitsAdminPage() {
   // ---------- Requisições recentes que excederam limite ----------
   const { data: exceeded } = useQuery({
     queryKey: ['admin-discount-exceeded'],
+    enabled: rolesLoaded && Boolean(isAdmin),
+    retry: 0,
     queryFn: async (): Promise<ExceededRequest[]> => {
       const { data, error } = await supabase
         // rls-allow: admin-only; RLS filtra
@@ -176,17 +188,15 @@ export default function SellerDiscountLimitsAdminPage() {
     }) => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error('Não autenticado');
-      const { error } = await supabase
-        .from('seller_discount_limits')
-        .upsert(
-          {
-            user_id: userId,
-            max_discount_percent: percent,
-            notes: notes || null,
-            set_by: u.user.id,
-          },
-          { onConflict: 'user_id' },
-        );
+      const { error } = await supabase.from('seller_discount_limits').upsert(
+        {
+          user_id: userId,
+          max_discount_percent: percent,
+          notes: notes || null,
+          set_by: u.user.id,
+        },
+        { onConflict: 'user_id' },
+      );
       if (error) throw error;
     },
     onSuccess: (_d, vars) => {
@@ -198,7 +208,7 @@ export default function SellerDiscountLimitsAdminPage() {
       qc.invalidateQueries({ queryKey: ['admin-seller-discount-limits'] });
       qc.invalidateQueries({ queryKey: ['admin-discount-impact'] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(sanitizeError(e)),
   });
 
   const sellerNameById = useMemo(() => {
@@ -501,7 +511,7 @@ function KpiCard({
   icon: React.ReactNode;
   label: string;
   value: number;
-  tone?: 'success' | 'warning' | 'danger';
+  tone?: 'danger' | 'success' | 'warning';
 }) {
   const toneCls =
     tone === 'success'
@@ -531,7 +541,7 @@ function ImpactPill({
 }: {
   label: string;
   value: number;
-  tone: 'success' | 'warning' | 'danger';
+  tone: 'danger' | 'success' | 'warning';
 }) {
   const toneCls =
     tone === 'success'

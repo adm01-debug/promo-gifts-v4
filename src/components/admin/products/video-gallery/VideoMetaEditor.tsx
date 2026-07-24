@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Save, X } from 'lucide-react';
-import { type ExternalVideo, VIDEO_TYPES } from "./types";
+import { type ExternalVideo, VIDEO_TYPES } from './types';
 
 interface Props {
   video: ExternalVideo;
@@ -63,8 +63,8 @@ export function VideoMetaEditor({ video, onSave, onCancel }: Props) {
           className="h-6 w-6 text-white hover:bg-white/20"
           onClick={() =>
             onSave({
-              title: title.trim() || null,
-              description: description.trim() || null,
+              title: title.trim() || undefined,
+              description: description.trim() || undefined,
               video_type: videoType,
             })
           }

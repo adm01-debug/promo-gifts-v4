@@ -8,7 +8,39 @@
 
 ## 🎯 Onde estamos hoje
 
-**Última sessão**: 2026-05-23 — **Etapas 9-13** fechadas — refatoração do top-5 do TSC baseline (235 erros eliminados, 0 regressão).
+**Última sessão**: 2026-06-02 / 2026-06-03 — **Auditoria QA exaustiva** (`claude/optimistic-shannon-aceSF`). 2 PRs entregues:
+
+- **[#608](https://github.com/adm01-debug/promo-gifts-v4/pull/608)** mergeado (commit `ce0384b`): destrava `test:ci-core` (deploy gate) com plugin Vite `rewriteDenoUrlImports` em `vitest.config.ts` — Vitest 4.1.8 deixou de aplicar `resolve.alias` regex para schemes `https:` (regressão vs 3.x), quebrando TODOS os contract tests que importam schemas Deno-style das edges. Antes: 1 suíte FAIL / 254 testes passing. Depois: **317/317 + 574/574 em `tests/contracts/`**. Mesmo PR também fechou: 47 regressões ESLint (incluindo `NoveltyProductGrid.integration.test.tsx` com redeclaração ilegal de `screen` + `require()` em ES module; 3 testes com anti-padrão T-FIX-5b `forEach(expect)`); `check:seller-scope` (comentário `rls-allow` realinhado em `QuoteBitrixSync.ts`); `check:contract-coverage` (3 schemas Zod para `verify-2fa-token`/`bulk-random-passwords`/`load-test`); `check:mojibake` (2 ocorrências `Ã ` em comentários PT-BR); 6 console.log de diagnóstico vazando em prod (`useCatalogState`/`CatalogContent`/`QuickQuoteFAB`).
+
+- **[#623](https://github.com/adm01-debug/promo-gifts-v4/pull/623)** draft (commit `13f8a47`): após rebase em main, descobri **2 P0 reais de runtime** que crasham a UI: (1) **Rules-of-Hooks** em `ProductGrid.tsx` — 3 hooks (`useMemo`, `useProductsColorsBatch`, `useEffect`) chamados depois de 2 early returns (`if (isError)` / `if (showEmptyState)`); ao alternar entre estado de erro/vazio e normal, React detecta contagem de hooks divergente e crasha com "Rendered fewer hooks than expected"; (2) **TDZ** em `ProductCard.tsx` — `useEffect` referenciava `const allMatchingVariants` declarada 150 linhas abaixo (linha 158 vs 308); ReferenceError em runtime sempre que renderiza card com `colors`. Reproduzido por teste existente `ProductGrid.test.tsx > renders actual products when not loading`. Fix: hooks movidos para topo do componente; `useMemo(resolveAllMatchingColors)` posicionado antes do useEffect que consome. Mesmo PR também: gera `external-db-bridge.test.ts` faltante (`check:edge-live-coverage` 83/84 → 84/84); adiciona deps `product` faltando em ProductCard/ProductDetail useEffects; remove imports não usados em `session-recovery.test.ts`; fecha regressão TS em `FiltersPage.sorting.test.tsx` via helper `mockCatalog` com cast pontual (`CatalogPage.nextOffset` ficou obrigatório em PR #606).
+
+**Relatório consolidado**: [`docs/AUDITORIA_QA_EXAUSTIVA_2026-06-02.md`](./docs/AUDITORIA_QA_EXAUSTIVA_2026-06-02.md) cobre 24 suítes/gates executadas, achados P0/P1/P2/P3, pendências (TSC baseline drift do PR #606 — 13 regressões em 11 arquivos fora do escopo; top-5 baseline original; selector `[data-skeleton-id]` inexistente no teste de skeleton).
+
+**Sessão anterior**: 2026-06-01 — **Fechamento do colapso 2026-05-24 + resolução de conflitos de PR** (`claude/confident-heisenberg-M03BW`). Duas frentes encerradas nesta sessão:
+
+**Frente DB/infra**: dois crons falhando por NULL URL corrigidos via migration — `external-db-bridge-keepalive` removido (estava disparando a cada 4 min e falhando com NOT NULL violation) e `connections-auto-test` recriado com URL hardcoded (não dependia mais do GUC `app.supabase_functions_base_url` inexistente). Resultado: zero novas falhas de cron desde 13:40 UTC; `cron_health_1h` auto-resolve às ~14:40 UTC quando o histórico das últimas falhas sair da janela de 1 hora.
+
+**Frente PR**: PR #574 (`claude/confident-heisenberg-M03BW`) tinha conflito em `20260524210100_harden_anon_graphql_exposure.sql` — resolvido via `git rebase`, mantendo a versão FOREACH + `to_regclass` (mais concisa e replay-safe) contra os 27 blocos separados do main. **PR #574 mergeado** ✅. PR #572 (`claude/pensive-fermat-RJcEl`) tinha 190 arquivos em conflito — após rebase todos os 10 commits foram descartados como "patch already upstream"; GitHub auto-fechou o PR ✅.
+
+**Estado atual**: kill-switch `external-db-bridge` ativo (410 Gone, sem abrir conexão); REVOKE SELECT `anon` em 27 tabelas internas; 67 índices ociosos removidos; `fn_run_and_persist_smoke_tests` sem SECURITY DEFINER (cron funciona); crons corrigidos; FK index + consolidação de policies em `system_kill_switches`; `fn_run_schema_drift_check` com hold máximo de 15s. Smoke tests: 13/14 PASS (o único FAIL é `cron_health_1h` — transiente, auto-resolve até 14:40 UTC hoje).
+
+**Settings de Postgres aplicados** (verificados em `pg_settings`):
+- `idle_session_timeout = 600000ms` ✅
+- `idle_in_transaction_session_timeout = 60000ms` ✅
+- `log_min_duration_statement = 2000ms` ✅
+
+**Única pendência** (não é GUC Postgres — só Dashboard ou Management API):
+- Auth → Connection Strategy → **Percentage 15%** (advisor `auth_db_connections_absolute`)
+
+**Sessão anterior**: 2026-05-27 — **Auditoria exaustiva do módulo `mockup-generator` (rodada 2)** (`claude/mockup-generator-audit-KlHz3`). Aprofundou a auditoria T1‑T10 anterior cobrindo 12 gaps remanescentes (G1‑G12) e reconciliando o contrato real frontend↔edge↔testes. Destaques: (1) **edge `generate-mockup`** — rejeição de SVG com `errorCode:SVG_NOT_SUPPORTED`, fetch produto+logo em paralelo, `ai_generation_timeout`→`composition_timeout` (não há IA — é compositor canvas), allowlist de host opt-in p/ SSRF; (2) **service** — tradução robusta de erro da edge (lê `error.context`), remoção do payload morto `areas[]`, `layout_url`+`area_config` no select do histórico; (3) **rotação/escala** agora persistidas em `area_config` (sem migration) e restauradas no `loadFromHistory`; (4) **guards de input** no cliente (logo SVG, imagem de produto relativa/`placeholder.svg`); (5) **delete unificado** (fonte única no hook, removido estado duplicado da página) + histórico "carregar" agora usa o `loadFromHistory` rico; (6) **testes** — suíte grep substituída por testes comportamentais reais (service + storage), integração reescrita p/ contrato real, `MockupDeletion` atualizado, fixtures e2e migradas de SVG→PNG. Gates: build ✅, baseline TSC ✅ (zero regressão), 62 testes do módulo ✅, ESLint sem novos problemas nos arquivos tocados. _Nota: composição via `OffscreenCanvas` mantida por decisão (assumida funcional em prod); migração do motor fica para sessão dedicada se surgir `canvas_runtime_unavailable`._
+
+**Sessão anterior**: 2026-05-26 — **Suíte de integração LIVE das Edge Functions**. Harness em `tests/edge-functions/live/` (`_live-client`/`_authz`/`_schemas`/`_live-suite` + registro `descriptors.ts`) cobrindo **82/82** edge functions com HTTP real (fronteira de auth, CORS, validação de input, contrato de erro, sem-crash 5xx) — 672 casos, validados contra o ambiente deployado. Funções destrutivas em negative-only/dry-run. Fuzz expandido (8→20 endpoints, +imagem/uploads). Gate `check:edge-live-coverage` + passos LIVE plugados em `ci.yml` e `edge-integration-all.yml`. Doc: [`docs/testing/EDGE_LIVE_TESTS.md`](./docs/testing/EDGE_LIVE_TESTS.md). _Nota: gate `typecheck` já acusava drift legado em `useGlobalSearch.ts` (etapa 16 adiada), não relacionado a esta sessão._
+
+**Última sessão**: 2026-05-25 — **Hardening de fluxos de usuário** (`claude/project-comprehensive-audit-555Dk`). Auditoria focada nos fluxos do vendedor (catálogo→carrinho→orçamento→kit). Achados/correções: (1) **carrinho** — 10 mutations de `useSellerCarts.ts` engoliam erros sem feedback (RLS/rede/constraint); adicionado `onError` consistente via `sanitizeError`; reorder agora aborta em falha parcial; `duplicateItemToCart` passou a copiar `sort_order`. (2) **#339** — confirmado via DB ao vivo que 6 colunas de personalização não existem (`area_image_url`, `max_area_cm2`, `is_default`×2, `is_personalizable`); migration aditiva idempotente **redigida** (`20260525232003_fix_339_*`), **não aplicada em prod** (aguarda revisão/deploy). Advisors read-only rodados no banco: 0 ERROR de segurança, estado bate com a doc. Gates: build ✅, baseline TSC ✅ (zero regressão), testes do carrinho 8/8 ✅.
+
+**Sessão anterior**: 2026-05-24 — **Continuação do colapso** (`claude/confident-heisenberg-M03BW`). Achado central: o kill-switch nunca havia sido ligado no código da edge `external-db-bridge` (causa raiz do colapso). Corrigido no código + 5 migrations DB aplicadas via MCP (REVOKE anon, drop de 67 índices ociosos, consolidação de policies, captura de `fn_handle_new_user`, otimização do drift-check). `fn_run_smoke_tests()` 14/14 ✅. Detalhes em [`docs/RUNBOOK_COLAPSO_2026-05-24.md`](./docs/RUNBOOK_COLAPSO_2026-05-24.md).
+
+**Sessão anterior**: 2026-05-23 — **Etapas 9-13** fechadas — refatoração do top-5 do TSC baseline (235 erros eliminados, 0 regressão).
 
 **Sessões recentes**:
 - 2026-05-23 (mais recente) — **Etapas 9-13** (top-5 TSC baseline) ✅
@@ -99,17 +131,134 @@ Refatoração dos 5 arquivos com mais erros no `.tsc-baseline.json` — **235 er
 **Total estimado**: ~5h de trabalho cuidadoso.
 
 > 💡 Sugestão: rodar essas etapas **uma por sessão dedicada**, sem misturar com novas features.
+>
+> 💡 Lição da Etapa 13: a causa real no compare folder era import errado entre dois tipos `Product` distintos (`@/types/product` DB-oriented vs `@/types/product-catalog` runtime). Antes de atacar um componente por suposto problema snake_case/camelCase, primeiro confirme se ele importa o tipo runtime correto.
 
 ---
 
+
+## 🌊 Plano de implementação em ondas (P0 primeiro)
+
+> Horizonte sugerido: **4 semanas corridas** a partir de **2026-05-25**.
+> Regra de execução: **não iniciar P1 sem concluir critérios de prontidão de P0**.
+
+### Onda P0 (Semana 1 — 2026-05-25 a 2026-05-31)
+**Objetivo:** eliminar riscos bloqueantes de operação/segurança e estabilizar trilha de validação.
+
+**Escopo foco**
+- Fechar pendências classificadas como bloqueantes no runbook de colapso e auditorias recentes.
+- Garantir smoke tests e gates mínimos de CI verdes no fluxo principal.
+- Confirmar observabilidade mínima para detectar regressão imediatamente após deploy.
+
+**Marcos semanais (milestones)**
+- **M1 (até 2026-05-27):** inventário final de bloqueadores aberto/fechado, com owner por item.
+- **M2 (até 2026-05-29):** validação técnica dos fixes de bloqueadores em ambiente controlado.
+- **M3 (até 2026-05-31):** checklist de produção assinado (go/no-go) para liberar P1.
+
+**Critérios de prontidão (DoR/DoD da etapa)**
+- 100% dos bloqueadores P0 classificados como “fechado” ou com rollback seguro documentado.
+- `fn_run_smoke_tests()` sem falhas (baseline da sessão anterior: 14/14).
+- Gates críticos do CI (typecheck/testes essenciais) sem regressão em relação ao baseline atual.
+- Runbook de incidente atualizado com passos de rollback e owner de plantão.
+
+### Onda P1 (Semana 2 — 2026-06-01 a 2026-06-07)
+**Objetivo:** reduzir dívida técnica que gera risco de regressão funcional e de qualidade.
+
+**Escopo foco**
+- Executar etapas 14-16 (redução de warnings ESLint em arquivos prioritários).
+- Atacar warnings com maior potencial de bug latente (tipagem frouxa, imports ambíguos, fluxos nulos).
+
+**Marcos semanais (milestones)**
+- **M4 (até 2026-06-03):** Etapa 14 concluída + diff de warnings publicado.
+- **M5 (até 2026-06-05):** Etapa 15 concluída + validação de regressão local/CI.
+- **M6 (até 2026-06-07):** Etapa 16 concluída + baseline recalibrado (se aplicável).
+
+**Critérios de prontidão**
+- Etapas 14-16 concluídas com evidência (commits + output de checks).
+- Nenhum aumento líquido nos baselines de ESLint/TSC.
+- Componentes tocados sem TODO bloqueante aberto.
+
+### Onda P2 (Semana 3 — 2026-06-08 a 2026-06-14)
+**Objetivo:** consolidar confiabilidade operacional e preparar escala de manutenção.
+
+**Escopo foco**
+- Fechar itens médios de qualidade runner/coverage (plano 10/10 #3 e #4).
+- Tratar flakiness remanescente de teardown async/helmet/event listeners.
+
+**Marcos semanais (milestones)**
+- **M7 (até 2026-06-10):** estratégia de coverage acordada e aplicada no pipeline.
+- **M8 (até 2026-06-12):** correções de flakiness aplicadas com repetição de testes.
+- **M9 (até 2026-06-14):** estabilidade de suíte validada em execuções consecutivas.
+
+**Critérios de prontidão**
+- Redução perceptível de intermitência de testes (registro em sessão).
+- Pipeline de qualidade executável sem bypass manual.
+- Checklists de troubleshooting atualizados para time de manutenção.
+
+### Onda P3 (Semana 4 — 2026-06-15 a 2026-06-21)
+**Objetivo:** finalizar pendências não-bloqueantes e formalizar estado estável do redeploy.
+
+**Escopo foco**
+- Pendências baixas (ex.: Issue 3 CRM depende de sponsor/chaves).
+- Documentação final de operação contínua e “steady state”.
+
+**Marcos semanais (milestones)**
+- **M10 (até 2026-06-17):** decisão explícita sobre itens dependentes de terceiros.
+- **M11 (até 2026-06-19):** handoff técnico consolidado.
+- **M12 (até 2026-06-21):** STATUS simplificado para modo manutenção (se elegível).
+
+**Critérios de prontidão**
+- Backlog sem item crítico/médio sem owner.
+- Dependências externas com SLA/data alvo registrada.
+- Projeto apto a operar sem “onda de hardening” ativa.
+
+## 🛡️ Plano de mitigação para gaps bloqueantes
+
+### 1) Identificação e classificação rápida (até 24h)
+- Classificar cada gap em: **bloqueante**, **alto não-bloqueante**, **monitorável**.
+- Atribuir owner técnico + owner de negócio por gap.
+- Registrar impacto (segurança, disponibilidade, compliance, dados).
+
+### 2) Contenção imediata (fail-safe)
+- Aplicar feature flag/kill-switch quando houver risco de impacto em produção.
+- Se não houver correção segura no mesmo ciclo, ativar rollback para último estado estável.
+- Congelar mudanças não essenciais no mesmo domínio até estabilização.
+
+### 3) Remediação com janela controlada
+- Corrigir primeiro causa-raiz (não apenas sintoma).
+- Exigir evidência mínima: teste automatizado ou smoke reproduzindo o cenário do gap.
+- Executar validação pós-fix em duas camadas: técnica (CI/smoke) + operacional (runbook).
+
+### 4) Governança e comunicação
+- Abrir registro de incidente interno para todo gap bloqueante.
+- Publicar status diário curto enquanto houver bloqueador aberto.
+- Declarar explicitamente critério de saída: quando o gap deixa de ser bloqueante.
+
+### 5) Prevenção de recorrência
+- Transformar o aprendizado em guard-rail (lint, teste, policy, monitor, alerta).
+- Atualizar documentação de arquitetura/operação na mesma PR do fix.
+- Revisar se há outros pontos homólogos com a mesma vulnerabilidade estrutural.
+
+
 ## 📅 Backlog priorizado (atualizado)
 
-| Prioridade | Item | Origem | Cutoff |
-|------------|------|--------|--------|
-| 🟡 Média | Reduzir top arquivos do ESLint baseline (etapas 14-16) | Auditoria 2026-05-23 | Sem cutoff |
-| 🟡 Média | Plano "10/10" #3, #4 (coverage, quality runner) | Bugs anteriores | Sem cutoff |
-| 🟢 Baixa | Issue 3 do post-mortem CRM — migrar `EXTERNAL_CRM_*` para `integration_credentials` | Post-mortem | Sponsor precisa fornecer chaves |
-| 🟢 Baixa | Flakiness teardown async Helmet/Event listener | Sessão anterior | Sem cutoff |
+### Consolidação de gaps (cobertura, qualidade e fuzz) — priorizada por risco × impacto de negócio
+
+| Prioridade | Gap consolidado | Risco técnico | Impacto no negócio | Owner | Prazo alvo | Critério de verificação pós-correção |
+|------------|------------------|---------------|--------------------|-------|------------|--------------------------------------|
+| 🔴 P0 | **Coverage em fluxos críticos de receita/autorização** (`discountApprovalFlow`, `simulator-wizard-pricing-parity`, contratos webhook/transactional-email) | Regressão silenciosa em regras de preço, aprovação comercial e integração transacional | Orçamento incorreto, atraso de pedidos e risco de perda de venda | **Backend + Pricing guild** | **2026-06-07** | Suite alvo obrigatória verde (`tests/integration/discountApprovalFlow.test.ts`, `tests/integration/simulator-wizard-pricing-parity.test.ts`, `tests/contracts/send-transactional-email.contract.test.ts`, `tests/contracts/webhooks.contract.test.ts`) + cobertura mínima >= baseline atual nesses diretórios |
+| 🔴 P0 | **Quality debt do baseline ESLint (etapas 14-16)** em `SupabaseConnectionsTab`, `CatalogContent`, `ProductQuickView`, `useSimulatorWizard`, `useGlobalSearch` | Warnings mascaram defeitos de tipagem/lógica e dificultam revisão | Aumenta lead time de entrega e chance de hotfix em produção | **Frontend chapter (Admin + Search)** | **2026-06-10** | `npm run lint` sem aumento do baseline e redução líquida nos 5 arquivos-alvo + checklist de revisão sem `eslint-disable` novo não justificado |
+| 🟠 P1 | **Fuzz/property tests para parsing e borda de dados externos** (`price-response.adapter`, máscaras, formatação, mapper de produto, URLs) | Inputs malformados escapam dos testes de exemplo | Falhas intermitentes em cadastro/cotação e suporte reativo | **Quality Enablement + Backend integration** | **2026-06-14** | Novos testes fuzz determinísticos passando (seed fixo) cobrindo parsers críticos + regressão reproduzida por pelo menos 1 caso mínimo por classe de bug |
+| 🟡 P2 | **Runner de qualidade unificado do plano 10/10 (#3 e #4)** com gate explícito de coverage + smoke + contratos prioritários | Sinais de qualidade fragmentados entre scripts | Decisão de release sem visão única (risco de falso verde) | **DevEx/CI** | **2026-06-17** | Pipeline único documentado e executável local/CI; falha obrigatória quando qualquer gate crítico quebrar; evidência em log de execução anexada no PR |
+| 🟢 P3 | Issue 3 do post-mortem CRM — migrar `EXTERNAL_CRM_*` para `integration_credentials` | Persistência de segredo fora do fluxo padrão | Bloqueio de evolução de segurança/compliance | **Plataforma + Sponsor** | **Dependente de chaves do sponsor (sem data firme)** | Migração aplicada em ambiente de teste + rotação de segredo validada + runbook atualizado |
+| 🟢 P3 | Flakiness teardown async Helmet/Event listener | Instabilidade intermitente de testes de UI | Ruído em CI e retrabalho de triagem | **Frontend chapter** | **2026-06-21** | Reexecução 20x dos testes-alvo sem falha intermitente + remoção de skips/workarounds temporários |
+
+### Critérios transversais de aceite (todos os itens acima)
+
+1. **Sem regressão de baseline** (`.tsc-baseline.json` e `.eslint-baseline.json` não podem piorar).
+2. **Evidência no PR**: comando rodado, output resumido e arquivo/teste afetado.
+3. **Owner explícito na issue** com data alvo e status semanal (`on-track`, `at-risk`, `blocked`).
+4. **Pós-correção monitorado por 7 dias** sem reabertura do mesmo bug/sintoma.
 
 > ✅ **Removido do backlog em 2026-05-23**: T-FIX-5b (Etapa 17) — anti-padrão B do guard-rail ESLint resolvido via Opção A. Ver `docs/redeploy/T-FIX-5-LINT-GUARDRAIL.md` → seção "Fase 2 — T-FIX-5b RESOLVIDO".
 >

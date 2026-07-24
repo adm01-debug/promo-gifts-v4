@@ -10,7 +10,11 @@ vi.mock('sonner', () => {
   const fns = { error, warning, message, success: vi.fn(), info: vi.fn() };
   // Guardamos referência aos spies originais — installSafeToast troca
   // fns.error/warning/message por wrappers, mas o wrapper chama o original.
-  (globalThis as unknown as { __sonnerOriginals: { error: typeof error; warning: typeof warning; message: typeof message } }).__sonnerOriginals = { error, warning, message };
+  (
+    globalThis as unknown as {
+      __sonnerOriginals: { error: typeof error; warning: typeof warning; message: typeof message };
+    }
+  ).__sonnerOriginals = { error, warning, message };
   return { toast: fns };
 });
 
@@ -21,21 +25,19 @@ vi.mock('@/lib/system/dev-gate/DevInfraGate', () => ({
   },
 }));
 
-import {
-  installSafeToast,
-  setSafeToastRoles,
-  __test__,
-} from '@/lib/security/safeToast';
+import { installSafeToast, setSafeToastRoles, __test__ } from '@/lib/security/safeToast';
 import { toast } from 'sonner';
 
 const sonner = () =>
-  (globalThis as unknown as {
-    __sonnerOriginals: {
-      error: ReturnType<typeof vi.fn>;
-      warning: ReturnType<typeof vi.fn>;
-      message: ReturnType<typeof vi.fn>;
-    };
-  }).__sonnerOriginals;
+  (
+    globalThis as unknown as {
+      __sonnerOriginals: {
+        error: ReturnType<typeof vi.fn>;
+        warning: ReturnType<typeof vi.fn>;
+        message: ReturnType<typeof vi.fn>;
+      };
+    }
+  ).__sonnerOriginals;
 
 describe('safeToast', () => {
   beforeEach(() => {

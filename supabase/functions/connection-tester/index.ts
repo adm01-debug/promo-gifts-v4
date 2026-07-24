@@ -1,4 +1,5 @@
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { safeErrorResponse } from "../_shared/error-response.ts";
 // connection-tester: pings external systems to verify connectivity. Admin-only.
 // Reads credentials from `integration_credentials` (DB-first) with env fallback.
 // Core ping/persistence logic lives in `_shared/connection-test-runner.ts`.
@@ -324,8 +325,6 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Erro" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return safeErrorResponse(err, { corsHeaders, publicMessage: "internal_error", logLabel: "connection-tester error:" });
   }
 });

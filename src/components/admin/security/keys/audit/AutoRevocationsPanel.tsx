@@ -9,20 +9,23 @@
  *   - Cron: a cada 15min via auto_revoke_orphan_full_keys('cron')
  *   - Tabela: mcp_key_auto_revocations
  */
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldOff, Zap, Clock, Wrench, AlertTriangle } from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { useAutoRevocations, type AutoRevocationRow } from "./useAutoRevocations";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ShieldOff, Zap, Clock, Wrench, AlertTriangle } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useAutoRevocations, type AutoRevocationRow } from './useAutoRevocations';
 
-const SOURCE_META: Record<AutoRevocationRow["source"], { label: string; Icon: typeof Zap; variant: "default" | "secondary" | "outline" }> = {
-  trigger: { label: "Trigger (instantâneo)", Icon: Zap, variant: "default" },
-  cron: { label: "Varredura periódica", Icon: Clock, variant: "secondary" },
-  manual: { label: "Execução manual", Icon: Wrench, variant: "outline" },
+const SOURCE_META: Record<
+  AutoRevocationRow['source'],
+  { label: string; Icon: typeof Zap; variant: 'default' | 'outline' | 'secondary' }
+> = {
+  trigger: { label: 'Trigger (instantâneo)', Icon: Zap, variant: 'default' },
+  cron: { label: 'Varredura periódica', Icon: Clock, variant: 'secondary' },
+  manual: { label: 'Execução manual', Icon: Wrench, variant: 'outline' },
 };
 
 export function AutoRevocationsPanel() {
@@ -36,9 +39,9 @@ export function AutoRevocationsPanel() {
           <CardTitle>Auto-revogações de chaves FULL</CardTitle>
         </div>
         <CardDescription>
-          Chaves MCP com escopo total revogadas automaticamente porque o emissor perdeu o papel{" "}
-          <code className="text-xs bg-muted px-1 py-0.5 rounded">dev</code>. O sistema atua via trigger (imediato)
-          e varredura defensiva a cada 15min.
+          Chaves MCP com escopo total revogadas automaticamente porque o emissor perdeu o papel{' '}
+          <code className="rounded bg-muted px-1 py-0.5 text-xs">dev</code>. O sistema atua via
+          trigger (imediato) e varredura defensiva a cada 15min.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -46,7 +49,9 @@ export function AutoRevocationsPanel() {
           <Alert variant="destructive" className="mb-4">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Erro ao carregar</AlertTitle>
-            <AlertDescription>{error instanceof Error ? error.message : "Falha desconhecida"}</AlertDescription>
+            <AlertDescription>
+              {error instanceof Error ? error.message : 'Falha desconhecida'}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -57,10 +62,10 @@ export function AutoRevocationsPanel() {
             ))}
           </div>
         ) : !rows || rows.length === 0 ? (
-          <div className="text-center py-12 text-sm text-muted-foreground">
-            <ShieldOff className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            Nenhuma auto-revogação registrada — todos os emissores de chaves FULL ativas mantêm o papel{" "}
-            <code className="text-xs">dev</code>.
+          <div className="py-12 text-center text-sm text-muted-foreground">
+            <ShieldOff className="mx-auto mb-3 h-10 w-10 opacity-30" />
+            Nenhuma auto-revogação registrada — todos os emissores de chaves FULL ativas mantêm o
+            papel <code className="text-xs">dev</code>.
           </div>
         ) : (
           <ScrollArea className="h-[420px] pr-2">
@@ -71,16 +76,18 @@ export function AutoRevocationsPanel() {
                 return (
                   <li
                     key={row.id}
-                    className="border border-border rounded-md p-3 hover:bg-accent/30 transition-colors"
+                    className="rounded-md border border-border p-3 transition-colors hover:bg-accent/30"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm truncate">
-                            {row.key_name ?? <span className="text-muted-foreground italic">chave removida</span>}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="truncate text-sm font-medium">
+                            {row.key_name ?? (
+                              <span className="italic text-muted-foreground">chave removida</span>
+                            )}
                           </span>
                           {row.key_prefix && (
-                            <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono">
+                            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">
                               {row.key_prefix}…
                             </code>
                           )}
@@ -88,21 +95,25 @@ export function AutoRevocationsPanel() {
                             FULL revogada
                           </Badge>
                         </div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-3 flex-wrap">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                           <span>
-                            Emissor:{" "}
+                            Emissor:{' '}
                             <span className="font-medium text-foreground">
                               {row.actor_email ?? row.created_by.slice(0, 8)}
                             </span>
                           </span>
                           <span>•</span>
-                          <span>{format(new Date(row.revoked_at), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })}</span>
+                          <span>
+                            {format(new Date(row.revoked_at), 'dd/MM/yyyy HH:mm:ss', {
+                              locale: ptBR,
+                            })}
+                          </span>
                         </div>
                         <div className="text-[11px] text-muted-foreground">
-                          Motivo: <code className="bg-muted px-1 py-0.5 rounded">{row.reason}</code>
+                          Motivo: <code className="rounded bg-muted px-1 py-0.5">{row.reason}</code>
                         </div>
                       </div>
-                      <Badge variant={meta.variant} className="gap-1 shrink-0">
+                      <Badge variant={meta.variant} className="shrink-0 gap-1">
                         <Icon className="h-3 w-3" />
                         <span className="text-[10px]">{meta.label}</span>
                       </Badge>

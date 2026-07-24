@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useStockAlerts } from './useStockAlerts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import * as bridge from '@/lib/external-db/bridge';
+import * as bridge from '@/lib/db/postgrest';
 
 // Mock the bridge to inspect its calls
-vi.mock('@/lib/external-db/bridge', async () => {
-  const actual = await vi.importActual('@/lib/external-db/bridge');
+vi.mock('@/lib/db/postgrest', async () => {
+  const actual = await vi.importActual('@/lib/db/postgrest');
   return {
     ...actual,
-    invokeExternalDb: vi.fn(),
+    dbInvoke: vi.fn(),
   };
 });
 
@@ -45,8 +45,8 @@ describe('useStockAlerts integration', () => {
       },
     ];
 
-    const invokeExternalDbMock = vi.mocked(bridge.invokeExternalDb);
-    invokeExternalDbMock.mockResolvedValue({
+    const dbInvokeMock = vi.mocked(bridge.dbInvoke);
+    dbInvokeMock.mockResolvedValue({
       records: mockRecords,
       count: 1,
     });
@@ -55,7 +55,7 @@ describe('useStockAlerts integration', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    const callArgs = invokeExternalDbMock.mock.calls[0][0];
+    const callArgs = dbInvokeMock.mock.calls[0][0] as { select: string };
     const selectStr = callArgs.select;
 
     const fields = selectStr.split(',').map((f: string) => f.trim());
@@ -68,8 +68,8 @@ describe('useStockAlerts integration', () => {
   });
 
   it('should map brand to supplier field correctly', async () => {
-    const invokeExternalDbMock = vi.mocked(bridge.invokeExternalDb);
-    invokeExternalDbMock.mockResolvedValue({
+    const dbInvokeMock = vi.mocked(bridge.dbInvoke);
+    dbInvokeMock.mockResolvedValue({
       records: [
         {
           id: 'p1',

@@ -1,0 +1,170 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  quality-gate:
+    name: TypeScript + ESLint Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      # GATE 0: SSOT Supabase — bloqueia se project ID errado estiver em client.ts
+      # Previne reincidência do incidente 401 de produção (2026-06-11).
+      # Lovable reverteu CURRENT_PROJECT_ID 6+ vezes em 10 min → este gate bloqueia.
+      - name: Gate 0 — SSOT Supabase (bloqueante)
+        run: node scripts/validate-supabase-config.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # GATE 1: TypeScript — zero regressions vs baseline
+      - name: TypeScript gate (zero regressions)
+        run: node scripts/check-tsc-baseline.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # GATE 2: ESLint — zero regressions vs baseline
+      - name: ESLint gate (zero regressions)
+        run: node scripts/check-eslint-baseline.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # GATE 2.3: `as any` gate — freeze baseline, prevent regressions
+      - name: Gate 2.3 — as any baseline (zero regressions)
+        run: node scripts/check-any-type-baseline.mjs
+
+      # GATE 2.4: Migration path references — bloqueia referências novas a arquivos
+      # inexistentes sob supabase/migrations{,-snapshot}/ e qa/migrations-draft/.
+      # Baseline em .migration-refs-baseline.json congela o legado.
+      - name: Gate 2.4 — Migration path references (bloqueante)
+        run: node scripts/check-migration-path-references.mjs
+
+
+      # GATE 2.5: Product type fields — campos críticos nunca podem ser removidos
+      # Previne: remoção de price/shortDescription/category_id durante merge (gap C2)
+      # Previne: renomeação silenciosa pelo Lovable como price→sale_price (gap L3)
+      - name: Gate 2.5 — Product type fields (bloqueante)
+        run: node scripts/check-product-type-fields.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+      # GATE 2.6: QuotesConfigurableList — invariantes de layout + a11y + unit (expiração)
+      # Previne regressão de ordem/alinhamento/testids/aria-label e da lógica determinística de expiração.
+      - name: Gate 2.6 — Quotes list validation (bloqueante)
+        run: node scripts/validate-quotes-list.mjs
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # GATE 2.7: overflow-x: clip em MainLayout/html/body (bloqueante)
+      # Previne regressão silenciosa do sticky da sidebar: `overflow-x: hidden`
+      # promove overflow-y para auto (CSS spec) e anula `position: sticky`.
+      - name: Gate 2.7 — overflow-x-clip (bloqueante)
+        run: node scripts/check-overflow-x-clip.mjs
+
+
+
+
+      # GATE 3: Build (zero build errors)
+      - name: Build check
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+      # GATE 3.5: Bundle size (bloqueante — regressões vazam antes de virar débito)
+      # Enforça 3 camadas: (1) limite global por chunk, (2) limite total,
+      # (3) limites por chunk crítico + regressão >15% vs snapshot em
+      # bundle-size-baseline.json.
+      # Para atualizar após refactor intencional: node scripts/check-bundle-size.mjs --update-baseline
+      - name: Gate 3.5 — Bundle size check (per-chunk + regression)
+        run: node scripts/check-bundle-size.mjs
+
+  # GATE 4: Unit tests (fast — no network)
+  unit-tests:
+    name: Vitest Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline
+
+      - name: Run unit tests
+        run: npm run test:ci-core
+        env:
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder
+
+  # GATE 5: Supabase types sync check
+  # Garante que os tipos gerados pelo Supabase estão em sincronia com o schema real.
+  # Se o schema mudar sem regenerar os tipos, esse gate falha — prevenindo o type drift
+  # que foi a causa raiz de 150+ erros TS neste projeto.
+  supabase-types:
+    name: Supabase Types Sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Só roda em PRs (requer token do Supabase via secrets)
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase@latest
+
+      - name: Generate types and check drift
+        run: |
+          # Gera os tipos a partir do schema atual do Supabase
+          supabase gen types typescript \
+            --project-id ${{ secrets.SUPABASE_PROJECT_ID }} \
+            --schema public \
+            > /tmp/supabase-types-current.ts
+
+          # Compara com o arquivo no repo
+          if ! diff -q /tmp/supabase-types-current.ts src/integrations/supabase/types.ts > /dev/null 2>&1; then
+            echo "❌ DRIFT DETECTADO: tipos Supabase desatualizados!"
+            echo "Execute: supabase gen types typescript --project-id doufsxqlfjyuvxuezpln > src/integrations/supabase/types.ts"
+            diff /tmp/supabase-types-current.ts src/integrations/supabase/types.ts | head -50
+            exit 1
+          fi
+          echo "✅ Tipos Supabase em sincronia com o schema"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        # Não bloqueia o PR se o secret não estiver configurado (primeiro setup)
+        continue-on-error: true

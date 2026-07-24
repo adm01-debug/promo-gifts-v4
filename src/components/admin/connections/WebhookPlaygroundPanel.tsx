@@ -4,21 +4,28 @@
  * catálogo SSOT, mostra payload de exemplo editável e dispara em modo teste
  * (não conta em consecutive_failures, não persiste em webhook_deliveries).
  */
-import { useMemo, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
+import { useMemo, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel,
-} from "@/components/ui/select";
-import { Beaker, Loader2, Send, CheckCircle2, AlertCircle } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { WEBHOOK_EVENTS_CATALOG } from "@/lib/webhook-events-catalog";
-import { getEventSamplePayload } from "@/lib/webhook-events-payload-samples";
-import { cn } from "@/lib/utils";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from '@/components/ui/select';
+import { Beaker, Loader2, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { WEBHOOK_EVENTS_CATALOG } from '@/lib/webhook-events-catalog';
+import { getEventSamplePayload } from '@/lib/webhook-events-payload-samples';
+import { cn } from '@/lib/utils';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface OutboundHookOption {
   id: string;
@@ -40,9 +47,9 @@ interface Props {
 }
 
 export function WebhookPlaygroundPanel({ webhooks }: Props) {
-  const [hookId, setHookId] = useState<string>("");
-  const [event, setEvent] = useState<string>("");
-  const [payload, setPayload] = useState<string>("");
+  const [hookId, setHookId] = useState<string>('');
+  const [event, setEvent] = useState<string>('');
+  const [payload, setPayload] = useState<string>('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -59,7 +66,7 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
 
   const handleDispatch = async () => {
     if (!hookId || !event) {
-      toast.error("Selecione webhook e evento");
+      toast.error('Selecione webhook e evento');
       return;
     }
     let parsed: unknown = null;
@@ -67,13 +74,19 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
       parsed = payload.trim() ? JSON.parse(payload) : null;
       setParseError(null);
     } catch (err) {
-      setParseError(err instanceof Error ? err.message : "JSON inválido");
+      setParseError(err instanceof Error ? err.message : 'JSON inválido');
       return;
     }
     setBusy(true);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("webhook-dispatcher", {
+      const { data, error } = await invokeEdge<{
+        success?: boolean;
+        status_code?: number | null;
+        latency_ms?: number;
+        response_body?: string;
+        error?: string;
+      }>('webhook-dispatcher', {
         body: {
           event,
           payload: parsed,
@@ -89,12 +102,18 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
         response_body: data?.response_body,
         error: data?.error,
       });
-      if (data?.success) toast.success("Payload entregue", { description: `HTTP ${data.status_code} em ${data.latency_ms}ms` });
-      else toast.warning("Destino respondeu com erro", { description: data?.error ?? `HTTP ${data?.status_code ?? "?"}` });
+      if (data?.success)
+        toast.success('Payload entregue', {
+          description: `HTTP ${data.status_code} em ${data.latency_ms}ms`,
+        });
+      else
+        toast.warning('Destino respondeu com erro', {
+          description: data?.error ?? `HTTP ${data?.status_code ?? '?'}`,
+        });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro";
+      const msg = err instanceof Error ? err.message : 'Erro';
       setResult({ success: false, status_code: null, latency_ms: 0, error: msg });
-      toast.error("Falha ao disparar", { description: msg });
+      toast.error('Falha ao disparar', { description: msg });
     } finally {
       setBusy(false);
     }
@@ -107,23 +126,38 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
           <Beaker className="h-4 w-4 text-primary" /> Playground — Testar payload
         </CardTitle>
         <CardDescription>
-          Dispare um evento de teste para um webhook. <strong>Não conta</strong> em métricas de falha,
-          não persiste em entregas e não aciona o circuit breaker.
+          Dispare um evento de teste para um webhook. <strong>Não conta</strong> em métricas de
+          falha, não persiste em entregas e não aciona o circuit breaker.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label className="text-xs">Webhook</Label>
-            <Select value={hookId} onValueChange={(v) => { setHookId(v); setEvent(""); setPayload(""); setResult(null); }}>
-              <SelectTrigger className="h-9 mt-1"><SelectValue placeholder="Escolha um webhook…" /></SelectTrigger>
+            <Select
+              value={hookId}
+              onValueChange={(v) => {
+                setHookId(v);
+                setEvent('');
+                setPayload('');
+                setResult(null);
+              }}
+            >
+              <SelectTrigger className="mt-1 h-9">
+                <SelectValue placeholder="Escolha um webhook…" />
+              </SelectTrigger>
               <SelectContent>
                 {webhooks.length === 0 ? (
-                  <SelectItem value="_none" disabled>Nenhum webhook cadastrado</SelectItem>
+                  <SelectItem value="_none" disabled>
+                    Nenhum webhook cadastrado
+                  </SelectItem>
                 ) : (
                   webhooks.map((h) => (
                     <SelectItem key={h.id} value={h.id}>
-                      {h.name} <span className="text-muted-foreground text-[10px] ml-1">({h.events.length} ev.)</span>
+                      {h.name}{' '}
+                      <span className="ml-1 text-[10px] text-muted-foreground">
+                        ({h.events.length} ev.)
+                      </span>
                     </SelectItem>
                   ))
                 )}
@@ -133,10 +167,16 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
           <div>
             <Label className="text-xs">Evento</Label>
             <Select value={event} onValueChange={handleEventChange} disabled={!hookId}>
-              <SelectTrigger className="h-9 mt-1"><SelectValue placeholder={hookId ? "Escolha o evento…" : "Selecione um webhook primeiro"} /></SelectTrigger>
+              <SelectTrigger className="mt-1 h-9">
+                <SelectValue
+                  placeholder={hookId ? 'Escolha o evento…' : 'Selecione um webhook primeiro'}
+                />
+              </SelectTrigger>
               <SelectContent>
                 {WEBHOOK_EVENTS_CATALOG.map((g) => {
-                  const visible = g.events.filter((e) => subscribedEvents.length === 0 || subscribedEvents.includes(e.key));
+                  const visible = g.events.filter(
+                    (e) => subscribedEvents.length === 0 || subscribedEvents.includes(e.key),
+                  );
                   if (visible.length === 0) return null;
                   return (
                     <SelectGroup key={g.category}>
@@ -152,7 +192,7 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
               </SelectContent>
             </Select>
             {selectedHook && subscribedEvents.length > 0 && (
-              <p className="text-[10px] text-muted-foreground mt-1">
+              <p className="mt-1 text-[10px] text-muted-foreground">
                 {subscribedEvents.length} evento(s) inscrito(s) neste webhook
               </p>
             )}
@@ -161,7 +201,7 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
 
         {event && (
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1 flex items-center justify-between">
               <Label className="text-xs">Payload (JSON editável)</Label>
               <Button
                 size="sm"
@@ -174,52 +214,67 @@ export function WebhookPlaygroundPanel({ webhooks }: Props) {
             </div>
             <Textarea
               value={payload}
-              onChange={(e) => { setPayload(e.target.value); setParseError(null); }}
-              className="font-mono text-[11px] min-h-[180px] max-h-[300px]"
+              onChange={(e) => {
+                setPayload(e.target.value);
+                setParseError(null);
+              }}
+              className="max-h-[300px] min-h-[180px] font-mono text-[11px]"
               spellCheck={false}
             />
             {parseError && (
-              <p className="text-[11px] text-destructive mt-1 flex items-center gap-1">
+              <p className="mt-1 flex items-center gap-1 text-[11px] text-destructive">
                 <AlertCircle className="h-3 w-3" /> JSON inválido: {parseError}
               </p>
             )}
           </div>
         )}
 
-        <Button onClick={handleDispatch} disabled={!hookId || !event || busy} className="w-full sm:w-auto">
-          {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+        <Button
+          onClick={handleDispatch}
+          disabled={!hookId || !event || busy}
+          className="w-full sm:w-auto"
+        >
+          {busy ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="mr-2 h-4 w-4" />
+          )}
           Disparar teste
         </Button>
 
         {result && (
-          <div className={cn(
-            "p-3 rounded-lg border",
-            result.success
-              ? "bg-success/5 border-success/20"
-              : "bg-destructive/5 border-destructive/20",
-          )}>
-            <div className="flex items-center justify-between mb-2">
+          <div
+            className={cn(
+              'rounded-lg border p-3',
+              result.success
+                ? 'border-success/20 bg-success/5'
+                : 'border-destructive/20 bg-destructive/5',
+            )}
+          >
+            <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                {result.success
-                  ? <CheckCircle2 className="h-4 w-4 text-success" />
-                  : <AlertCircle className="h-4 w-4 text-destructive" />}
-                <span className="text-sm font-medium">
-                  {result.success ? "Sucesso" : "Falha"}
-                </span>
+                {result.success ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                )}
+                <span className="text-sm font-medium">{result.success ? 'Sucesso' : 'Falha'}</span>
               </div>
               <div className="flex items-center gap-2">
                 {result.status_code !== null && (
-                  <Badge variant="outline" className="text-[10px] font-mono">HTTP {result.status_code}</Badge>
+                  <Badge variant="outline" className="font-mono text-[10px]">
+                    HTTP {result.status_code}
+                  </Badge>
                 )}
-                <Badge variant="outline" className="text-[10px] font-mono">{result.latency_ms}ms</Badge>
+                <Badge variant="outline" className="font-mono text-[10px]">
+                  {result.latency_ms}ms
+                </Badge>
               </div>
             </div>
-            {result.error && (
-              <p className="text-xs text-destructive mb-2">{result.error}</p>
-            )}
+            {result.error && <p className="mb-2 text-xs text-destructive">{result.error}</p>}
             {result.response_body && (
-              <pre className="text-[10px] font-mono p-2 rounded bg-muted overflow-auto max-h-40">
-                {result.response_body || "(vazio)"}
+              <pre className="max-h-40 overflow-auto rounded bg-muted p-2 font-mono text-[10px]">
+                {result.response_body || '(vazio)'}
               </pre>
             )}
           </div>

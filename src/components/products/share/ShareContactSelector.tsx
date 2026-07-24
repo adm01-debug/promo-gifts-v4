@@ -1,16 +1,12 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Building2, User, Search, X, Loader2, Phone, Mail, Check } from 'lucide-react';
+import { Building2, User, Search, X, Loader2, Phone, Check, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { searchCrm, selectCrm } from '@/lib/crm-db';
-import {
-  getCompanyDisplayName,
-  type CrmContact,
-  type CrmContactEmail,
-  type CrmContactPhone,
-} from '@/types/crm';
+import { type CrmContact, type CrmContactEmail, type CrmContactPhone } from '@/types/crm';
+import { maskCnpj } from '@/utils/masks';
 
 interface CompanyOption {
   id: string;
@@ -82,7 +78,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
       return results.map(
         (c: { id: string; razao_social?: string; nome_fantasia?: string; cnpj?: string }) => ({
           id: c.id,
-          name: getCompanyDisplayName(c),
+          name: c.nome_fantasia || c.razao_social || '',
           razao_social: c.razao_social,
           nome_fantasia: c.nome_fantasia,
           cnpj: c.cnpj,
@@ -121,11 +117,11 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
           }
           try {
             const phones = await selectCrm<CrmContactPhone>('contact_phones', {
-              select: 'phone',
+              select: 'numero',
               filters: { contact_id: c.id, is_primary: true },
               limit: 1,
             });
-            phone = phones[0]?.phone ?? null;
+            phone = phones[0]?.numero ?? null;
           } catch {
             /* empty */
           }
@@ -163,18 +159,31 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
     onSelect(null);
   };
 
+  const phoneError = useMemo(() => {
+    if (!selection?.contactPhone) return null;
+    const digits = selection.contactPhone.replace(/\D/g, '');
+    if (digits.length < 10) return 'Telefone muito curto (mínimo 10 dígitos)';
+    if (digits.length > 13) return 'Telefone muito longo';
+    return null;
+  }, [selection?.contactPhone]);
+
+  const handlePhoneChange = (newPhone: string) => {
+    if (!selection) return;
+    onSelect({
+      ...selection,
+      contactPhone: newPhone,
+    });
+  };
+
   // If we have a selection, show it
-  if (selection?.companyId && selectedCompany) {
+  if (selection?.companyId && (selectedCompany || selection.companyName)) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {/* Company badge */}
         <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/50 p-2">
           <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{selectedCompany.name}</p>
-            {selectedCompany.cnpj && (
-              <p className="text-xs text-muted-foreground">{selectedCompany.cnpj}</p>
-            )}
+            <p className="truncate text-sm font-medium">{selection.companyName}</p>
           </div>
           <button
             type="button"
@@ -192,45 +201,73 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
             <Loader2 className="h-3 w-3 animate-spin" /> Carregando contatos...
           </div>
         ) : contacts.length > 0 ? (
-          <ScrollArea className="max-h-32">
-            <div className="space-y-1">
-              {contacts.map((contact) => {
-                const isSelected = selection.contactId === contact.id;
-                return (
-                  <button
-                    key={contact.id}
-                    type="button"
-                    onClick={() => handleSelectContact(contact)}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors',
-                      isSelected ? 'border border-primary/30 bg-primary/10' : 'hover:bg-accent',
-                    )}
-                  >
-                    <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0 flex-1">
-                      <span className="font-medium">{contact.name}</span>
-                      {contact.cargo && (
-                        <span className="ml-1 text-muted-foreground">· {contact.cargo}</span>
+          <div className="space-y-2">
+            <ScrollArea className="max-h-32">
+              <div className="space-y-1">
+                {contacts.map((contact) => {
+                  const isSelected = selection.contactId === contact.id;
+                  return (
+                    <button
+                      key={contact.id}
+                      type="button"
+                      onClick={() => handleSelectContact(contact)}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-md p-2 text-left text-sm transition-colors',
+                        isSelected ? 'border border-primary/30 bg-primary/10' : 'hover:bg-accent',
                       )}
-                      <div className="flex gap-3 text-xs text-muted-foreground">
-                        {contact.phone && (
-                          <span className="flex items-center gap-0.5">
-                            <Phone className="h-2.5 w-2.5" /> {contact.phone}
-                          </span>
-                        )}
-                        {contact.email && (
-                          <span className="flex items-center gap-0.5">
-                            <Mail className="h-2.5 w-2.5" /> {contact.email}
+                    >
+                      <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium">{contact.name}</span>
+                        {contact.cargo && (
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            · {contact.cargo}
                           </span>
                         )}
                       </div>
-                    </div>
-                    {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
-                  </button>
-                );
-              })}
-            </div>
-          </ScrollArea>
+                      {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+
+            {selection.contactId && (
+              <div className="mt-2 space-y-2 rounded-lg border border-border/40 bg-card p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Telefone de Contato
+                  </span>
+                  {phoneError && (
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-destructive">
+                      <AlertCircle className="h-3 w-3" /> {phoneError}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Phone className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={selection.contactPhone || ''}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      placeholder="(00) 00000-0000"
+                      className={cn(
+                        'h-9 pl-8 text-sm',
+                        phoneError && 'border-destructive focus-visible:ring-destructive',
+                      )}
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Normalizado:{' '}
+                  <span className="font-mono">
+                    {selection.contactPhone?.replace(/\D/g, '') || '-'}
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
         ) : (
           <p className="p-2 text-xs text-muted-foreground">Nenhum contato encontrado</p>
         )}
@@ -273,7 +310,7 @@ export function ShareContactSelector({ onSelect, selection }: ShareContactSelect
                   <Building2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{c.name}</p>
-                    {c.cnpj && <p className="text-xs text-muted-foreground">{c.cnpj}</p>}
+                    {c.cnpj && <p className="text-xs text-muted-foreground font-mono">{maskCnpj(c.cnpj)}</p>}
                   </div>
                 </button>
               ))}

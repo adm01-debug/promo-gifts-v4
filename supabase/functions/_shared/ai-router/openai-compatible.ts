@@ -30,6 +30,7 @@ interface OpenAiResponse {
 function classifyHttpStatus(status: number): { retryable: boolean; kind: "auth" | "rate_limit" | "server" | "client" } {
   if (status === 401 || status === 403) return { retryable: false, kind: "auth" };
   if (status === 429) return { retryable: true, kind: "rate_limit" };
+  if (status === 404 || status === 400) return { retryable: true, kind: "client" }; // 404/400 (not found/bad request) could be model-specific
   if (status >= 500 && status <= 599) return { retryable: true, kind: "server" };
   return { retryable: false, kind: "client" };
 }

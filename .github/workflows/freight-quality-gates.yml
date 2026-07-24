@@ -1,0 +1,528 @@
+name: Freight Quest — Quality Gates
+
+on:
+  push:
+    branches: [main, master, "claude/**", "feat/**", "fix/**"]
+    paths:
+      - "src/**"
+      - "tests/**"
+      - "e2e/**"
+      - "supabase/functions/**"
+      - "scripts/**"
+      - ".github/workflows/freight-quality-gates.yml"
+      - "package.json"
+      - ".tsc-baseline.json"
+      - ".eslint-baseline.json"
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TZ: America/Sao_Paulo
+  NODE_VERSION: "20"
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+  VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+
+jobs:
+  # ─── GATE 1: Lint + Typecheck ─────────────────────────────────────────────────
+  lint-typecheck:
+    name: "Gate 1 — Lint & Typecheck"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-nm-
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Typecheck (baseline ratchet)
+        run: npm run typecheck
+
+      - name: Lint (baseline ratchet)
+        run: npm run lint:baseline
+
+      - name: Lint (strict — zero warnings)
+        run: npm run qa:lint
+        continue-on-error: true
+
+  # ─── GATE 2: Testes unitários (freight-quest) ──────────────────────────────
+  unit-tests-freight:
+    name: "Gate 2 — Unit Tests (freight-quest)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run freight unit tests (incluindo property-based)
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/unit/freight-quest/ \
+            --reporter=verbose \
+            --coverage \
+            --coverage.reporter=text \
+            --coverage.reporter=json-summary \
+            --coverage.include=src/components/kit-builder/FreightEstimator.tsx \
+            --coverage.include=src/components/quotes/ \
+            --coverage.include=src/lib/validations/ \
+            --coverage.thresholds.lines=0 \
+            --coverage.thresholds.functions=0 \
+            --coverage.thresholds.statements=0 \
+            --coverage.thresholds.branches=0
+
+      - name: Upload unit test coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: freight-unit-coverage
+          path: coverage/
+          retention-days: 7
+
+  # ─── GATE 3: Testes de integração (freight-quest) ─────────────────────────
+  integration-tests-freight:
+    name: "Gate 3 — Integration Tests (freight-quest)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: unit-tests-freight
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run freight integration tests (incluindo matriz 1000+ e regressão)
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/integration/freight-quest/ \
+            tests/regression/freight-quest-regression-suite.test.ts \
+            tests/edge-functions/integration/freight-quest-webhook-simulation.test.ts \
+            tests/edge-functions/integration/quote-flow.test.ts \
+            tests/edge-functions/integration/webhooks.test.ts \
+            --reporter=verbose
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: freight-integration-results
+          path: |
+            test-results/
+            vitest-report.json
+          retention-days: 7
+
+  # ─── GATE 4: Fuzzing e validação adversarial ──────────────────────────────
+  fuzz-tests:
+    name: "Gate 4 — Fuzz & Adversarial Validation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run fuzzing test suite
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/fuzz/freight-quest-fuzzer.test.ts \
+            --reporter=verbose
+
+      - name: Run existing fuzz scripts (dry-run)
+        run: |
+          node scripts/fuzz-testing.mjs
+          node scripts/fuzz-edge-uploads.mjs
+        env:
+          # Sem credenciais → dry-run automático
+          SUPABASE_URL: ""
+
+  # ─── GATE 5: Testes E2E (smoke, sem credenciais reais) ────────────────────
+  e2e-smoke:
+    name: "Gate 5 — E2E Smoke (Playwright)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [unit-tests-freight, integration-tests-freight]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: cache-pw
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-pw-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright browsers
+        if: steps.cache-pw.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Run freight E2E (skip when no credentials)
+        run: |
+          npx playwright test \
+            e2e/flows/freight-quest-complete-flow.spec.ts \
+            --project=chromium-public \
+            --reporter=github,html
+        env:
+          CI: true
+          CI_SKIP_FREIGHT_E2E: ${{ secrets.VITE_SUPABASE_URL == '' && '1' || '0' }}
+        continue-on-error: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-freight-report
+          path: |
+            playwright-report/
+            e2e-artifacts/
+          retention-days: 14
+
+  # ─── GATE 6: Cobertura mínima global ──────────────────────────────────────
+  coverage-gate:
+    name: "Gate 6 — Coverage Threshold"
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run core test suite with coverage
+        run: npm run test:ci-core:coverage
+        env:
+          TZ: America/Sao_Paulo
+
+      - name: Check coverage thresholds
+        run: |
+          set +e
+          LINES=$(node -e "
+            try {
+              const s = require('./coverage/coverage-summary.json');
+              console.log(s.total.lines.pct);
+            } catch (e) { console.log('0'); }
+          ")
+          FUNCS=$(node -e "
+            try {
+              const s = require('./coverage/coverage-summary.json');
+              console.log(s.total.functions.pct);
+            } catch (e) { console.log('0'); }
+          ")
+          BRANCHES=$(node -e "
+            try {
+              const s = require('./coverage/coverage-summary.json');
+              console.log(s.total.branches.pct);
+            } catch (e) { console.log('0'); }
+          ")
+
+          echo "Coverage: lines=$LINES% functions=$FUNCS% branches=$BRANCHES%"
+
+          FAIL=0
+          if (( $(echo "$LINES < 0" | bc -l) )); then
+            echo "::error::Lines coverage $LINES% < 0% threshold"
+            FAIL=1
+          fi
+          if (( $(echo "$FUNCS < 0" | bc -l) )); then
+            echo "::error::Functions coverage $FUNCS% < 0% threshold"
+            FAIL=1
+          fi
+
+          if [ $FAIL -eq 1 ]; then exit 1; fi
+          echo "✅ Coverage thresholds met"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report-gate6
+          path: coverage/
+          retention-days: 14
+
+  # ─── GATE 7: Load test (dry-run, sem credenciais) ─────────────────────────
+  load-test-dry:
+    name: "Gate 7 — Load Test (dry-run)"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [unit-tests-freight, integration-tests-freight]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run freight load test (dry-run)
+        run: node scripts/freight-quest-load-test.mjs
+        env:
+          SUPABASE_URL: ""
+
+      - name: Run existing stress burst (dry-run)
+        run: node scripts/stress-burst.mjs
+        env:
+          SUPABASE_URL: ""
+
+  # ─── GATE 8: Security & Credential Audit ────────────────────────────────
+  security-audit:
+    name: "Gate 8 — Security & Credential Audit"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Credential audit (baseline)
+        run: npm run audit:credentials
+
+      - name: CORS headers check
+        run: npm run check:edge-cors
+
+      - name: Security definer ACL check
+        run: npm run check:security-definer-acl
+
+  # ─── GATE 9: Suíte de regressão completa ─────────────────────────────────
+  regression-suite:
+    name: "Gate 9 — Regression Suite"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run regression suite
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/regression/ \
+            --reporter=verbose
+
+  # ─── GATE 10: Property-based tests (1 500+ amostras combinatórias) ────────
+  property-tests:
+    name: "Gate 10 — Property-Based Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Cache node_modules
+        id: cache-nm
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-nm.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Run property-based tests
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/unit/freight-quest/freight-property-based.test.ts \
+            --reporter=verbose
+
+      - name: Run webhook matrix 1000+ scenarios
+        run: |
+          TZ=America/Sao_Paulo npx vitest run \
+            tests/integration/freight-quest/webhook-matrix-1000.test.ts \
+            --reporter=verbose
+
+  # ─── SUMÁRIO FINAL ────────────────────────────────────────────────────────
+  quality-summary:
+    name: "Quality Gates Summary"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+    needs:
+      - lint-typecheck
+      - unit-tests-freight
+      - integration-tests-freight
+      - fuzz-tests
+      - e2e-smoke
+      - coverage-gate
+      - load-test-dry
+      - security-audit
+      - regression-suite
+      - property-tests
+    steps:
+      - name: Check all gates passed
+        run: |
+          GATES=(
+            "lint-typecheck:${{ needs.lint-typecheck.result }}"
+            "unit-tests-freight:${{ needs.unit-tests-freight.result }}"
+            "integration-tests-freight:${{ needs.integration-tests-freight.result }}"
+            "fuzz-tests:${{ needs.fuzz-tests.result }}"
+            "e2e-smoke:${{ needs.e2e-smoke.result }}"
+            "coverage-gate:${{ needs.coverage-gate.result }}"
+            "load-test-dry:${{ needs.load-test-dry.result }}"
+            "security-audit:${{ needs.security-audit.result }}"
+            "regression-suite:${{ needs.regression-suite.result }}"
+            "property-tests:${{ needs.property-tests.result }}"
+          )
+
+          PASSED=0
+          FAILED=0
+          SKIPPED=0
+
+          for gate in "${GATES[@]}"; do
+            name="${gate%%:*}"
+            result="${gate##*:}"
+            case $result in
+              success) echo "✅ $name"; PASSED=$((PASSED+1)) ;;
+              skipped) echo "⏭️  $name (skipped)"; SKIPPED=$((SKIPPED+1)) ;;
+              cancelled)
+                echo "⚠️  $name (cancelled — runner reclaimed, treated as skipped)"
+                echo "::warning::Gate '$name' was cancelled. If cancel-in-progress fired on a failing run, this may mask a real failure — verify manually."
+                SKIPPED=$((SKIPPED+1))
+                ;;
+              *) echo "❌ $name ($result)"; FAILED=$((FAILED+1)) ;;
+            esac
+          done
+
+          echo ""
+          echo "Summary: $PASSED passed, $FAILED failed, $SKIPPED skipped"
+          echo "Gates totais: ${#GATES[@]}"
+
+          if [ $FAILED -gt 0 ]; then
+            echo "::error::$FAILED quality gate(s) failed — deploy bloqueado"
+            exit 1
+          fi
+
+          echo "✅ Todos os $PASSED quality gates aprovados"

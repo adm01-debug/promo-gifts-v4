@@ -1,24 +1,19 @@
 /**
- * Tests for NoveltyGridCard — covers the PR text label change:
- *   "Vendas no Fornecedor 30d" → "Vendas 30d"
+ * Tests for NoveltyGridCard — covers rendering of product info fields.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
 import { renderWithProviders } from "../render-helpers";
 import React from "react";
 
 // ── Mocks for heavy child components ────────────────────────────
 
-vi.mock("@/components/products/ProductSparkline", () => ({
-  ProductSparkline: () => <div data-testid="sparkline-stub" />,
-}));
-
 vi.mock("@/components/products/NoveltyBadge", () => ({
   NoveltyBadge: () => null,
 }));
 
-vi.mock("@/components/common/SelectionCheckbox", () => ({
-  SelectionCheckbox: () => null,
+vi.mock("@/components/products/ProductStatusBadge", () => ({
+  ProductStatusBadge: () => null,
 }));
 
 // ── Test fixtures ────────────────────────────────────────────────
@@ -26,11 +21,10 @@ vi.mock("@/components/common/SelectionCheckbox", () => ({
 const baseProduct = {
   product_id: "np-1",
   id: "np-1",
-  // Componente usa product_name (não 'name'). Mantemos ambos por compat.
   product_name: "Copo Personalizado",
   name: "Copo Personalizado",
   product_image: null,
-  product_sku: null,
+  product_sku: "COP-001",
   base_price: 12.99,
   price: 12.99,
   stock_quantity: 80,
@@ -45,33 +39,14 @@ const baseProduct = {
 
 const baseCardProps = {
   product: baseProduct as any,
-  onClick: vi.fn(),
   selectionMode: false,
   isSelected: false,
-  onToggleSelect: vi.fn(),
+  onSelect: vi.fn(),
 };
 
-describe("NoveltyGridCard — label changes (PR)", () => {
+describe("NoveltyGridCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it("renders 'Vendas 30d' label (updated text)", async () => {
-    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
-    renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
-    expect(screen.getByText("Vendas 30d")).toBeInTheDocument();
-  });
-
-  it("does NOT render the old 'Vendas no Fornecedor 30d' label", async () => {
-    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
-    renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
-    expect(screen.queryByText(/Vendas no Fornecedor 30d/i)).not.toBeInTheDocument();
-  });
-
-  it("renders the ProductSparkline for the product", async () => {
-    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
-    renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
-    expect(screen.getByTestId("sparkline-stub")).toBeInTheDocument();
   });
 
   it("renders product name", async () => {
@@ -80,36 +55,74 @@ describe("NoveltyGridCard — label changes (PR)", () => {
     expect(screen.getByText("Copo Personalizado")).toBeInTheDocument();
   });
 
-  it("renders category name when present", async () => {
+  it("renders SKU when present", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
-    expect(screen.getByText("Copos")).toBeInTheDocument();
+    expect(screen.getByText("COP-001")).toBeInTheDocument();
   });
 
-  it("does not render category badge when category_name is absent", async () => {
+  it("renders price in BRL format", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
-    const productNoCat = { ...baseProduct, category_name: undefined };
-    renderWithProviders(
-      <NoveltyGridCard {...baseCardProps} product={productNoCat as any} />
-    );
-    // "Copos" should not appear
-    expect(screen.queryByText("Copos")).not.toBeInTheDocument();
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
+    // pt-BR Intl.NumberFormat uses narrow no-break space (U+202F) between
+    // currency symbol and number — use regex to match any whitespace variant
+    expect(screen.getByText(/R\$.*12,99/)).toBeInTheDocument();
   });
 
-  // Regression: ensure the old label stays absent even if product name contains "Fornecedor"
-  it("does not show 'Vendas no Fornecedor' when product name contains 'Fornecedor'", async () => {
+  it("hides SKU element when product_sku is null", async () => {
     const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
-    const productWithFornecedorName = {
-      ...baseProduct,
-      name: "Brinde do Fornecedor Premium",
-    };
+    const productNoSku = { ...baseProduct, product_sku: null };
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} product={productNoSku as any} />);
+    expect(document.querySelector('[aria-label^="Código do produto"]')).not.toBeInTheDocument();
+  });
+
+  it("calls onSelect with product_id when clicked", async () => {
+    const onSelect = vi.fn();
+    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} onSelect={onSelect} />);
+    const article = document.querySelector("article")!;
+    fireEvent.click(article);
+    expect(onSelect).toHaveBeenCalledWith("np-1");
+  });
+
+  it("does not render old 'Vendas no Fornecedor' label", async () => {
+    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
+    expect(screen.queryByText(/Vendas no Fornecedor/i)).not.toBeInTheDocument();
+  });
+
+  it("shows selection indicator when isSelected=true and selectionMode=true", async () => {
+    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
     renderWithProviders(
-      <NoveltyGridCard {...baseCardProps} product={productWithFornecedorName as any} />
+      <NoveltyGridCard {...baseCardProps} selectionMode={true} isSelected={true} />
     );
-    // The sparkline label should still be "Vendas 30d"
-    expect(screen.getByText("Vendas 30d")).toBeInTheDocument();
-    // The old label should not appear as the section header
-    const allText = document.body.textContent ?? "";
-    expect(allText).not.toMatch(/Vendas no Fornecedor 30d/i);
+    // Selection checkmark SVG path should be present
+    const checkPath = document.querySelector("path[d='M2 6L5 9L10 3']");
+    expect(checkPath).toBeInTheDocument();
+  });
+
+  it("has aria-label containing product name for screen readers", async () => {
+    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} />);
+    const article = document.querySelector("article")!;
+    expect(article.getAttribute("aria-label")).toContain("Copo Personalizado");
+  });
+
+  it("calls onSelect via Enter keydown for keyboard navigation", async () => {
+    const onSelect = vi.fn();
+    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} onSelect={onSelect} />);
+    const article = document.querySelector("article")!;
+    fireEvent.keyDown(article, { key: "Enter" });
+    expect(onSelect).toHaveBeenCalledWith("np-1");
+  });
+
+  it("calls onSelect via Space keydown for keyboard navigation", async () => {
+    const onSelect = vi.fn();
+    const { NoveltyGridCard } = await import("@/components/novelties/NoveltyCards");
+    renderWithProviders(<NoveltyGridCard {...baseCardProps} onSelect={onSelect} />);
+    const article = document.querySelector("article")!;
+    fireEvent.keyDown(article, { key: " " });
+    expect(onSelect).toHaveBeenCalledWith("np-1");
   });
 });

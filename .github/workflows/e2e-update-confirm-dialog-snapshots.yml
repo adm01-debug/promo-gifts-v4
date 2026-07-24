@@ -1,0 +1,56 @@
+name: E2E · Update Confirm Dialog snapshots
+# Executa `playwright test --update-snapshots` para o spec do ConfirmDialog
+# e faz commit dos PNGs atualizados. Dispara manualmente OU quando o próprio
+# spec é editado.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "e2e/ui/confirm-dialog-visual.spec.ts"
+      - "src/pages/dev/ConfirmDialogHarness.tsx"
+    paths-ignore:
+      # Evita loop: o próprio job commita PNGs neste diretório.
+      - "e2e/ui/confirm-dialog-visual.spec.ts-snapshots/**"
+      - "**/*.png"
+
+permissions:
+  contents: write
+
+# Evita execuções simultâneas — a última em fila cancela as anteriores no mesmo ref.
+concurrency:
+  group: e2e-update-confirm-dialog-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  update-snapshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - name: Bootstrap (install deps + chromium)
+        run: npm run e2e:bootstrap
+      - name: Update baselines
+        run: npm run e2e:confirm-dialog:update
+      - name: Commit updated snapshots
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A e2e/ui/confirm-dialog-visual.spec.ts-snapshots || true
+          if git diff --cached --quiet; then
+            echo "Sem mudanças de baseline."
+          else
+            git commit -m "chore(e2e): update ConfirmDialog visual snapshots [skip ci]"
+            git push
+          fi

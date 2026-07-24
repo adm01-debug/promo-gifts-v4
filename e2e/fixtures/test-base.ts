@@ -33,6 +33,8 @@ import {
   createE2eFavoriteList,
   createE2eCartTemplate,
   createE2eCustomKit,
+  createE2eSupplier,
+  createE2eTechnique,
 } from "../helpers/e2e-resources";
 
 interface CreateOpts {
@@ -48,6 +50,8 @@ export interface E2eResources {
   createFavoriteList: (opts?: CreateOpts) => Promise<{ name: string }>;
   createCartTemplate: (opts?: CreateOpts) => Promise<{ name: string }>;
   createCustomKit: (opts?: CreateOpts) => Promise<{ name: string }>;
+  createSupplier: (opts?: CreateOpts) => Promise<{ name: string }>;
+  createTechnique: (opts?: CreateOpts) => Promise<{ name: string }>;
 }
 
 type Fixtures = {
@@ -69,6 +73,32 @@ export const test = base.extend<Fixtures>({
   evidence: async ({ page }, use, testInfo) => {
     const collector = attachConsoleCapture(page);
     await use(collector);
+
+    // Fail test if console errors or critical warnings were captured
+    const errors = collector.pageErrors.map(e => e.message);
+    const consoleErrors = collector.consoleLogs
+      .filter(l => l.type === 'error' && !l.text.includes('chrome-extension'))
+      .map(l => l.text);
+    
+    const allErrors = [...errors, ...consoleErrors];
+    if (allErrors.length > 0) {
+      throw new Error(`Test failed due to console errors:\n${allErrors.join('\n')}`);
+    }
+
+    // Fail on critical warnings
+    const criticalWarnings = collector.consoleLogs
+      .filter(l => l.type === 'warning' && (
+        l.text.includes('React') || 
+        l.text.includes('Supabase') || 
+        l.text.includes('Invalid') ||
+        l.text.includes('Failed')
+      ))
+      .map(l => l.text);
+
+    if (criticalWarnings.length > 0) {
+      throw new Error(`Test failed due to critical console warnings:\n${criticalWarnings.join('\n')}`);
+    }
+
     if (testInfo.status !== testInfo.expectedStatus) {
       await collector.attachAll(page, testInfo);
     }
@@ -84,22 +114,34 @@ export const test = base.extend<Fixtures>({
       createFavoriteList: (o = {}) => createE2eFavoriteList(page, { ...o, prefix }),
       createCartTemplate: (o = {}) => createE2eCartTemplate(page, { ...o, prefix }),
       createCustomKit: (o = {}) => createE2eCustomKit(page, { ...o, prefix }),
+      createSupplier: (o = {}) => createE2eSupplier(page, { ...o, prefix }),
+      createTechnique: (o = {}) => createE2eTechnique(page, { ...o, prefix }),
     };
     await use(api);
   },
 
   cleanupOnFailure: [
     async ({ resources }, use, testInfo) => {
-      await use();
-      if (process.env.E2E_CLEANUP_ON_FAILURE === "0") return;
-      if (testInfo.status === testInfo.expectedStatus) return;
+      // Setup: Limpa recursos ANTES do teste para garantir isolamento
       const cfg = loadCleanupConfig();
-      if (!cfg) return;
-      await purgeAll(cfg, {
-        quiet: true,
-        reason: `failure:${testInfo.title}`,
-        nameFilterPrefix: resources.prefix,
-      }).catch(() => {});
+      if (cfg && process.env.E2E_CLEANUP_ON_START !== "0") {
+        await purgeAll(cfg, {
+          quiet: true,
+          reason: `setup:${testInfo.title}`,
+          nameFilterPrefix: resources.prefix,
+        }).catch(() => {});
+      }
+
+      await use();
+
+      // Teardown: Limpa recursos APÓS o teste se passar
+      if (cfg && (testInfo.status === testInfo.expectedStatus || process.env.E2E_CLEANUP_ALWAYS === "1")) {
+        await purgeAll(cfg, {
+          quiet: true,
+          reason: `teardown:${testInfo.title}`,
+          nameFilterPrefix: resources.prefix,
+        }).catch(() => {});
+      }
     },
     { auto: true },
   ],
@@ -119,8 +161,24 @@ function authStorageHasCookies(): boolean {
 }
 
 /** Marca o teste como skip se as credenciais E2E_USER_* não foram fornecidas
- *  OU se o auth.setup falhou (login inválido, Supabase indisponível, etc.). */
+ *  OU se o auth.setup falhou (login inválido, Supabase indisponível, etc.).
+ *
+ *  BYPASS: quando `E2E_MOCK_AUTH=1`, aceitamos o storageState sintético
+ *  gerado por `scripts/e2e-mock-auth-setup.mjs` — que grava um cookie
+ *  sentinela `e2e-mock-auth`. Nesse modo, os specs precisam chamar
+ *  `installMockAuth(page)` (em `e2e/helpers/mock-auth.ts`) para interceptar
+ *  as chamadas a `/auth/v1/**`. */
 export function requireAuth(reason = "E2E_USER_EMAIL/PASSWORD não configurados") {
+  const mockMode = process.env.E2E_MOCK_AUTH === "1" || process.env.E2E_MOCK_AUTH === "true";
+  if (mockMode) {
+    // Em modo mock só exigimos que o storageState exista com cookies (o
+    // script mock-auth-setup grava a sentinela).
+    test.skip(
+      !authStorageHasCookies(),
+      "E2E_MOCK_AUTH=1 mas storageState mock não foi gerado. Rode `node scripts/e2e-mock-auth-setup.mjs` antes.",
+    );
+    return;
+  }
   const hasCredentials = !!(process.env.E2E_USER_EMAIL && process.env.E2E_USER_PASSWORD);
   if (!hasCredentials) {
     test.skip(true, reason);

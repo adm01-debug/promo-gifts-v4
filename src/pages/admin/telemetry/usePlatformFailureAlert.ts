@@ -13,7 +13,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
-import { usePlatformFailureMetrics, type PlatformFailureMetrics } from "@/pages/admin/telemetry/usePlatformFailureMetrics";
+import {
+  usePlatformFailureMetrics,
+  type PlatformFailureMetrics,
+} from '@/pages/admin/telemetry/usePlatformFailureMetrics';
 
 const STORAGE_KEY = 'admin.telemetry.failureAlertConfig';
 
@@ -54,7 +57,7 @@ export function saveAlertConfig(cfg: FailureAlertConfig): void {
   }
 }
 
-export type AlertLevel = 'ok' | 'breach_503' | 'breach_cold_start' | 'breach_both';
+export type AlertLevel = 'breach_503' | 'breach_both' | 'breach_cold_start' | 'ok';
 
 export interface AlertState {
   level: AlertLevel;
@@ -98,7 +101,9 @@ export function usePlatformFailureAlert(windowMinutes = 60): AlertState {
       parts.push(`503=${metrics.rate503Pct.toFixed(2)}% (limite ${config.threshold503Pct}%)`);
     }
     if (level !== 'breach_503') {
-      parts.push(`cold-start=${metrics.rateColdStartPct.toFixed(2)}% (limite ${config.thresholdColdStartPct}%)`);
+      parts.push(
+        `cold-start=${metrics.rateColdStartPct.toFixed(2)}% (limite ${config.thresholdColdStartPct}%)`,
+      );
     }
     return parts.join(' · ');
   }, [metrics, level, config]);

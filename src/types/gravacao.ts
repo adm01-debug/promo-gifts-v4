@@ -1,9 +1,9 @@
 /**
  * Types: Sistema de Gravação e Personalização
- * 
+ *
  * Tipos para áreas de gravação e técnicas de personalização.
  * Baseado na documentação oficial do backend (DOC_SISTEMA_GRAVACAO_LOVABLE).
- * 
+ *
  * SSOT: BD Externo (Promobrind) é o master.
  */
 
@@ -26,7 +26,7 @@ export interface TecnicaGravacao {
   cobra_por_area: boolean;
   cobra_por_pontos: boolean;
   requer_setup: boolean;
-  tipo_setup: 'nenhum' | 'fotolito' | 'cliche' | 'matriz' | string | null;
+  tipo_setup: string | 'cliche' | 'fotolito' | 'matriz' | 'nenhum' | null;
   tempo_producao_dias: number;
   ordem_exibicao: number;
   ativo: boolean;
@@ -51,7 +51,7 @@ export interface TecnicaSimples {
 /**
  * Shape (formato) da área de gravação
  */
-export type AreaShape = 'rectangle' | 'circle' | 'oval' | 'triangle' | 'custom';
+export type AreaShape = 'circle' | 'custom' | 'oval' | 'rectangle' | 'triangle';
 
 /**
  * Área de gravação do produto (tabela product_print_areas)
@@ -180,7 +180,7 @@ export const TECHNIQUE_COLORS: Record<string, string> = {
   TAMPOGRAFIA: 'bg-green-100 text-green-800',
   BORDADO: 'bg-yellow-100 text-yellow-800',
   SUBLIMACAO: 'bg-pink-100 text-pink-800',
-  HOT_STAMPING: 'bg-orange-100 text-orange-800',
+  HOT_STAMPING: 'bg-brand-primary-100 text-brand-primary-800',
   TRANSFER_DIGITAL: 'bg-cyan-100 text-cyan-800',
   ADESIVO: 'bg-indigo-100 text-indigo-800',
   ETIQUETA: 'bg-gray-100 text-gray-800',

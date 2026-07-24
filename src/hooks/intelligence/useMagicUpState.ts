@@ -13,10 +13,10 @@ import { useAriaLive } from '@/components/a11y';
 import { useProductCustomizationOptionsForMockup } from '@/hooks/mockup';
 import { searchCrm } from '@/lib/crm-db';
 import { getCompanyDisplayName, type CrmCompany } from '@/types/crm';
-import type { PrintAreaWithTechniques } from '@/types/gravacao';
+import type { PrintAreaWithTechniques, AreaShape } from '@/types/gravacao';
 import type { ScenePrompt } from '@/components/magic-up/PromptBank';
 import type { GenerationHistoryItem } from '@/components/magic-up/AdImageResult';
-import { useMagicUpGeneration } from "@/hooks/intelligence/useMagicUpGeneration";
+import { useMagicUpGeneration } from '@/hooks/intelligence/useMagicUpGeneration';
 import {
   DEFAULT_BRAND_KIT,
   DEFAULT_BRIEF,
@@ -178,7 +178,9 @@ export function useMagicUpState() {
     queryKey: ['magic-up-history', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data } = await supabase
+      // BUG-MAGICUPSTATE-HISTORY-SELECT-SILENT-FAIL FIX: { data } without error check —
+      // RLS failure silently returned [] making queryFn succeed with empty history list.
+      const { data, error: histErr } = await supabase
         .from('magic_up_generations')
         .select(
           'id, generated_image_url, product_name, scene_title, scene_category, is_favorite, created_at, client_name, quality_score, status, channel, aspect_ratio, metadata, copy_pack',
@@ -186,6 +188,7 @@ export function useMagicUpState() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50);
+      if (histErr) throw histErr;
       return (data || []) as GenerationHistoryItem[];
     },
     enabled: !!user?.id,
@@ -204,7 +207,7 @@ export function useMagicUpState() {
         .order('updated_at', { ascending: false })
         .limit(30);
       if (error) throw error;
-      return (data || []).map((row: Tables<'magic_up_campaigns'>) => ({
+      return ((data || []) as Tables<'magic_up_campaigns'>[]).map((row) => ({
         id: row.id,
         title: row.title,
         status: row.status as MagicUpCampaignStatus,
@@ -278,7 +281,7 @@ export function useMagicUpState() {
             images: p.images || [],
             primary_image_url: p.primary_image_url || p.image_url || null,
             og_image_url: p.og_image_url || null,
-          })),
+          })) as unknown as MagicUpProduct[],
         );
       } catch {
         toast.error('Erro ao carregar produtos');
@@ -298,19 +301,22 @@ export function useMagicUpState() {
       setSelectedTechnique(null);
       return;
     }
+    // Guarda contra resposta fora-de-ordem: ao trocar de produto rapidamente, a
+    // resposta mais lenta (produto antigo) não pode sobrescrever o estado atual.
+    let cancelled = false;
     (async () => {
       setLoadingColors(true);
       try {
-        const { invokeExternalDb } = await import('@/lib/external-db');
+        const { dbInvoke } = await import('@/lib/db/postgrest');
         const [variantsResult, imagesResult] = await Promise.all([
-          invokeExternalDb<Record<string, unknown>>({
+          dbInvoke<Record<string, unknown>>({
             table: 'product_variants',
             operation: 'select',
             filters: { product_id: selectedProduct.id },
             orderBy: { column: 'color_name', ascending: true },
             limit: 100,
           }),
-          invokeExternalDb<Record<string, unknown>>({
+          dbInvoke<Record<string, unknown>>({
             table: 'product_images',
             operation: 'select',
             filters: { product_id: selectedProduct.id },
@@ -318,6 +324,7 @@ export function useMagicUpState() {
             limit: 100,
           }),
         ]);
+        if (cancelled) return;
         const images: ProductImage[] = (imagesResult.records || [])
           .filter((img: Record<string, unknown>) => img.image_type !== 'box')
           .map((img: Record<string, unknown>) => ({
@@ -326,26 +333,32 @@ export function useMagicUpState() {
             isPrimary: img.is_primary,
             isOgImage: img.is_og_image || false,
           }))
-          .filter((img: ProductImage) => img.url);
+          .filter((img) => !!(img as ProductImage).url) as ProductImage[];
         setProductImages(images);
         const uniqueColors = new Map<string, ProductColor>();
         (variantsResult.records || []).forEach((v: Record<string, unknown>) => {
-          if (!v.color_name || uniqueColors.has(v.color_name)) return;
-          uniqueColors.set(v.color_name, {
-            hex: v.color_hex || '#CCCCCC',
-            name: v.color_name,
-            code: v.color_code || '',
-            stock: v.stock_quantity ?? 0,
+          const colorName = v.color_name as string | undefined;
+          if (!colorName || uniqueColors.has(colorName)) return;
+          uniqueColors.set(colorName, {
+            hex: (v.color_hex as string) || '#CCCCCC',
+            name: colorName,
+            code: (v.color_code as string) || '',
+            stock: (v.stock_quantity as number) ?? 0,
           });
         });
         setColors(Array.from(uniqueColors.values()));
       } catch {
+        if (cancelled) return;
         setColors([]);
         setProductImages([]);
       } finally {
-        setLoadingColors(false);
+        if (!cancelled) setLoadingColors(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProduct?.id]);
 
   // ─── Print Areas from customization data ───────────────────────
@@ -360,7 +373,7 @@ export function useMagicUpState() {
       max_width: Math.max(...loc.options.map((o) => o.efetiva_largura_max || 0), 0),
       max_height: Math.max(...loc.options.map((o) => o.efetiva_altura_max || 0), 0),
       unit: 'cm',
-      shape: loc.options[0]?.shape || 'rectangle',
+      shape: (loc.options[0]?.shape || 'rectangle') as AreaShape,
       is_curved: loc.options.some((o) => o.is_curved),
       is_primary: idx === 0,
       display_order: loc.location_order,
@@ -454,7 +467,7 @@ export function useMagicUpState() {
 
   // ─── Effective prompt ─────────────────────────────────────────
   const effectivePrompt = useMemo(() => {
-    const base = selectedScene?.prompt || '';
+    const base = selectedScene?.prompt ?? '';
     const extra = additionalDetails.trim();
     if (base && extra) return `${base}\n\nADDITIONAL DETAILS: ${extra}`;
     return extra || base;
@@ -595,7 +608,7 @@ CENÁRIO: ${effectivePrompt}`;
           .insert({ ...basePayload, user_id: user.id } satisfies TablesInsert<'magic_up_campaigns'>)
           .select('id, created_at, updated_at')
           .single();
-    if (result.error) {
+    if (result.error || !result.data) {
       toast.error('Erro ao salvar campanha');
       announceAlert('Erro ao salvar campanha');
       return;
@@ -707,7 +720,7 @@ CENÁRIO: ${effectivePrompt}`;
           .insert({ ...payload, user_id: user.id } satisfies TablesInsert<'magic_up_brand_kits'>)
           .select('id, updated_at')
           .single();
-    if (result.error) {
+    if (result.error || !result.data) {
       toast.error('Erro ao salvar Brand Kit');
       announceAlert('Erro ao salvar Brand Kit');
       return;
@@ -814,7 +827,7 @@ CENÁRIO: ${effectivePrompt}`;
   );
 
   // ─── Handlers ──────────────────────────────────────────────────
-  const handleLogoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -864,6 +877,7 @@ CENÁRIO: ${effectivePrompt}`;
       generation.setVariations([]);
       generation.setActiveVariation(0);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [generation.setActiveVariation, generation.setVariations],
   );
 
@@ -928,8 +942,6 @@ CENÁRIO: ${effectivePrompt}`;
     handleRunBatchQueue,
     handleClearBatchQueue,
     qualityScore,
-    qualityDiagnosis: generation.qualityDiagnosis,
-    curationStatus: generation.curationStatus,
     copyPack,
     effectivePrompt,
     fullPromptPreview,

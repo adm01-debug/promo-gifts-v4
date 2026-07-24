@@ -1,0 +1,79 @@
+name: E2E Quote Item Editor Sheet
+
+# Valida o redesign do header do QuoteItemEditorSheet em 320/375/768:
+# ordem DOM ("+ Produto" antes do título), layout (sem overflow),
+# acessibilidade (foco/tab) e snapshots visuais por viewport.
+# Roda em Chromium/Firefox/WebKit (matriz de browser) em todo PR que
+# tocar no sheet, no harness visual, na rota ou na própria spec.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/components/quotes/QuoteItemEditorSheet.tsx'
+      - 'src/components/quotes/QuoteBuilderProductSearch.tsx'
+      - 'src/pages/__visual/QuoteItemEditorSheetHarness.tsx'
+      - 'src/pages/__visual/QuoteAddProductButtonHarness.tsx'
+      - 'src/routes/AppRoutes.tsx'
+      - 'e2e/quotes/quote-item-editor-sheet-header.spec.ts'
+      - 'e2e/quotes/quote-add-product-button.spec.ts'
+      - '.github/workflows/e2e-quote-item-editor-sheet.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/components/quotes/QuoteItemEditorSheet.tsx'
+      - 'src/components/quotes/QuoteBuilderProductSearch.tsx'
+      - 'src/pages/__visual/QuoteItemEditorSheetHarness.tsx'
+      - 'src/pages/__visual/QuoteAddProductButtonHarness.tsx'
+      - 'src/routes/AppRoutes.tsx'
+      - 'e2e/quotes/quote-item-editor-sheet-header.spec.ts'
+      - 'e2e/quotes/quote-add-product-button.spec.ts'
+      - '.github/workflows/e2e-quote-item-editor-sheet.yml'
+  workflow_dispatch:
+
+jobs:
+  editor-sheet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    env:
+      CI: 'true'
+      FORCE_COLOR: '0'
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: playwright-${{ runner.os }}-
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Run QuoteItemEditorSheet spec (${{ matrix.browser }})
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-item-editor-sheet-header.spec.ts \
+            e2e/quotes/quote-add-product-button.spec.ts \
+            --project=${{ matrix.browser }}-public \
+            --reporter=line
+
+      - name: Upload report + snapshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-item-editor-sheet-${{ matrix.browser }}
+          path: |
+            playwright-report
+            test-results
+            e2e/quotes/quote-item-editor-sheet-header.spec.ts-snapshots
+            e2e/quotes/quote-add-product-button.spec.ts-snapshots
+          retention-days: 14

@@ -19,23 +19,41 @@ const deleteEqMock = vi.fn().mockResolvedValue({ error: null });
 const deleteMock = vi.fn(() => ({ eq: deleteEqMock }));
 
 vi.mock("@/integrations/supabase/client", () => {
-  const buildSelectChain = () => ({
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        order: vi.fn().mockReturnValue({
-          limit: (...args: unknown[]) => limitMock(...args),
-        }),
-      }),
-    }),
-    update: (...args: unknown[]) => updateMock(...args),
-    delete: (...args: unknown[]) => deleteMock(...args),
-  });
-  return { supabase: { from: vi.fn(() => buildSelectChain()) } };
+  let lastData = [];
+  const buildSelectChain = () => {
+    let headCount = false;
+    const chain = {};
+    for (const m of ["select", "eq", "order", "range", "gte", "limit"]) {
+      chain[m] = (...args) => {
+        if (m === "select" && args[1] && args[1].head) headCount = true;
+        if (m === "limit") return limitMock(...args);
+        return chain;
+      };
+    }
+    chain.update = (...args) => updateMock(...args);
+    chain.delete = (...args) => deleteMock(...args);
+    chain.then = async (resolve, reject) => {
+      try {
+        if (headCount) { resolve({ count: lastData.filter((n) => !n.is_read).length, error: null }); return; }
+        const base = await limitMock();
+        lastData = (base && base.data) || [];
+        resolve({ ...base, count: lastData.length });
+      } catch (e) { reject(e); }
+    };
+    return chain;
+  };
+  return {
+    supabase: {
+      from: vi.fn(() => buildSelectChain()),
+      channel: vi.fn(() => ({ on: vi.fn().mockReturnThis(), subscribe: vi.fn() })),
+      removeChannel: vi.fn(),
+    },
+  };
 });
 
 const STABLE_USER = { id: "user-cache-inv-1" };
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: STABLE_USER }),
+  useAuth: () => ({ user: STABLE_USER, rolesLoaded: true }),
 }));
 
 const CACHE_KEY = "workspace_notifications_cache:user-cache-inv-1";

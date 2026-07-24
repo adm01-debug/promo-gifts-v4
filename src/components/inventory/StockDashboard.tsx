@@ -1,61 +1,218 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { useToast } from "@/hooks/ui";
+import { useState, useMemo, useEffect, useRef, useCallback, Suspense, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
+import { useToast } from '@/hooks/ui';
 import {
-  Package, TrendingDown, RefreshCw, Truck, CheckCircle2, XCircle, Palette, Loader2, AlertCircle, X,
-  ChevronDown, ChevronRight, Clock, BarChart3, Shield, Download,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useVariantStock } from "@/hooks/products";
-import { VariantStockTable } from "./VariantStockTable";
-import { SupplierRiskPanel } from "./SupplierRiskPanel";
-import { StatCard } from "./StockStatCard";
-import { AlertCard } from "./StockAlertCard";
-import { OutOfStockDialog, LowStockDialog } from "./StockAlertDialogs";
-import { StockFilterToolbar } from "./StockFilterToolbar";
-import { FutureStockDialog } from "./FutureStockDialog";
+  AlertCircle,
+  BarChart3,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Loader2,
+  Package,
+  Palette,
+  RefreshCw,
+  ShieldCheck,
+  TrendingDown,
+  Truck,
+  X,
+  XCircle,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useVariantStock } from '@/hooks/products';
+import { VariantStockTable } from './VariantStockTable';
+import { buildStockKpiCards } from './stockKpiCards';
+import { useRuptureAlerts } from '@/hooks/stock/useRuptureAlerts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useListUrlState } from '@/hooks/common/useListUrlState';
+import { isFeatureEnabled } from '@/lib/feature-flags';
 
+const SupplierReliabilityTab = lazyWithRetry(() =>
+  import('./supplier-reliability/SupplierReliabilityTab').then((m) => ({
+    default: m.SupplierReliabilityTab,
+  })),
+);
+
+
+// #15 — Lazy: painéis pesados (recebem array completo de 22k+ variações).
+const SupplierRiskPanel = lazyWithRetry(() =>
+  import('./SupplierRiskPanel').then((m) => ({ default: m.SupplierRiskPanel })),
+);
+import { StatCard } from './StockStatCard';
+import { AlertCard } from './StockAlertCard';
+import { OutOfStockDialog, LowStockDialog } from './StockAlertDialogs';
+import { StockFilterToolbar } from './StockFilterToolbar';
+import { FutureStockDialog } from './FutureStockDialog';
+const StockHealthBreakdownDrawer = lazyWithRetry(() =>
+  import('./StockHealthBreakdownDrawer').then((m) => ({ default: m.StockHealthBreakdownDrawer })),
+);
+import { StockEmptyFiltersHint } from './StockEmptyFiltersHint';
+
+const RISK_PANEL_STORAGE_KEY = 'stock-dashboard:risk-panel-open:v1';
+const ACTIVE_TAB_STORAGE_KEY = 'stock-dashboard:active-tab:v1';
+type StockTabValue = 'overview' | 'reliability';
+
+/** Lê do localStorage se o painel de risco estava aberto na última sessão. */
+function readRiskPanelPref(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const raw = window.localStorage.getItem(RISK_PANEL_STORAGE_KEY);
+    if (raw === null) return true;
+    return raw === '1';
+  } catch {
+    return true;
+  }
+}
+
+/** Lê do localStorage a aba ativa do dashboard. Default: 'overview'. */
+function readActiveTabPref(): StockTabValue {
+  if (typeof window === 'undefined') return 'overview';
+  try {
+    const raw = window.localStorage.getItem(ACTIVE_TAB_STORAGE_KEY);
+    return raw === 'reliability' ? 'reliability' : 'overview';
+  } catch {
+    return 'overview';
+  }
+}
+
+/** Formata tempo relativo em PT-BR: "agora", "há 2 min", "há 1 h", "há 2 dias". */
+function formatRelativeTime(date: Date, now: number): string {
+  const diffSec = Math.max(0, Math.floor((now - date.getTime()) / 1000));
+  if (diffSec < 30) return 'agora';
+  if (diffSec < 60) return `há ${diffSec} s`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `há ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `há ${diffH} h`;
+  const diffD = Math.floor(diffH / 24);
+  return `há ${diffD} dia${diffD > 1 ? 's' : ''}`;
+}
+
+/**
+ * Portal que projeta controles no slot à direita da toolbar de Estoque
+ * (`#stock-toolbar-slot`). Se o slot da toolbar ainda não existir no DOM,
+ * faz fallback para o `#stock-header-slot` (compat com layouts antigos).
+ * Reavalia o alvo quando a árvore muda (toolbar é remontada em filtros).
+ */
+function HeaderSlotPortal({ children }: { children: ReactNode }) {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const resolve = () =>
+      document.getElementById('stock-toolbar-slot') ??
+      document.getElementById('stock-header-slot');
+    setSlot(resolve());
+    const mo = new MutationObserver(() => {
+      const next = resolve();
+      setSlot((prev) => (prev === next ? prev : next));
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, []);
+  if (!slot) return null;
+  return createPortal(children, slot);
+}
+
+/** Dashboard completo de gestão de estoque: cards de KPI, tabela de variações e painel de risco. */
 export function StockDashboard() {
   const [outOfStockDialogOpen, setOutOfStockDialogOpen] = useState(false);
   const [lowStockDialogOpen, setLowStockDialogOpen] = useState(false);
   const [futureStockDialogOpen, setFutureStockDialogOpen] = useState(false);
-  const [riskPanelOpen, setRiskPanelOpen] = useState(true);
+  const [healthDrawerOpen, setHealthDrawerOpen] = useState(false);
+  // #14 — persiste preferência do painel de risco entre sessões.
+  const [riskPanelOpen, setRiskPanelOpen] = useState<boolean>(readRiskPanelPref);
+  const reliabilityFlag = isFeatureEnabled('supplierReliability');
+  // Aba ativa: URL é a SSOT (deep-link + share), com fallback para o preferido
+  // salvo em localStorage na primeira visita. `useListUrlState` mantém o
+  // padrão das demais listagens (/orcamentos, /carrinhos) — status/sort/busca
+  // via query string.
+  const initialTab: StockTabValue = reliabilityFlag ? readActiveTabPref() : 'overview';
+  const stockUrlKeys = useMemo(() => ({ tab: initialTab }), [initialTab]);
+  const { values: stockUrlValues, setValue: setStockUrlValue } = useListUrlState({
+    keys: stockUrlKeys,
+  });
+  const activeTab: StockTabValue =
+    stockUrlValues.tab === 'reliability' ? 'reliability' : 'overview';
+  const setActiveTab = useCallback(
+    (v: StockTabValue) => setStockUrlValue('tab', v),
+    [setStockUrlValue],
+  );
+  // Persiste como preferência local (retenção entre sessões quando URL não traz `tab`).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(ACTIVE_TAB_STORAGE_KEY, activeTab);
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [activeTab]);
   const { toast } = useToast();
   const prevCriticalCountRef = useRef<number | null>(null);
-  const lastRefreshRef = useRef<Date>(new Date());
+  // #11/#19 — lastRefresh como estado força re-render quando o tempo relativo
+  // muda; tick periódico atualiza "há X min" sem precisar de novo fetch.
+  const [lastRefresh, setLastRefresh] = useState<Date>(() => new Date());
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
   const {
-    isLoading, isFetching, loadingProgress, productStocks, allProductStocks,
-    summary, alerts, criticalAlerts, filters, futureStock, allColors,
-    availableCategories, availableSuppliers, availableColorGroups,
-    fetchStockData, updateFilter, resetFilters, dismissAlert, dismissAlertsBySeverity,
+    isLoading,
+    isFetching,
+    loadingProgress,
+    productStocks,
+    allProductStocks,
+    summary,
+    alerts,
+    criticalAlerts,
+    filters,
+    futureStock,
+    allColors,
+    availableCategories,
+    availableSuppliers,
+    availableColorGroups,
+    error,
+    fetchStockData,
+    updateFilter,
+    resetFilters,
+    dismissAlert,
+    dismissAlertsBySeverity,
   } = useVariantStock();
 
-  // Track last refresh time
+  // #19 — quando o fetch termina (transição isFetching true→false), marcamos
+  // o instante da última atualização. Mantido em useEffect porque o
+  // invalidateQueries é assíncrono e o estado real só estabiliza aqui.
   useEffect(() => {
-    if (!isFetching) lastRefreshRef.current = new Date();
+    if (!isFetching) setLastRefresh(new Date());
   }, [isFetching]);
 
-  // Keyboard shortcut: Ctrl+Shift+R to refresh stock data
+  // #11 — re-render a cada 30s para o label "há X min" ficar fresco.
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // #14 — persiste preferência sem bloquear render.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(RISK_PANEL_STORAGE_KEY, riskPanelOpen ? '1' : '0');
+    } catch {
+      /* quota/private mode — silencioso */
+    }
+  }, [riskPanelOpen]);
+
   const handleRefresh = useCallback(() => {
     if (!isFetching && !isLoading) fetchStockData();
   }, [isFetching, isLoading, fetchStockData]);
 
+  // #12 — atalho Ctrl/⌘+Shift+S (Sync). Ctrl+Shift+R colidia com o
+  // hard-reload reservado do Chrome/Firefox.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'R') {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'S' || e.key === 's')) {
         e.preventDefault();
         handleRefresh();
-        toast({ title: '🔄 Atualizando Estoque...', description: 'Atalho: Ctrl+Shift+R' });
+        toast({ title: '🔄 Atualizando Estoque...', description: 'Atalho: Ctrl+Shift+S' });
       }
     };
     window.addEventListener('keydown', handler);
@@ -70,111 +227,161 @@ export function StockDashboard() {
       const newCount = count - prevCriticalCountRef.current;
       toast({
         title: `⚠️ ${newCount} novo${newCount > 1 ? 's' : ''} alerta${newCount > 1 ? 's' : ''} crítico${newCount > 1 ? 's' : ''}`,
-        description: "Produtos sem estoque ou em nível crítico detectados.",
-        variant: "destructive",
+        description: 'Produtos sem estoque ou em nível crítico detectados.',
+        variant: 'destructive',
       });
     }
     prevCriticalCountRef.current = count;
   }, [criticalAlerts.length, isLoading, toast]);
 
-  const warningAlerts = useMemo(() => alerts.filter(a => a.severity === 'warning'), [alerts]);
-  const infoAlerts = useMemo(() => alerts.filter(a => a.severity === 'info'), [alerts]);
+  const warningAlerts = useMemo(() => alerts.filter((a) => a.severity === 'warning'), [alerts]);
+  const infoAlerts = useMemo(() => alerts.filter((a) => a.severity === 'info'), [alerts]);
 
-  const activeFilterLabel = useMemo(() => {
-    switch (filters.status) {
-      case 'in_stock': return 'Em Estoque';
-      case 'low_stock': return 'Estoque Baixo';
-      case 'critical': return 'Estoque Crítico';
-      case 'out_of_stock': return 'Sem Estoque';
-      case 'incoming': return 'Estoque Futuro';
-      default: return null;
+  // Risco de Ruptura: variações com cobertura projetada (EMA) ≤ 30 dias.
+  // Quando o feature flag `useEmaRupture` estiver off, `alerts` vem vazio e
+  // passamos `null` para o helper cair no fallback `variantsCritical`.
+  const { alerts: ruptureAlerts, byVariantId: ruptureByVariantId } = useRuptureAlerts();
+
+  // SSOT do "Risco de Ruptura": set de variantId únicos com cobertura ≤ 30d.
+  // O MESMO set alimenta o número do card E o filtro da tabela, garantindo
+  // invariante card-count === linhas-filtradas (deduplica fornecedores por
+  // variante via `byVariantId`).
+  const ruptureRiskVariantIds = useMemo<ReadonlySet<string> | null>(() => {
+    if (ruptureByVariantId.size === 0) return null;
+    const ids = new Set<string>();
+    for (const a of ruptureByVariantId.values()) {
+      if (
+        typeof a.cobertura_dias === 'number' &&
+        Number.isFinite(a.cobertura_dias) &&
+        a.cobertura_dias <= 30
+      ) {
+        ids.add(a.variant_id);
+      }
     }
-  }, [filters.status]);
+    return ids.size > 0 ? ids : null;
+  }, [ruptureByVariantId]);
 
-  const isFiltered = filters.status !== 'all';
+  const ruptureRisk30dCount = ruptureRiskVariantIds ? ruptureRiskVariantIds.size : null;
+  const isRuptureRiskActive = Boolean(filters.ruptureRiskVariantIds);
+  void ruptureAlerts; // mantido para upstream subscribers (cache warm)
 
-  // Health score calculation
-  const healthScore = useMemo(() => {
-    if (summary.totalProducts === 0) return 100;
-    const healthy = summary.productsInStock;
-    return Math.round((healthy / summary.totalProducts) * 100);
-  }, [summary]);
-
-  const healthColor = healthScore >= 80 ? 'text-success' : healthScore >= 50 ? 'text-warning' : 'text-destructive';
-
-  // Future stock total
-  const futureStockTotal = useMemo(
-    () => futureStock.reduce((sum, f) => sum + (f.expectedQuantity || 0), 0),
-    [futureStock]
+  // Toggle on/off do filtro de Risco de Ruptura — espelha o padrão do
+  // Estoque Futuro (Switch no popover do botão da toolbar). Persiste o
+  // estado em localStorage e reaplica quando o conjunto fica disponível
+  // após reload (re-hidratação assíncrona dos alertas EMA).
+  const RUPTURE_PREF_KEY = 'stock-filter:rupture-risk-active:v1';
+  const toggleRuptureRisk = useCallback(
+    (active: boolean) => {
+      if (active && ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+        updateFilter('status', 'all');
+        updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+      } else {
+        updateFilter('ruptureRiskVariantIds', undefined);
+      }
+      try {
+        window.localStorage.setItem(RUPTURE_PREF_KEY, active ? '1' : '0');
+      } catch {
+        /* quota/private mode */
+      }
+    },
+    [ruptureRiskVariantIds, updateFilter],
   );
 
-  // Export CSV
-  const handleExportCSV = () => {
-    const data = productStocks.flatMap(p =>
-      p.variants.map(v => ({
-        produto: p.productName,
-        sku: p.productSku,
-        cor: v.colorName || 'Sem cor',
-        sku_variante: v.variantSku,
-        estoque_atual: v.currentStock,
-        estoque_minimo: v.minStock,
-        reservado: v.reservedStock,
-        disponivel: v.availableStock,
-        em_transito: v.inTransitStock,
-        status: v.status,
-        dias_ate_esgotamento: v.daysUntilStockout ?? '',
-      }))
-    );
+  // Re-hidratação: quando os alertas EMA chegam após mount, se a pref
+  // estava ON, aplica o filtro automaticamente (uma única vez por sessão).
+  const ruptureHydratedRef = useRef(false);
+  useEffect(() => {
+    if (ruptureHydratedRef.current) return;
+    if (!ruptureRiskVariantIds || ruptureRiskVariantIds.size === 0) return;
+    let pref = '0';
+    try {
+      pref = window.localStorage.getItem(RUPTURE_PREF_KEY) ?? '0';
+    } catch {
+      /* ignore */
+    }
+    if (pref === '1' && !isRuptureRiskActive) {
+      updateFilter('status', 'all');
+      updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+    }
+    ruptureHydratedRef.current = true;
+  }, [ruptureRiskVariantIds, isRuptureRiskActive, updateFilter]);
 
-    if (data.length === 0) return;
+  const activeFilterLabel = useMemo(() => {
+    if (isRuptureRiskActive) return 'Risco de Ruptura (≤30d)';
+    switch (filters.status) {
+      case 'in_stock':
+        return 'Em Estoque';
+      case 'low_stock':
+        return 'Estoque Baixo';
+      case 'critical':
+        return 'Estoque Crítico';
+      case 'out_of_stock':
+        return 'Sem Estoque';
+      case 'incoming':
+        return 'Estoque Futuro';
+      case 'overstocked':
+        return 'Excesso de Estoque';
+      default:
+        return null;
+    }
+  }, [filters.status, isRuptureRiskActive]);
 
-    const headers = Object.keys(data[0]);
-    const csv = [
-      headers.join(';'),
-      ...data.map(row => headers.map(h => row[h as keyof typeof row]).join(';')),
-    ].join('\n');
+  const isFiltered = filters.status !== 'all' || isRuptureRiskActive;
 
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `estoque_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // Estoque futuro — janela de 30 dias (regra de negócio).
+  // Contamos variações distintas com pelo menos uma reposição prevista nos
+  // próximos 30 dias; o total de unidades vira contexto secundário (trend).
+  const FUTURE_STOCK_WINDOW_DAYS = 30;
+  const { futureStock30dVariantCount, futureStock30dUnits } = useMemo(() => {
+    const now = Date.now();
+    const horizon = now + FUTURE_STOCK_WINDOW_DAYS * 24 * 60 * 60 * 1000;
+    const variantSet = new Set<string>();
+    let units = 0;
+    for (const f of futureStock) {
+      const t = f.expectedDate ? Date.parse(f.expectedDate) : NaN;
+      if (!Number.isFinite(t)) continue;
+      if (t < now || t > horizon) continue;
+      if (f.variantId) variantSet.add(f.variantId);
+      units += f.expectedQuantity || 0;
+    }
+    return { futureStock30dVariantCount: variantSet.size, futureStock30dUnits: units };
+  }, [futureStock]);
 
-    toast({ title: '📊 Exportação concluída', description: `${data.length} registros exportados.` });
-  };
 
   if (isLoading) {
-    const pct = loadingProgress ? Math.round((loadingProgress.current / loadingProgress.total) * 100) : 0;
+    const pct = loadingProgress
+      ? Math.round((loadingProgress.current / loadingProgress.total) * 100)
+      : 0;
     return (
       <div className="space-y-5" aria-live="polite" aria-busy="true">
         <div className="flex items-center gap-3 rounded-xl border border-border/40 bg-card px-4 py-3">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Package className="h-4 w-4 text-primary animate-pulse" />
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <Package className="h-4 w-4 animate-pulse text-primary" />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium truncate">Sincronizando estoque</p>
+              <p className="truncate text-sm font-medium">Sincronizando estoque</p>
               {loadingProgress && (
-                <p className="text-xs font-medium tabular-nums text-primary flex-shrink-0">{pct}%</p>
+                <p className="flex-shrink-0 text-xs font-medium tabular-nums text-primary">
+                  {pct}%
+                </p>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-1.5">
-              <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+            <div className="mt-1.5 flex items-center gap-2">
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-500 ease-out"
+                  className="h-full rounded-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500 ease-out"
                   style={{ width: `${pct || 8}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground truncate max-w-[40%]">
+              <p className="max-w-[40%] truncate text-xs text-muted-foreground">
                 {loadingProgress?.step || 'Conectando ao fornecedor...'}
               </p>
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {[1, 2, 3, 4, 5].map(i => (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((i) => (
             <Skeleton key={i} className="h-28 rounded-xl" />
           ))}
         </div>
@@ -184,114 +391,261 @@ export function StockDashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <Card className="border-destructive/20 bg-destructive/5">
+        <CardContent className="flex flex-col items-center justify-center space-y-4 p-12 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-destructive">Falha ao carregar estoque</h3>
+            <p className="max-w-md text-muted-foreground">
+              {error instanceof Error
+                ? error.message
+                : 'Não foi possível conectar ao banco de dados externo.'}
+            </p>
+          </div>
+          <Button onClick={fetchStockData} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Tentar novamente
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-5">
-
       {/* Alert Dialogs */}
-      <OutOfStockDialog open={outOfStockDialogOpen} onOpenChange={setOutOfStockDialogOpen}
-        alerts={criticalAlerts} onDismiss={dismissAlert} onDismissAll={() => dismissAlertsBySeverity('error')} />
-      <LowStockDialog open={lowStockDialogOpen} onOpenChange={setLowStockDialogOpen}
-        alerts={warningAlerts} onDismiss={dismissAlert} onDismissAll={() => dismissAlertsBySeverity('warning')} />
-      <FutureStockDialog open={futureStockDialogOpen} onOpenChange={setFutureStockDialogOpen}
-        entries={futureStock} />
+      <OutOfStockDialog
+        open={outOfStockDialogOpen}
+        onOpenChange={setOutOfStockDialogOpen}
+        alerts={criticalAlerts}
+        onDismiss={dismissAlert}
+        onDismissAll={() => dismissAlertsBySeverity('error')}
+      />
+      <LowStockDialog
+        open={lowStockDialogOpen}
+        onOpenChange={setLowStockDialogOpen}
+        alerts={warningAlerts}
+        onDismiss={dismissAlert}
+        onDismissAll={() => dismissAlertsBySeverity('warning')}
+      />
+      <FutureStockDialog
+        open={futureStockDialogOpen}
+        onOpenChange={setFutureStockDialogOpen}
+        entries={futureStock}
+      />
+      {healthDrawerOpen && (
+        <Suspense fallback={null}>
+          <StockHealthBreakdownDrawer
+            open={healthDrawerOpen}
+            onOpenChange={setHealthDrawerOpen}
+            products={allProductStocks ?? productStocks}
+          />
+        </Suspense>
+      )}
 
-      {/* Header with Health Score */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold">Visão Geral</h2>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "gap-1 text-xs font-semibold",
-                    healthScore >= 80 && "bg-success/10 border-success/20 text-success",
-                    healthScore >= 50 && healthScore < 80 && "bg-warning/10 border-warning/20 text-warning",
-                    healthScore < 50 && "bg-destructive/10 border-destructive/20 text-destructive",
-                  )}
-                >
-                  <Shield className="h-3 w-3" />
-                  Saúde: {healthScore}%
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p className="text-xs max-w-[200px]">
-                  Saúde do Estoque: {summary.productsInStock} de {summary.totalProducts} produtos com estoque adequado.
-                  {healthScore < 50 && ' ⚠️ Atenção: muitos produtos precisam de reposição.'}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          {criticalAlerts.length > 0 && (
-            <Badge variant="destructive" className="gap-1 text-xs animate-pulse cursor-pointer"
-              onClick={() => setOutOfStockDialogOpen(true)}>
-              <AlertCircle className="h-3 w-3" />
-              {criticalAlerts.length} alertas
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" />
-          {lastRefreshRef.current.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-          {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
-        </div>
+
+      {/* Título "Estoque" + Toolbar de filtros na mesma linha (padrão Super Filtro) */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
+            <h1
+              data-testid="page-title-estoque"
+              className="shrink-0 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:pt-1"
+            >
+              Estoque
+            </h1>
+            <div className="min-w-0 flex-1">
+              <StockFilterToolbar
+                filters={filters}
+                onUpdateFilter={updateFilter}
+                onResetFilters={resetFilters}
+                categories={availableCategories}
+                suppliers={availableSuppliers}
+                colors={allColors}
+                colorGroups={availableColorGroups}
+                totalProducts={allProductStocks.length}
+                filteredCount={productStocks.length}
+                isRuptureRiskActive={isRuptureRiskActive}
+                ruptureRiskCount={ruptureRisk30dCount ?? 0}
+                onToggleRuptureRisk={toggleRuptureRisk}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs
+        value={reliabilityFlag ? activeTab : 'overview'}
+        onValueChange={(v) => setActiveTab(v as StockTabValue)}
+        className="space-y-5"
+      >
+        {reliabilityFlag && (
+          <TabsList data-testid="stock-tabs">
+            <TabsTrigger value="overview" data-testid="stock-tab-overview">
+              Painel
+            </TabsTrigger>
+            <TabsTrigger
+              value="reliability"
+              data-testid="stock-tab-reliability"
+              className="gap-1.5"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Confiabilidade de Fornecedores
+            </TabsTrigger>
+          </TabsList>
+        )}
+
+        {reliabilityFlag && (
+          <TabsContent value="reliability" className="space-y-5">
+            <Suspense fallback={<Skeleton className="h-64 w-full" />}>
+              <SupplierReliabilityTab />
+            </Suspense>
+          </TabsContent>
+        )}
+
+        <TabsContent value="overview" className="space-y-5">
+          {/* Header with Health Score */}
+
+      <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2" />
+
+        <HeaderSlotPortal>
+          <div
+            className="flex items-center gap-2 text-xs text-muted-foreground"
+            title={lastRefresh.toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })}
+            aria-live="polite"
+            data-testid="stock-last-refresh"
+          >
+            <Clock className="h-3.5 w-3.5" />
+            <span>Atualizado {formatRelativeTime(lastRefresh, nowTick)}</span>
+            <span className="text-muted-foreground/60">
+              ·{' '}
+              {lastRefresh.toLocaleTimeString('pt-BR', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </span>
+            {isFetching && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+          </div>
+        </HeaderSlotPortal>
       </div>
 
       {/* Summary Cards — clickable filters */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        <StatCard title="Total de Produtos" value={summary.totalProducts.toLocaleString('pt-BR')}
-          icon={<Package className="h-6 w-6 text-primary" />}
-          isActive={filters.status === 'all'}
-          onClick={() => updateFilter('status', 'all')}
-          clickHint="Mostrar todos os produtos"
-          trend={{ value: summary.totalVariants, label: `${summary.totalVariants.toLocaleString('pt-BR')} variações` }} />
-        <StatCard title="Em Estoque" value={summary.productsInStock.toLocaleString('pt-BR')}
-          icon={<CheckCircle2 className="h-6 w-6 text-success" />} variant="success"
-          isActive={filters.status === 'in_stock'}
-          onClick={() => updateFilter('status', filters.status === 'in_stock' ? 'all' : 'in_stock')}
-          clickHint="Filtrar produtos em estoque"
-          trend={summary.totalProducts > 0 ? { value: 1, label: `${Math.round((summary.productsInStock / summary.totalProducts) * 100)}% do total` } : undefined} />
-        <StatCard title="Estoque Baixo" value={(summary.productsLowStock + summary.productsCritical).toLocaleString('pt-BR')}
-          icon={<TrendingDown className="h-6 w-6 text-warning" />} variant="warning"
-          isActive={filters.status === 'low_stock' || filters.status === 'critical'}
-          onClick={() => {
-            updateFilter('status', filters.status === 'low_stock' ? 'all' : 'low_stock');
-            if (warningAlerts.length > 0) setLowStockDialogOpen(true);
-          }}
-          clickHint="Filtrar produtos com estoque baixo"
-          trend={summary.productsCritical > 0 ? { value: -1, label: `${summary.productsCritical} críticos` } : undefined} />
-        <StatCard title="Sem Estoque" value={summary.productsOutOfStock.toLocaleString('pt-BR')}
-          icon={<XCircle className="h-6 w-6 text-destructive" />} variant="error"
-          isActive={filters.status === 'out_of_stock'}
-          onClick={() => {
-            updateFilter('status', filters.status === 'out_of_stock' ? 'all' : 'out_of_stock');
-            if (criticalAlerts.length > 0) setOutOfStockDialogOpen(true);
-          }}
-          clickHint="Filtrar produtos sem estoque"
-          trend={summary.criticalAlerts > 0 ? { value: -1, label: `${summary.criticalAlerts} alertas ativos` } : undefined} />
-        <StatCard title="Estoque Futuro"
-          value={futureStockTotal}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
+        {buildStockKpiCards(summary, ruptureRisk30dCount).map((card) => {
+          const ICONS: Record<typeof card.slug, React.ReactNode> = {
+            'total-de-variacoes': <Package className="h-6 w-6 text-primary" />,
+            'em-estoque': <CheckCircle2 className="h-6 w-6 text-success" />,
+            'risco-de-ruptura': <TrendingDown className="h-6 w-6 text-warning" />,
+            'sem-estoque': <XCircle className="h-6 w-6 text-destructive" />,
+          };
+
+          // "Risco de Ruptura" usa o filtro dimensional ruptureRiskVariantIds
+          // (set EMA ≤ 30d) ao invés de filters.status='critical' — assim a
+          // tabela mostra EXATAMENTE as variações sinalizadas, sem mistura.
+          const isRuptureCard = card.slug === 'risco-de-ruptura';
+          const isActive = isRuptureCard
+            ? isRuptureRiskActive
+            : !isRuptureRiskActive &&
+              (card.filter === 'all' ? filters.status === 'all' : filters.status === card.filter);
+          return (
+            <StatCard
+              key={card.slug}
+              title={card.title}
+              value={card.value.toLocaleString('pt-BR')}
+              icon={ICONS[card.slug]}
+              variant={card.variant}
+              subtitle={card.subtitle}
+              tooltip={card.tooltip}
+              isActive={isActive}
+              onClick={() => {
+                if (isRuptureCard) {
+                  // toggle do filtro dimensional + zera status pra não competir
+                  if (isRuptureRiskActive) {
+                    updateFilter('ruptureRiskVariantIds', undefined);
+                  } else if (ruptureRiskVariantIds && ruptureRiskVariantIds.size > 0) {
+                    updateFilter('status', 'all');
+                    updateFilter('ruptureRiskVariantIds', ruptureRiskVariantIds);
+                  } else {
+                    // Sem dados EMA (flag off ou sem alertas) → fallback antigo
+                    updateFilter('status', filters.status === 'critical' ? 'all' : 'critical');
+                  }
+                  updateFilter('sortBy', 'name');
+                  updateFilter('sortDirection', 'asc');
+                  return;
+                }
+                if (!card.filter) return;
+                const next =
+                  card.filter === 'all'
+                    ? 'all'
+                    : filters.status === card.filter
+                      ? 'all'
+                      : card.filter;
+                // Qualquer outro card sai do modo "risco de ruptura"
+                if (isRuptureRiskActive) updateFilter('ruptureRiskVariantIds', undefined);
+                updateFilter('status', next);
+                // Restaura a abertura do OutOfStockDialog ao clicar em "Sem Estoque"
+                // com alertas críticos (trigger removido por engano em 98052925a, 2026-06-21).
+                if (card.filter === 'out_of_stock' && criticalAlerts.length > 0) {
+                  setOutOfStockDialogOpen(true);
+                }
+                updateFilter('sortBy', 'name');
+                updateFilter('sortDirection', 'asc');
+              }}
+            />
+          );
+        })}
+
+
+        <StatCard
+          title="Estoque Futuro (30 dias)"
+          // SSOT: valor primário = variações distintas com reposição prevista
+          // nos próximos 30 dias. Total de unidades vira trend secundário.
+          value={futureStock30dVariantCount}
           icon={<Truck className="h-6 w-6 text-primary" />}
           isActive={filters.status === 'incoming'}
           onClick={() => {
             updateFilter('status', filters.status === 'incoming' ? 'all' : 'incoming');
-            if (futureStock.length > 0) setFutureStockDialogOpen(true);
+            // Restaura a abertura do FutureStockDialog quando há reposição prevista
+            // (trigger removido por engano em 98052925a, 2026-06-21).
+            if (futureStock30dVariantCount > 0) setFutureStockDialogOpen(true);
+            updateFilter('sortBy', 'name');
+            updateFilter('sortDirection', 'asc');
           }}
-          clickHint="Ver previsões de reposição"
-          trend={futureStock.length > 0 ? { value: 1, label: `${futureStock.length} reposições previstas` } : undefined} />
+          tooltip="Variações com reposição prevista nos próximos 30 dias."
+          trend={
+            futureStock30dUnits > 0
+              ? {
+                  value: 1,
+                  label: `${futureStock30dUnits.toLocaleString('pt-BR')} un. previstas`,
+                }
+              : undefined
+          }
+        />
+
       </div>
 
       {/* Active Filter Badge */}
       {isFiltered && (
-        <div className="flex items-center gap-2 animate-fade-in">
+        <div className="flex animate-fade-in items-center gap-2">
           <span className="text-sm text-muted-foreground">Filtro ativo:</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-sm font-medium text-primary">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
             {activeFilterLabel}
             <button
               type="button"
               onClick={() => updateFilter('status', 'all')}
-              className="ml-0.5 rounded-full p-0.5 hover:bg-primary/20 transition-colors"
+              className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-primary/20"
               aria-label="Remover filtro"
             >
               <X className="h-3.5 w-3.5" />
@@ -303,22 +657,6 @@ export function StockDashboard() {
         </div>
       )}
 
-      {/* Advanced Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <StockFilterToolbar
-            filters={filters}
-            onUpdateFilter={updateFilter}
-            onResetFilters={resetFilters}
-            categories={availableCategories}
-            suppliers={availableSuppliers}
-            colors={allColors}
-            colorGroups={availableColorGroups}
-            totalProducts={allProductStocks.length}
-            filteredCount={productStocks.length}
-          />
-        </CardContent>
-      </Card>
 
       {/* Stock Table */}
       <Card>
@@ -328,7 +666,7 @@ export function StockDashboard() {
               <CardTitle className="flex items-center gap-2 text-base">
                 <Palette className="h-5 w-5" />
                 Estoque por Cor/Variação
-                <Badge variant="secondary" className="text-xs font-normal ml-1">
+                <Badge variant="secondary" className="ml-1 text-xs font-normal">
                   {isFiltered
                     ? `${productStocks.length} de ${allProductStocks.length}`
                     : `${productStocks.length} produtos`}
@@ -338,45 +676,27 @@ export function StockDashboard() {
                 Visualização detalhada do estoque segmentado por cores e variações
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleExportCSV}
-                      disabled={productStocks.length === 0}
-                      className="gap-1.5"
-                      aria-label="Exportar Estoque em CSV"
-                    >
-                      <Download className="h-4 w-4" />
-                      <span className="hidden sm:inline">Exportar</span>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs">Exportar dados filtrados em CSV</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchStockData}
-                disabled={isFetching}
-                className="gap-1.5"
-                aria-label="Atualizar dados do Estoque"
-              >
-                <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
-                {isFetching ? 'Atualizando...' : 'Atualizar'}
-              </Button>
-            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <ScrollArea className="h-[min(600px,_60vh)]">
-            <VariantStockTable products={productStocks} />
-          </ScrollArea>
+          {productStocks.length === 0 && allProductStocks.length > 0 && (
+            <div className="mb-4">
+              <StockEmptyFiltersHint
+                filters={filters}
+                totalProducts={allProductStocks.length}
+                onResetFilters={resetFilters}
+                onUpdateFilter={updateFilter}
+              />
+            </div>
+          )}
+          {/* Scroll é gerenciado internamente pela tabela para preservar o sticky
+              do toolbar (busca + paginação) e do <thead>. */}
+          <VariantStockTable
+            products={productStocks}
+            isLoading={isFetching}
+            targetQuantity={filters.minQuantityNeeded}
+            ruptureFilterActive={isRuptureRiskActive}
+          />
         </CardContent>
       </Card>
 
@@ -384,14 +704,22 @@ export function StockDashboard() {
       <div className="space-y-0">
         <button
           type="button"
-          onClick={() => setRiskPanelOpen(prev => !prev)}
-          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+          onClick={() => setRiskPanelOpen((prev) => !prev)}
+          className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
-          {riskPanelOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+          {riskPanelOpen ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
           <BarChart3 className="h-4 w-4" />
           Painel de Risco do Fornecedor
         </button>
-        {riskPanelOpen && <SupplierRiskPanel products={allProductStocks} />}
+        {riskPanelOpen && (
+          <Suspense fallback={<Skeleton className="h-48 w-full" />}>
+            <SupplierRiskPanel products={allProductStocks} />
+          </Suspense>
+        )}
       </div>
 
       {/* Info Alerts */}
@@ -399,27 +727,44 @@ export function StockDashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <AlertCircle className="h-5 w-5" />
-                Outros Alertas ({infoAlerts.length})
+                Outros Alertas
+                <Badge variant="secondary" className="ml-1 text-xs font-normal">
+                  {infoAlerts.length > 10
+                    ? `exibindo 10 de ${infoAlerts.length.toLocaleString('pt-BR')}`
+                    : `${infoAlerts.length}`}
+                </Badge>
               </CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-foreground gap-1.5"
-                onClick={() => dismissAlertsBySeverity('info')}>
-                <XCircle className="h-3.5 w-3.5" />Limpar Todos
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => dismissAlertsBySeverity('info')}
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Limpar Todos
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             <ScrollArea className="max-h-60">
               <div className="space-y-2">
-                {infoAlerts.slice(0, 10).map(alert => (
-                  <AlertCard key={alert.id} alert={alert} onDismiss={() => dismissAlert(alert.id)} />
+                {infoAlerts.slice(0, 10).map((alert) => (
+                  <AlertCard
+                    key={alert.id}
+                    alert={alert}
+                    onDismiss={() => dismissAlert(alert.id)}
+                  />
                 ))}
               </div>
             </ScrollArea>
           </CardContent>
         </Card>
       )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

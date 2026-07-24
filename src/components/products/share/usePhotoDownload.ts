@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { useToast } from "@/hooks/ui";
+import { useCallback, useState } from 'react';
+import { useToast } from '@/hooks/ui';
 
 /**
  * Hook to download product photos.
@@ -16,7 +16,7 @@ export function usePhotoDownload() {
 
       setDownloading(true);
       toast({
-        title: "Download",
+        title: 'Download',
         description: `Preparando ${images.length} foto(s)...`,
       });
 
@@ -24,15 +24,15 @@ export function usePhotoDownload() {
         for (let i = 0; i < images.length; i++) {
           const url = images[i];
           try {
-            const response = await fetch(url, { mode: "cors" });
+            const response = await fetch(url, { mode: 'cors' });
             const blob = await response.blob();
-            const ext = url.split(".").pop()?.split("?")[0] || "jpg";
+            const ext = url.split('.').pop()?.split('?')[0] || 'jpg';
             const safeName = productName
-              .replace(/[^a-zA-Z0-9-_ ]/g, "")
-              .replace(/\s+/g, "_")
+              .replace(/[^a-zA-Z0-9-_ ]/g, '')
+              .replace(/\s+/g, '_')
               .substring(0, 30);
 
-            const a = document.createElement("a");
+            const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = `${safeName}_${i + 1}.${ext}`;
             document.body.appendChild(a);
@@ -42,29 +42,31 @@ export function usePhotoDownload() {
 
             // Small delay between downloads to avoid browser blocking
             if (i < images.length - 1) {
-              await new Promise((r) => setTimeout(r, 300));
+              await new Promise((r) => {
+                setTimeout(r, 300);
+              });
             }
           } catch {
             // Fallback: open in new tab
-            window.open(url, "_blank");
+            window.open(url, '_blank');
           }
         }
 
         toast({
-          title: "Download concluído",
+          title: 'Download concluído',
           description: `${images.length} foto(s) baixada(s)`,
         });
-      } catch (err) {
+      } catch {
         toast({
-          title: "Erro no download",
-          description: "Não foi possível baixar as fotos",
-          variant: "destructive",
+          title: 'Erro no download',
+          description: 'Não foi possível baixar as fotos',
+          variant: 'destructive',
         });
       } finally {
         setDownloading(false);
       }
     },
-    [toast]
+    [toast],
   );
 
   return { downloadPhotos, downloading };

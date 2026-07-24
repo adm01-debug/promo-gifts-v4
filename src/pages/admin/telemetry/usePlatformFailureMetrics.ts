@@ -13,6 +13,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface PlatformFailureMetrics {
   windowMinutes: number;
@@ -29,9 +30,14 @@ export interface PlatformFailureMetrics {
 const QUERY_KEY = (windowMinutes: number) => ['telemetry', 'platform-failures', windowMinutes];
 
 export function usePlatformFailureMetrics(windowMinutes = 60) {
+  const { rolesLoaded, isAdmin } = useAuth();
   return useQuery({
     queryKey: QUERY_KEY(windowMinutes),
+    enabled: rolesLoaded && Boolean(isAdmin),
     refetchInterval: 30_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async (): Promise<PlatformFailureMetrics> => {
       const { data, error } = await supabase.rpc('get_platform_failure_metrics', {
         window_minutes: windowMinutes,
@@ -46,7 +52,7 @@ export function usePlatformFailureMetrics(windowMinutes = 60) {
         totalColdStarts: num('total_cold_starts'),
         rate503Pct: num('rate_503_pct'),
         rateColdStartPct: num('rate_cold_start_pct'),
-        lastColdStartAt: (raw['last_cold_start_at'] as string | null) ?? null,
+        lastColdStartAt: (raw.last_cold_start_at as string | null) ?? null,
         prevWindow503: num('prev_window_503'),
         delta503: num('delta_503'),
       };

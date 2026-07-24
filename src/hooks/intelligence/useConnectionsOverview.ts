@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface OverviewRow {
   key: string;
   id: string | null;
-  type: "supabase" | "bitrix24" | "n8n" | "mcp" | "webhook_outbound" | string;
+  type: string | 'bitrix24' | 'mcp' | 'n8n' | 'supabase' | 'webhook_outbound';
   name: string;
-  env_key: "promobrind" | "crm" | null;
+  env_key: 'crm' | 'promobrind' | null;
   status: string;
   last_test_at: string | null;
   last_test_ok: boolean | null;
@@ -20,20 +20,33 @@ export function useConnectionsOverview(pollMs = 30000) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  /**
+   * BUG-26 FIX: mountedRef para guard de load (isMounted pattern).
+   *
+   * PROBLEMA: `load` (useCallback[]) chamava setRows/setLoading/setRefreshing
+   * após uma query Supabase sem verificar se o componente ainda estava montado.
+   * Navegação rápida entre páginas durante o fetch de 30s causava warnings de
+   * "setState on unmounted component".
+   */
+  const mountedRef = useRef(true);
+
   const load = useCallback(async (silent = false) => {
     if (!silent) setRefreshing(true);
     const { data, error } = await supabase
-      .from("external_connections")
-      .select("id, type, name, env_key, status, last_test_at, last_test_ok, last_test_message, last_latency_ms, auto_test_enabled")
-      .order("type", { ascending: true })
-      .order("name", { ascending: true });
+      .from('external_connections')
+      .select(
+        'id, type, name, env_key, status, last_test_at, last_test_ok, last_test_message, last_latency_ms, auto_test_enabled',
+      )
+      .order('type', { ascending: true })
+      .order('name', { ascending: true });
+    if (!mountedRef.current) return; // BUG-26 FIX: guard pós-await
     if (!error && data) {
       const mapped: OverviewRow[] = data.map((r) => ({
         key: r.id,
         id: r.id,
         type: r.type,
         name: r.name,
-        env_key: (r.env_key as "promobrind" | "crm" | null) ?? null,
+        env_key: (r.env_key as 'crm' | 'promobrind' | null) ?? null,
         status: r.status,
         last_test_at: r.last_test_at,
         last_test_ok: r.last_test_ok,
@@ -45,13 +58,20 @@ export function useConnectionsOverview(pollMs = 30000) {
     }
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, []); // mountedRef é estável
 
   useEffect(() => {
+    mountedRef.current = true;
     load(true);
-    if (pollMs <= 0) return;
+    if (pollMs <= 0)
+      return () => {
+        mountedRef.current = false;
+      };
     const id = setInterval(() => load(true), pollMs);
-    return () => clearInterval(id);
+    return () => {
+      mountedRef.current = false; // BUG-26 FIX: sinaliza unmount antes de clearInterval
+      clearInterval(id);
+    };
   }, [load, pollMs]);
 
   const patchRow = useCallback((key: string, patch: Partial<OverviewRow>) => {

@@ -44,6 +44,7 @@ import {
 } from '@/lib/telemetry/secretsManagerCallMetrics';
 import { useSecretsManager } from '@/hooks/admin';
 import { toast } from 'sonner';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 const MAX_RECENT = 8;
 
@@ -142,7 +143,7 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
     try {
       // Action `status` é alias leve de `list`. Pedimos um nome inexistente
       // para minimizar payload — só queremos validar o roundtrip.
-      const { data, error } = await supabase.functions.invoke('secrets-manager', {
+      const { data, error } = await invokeEdge('secrets-manager', {
         body: { action: 'status', names: [] as string[] },
         headers: { [REQUEST_ID_HEADER]: requestId },
       });
@@ -202,9 +203,14 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
     }
   }, [boot, pinging, ping]);
 
-  const recent = samples.slice(-MAX_RECENT).reverse();
-  const errorCount = samples.filter((s) => !s.ok).length;
-  const totalCount = samples.length;
+  const { recent, errorCount, totalCount } = useMemo(
+    () => ({
+      recent: samples.slice(-MAX_RECENT).reverse(),
+      errorCount: samples.filter((s) => !s.ok).length,
+      totalCount: samples.length,
+    }),
+    [samples],
+  );
 
   const bootBadge = !boot
     ? {
@@ -265,8 +271,8 @@ export function SecretsManagerHealthPanel({ className }: { className?: string })
             {boot ? (
               <span>
                 <span className="font-medium text-foreground">{boot.durationMs}ms</span>
-                {typeof boot.status === 'number' && <> · HTTP {boot.status}</>}
-                <> · às {formatTime(boot.ts)}</>
+                {typeof boot.status === 'number' && <> · HTTP {boot.status}</>}· às{' '}
+                {formatTime(boot.ts)}
               </span>
             ) : (
               <span className="italic">Aguardando primeiro heartbeat…</span>

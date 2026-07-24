@@ -1,0 +1,73 @@
+name: Quote Number Hardening — Verify (canonical DB)
+
+on:
+  schedule:
+    - cron: '17 */6 * * *' # a cada 6h
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/verify-quote-number-hardening.mjs'
+      - 'docs/sql/quote-number-hardening*.sql'
+      - '.github/workflows/quote-number-hardening-verify.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quote-number-hardening-verify
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify trigger + unique index no banco canônico
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Banco canônico Gold/Medallion (doufsxqlfjyuvxuezpln).
+      # Secrets exigidos no repositório (Settings → Secrets and variables → Actions):
+      #   CANONICAL_PGHOST, CANONICAL_PGPORT, CANONICAL_PGUSER,
+      #   CANONICAL_PGPASSWORD, CANONICAL_PGDATABASE
+      PGHOST: ${{ secrets.CANONICAL_PGHOST }}
+      PGPORT: ${{ secrets.CANONICAL_PGPORT }}
+      PGUSER: ${{ secrets.CANONICAL_PGUSER }}
+      PGPASSWORD: ${{ secrets.CANONICAL_PGPASSWORD }}
+      PGDATABASE: ${{ secrets.CANONICAL_PGDATABASE }}
+      PGSSLMODE: require
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Guard — secrets do canônico configurados
+        run: |
+          if [ -z "$PGHOST" ] || [ -z "$PGUSER" ] || [ -z "$PGPASSWORD" ] || [ -z "$PGDATABASE" ]; then
+            echo "::error::Secrets CANONICAL_PG* ausentes. Configure-os apontando para doufsxqlfjyuvxuezpln."
+            exit 1
+          fi
+
+      - name: Instalar psql client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Smoke — conexão e DB correto
+        run: |
+          DB=$(psql -At -c "select current_database()")
+          echo "DB conectado: $DB"
+          # Sanity: o nome do projeto vira o database
+          if ! echo "$DB" | grep -q "postgres"; then
+            echo "::warning::DB inesperado: $DB"
+          fi
+
+      - name: Rodar verify-quote-number-hardening
+        run: node scripts/verify-quote-number-hardening.mjs
+
+      - name: Resultado
+        if: failure()
+        run: |
+          echo "::error::Hardening do quote_number falhou no banco canônico."
+          echo "Runbook: docs/RUNBOOK_QUOTE_NUMBER_HARDENING.md"
+          echo "Rollback (se necessário): docs/sql/quote-number-hardening-rollback.sql"

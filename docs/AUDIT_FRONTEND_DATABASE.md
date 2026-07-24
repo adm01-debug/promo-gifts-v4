@@ -1,5 +1,12 @@
 # Auditoria Técnica: Front-end ↔ Banco de Dados
 
+> ⚠️ **SUPERSEDED (2026-05-31).** Este documento é histórico. O `project_id` abaixo
+> (`nmojwpihnslkssljowjh`) está **desatualizado** — o projeto oficial atual é
+> **`doufsxqlfjyuvxuezpln`** (ver `supabase/config.toml`). A nota de “falha de privilégio”
+> do MCP também não se aplica mais (o acesso SQL funciona). Para a auditoria vigente, com
+> dados do banco _live_ (299 tabelas, 295 FKs, 767 RLS policies), ver
+> **`docs/AUDITORIA_DB_FRONTEND_2026-05-31.md`**.
+
 **Projeto:** Promo_Gifts  
 **Supabase project_id:** `nmojwpihnslkssljowjh`  
 **Data da auditoria:** 2026-04-29  

@@ -7,10 +7,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "./alert-dialog";
-import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
-import { AlertTriangle, Trash2, Info, HelpCircle, Loader2, type LucideIcon } from "lucide-react";
+} from './alert-dialog';
+import { cn } from '@/lib/utils';
+import { AlertTriangle, Trash2, Info, HelpCircle, Loader2, type LucideIcon } from 'lucide-react';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -18,10 +17,17 @@ interface ConfirmDialogProps {
   title: string;
   description?: string;
   confirmLabel?: string;
+  /**
+   * Rótulo curto exibido em containers estreitos (<220px). Se ausente,
+   * fallback para `confirmLabel`. O texto completo permanece no `aria-label`
+   * e no `title` (tooltip nativo) para leitor de tela.
+   */
+  confirmLabelShort?: string;
   cancelLabel?: string;
-  onConfirm: () => void | Promise<void>;
+  cancelLabelShort?: string;
+  onConfirm: () => Promise<void> | void;
   onCancel?: () => void;
-  variant?: "default" | "destructive" | "warning" | "info";
+  variant?: 'default' | 'destructive' | 'info' | 'warning';
   icon?: LucideIcon;
   loading?: boolean;
   impactPreview?: {
@@ -35,27 +41,35 @@ interface ConfirmDialogProps {
 const variantConfig = {
   default: {
     icon: HelpCircle,
-    iconColor: "text-primary",
-    iconBg: "bg-primary/10",
-    buttonVariant: "default" as const,
+    iconColor: 'text-primary',
+    iconBg: 'bg-primary/10',
+    iconRing: 'ring-primary/20',
+    iconGlow: 'bg-primary/30',
+    buttonVariant: 'default' as const,
   },
   destructive: {
     icon: Trash2,
-    iconColor: "text-destructive",
-    iconBg: "bg-destructive/10",
-    buttonVariant: "destructive" as const,
+    iconColor: 'text-destructive',
+    iconBg: 'bg-destructive/10',
+    iconRing: 'ring-destructive/20',
+    iconGlow: 'bg-destructive/30',
+    buttonVariant: 'destructive' as const,
   },
   warning: {
     icon: AlertTriangle,
-    iconColor: "text-warning",
-    iconBg: "bg-warning/10",
-    buttonVariant: "default" as const,
+    iconColor: 'text-warning',
+    iconBg: 'bg-warning/10',
+    iconRing: 'ring-warning/20',
+    iconGlow: 'bg-warning/30',
+    buttonVariant: 'default' as const,
   },
   info: {
     icon: Info,
-    iconColor: "text-info",
-    iconBg: "bg-info/10",
-    buttonVariant: "default" as const,
+    iconColor: 'text-info',
+    iconBg: 'bg-info/10',
+    iconRing: 'ring-info/20',
+    iconGlow: 'bg-info/30',
+    buttonVariant: 'default' as const,
   },
 };
 
@@ -64,11 +78,13 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
+  confirmLabel = 'Confirmar',
+  confirmLabelShort,
+  cancelLabel = 'Cancelar',
+  cancelLabelShort,
   onConfirm,
   onCancel,
-  variant = "default",
+  variant = 'default',
   icon: CustomIcon,
   loading = false,
   impactPreview,
@@ -89,89 +105,152 @@ export function ConfirmDialog({
     onOpenChange(false);
   };
 
-  // Quando o consumidor passa um `testId` (ex.: "cart-confirm-dialog"),
-  // derivamos testids específicos para os botões e título — ex.:
-  // "cart-confirm-dialog-yes" / "cart-confirm-dialog-no" / "cart-confirm-dialog-title".
-  // Isso elimina o uso do testid genérico "confirm-dialog-yes" quando vários
-  // diálogos podem coexistir na mesma tela. Os genéricos continuam disponíveis
-  // como fallback para compatibilidade com specs já existentes.
-  const yesTestId = testId ? `${testId}-yes` : "confirm-dialog-yes";
-  const noTestId = testId ? `${testId}-no` : "confirm-dialog-no";
-  const titleTestId = testId ? `${testId}-title` : "confirm-dialog-title";
-  const descriptionTestId = testId ? `${testId}-description` : "confirm-dialog-description";
+  const yesTestId = testId ? `${testId}-yes` : 'confirm-dialog-yes';
+  const noTestId = testId ? `${testId}-no` : 'confirm-dialog-no';
+  const titleTestId = testId ? `${testId}-title` : 'confirm-dialog-title';
+  const descriptionTestId = testId ? `${testId}-description` : 'confirm-dialog-description';
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-md" data-testid={testId}>
-        <AlertDialogHeader>
-          <div className="flex items-start gap-4">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      <AlertDialogContent
+        className="!max-w-[358px] w-[92vw] gap-0 overflow-hidden rounded-xl border border-border/60 bg-card/95 p-0 shadow-xl backdrop-blur-xl supports-[backdrop-filter]:bg-card/80"
+        data-testid={testId}
+      >
+        {/* Top accent bar — sutil, casa com a variante */}
+        <div
+          aria-hidden="true"
+          className={cn('h-[3px] w-full', {
+            'bg-gradient-to-r from-transparent via-primary to-transparent': variant === 'default',
+            'bg-gradient-to-r from-transparent via-destructive to-transparent':
+              variant === 'destructive',
+            'bg-gradient-to-r from-transparent via-warning to-transparent': variant === 'warning',
+            'bg-gradient-to-r from-transparent via-info to-transparent': variant === 'info',
+          })}
+        />
+
+        <div className="px-4 pb-1.5 pt-4">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-3">
+              {/* Icon tile com glow suave */}
+              <div className="relative flex-shrink-0">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'absolute inset-0 -z-10 rounded-xl blur-lg opacity-60',
+                    config.iconGlow,
+                  )}
+                />
+                <div
+                  className={cn(
+                    'flex h-9 w-9 animate-scale-in items-center justify-center rounded-xl ring-1 ring-inset transition-transform duration-300 hover:scale-105',
+                    config.iconBg,
+                    config.iconRing,
+                  )}
+                >
+                  <Icon className={cn('h-[18px] w-[18px]', config.iconColor)} strokeWidth={2.2} />
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                <AlertDialogTitle
+                  className="text-sm font-semibold leading-tight tracking-tight text-foreground"
+                  data-testid={titleTestId}
+                >
+                  {title}
+                </AlertDialogTitle>
+                {description && (
+                  <AlertDialogDescription
+                    className="text-xs leading-relaxed text-muted-foreground"
+                    data-testid={descriptionTestId}
+                  >
+                    {description}
+                  </AlertDialogDescription>
+                )}
+              </div>
+            </div>
+          </AlertDialogHeader>
+
+          {/* Impact Preview */}
+          {impactPreview && (
+            <div
+              className="animate-fade-in-up mt-3 rounded-lg border border-border/60 bg-muted/40 p-3"
+              data-testid={testId ? `${testId}-impact` : 'confirm-dialog-impact'}
+            >
+              <h4 className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {impactPreview.title}
+              </h4>
+              <ul className="stagger-children space-y-1">
+                {impactPreview.items.map((item, index) => (
+                  <li
+                    key={index}
+                    className="flex items-start gap-2 text-xs text-foreground/80"
+                  >
+                    <span
+                      className={cn(
+                        'mt-1.5 h-1 w-1 flex-shrink-0 rounded-full',
+                        config.iconColor.replace('text-', 'bg-'),
+                      )}
+                    />
+                    <span className="leading-relaxed">{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Divisor sutil + footer */}
+        <div className="mt-3 border-t border-border/50 bg-muted/20 px-4 py-2.5">
+          <AlertDialogFooter className="gap-1.5 sm:gap-1.5">
+            <AlertDialogCancel
+              onClick={handleCancel}
+              disabled={loading}
+              data-testid={noTestId}
+              aria-label={cancelLabel}
+              title={cancelLabel}
+              className="mt-0 h-[26px] min-h-[26px] whitespace-nowrap rounded-md border-border/70 bg-transparent px-3 py-0 text-xs font-medium leading-none text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              {cancelLabelShort ? (
+                <>
+                  <span className="min-[220px]:hidden">{cancelLabelShort}</span>
+                  <span className="hidden min-[220px]:inline">{cancelLabel}</span>
+                </>
+              ) : (
+                cancelLabel
+              )}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirm}
+              disabled={loading}
+              data-testid={yesTestId}
+              aria-label={confirmLabel}
+              title={confirmLabel}
               className={cn(
-                "flex items-center justify-center w-12 h-12 rounded-full flex-shrink-0",
-                config.iconBg
+                'inline-flex h-[26px] min-h-[26px] items-center whitespace-nowrap rounded-md px-3.5 py-0 text-xs font-semibold leading-none shadow-sm transition-all hover:shadow-md active:scale-[0.98]',
+                variant === 'destructive' &&
+                  'bg-destructive text-destructive-foreground shadow-destructive/20 hover:bg-destructive/90 hover:shadow-destructive/30',
+                variant === 'default' && 'shadow-primary/20 hover:shadow-primary/30',
+                variant === 'info' && 'bg-info text-info-foreground hover:bg-info/90',
+                variant === 'warning' && 'bg-warning text-warning-foreground hover:bg-warning/90',
               )}
             >
-              <Icon className={cn("w-6 h-6", config.iconColor)} />
-            </motion.div>
-            <div className="space-y-2">
-              <AlertDialogTitle className="text-lg" data-testid={titleTestId}>
-                {title}
-              </AlertDialogTitle>
-              {description && (
-                <AlertDialogDescription data-testid={descriptionTestId}>
-                  {description}
-                </AlertDialogDescription>
+              {loading && (
+                <Loader2
+                  className="mr-1.5 h-3.5 w-3.5 animate-spin"
+                  data-testid={testId ? `${testId}-loading` : 'confirm-dialog-loading'}
+                />
               )}
-            </div>
-          </div>
-        </AlertDialogHeader>
-
-        {/* Impact Preview */}
-        {impactPreview && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="my-4 p-4 rounded-lg bg-muted/50 border border-border"
-            data-testid={testId ? `${testId}-impact` : "confirm-dialog-impact"}
-          >
-            <h4 className="text-sm font-medium mb-2">{impactPreview.title}</h4>
-            <ul className="space-y-1">
-              {impactPreview.items.map((item, index) => (
-                <motion.li
-                  key={index}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
-                  className="text-sm text-muted-foreground flex items-center gap-2"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-                  {item}
-                </motion.li>
-              ))}
-            </ul>
-          </motion.div>
-        )}
-
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel} disabled={loading} data-testid={noTestId}>
-            {cancelLabel}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            disabled={loading}
-            data-testid={yesTestId}
-            className={cn(
-              variant === "destructive" && "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            )}
-          >
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" data-testid={testId ? `${testId}-loading` : "confirm-dialog-loading"} />}
-            {confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+              {confirmLabelShort ? (
+                <>
+                  <span className="min-[220px]:hidden">{confirmLabelShort}</span>
+                  <span className="hidden min-[220px]:inline">{confirmLabel}</span>
+                </>
+              ) : (
+                confirmLabel
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );
@@ -192,7 +271,7 @@ export function DeleteConfirmDialog({
   onOpenChange: (open: boolean) => void;
   entityName: string;
   itemName?: string;
-  onConfirm: () => void | Promise<void>;
+  onConfirm: () => Promise<void> | void;
   loading?: boolean;
   affectedItems?: string[];
   /** Optional testid scope. Defaults to `delete-confirm-dialog`. */
@@ -213,11 +292,11 @@ export function DeleteConfirmDialog({
       cancelLabel="Cancelar"
       onConfirm={onConfirm}
       loading={loading}
-      testId={testId ?? "delete-confirm-dialog"}
+      testId={testId ?? 'delete-confirm-dialog'}
       impactPreview={
         affectedItems && affectedItems.length > 0
           ? {
-              title: "Isso irá afetar:",
+              title: 'Isso irá afetar:',
               items: affectedItems,
             }
           : undefined
@@ -237,7 +316,7 @@ export function UnsavedChangesDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDiscard: () => void;
-  onSave?: () => void | Promise<void>;
+  onSave?: () => Promise<void> | void;
   loading?: boolean;
 }) {
   return (
@@ -247,8 +326,9 @@ export function UnsavedChangesDialog({
       variant="warning"
       title="Alterações não salvas"
       description="Você tem alterações que não foram salvas. Deseja descartar as alterações ou salvá-las?"
-      confirmLabel={onSave ? "Salvar" : "Descartar"}
+      confirmLabel={onSave ? 'Salvar' : 'Descartar'}
       cancelLabel="Continuar editando"
+      cancelLabelShort="Continuar"
       onConfirm={onSave || onDiscard}
       onCancel={() => onOpenChange(false)}
       loading={loading}

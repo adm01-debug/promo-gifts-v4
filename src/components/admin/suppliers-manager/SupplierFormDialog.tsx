@@ -29,9 +29,9 @@ import {
   Search,
   Truck,
 } from 'lucide-react';
-import { maskCnpj, maskPhone, ESTADOS_BR } from '@/utils/masks';
+import { maskCnpj, maskPhone, ESTADOS_BR, normalizeCnpj, validateCnpj } from '@/utils/masks';
 import { applyPixMask, pixPlaceholder, validatePixKey } from '@/utils/pixMask';
-import { type Supplier, type SupplierContact, type PixKey, CONTACT_ROLES } from "./types";
+import { type Supplier, type SupplierContact, type PixKey, CONTACT_ROLES } from './types';
 import React from 'react';
 
 interface SupplierFormDialogProps {
@@ -39,6 +39,8 @@ interface SupplierFormDialogProps {
   setEditingSupplier: (s: Partial<Supplier> | null) => void;
   isNew: boolean;
   saving: boolean;
+  /** Erro CNPJ vindo do backend (SSOT: mapCnpjError) — exibido inline. */
+  cnpjError?: string;
   uploadingLogo: boolean;
   fetchingCnpj: boolean;
   contacts: SupplierContact[];
@@ -76,7 +78,7 @@ interface SupplierFormDialogProps {
   updateContact: (id: string, field: keyof SupplierContact, value: string) => void;
   addContact: () => void;
   removeContact: (id: string) => void;
-  updatePixKey: (id: string, field: keyof Omit<PixKey, 'id'>, value: string | boolean) => void;
+  updatePixKey: (id: string, field: keyof Omit<PixKey, 'id'>, value: boolean | string) => void;
   addPixKey: () => void;
   removePixKey: (id: string) => void;
 }
@@ -86,6 +88,7 @@ export function SupplierFormDialog({
   setEditingSupplier,
   isNew,
   saving,
+  cnpjError,
   uploadingLogo,
   fetchingCnpj,
   contacts,
@@ -138,7 +141,7 @@ export function SupplierFormDialog({
         if (!open) setEditingSupplier(null);
       }}
     >
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      <DialogContent data-testid="admin-form" className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
@@ -238,6 +241,7 @@ export function SupplierFormDialog({
                 </Label>
                 <Input
                   value={editingSupplier.code || ''}
+                  data-testid="admin-code-input"
                   onChange={(e) => updateField('code', e.target.value)}
                   className={`${fieldClass} font-mono uppercase`}
                 />
@@ -249,6 +253,7 @@ export function SupplierFormDialog({
               </Label>
               <Input
                 value={editingSupplier.name || ''}
+                data-testid="admin-name-input"
                 onChange={(e) => updateField('name', e.target.value)}
                 className={fieldClass}
               />
@@ -259,10 +264,17 @@ export function SupplierFormDialog({
                 <Label className="text-xs font-semibold">CNPJ</Label>
                 <div className="flex gap-1.5">
                   <Input
-                    value={editingSupplier.cnpj || ''}
-                    onChange={(e) => updateField('cnpj', maskCnpj(e.target.value))}
+                    value={maskCnpj(editingSupplier.cnpj || '')}
+                    data-testid="admin-cnpj-input"
+                    onChange={(e) => updateField('cnpj', normalizeCnpj(e.target.value))}
                     className={`${fieldClass} flex-1 font-mono`}
                     maxLength={18}
+                    inputMode="numeric"
+                    aria-invalid={(() => {
+                      const d = (editingSupplier.cnpj ?? '').replace(/\D/g, '');
+                      return d.length > 0 && (d.length !== 14 || !validateCnpj(d));
+                    })()}
+                    aria-describedby="admin-cnpj-error"
                   />
                   <Button
                     type="button"
@@ -270,7 +282,7 @@ export function SupplierFormDialog({
                     size="sm"
                     className="h-9 shrink-0 px-2.5"
                     disabled={
-                      fetchingCnpj || (editingSupplier.cnpj?.replace(/\D/g, '') || '').length !== 14
+                      fetchingCnpj || (editingSupplier.cnpj?.replace(/\D/g, '') ?? '').length !== 14
                     }
                     onClick={handleCnpjLookup}
                   >
@@ -281,6 +293,42 @@ export function SupplierFormDialog({
                     )}
                   </Button>
                 </div>
+                {(() => {
+                  const d = (editingSupplier.cnpj ?? '').replace(/\D/g, '');
+                  if (d.length === 0) return null;
+                  if (d.length !== 14) {
+                    return (
+                      <p
+                        id="admin-cnpj-error"
+                        data-testid="admin-cnpj-error"
+                        className="mt-1 text-xs text-destructive"
+                      >
+                        CNPJ deve ter 14 dígitos (atual: {d.length}).
+                      </p>
+                    );
+                  }
+                  if (!validateCnpj(d)) {
+                    return (
+                      <p
+                        id="admin-cnpj-error"
+                        data-testid="admin-cnpj-error"
+                        className="mt-1 text-xs text-destructive"
+                      >
+                        CNPJ inválido — verifique os dígitos.
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
+                {cnpjError ? (
+                  <p
+                    id="admin-cnpj-backend-error"
+                    data-testid="admin-cnpj-backend-error"
+                    className="mt-1 text-xs text-destructive"
+                  >
+                    {cnpjError}
+                  </p>
+                ) : null}
               </div>
               <div>
                 <Label className="text-xs font-semibold">Inscrição Estadual</Label>
@@ -485,6 +533,7 @@ export function SupplierFormDialog({
                 <select
                   value={editingSupplier.tipo_logradouro || ''}
                   onChange={(e) => updateField('tipo_logradouro', e.target.value)}
+                  onBlur={(e) => updateField('tipo_logradouro', e.target.value)}
                   className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="">Selecione</option>
@@ -557,6 +606,7 @@ export function SupplierFormDialog({
                 <select
                   value={editingSupplier.estado || ''}
                   onChange={(e) => updateField('estado', e.target.value)}
+                  onBlur={(e) => updateField('estado', e.target.value)}
                   className="mt-1.5 h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
                   <option value="">Selecione</option>
@@ -683,6 +733,16 @@ export function SupplierFormDialog({
                   {searchingCarriers && (
                     <Loader2 className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
                   )}
+                  {showCarrierDropdown &&
+                    !searchingCarriers &&
+                    carrierResults.length === 0 &&
+                    carrierSearch.length >= 2 && (
+                      <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover p-2 shadow-lg">
+                        <p className="text-xs text-muted-foreground">
+                          Nenhuma transportadora encontrada
+                        </p>
+                      </div>
+                    )}
                   {showCarrierDropdown && carrierResults.length > 0 && (
                     <div className="absolute z-50 mt-1 max-h-48 w-full overflow-y-auto rounded-md border bg-popover shadow-lg">
                       {carrierResults.map((c) => (
@@ -813,7 +873,7 @@ export function SupplierFormDialog({
                   onChange={(e) =>
                     updateField(
                       'delivery_time_days',
-                      e.target.value ? parseInt(e.target.value) : null,
+                      e.target.value ? parseInt(e.target.value, 10) : null,
                     )
                   }
                   className={fieldClass}
@@ -844,7 +904,7 @@ export function SupplierFormDialog({
                 type="number"
                 value={editingSupplier.priority ?? 50}
                 onChange={(e) =>
-                  updateField('priority', e.target.value ? parseInt(e.target.value) : 50)
+                  updateField('priority', e.target.value ? parseInt(e.target.value, 10) : 50)
                 }
                 className={`${fieldClass} w-24`}
                 min={0}
@@ -1016,7 +1076,13 @@ export function SupplierFormDialog({
           <Button variant="ghost" size="sm" onClick={() => setEditingSupplier(null)}>
             Cancelar
           </Button>
-          <Button size="sm" disabled={saving} onClick={handleSave} className="gap-1.5">
+          <Button
+            size="sm"
+            disabled={saving}
+            onClick={handleSave}
+            data-testid="admin-save-btn"
+            className="gap-1.5"
+          >
             {saving ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (

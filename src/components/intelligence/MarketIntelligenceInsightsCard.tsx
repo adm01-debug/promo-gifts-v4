@@ -2,17 +2,23 @@
  * MarketIntelligenceInsightsCard — narrativa em IA dos dados do dashboard de Inteligência de Mercado.
  * Consome a edge function `market-intelligence-insights` (Lovable AI).
  */
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import {
-  Sparkles, AlertTriangle, TrendingUp, Lightbulb, Star,
-  Database, Inbox,
-} from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/ui";
+  Sparkles,
+  AlertTriangle,
+  TrendingUp,
+  Lightbulb,
+  Star,
+  Database,
+  Inbox,
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/ui';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface Props {
   days: number;
@@ -47,23 +53,39 @@ export function MarketIntelligenceInsightsCard({
   const { toast } = useToast();
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["market-intelligence-insights", days, categoryId, supplierId, productId],
+    queryKey: ['market-intelligence-insights', days, categoryId, supplierId, productId],
     queryFn: async (): Promise<InsightResponse> => {
-      const { data, error } = await supabase.functions.invoke("market-intelligence-insights", {
-        body: {
-          days, categoryId, supplierId, productId,
-          categoryName, supplierName, productName,
+      const { data: queryRows, error } = await invokeEdge(
+        'market-intelligence-insights',
+        {
+          body: {
+            days,
+            categoryId,
+            supplierId,
+            productId,
+            categoryName,
+            supplierName,
+            productName,
+          },
         },
-      });
+      );
       if (error) {
-        if (error.message?.includes("429")) {
-          toast({ title: "Limite de IA atingido", description: "Aguarde alguns instantes ou verifique sua quota.", variant: "destructive" });
-        } else if (error.message?.includes("402")) {
-          toast({ title: "Sem créditos de IA", description: "Adicione créditos no workspace.", variant: "destructive" });
+        if (error.message?.includes('429')) {
+          toast({
+            title: 'Limite de IA atingido',
+            description: 'Aguarde alguns instantes ou verifique sua quota.',
+            variant: 'destructive',
+          });
+        } else if (error.message?.includes('402')) {
+          toast({
+            title: 'Sem créditos de IA',
+            description: 'Adicione créditos no workspace.',
+            variant: 'destructive',
+          });
         }
         throw error;
       }
-      return data as InsightResponse;
+      return queryRows as InsightResponse;
     },
     staleTime: 1000 * 60 * 5,
     retry: false,
@@ -77,7 +99,7 @@ export function MarketIntelligenceInsightsCard({
 
   return (
     <TooltipProvider>
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 via-background to-chart-2/5 animate-fade-in">
+      <Card className="animate-fade-in border-primary/30 bg-gradient-to-br from-primary/5 via-background to-chart-2/5">
         <CardHeader className="pb-3">
           <div className="min-w-0">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -86,22 +108,33 @@ export function MarketIntelligenceInsightsCard({
               {data?.cached && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-chart-2/40 text-chart-2 gap-1">
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-chart-2/40 px-1.5 py-0 text-[10px] text-chart-2"
+                    >
                       <Database className="h-2.5 w-2.5" /> Cache
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-xs">
-                      Gerado em {data.generated_at ? new Date(data.generated_at).toLocaleString("pt-BR") : "—"}.
+                      Gerado em{' '}
+                      {data.generated_at
+                        ? new Date(data.generated_at).toLocaleString('pt-BR')
+                        : '—'}
+                      .
                     </p>
                   </TooltipContent>
                 </Tooltip>
               )}
             </CardTitle>
-            <CardDescription className="flex flex-wrap items-center gap-1.5 mt-1">
+            <CardDescription className="mt-1 flex flex-wrap items-center gap-1.5">
               <span>Análise dos últimos {days} dias</span>
               {filterChips.map((c) => (
-                <Badge key={c} variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">
+                <Badge
+                  key={c}
+                  variant="outline"
+                  className="border-primary/30 px-1.5 py-0 text-[10px] text-primary"
+                >
                   {c}
                 </Badge>
               ))}
@@ -117,12 +150,12 @@ export function MarketIntelligenceInsightsCard({
             </div>
           ) : isError ? (
             <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
               <span>Não foi possível gerar insights agora. Tente novamente em instantes.</span>
             </div>
           ) : data?.empty ? (
-            <div className="flex items-start gap-3 p-4 rounded-md bg-muted/40 border border-dashed border-border">
-              <Inbox className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 rounded-md border border-dashed border-border bg-muted/40 p-4">
+              <Inbox className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
               <div className="space-y-1.5">
                 <p className="text-sm font-medium text-foreground">{data.summary}</p>
                 <p className="text-xs text-muted-foreground">{data.next_action}</p>
@@ -131,22 +164,45 @@ export function MarketIntelligenceInsightsCard({
           ) : data ? (
             <div className="space-y-3 text-sm">
               {data.summary && (
-                <p className="font-medium text-foreground leading-relaxed animate-fade-in">{data.summary}</p>
+                <p className="animate-fade-in font-medium leading-relaxed text-foreground">
+                  {data.summary}
+                </p>
               )}
               <div className="grid gap-2.5">
-                <InsightRow icon={<TrendingUp className="h-4 w-4 text-chart-2" />} label="O que mudou" text={data.what_changed} delay={50} />
-                <InsightRow icon={<Lightbulb className="h-4 w-4 text-chart-4" />} label="Por quê" text={data.why} delay={100} />
-                <InsightRow icon={<Sparkles className="h-4 w-4 text-primary" />} label="Próxima ação" text={data.next_action} delay={150} />
+                <InsightRow
+                  icon={<TrendingUp className="h-4 w-4 text-chart-2" />}
+                  label="O que mudou"
+                  text={data.what_changed}
+                  delay={50}
+                />
+                <InsightRow
+                  icon={<Lightbulb className="h-4 w-4 text-chart-4" />}
+                  label="Por quê"
+                  text={data.why}
+                  delay={100}
+                />
+                <InsightRow
+                  icon={<Sparkles className="h-4 w-4 text-primary" />}
+                  label="Próxima ação"
+                  text={data.next_action}
+                  delay={150}
+                />
                 {data.highlights && data.highlights.length > 0 && (
                   <div
-                    className="flex items-start gap-2 p-2.5 rounded-md bg-card/60 border border-border/40 animate-fade-in"
-                    style={{ animationDelay: "200ms" }}
+                    className="flex animate-fade-in items-start gap-2 rounded-md border border-border/40 bg-card/60 p-2.5"
+                    style={{ animationDelay: '200ms' }}
                   >
-                    <div className="shrink-0 mt-0.5"><Star className="h-4 w-4 text-chart-5" /></div>
+                    <div className="mt-0.5 shrink-0">
+                      <Star className="h-4 w-4 text-chart-5" />
+                    </div>
                     <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Destaques</p>
-                      <ul className="text-sm text-foreground/90 leading-relaxed list-disc pl-4 space-y-0.5">
-                        {data.highlights.map((h, i) => <li key={i}>{h}</li>)}
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Destaques
+                      </p>
+                      <ul className="list-disc space-y-0.5 pl-4 text-sm leading-relaxed text-foreground/90">
+                        {data.highlights.map((h, i) => (
+                          <li key={i}>{h}</li>
+                        ))}
                       </ul>
                     </div>
                   </div>
@@ -174,13 +230,15 @@ function InsightRow({
   if (!text) return null;
   return (
     <div
-      className="flex items-start gap-2 p-2.5 rounded-md bg-card/60 border border-border/40 animate-fade-in"
+      className="flex animate-fade-in items-start gap-2 rounded-md border border-border/40 bg-card/60 p-2.5"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="shrink-0 mt-0.5">{icon}</div>
+      <div className="mt-0.5 shrink-0">{icon}</div>
       <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">{label}</p>
-        <p className="text-sm text-foreground/90 leading-relaxed">{text}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        <p className="text-sm leading-relaxed text-foreground/90">{text}</p>
       </div>
     </div>
   );

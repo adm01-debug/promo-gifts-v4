@@ -20,6 +20,51 @@ describe('contract: product-webhook v1 (compat com produção)', () => {
     }
   });
 
+  it('aceita produto com campos opcionais ricos', async () => {
+    const req = makeRequest({
+      body: {
+        action: 'upsert',
+        product: {
+          external_id: 'ext-002',
+          sku: 'BAG-001',
+          name: 'Mochila tecnica',
+          description: 'Mochila tecnica 30L',
+          price: 199.9,
+          min_quantity: 10,
+          category_id: 12,
+          category_name: 'Bolsas',
+          subcategory: 'Outdoor',
+          supplier_id: 'sup-01',
+          supplier_name: 'Fornecedor A',
+          stock: 500,
+          stock_status: 'available',
+          is_kit: false,
+          is_active: true,
+          featured: true,
+          new_arrival: false,
+          on_sale: false,
+          images: ['https://cdn.example.com/mochila-1.jpg'],
+          video_url: 'https://cdn.example.com/mochila.mp4',
+          colors: [{ name: 'Preto', hex: '#000000', group: 'neutro' }],
+          materials: ['Poliester'],
+          tags: { tecnico: ['outdoor', 'esportivo'] },
+          kit_items: [
+            {
+              productId: 'item-1',
+              productName: 'Necessaire',
+              quantity: 1,
+              sku: 'NEC-001',
+            },
+          ],
+          variations: [{ sku: 'BAG-001-PRETO', color: 'preto' }],
+          metadata: { source: 'legacy-import', batch: 7 },
+        },
+      },
+    });
+    const r = await parseContract(req, ProductWebhookSchemas);
+    expect(r.ok).toBe(true);
+  });
+
   it('payload sem body → 400 missing_body', async () => {
     const req = makeRequest({ body: '' });
     const r = await parseContract(req, ProductWebhookSchemas);
@@ -94,6 +139,103 @@ describe('contract: product-webhook v1 (compat com produção)', () => {
       expect(issue).toBeDefined();
     }
   });
+
+  it('URL invalida em images -> 422', async () => {
+    const req = makeRequest({
+      body: {
+        action: 'upsert',
+        product: {
+          sku: 'IMG-001',
+          name: 'Produto com imagem',
+          price: 10,
+          images: ['not-a-url'],
+        },
+      },
+    });
+    const r = await parseContract(req, ProductWebhookSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['product.images[0]'],
+      });
+    }
+  });
+
+  it('products acima do limite de 500 -> 422', async () => {
+    const products = Array.from({ length: 501 }, (_, index) => ({
+      sku: `SKU-${index}`,
+      name: `Produto ${index}`,
+      price: 1,
+    }));
+    const req = makeRequest({
+      body: {
+        action: 'batch_upsert',
+        products,
+      },
+    });
+    const r = await parseContract(req, ProductWebhookSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['products'],
+      });
+    }
+  });
+
+  it('products no limite de 500 -> aceita (200) com latencia aceitavel', async () => {
+    const products = Array.from({ length: 500 }, (_, index) => ({
+      sku: `SKU-${index}`,
+      name: `Produto ${index}`,
+      price: 1,
+    }));
+
+    const req = makeRequest({
+      body: {
+        action: 'batch_upsert',
+        products,
+      },
+    });
+
+    const start = performance.now();
+    const r = await parseContract(req, ProductWebhookSchemas);
+    const elapsedMs = performance.now() - start;
+
+    expect(r.ok).toBe(true);
+    expect(elapsedMs).toBeLessThan(250);
+  });
+
+  it('products acima do limite de 500 -> rejeita com 422 e latencia aceitavel', async () => {
+    const products = Array.from({ length: 501 }, (_, index) => ({
+      sku: `SKU-${index}`,
+      name: `Produto ${index}`,
+      price: 1,
+    }));
+
+    const req = makeRequest({
+      body: {
+        action: 'batch_upsert',
+        products,
+      },
+    });
+
+    const start = performance.now();
+    const r = await parseContract(req, ProductWebhookSchemas);
+    const elapsedMs = performance.now() - start;
+
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['products'],
+      });
+    }
+    expect(elapsedMs).toBeLessThan(250);
+  });
 });
 
 describe('contract: product-webhook v2 (strict)', () => {
@@ -126,6 +268,22 @@ describe('contract: product-webhook v2 (strict)', () => {
     const req = makeRequest({
       headers: { 'accept-version': '2' },
       body: rest,
+    });
+    const r = await parseContract(req, ProductWebhookSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['idempotency_key'],
+      });
+    }
+  });
+
+  it('v2 idempotency_key precisa ser UUID -> 422', async () => {
+    const req = makeRequest({
+      headers: { 'accept-version': '2' },
+      body: { ...validV2, idempotency_key: 'short' },
     });
     const r = await parseContract(req, ProductWebhookSchemas);
     expect(r.ok).toBe(false);
@@ -177,6 +335,32 @@ describe('contract: product-webhook v2 (strict)', () => {
         action: 'batch_upsert',
         idempotency_key: '11111111-2222-3333-4444-555555555555',
         products: [],
+      },
+    });
+    const r = await parseContract(req, ProductWebhookSchemas);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      await expectContractError(r.response, {
+        status: 422,
+        code: 'validation_failed',
+        fieldPaths: ['products'],
+      });
+    }
+  });
+
+  it('v2 rejeita product e products simultaneos -> 422', async () => {
+    const req = makeRequest({
+      headers: { 'accept-version': '2' },
+      body: {
+        ...validV2,
+        products: [
+          {
+            external_id: 'ext-002',
+            sku: 'DEF',
+            name: 'Caneca',
+            price: 12,
+          },
+        ],
       },
     });
     const r = await parseContract(req, ProductWebhookSchemas);

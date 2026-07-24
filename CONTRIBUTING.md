@@ -2,6 +2,12 @@
 
 > Padrão de trabalho da Promo Brindes. Aplica-se a todo este repositório.
 
+> 🔒 **Banco canônico (SSOT):** `doufsxqlfjyuvxuezpln`
+> (`https://doufsxqlfjyuvxuezpln.supabase.co`). Toda alteração de schema,
+> migration ou edge function tem como alvo exclusivo este projeto. Detalhes
+> e aviso sobre o projeto legado em [`SUPABASE_CONNECTION.md`](SUPABASE_CONNECTION.md).
+
+
 ## 🎯 Princípio
 
 **Toda alteração em `main` passa por Pull Request.** Sem exceção. Mesmo configs.
@@ -57,6 +63,7 @@ Razão: rastreabilidade + revisão automática (CodeRabbit) + ponto de gate ante
 - Commitar `.env`, tokens, chaves SSH ou qualquer credencial
 - Merge sem revisão do CodeRabbit
 - Renomear ou deletar tabelas/colunas Supabase sem backup `_backup_*_YYYYMMDD`
+- Editar Edge Functions direto no Dashboard do Supabase (ver seção "🔁 Edge Functions")
 
 ## 🔐 Secrets
 
@@ -73,6 +80,56 @@ Checklist mínimo:
 - [ ] Sem secrets hardcoded
 - [ ] Migrations SQL com backup das tabelas afetadas
 - [ ] Variáveis de ambiente documentadas se forem novas
+- [ ] `npm run ssot:all` verde (Gate 0 + guard canônico + hosts em docs)
+
+## 🔒 Checklist de SSOT (revisão de PR — obrigatório)
+
+> **Banco canônico:** `doufsxqlfjyuvxuezpln` — `https://doufsxqlfjyuvxuezpln.supabase.co`  
+> **Legado (informacional apenas):** `pqpdolkaeqlyzpdpbizo` — sem dados reais, NUNCA operacional.
+
+Todo revisor de PR (humano ou automático) DEVE marcar cada item abaixo antes do merge.
+Qualquer "não" bloqueia o merge.
+
+### 1. Código runtime
+- [ ] `src/integrations/supabase/client.ts` continua apontando para `doufsxqlfjyuvxuezpln`
+- [ ] `supabase/config.toml` continua com `project_id = "doufsxqlfjyuvxuezpln"`
+- [ ] Nenhum arquivo em `src/` ou `supabase/functions/` menciona o ID legado `pqpdolkaeqlyzpdpbizo` fora de comentário — projeto legado, NUNCA usar
+- [ ] Campos críticos do tipo `Product` intactos: `price`, `sale_price`, `shortDescription`, `category_id`, `category_name`
+
+### 2. Documentação (`.md`)
+- [ ] Nenhuma instrução operacional nova cita o ID legado `pqpdolkaeqlyzpdpbizo` — projeto legado, NUNCA operacional (deploy, migration, `supabase link`, `--project-ref`, connect)
+- [ ] Toda URL `https://<ref>.supabase.co` operacional aponta para o canônico
+- [ ] Menções históricas ao legado estão em pasta de arquivo (`docs/redeploy/`, `docs/audit/`, `docs/incidents/`, `docs/sessoes/`) OU trazem marcador na mesma linha / nas 3 anteriores: `[LEGACY_INFORMATIVO]`, `projeto legado`, `deprecated`, `⚠️`, `não use`, `NUNCA apontar`
+- [ ] Novos exemplos de `.env` usam placeholders (`<project_ref>`, `your_project`) e não IDs reais
+
+### 3. Migrations e schema
+- [ ] Toda migration SQL foi aplicada no canônico (`doufsxqlfjyuvxuezpln`), nunca no legado
+- [ ] `types.ts` regenerado contra o canônico após alterações de schema
+- [ ] Contagem de `export type` em `src/integrations/supabase/types.ts` não regrediu sem justificativa (Regra #4 do `CLAUDE.md`)
+
+### 4. Gates automáticos verdes
+Rodar antes do merge (ou aguardar CI):
+
+```bash
+npm run ssot:all
+```
+
+Isto executa em sequência:
+1. `scripts/validate-supabase-config.mjs` — Gate 0 (SSOT do client)
+2. `scripts/guard-canonical-project.mjs` — runtime + arquivos críticos + docs operacionais
+3. `scripts/check-docs-supabase-hosts.mjs` — verificação de hosts/links em `.md`
+
+Todos devem sair com exit 0. Falha em qualquer um bloqueia o merge.
+
+### 5. Se o PR precisa mencionar o legado
+Legítimo em três cenários:
+- **Log histórico** — colocar o arquivo sob `docs/redeploy/` ou `docs/audit/` (arquivos históricos por convenção).
+- **Aviso didático** — adicionar marcador de legado explícito na linha ou logo acima.
+- **Incidente/pós-mortem** — publicar em `docs/incidents/`.
+
+Se nenhum encaixa, o PR está introduzindo instrução operacional legado — **rejeitar**.
+
+
 
 ## 🎓 Convenções específicas
 
@@ -106,6 +163,32 @@ Rodar `db push` destruiria o banco. Ver `supabase/migrations/README.md`.
 ### Bitrix24
 - `crm.item.get` com `entityTypeId=4` para Smart Companies (não usar `crm.company.get`)
 - OAuth2 sempre — webhook clássico está deprecado para nosso uso
+
+## 🔁 Edge Functions — fonte de verdade
+
+**Regra:** O repositório é a única fonte de verdade. Toda Edge Function vive em `supabase/functions/<slug>/index.ts` e chega ao canônico via CI.
+
+### Como funciona
+
+1. PR mergeado em `main` que toca `supabase/functions/**` dispara o workflow `Deploy Edge Functions` automaticamente.
+2. O workflow faz `supabase functions deploy` para o projeto canônico (`doufsxqlfjyuvxuezpln`).
+3. O workflow `edge-functions-drift-check` roda em cron diário 06:00 BRT, em todo PR que toca `supabase/functions/**`, e por dispatch manual. Compara hash sha256 entre repo e canônico. Falha o build se houver qualquer divergência.
+
+### Proibido
+
+- **Editar uma function direto no Dashboard do Supabase.** Cria drift e dispara issue automática com label `drift-check`.
+- Deletar function via Dashboard sem antes remover a pasta do repo via PR.
+- Disparar `supabase functions deploy` da máquina pessoal contra o canônico sem PR correspondente.
+
+### Permitido
+
+- Inspecionar logs no Dashboard.
+- Disparar `Deploy Edge Functions` manualmente via Actions UI (já roda do código do repo).
+- `supabase functions download` para coleta de evidência ou auditoria local.
+
+### Se você precisar de um hotfix urgente
+
+Mesmo emergência: a) commit no repo na branch `hotfix/<slug>`, b) merge fast-track no main, c) deixar o auto-deploy reconciliar. **Sem janela** para edição direta no Dashboard. O auto-deploy leva tipicamente 1-2 minutos por function.
 
 ## 🛡️ Branch Protection Sentinel
 

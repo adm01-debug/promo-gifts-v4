@@ -29,6 +29,18 @@ vi.mock("@/hooks/ui/useNotifications", () => ({
     clearAll: vi.fn(),
     refresh: vi.fn(),
     prefetch: prefetchMock,
+    page: 1,
+    totalCount: 0,
+    search: "",
+    category: "all",
+    unreadOnly: false,
+    dateRange: { from: undefined, to: undefined },
+    setPage: vi.fn(),
+    setSearch: vi.fn(),
+    setCategory: vi.fn(),
+    setUnreadOnly: vi.fn(),
+    setDateRange: vi.fn(),
+    undoMarkAsRead: vi.fn(),
     push: {},
   }),
 }));
@@ -39,7 +51,7 @@ vi.mock("@/components/a11y/AriaLive", () => ({
 }));
 
 vi.mock("framer-motion", () => {
-  const passthrough = (Tag: keyof JSX.IntrinsicElements) =>
+  const passthrough = (Tag: keyof React.JSX.IntrinsicElements) =>
     React.forwardRef<HTMLElement, Record<string, unknown>>(function M(props, ref) {
       const { children, ...rest } = props as { children?: React.ReactNode };
       const clean: Record<string, unknown> = {};
@@ -51,7 +63,11 @@ vi.mock("framer-motion", () => {
       return React.createElement(Tag, { ref, ...clean }, children);
     });
   return {
-    motion: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof JSX.IntrinsicElements) }),
+    motion: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof React.JSX.IntrinsicElements) }),
+    m: new Proxy({}, { get: (_t, p: string) => passthrough(p as keyof React.JSX.IntrinsicElements) }),
+    LazyMotion: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+    domMax: {},
+    domAnimation: {},
     AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   };
 });
@@ -186,7 +202,6 @@ describe("NotificationDrawer — trigger→prefetch end-to-end timing", () => {
     expect(snap.lastTriggerToFetch!.totalMs).toBeGreaterThanOrEqual(TRIGGER_TO_FETCH_TTL_MS);
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining("trigger→fetch exceeded TTL window"),
-      expect.any(Object)
     );
     warnSpy.mockRestore();
   });

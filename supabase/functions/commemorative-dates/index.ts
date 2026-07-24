@@ -1,7 +1,13 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { safeErrorResponse } from '../_shared/error-response.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { parseBodyWithSchema } from "../_shared/zod-validate.ts";
+// BUG-012 FIX: import resolveCredential for SSOT credential resolution (DB-first -> env fallback).
+// Previously used Deno.env.get('EXTERNAL_SUPABASE_URL') and Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY')
+// directly, bypassing the credential management system (/admin/conexoes).
+// This meant key rotations via admin UI had NO effect until the Deno isolate was restarted.
+import { resolveCredential } from '../_shared/credentials.ts';
 
 const ActionSchema = z.object({
   action: z.enum(['get_active_dates', 'get_upcoming_dates', 'get_products_by_date', 'get_dates_with_colors']),
@@ -24,7 +30,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
+        JSON.stringify({ error: 'N\u00e3o autorizado' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -38,7 +44,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await localSupabase.auth.getUser();
     if (userError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Token inválido' }),
+        JSON.stringify({ error: 'Token inv\u00e1lido' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -49,14 +55,19 @@ Deno.serve(async (req) => {
 
     const { action, params } = parsed.data;
 
-    // External DB client
-    const externalUrl = Deno.env.get('EXTERNAL_SUPABASE_URL');
-    const externalKey = Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY');
+    // BUG-012 FIX: use resolveCredential() (DB-first SSOT) instead of Deno.env.get().
+    // EXTERNAL_PROMOBRIND_URL resolves aliases: EXTERNAL_SUPABASE_URL (legacy env name).
+    // EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY resolves: EXTERNAL_SUPABASE_SERVICE_ROLE_KEY,
+    // EXTERNAL_SUPABASE_SERVICE_KEY (legacy aliases).
+    const [{ value: externalUrl }, { value: externalKey }] = await Promise.all([
+      resolveCredential('EXTERNAL_PROMOBRIND_URL'),
+      resolveCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY'),
+    ]);
 
     if (!externalUrl || !externalKey) {
-      console.warn('[commemorative-dates] EXTERNAL_SUPABASE_URL/KEY not configured — returning empty payload');
+      console.warn('[commemorative-dates] External DB credentials not configured — returning empty payload');
       return new Response(
-        JSON.stringify({ data: [], records: [], count: 0, _unconfigured: true, _message: 'Banco externo não configurado' }),
+        JSON.stringify({ data: [], records: [], count: 0, _unconfigured: true, _message: 'Banco externo n\u00e3o configurado' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -68,8 +79,7 @@ Deno.serve(async (req) => {
       case 'get_active_dates': {
         const { data, error } = await externalSupabase.rpc('get_active_commemorative_dates');
         if (error) {
-          return new Response(JSON.stringify({ error: error.message }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          return safeErrorResponse(error, { corsHeaders, publicMessage: 'query_failed', status: 400, logLabel: 'commemorative-dates query error:' });
         }
         result = data;
         break;
@@ -81,8 +91,7 @@ Deno.serve(async (req) => {
           p_days_ahead: daysAhead
         });
         if (error) {
-          return new Response(JSON.stringify({ error: error.message }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          return safeErrorResponse(error, { corsHeaders, publicMessage: 'query_failed', status: 400, logLabel: 'commemorative-dates query error:' });
         }
         result = data;
         break;
@@ -91,7 +100,7 @@ Deno.serve(async (req) => {
       case 'get_products_by_date': {
         const slug = params?.slug;
         if (!slug) {
-          return new Response(JSON.stringify({ error: 'Slug é obrigatório' }),
+          return new Response(JSON.stringify({ error: 'Slug \u00e9 obrigat\u00f3rio' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
         const limit = params?.limit || 100;
@@ -103,8 +112,7 @@ Deno.serve(async (req) => {
           p_include_all_colors: includeAllColors
         });
         if (error) {
-          return new Response(JSON.stringify({ error: error.message }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          return safeErrorResponse(error, { corsHeaders, publicMessage: 'query_failed', status: 400, logLabel: 'commemorative-dates query error:' });
         }
         result = data;
         break;
@@ -118,8 +126,7 @@ Deno.serve(async (req) => {
           .order('date_month')
           .order('date_day');
         if (error) {
-          return new Response(JSON.stringify({ error: error.message }),
-            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          return safeErrorResponse(error, { corsHeaders, publicMessage: 'query_failed', status: 400, logLabel: 'commemorative-dates query error:' });
         }
         result = data;
         break;
@@ -132,11 +139,6 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error('Unexpected error:', errorMessage);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return safeErrorResponse(error, { corsHeaders, publicMessage: 'internal_error', logLabel: 'commemorative-dates unexpected error:' });
   }
 });

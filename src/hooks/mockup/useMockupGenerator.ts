@@ -1,33 +1,35 @@
 /**
  * useMockupGenerator — Core business logic hook for MockupGenerator page
  *
- * Performance Optimized:
- * - Lazy initialization of techniques and history.
- * - Memoized computed values (historyClients, productLocations).
- * - Debounced position history persistence.
+ * Sprint 1 fixes: T1-T10 (see previous commits)
+ * Sprint 2 fixes (audit 26/05/2026):
+ * BUG-F: resetForm is now async and awaits clearDraft().
+ * BUG-J: isDraftLoading now exposed in return object.
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
 import { needsConversion, ensureSupportedFormat } from '@/lib/image-converter';
+import { getCdnUrl } from '@/utils/image-utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMockupDraft } from '@/hooks/mockup';
 import {
   useFilteredTechniques,
   useProductCustomizationOptionsForMockup,
-  type TechniqueWithLimits,
   type CustomizationOption,
-} from '@/hooks/mockup';
-import { useLogoColorAnalysis, usePositionHistory } from "@/hooks/simulation";
+  type TechniqueWithLimits,
+} from './useMockupTechniques';
+import { useMockupDraft } from './useMockupDraft';
+import { useLogoColorAnalysis, usePositionHistory } from '@/hooks/simulation';
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { getMockupWizardStep } from '@/components/mockup/mockupWizardStep';
 import { showMockupSuccessToast } from '@/components/mockup/MockupSuccessToast';
 import type { TechniqueColorConfig } from '@/components/mockup/techniqueColorUtils';
-import { invokeWithRetry, extractFunctionErrorMessage } from '@/lib/external-db/invoke';
 import { adaptTabelaPrecoRows } from '@/lib/personalization/adapters';
 import type { PersonalizationArea } from '@/components/mockup/MultiAreaManager';
 import type { MockupProductSelection } from '@/components/mockup/MockupProductSelector';
 import type { MockupClient } from '@/components/mockup/MockupConfigPanel';
+import type { ArtFileAttachment } from '@/components/mockup/ArtFileUpload';
 import {
   type Technique,
   type GeneratedMockup,
@@ -37,9 +39,9 @@ import {
   generateMockupApi,
   downloadMockupAsPdf,
   deleteMockupFromDb,
-} from "@/hooks/mockup/mockupGenerationService";
+} from '@/hooks/mockup/mockupGenerationService';
 
-// Re-export types for consumers
+import { logger } from '@/lib/logger';
 export type { Technique, GeneratedMockup };
 
 export function useMockupGenerator() {
@@ -49,47 +51,43 @@ export function useMockupGenerator() {
     loadDraft,
     clearDraft,
     isSaving: isDraftSaving,
+    isLoading: isDraftLoading,
     lastSaved,
     error: draftError,
   } = useMockupDraft();
   const { getProductById } = useProductsContext();
 
-  // Data state
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
-
-  // Selection state
   const [productSelection, setProductSelection] = useState<MockupProductSelection | null>(null);
   const [selectedTechnique, setSelectedTechnique] = useState<
     Technique | TechniqueWithLimits | null
   >(null);
   const [selectedClient, setSelectedClient] = useState<MockupClient | null>(null);
-
-  // Multi-area
   const [personalizationAreas, setPersonalizationAreas] = useState<PersonalizationArea[]>([
     createDefaultArea(),
   ]);
   const [activeAreaId, setActiveAreaId] = useState<string | null>(null);
-
-  // Generation
   const [generatedMockup, setGeneratedMockup] = useState<string | null>(null);
   const [generatedBatchMockups, setGeneratedBatchMockups] = useState<
     { areaName: string; url: string }[]
   >([]);
-  const [artAttachments, setArtAttachments] = useState<unknown[]>([]);
+  const [artAttachments, setArtAttachments] = useState<ArtFileAttachment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // Re-entrancy guard for generateMockup: setIsLoading(true) is async/batched and
+  // cannot block a synchronous second call (a fast double-click, or the two buttons
+  // wired to the same handler). Flipped synchronously before the first await so a
+  // concurrent invocation returns immediately — preventing duplicate edge calls,
+  // duplicate history rows, and orphaned storage PNGs.
+  const isGeneratingRef = useRef(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [mockupAnnotations, setMockupAnnotations] = useState<
     { id: string; x: number; y: number; text: string }[]
   >([]);
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
-
-  // Technique color configuration
   const [techniqueColorConfig, setTechniqueColorConfig] = useState<TechniqueColorConfig | null>(
     null,
   );
-
-  // History
   const [mockupHistory, setMockupHistory] = useState<GeneratedMockup[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -97,20 +95,15 @@ export function useMockupGenerator() {
   const [lastSavedRecordId, setLastSavedRecordId] = useState<string | null>(null);
   const [lastSavedMockupUrl, setLastSavedMockupUrl] = useState<string | null>(null);
   const [lastSavedLayoutMode, setLastSavedLayoutMode] = useState<'ai' | 'static'>('ai');
-
-  // Draft
   const [hasDraftRestored, setHasDraftRestored] = useState(false);
   const [showDraftRestoredNotice, setShowDraftRestoredNotice] = useState(false);
   const isRestoringDraft = useRef(false);
-
-  // Tab & positioning
+  const historyPushTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [activeTab, setActiveTab] = useState<'generator' | 'history'>('generator');
   const [hasUserInteractedPosition, setHasUserInteractedPosition] = useState(false);
 
-  // Logo color analysis
   const logoColorAnalysis = useLogoColorAnalysis();
-
-  // ─── Undo/Redo ───────────────────────────────────────────────────────
   const positionHistory = usePositionHistory({ enabled: true });
 
   useEffect(() => {
@@ -119,11 +112,20 @@ export function useMockupGenerator() {
       setPersonalizationAreas((prev) =>
         prev.map((area) => (area.id === activeAreaId ? { ...area, ...state } : area)),
       );
-      toast.info(positionHistory.canRedo ? '↩️ Desfazer' : '↪️ Refazer', { duration: 1000 });
+      toast.info(positionHistory.canRedo ? '↩️ Desfeito' : '↪️ Refeito', { duration: 1000 });
     });
   }, [activeAreaId, positionHistory]);
 
-  // ─── Derived state ──────────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      if (historyPushTimeout.current) clearTimeout(historyPushTimeout.current);
+    };
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (draftNoticeTimeoutRef.current) clearTimeout(draftNoticeTimeoutRef.current);
+    };
+  }, []);
 
   const activeArea =
     personalizationAreas.find((a) => a.id === activeAreaId) || personalizationAreas[0];
@@ -137,12 +139,10 @@ export function useMockupGenerator() {
   const historyClients = useMemo(() => {
     if (!mockupHistory.length) return [];
     const map = new Map<string, { id: string; name: string }>();
-    for (let i = 0; i < mockupHistory.length; i++) {
-      const m = mockupHistory[i];
+    for (const m of mockupHistory) {
       const clientKey = m.client_id || m.client_name;
-      if (clientKey && m.client_name && !map.has(clientKey)) {
+      if (clientKey && m.client_name && !map.has(clientKey))
         map.set(clientKey, { id: m.client_id || m.client_name, name: m.client_name });
-      }
     }
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [mockupHistory]);
@@ -165,16 +165,14 @@ export function useMockupGenerator() {
         maxWidthCm: widths.length ? Math.max(...widths) : null,
         maxHeightCm: heights.length ? Math.max(...heights) : null,
         maxColors: colors.length ? Math.max(...colors) : null,
-        isCurved: opts.some((o: CustomizationOption) => o.is_curved === true),
+        isCurved: opts.some((o: CustomizationOption) => o.is_curved),
         techniquesAvailable: opts.length,
       };
     });
   }, [customizationOptions]);
 
-  // ─── Effects ────────────────────────────────────────────────────────
-
   useEffect(() => {
-    if (!productLocations || isRestoringDraft.current) return;
+    if (!productLocations || isRestoringDraft.current || !hasDraftRestored) return;
     const newAreas: PersonalizationArea[] = productLocations
       .sort((a, b) => a.order - b.order)
       .map((loc) => ({
@@ -196,7 +194,7 @@ export function useMockupGenerator() {
       setPersonalizationAreas(newAreas);
       setActiveAreaId(newAreas[0].id);
     }
-  }, [productLocations]);
+  }, [productLocations, hasDraftRestored]);
 
   useEffect(() => {
     if (!activeAreaId && personalizationAreas.length > 0)
@@ -205,14 +203,12 @@ export function useMockupGenerator() {
 
   useEffect(() => {
     fetchData();
-    fetchHistory();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (selectedTechnique && filteredTechniques.length > 0) {
+    if (selectedTechnique && filteredTechniques.length > 0)
       if (!filteredTechniques.some((t) => t.id === selectedTechnique.id))
         setSelectedTechnique(null);
-    }
   }, [filteredTechniques, selectedTechnique]);
 
   useEffect(() => {
@@ -226,7 +222,6 @@ export function useMockupGenerator() {
     if ((!mw || mw <= 0) && (!mh || mh <= 0)) return;
     setPersonalizationAreas((prev) =>
       prev.map((area) => {
-        // Limite efetivo = menor entre técnica e área (se ambos definidos)
         const areaW = area.maxWidthCm && area.maxWidthCm > 0 ? area.maxWidthCm : null;
         const areaH = area.maxHeightCm && area.maxHeightCm > 0 ? area.maxHeightCm : null;
         const effW = mw && areaW ? Math.min(mw, areaW) : mw || areaW;
@@ -241,13 +236,14 @@ export function useMockupGenerator() {
     );
   }, [selectedTechnique]);
 
-  // Draft restoration
   useEffect(() => {
+    let isMounted = true;
     const restoreDraft = async () => {
       if (isLoadingData || hasDraftRestored || isRestoringDraft.current) return;
       isRestoringDraft.current = true;
       try {
         const draft = await loadDraft();
+        if (!isMounted) return;
         if (
           draft &&
           (draft.productId ||
@@ -274,19 +270,23 @@ export function useMockupGenerator() {
             setActiveAreaId(draft.personalizationAreas[0].id);
           }
           setShowDraftRestoredNotice(true);
-          setTimeout(() => setShowDraftRestoredNotice(false), 5000);
+          if (draftNoticeTimeoutRef.current) clearTimeout(draftNoticeTimeoutRef.current);
+          draftNoticeTimeoutRef.current = setTimeout(() => setShowDraftRestoredNotice(false), 5000);
         }
       } catch (err) {
-        console.error('Erro ao restaurar rascunho:', err);
+        if (!isMounted) return;
+        logger.error('Erro ao restaurar rascunho:', err);
       } finally {
-        setHasDraftRestored(true);
+        if (isMounted) setHasDraftRestored(true);
         isRestoringDraft.current = false;
       }
     };
     restoreDraft();
+    return () => {
+      isMounted = false;
+    };
   }, [isLoadingData, techniques, loadDraft, hasDraftRestored, getProductById]);
 
-  // URL param pre-selection
   const urlParamsApplied = useRef(false);
   useEffect(() => {
     if (urlParamsApplied.current || isLoadingData || !hasDraftRestored) return;
@@ -308,14 +308,20 @@ export function useMockupGenerator() {
       );
       if (technique) setSelectedTechnique(technique);
     }
-    window.history.replaceState({}, '', window.location.pathname);
+    // T9 FIX: only remove the params we processed — preserve everything else.
+    const newParams = new URLSearchParams(window.location.search);
+    newParams.delete('product_id');
+    newParams.delete('technique');
+    const newSearch = newParams.toString();
+    window.history.replaceState(
+      {},
+      '',
+      window.location.pathname + (newSearch ? `?${newSearch}` : ''),
+    );
   }, [isLoadingData, hasDraftRestored, techniques, getProductById]);
 
-  // Auto-save with debounce to prevent UI lag during logo dragging/resizing
-  // especially since logoPreview can be a large base64 string
   useEffect(() => {
     if (!hasDraftRestored || isRestoringDraft.current) return;
-
     const timeout = setTimeout(() => {
       saveDraft({
         productId: productSelection?.product?.id || null,
@@ -327,8 +333,7 @@ export function useMockupGenerator() {
         personalizationAreas,
         updatedAt: new Date().toISOString(),
       });
-    }, 1000); // 1 second debounce for all state changes
-
+    }, 1000);
     return () => clearTimeout(timeout);
   }, [
     productSelection,
@@ -343,26 +348,20 @@ export function useMockupGenerator() {
     if (user?.id) fetchHistory();
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Data fetching ──────────────────────────────────────────────────
-
   const fetchData = useCallback(async () => {
     try {
-      const { data: techniquesRes, error: techniquesErr } = await invokeWithRetry({
+      // MIGRAÇÃO REST-NATIVO (2026-05-30): dbInvoke (REST-native-first, silencioso
+      // quando o kill-switch `edge_external_db_bridge` está OFF) em vez do invokeWithRetry
+      // legado, que disparava o banner de "catálogo indisponível" no estado OFF esperado.
+      // `tabela_preco_gravacao_oficial` está na whitelist do REST nativo e possui coluna `ativo`.
+      const { records: rawRecords } = await dbInvoke<Record<string, unknown>>({
         table: 'tabela_preco_gravacao_oficial',
         operation: 'select',
         filters: { ativo: true },
         limit: 100,
         countMode: 'none',
       });
-      if (techniquesErr) {
-        const msg = await extractFunctionErrorMessage(techniquesErr);
-        console.error('Error fetching techniques:', msg);
-        toast.error('Erro ao carregar técnicas. Tente recarregar a página.');
-        return;
-      }
-      const records = adaptTabelaPrecoRows(
-        techniquesRes?.data?.records || techniquesRes?.records || [],
-      );
+      const records = adaptTabelaPrecoRows(rawRecords ?? []);
       const techniquesData = records.map((r) => ({
         id: r.id,
         name: r.name ?? r.nome ?? '',
@@ -373,7 +372,7 @@ export function useMockupGenerator() {
       );
       setTechniques(techniquesData);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      logger.error('Error fetching data:', error);
       toast.error('Erro ao carregar dados. Tente novamente.');
     } finally {
       setIsLoadingData(false);
@@ -386,36 +385,27 @@ export function useMockupGenerator() {
       const data = await fetchMockupHistory(user?.id);
       setMockupHistory(data);
     } catch (error) {
-      console.error('Error fetching history:', error);
+      logger.error('Error fetching history:', error);
     } finally {
       setIsLoadingHistory(false);
     }
   }, [user?.id]);
 
-  // ─── Handlers ───────────────────────────────────────────────────────
-
-  const historyPushTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const updateActiveArea = useCallback(
     (updates: Partial<PersonalizationArea>) => {
       if (!activeAreaId) return;
-
       setPersonalizationAreas((prev) => {
         const areaIndex = prev.findIndex((a) => a.id === activeAreaId);
         if (areaIndex === -1) return prev;
-
         const currentArea = prev[areaIndex];
-        // Only update if there are actual changes
         const hasChanges = Object.entries(updates).some(
           ([key, value]) => currentArea[key as keyof PersonalizationArea] !== value,
         );
         if (!hasChanges) return prev;
-
         const newAreas = [...prev];
         newAreas[areaIndex] = { ...currentArea, ...updates };
         return newAreas;
       });
-
       const isPositioningUpdate =
         'positionX' in updates ||
         'positionY' in updates ||
@@ -423,16 +413,13 @@ export function useMockupGenerator() {
         'logoHeight' in updates ||
         'logoRotation' in updates ||
         'logoScale' in updates;
-
       if (isPositioningUpdate) {
         setHasUserInteractedPosition(true);
-
         if (historyPushTimeout.current) clearTimeout(historyPushTimeout.current);
-
         historyPushTimeout.current = setTimeout(() => {
           setPersonalizationAreas((currentAreas) => {
             const current = currentAreas.find((a) => a.id === activeAreaId);
-            if (current) {
+            if (current)
               positionHistory.pushState({
                 positionX: current.positionX,
                 positionY: current.positionY,
@@ -441,10 +428,9 @@ export function useMockupGenerator() {
                 logoRotation: current.logoRotation ?? 0,
                 logoScale: current.logoScale ?? 100,
               });
-            }
             return currentAreas;
           });
-        }, 300); // Slightly faster debounce for better responsiveness
+        }, 300);
       }
     },
     [activeAreaId, positionHistory],
@@ -456,11 +442,16 @@ export function useMockupGenerator() {
         toast.error('Por favor, selecione uma imagem válida');
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('A imagem deve ter no máximo 5MB');
+      // BUG-SVG-UPLOAD FIX: reject SVGs at upload time — the edge function
+      // (assertNotSvg) rejects them at generation, but early rejection gives cleaner UX.
+      if (file.type === 'image/svg+xml') {
+        toast.error('Logos SVG não são suportados. Converta para PNG ou JPG e tente novamente.');
         return;
       }
-
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('A imagem deve ter no máximo 10MB');
+        return;
+      }
       let processedFile = file;
       if (needsConversion(file)) {
         try {
@@ -468,12 +459,11 @@ export function useMockupGenerator() {
           processedFile = await ensureSupportedFormat(file);
           toast.success('Imagem convertida para PNG com sucesso!');
         } catch (err) {
-          console.error('Conversion error:', err);
+          logger.error('Conversion error:', err);
           toast.error('Erro ao converter imagem. Tente usar PNG ou JPG.');
           return;
         }
       }
-
       const reader = new FileReader();
       reader.onload = (e) => {
         const logoData = e.target?.result as string;
@@ -481,6 +471,10 @@ export function useMockupGenerator() {
           prev.map((area) => (area.id === areaId ? { ...area, logoPreview: logoData } : area)),
         );
         logoColorAnalysis.analyzeImage(logoData);
+      };
+      reader.onerror = (e) => {
+        logger.error('[useMockupGenerator] FileReader error ao ler imagem:', e);
+        toast.error('Erro ao ler o arquivo de imagem. Tente novamente.');
       };
       reader.readAsDataURL(processedFile);
     },
@@ -490,32 +484,49 @@ export function useMockupGenerator() {
   const getProductImage = useCallback((): string | null => {
     if (productSelection?.imageUrl) {
       const url = productSelection.imageUrl;
-      return url.endsWith('/thumbnail') ? url.replace('/thumbnail', '') : url;
+      return getCdnUrl(url, 'public');
     }
     return selectedProduct?.images?.[0] || null;
   }, [productSelection, selectedProduct]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const saveMockupToHistory = async (
-    mockupUrl: string,
-    area: PersonalizationArea,
-    extra?: { layoutUrl?: string; locationName?: string; colorsCount?: number },
-  ): Promise<string | null> => {
-    if (!user || !selectedProduct || !selectedTechnique || !area.logoPreview) return null;
-    return saveMockupToDb({
-      userId: user.id,
-      product: selectedProduct,
-      technique: selectedTechnique,
-      client: selectedClient,
-      area,
-      mockupUrl,
-      annotations: mockupAnnotations,
-      extra,
-    });
-  };
+  const saveMockupToHistory = useCallback(
+    async (
+      mockupUrl: string,
+      area: PersonalizationArea,
+      extra?: { layoutUrl?: string; locationName?: string; colorsCount?: number },
+    ): Promise<string | null> => {
+      if (!user || !selectedProduct || !selectedTechnique || !area.logoPreview) return null;
+      return saveMockupToDb({
+        userId: user.id,
+        product: selectedProduct,
+        technique: selectedTechnique,
+        client: selectedClient,
+        area,
+        mockupUrl,
+        annotations: mockupAnnotations,
+        extra,
+      });
+    },
+    [user, selectedProduct, selectedTechnique, selectedClient, mockupAnnotations],
+  );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const generateMockup = async () => {
+  const downloadMockup = useCallback(
+    async (url?: string) => {
+      const mockupUrl = url || generatedMockup;
+      if (!mockupUrl) return;
+      await downloadMockupAsPdf(
+        mockupUrl,
+        { sku: selectedProduct?.sku ?? null },
+        selectedTechnique as Technique,
+      );
+    },
+    [generatedMockup, selectedProduct, selectedTechnique],
+  );
+
+  const generateMockup = useCallback(async () => {
+    // Re-entrancy guard (see isGeneratingRef): block a second concurrent generation
+    // that slips through before the isLoading-driven `disabled` re-render commits.
+    if (isGeneratingRef.current) return;
     const areasWithLogos = personalizationAreas.filter((a) => a.logoPreview);
     if (!selectedClient || !productSelection || !selectedTechnique || areasWithLogos.length === 0) {
       toast.error('Selecione empresa, produto, técnica e faça upload de pelo menos um logo');
@@ -526,22 +537,56 @@ export function useMockupGenerator() {
       toast.error('O produto selecionado não possui imagem');
       return;
     }
+    // BUG-NO-DIM-VALIDATION FIX: warn if any logo exceeds the technique/area limit.
+    // Non-blocking — we still generate; the server will composite what it receives.
+    for (const area of areasWithLogos) {
+      const techW =
+        selectedTechnique && 'maxWidth' in selectedTechnique
+          ? (selectedTechnique as TechniqueWithLimits).maxWidth
+          : null;
+      const techH =
+        selectedTechnique && 'maxHeight' in selectedTechnique
+          ? (selectedTechnique as TechniqueWithLimits).maxHeight
+          : null;
+      const maxW = area.maxWidthCm ?? techW;
+      const maxH = area.maxHeightCm ?? techH;
+      if (maxW && area.logoWidth > maxW + 0.5) {
+        toast.warning(
+          `"${area.name}": logo ${area.logoWidth.toFixed(1)} cm excede o limite de ${maxW} cm de largura.`,
+          { duration: 5000 },
+        );
+      }
+      if (maxH && area.logoHeight > maxH + 0.5) {
+        toast.warning(
+          `"${area.name}": logo ${area.logoHeight.toFixed(1)} cm excede o limite de ${maxH} cm de altura.`,
+          { duration: 5000 },
+        );
+      }
+    }
 
+    isGeneratingRef.current = true;
     setIsLoading(true);
     setGeneratedMockup(null);
     setGeneratedBatchMockups([]);
     setGenerationError(null);
     setMockupAnnotations([]);
     setBeforeImage(productImage);
-
     try {
       const result = await generateMockupApi({
         productImage,
         productName: selectedProduct?.name ?? '',
         technique: selectedTechnique,
         areas: personalizationAreas,
+        // Same derivation the preview uses (LogoPositionEditor) so the generated
+        // mockup matches the on-screen logo size (WYSIWYG); null ⇒ edge /20 fallback.
+        productWidthCm:
+          selectedProduct?.dimensions?.width_cm ??
+          selectedProduct?.dimensions?.diameter_cm ??
+          (selectedProduct?.metadata?.width_mm ? selectedProduct.metadata.width_mm / 10 : null),
+        productHeightCm:
+          selectedProduct?.dimensions?.height_cm ??
+          (selectedProduct?.metadata?.height_mm ? selectedProduct.metadata.height_mm / 10 : null),
       });
-
       if (result.singleUrl && result.batchResults.length === 0) {
         setGeneratedMockup(result.singleUrl);
         const recordId = await saveMockupToHistory(result.singleUrl, areasWithLogos[0]);
@@ -557,55 +602,73 @@ export function useMockupGenerator() {
           onDownload: () => downloadMockup(result.singleUrl ?? undefined),
         });
       } else {
-        for (let i = 0; i < result.batchResults.length; i++) {
-          const r = result.batchResults[i];
-          const area = areasWithLogos.find((a) => a.name === r.areaName) || areasWithLogos[i];
-          const recordId = await saveMockupToHistory(r.url, area);
-          if (recordId && i === result.batchResults.length - 1) {
-            setLastSavedMockupUrl(r.url);
-            setLastSavedLayoutMode('ai');
-            setLastSavedRecordId(recordId);
-          }
+        // T5 FIX: parallel DB writes.
+        const batchSaveResults = await Promise.allSettled(
+          result.batchResults.map((r, i) => {
+            const area = areasWithLogos.find((a) => a.name === r.areaName) || areasWithLogos[i];
+            return saveMockupToHistory(r.url, area).then((recordId) => ({ recordId, r }));
+          }),
+        );
+        const lastFulfilled = batchSaveResults
+          .filter(
+            (
+              res,
+            ): res is PromiseFulfilledResult<{
+              recordId: string | null;
+              r: { areaName: string; url: string };
+            }> => res.status === 'fulfilled',
+          )
+          .pop();
+        if (lastFulfilled?.value.recordId) {
+          setLastSavedMockupUrl(lastFulfilled.value.r.url);
+          setLastSavedLayoutMode('ai');
+          setLastSavedRecordId(lastFulfilled.value.recordId);
         }
-        setGeneratedMockup(result.batchResults[0]?.url || result.singleUrl);
+        setGeneratedMockup(result.batchResults[0]?.url || result.singleUrl || null);
         setGeneratedBatchMockups(result.batchResults);
         toast.success(`${result.batchResults.length} mockups gerados com sucesso!`);
       }
+      // BUG-3 FIX: history panel was stale after generation because fetchHistory() was
+      // only called once on mount. Refresh it now so the new record appears immediately.
+      fetchHistory();
     } catch (error: unknown) {
-      console.error('Error generating mockup:', error);
+      logger.error('Error generating mockup:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro ao gerar mockup';
       setGenerationError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
+      isGeneratingRef.current = false;
     }
-  };
+  }, [
+    selectedClient,
+    productSelection,
+    selectedTechnique,
+    personalizationAreas,
+    getProductImage,
+    saveMockupToHistory,
+    selectedProduct,
+    downloadMockup,
+    fetchHistory,
+  ]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const downloadMockup = async (url?: string) => {
-    const mockupUrl = url || generatedMockup;
-    if (!mockupUrl) return;
-    await downloadMockupAsPdf(mockupUrl, selectedProduct?.sku, selectedTechnique?.name);
-  };
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const deleteMockup = async () => {
+  const deleteMockup = useCallback(async () => {
     if (!mockupToDelete) return;
     try {
-      await deleteMockupFromDb(mockupToDelete);
+      await deleteMockupFromDb(mockupToDelete, user?.id);
       setMockupHistory((prev) => prev.filter((m) => m.id !== mockupToDelete));
       toast.success('Mockup excluído');
     } catch (error) {
-      console.error('Error deleting mockup:', error);
+      logger.error('Error deleting mockup:', error);
       toast.error('Erro ao excluir mockup');
     } finally {
       setDeleteDialogOpen(false);
       setMockupToDelete(null);
     }
-  };
+  }, [mockupToDelete, user]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const resetForm = () => {
+  // BUG-F FIX: async + await clearDraft() to prevent race with 1s auto-save debounce.
+  const resetForm = useCallback(async () => {
     setProductSelection(null);
     setSelectedTechnique(null);
     setSelectedClient(null);
@@ -623,56 +686,77 @@ export function useMockupGenerator() {
     setLastSavedMockupUrl(null);
     setLastSavedLayoutMode('ai');
     positionHistory.clear();
-    clearDraft();
+    await clearDraft();
     logoColorAnalysis.clearAnalysis();
-  };
+  }, [positionHistory, clearDraft, logoColorAnalysis]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const handleShareMockup = (mockup: GeneratedMockup) => {
+  const handleShareMockup = useCallback((mockup: GeneratedMockup) => {
     const text = `Confira o mockup: ${mockup.product_name} com ${mockup.technique_name}`;
     window.open(
-      `https://wa.me/?text=${encodeURIComponent(text + '\n' + mockup.mockup_url)}`,
+      `https://wa.me/?text=${encodeURIComponent(`${text}\n${mockup.mockup_url}`)}`,
       '_blank',
     );
-  };
+  }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const loadFromHistory = (mockup: GeneratedMockup) => {
-    const product = mockup.product_id ? getProductById(mockup.product_id) : null;
-    const technique = mockup.technique_id
-      ? techniques.find((t) => t.id === mockup.technique_id)
-      : null;
-    if (product)
-      setProductSelection({
-        product,
-        variant: null,
-        imageUrl: product.images?.[0] || '/placeholder.svg',
-      });
-    else setProductSelection(null);
-    setSelectedTechnique(technique || null);
-    setSelectedClient(
-      mockup.client_id ? { id: mockup.client_id, name: mockup.client_name || 'Cliente' } : null,
-    );
-    const restoredArea: PersonalizationArea = {
-      id: crypto.randomUUID(),
-      name: 'Frente',
-      positionX: mockup.position_x ?? 50,
-      positionY: mockup.position_y ?? 50,
-      logoWidth: mockup.logo_width_cm ?? 5,
-      logoHeight: mockup.logo_height_cm ?? 3,
-      logoRotation: 0,
-      logoScale: 100,
-      logoPreview: mockup.logo_url,
-    };
-    setPersonalizationAreas([restoredArea]);
-    setActiveAreaId(restoredArea.id);
-    setGeneratedMockup(null);
-    setHasUserInteractedPosition(true);
-    positionHistory.clear();
-    setActiveTab('generator');
-    if (mockup.logo_url) logoColorAnalysis.analyzeImage(mockup.logo_url);
-    toast.success('Configurações carregadas!');
-  };
+  const loadFromHistory = useCallback(
+    async (mockup: GeneratedMockup) => {
+      const product = mockup.product_id ? getProductById(mockup.product_id) : null;
+      // BUG-11 FIX: technique_id is now always null (BUG-10 fix) because the FK points to
+      // personalization_techniques but the UI loads from tabela_preco_gravacao_oficial.
+      // Fall back to name-matching so the technique is correctly pre-selected when loading from history.
+      const technique =
+        (mockup.technique_id && techniques.find((t) => t.id === mockup.technique_id)) ||
+        (mockup.technique_name &&
+          techniques.find((t) => t.name.toLowerCase() === mockup.technique_name?.toLowerCase())) ||
+        null;
+      if (product)
+        setProductSelection({
+          product,
+          variant: null,
+          imageUrl: product.images?.[0] || '/placeholder.svg',
+        });
+      else setProductSelection(null);
+      setSelectedTechnique(technique || null);
+      // BUG-LOADFROMHISTORY-CLIENT FIX: client_id was always null (BUG-CLIENT-ID) so
+      // the client was never restored. Restore the client for display when only the
+      // name exists (old rows), but keep `id` empty — NEVER fall back to client_name
+      // as the id, otherwise re-saving writes a human name into the client_id column
+      // (saveMockupToDb persists `client?.id`). After migration 20260620000001, new
+      // rows carry a real client_id.
+      setSelectedClient(
+        mockup.client_id || mockup.client_name
+          ? {
+              id: mockup.client_id ?? '',
+              name: mockup.client_name || 'Cliente',
+            }
+          : null,
+      );
+      const restoredArea: PersonalizationArea = {
+        id: crypto.randomUUID(),
+        name: mockup.location_name ?? 'Frente',
+        positionX: mockup.position_x ?? 50,
+        positionY: mockup.position_y ?? 50,
+        logoWidth: mockup.logo_width_cm ?? 5,
+        logoHeight: mockup.logo_height_cm ?? 3,
+        logoRotation: mockup.logo_rotation ?? 0,
+        logoScale: mockup.logo_scale ?? 100,
+        logoPreview: mockup.logo_url,
+      };
+      setPersonalizationAreas([restoredArea]);
+      setActiveAreaId(restoredArea.id);
+      setGeneratedMockup(null);
+      setHasUserInteractedPosition(true);
+      positionHistory.clear();
+      setActiveTab('generator');
+      if (mockup.logo_url) logoColorAnalysis.analyzeImage(mockup.logo_url);
+      // BUG-04 FIX: clear stale draft.
+      // BUG-F-LOADHISTORY FIX: await clearDraft() — same race as resetForm (BUG-F).
+      // Without await, the 1 s auto-save debounce can fire and re-persist the old draft.
+      await clearDraft();
+      toast.success('Configurações carregadas!');
+    },
+    [techniques, getProductById, logoColorAnalysis, clearDraft, positionHistory],
+  );
 
   const wizardStep = getMockupWizardStep({
     hasClient: !!selectedClient,
@@ -733,6 +817,7 @@ export function useMockupGenerator() {
       lastSavedLayoutMode,
       setLastSavedLayoutMode,
       isDraftSaving,
+      isDraftLoading,
       lastSaved,
       draftError,
       showDraftRestoredNotice,
@@ -786,6 +871,7 @@ export function useMockupGenerator() {
       lastSavedMockupUrl,
       lastSavedLayoutMode,
       isDraftSaving,
+      isDraftLoading,
       lastSaved,
       draftError,
       showDraftRestoredNotice,

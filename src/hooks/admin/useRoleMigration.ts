@@ -7,18 +7,18 @@
  * Toda escrita é feita pela RPC (SECURITY DEFINER + admin estrito); o cliente
  * nunca toca diretamente nas tabelas — RLS bloqueia INSERT/UPDATE/DELETE.
  */
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
-export type AppRole = Database["public"]["Enums"]["app_role"];
-export type BatchStatus = Database["public"]["Enums"]["role_migration_status"];
-export type ItemStatus = Database["public"]["Enums"]["role_migration_item_status"];
+export type AppRole = Database['public']['Enums']['app_role'];
+export type BatchStatus = Database['public']['Enums']['role_migration_status'];
+export type ItemStatus = Database['public']['Enums']['role_migration_item_status'];
 
 export interface MigrationItemInput {
   user_id: string;
   to_role: AppRole;
-  operation: "add" | "remove" | "replace";
+  operation: 'add' | 'remove' | 'replace';
 }
 
 export interface BatchRow {
@@ -61,9 +61,9 @@ export function useRoleMigration() {
     setLoadingBatches(true);
     try {
       const { data, error } = await supabase
-        .from("role_migration_batches")
-        .select("*")
-        .order("created_at", { ascending: false })
+        .from('role_migration_batches')
+        .select('*')
+        .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
       setBatches((data ?? []) as BatchRow[]);
@@ -72,16 +72,24 @@ export function useRoleMigration() {
     }
   }, []);
 
-  useEffect(() => { void refreshBatches(); }, [refreshBatches]);
+  useEffect(() => {
+    void refreshBatches();
+  }, [refreshBatches]);
 
   const executeBatch = useCallback(
-    async (params: { label: string; reason: string; items: MigrationItemInput[]; dryRun: boolean }) => {
+    async (params: {
+      label: string;
+      reason: string;
+      items: MigrationItemInput[];
+      dryRun: boolean;
+    }) => {
       setSubmitting(true);
       try {
-        const { data, error } = await supabase.rpc("execute_role_migration_batch", {
+        const { data, error } = await supabase.rpc('execute_role_migration_batch', {
           _label: params.label,
           _reason: params.reason,
-          _items: params.items as unknown as Database["public"]["Tables"]["role_migration_items"]["Row"][],
+          _items:
+            params.items as unknown as Database['public']['Tables']['role_migration_items']['Row'][],
           _dry_run: params.dryRun,
         });
         if (error) throw error;
@@ -96,10 +104,10 @@ export function useRoleMigration() {
 
   const fetchItems = useCallback(async (batchId: string): Promise<ItemRow[]> => {
     const { data, error } = await supabase
-      .from("role_migration_items")
-      .select("*")
-      .eq("batch_id", batchId)
-      .order("created_at", { ascending: true });
+      .from('role_migration_items')
+      .select('*')
+      .eq('batch_id', batchId)
+      .order('created_at', { ascending: true });
     if (error) throw error;
     return (data ?? []) as ItemRow[];
   }, []);

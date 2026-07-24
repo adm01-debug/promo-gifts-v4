@@ -1,14 +1,16 @@
-import { useRef, useCallback, useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ArrowUp } from "lucide-react";
-import { ProductCard } from "./ProductCard";
-import { ProductListItem } from "./ProductListItem";
-import { ProductCardSkeleton } from "./ProductCardSkeleton";
-import { InlineFilterBar } from "@/components/filters/StickyFilterBar";
-import type { Product } from "@/hooks/products";
-import type { ActiveColorFilter } from "@/utils/color-image-resolver";
+import { useRef, useCallback, useState, useEffect, useMemo, memo } from 'react';
+import { cn } from '@/lib/utils';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { AnimatePresence, m as motion } from 'framer-motion';
+import { Loader2, ArrowUp } from 'lucide-react';
+import { ProductCard } from './ProductCard';
+import { ProductListItem } from './ProductListItem';
+import { ProductCardSkeleton } from '@/components/loading/ModernSkeletons';
+import { InlineFilterBar } from '@/components/filters/StickyFilterBar';
+import type { Product } from '@/hooks/products';
+import type { ActiveColorFilter } from '@/utils/color-image-resolver';
+import { useProductsColorsBatch } from '@/hooks/products/useProductsColorsBatch';
+import { useStockVelocityPrefetch } from '@/hooks/intelligence';
 
 interface VirtualizedProductGridProps {
   products: Product[];
@@ -16,7 +18,7 @@ interface VirtualizedProductGridProps {
   hasMore?: boolean;
   onLoadMore?: () => void;
   columns?: number;
-  onProductClick?: (productId: string) => void;
+  onProductClick?: (productId: string, colorName?: string) => void;
   isFavorited?: (productId: string) => boolean;
   onToggleFavorite?: (productId: string) => void;
   isInCompare?: (productId: string) => boolean;
@@ -29,8 +31,8 @@ interface VirtualizedProductGridProps {
   onSortChange?: (value: string) => void;
   onOpenFilters?: () => void;
   onClearFilters?: () => void;
-  viewMode?: "grid" | "list" | "table";
-  onViewModeChange?: (mode: "grid" | "list" | "table") => void;
+  viewMode?: 'grid' | 'list' | 'table';
+  onViewModeChange?: (mode: 'grid' | 'list' | 'table') => void;
   showFilterBar?: boolean;
   /** Filtros de cor ativos para mostrar imagem específica da cor no card */
   activeColorFilter?: ActiveColorFilter | null;
@@ -42,9 +44,16 @@ interface VirtualizedProductGridProps {
   selectedIds?: Set<string>;
   /** External toggle handler */
   onToggleSelect?: (id: string) => void;
+  onStatusClick?: (type: string, value?: number | string) => void;
+  /**
+   * BUG-SCROLL-01 FIX: Chave que muda SOMENTE em filter/sort — NUNCA em load-more.
+   * Quando muda, o grid rola ao topo. Quando `undefined` (padrão legado), o scroll
+   * reset ocorre em toda mudança de referência do array (FiltersPage: backward-compat).
+   */
+  scrollResetKey?: string;
 }
 
-export function VirtualizedProductGrid({
+function VirtualizedProductGridInner({
   products,
   isLoading = false,
   hasMore = false,
@@ -58,47 +67,85 @@ export function VirtualizedProductGrid({
   canAddToCompare = true,
   onShare,
   activeFiltersCount = 0,
-  sortBy = "name",
+  sortBy = 'name',
   onSortChange,
   onOpenFilters,
   onClearFilters,
-  viewMode = "grid",
+  viewMode = 'grid',
   onViewModeChange,
-  showFilterBar = true,
+  showFilterBar = false,
   activeColorFilter,
   columnSelector,
   selectionMode = false,
   selectedIds,
   onToggleSelect,
+  onStatusClick,
+  scrollResetKey,
 }: VirtualizedProductGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // In list mode, always 1 column; in grid mode use columns prop
-  const effectiveColumns = viewMode === "list" ? 1 : columns;
+  const effectiveColumns = viewMode === 'list' ? 1 : columns;
 
-  // Column gap varies by density, row gap is always consistent (16px = gap-y-4)
-  const getColumnGapPx = () => {
+  // Column gap varies by density, row gap is always consistent
+  const colGapPx = useMemo(() => {
     if (effectiveColumns >= 8) return 16;
     if (effectiveColumns >= 6) return 24;
     return 32;
-  };
-  const colGapPx = getColumnGapPx();
-  const rowGapPx = viewMode === "list" ? 8 : 32; // list: compact 8px gap; grid: 32px
+  }, [effectiveColumns]);
+  const rowGapPx = viewMode === 'list' ? 8 : 32;
+
+  // Hidrata cores nos cards cujo fetch principal (lightweight) não trouxe `colors`.
+  // Mesmo padrão usado no ProductGrid (Novidades/Reposição) — SSOT em useProductsColorsBatch.
+  const idsNeedingColors = useMemo(
+    () => products.filter((p) => !p.colors || p.colors.length === 0).map((p) => p.id),
+    [products],
+  );
+  const { data: colorsByProduct } = useProductsColorsBatch(idsNeedingColors);
+
+  // ANTI N+1: prefetch batch de mv_stock_velocity para todos os produtos visíveis.
+  // Popula React Query cache via setQueryData; hooks individuais nos cards usam o cache.
+  const _allProductIds = useMemo(() => products.map((p) => p.id), [products]);
+  useStockVelocityPrefetch(_allProductIds);
+  const hydratedProducts = useMemo(() => {
+    if (colorsByProduct.size === 0) return products;
+    return products.map((p) => {
+      if (p.colors && p.colors.length > 0) return p;
+      const batch = colorsByProduct.get(p.id);
+      if (!batch || batch.length === 0) return p;
+      return {
+        ...p,
+        // FIX-COLOR-SEL-01 (2026-06-21): image/stock do batch eram descartados — clique na bolinha
+        // nao trocava foto nem estoque. userSelectedColor?.image e resolveColorStock dependem desses campos.
+        colors: batch.map((c) => ({
+          name: c.name,
+          hex: c.hex || '',
+          group: '',
+          image: c.image || undefined,
+          stock: c.stockQty,
+        })),
+      };
+    });
+  }, [products, colorsByProduct]);
 
   // Calculate rows based on columns
   const rowCount = Math.ceil(products.length / effectiveColumns);
-  const estimatedRowHeight = viewMode === "list" 
-    ? 88  // compact list item height
-    : (effectiveColumns >= 8 ? 420 : effectiveColumns >= 6 ? 460 : 520);
+  const estimatedRowHeight =
+    viewMode === 'list'
+      ? 88 // Altura fixa do ListItem (88px)
+      : 520; // Altura média do Grid Card (pode variar ligeiramente por zoom)
 
   const virtualizer = useVirtualizer({
     count: hasMore ? rowCount + 1 : rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => estimatedRowHeight,
-    overscan: viewMode === "list" ? 8 : 3,
-    measureElement: (el) => el.getBoundingClientRect().height,
+    estimateSize: (index) => {
+      if (hasMore && index === rowCount) return 120; // Espaço para loader/skeleton
+      return estimatedRowHeight;
+    },
+    overscan: viewMode === 'list' ? 10 : 5,
+    scrollMargin: 0,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -108,10 +155,10 @@ export function VirtualizedProductGrid({
     if (!parentRef.current) return;
 
     const { scrollTop, scrollHeight, clientHeight } = parentRef.current;
-    
+
     // Show scroll-to-top button after scrolling 300px
     setShowScrollTop(scrollTop > 300);
-    
+
     // Load more when 500px from bottom
     if (!hasMore || loadingMore || isLoading) return;
     const scrollThreshold = 500;
@@ -126,58 +173,90 @@ export function VirtualizedProductGrid({
     const element = parentRef.current;
     if (!element) return;
 
-    element.addEventListener("scroll", handleScroll, { passive: true });
-    return () => element.removeEventListener("scroll", handleScroll);
+    element.addEventListener('scroll', handleScroll, { passive: true });
+    return () => element.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  // Reset loadingMore when products change
+  // BUG-SCROLL-01 FIX: dois efeitos com responsabilidades distintas.
+  //
+  // PROBLEMA ANTERIOR: um único useEffect([products]) chamava scrollTo(0)
+  // toda vez que displayCount subia via loadMore() — products = nova slice
+  // = nova referência — causando snap-back inevitável com 7.143 produtos.
+  //
+  // SOLUÇÃO:
+  //   1. setLoadingMore(false) → em toda mudança de products (inclusive load-more)
+  //   2. scrollTo(0) → SOMENTE quando scrollResetKey muda (filter/sort/viewMode)
+  //      scrollResetKey não muda em load-more → scroll preservado ✓
+  //
+  // Modo legado (scrollResetKey=undefined): FiltersPage e similares que não passam
+  // a prop continuam com o comportamento anterior (scroll reset no products change).
   useEffect(() => {
     setLoadingMore(false);
-  }, [products.length]);
+  }, [products]);
+
+  useEffect(() => {
+    if (scrollResetKey === undefined) {
+      // Modo legado: backward-compat para callers sem a prop.
+      parentRef.current?.scrollTo({ top: 0 });
+      return;
+    }
+    // scrollResetKey definido: rola ao topo somente em filter/sort/viewMode.
+    parentRef.current?.scrollTo({ top: 0 });
+  }, [scrollResetKey]);
 
   const scrollToTop = () => {
-    parentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    parentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (isLoading && products.length === 0) {
     return (
       <div className="relative h-full">
         <div
-          className="h-[calc(100vh-200px)] min-h-[600px] overflow-y-auto rounded-xl border border-border/40 
-            bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-sm
-            scrollbar-products shadow-inner overscroll-contain"
-          style={{ contain: "strict", WebkitOverflowScrolling: "touch" }}
+          className="scrollbar-products h-full overflow-y-auto rounded-xl border border-border/40 bg-background shadow-sm"
+          style={{ contain: 'strict' }}
         >
-          {showFilterBar && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
-            <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 bg-background/95 backdrop-blur-md border-b border-border px-4 py-2.5 mb-2">
-               <InlineFilterBar
-                activeFiltersCount={activeFiltersCount}
-                totalProducts={0}
-                sortBy={sortBy}
-                onSortChange={onSortChange}
-                onOpenFilters={onOpenFilters}
-                onClearFilters={onClearFilters}
-                viewMode={viewMode}
-                onViewModeChange={onViewModeChange}
-                columnSelector={columnSelector}
-              />
-            </div>
-          )}
-          
+          {showFilterBar &&
+            !isLoading &&
+            onSortChange &&
+            onOpenFilters &&
+            onClearFilters &&
+            onViewModeChange && (
+              <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
+                <InlineFilterBar
+                  activeFiltersCount={activeFiltersCount}
+                  totalProducts={0}
+                  sortBy={sortBy}
+                  onSortChange={onSortChange}
+                  onOpenFilters={onOpenFilters}
+                  onClearFilters={onClearFilters}
+                  viewMode={viewMode}
+                  onViewModeChange={onViewModeChange}
+                  columnSelector={columnSelector}
+                />
+              </div>
+            )}
+
           <div className="p-4">
-            <div 
+            <div
               className={cn(
-                "grid gap-y-8",
-                viewMode === "list" 
-                  ? "grid-cols-1" 
-                  : `grid-cols-2 sm:grid-cols-3 ${columns >= 4 ? 'lg:grid-cols-4' : ''} ${columns >= 5 ? 'xl:grid-cols-5' : ''} ${columns >= 6 ? '2xl:grid-cols-6' : ''}`
+                'grid gap-y-8',
+                viewMode === 'list'
+                  ? 'grid-cols-1'
+                  : `grid-cols-2 sm:grid-cols-3 ${columns >= 4 ? 'lg:grid-cols-4' : ''} ${columns >= 5 ? 'xl:grid-cols-5' : ''} ${columns >= 6 ? '2xl:grid-cols-6' : ''}`,
               )}
-              style={viewMode !== "list" ? {
-                columnGap: `${colGapPx}px`,
-              } : undefined}
+              style={
+                viewMode !== 'list'
+                  ? {
+                      columnGap: `${colGapPx}px`,
+                    }
+                  : undefined
+              }
             >
-              {Array.from({ length: 12 }).map((_, i) => (
-                <ProductCardSkeleton key={i} variant={viewMode === "list" ? "compact" : "default"} />
+              {Array.from({ length: 15 }).map((_, i) => (
+                <ProductCardSkeleton
+                  key={i}
+                  variant={viewMode === 'list' ? 'compact' : 'default'}
+                />
               ))}
             </div>
           </div>
@@ -190,34 +269,38 @@ export function VirtualizedProductGrid({
     <div className="relative h-full">
       <div
         ref={parentRef}
-        className="h-[calc(100vh-200px)] min-h-[600px] overflow-y-auto rounded-xl border border-border/40 
-          bg-gradient-to-b from-background/80 to-background/40 backdrop-blur-sm
-          scrollbar-products shadow-inner overscroll-contain"
-        style={{ contain: "strict", WebkitOverflowScrolling: "touch" }}
+        data-testid="virtualized-product-grid"
+        className="scrollbar-products h-full overflow-y-auto rounded-xl border border-border/40 bg-background shadow-sm"
+        style={{ contain: 'strict' }}
       >
         {/* Barra de filtros sticky DENTRO do container de scroll */}
-        {showFilterBar && onSortChange && onOpenFilters && onClearFilters && onViewModeChange && (
-          <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 bg-background/95 backdrop-blur-md border-b border-border px-4 py-2.5 mb-2">
-             <InlineFilterBar
-              activeFiltersCount={activeFiltersCount}
-              totalProducts={products.length}
-              sortBy={sortBy}
-              onSortChange={onSortChange}
-              onOpenFilters={onOpenFilters}
-              onClearFilters={onClearFilters}
-              viewMode={viewMode}
-              onViewModeChange={onViewModeChange}
-              columnSelector={columnSelector}
-            />
-          </div>
-        )}
-        
+        {showFilterBar &&
+          !isLoading &&
+          onSortChange &&
+          onOpenFilters &&
+          onClearFilters &&
+          onViewModeChange && (
+            <div className="sticky top-0 z-20 mb-2 border-b border-border bg-background/95 px-4 py-2.5 backdrop-blur-md">
+              <InlineFilterBar
+                activeFiltersCount={activeFiltersCount}
+                totalProducts={products.length}
+                sortBy={sortBy}
+                onSortChange={onSortChange}
+                onOpenFilters={onOpenFilters}
+                onClearFilters={onClearFilters}
+                viewMode={viewMode}
+                onViewModeChange={onViewModeChange}
+                columnSelector={columnSelector}
+              />
+            </div>
+          )}
+
         <div
           style={{
             height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative",
-            padding: "1rem",
+            width: '100%',
+            position: 'relative',
+            padding: '1rem',
           }}
         >
           {virtualItems.map((virtualRow) => {
@@ -228,18 +311,40 @@ export function VirtualizedProductGrid({
                 <div
                   key="loader"
                   style={{
-                    position: "absolute",
+                    position: 'absolute',
                     top: 0,
                     left: 0,
-                    width: "100%",
+                    width: '100%',
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className="flex items-center justify-center py-8"
+                  className="px-4"
                 >
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Carregando mais produtos...</span>
+                  <div
+                    className={cn(
+                      'grid gap-y-8',
+                      viewMode === 'list'
+                        ? 'grid-cols-1'
+                        : `grid-cols-2 sm:grid-cols-3 ${columns >= 4 ? 'lg:grid-cols-4' : ''} ${columns >= 5 ? 'xl:grid-cols-5' : ''} ${columns >= 6 ? '2xl:grid-cols-6' : ''}`,
+                    )}
+                    style={
+                      viewMode !== 'list'
+                        ? {
+                            columnGap: `${colGapPx}px`,
+                          }
+                        : undefined
+                    }
+                  >
+                    {Array.from({ length: effectiveColumns }).map((_, i) => (
+                      <ProductCardSkeleton
+                        key={i}
+                        variant={viewMode === 'list' ? 'compact' : 'default'}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-xs">Carregando mais...</span>
                   </div>
                 </div>
               );
@@ -247,7 +352,7 @@ export function VirtualizedProductGrid({
 
             // Get products for this row
             const startIndex = virtualRow.index * effectiveColumns;
-            const rowProducts = products.slice(startIndex, startIndex + effectiveColumns);
+            const rowProducts = hydratedProducts.slice(startIndex, startIndex + effectiveColumns);
 
             return (
               <div
@@ -255,34 +360,40 @@ export function VirtualizedProductGrid({
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   top: 0,
                   left: 0,
-                  width: "100%",
+                  width: '100%',
                   transform: `translateY(${virtualRow.start}px)`,
-                  ...(viewMode === "list"
+                  ...(viewMode === 'list'
                     ? {
-                        display: "flex",
-                        flexDirection: "column" as const,
-                        paddingLeft: "0.5rem",
-                        paddingRight: "1.5rem",
+                        display: 'flex',
+                        flexDirection: 'column' as const,
+                        paddingLeft: '0.5rem',
+                        paddingRight: '1.5rem',
                         paddingBottom: `${rowGapPx}px`,
                       }
                     : {
-                        display: "grid",
+                        display: 'grid',
                         gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))`,
                         columnGap: `${colGapPx}px`,
-                        paddingLeft: "0.5rem",
-                        paddingRight: "1.5rem",
+                        paddingLeft: '0.5rem',
+                        paddingRight: '1.5rem',
                         paddingBottom: `${rowGapPx}px`,
-                        isolation: "isolate",
+                        isolation: 'isolate',
                       }),
                 }}
               >
-                {rowProducts.map((product, colIndex) =>
-                  viewMode === "list" ? (
+                {rowProducts.map((product) => {
+                  // FAN-OUT: key composta productId|colorId garante unicidade quando o
+                  // mesmo produto vira múltiplos cards (1 por cor). Sem fan-out
+                  // (_cardColorId undefined) cai no product.id puro.
+                  const cardKey = product._cardColorId
+                    ? `${product.id}|${product._cardColorId}`
+                    : product.id;
+                  return viewMode === 'list' ? (
                     <ProductListItem
-                      key={product.id}
+                      key={cardKey}
                       product={product}
                       onClick={() => onProductClick?.(product.id)}
                       isFavorited={isFavorited?.(product.id)}
@@ -291,26 +402,26 @@ export function VirtualizedProductGrid({
                       onToggleCompare={onToggleCompare}
                       canAddToCompare={canAddToCompare}
                       activeColorFilter={activeColorFilter}
+                      onStatusClick={onStatusClick}
+                      priority={virtualRow.index === 0}
                     />
                   ) : (
-                    <motion.div
-                      key={product.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: colIndex * 0.05 }}
+                    <div
+                      key={cardKey}
                       className={cn(
-                        "relative transition-all duration-200",
-                        selectionMode && selectedIds?.has(product.id) && "ring-2 ring-primary/50 rounded-2xl shadow-md"
+                        'relative',
+                        selectionMode &&
+                          selectedIds?.has(product.id) &&
+                          'rounded-2xl shadow-md ring-2 ring-primary/50',
                       )}
-                      style={{ zIndex: 1 }}
                     >
                       {selectionMode && (
                         <button
                           className={cn(
-                            "absolute top-2 left-2 z-20 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200",
+                            'absolute left-2 top-2 z-20 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-200',
                             selectedIds?.has(product.id)
-                              ? "bg-primary border-primary text-primary-foreground scale-100"
-                              : "border-muted-foreground/40 bg-card/80 backdrop-blur-sm hover:border-primary/60"
+                              ? 'scale-100 border-primary bg-primary text-primary-foreground'
+                              : 'border-muted-foreground/40 bg-card/80 backdrop-blur-sm hover:border-primary/60',
                           )}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -318,15 +429,28 @@ export function VirtualizedProductGrid({
                           }}
                         >
                           {selectedIds?.has(product.id) && (
-                            <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none">
-                              <path d="M11.5 3.5L5.5 10L2.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            <svg className="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none">
+                              <path
+                                d="M11.5 3.5L5.5 10L2.5 7"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                             </svg>
                           )}
                         </button>
                       )}
                       <ProductCard
                         product={product}
-                        onClick={() => onProductClick?.(product.id)}
+                        onClick={() =>
+                          onProductClick?.(
+                            product.id,
+                            product._cardColorId
+                              ? (product.colors?.[0]?.name ?? undefined)
+                              : undefined,
+                          )
+                        }
                         isFavorited={isFavorited?.(product.id)}
                         onToggleFavorite={onToggleFavorite}
                         isInCompare={isInCompare?.(product.id)}
@@ -334,10 +458,11 @@ export function VirtualizedProductGrid({
                         canAddToCompare={canAddToCompare}
                         onShare={onShare}
                         activeColorFilter={activeColorFilter}
+                        onStatusClick={onStatusClick}
                       />
-                    </motion.div>
-                  )
-                )}
+                    </div>
+                  );
+                })}
               </div>
             );
           })}
@@ -351,7 +476,7 @@ export function VirtualizedProductGrid({
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute bottom-4 right-4 p-3 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors z-30"
+            className="absolute bottom-4 right-4 z-30 rounded-full bg-primary p-3 text-primary-foreground shadow-lg transition-colors hover:bg-primary/90"
             onClick={scrollToTop}
             title="Voltar ao topo"
           >
@@ -362,3 +487,6 @@ export function VirtualizedProductGrid({
     </div>
   );
 }
+
+export const VirtualizedProductGrid = memo(VirtualizedProductGridInner);
+VirtualizedProductGrid.displayName = 'VirtualizedProductGrid';

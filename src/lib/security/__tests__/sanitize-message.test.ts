@@ -48,9 +48,7 @@ describe('sanitize-message (SSOT)', () => {
 
   describe('sanitizeMessage (não-dev)', () => {
     it('substitui texto técnico por fallback', () => {
-      expect(sanitizeMessage(new Error('TypeError: undefined'))).toBe(
-        PUBLIC_FALLBACK_MESSAGE,
-      );
+      expect(sanitizeMessage(new Error('TypeError: undefined'))).toBe(PUBLIC_FALLBACK_MESSAGE);
     });
 
     it('mapeia código canônico (401) para AUTH_GENERIC', () => {

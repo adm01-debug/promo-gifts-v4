@@ -8,9 +8,10 @@
  * Uses incremental enrichment: keeps a growing cache of results and only
  * fetches data for NEW product IDs that haven't been enriched yet.
  */
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useMemo, useEffect } from 'react';
-import { invokeBatchBridge } from '@/lib/external-db';
+import { dbInvoke } from '@/lib/db/postgrest';
 import { logger } from '@/lib/logger';
 
 interface ColorEnrichmentData {
@@ -28,6 +29,14 @@ interface UseColorEnrichmentOptions {
   colorGroups: string[];
   /** Active color variation slugs */
   colorVariations: string[];
+  /** Active color nuance slugs (optional — callers without nuance filter omit this) */
+  colorNuances?: string[];
+  /**
+   * Per-product minimum order quantities. When provided, stockStatus correctly
+   * reflects 'out-of-stock' for products where totalStock < minQuantity.
+   * Without this, products with stock=30 but minQuantity=50 would show 'in-stock'.
+   */
+  productMinQuantities?: Map<string, number>;
 }
 
 // Cached reference tables (shared across instances)
@@ -37,8 +46,10 @@ let cachedColorVariations: Array<{
   name: string;
   slug: string;
   group_id: string;
-  hex_code?: string;
+  nuance_id: string | null;
+  hex_code?: string | null;
 }> | null = null;
+let cachedColorNuances: Array<{ id: string; slug: string }> | null = null;
 
 /**
  * Returns a Map<productId, ColorEnrichmentData> for products matching the color filter.
@@ -47,14 +58,20 @@ export function useColorEnrichment({
   productIds,
   colorGroups,
   colorVariations,
+  colorNuances = [],
+  productMinQuantities,
 }: UseColorEnrichmentOptions) {
-  const hasFilter = colorGroups.length > 0 || colorVariations.length > 0;
-  const filterKey = [...colorGroups].sort().join(',') + '|' + [...colorVariations].sort().join(',');
+  const hasFilter = colorGroups.length > 0 || colorVariations.length > 0 || colorNuances.length > 0;
+  const filterKey = `${[...colorGroups].sort().join(',')}|${[...colorVariations].sort().join(',')}|${[...colorNuances].sort().join(',')}`;
 
   // Accumulator: track which product IDs have already been enriched for this filter
   const enrichedIdsRef = useRef<Set<string>>(new Set());
   const accumulatedMapRef = useRef<Map<string, ColorEnrichmentData>>(new Map());
   const lastFilterKeyRef = useRef<string>(filterKey);
+  // Track productMinQuantities via ref so queryFn always reads the latest value
+  // without needing it in the queryKey (these are stable catalog data, not filter state).
+  const productMinQuantitiesRef = useRef<Map<string, number> | undefined>(productMinQuantities);
+  productMinQuantitiesRef.current = productMinQuantities;
 
   // Reset cache when filter changes — use useEffect to avoid mutating refs during render
   useEffect(() => {
@@ -68,58 +85,90 @@ export function useColorEnrichment({
   // Find product IDs that haven't been enriched yet
   const newProductIds = useMemo(() => {
     if (!hasFilter) return [];
-    return productIds.filter((id) => !enrichedIdsRef.current.has(id));
+    const enrichedIds =
+      lastFilterKeyRef.current === filterKey ? enrichedIdsRef.current : new Set<string>();
+    return productIds.filter((id) => !enrichedIds.has(id));
   }, [productIds, hasFilter, filterKey]);
 
-  // Stable key: use count of new IDs + total count
+  // Chave por CONTEÚDO dos IDs (não só `.length`): dois conjuntos de IDs
+  // distintos com o mesmo tamanho colidiam na mesma entrada de cache e serviam
+  // enrichment do conjunto errado. `newProductIds` é memoizado em deps estáveis,
+  // então a chave não muda após o enrich (sem loop de refetch).
   const queryEnabled = hasFilter && newProductIds.length > 0;
 
   const query = useQuery({
-    queryKey: ['color-enrichment-batch', filterKey, newProductIds.length, productIds.length],
+    queryKey: ['color-enrichment-batch', filterKey, newProductIds.join(',')],
     queryFn: async (): Promise<Map<string, ColorEnrichmentData>> => {
-      if (newProductIds.length === 0) return accumulatedMapRef.current;
-
-      // Step 1: Load reference tables (cached after first call)
-      if (!cachedColorGroups || !cachedColorVariations) {
-        const refResults = await invokeBatchBridge([
-          {
-            table: 'color_groups',
-            operation: 'select' as const,
-            select: 'id, slug',
-            filters: { is_active: true },
-            limit: 200,
-            offset: 0,
-            cacheKey: 'ref:color_groups',
-          },
-          {
-            table: 'color_variations',
-            operation: 'select' as const,
-            select: 'id, name, slug, group_id, hex_code',
-            filters: { is_active: true },
-            limit: 500,
-            offset: 0,
-            cacheKey: 'ref:color_variations',
-          },
-        ]);
-
-        cachedColorGroups = refResults[0]?.success
-          ? ((refResults[0].data?.records || []) as Array<{ id: string; slug: string }>)
-          : [];
-        cachedColorVariations = refResults[1]?.success
-          ? ((refResults[1].data?.records || []) as Array<{
-              id: string;
-              name: string;
-              slug: string;
-              group_id: string;
-              hex_code: string | null;
-            }>)
-          : [];
+      if (lastFilterKeyRef.current !== filterKey) {
+        enrichedIdsRef.current = new Set();
+        accumulatedMapRef.current = new Map();
+        lastFilterKeyRef.current = filterKey;
       }
 
-      const groupsBySlug = new Map(cachedColorGroups!.map((g) => [g.slug, g.id]));
-      const variationsBySlug = new Map(cachedColorVariations!.map((v) => [v.slug, v]));
+      if (newProductIds.length === 0) return accumulatedMapRef.current;
 
-      // Resolve target color_ids
+      // Step 1: Load reference tables (cached after first call).
+      // color_nuances only fetched when nuance filter is active.
+      const needNuances = colorNuances.length > 0 && !cachedColorNuances;
+      if (!cachedColorGroups || !cachedColorVariations || needNuances) {
+        const fetches: Promise<unknown>[] = [
+          cachedColorGroups
+            ? Promise.resolve({ records: cachedColorGroups })
+            : dbInvoke<{ id: string; slug: string }>({
+                table: 'color_groups',
+                operation: 'select',
+                select: 'id, slug',
+                filters: { is_active: true },
+                limit: 200,
+                offset: 0,
+              }),
+          cachedColorVariations
+            ? Promise.resolve({ records: cachedColorVariations })
+            : dbInvoke<{
+                id: string;
+                name: string;
+                slug: string;
+                group_id: string;
+                nuance_id: string | null;
+                hex_code: string | null;
+              }>({
+                table: 'color_variations',
+                operation: 'select',
+                select: 'id, name, slug, group_id, nuance_id, hex_code',
+                filters: { is_active: true },
+                limit: 500,
+                offset: 0,
+              }),
+          needNuances
+            ? dbInvoke<{ id: string; slug: string }>({
+                table: 'color_nuances',
+                operation: 'select',
+                select: 'id, slug',
+                filters: { is_active: true },
+                limit: 500,
+                offset: 0,
+              })
+            : Promise.resolve(null),
+        ];
+
+        const refResults = await Promise.all(fetches);
+        cachedColorGroups =
+          (refResults[0] as { records?: typeof cachedColorGroups } | null)?.records || [];
+        cachedColorVariations =
+          (refResults[1] as { records?: typeof cachedColorVariations } | null)?.records || [];
+        if (needNuances) {
+          cachedColorNuances =
+            (refResults[2] as { records?: Array<{ id: string; slug: string }> } | null)?.records ||
+            [];
+        }
+      }
+
+      const colorGroupsCache = cachedColorGroups ?? [];
+      const colorVariationsCache = cachedColorVariations ?? [];
+      const groupsBySlug = new Map(colorGroupsCache.map((g) => [g.slug, g.id]));
+      const variationsBySlug = new Map(colorVariationsCache.map((v) => [v.slug, v]));
+
+      // Resolve target color_ids from groups, variations, and nuances
       const targetColorIds = new Set<string>();
 
       for (const slug of colorVariations) {
@@ -130,8 +179,25 @@ export function useColorEnrichment({
       for (const slug of colorGroups) {
         const groupId = groupsBySlug.get(slug);
         if (groupId) {
-          for (const v of cachedColorVariations!) {
+          for (const v of colorVariationsCache) {
             if (v.group_id === groupId) targetColorIds.add(v.id);
+          }
+        }
+      }
+
+      // FIX-NUANCE-ENRICH: resolve nuance slugs → nuance IDs → variation IDs → color IDs.
+      // Without this, nuance-only filters produced correct product filtering (useProductsByColor)
+      // but showed default product images instead of nuance-specific variant images.
+      if (colorNuances.length > 0 && cachedColorNuances) {
+        const nuanceIdBySlug = new Map(cachedColorNuances.map((n) => [n.slug, n.id]));
+        const targetNuanceIds = new Set<string>();
+        for (const slug of colorNuances) {
+          const nid = nuanceIdBySlug.get(slug);
+          if (nid) targetNuanceIds.add(nid);
+        }
+        for (const v of colorVariationsCache) {
+          if (v.nuance_id && targetNuanceIds.has(v.nuance_id)) {
+            targetColorIds.add(v.id);
           }
         }
       }
@@ -155,20 +221,18 @@ export function useColorEnrichment({
 
       for (let i = 0; i < newProductIds.length; i += CHUNK) {
         const pidChunk = newProductIds.slice(i, i + CHUNK);
-        const results = await invokeBatchBridge([
-          {
-            table: 'product_variants',
-            operation: 'select' as const,
-            select:
-              'id, product_id, color_id, color_name, color_hex, color_code, stock_quantity, selected_thumbnail, images',
-            filters: { is_active: true, product_id: pidChunk, color_id: colorIdArray },
-            limit: 3000,
-            offset: 0,
-          },
-        ]);
+        const result = await dbInvoke<(typeof allVariants)[number]>({
+          table: 'product_variants',
+          operation: 'select',
+          select:
+            'id, product_id, color_id, color_name, color_hex, color_code, stock_quantity, selected_thumbnail, images',
+          filters: { is_active: true, product_id: pidChunk, color_id: colorIdArray },
+          limit: 3000,
+          offset: 0,
+        });
 
-        if (results[0]?.success && results[0].data?.records) {
-          allVariants.push(...(results[0].data.records as typeof allVariants));
+        if (result.records?.length) {
+          allVariants.push(...result.records);
         }
       }
 
@@ -186,20 +250,18 @@ export function useColorEnrichment({
 
       for (let i = 0; i < productIdsWithVariants.length; i += CHUNK) {
         const pidChunk = productIdsWithVariants.slice(i, i + CHUNK);
-        const results = await invokeBatchBridge([
-          {
-            table: 'product_images',
-            operation: 'select' as const,
-            select:
-              'product_id, variant_id, supplier_code, url_cdn, is_og_image, is_primary, image_type',
-            filters: { product_id: pidChunk },
-            limit: 3000,
-            offset: 0,
-          },
-        ]);
+        const result = await dbInvoke<(typeof allImages)[number]>({
+          table: 'product_images',
+          operation: 'select',
+          select:
+            'product_id, variant_id, supplier_code, url_cdn, is_og_image, is_primary, image_type',
+          filters: { product_id: pidChunk },
+          limit: 3000,
+          offset: 0,
+        });
 
-        if (results[0]?.success && results[0].data?.records) {
-          allImages.push(...(results[0].data.records as typeof allImages));
+        if (result.records?.length) {
+          allImages.push(...result.records);
         }
       }
 
@@ -214,7 +276,7 @@ export function useColorEnrichment({
         if ((img.is_primary || img.is_og_image) && img.url_cdn) {
           if (!primaryImagesByProduct.has(img.product_id))
             primaryImagesByProduct.set(img.product_id, new Set());
-          primaryImagesByProduct.get(img.product_id)!.add(img.url_cdn);
+          primaryImagesByProduct.get(img.product_id)?.add(img.url_cdn);
         }
         if (img.variant_id) {
           if (!imagesByVariantId.has(img.variant_id) || img.is_og_image) {
@@ -233,7 +295,7 @@ export function useColorEnrichment({
       const variantsByProduct = new Map<string, typeof allVariants>();
       for (const v of allVariants) {
         if (!variantsByProduct.has(v.product_id)) variantsByProduct.set(v.product_id, []);
-        variantsByProduct.get(v.product_id)!.push(v);
+        variantsByProduct.get(v.product_id)?.push(v);
       }
 
       let withImage = 0;
@@ -325,8 +387,11 @@ export function useColorEnrichment({
         accumulatedMapRef.current.set(productId, {
           image: bestImage,
           stock: totalStock,
-          stockStatus:
-            totalStock <= 0 ? 'out-of-stock' : totalStock < 10 ? 'low-stock' : 'in-stock',
+          stockStatus: getCatalogStockStatus(
+            totalStock,
+            undefined,
+            productMinQuantitiesRef.current?.get(productId),
+          ),
           colorName: bestColorName,
           colorHex: bestColorHex,
         });

@@ -43,7 +43,8 @@ test.describe("Mockup Generation IA Flow", () => {
     // 4. Upload Logo
     // Find the file input for the first area
     const fileInput = page.locator('input[data-testid^="mockup-logo-upload-input-"]').first();
-    const logoPath = path.resolve("public/placeholder.svg");
+    // PNG (not SVG): SVG logos are rejected — they cannot be rasterised by the compositor.
+    const logoPath = path.resolve("public/images/promo-brindes-logo.png");
     await fileInput.setInputFiles(logoPath);
     
     // Wait for the logo preview image to appear in the editor

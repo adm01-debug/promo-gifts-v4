@@ -55,12 +55,14 @@
 
 /* ===== HOVER STATES ===== */
 .card-hover {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 
+  box-shadow:
     0 12px 24px -4px rgba(0, 0, 0, 0.08),
     0 4px 8px -2px rgba(0, 0, 0, 0.04);
 }
@@ -91,7 +93,9 @@
   width: 0;
   height: 2px;
   background: hsl(var(--primary));
-  transition: width 0.3s ease, left 0.3s ease;
+  transition:
+    width 0.3s ease,
+    left 0.3s ease;
 }
 
 .input-focus:focus-within::after {
@@ -118,7 +122,8 @@
 
 /* ===== PULSE & GLOW ANIMATIONS ===== */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 5px hsl(var(--primary) / 0.3);
   }
   50% {
@@ -130,18 +135,7 @@
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Pulse ring para indicadores */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.8);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.5);
-    opacity: 0;
-  }
-}
-
+/* pulse-ring keyframes defined in index.css */
 .pulse-ring::after {
   content: '';
   position: absolute;
@@ -182,12 +176,7 @@
   animation: slide-in-right 0.3s ease-out;
 }
 
-/* ===== FADE ANIMATIONS ===== */
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
+/* fade-in keyframes defined in index.css */
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
@@ -207,30 +196,22 @@
   animation: fade-in-up 0.4s ease-out;
 }
 
-/* ===== SKELETON LOADING ===== */
-@keyframes shimmer {
+/* Indeterminate progress bar */
+@keyframes indeterminate-progress {
   0% {
-    background-position: -1000px 0;
+    transform: translateX(-100%);
   }
   100% {
-    background-position: 1000px 0;
+    transform: translateX(400%);
   }
 }
 
-.skeleton-shimmer {
-  background: linear-gradient(
-    90deg,
-    hsl(var(--muted)) 0%,
-    hsl(var(--muted-foreground) / 0.1) 50%,
-    hsl(var(--muted)) 100%
-  );
-  background-size: 1000px 100%;
-  animation: shimmer 2s infinite linear;
-}
+/* Skeleton shimmer: see index.css .skeleton-shimmer */
 
 /* ===== BOUNCE ANIMATION ===== */
 @keyframes bounce-subtle {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -242,18 +223,7 @@
   animation: bounce-subtle 2s ease-in-out infinite;
 }
 
-/* ===== SCALE IN ANIMATION ===== */
-@keyframes scale-in {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
+/* scale-in keyframes defined in index.css */
 .animate-scale-in {
   animation: scale-in 0.2s ease-out;
 }
@@ -279,13 +249,21 @@
 
 /* ===== SHAKE ANIMATION (for errors) ===== */
 @keyframes shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
-  10%, 30%, 50%, 70%, 90% {
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
     transform: translateX(-4px);
   }
-  20%, 40%, 60%, 80% {
+  20%,
+  40%,
+  60%,
+  80% {
     transform: translateX(4px);
   }
 }
@@ -294,16 +272,7 @@
   animation: shake 0.5s ease-in-out;
 }
 
-/* ===== SPIN ANIMATION ===== */
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
+/* spin-slow keyframes defined in index.css */
 .animate-spin-slow {
   animation: spin-slow 3s linear infinite;
 }
@@ -314,14 +283,30 @@
   animation: fade-in-up 0.4s ease-out forwards;
 }
 
-.stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
-.stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
-.stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
-.stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
-.stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
-.stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
-.stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
-.stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+.stagger-children > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.stagger-children > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.stagger-children > *:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.stagger-children > *:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.stagger-children > *:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.stagger-children > *:nth-child(6) {
+  animation-delay: 0.3s;
+}
+.stagger-children > *:nth-child(7) {
+  animation-delay: 0.35s;
+}
+.stagger-children > *:nth-child(8) {
+  animation-delay: 0.4s;
+}
 
 /* ===== SPRING PHYSICS ===== */
 .spring-bounce {
@@ -336,53 +321,4 @@
   transform: scale(0.95);
 }
 
-/* ===== ROCKET & SPACE ANIMATIONS ===== */
-@keyframes rocketLaunch {
-  0% {
-    transform: translateY(10vh);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-110vh);
-    opacity: 0;
-  }
-}
-
-@keyframes rocketShake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-0.5px); }
-  75% { transform: translateX(0.5px); }
-}
-
-@keyframes flameTrail {
-  0% { transform: translateX(-50%) scaleY(1); opacity: 0.8; }
-  100% { transform: translateX(-50%) scaleY(1.4); opacity: 0.4; }
-}
-
-@keyframes smokeRise {
-  0% { transform: translateX(-50%) scale(0.8); opacity: 0.5; filter: blur(8px); }
-  100% { transform: translateX(-50%) translateY(40px) scale(2.5); opacity: 0; filter: blur(24px); }
-}
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.15); }
-}
-
-@keyframes scale-fade-in {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
+/* twinkle and scale-fade-in keyframes defined in index.css */

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConnectionsOverviewTable } from '../ConnectionsOverviewTable';
@@ -74,29 +75,29 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    useAuthMock.mockReturnValue({ isAdmin: true });
+    useAuthMock.mockReturnValue({ isAdmin: true } as unknown as ReturnType<typeof useAuth>);
     useConnectionsOverviewMock.mockReturnValue({
       rows: mockRows,
       loading: false,
       refreshing: false,
       refresh: vi.fn(),
       patchRow: vi.fn(),
-    });
+    } as unknown as ReturnType<typeof useConnectionsOverview>);
     useConnectionTesterMock.mockReturnValue({
       test: vi.fn(),
       testing: false,
-    });
+    } as unknown as ReturnType<typeof useConnectionTester>);
     useConsecutiveFailuresMock.mockReturnValue({
       map: new Map(),
       loading: false,
-    });
+    } as unknown as ReturnType<typeof useConsecutiveFailures>);
     useSecretsManagerMock.mockReturnValue({
       secrets: [],
       list: vi.fn(),
-    });
+    } as unknown as ReturnType<typeof useSecretsManager>);
   });
 
-  it('should render the table with correct data', async () => {
+  it('should render the table with correct data', () => {
     render(
       <TooltipProvider>
         <ConnectionsOverviewTable />
@@ -110,7 +111,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
     expect(screen.getByText('Connection timeout')).toBeInTheDocument();
   });
 
-  it('should show status badges correctly', async () => {
+  it('should show status badges correctly', () => {
     render(
       <TooltipProvider>
         <ConnectionsOverviewTable />
@@ -121,7 +122,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
     expect(screen.getAllByRole('row')).toHaveLength(3); // Header + 2 data rows
   });
 
-  it('should trigger refresh when button is clicked', async () => {
+  it('should trigger refresh when button is clicked', () => {
     const refreshMock = vi.fn();
     useConnectionsOverviewMock.mockReturnValue({
       rows: mockRows,
@@ -129,7 +130,7 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
       refreshing: false,
       refresh: refreshMock,
       patchRow: vi.fn(),
-    });
+    } as unknown as ReturnType<typeof useConnectionsOverview>);
 
     render(
       <TooltipProvider>
@@ -143,14 +144,14 @@ describe('ConnectionsOverviewTable Regression Tests', () => {
     expect(refreshMock).toHaveBeenCalledTimes(1);
   });
 
-  it('should handle empty state', async () => {
+  it('should handle empty state', () => {
     useConnectionsOverviewMock.mockReturnValue({
       rows: [],
       loading: false,
       refreshing: false,
       refresh: vi.fn(),
       patchRow: vi.fn(),
-    });
+    } as unknown as ReturnType<typeof useConnectionsOverview>);
 
     render(
       <TooltipProvider>

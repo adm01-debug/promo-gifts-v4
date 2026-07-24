@@ -1,0 +1,166 @@
+name: stock-module-quality
+
+# Pipeline consolidado do módulo de Estoque:
+#   - testes unit/integration + fuzz/stress com seeds fixas (regressão e flake)
+#   - cobertura focada em src/lib/inventory + src/components/inventory
+#   - benchmark 10k SKUs vs baseline (bloqueia regressão > 25% p95)
+#   - E2E cross-browser (Chromium, Firefox, WebKit) em múltiplos viewports
+on:
+  pull_request:
+    paths:
+      - 'src/lib/inventory/**'
+      - 'src/components/inventory/**'
+      - 'src/hooks/stock/**'
+      - 'src/types/stock.ts'
+      - 'tests/**stock**'
+      - 'tests/StockFilterToolbar*.tsx'
+      - 'e2e/routes/app/stock-*.spec.ts'
+      - 'e2e/admin/stock-*.spec.ts'
+      - 'scripts/stock-benchmark.mjs'
+      - '.github/workflows/stock-module-quality.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: stock-module-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Seeds fixas: garantem reprodutibilidade e detecção determinística de flakes.
+  STRESS_MASTER_SEED: '48879'   # 0xbeef
+  STRESS_SIMS: '5000'
+  FUZZ_SEED: '1337'
+
+jobs:
+  unit-and-coverage:
+    name: unit + fuzz/stress + coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Vitest — módulo de estoque (com cobertura)
+        run: |
+          npx vitest run \
+            --coverage \
+            --coverage.include='src/lib/inventory/**' \
+            --coverage.include='src/components/inventory/**' \
+            --coverage.include='src/hooks/stock/**' \
+            --coverage.include='src/types/stock.ts' \
+            --coverage.reporter=text \
+            --coverage.reporter=json-summary \
+            --coverage.reporter=lcov \
+            --coverage.reportsDirectory=coverage/stock \
+            tests/stock-performance.test.ts \
+            tests/StockFilterToolbar.field-order.test.tsx \
+            tests/StockFilterToolbar.test.tsx \
+            tests/StockFilterToolbar.reset-isSearching.test.tsx \
+            tests/StockStatCard.test.tsx \
+            tests/stock-module.test.tsx \
+            tests/stock-types.test.ts \
+            tests/hooks/stock-velocity-index.test.ts \
+            tests/hooks/stock-future-entries.test.ts \
+            tests/hooks/stockFetcher-410.test.ts \
+            tests/lib/rupture-risk.test.ts \
+            tests/lib/rupture-risk.simulation.test.ts \
+            src/components/inventory/__tests__ \
+            src/lib/inventory/__tests__
+
+      - name: Upload cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-coverage
+          path: coverage/stock
+          retention-days: 30
+
+  benchmark-10k:
+    name: benchmark 10k SKUs (antes/depois)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: unit-and-coverage
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Restaurar baseline da main (se existir)
+        id: baseline
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: stock-module-quality.yml
+          name: stock-benchmark-baseline
+          branch: main
+          path: .baseline
+
+      - name: Rodar benchmark (compara vs baseline)
+        env:
+          BASELINE: .baseline/stock-benchmark-report.json
+          THRESHOLD_PCT: '25'
+          SKU_COUNT: '10000'
+          ITERATIONS: '30'
+        run: npx vitest run scripts/__tests__/stock-benchmark.test.ts
+
+
+      - name: Publicar relatório do PR
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-benchmark-report
+          path: stock-benchmark-report.json
+          retention-days: 90
+
+      - name: Publicar baseline (somente push em main)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-benchmark-baseline
+          path: stock-benchmark-report.json
+          retention-days: 365
+
+  e2e-cross-browser:
+    name: e2e ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # As specs novas (stock-search-button / race-and-keyboard) precisam
+        # rodar pelo menos em chromium-authed (desktop) e mobile-chrome,
+        # conforme contrato dos testes (VIEWPORTS = desktop + mobile).
+        project: [chromium-authed, firefox-authed, webkit-authed, mobile-chrome, mobile-safari]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - name: Playwright — specs de estoque
+        env:
+          E2E_BASE_URL: http://localhost:8080
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+        run: |
+          npx playwright test \
+            --project=${{ matrix.project }} \
+            e2e/routes/app/stock-dashboard.spec.ts \
+            e2e/routes/app/stock-filter-switching.spec.ts \
+            e2e/routes/app/stock-table-sticky.spec.ts \
+            e2e/admin/stock-search-button.spec.ts \
+            e2e/admin/stock-search-race-and-keyboard.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 14

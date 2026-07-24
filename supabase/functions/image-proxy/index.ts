@@ -2,31 +2,60 @@ import { getCorsHeaders } from '../_shared/cors.ts';
 import { runBotProtection } from '../_shared/bot-protection.ts';
 import { fetchWithBreaker, CircuitOpenError, circuitOpenResponse } from '../_shared/external-fetch.ts';
 
-// Allowed external domains for proxying
+// BUG-A04 FIX (26/05/2026): Expanded ALLOWED_DOMAINS to include all active suppliers.
+// Previously only 'spotgifts.com.br' was allowed — XBZ, Asia Import, Só Marcas and
+// Cloudflare Images were all blocked with 403.
 const ALLOWED_DOMAINS = [
+  // Promo Brindes suppliers
   'www.spotgifts.com.br',
   'spotgifts.com.br',
+  'cdn.xbzbrindes.com.br',        // XBZ CDN de imagens — 67.96% product_images
+  'www.xbzbrindes.com.br',
+  'api.minhaxbz.com.br',          // XBZ API (manter por compatibilidade)
+  'minhaxbz.com.br',
+  'cdndeprodutos.azureedge.net', // XBZ Azure CDN — 4.5% product_images
+  'media.asiaimport.com.br',     // Asia Import CDN — 8.96% product_images
+  'asiaimport.com.br',           // Asia Import
+  'www.asiaimport.com.br',
+  'somarcascdn.azureedge.net',   // Só Marcas Azure CDN — 2.38% product_images
+  'somarcas.com.br',             // Só Marcas
+  'www.somarcas.com.br',
+  // Cloudflare Images (imagedelivery.net is the CDN domain)
+  'imagedelivery.net',
+  // Supabase Storage (for locally cached/uploaded images)
+  'doufsxqlfjyuvxuezpln.supabase.co',
+  'supabase.co',
 ];
 
-// Allowed referer hosts (anti-hotlinking)
-const ALLOWED_REFERER_HOSTS = [
+// BUG-A05 FIX (26/05/2026): Added staging/beta domains to ALLOWED_REFERER_HOSTS.
+// promo-gifts-beta.vercel.app was missing — staging environment was rejected.
+const ALLOWED_REFERER_EXACT = new Set([
   'criar-together-now.lovable.app',
+  // First-party Lovable preview environments (same as _shared/cors.ts EXACT_ALLOWED_ORIGINS)
+  'id-preview--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app',
+  '1be35a65-1f65-4c2b-9a79-7d563930aacd.lovableproject.com',
   'promogifts.com.br',
   'www.promogifts.com.br',
-  'lovable.app',          // any *.lovable.app subdomain
-  'lovableproject.com',
-];
+  'promogifts.atomicabr.com.br',
+  'promo-gifts-beta.vercel.app',
+]);
 
-// Localhost/127.0.0.1 conditional (Hardening 6.3)
-if (Deno.env.get('IMAGE_PROXY_ALLOW_LOCALHOST') === 'true') {
-  ALLOWED_REFERER_HOSTS.push('localhost', '127.0.0.1');
-}
+// Vercel preview pattern: only this team's deployments (suffix -juca1.vercel.app)
+const VERCEL_TEAM_PATTERN = /^[\w-]+-juca1\.vercel\.app$/i;
+// Lovable: no wildcard — specific project domains go in ALLOWED_REFERER_EXACT above.
+// A wildcard *.lovable.app / *.lovableproject.com would allow any Lovable tenant to hotlink.
+
+const ALLOW_LOCALHOST = Deno.env.get('IMAGE_PROXY_ALLOW_LOCALHOST') === 'true';
 
 function isAllowedReferer(referer: string | null): boolean {
   if (!referer) return false;
   try {
     const host = new URL(referer).hostname.toLowerCase();
-    return ALLOWED_REFERER_HOSTS.some((allowed) => host === allowed || host.endsWith('.' + allowed));
+    return (
+      ALLOWED_REFERER_EXACT.has(host) ||
+      VERCEL_TEAM_PATTERN.test(host) ||
+      (ALLOW_LOCALHOST && (host === 'localhost' || host === '127.0.0.1'))
+    );
   } catch {
     return false;
   }
@@ -39,18 +68,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 1. Anti-scraping protection (bot UA check + rate limit per IP)
-    // Generous limit because images are loaded in batches; abuse means hundreds/min from same IP.
     const protection = await runBotProtection(req, {
       endpoint: 'image-proxy',
-      maxRequests: 200,        // 200 imagens/min por IP
+      maxRequests: 200,
       windowSeconds: 60,
-      blockSeconds: 1800,      // 30min de bloqueio
+      blockSeconds: 1800,
       allowSearchBots: true,
     }, corsHeaders);
     if (!protection.allowed) return protection.blockResponse!;
 
-    // 2. Anti-hotlinking: only serve when called from our own domains
     const referer = req.headers.get('referer') || req.headers.get('origin');
     if (referer && !isAllowedReferer(referer)) {
       return new Response(JSON.stringify({ error: 'Hotlinking not allowed' }), {
@@ -80,7 +106,7 @@ Deno.serve(async (req) => {
     }
 
     if (!ALLOWED_DOMAINS.includes(parsedUrl.hostname)) {
-      return new Response(JSON.stringify({ error: 'Domain not allowed' }), {
+      return new Response(JSON.stringify({ error: 'Domain not allowed', hostname: parsedUrl.hostname }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -100,32 +126,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Hardening 6.3: Max bytes limit
-    const maxBytes = parseInt(Deno.env.get('IMAGE_PROXY_MAX_BYTES') || '5242880', 10); // Default 5MB
+    const maxBytes = parseInt(Deno.env.get('IMAGE_PROXY_MAX_BYTES') || '5242880', 10);
     const contentLength = imageResponse.headers.get('content-length');
     
     if (contentLength && parseInt(contentLength, 10) > maxBytes) {
       console.warn(`[image-proxy] Blocking oversized image: ${contentLength} bytes from ${imageUrl}`);
       return new Response(JSON.stringify({ error: 'Image too large' }), {
-        status: 413, // Payload Too Large
+        status: 413,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const contentType = imageResponse.headers.get('Content-Type') || 'image/jpeg';
     
-    // Critical #4 fix: Validate Content-Type to prevent content-sniffing or HTML injection
     if (!contentType.toLowerCase().startsWith('image/')) {
       console.warn(`[image-proxy] Blocking non-image content: ${contentType} from ${imageUrl}`);
       return new Response(JSON.stringify({ error: 'Source is not an image' }), {
-        status: 415, // Unsupported Media Type
+        status: 415,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const imageBuffer = await imageResponse.arrayBuffer();
 
-    // Secondary check if Content-Length was missing
     if (imageBuffer.byteLength > maxBytes) {
       console.warn(`[image-proxy] Blocking oversized buffer: ${imageBuffer.byteLength} bytes from ${imageUrl}`);
       return new Response(JSON.stringify({ error: 'Image too large' }), {

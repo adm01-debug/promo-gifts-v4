@@ -1,35 +1,127 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <!-- ─────────────────────────────────────────────────────────────────────
+         Boot asset recovery guard  (fix/boot-asset-recovery-guard-hardening)
+         Recupera de 404 transitório dos assets do BUILD (entry-point, vendor
+         chunks via modulepreload, e CSS principal) durante a janela de
+         propagação de um deploy do Vercel (version skew por deploys de alta
+         frequência).
+
+         POR QUE INLINE E NO TOPO DO <head>: toda a recuperação de chunk do app
+         (vite:preloadError em main.tsx, SW_STALE_CHUNK, chunk-recovery.ts) vive
+         DENTRO do bundle. Se o próprio entry-point (ou um vendor chunk de
+         dependência estática via modulepreload) falha ao carregar, main.tsx
+         nunca executa e nenhum desses handlers é instalado → tela branca
+         permanente até reload manual. Este guard é a ÚNICA camada capaz de
+         resgatar esse caso, e precisa estar ativo ANTES de o entry
+         <script type="module"> (injetado logo abaixo pelo Vite) carregar.
+
+         DETALHE TÉCNICO: erros de carregamento de RECURSO (script/link) não
+         borbulham — só são capturáveis na fase de captura, por isso
+         addEventListener('error', ..., true). Um <script type="module"> dispara
+         'error' se ELE ou QUALQUER dependência estática (modulepreload) falhar,
+         então um único handler cobre entry + todos os vendor chunks + CSS.
+
+         À PROVA DE LOOP (storage-free): o contador de tentativas vive na URL
+         (params __bare/__bart), não em sessionStorage. Isso garante o cap de
+         reloads MESMO quando sessionStorage está indisponível/lança exceção
+         (modo restrito), eliminando o loop infinito que um contador em storage
+         teria numa falha PERMANENTE de asset. Máx 2 hard-reloads numa janela de
+         20s a partir da 1ª tentativa; após a janela, reseta sozinho (permite
+         recuperar de um skew futuro independente). Coalesce múltiplos erros de
+         asset do mesmo load num único reload.
+    ──────────────────────────────────────────────────────────────────────── -->
+    <script>
+      (function () {
+        var PARAM = '__bare';  /* contador de tentativas (sobrevive a reload sem storage) */
+        var TPARAM = '__bart'; /* epoch ms da 1a tentativa (define a janela de auto-reset) */
+        var MAX = 2;           /* maximo de hard-reloads por janela */
+        var WINDOW = 20000;    /* ms; apos isso o contador reseta sozinho */
+        var BACKOFF = 800;     /* espera antes do reload p/ dar tempo de propagacao do edge */
+        var scheduled = false; /* coalesce multiplos erros de asset do mesmo load */
+
+        function isCriticalBuildAsset(t) {
+          if (!t || !t.tagName) return false; /* ignora erros de runtime JS (target=window) */
+          if (t.tagName === 'SCRIPT') {
+            return !!t.src && t.src.indexOf('/assets/') !== -1;
+          }
+          if (t.tagName === 'LINK') {
+            if (!t.href || t.href.indexOf('/assets/') === -1) return false;
+            var rel = t.rel || '';
+            return rel === 'stylesheet' || rel === 'modulepreload' || rel === 'preload';
+          }
+          return false;
+        }
+
+        /* Le o estado da URL e aplica auto-reset por janela. Storage-free. */
+        function readState() {
+          var n = 0, firstAt = 0;
+          try {
+            var sp = new URL(window.location.href).searchParams;
+            n = parseInt(sp.get(PARAM), 10);
+            firstAt = parseInt(sp.get(TPARAM), 10);
+            if (!isFinite(n) || n < 0) n = 0;
+            if (!isFinite(firstAt) || firstAt < 0) firstAt = 0;
+          } catch (_) { n = 0; firstAt = 0; }
+          var now = Date.now();
+          if (n === 0 || !firstAt || (now - firstAt) > WINDOW) { n = 0; firstAt = now; }
+          return { n: n, firstAt: firstAt };
+        }
+
+        window.addEventListener('error', function (e) {
+          if (!isCriticalBuildAsset(e && e.target)) return;
+          if (scheduled) return; /* ja agendou um reload neste load */
+          var s = readState();
+          if (s.n >= MAX) return; /* esgotou tentativas -> nao recarrega (evita loop) */
+          scheduled = true;
+          var next = s.n + 1;
+          var firstAt = s.firstAt;
+          setTimeout(function () {
+            try {
+              var u = new URL(window.location.href);
+              u.searchParams.set(PARAM, String(next));
+              u.searchParams.set(TPARAM, String(firstAt));
+              window.location.replace(u.toString());
+            } catch (_) {
+              window.location.reload();
+            }
+          }, BACKOFF);
+        }, true); /* capture=true: erros de recurso nao borbulham */
+      })();
+    </script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Priority hints: melhoram LCP instruindo o browser a priorizar imagens críticas -->
+    <meta name="color-scheme" content="dark light" />
 
     <!-- Security Headers -->
     <!--
       Os cabeçalhos abaixo são entregues como HTTP headers reais via `public/_headers`
-      (X-Frame-Options, Strict-Transport-Security, frame-ancestors da CSP e cabeçalhos
-      relacionados). Aqui mantemos apenas as diretivas que funcionam corretamente
-      como <meta http-equiv> — o navegador ignora as demais e emite warnings no
-      console do preview.
+      e `vercel.json` (X-Frame-Options, Strict-Transport-Security, Permissions-Policy,
+      frame-ancestors da CSP e cabeçalhos relacionados). Aqui mantemos apenas as
+      diretivas que funcionam corretamente como <meta http-equiv> — o navegador
+      ignora as demais (como Permissions-Policy, removido nesta etapa) e emite
+      warnings no console do preview.
     -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(self), geolocation=(), payment=()" />
     
     <!-- SEO - Título e Meta Tags -->
-    <title>Promo Gifts | Catálogo Inteligente de Produtos Promocionais</title>
+    <title>Catálogo de Produtos | Promo Gifts</title>
     <meta name="description" content="Plataforma completa para vendedores de produtos promocionais. Catálogo inteligente, orçamentos rápidos, mockups personalizados e gestão de clientes com IA.">
     <meta name="author" content="Promo Gifts" />
     <meta name="keywords" content="produtos promocionais, brindes corporativos, catálogo promocional, orçamentos, mockups, personalização, bordado, serigrafia, gravação laser" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://we-dream-big.lovable.app" />
+    <link rel="canonical" href="https://www.promogifts.com.br" data-rh="true" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://we-dream-big.lovable.app" />
+    <meta property="og:url" content="https://www.promogifts.com.br" data-rh="true" />
     <meta property="og:title" content="Promo Gifts | Solução Completa para Brindes Corporativos">
     <meta property="og:description" content="Acelere suas vendas de brindes com nosso catálogo inteligente, orçamentos instantâneos em PDF e gerador de mockups com IA.">
-    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e1261250-c70e-4278-b09c-68f108f6f3fb/id-preview-c11a0001--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app-1773315238298.png">
+    <meta property="og:image" content="https://www.promogifts.com.br/og-image.png">
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="pt_BR" />
@@ -37,59 +129,129 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://we-dream-big.lovable.app" />
+    <meta name="twitter:url" content="https://www.promogifts.com.br" data-rh="true" />
     <meta name="twitter:title" content="Promo Gifts | Solução Completa para Brindes Corporativos">
     <meta name="twitter:description" content="Acelere suas vendas de brindes com nosso catálogo inteligente, orçamentos instantâneos em PDF e gerador de mockups com IA.">
-    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e1261250-c70e-4278-b09c-68f108f6f3fb/id-preview-c11a0001--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app-1773315238298.png">
+    <meta name="twitter:image" content="https://www.promogifts.com.br/og-image.png">
 
-    <!-- DNS Prefetch & Preconnect — reduce network dependency chain -->
+    <!-- DNS Prefetch & Preconnect — reduce network dependency chain
+         BUG-06 FIX: Removed preconnect/dns-prefetch to FORBIDDEN project
+         pqpdolkaeqlyzpdpbizo (listed in FORBIDDEN_REFS in client.ts).
+         Added canonical project doufsxqlfjyuvxuezpln instead. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://doufsxqlfjyuvxuezpln.supabase.co" />
     <link rel="preconnect" href="https://doufsxqlfjyuvxuezpln.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://imagedelivery.net" />
+    <link rel="preconnect" href="https://imagedelivery.net" crossorigin />
+    <!-- Preconnect para o CDN de vídeo do Cloudflare Stream -->
+    <!-- BUG-IDX-1 FIX: subdomain correto de src/utils/cloudflare-stream.ts -->
+    <link rel="dns-prefetch" href="https://customer-ksi0mrlcw6rwzezz.cloudflarestream.com" />
+    <link rel="preconnect" href="https://customer-ksi0mrlcw6rwzezz.cloudflarestream.com" crossorigin />
+    <!-- CF Stream embed player domain (iframe src) -->
+    <link rel="dns-prefetch" href="https://iframe.cloudflarestream.com" />
+    <link rel="preconnect" href="https://iframe.cloudflarestream.com" crossorigin />
+    <!-- CF Stream video delivery CDN -->
+    <link rel="dns-prefetch" href="https://videodelivery.net" />
     
     <!-- Load Google Fonts — non-render-blocking via media swap -->
-    <!-- Inter está incluído porque é a fonte das skins Opera GX (família do Cloudflare Sans). -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" media="print" onload="this.media='all'" />
-    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" /></noscript>
+    <!-- Apenas Outfit (display) e Plus Jakarta Sans (sans).o. Inter foi removido
+         (era para "skins Opera GX", overhead desnecessário). display=optional evita CLS. -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=optional" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=optional" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;600;700&display=optional" /></noscript>
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     
-    <!-- Theme Color & PWA -->
-    <meta name="theme-color" content="#fb923c" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <!-- Theme Color & PWA — adaptativo light/dark, theme azul brand -->
 
-    <!-- JSON-LD Structured Data -->
+    <meta name="theme-color" content="#0a0a0a" />
+    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+    <!-- Windows 10/11 pinned tile (Start menu / taskbar) -->
+    <meta name="msapplication-TileColor" content="#0a0a0a" />
+    <meta name="msapplication-TileImage" content="/icons/icon-192.png" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+
+    <!-- JSON-LD Structured Data
+         WebApplication + Organization em um unico @graph (recomendado pelo Google).
+         Removido "offers/price: 0" - era enganoso (nao e SaaS gratuito).
+         Substituido por audience B2B + potentialAction ContactAction. -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Promo Gifts",
-      "url": "https://we-dream-big.lovable.app",
-      "description": "Plataforma completa para vendedores de produtos promocionais. Catálogo inteligente, orçamentos rápidos e mockups personalizados.",
-      "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "BRL"
-      },
-      "author": {
-        "@type": "Organization",
-        "name": "Promo Gifts"
-      }
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://www.promogifts.com.br/#webapp",
+          "name": "Promo Gifts",
+          "url": "https://www.promogifts.com.br",
+          "description": "Plataforma completa para vendedores de produtos promocionais. Catálogo inteligente, orçamentos rápidos e mockups personalizados.",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "inLanguage": "pt-BR",
+          "audience": {
+            "@type": "BusinessAudience",
+            "audienceType": "Vendedores B2B de brindes corporativos e produtos promocionais"
+          },
+          "potentialAction": {
+            "@type": "ContactAction",
+            "name": "Solicitar acesso",
+            "target": "https://www.promogifts.com.br/auth"
+          },
+          "publisher": {
+            "@id": "https://www.promogifts.com.br/#organization"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://www.promogifts.com.br/#organization",
+          "name": "Promo Gifts",
+          "legalName": "Brasil Marcas Indústria e Comércio de Brindes Ltda",
+          "url": "https://www.promogifts.com.br",
+          "logo": "https://www.promogifts.com.br/favicon.svg",
+          "email": "ti@promobrindes.com.br",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "São Paulo",
+            "addressRegion": "SP",
+            "postalCode": "03377-000",
+            "addressCountry": "BR"
+          },
+          "sameAs": [
+            "https://www.instagram.com/promobrindes",
+            "https://www.linkedin.com/company/promobrindes"
+          ]
+        }
+      ]
     }
     </script>
   </head>
 
-  <body style="background-color: #020617;">
+  <body style="background-color: #0a0a0a; margin: 0;">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Inline critical: previne FOUC — aplica preset-id salvo antes do React montar -->
+    <script>
+      (function(){
+        // App sempre roda em dark mode
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        try {
+          var raw = localStorage.getItem('gifts-store-theme-config');
+          if (raw) {
+            var cfg = JSON.parse(raw);
+            if (cfg && cfg.presetId) {
+              document.documentElement.setAttribute('data-preset-id', cfg.presetId);
+            }
+          }
+        } catch(e) {}
+      })();
+    </script>
   </body>
 </html>

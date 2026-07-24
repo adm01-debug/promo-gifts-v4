@@ -8,7 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import type { TechniqueSettings } from '@/types/simulation';
+import type { Json } from '@/integrations/supabase/types';
 
+import { logger } from '@/lib/logger';
 interface SimulatorPreferences {
   lastQuantity: number;
   lastProductId: string | null;
@@ -16,7 +18,7 @@ interface SimulatorPreferences {
   lastTechniqueSettings: Record<string, TechniqueSettings>;
   defaultColors: number;
   defaultAreaCm2: number;
-  preferredView: 'cards' | 'table' | 'matrix';
+  preferredView: 'cards' | 'matrix' | 'table';
   autoExpandResults: boolean;
   showUpsellSuggestions: boolean;
 }
@@ -51,7 +53,7 @@ export function useSimulatorPreferences() {
         .from('profiles')
         .select('preferences')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error || !data?.preferences) return null;
 
@@ -74,24 +76,25 @@ export function useSimulatorPreferences() {
         .from('profiles')
         .select('preferences')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const existingPrefs = (existingData?.preferences as Record<string, unknown>) || {};
 
       const { error } = await supabase
         .from('profiles')
         .update({
+          // merged JSON-serializable preferences persisted in profiles.preferences
           preferences: {
             ...existingPrefs,
             simulator: prefs,
-          } as Record<string, unknown>,
+          } as unknown as Json,
         })
         .eq('user_id', user.id);
 
       if (error) throw error;
     },
     onError: (error) => {
-      console.error('Error saving preferences to cloud:', error);
+      logger.error('Error saving preferences to cloud:', error);
     },
   });
 
@@ -113,7 +116,7 @@ export function useSimulatorPreferences() {
           }
         }
       } catch (error) {
-        console.error('Error loading preferences:', error);
+        logger.error('Error loading preferences:', error);
       }
       setIsLoaded(true);
     };
@@ -131,7 +134,7 @@ export function useSimulatorPreferences() {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
         } catch (error) {
-          console.error('Error saving preferences to localStorage:', error);
+          logger.error('Error saving preferences to localStorage:', error);
         }
 
         // Save to cloud (debounced via mutation)
@@ -185,7 +188,7 @@ export function useSimulatorPreferences() {
   );
 
   const setPreferredView = useCallback(
-    (view: 'cards' | 'table' | 'matrix') => {
+    (view: 'cards' | 'matrix' | 'table') => {
       savePreferences({ preferredView: view });
     },
     [savePreferences],

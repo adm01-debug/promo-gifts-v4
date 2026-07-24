@@ -1,3 +1,4 @@
+import { createStructuredLogger } from "../_shared/structured-logger.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { encodeHex } from "https://deno.land/std@0.224.0/encoding/hex.ts";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";

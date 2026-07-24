@@ -1,8 +1,8 @@
-import { Badge } from "@/components/ui/badge";
-import { Palette } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { TechniqueFilter } from "./logoTechniqueFilters";
-import type { TechniqueColorConfig } from "../techniqueColorUtils";
+import { Badge } from '@/components/ui/badge';
+import { Palette } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { TechniqueFilter } from './logoTechniqueFilters';
+import type { TechniqueColorConfig } from '../techniqueColorUtils';
 
 interface LogoPreviewCanvasProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -41,27 +41,27 @@ export function LogoPreviewCanvas({
 }: LogoPreviewCanvasProps) {
   const isCanvasProcessed =
     processedLogoUrl &&
-    (techniqueColorConfig?.category === "laser" || techniqueColorConfig?.category === "serigrafia");
+    (techniqueColorConfig?.category === 'laser' || techniqueColorConfig?.category === 'serigrafia');
 
   return (
     <>
       {/* Technique preview indicator */}
       {techniqueName && (
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
+        <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-2">
           <div
-            className="w-4 h-4 rounded-full border-2 border-primary"
+            className="h-4 w-4 rounded-full border-2 border-primary"
             style={{
-              background: techniqueFilter.filter.includes("grayscale")
-                ? "linear-gradient(135deg, hsl(var(--muted-foreground)), hsl(var(--muted)))"
-                : techniqueFilter.filter.includes("sepia")
-                  ? "linear-gradient(135deg, hsl(var(--warning)), hsl(var(--warning) / 0.65))"
-                  : "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))",
+              background: techniqueFilter.filter.includes('grayscale')
+                ? 'linear-gradient(135deg, hsl(var(--muted-foreground)), hsl(var(--muted)))'
+                : techniqueFilter.filter.includes('sepia')
+                  ? 'linear-gradient(135deg, hsl(var(--warning)), hsl(var(--warning) / 0.65))'
+                  : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))',
             }}
           />
           <span className="text-xs text-muted-foreground">
             Simulando: <span className="font-medium text-foreground">{techniqueName}</span>
           </span>
-          <Badge variant="secondary" className="text-[10px] ml-auto">
+          <Badge variant="secondary" className="ml-auto text-[10px]">
             {techniqueFilter.description}
           </Badge>
         </div>
@@ -69,22 +69,24 @@ export function LogoPreviewCanvas({
 
       {/* Preview area */}
       <div
-        ref={containerRef}
-        className="relative rounded-lg border overflow-hidden bg-muted/30 aspect-square"
+        // RefObject<T | null> (from useRef<T | null>) is structurally identical to
+        // the LegacyRef<T> the JSX ref prop expects in @types/react 18.3; narrow the type param.
+        ref={containerRef as React.RefObject<HTMLDivElement>}
+        className="relative aspect-square overflow-hidden rounded-lg border bg-muted/30"
       >
         <img
           src={productImageUrl}
           alt="Imagem do produto para preview de personalização"
-          className="absolute inset-0 w-full h-full object-contain"
+          className="absolute inset-0 h-full w-full object-contain"
           loading="lazy"
           onError={(e) => {
             const t = e.currentTarget;
             const currentSrc = t.src;
-            if (currentSrc.includes("/thumbnail")) {
-              t.src = currentSrc.replace("/thumbnail", "");
-            } else if (!currentSrc.endsWith("/placeholder.svg") && !t.dataset.fallback) {
-              t.dataset.fallback = "1";
-              t.src = "/placeholder.svg";
+            if (currentSrc.includes('/thumbnail')) {
+              t.src = currentSrc.replace('/thumbnail', '');
+            } else if (!currentSrc.endsWith('/placeholder.svg') && !t.dataset.fallback) {
+              t.dataset.fallback = '1';
+              t.src = '/placeholder.svg';
             }
           }}
         />
@@ -92,9 +94,9 @@ export function LogoPreviewCanvas({
         {logoPreview && logoDisplay ? (
           <div
             className={cn(
-              "absolute select-none touch-none overflow-hidden",
-              "cursor-grab active:cursor-grabbing",
-              "ring-2 ring-primary/30 rounded-sm"
+              'absolute touch-none select-none overflow-hidden',
+              'cursor-grab active:cursor-grabbing',
+              'rounded-sm ring-2 ring-primary/30',
             )}
             onPointerDown={onPointerDown}
             style={{
@@ -106,9 +108,9 @@ export function LogoPreviewCanvas({
             }}
           >
             <img
-              src={isCanvasProcessed ? processedLogoUrl : logoPreview!}
+              src={isCanvasProcessed ? processedLogoUrl : logoPreview}
               alt="Logo para personalização"
-              className="absolute inset-0 w-full h-full object-contain"
+              className="absolute inset-0 h-full w-full object-contain"
               style={{
                 transform: `rotate(${logoRotation}deg) scale(${userScaleFactor})`,
                 opacity: isCanvasProcessed
@@ -116,8 +118,8 @@ export function LogoPreviewCanvas({
                   : (colorConfigFilter?.opacity ?? techniqueFilter.opacity),
                 filter: !isCanvasProcessed
                   ? (colorConfigFilter?.filter ?? techniqueFilter.filter)
-                  : "none",
-                mixBlendMode: techniqueFilter.blend as React.CSSProperties["mixBlendMode"],
+                  : 'none',
+                mixBlendMode: techniqueFilter.blend as React.CSSProperties['mixBlendMode'],
               }}
               draggable={false}
               loading="lazy"
@@ -125,7 +127,7 @@ export function LogoPreviewCanvas({
           </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80">
-            <p className="text-sm text-muted-foreground text-center px-4">
+            <p className="px-4 text-center text-sm text-muted-foreground">
               Faça upload do logo para posicioná-lo
             </p>
           </div>
@@ -133,23 +135,35 @@ export function LogoPreviewCanvas({
 
         {/* Live preview badge + Color config badge */}
         {logoPreview && (
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
-            <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm text-[10px] gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+          <div className="absolute left-2 top-2 flex flex-col gap-1">
+            <Badge
+              variant="secondary"
+              className="gap-1 bg-background/90 text-[10px] backdrop-blur-sm"
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-success" />
               Preview em tempo real
             </Badge>
             {techniqueColorConfig && (
               <Badge
                 variant="outline"
-                className="bg-background/90 backdrop-blur-sm text-[10px] gap-1 cursor-pointer hover:bg-accent"
+                role="button"
+                tabIndex={0}
+                aria-label="Configurar cores da técnica"
+                className="cursor-pointer gap-1 bg-background/90 text-[10px] backdrop-blur-sm hover:bg-accent"
                 onClick={onColorConfigClick}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onColorConfigClick?.();
+                  }
+                }}
               >
-                <Palette className="h-3 w-3" />
-                {techniqueColorConfig.category === "laser"
-                  ? `Laser ${techniqueColorConfig.laserTone === "claro" ? "Claro" : "Escuro"}`
-                  : techniqueColorConfig.category === "serigrafia"
-                    ? `${techniqueColorConfig.colorCount || 1} cor${(techniqueColorConfig.colorCount || 1) > 1 ? "es" : ""}`
-                    : "Policromia"}
+                <Palette aria-hidden="true" className="h-3 w-3" />
+                {techniqueColorConfig.category === 'laser'
+                  ? `Laser ${techniqueColorConfig.laserTone === 'claro' ? 'Claro' : 'Escuro'}`
+                  : techniqueColorConfig.category === 'serigrafia'
+                    ? `${techniqueColorConfig.colorCount || 1} cor${(techniqueColorConfig.colorCount || 1) > 1 ? 'es' : ''}`
+                    : 'Policromia'}
               </Badge>
             )}
           </div>

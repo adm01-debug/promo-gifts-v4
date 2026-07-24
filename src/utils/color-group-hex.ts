@@ -29,24 +29,31 @@ export const COLOR_GROUP_HEX: Record<string, string> = {
  * Resolve a cor hex do destaque com base nos filtros ativos e cores do produto.
  */
 export function resolveHighlightHex(
-  productColors: Array<{ hex?: string; group?: string; groupSlug?: string; variationSlug?: string }>,
+  productColors: Array<{
+    hex?: string;
+    group?: string;
+    groupSlug?: string;
+    variationSlug?: string;
+  }>,
   activeColorFilter?: { groups: string[]; variations: string[] } | null,
   highlightColors?: string[],
 ): string | null {
   if (activeColorFilter) {
     if (activeColorFilter.groups.length > 0) {
-      const match = productColors.find(c => activeColorFilter.groups.includes(c.groupSlug || ''));
+      const match = productColors.find((c) => activeColorFilter.groups.includes(c.groupSlug || ''));
       if (match?.hex) return match.hex;
-      const groupKey = activeColorFilter.groups.find(g => COLOR_GROUP_HEX[g]);
+      const groupKey = activeColorFilter.groups.find((g) => COLOR_GROUP_HEX[g]);
       if (groupKey) return COLOR_GROUP_HEX[groupKey];
     }
     if (activeColorFilter.variations.length > 0) {
-      const match = productColors.find(c => activeColorFilter.variations.includes(c.variationSlug || ''));
+      const match = productColors.find((c) =>
+        activeColorFilter.variations.includes(c.variationSlug || ''),
+      );
       if (match?.hex) return match.hex;
     }
   }
   if (highlightColors?.length) {
-    const match = productColors.find(c => highlightColors.includes(c.group || ''));
+    const match = productColors.find((c) => highlightColors.includes(c.group || ''));
     if (match?.hex) return match.hex;
   }
   return null;

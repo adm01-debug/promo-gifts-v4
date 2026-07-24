@@ -1,6 +1,6 @@
 /**
  * Query Keys Centralizadas - Técnicas e Tabelas de Preço
- * 
+ *
  * Single Source of Truth para todas as query keys do módulo
  */
 
@@ -14,6 +14,7 @@ export const TECNICAS_QUERY_KEYS = {
   // Tabelas de preço
   tabelasPreco: () => [...TECNICAS_QUERY_KEYS.all, 'tabelas-preco'] as const,
   tabelaPorCodigo: (codigo: string) => [...TECNICAS_QUERY_KEYS.all, 'tabela', codigo] as const,
-  tabelasPorTecnica: (nomeTecnica: string) => [...TECNICAS_QUERY_KEYS.all, 'tabelas-tecnica', nomeTecnica] as const,
+  tabelasPorTecnica: (nomeTecnica: string) =>
+    [...TECNICAS_QUERY_KEYS.all, 'tabelas-tecnica', nomeTecnica] as const,
   nomesTecnicas: () => [...TECNICAS_QUERY_KEYS.all, 'nomes-tecnicas'] as const,
 };

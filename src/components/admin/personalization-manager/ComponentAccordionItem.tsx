@@ -104,7 +104,11 @@ export function ComponentAccordionItem({
 
   return (
     <SortableItem key={component.id} id={component.id}>
-      <AccordionItem value={component.id} className="rounded-lg border px-4">
+      <AccordionItem
+        value={component.id}
+        data-testid={`admin-row-${component.id}`}
+        className="rounded-lg border px-4"
+      >
         <AccordionTrigger className="hover:no-underline">
           <div className="flex flex-1 items-center gap-3">
             <Badge variant="outline" className="font-mono">
@@ -283,7 +287,7 @@ export function ComponentAccordionItem({
                       <div>
                         <Label className="text-xs text-muted-foreground">Larg. (cm)</Label>
                         <InlineEditField
-                          value={location.max_width_cm?.toString() || ''}
+                          value={location.max_width_cm?.toString() ?? ''}
                           onSave={(v) =>
                             updateLocation({
                               id: location.id,
@@ -297,7 +301,7 @@ export function ComponentAccordionItem({
                       <div>
                         <Label className="text-xs text-muted-foreground">Alt. (cm)</Label>
                         <InlineEditField
-                          value={location.max_height_cm?.toString() || ''}
+                          value={location.max_height_cm?.toString() ?? ''}
                           onSave={(v) =>
                             updateLocation({
                               id: location.id,
@@ -311,7 +315,7 @@ export function ComponentAccordionItem({
                       <div>
                         <Label className="text-xs text-muted-foreground">Área (cm²)</Label>
                         <InlineEditField
-                          value={location.max_area_cm2?.toString() || ''}
+                          value={location.max_area_cm2?.toString() ?? ''}
                           onSave={(v) =>
                             updateLocation({
                               id: location.id,

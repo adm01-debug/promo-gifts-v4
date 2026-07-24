@@ -1,26 +1,25 @@
-import { useEffect } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { 
-  History, 
-  Plus, 
-  Edit2, 
-  RefreshCw, 
-  Trash2, 
-  Send, 
-  CheckCircle, 
+import { useEffect } from 'react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import {
+  History,
+  Plus,
+  Edit2,
+  RefreshCw,
+  Trash2,
+  CheckCircle,
   XCircle,
   Clock,
   Package,
-  Upload,
   FileText,
   AlertTriangle,
-  Zap
-} from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useQuoteHistory, type QuoteHistoryEntry } from "@/hooks/quotes";
-import { cn } from "@/lib/utils";
+  Zap,
+} from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TimelineDot, TimelineLine } from '@/components/ui/timeline';
+import { useQuoteHistory, type QuoteHistoryEntry } from '@/hooks/quotes';
+import { cn } from '@/lib/utils';
 
 interface QuoteHistoryPanelProps {
   quoteId: string;
@@ -42,18 +41,18 @@ const actionIcons: Record<string, React.ReactNode> = {
 };
 
 const actionColors: Record<string, string> = {
-  created: "bg-primary/10 text-primary border-primary/20",
-  updated: "bg-primary/10 text-primary border-primary/20",
-  status_changed: "bg-warning/10 text-warning border-warning/20",
-  item_added: "bg-primary/10 text-primary border-primary/20",
-  item_removed: "bg-destructive/10 text-destructive border-destructive/20",
-  item_updated: "bg-primary/15 text-primary/80 border-primary/25",
+  created: 'bg-primary/10 text-primary border-primary/20',
+  updated: 'bg-primary/10 text-primary border-primary/20',
+  status_changed: 'bg-warning/10 text-warning border-warning/20',
+  item_added: 'bg-primary/10 text-primary border-primary/20',
+  item_removed: 'bg-destructive/10 text-destructive border-destructive/20',
+  item_updated: 'bg-primary/15 text-primary/80 border-primary/25',
   // Sync events
-  sync_started: "bg-primary/10 text-primary/70 border-primary/20",
-  sync_pdf_ok: "bg-primary/10 text-primary/60 border-primary/15",
-  sync_pdf_error: "bg-warning/10 text-warning border-warning/20",
-  sync_success: "bg-primary/10 text-primary border-primary/30",
-  sync_error: "bg-destructive/10 text-destructive border-destructive/20",
+  sync_started: 'bg-primary/10 text-primary/70 border-primary/20',
+  sync_pdf_ok: 'bg-primary/10 text-primary/60 border-primary/15',
+  sync_pdf_error: 'bg-warning/10 text-warning border-warning/20',
+  sync_success: 'bg-primary/10 text-primary border-primary/30',
+  sync_error: 'bg-destructive/10 text-destructive border-destructive/20',
 };
 
 export function QuoteHistoryPanel({ quoteId }: QuoteHistoryPanelProps) {
@@ -63,6 +62,7 @@ export function QuoteHistoryPanel({ quoteId }: QuoteHistoryPanelProps) {
     if (quoteId) {
       fetchHistory(quoteId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quoteId]);
 
   if (isLoading) {
@@ -84,51 +84,60 @@ export function QuoteHistoryPanel({ quoteId }: QuoteHistoryPanelProps) {
   if (history.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
-        <History className="h-10 w-10 text-muted-foreground mb-3" />
+        <History className="mb-3 h-10 w-10 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">Nenhum histórico disponível</p>
       </div>
     );
   }
 
   return (
-    <ScrollArea className="h-[400px] pr-4">
+    <ScrollArea className="h-[calc(100vh-9rem)] pr-3">
       <div className="relative">
-        {/* Timeline line */}
-        <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
+        <TimelineLine leftClassName="left-[15px]" />
 
-        <div className="space-y-4">
+
+
+        <ol className="space-y-1.5">
           {history.map((entry, index) => (
             <HistoryEntry key={entry.id} entry={entry} isFirst={index === 0} />
           ))}
-        </div>
+        </ol>
       </div>
     </ScrollArea>
   );
 }
 
 function HistoryEntry({ entry, isFirst }: { entry: QuoteHistoryEntry; isFirst: boolean }) {
-  const icon = actionIcons[entry.action] || <Clock className="h-4 w-4" />;
-  const colorClass = actionColors[entry.action] || "bg-muted text-muted-foreground";
+  const icon = actionIcons[entry.action] || <Clock className="h-3.5 w-3.5" />;
+  const colorClass =
+    actionColors[entry.action] || 'bg-muted/40 text-muted-foreground border-border/50';
 
   return (
-    <div className="relative pl-10">
-      {/* Timeline dot */}
-      <div
-        className={cn(
-          "absolute left-0 flex h-8 w-8 items-center justify-center rounded-full border",
-          colorClass,
-          isFirst && "ring-2 ring-primary/20"
-        )}
+    <li className="group relative pl-11">
+      <TimelineDot
+        highlighted={isFirst}
+        toneClassName={colorClass}
+        className="absolute left-0 top-2 h-8 w-8"
       >
         {icon}
-      </div>
+      </TimelineDot>
 
-      <div className="pt-1">
-        <p className="text-sm font-medium text-foreground">{entry.description}</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          {format(new Date(entry.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
+      <div
+        className={cn(
+          'rounded-lg border border-transparent px-3 py-2 transition-all duration-200',
+          'group-hover:border-border/40 group-hover:bg-card/40',
+        )}
+      >
+        <p className="text-[13px] font-medium leading-snug text-foreground">
+          {entry.description}
+        </p>
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
+          <Clock className="h-3 w-3" aria-hidden="true" />
+          <time dateTime={entry.created_at}>
+            {format(new Date(entry.created_at), "dd 'de' MMM 'às' HH:mm", { locale: ptBR })}
+          </time>
         </p>
       </div>
-    </div>
+    </li>
   );
 }

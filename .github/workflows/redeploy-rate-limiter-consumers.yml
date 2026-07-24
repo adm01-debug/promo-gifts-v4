@@ -1,0 +1,107 @@
+name: Redeploy rate-limiter consumers
+
+# Quando `supabase/functions/_shared/rate-limiter.ts` muda, o bundle das
+# funções que o importam fica defasado (o shared é inline no build de cada
+# função — não é resolvido em runtime). Este workflow detecta a mudança e
+# redeploya APENAS os consumidores, evitando redeploy de ~90 funções via
+# `deploy-edge-functions.yml`.
+#
+# Consumidores atuais (grep em supabase/functions/**/index.ts):
+#   ai-recommendations, expert-chat, log-login-attempt, receive-crm-callback,
+#   semantic-search, visual-search.
+#
+# Se um novo consumidor for adicionado, incluir aqui manualmente OU rodar
+# `grep -rl '_shared/rate-limiter' supabase/functions/*/index.ts`.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/rate-limiter.ts'
+  workflow_dispatch:
+
+env:
+  SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'doufsxqlfjyuvxuezpln' }}
+
+permissions:
+  contents: read
+
+jobs:
+  detect-consumers:
+    name: Detect functions importing rate-limiter
+    runs-on: ubuntu-latest
+    outputs:
+      functions: ${{ steps.detect.outputs.functions }}
+      count: ${{ steps.detect.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Grep consumers
+        id: detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t FNS < <(
+            grep -rl "_shared/rate-limiter" supabase/functions/*/index.ts 2>/dev/null \
+              | awk -F'/' '{print $(NF-1)}' \
+              | sort -u
+          )
+          COUNT=${#FNS[@]}
+          if [[ $COUNT -eq 0 ]]; then
+            echo "⚠️ Nenhum consumidor encontrado — nada a redeployar." >> "$GITHUB_STEP_SUMMARY"
+            echo "functions=[]" >> "$GITHUB_OUTPUT"
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          JSON=$(printf '%s\n' "${FNS[@]}" | jq -R . | jq -sc .)
+          echo "functions=$JSON" >> "$GITHUB_OUTPUT"
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          {
+            echo "## 🔁 Consumidores de _shared/rate-limiter.ts: $COUNT"
+            printf '%s\n' "${FNS[@]}" | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Deploy ${{ matrix.fn }}
+    needs: detect-consumers
+    if: needs.detect-consumers.outputs.count != '0'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        fn: ${{ fromJSON(needs.detect-consumers.outputs.functions) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: 2.101.0
+
+      - name: Deploy ${{ matrix.fn }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SUPABASE_ACCESS_TOKEN:-}" ]]; then
+            echo "❌ Secret SUPABASE_ACCESS_TOKEN ausente." >&2
+            exit 1
+          fi
+          supabase functions deploy "${{ matrix.fn }}" \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --use-api
+
+      - name: Smoke test (boot check)
+        shell: bash
+        run: |
+          # POST vazio — esperamos 4xx (auth/validation). 5xx indica boot/import quebrado.
+          URL="https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/${{ matrix.fn }}"
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{}' "$URL" || echo '000')
+          echo "Smoke ${{ matrix.fn }} → HTTP $STATUS"
+          if [[ "$STATUS" == 5* || "$STATUS" == "000" ]]; then
+            echo "❌ ${{ matrix.fn }} respondeu $STATUS (boot/import possivelmente quebrado)" >&2
+            exit 1
+          fi
+          echo "✅ ${{ matrix.fn }} → $STATUS (boot OK)" >> "$GITHUB_STEP_SUMMARY"

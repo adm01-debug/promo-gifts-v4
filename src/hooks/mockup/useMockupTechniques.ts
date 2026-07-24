@@ -1,16 +1,17 @@
 /**
  * useMockupTechniques — Filter techniques by product using fn_get_product_customization_options RPC
  *
- * v6.0 Performance Optimized:
- * - Aggressive caching of technique dimensions in sessionStorage.
- * - keepPreviousData for zero-flicker transitions.
- * - Map-based lookup for speed.
+ * v6.1 Fixes (audit sprint-2, 26/05/2026):
+ * BUG-B: During product-data loading, return unfiltered techniques instead of [] to
+ *        avoid a flash of empty dropdown.
+ * BUG-D: Skip techniques without a code before inserting into the sessionStorage Map
+ *        to prevent orphaned null-key entries.
  */
 
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useMemo } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { invokeExternalRpc } from '@/lib/external-rpc';
-import { invokeExternalDb } from '@/lib/external-db';
 import { adaptCustomizationOptions } from '@/lib/personalization/adapters';
 
 interface Technique {
@@ -90,11 +91,11 @@ export function useProductCustomizationOptionsForMockup(productId: string | unde
   });
 }
 
-function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean) {
+function useAllTechniqueDimensions(shouldFetch: boolean) {
   return useQuery({
-    queryKey: ['all-technique-dimensions-v6'],
+    queryKey: ['all-technique-dimensions-v7'],
     queryFn: async () => {
-      const CACHE_KEY = 'mockup-tech-dims-v6';
+      const CACHE_KEY = 'mockup-tech-dims-v7';
       try {
         const cached = sessionStorage.getItem(CACHE_KEY);
         if (cached) {
@@ -108,37 +109,53 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
         /* ignore */
       }
 
-      const techResult = await invokeExternalDb<{ id: string; code: string; name: string }>({
-        table: 'personalization_techniques',
-        operation: 'select',
-        limit: 200,
-      });
+      // BUG-19 FIX: original code joined personalization_techniques.id against
+      // tabela_preco_gravacao_oficial_faixa.tabela_preco_gravacao_id — the two UUID
+      // namespaces never overlap, so the Map was always empty.
+      // Correct chain: tabela_preco_gravacao_oficial (bridge: id ↔ codigo_tabela)
+      // → tabela_preco_gravacao_oficial_faixa (by tabela_preco_gravacao_id)
+      // → map keyed by codigo_tabela (= technique.code).
+      const [oficialResult, faixaResult] = await Promise.all([
+        dbInvoke<{ id: string; codigo_tabela: string }>({
+          table: 'tabela_preco_gravacao_oficial',
+          operation: 'select',
+          select: 'id,codigo_tabela',
+          limit: 500,
+        }),
+        dbInvoke<{
+          tabela_preco_gravacao_id: string;
+          largura_max: number | null;
+          altura_max: number | null;
+        }>({
+          table: 'tabela_preco_gravacao_oficial_faixa',
+          operation: 'select',
+          select: 'tabela_preco_gravacao_id,largura_max,altura_max',
+          limit: 5000,
+        }),
+      ]);
 
-      if (!techResult.records.length) return new Map();
+      if (!oficialResult.records.length) return new Map();
 
-      const faixaResult = await invokeExternalDb<{
-        tabela_preco_gravacao_id: string;
-        largura_max: number | null;
-        altura_max: number | null;
-      }>({
-        table: 'tabela_preco_gravacao_oficial_faixa',
-        operation: 'select',
-        select: 'tabela_preco_gravacao_id,largura_max,altura_max',
-        limit: 5000,
-      });
+      // Build: pricing_table_id → codigo_tabela (technique code)
+      const idToCode = new Map<string, string>();
+      for (const row of oficialResult.records) {
+        if (row.id && row.codigo_tabela) idToCode.set(row.id, row.codigo_tabela);
+      }
 
-      const faixasByTech = new Map<string, FaixaPreco[]>();
+      // Group faixa rows by technique code
+      const faixasByCode = new Map<string, FaixaPreco[]>();
       for (const f of faixaResult.records) {
-        const key = f.tabela_preco_gravacao_id;
-        if (!faixasByTech.has(key)) faixasByTech.set(key, []);
-        faixasByTech.get(key)?.push(f);
+        const code = idToCode.get(f.tabela_preco_gravacao_id);
+        if (!code) continue;
+        if (!faixasByCode.has(code)) faixasByCode.set(code, []);
+        faixasByCode.get(code)?.push(f);
       }
 
       const codeMap = new Map<string, { maxWidth: number | null; maxHeight: number | null }>();
-      for (const tech of techResult.records) {
-        const faixas = faixasByTech.get(tech.id) || [];
-        if (!faixas.length) continue;
-
+      for (const [techCode, faixas] of faixasByCode.entries()) {
+        // BUG-D FIX: skip entries without a valid code to prevent null-key entries in codeMap.
+        const tech = { code: techCode };
+        if (!tech.code) continue;
         const larguras: number[] = [];
         const alturas: number[] = [];
         let lwS = false,
@@ -169,10 +186,29 @@ function useAllTechniqueDimensions(techniques: Technique[], shouldFetch: boolean
       return codeMap;
     },
     enabled: shouldFetch,
-    staleTime: Infinity, // General dimensions change very rarely
+    staleTime: Infinity,
     gcTime: Infinity,
     placeholderData: keepPreviousData,
   });
+}
+
+/** Sentinel that builds a TechniqueWithLimits with all limits null (used as loading placeholder). */
+function toUnlimited(t: Technique): TechniqueWithLimits {
+  return {
+    ...t,
+    maxWidth: null,
+    maxHeight: null,
+    areaName: null,
+    locationName: null,
+    maxColors: null,
+    chargesPerColor: false,
+    usesDimension: false,
+    isCurved: false,
+    setupCost: null,
+    variationLabel: null,
+    groupCode: null,
+    shape: null,
+  };
 }
 
 export function useFilteredTechniques(
@@ -183,33 +219,22 @@ export function useFilteredTechniques(
     selectedProduct?.id,
   );
 
-  const needsTechniqueDims =
-    !!selectedProduct && customizationData?.locations && customizationData.locations.length === 0;
+  const needsTechniqueDims = !!selectedProduct && customizationData?.locations?.length === 0;
 
-  const { data: techniqueDims } = useAllTechniqueDimensions(techniques, !!needsTechniqueDims);
+  const { data: techniqueDims } = useAllTechniqueDimensions(!!needsTechniqueDims);
 
   return useMemo(() => {
     if (!selectedProduct || !techniques.length) {
-      return techniques.map((t) => ({
-        ...t,
-        maxWidth: null,
-        maxHeight: null,
-        areaName: null,
-        locationName: null,
-        maxColors: null,
-        chargesPerColor: false,
-        usesDimension: false,
-        isCurved: false,
-        setupCost: null,
-        variationLabel: null,
-        groupCode: null,
-        shape: null,
-      }));
+      return techniques.map(toUnlimited);
     }
 
-    if (customizationData === undefined && isFetching) return [];
+    // BUG-B FIX: return all techniques (unfiltered) while product data is loading
+    // instead of [] — prevents a flash of empty dropdown on product selection.
+    if (customizationData === undefined && isFetching) {
+      return techniques.map(toUnlimited);
+    }
 
-    if (customizationData?.locations && customizationData.locations.length === 0) {
+    if (customizationData?.locations?.length === 0) {
       return techniques.map((t) => {
         const dims = t.code ? techniqueDims?.get(t.code) : undefined;
         return {

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { notificationsMetrics, type BadgeRenderStat, type TriggerSource } from "@/lib/notifications-metrics";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { notificationsMetrics } from '@/lib/notifications-metrics';
 
 /** Sliding-window length for the sparkline (60 samples × 1s = 60s). */
 const SPARK_WINDOW_SECONDS = 60;
@@ -9,13 +9,18 @@ const SUSPICIOUS_RATIO_THRESHOLD = 0.7;
 const SUSPICIOUS_STREAK_SECONDS = 10;
 
 /** One ratio sample for the sparkline. */
-export interface RatioSample { t: number; ratio: number; triggers: number; fetches: number; }
+export interface RatioSample {
+  t: number;
+  ratio: number;
+  triggers: number;
+  fetches: number;
+}
 
 /** Read the runtime debug toggle (mirrors `isDebugEnabled` in notifications-metrics). */
 function isDebugMode(): boolean {
   try {
-    if (typeof window === "undefined") return false;
-    if (window.localStorage?.getItem("debug:notifications") === "1") return true;
+    if (typeof window === 'undefined') return false;
+    if (window.localStorage?.getItem('debug:notifications') === '1') return true;
     return Boolean((import.meta as { env?: { DEV?: boolean } }).env?.DEV);
   } catch {
     return false;
@@ -87,7 +92,7 @@ export function useNotificationsMetricsPanel(visible: boolean) {
   }, [samples]);
 
   const isSuspicious = suspiciousStreakSeconds >= SUSPICIOUS_STREAK_SECONDS;
-  
+
   const streakStartIdx = useMemo(() => {
     if (suspiciousStreakSeconds === 0) return -1;
     return samples.length - suspiciousStreakSeconds;
@@ -119,16 +124,16 @@ export function useNotificationsMetricsPanel(visible: boolean) {
 
   const streakTrend = useMemo(() => {
     if (streakStartIdx < 0) {
-      return { direction: "flat", slopePerSec: 0, suggestion: null };
+      return { direction: 'flat', slopePerSec: 0, suggestion: null };
     }
     const window = samples.slice(streakStartIdx);
     if (window.length < 3) {
       return {
-        direction: "flat",
+        direction: 'flat',
         slopePerSec: 0,
         suggestion: {
-          primary: "Hold current values; need \u22653s of data to recommend.",
-          rationale: "Streak too short to fit a trend line.",
+          primary: 'Hold current values; need \u22653s of data to recommend.',
+          rationale: 'Streak too short to fit a trend line.',
         },
       };
     }
@@ -144,24 +149,27 @@ export function useNotificationsMetricsPanel(visible: boolean) {
       den += (xs[i] - meanX) ** 2;
     }
     const slopePerSec = den === 0 ? 0 : num / den;
-    const direction: "rising" | "flat" | "falling" =
-      slopePerSec >= 0.01 ? "rising" : slopePerSec <= -0.01 ? "falling" : "flat";
+    const direction: 'falling' | 'flat' | 'rising' =
+      slopePerSec >= 0.01 ? 'rising' : slopePerSec <= -0.01 ? 'falling' : 'flat';
 
     let suggestion: { primary: string; rationale: string };
-    if (direction === "rising") {
+    if (direction === 'rising') {
       suggestion = {
-        primary: "Try debounce 200ms \u2192 400ms",
-        rationale: "Ratio still climbing \u2014 widen the trailing-edge window first to absorb growing micro-bursts before touching the TTL gate.",
+        primary: 'Try debounce 200ms \u2192 400ms',
+        rationale:
+          'Ratio still climbing \u2014 widen the trailing-edge window first to absorb growing micro-bursts before touching the TTL gate.',
       };
-    } else if (direction === "flat") {
+    } else if (direction === 'flat') {
       suggestion = {
-        primary: "Try TTL 5s \u2192 10s (keep debounce 200ms)",
-        rationale: "Ratio plateaued at a high level \u2014 debounce is firing per burst; raise the prefetch TTL gate so back-to-back bursts coalesce.",
+        primary: 'Try TTL 5s \u2192 10s (keep debounce 200ms)',
+        rationale:
+          'Ratio plateaued at a high level \u2014 debounce is firing per burst; raise the prefetch TTL gate so back-to-back bursts coalesce.',
       };
     } else {
       suggestion = {
-        primary: "Hold values \u2014 ratio is self-recovering",
-        rationale: "Trend is falling. Wait one more streak cycle before tuning to avoid over-correcting.",
+        primary: 'Hold values \u2014 ratio is self-recovering',
+        rationale:
+          'Trend is falling. Wait one more streak cycle before tuning to avoid over-correcting.',
       };
     }
     return { direction, slopePerSec, suggestion };
@@ -179,6 +187,6 @@ export function useNotificationsMetricsPanel(visible: boolean) {
     streakStartIdx,
     SUSPICIOUS_RATIO_THRESHOLD,
     SUSPICIOUS_STREAK_SECONDS,
-    SPARK_WINDOW_SECONDS
+    SPARK_WINDOW_SECONDS,
   };
 }

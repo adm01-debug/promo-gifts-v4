@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   DndContext,
   type DragEndEvent,
@@ -27,6 +27,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrentOrgId } from '@/hooks/common';
 import { useSalesScope } from '@/lib/auth/visibility-scope';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface WidgetConfig {
   id: string;
@@ -71,7 +72,7 @@ function SortableWidget({
 
   return (
     <div ref={setNodeRef} style={style}>
-      <Card className={`group relative ${isDragging ? 'shadow-lg ring-2 ring-primary' : ''}`}>
+      <Card className={cn('group relative', isDragging && 'shadow-lg ring-2 ring-primary')}>
         <div className="absolute right-2 top-2 z-10 opacity-0 transition-opacity group-hover:opacity-100">
           <Button
             variant="ghost"
@@ -117,8 +118,17 @@ function MetricCard({
   );
 }
 
+const FULL_WIDTH_WIDGET_IDS = new Set([
+  'quick-actions',
+  'upcoming-dates',
+  'recent-kits',
+  'my-quotes',
+  'my-discounts',
+]);
+
 export function CustomizableDashboard() {
-  const { user } = useAuth();
+  // BUG-HEAD-GUARD FIX (2026-06-23): 2 HEAD requests sem guard de rolesLoaded.
+  const { user, rolesLoaded } = useAuth();
   const [widgetOrder, setWidgetOrder] = useState<WidgetConfig[]>(DEFAULT_WIDGETS);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [metrics, setMetrics] = useState({ quotes: 0, quotesDraft: 0 });
@@ -150,7 +160,7 @@ export function CustomizableDashboard() {
 
   // Fetch real metrics — RLS faz o isolamento; só filtramos manualmente quando o escopo é "self".
   useEffect(() => {
-    if (!user) return;
+    if (!user || !rolesLoaded) return;  // BUG-HEAD-GUARD
     const fetchMetrics = async () => {
       // rls-allow: respeita can_view_all_sales; RLS filtra por seller
       let quotesQ = supabase.from('quotes').select('id', { count: 'exact', head: true });
@@ -174,7 +184,7 @@ export function CustomizableDashboard() {
       });
     };
     fetchMetrics();
-  }, [user, orgId, salesScope]);
+  }, [user, rolesLoaded, orgId, salesScope]);  // BUG-HEAD-GUARD
 
   const saveLayout = useCallback((configs: WidgetConfig[]) => {
     localStorage.setItem(LAYOUT_KEY, JSON.stringify(configs));
@@ -210,7 +220,7 @@ export function CustomizableDashboard() {
     toast.success('Layout restaurado para o padrão');
   };
 
-  const visibleWidgets = widgetOrder.filter((w) => w.visible);
+  const visibleWidgets = useMemo(() => widgetOrder.filter((w) => w.visible), [widgetOrder]);
 
   const renderWidgetContent = (widgetId: string) => {
     switch (widgetId) {
@@ -251,113 +261,104 @@ export function CustomizableDashboard() {
     }
   };
 
-  // Widgets that render as full-width vs metric cards
-  const fullWidthIds = new Set([
-    'quick-actions',
-    'upcoming-dates',
-    'recent-kits',
-    'my-quotes',
-    'my-discounts',
-  ]);
-
   return (
-      <>
-        <PageSEO
-          title="Dashboard"
-          description="Painel personalizado com métricas, ações rápidas e widgets."
-          path="/dashboard"
-        />
-        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h1
-                data-testid="page-title-dashboard"
-                className="flex items-center gap-2 font-display text-2xl font-bold"
-              >
-                <LayoutDashboard className="h-6 w-6" />
-                Dashboard
-              </h1>
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-                <p className="text-sm text-muted-foreground">
-                  {isCustomizing ? 'Personalize seu dashboard' : 'Arraste widgets para reorganizar'}
-                </p>
-                <ScopeBadge />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {isCustomizing && (
-                <Button variant="ghost" size="sm" onClick={resetLayout} className="gap-1 text-xs">
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Restaurar Padrão
-                </Button>
-              )}
-              <Button
-                variant={isCustomizing ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setIsCustomizing(!isCustomizing)}
-                className="gap-1"
-              >
-                {isCustomizing ? (
-                  <Save className="h-3.5 w-3.5" />
-                ) : (
-                  <LayoutDashboard className="h-3.5 w-3.5" />
-                )}
-                {isCustomizing ? 'Concluir' : 'Personalizar'}
-              </Button>
+    <>
+      <PageSEO
+        title="Dashboard"
+        description="Painel personalizado com métricas, ações rápidas e widgets."
+        path="/dashboard"
+      />
+      <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h1
+              data-testid="page-title-dashboard"
+              className="flex items-center gap-2 font-display text-2xl font-bold"
+            >
+              <LayoutDashboard className="h-6 w-6" />
+              Dashboard
+            </h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">
+                {isCustomizing ? 'Personalize seu dashboard' : 'Arraste widgets para reorganizar'}
+              </p>
+              <ScopeBadge />
             </div>
           </div>
-
-          {/* Widget visibility toggles */}
-          {isCustomizing && (
-            <Card>
-              <CardContent className="p-4">
-                <h3 className="mb-3 font-display text-sm font-medium">Widgets Visíveis</h3>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                  {widgetOrder.map((w) => (
-                    <label key={w.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                      <Switch checked={w.visible} onCheckedChange={() => toggleWidget(w.id)} />
-                      <span className={w.visible ? '' : 'text-muted-foreground line-through'}>
-                        {w.title}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={visibleWidgets.map((w) => w.id)} strategy={rectSortingStrategy}>
-              <div className="space-y-3 sm:space-y-4">
-                {visibleWidgets.map((widget) => {
-                  const isFullWidth = fullWidthIds.has(widget.id);
-
-                  if (isFullWidth) {
-                    return (
-                      <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
-                        <CardContent className="p-0">{renderWidgetContent(widget.id)}</CardContent>
-                      </SortableWidget>
-                    );
-                  }
-
-                  return null; // metric cards rendered below in grid
-                })}
-
-                {/* Metric cards in grid */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {visibleWidgets
-                    .filter((w) => !fullWidthIds.has(w.id))
-                    .map((widget) => (
-                      <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
-                        {renderWidgetContent(widget.id)}
-                      </SortableWidget>
-                    ))}
-                </div>
-              </div>
-            </SortableContext>
-          </DndContext>
+          <div className="flex items-center gap-2">
+            {isCustomizing && (
+              <Button variant="ghost" size="sm" onClick={resetLayout} className="gap-1 text-xs">
+                <RotateCcw className="h-3.5 w-3.5" />
+                Restaurar Padrão
+              </Button>
+            )}
+            <Button
+              variant={isCustomizing ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setIsCustomizing(!isCustomizing)}
+              className="gap-1"
+            >
+              {isCustomizing ? (
+                <Save className="h-3.5 w-3.5" />
+              ) : (
+                <LayoutDashboard className="h-3.5 w-3.5" />
+              )}
+              {isCustomizing ? 'Concluir' : 'Personalizar'}
+            </Button>
+          </div>
         </div>
-      </>
+
+        {/* Widget visibility toggles */}
+        {isCustomizing && (
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="mb-3 font-display text-sm font-medium">Widgets Visíveis</h3>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                {widgetOrder.map((w) => (
+                  <label key={w.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                    <Switch checked={w.visible} onCheckedChange={() => toggleWidget(w.id)} />
+                    <span className={w.visible ? '' : 'text-muted-foreground line-through'}>
+                      {w.title}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={visibleWidgets.map((w) => w.id)} strategy={rectSortingStrategy}>
+            <div className="space-y-3 sm:space-y-4">
+              {visibleWidgets.map((widget) => {
+                const isFullWidth = FULL_WIDTH_WIDGET_IDS.has(widget.id);
+
+                if (isFullWidth) {
+                  return (
+                    <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
+                      <CardContent className="p-0">{renderWidgetContent(widget.id)}</CardContent>
+                    </SortableWidget>
+                  );
+                }
+
+                return null; // metric cards rendered below in grid
+              })}
+
+              {/* Metric cards in grid */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {visibleWidgets
+                  .filter((w) => !FULL_WIDTH_WIDGET_IDS.has(w.id))
+                  .map((widget) => (
+                    <SortableWidget key={widget.id} id={widget.id} title={widget.title}>
+                      {renderWidgetContent(widget.id)}
+                    </SortableWidget>
+                  ))}
+              </div>
+            </div>
+          </SortableContext>
+        </DndContext>
+      </div>
+    </>
   );
 }
 

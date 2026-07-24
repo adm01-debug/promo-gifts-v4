@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-export type ReportFrequency = 'daily' | 'weekly' | 'monthly';
-export type ReportType = 'sales' | 'quotes' | 'clients' | 'products' | 'orders';
+import { logger } from '@/lib/logger';
+export type ReportFrequency = 'daily' | 'monthly' | 'weekly';
+export type ReportType = 'clients' | 'orders' | 'products' | 'quotes' | 'sales';
 
 export interface ScheduledReport {
   id: string;
@@ -61,7 +63,7 @@ export function useScheduledReports() {
       if (error) throw error;
       setReports((data || []) as unknown as ScheduledReport[]);
     } catch (err) {
-      console.error('Error fetching scheduled reports:', err);
+      logger.error('Error fetching scheduled reports:', err);
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +84,8 @@ export function useScheduledReports() {
           frequency: input.frequency,
           email_to: input.email_to,
           report_name: input.report_name,
-          filters: (input.filters || {}) as Record<string, unknown>,
+          // filters holds user-defined report criteria persisted as JSON
+          filters: (input.filters ?? {}) as unknown as Json,
           next_run_at: nextRun.toISOString(),
         });
 

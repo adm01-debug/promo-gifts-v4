@@ -1,11 +1,12 @@
 /**
  * useSellerDiscountLimits — Gerencia limites de desconto por vendedor
  */
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 export interface SellerDiscountLimit {
   id: string;
   user_id: string;
@@ -25,11 +26,15 @@ export function useSellerDiscountLimits() {
   // Fetch own limit (for sellers)
   const fetchMyLimit = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("seller_discount_limits")
-      .select("*")
-      .eq("user_id", user.id)
+    const { data, error } = await supabase
+      .from('seller_discount_limits')
+      .select('*')
+      .eq('user_id', user.id)
       .maybeSingle();
+    // BUG-LIMIT-SILENT-FAIL FIX: previously errors were silently swallowed.
+    // A network failure or RLS denial would leave myLimit=null, treating it
+    // as "no limit configured" and allowing unlimited discounts.
+    if (error) logger.error('Error fetching seller discount limit:', error);
     setMyLimit(data?.max_discount_percent ?? null);
   }, [user]);
 
@@ -37,11 +42,11 @@ export function useSellerDiscountLimits() {
   const fetchAllLimits = useCallback(async () => {
     setIsLoading(true);
     const { data, error } = await supabase
-      .from("seller_discount_limits")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from('seller_discount_limits')
+      .select('*')
+      .order('created_at', { ascending: false });
     if (error) {
-      console.error("Error fetching discount limits:", error);
+      logger.error('Error fetching discount limits:', error);
     } else {
       setLimits((data || []) as SellerDiscountLimit[]);
     }
@@ -49,44 +54,49 @@ export function useSellerDiscountLimits() {
   }, []);
 
   // Set/update limit for a seller
-  const setLimit = useCallback(async (
-    userId: string,
-    maxPercent: number,
-    notes?: string
-  ): Promise<boolean> => {
-    if (!user) return false;
-    try {
-      const { error } = await supabase
-        .from("seller_discount_limits")
-        .upsert({
-          user_id: userId,
-          max_discount_percent: maxPercent,
-          set_by: user.id,
-          notes: notes || null,
-        }, { onConflict: "user_id" });
-      if (error) throw error;
-      toast.success("Limite de desconto atualizado!");
-      return true;
-    } catch (err) {
-      console.error("Error setting discount limit:", err);
-      toast.error("Erro ao definir limite de desconto");
-      return false;
-    }
-  }, [user]);
+  const setLimit = useCallback(
+    async (userId: string, maxPercent: number, notes?: string): Promise<boolean> => {
+      if (!user) return false;
+      // GUARD (hardening): bloqueia o upsert quando o vendedor nao possui vinculo de conta
+      // (user_id ausente/vazio). O banco ja rejeita user_id nulo (NOT NULL + FK -> profiles),
+      // mas este guard evita o erro 23502 e entrega feedback claro em vez de um toast generico.
+      if (!userId) {
+        logger.error('setLimit: userId ausente - vendedor sem vinculo de conta (user_id)');
+        toast.error('Vendedor invalido: conta sem vinculo. Atualize o cadastro do vendedor.');
+        return false;
+      }
+      try {
+        const { error } = await supabase.from('seller_discount_limits').upsert(
+          {
+            user_id: userId,
+            max_discount_percent: maxPercent,
+            set_by: user.id,
+            notes: notes || null,
+          },
+          { onConflict: 'user_id' },
+        );
+        if (error) throw error;
+        toast.success('Limite de desconto atualizado!');
+        return true;
+      } catch (err) {
+        logger.error('Error setting discount limit:', err);
+        toast.error('Erro ao definir limite de desconto');
+        return false;
+      }
+    },
+    [user],
+  );
 
   // Delete limit
   const deleteLimit = useCallback(async (limitId: string): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from("seller_discount_limits")
-        .delete()
-        .eq("id", limitId);
+      const { error } = await supabase.from('seller_discount_limits').delete().eq('id', limitId);
       if (error) throw error;
-      toast.success("Limite removido");
+      toast.success('Limite removido');
       return true;
     } catch (err) {
-      console.error("Error deleting limit:", err);
-      toast.error("Erro ao remover limite");
+      logger.error('Error deleting limit:', err);
+      toast.error('Erro ao remover limite');
       return false;
     }
   }, []);

@@ -4,8 +4,8 @@
  */
 
 // Types
-export * from "./types";
-export { mmToCm } from "./types";
+export * from './types';
+export { mmToCm } from './types';
 
 // Mock data
 export { MOCK_BOXES, MOCK_ITEMS } from './mock-data';

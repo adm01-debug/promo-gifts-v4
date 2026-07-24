@@ -55,6 +55,17 @@ reviews:
         - CORS configurado para origem esperada, não wildcard em produção
         - Rate limiting ou debouncing onde fizer sentido
         - Logs não devem incluir payloads completos com dados sensíveis
+
+        ⚠️ ALERTA DE DRIFT: se o título do PR ou mensagens de commit contiverem
+        "Fast Visual Edit", "visual", "stepper", "header", "layout", "centralizou",
+        "moveu" ou similares (típicos de Lovable) E houver mudanças neste path,
+        FLAG explicitamente no review. Edge functions são lógica de produção —
+        refactors aqui exigem PR dedicado, NUNCA rotulado como mudança visual.
+        Histórico (26/05/2026, PR #460): refactor mascarado de "Fast Visual Edit"
+        removeu versionamento v1/v2, allowlist legada, headers Deprecation/Sunset
+        e métrica de adoção do webhook-inbound sem aviso. Verificar se features
+        foram removidas: contract version (v1/v2), HMAC validation, rate limiting,
+        idempotency, métricas estruturadas.
     - path: "supabase/migrations/**/*.sql"
       instructions: |
         Migrations Supabase. Verificar:
@@ -63,6 +74,28 @@ reviews:
         - Funções com SECURITY DEFINER apenas quando absolutamente necessário e com search_path explícito
         - ALTER COLUMN com mudança de tipo incompatível precisa de USING clause
         - Indices em colunas usadas em policies de RLS para performance
+
+        ⚠️ ALERTA DE DRIFT: se o título do PR ou mensagens de commit contiverem
+        "Fast Visual Edit", "visual", "stepper", "header", "layout", "centralizou",
+        "moveu" ou similares (típicos de Lovable) E houver mudanças neste path,
+        FLAG explicitamente. Migrations modificam o estado do banco — NUNCA são
+        mudança visual. Verificar especialmente:
+        - DROP POLICY em massa: validar que função referenciada existe com a
+          assinatura correta (caso real: 141234 chamava can_view_all_sales(uuid)
+          quando função tem 0 args — teria falhado em runtime).
+        - ADD COLUMN com IF NOT EXISTS em coluna que já existe NOT NULL é
+          silenciosamente no-op mas INDUZ EM ERRO o leitor.
+        - SECURITY DEFINER sem REVOKE explícito de PUBLIC/anon/authenticated.
+
+    - path: "**/*.{json,html,toml,yaml,yml,sh,sql,ts,tsx,js,jsx,md,css}"
+      instructions: |
+        Detecção de conteúdo acidentalmente base64-encoded.
+        Se um arquivo texto contém apenas UMA linha longa (>200 chars) composta
+        de caracteres do alfabeto base64 ([A-Za-z0-9+/=]), FLAG como provável
+        bug de codificação. Esse padrão ocorreu 3x neste repo (PRs #319, #457,
+        #459) sempre quebrando build Vercel silenciosamente. O workflow
+        `detect-base64-content.yml` faz a verificação automática, mas reforce
+        no review se notar.
     - path: "**/*.{ts,tsx,js,jsx}"
       instructions: |
         Código TypeScript/JavaScript. Verificar:

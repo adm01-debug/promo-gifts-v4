@@ -3,17 +3,18 @@
  * Two modes: AI (uses existing generated mockup) and Static (high-res composition).
  */
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Sparkles, ImageIcon, Loader2 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { toast } from "sonner";
-import { detectProductBounds } from "@/lib/product-bounds-detector";
-import { MockupApprovalPreview } from "./MockupApprovalPreview";
-import type { MockupApprovalData } from "@/types/mockup-approval";
-import type { MockupClient } from "@/components/mockup/MockupConfigPanel";
-import type { DetectedColor } from "@/hooks/simulation";
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Sparkles, ImageIcon, Loader2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
+import { detectProductBounds } from '@/lib/product-bounds-detector';
+import { MockupApprovalPreview } from './MockupApprovalPreview';
+import type { MockupApprovalData } from '@/types/mockup-approval';
+import type { MockupClient } from '@/components/mockup/MockupConfigPanel';
+import type { DetectedColor } from '@/hooks/simulation';
 
+import { logger } from '@/lib/logger';
 interface MockupLayoutButtonsProps {
   /** The AI-generated mockup URL */
   generatedMockup: string | null;
@@ -66,7 +67,10 @@ interface MockupLayoutButtonsProps {
   /** Number of colors from technique config */
   colorsCount?: number;
   /** Callback to save the generated static mockup to history */
-  onStaticGenerated?: (dataUrl: string, extra?: { locationName?: string; colorsCount?: number }) => void;
+  onStaticGenerated?: (
+    dataUrl: string,
+    extra?: { locationName?: string; colorsCount?: number },
+  ) => void;
   /** Callback when layout image is captured from the approval template */
   onLayoutCaptured?: (layoutDataUrl: string) => void;
   /** Trigger AI mockup generation (async) */
@@ -96,59 +100,66 @@ export function MockupLayoutButtons({
   const [isGeneratingStatic, setIsGeneratingStatic] = useState(false);
   const pendingLayoutAI = useRef(false);
 
-  const buildApprovalData = useCallback((mockupUrl: string, mode: 'ai' | 'static'): MockupApprovalData => {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
-    const docNumber = `MK-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
+  const buildApprovalData = useCallback(
+    (mockupUrl: string, mode: 'ai' | 'static'): MockupApprovalData => {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      const docNumber = `MK-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
 
-    return {
-      documentNumber: docNumber,
-      date: dateStr,
-      client: {
-        name: client?.nome_fantasia || client?.razao_social || client?.name || "—",
-        cnpj: client?.cnpj,
-        logoUrl: client?.logo_url || undefined,
-      },
-      seller: {
-        name: seller?.name || "—",
-        email: seller?.email,
-      },
-      product: {
-        name: product?.name || "—",
-        sku: product?.sku,
-        imageUrl: product?.imageUrl,
-        color: product?.color,
-        colorHex: product?.colorHex,
-        material: product?.material,
-        heightCm: product?.heightCm,
-        widthCm: product?.widthCm,
-        diameterCm: product?.diameterCm,
-        depthCm: product?.depthCm,
-        capacityMl: product?.capacityMl,
-        weightG: product?.weightG,
-      },
-      personalization: {
-        techniqueName: technique?.name || "—",
-        techniqueCode: technique?.code || undefined,
-        locationName: technique?.locationName || activeArea?.name || "Frente",
-        widthCm: activeArea?.logoWidth || technique?.maxWidth || 0,
-        heightCm: activeArea?.logoHeight || technique?.maxHeight || 0,
-        colorsCount: colorsCount,
-      },
-      pantoneColors: (pantoneColors || []).map(c => ({
-        name: c.selectedPantone || c.pantoneMatch?.name || c.name,
-        hex: c.hex,
-      })),
-      mockupImageUrl: mockupUrl,
-      layoutMode: mode,
-    };
-  }, [client, seller, product, technique, activeArea, pantoneColors, colorsCount]);
+      return {
+        documentNumber: docNumber,
+        date: dateStr,
+        client: {
+          name: client?.nome_fantasia || client?.razao_social || client?.name || '—',
+          cnpj: client?.cnpj,
+          logoUrl: client?.logo_url || undefined,
+        },
+        seller: {
+          name: seller?.name || '—',
+          email: seller?.email,
+        },
+        product: {
+          name: product?.name || '—',
+          sku: product?.sku,
+          imageUrl: product?.imageUrl,
+          color: product?.color,
+          colorHex: product?.colorHex,
+          material: product?.material,
+          heightCm: product?.heightCm,
+          widthCm: product?.widthCm,
+          diameterCm: product?.diameterCm,
+          depthCm: product?.depthCm,
+          capacityMl: product?.capacityMl,
+          weightG: product?.weightG,
+        },
+        personalization: {
+          techniqueName: technique?.name || '—',
+          techniqueCode: technique?.code || undefined,
+          locationName: technique?.locationName || activeArea?.name || 'Frente',
+          widthCm: activeArea?.logoWidth || technique?.maxWidth || 0,
+          heightCm: activeArea?.logoHeight || technique?.maxHeight || 0,
+          colorsCount,
+        },
+        pantoneColors: (pantoneColors || []).map((c) => ({
+          name: c.selectedPantone || c.pantoneMatch?.pantoneCode || c.name,
+          hex: c.hex,
+        })),
+        mockupImageUrl: mockupUrl,
+        layoutMode: mode,
+      };
+    },
+    [client, seller, product, technique, activeArea, pantoneColors, colorsCount],
+  );
 
   // When generatedMockup arrives and we were waiting for it, auto-open layout
   useEffect(() => {
     if (pendingLayoutAI.current && generatedMockup) {
       pendingLayoutAI.current = false;
-      const data = buildApprovalData(generatedMockup, "ai");
+      const data = buildApprovalData(generatedMockup, 'ai');
       setApprovalData(data);
       setPreviewOpen(true);
     }
@@ -157,34 +168,41 @@ export function MockupLayoutButtons({
   const handleLayoutAI = useCallback(async () => {
     if (generatedMockup) {
       // Mockup already exists, open layout directly
-      const data = buildApprovalData(generatedMockup, "ai");
+      const data = buildApprovalData(generatedMockup, 'ai');
       setApprovalData(data);
       setPreviewOpen(true);
       return;
     }
     // No mockup yet — trigger generation, layout opens via useEffect above
-    if (onGenerateMockup) {
-      pendingLayoutAI.current = true;
+    if (!onGenerateMockup) {
+      toast.error('Configure o gerador de mockup primeiro.');
+      return;
+    }
+    // BUG-LAY1 FIX: wrap in try/catch so that (a) unhandled rejection is prevented
+    // and (b) pendingLayoutAI is cleared if onGenerateMockup throws, stopping it
+    // from auto-opening the layout dialog on the next unrelated mockup generation.
+    pendingLayoutAI.current = true;
+    try {
       await onGenerateMockup();
-    } else {
-      toast.error("Configure o gerador de mockup primeiro.");
+    } catch {
+      pendingLayoutAI.current = false;
     }
   }, [generatedMockup, buildApprovalData, onGenerateMockup]);
 
   const handleLayoutStatic = useCallback(async () => {
     if (!product?.imageUrl || !activeArea?.logoPreview) {
-      toast.error("Selecione um produto e faça upload do logo primeiro.");
+      toast.error('Selecione um produto e faça upload do logo primeiro.');
       return;
     }
 
     setIsGeneratingStatic(true);
     try {
       const CANVAS_SIZE = 1024;
-      const canvas = document.createElement("canvas");
+      const canvas = document.createElement('canvas');
       canvas.width = CANVAS_SIZE;
       canvas.height = CANVAS_SIZE;
-      const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = "#ffffff";
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
       // Load product image with CORS fallback
@@ -211,13 +229,15 @@ export function MockupLayoutButtons({
       const logoImg = await loadImageWithFallback(activeArea.logoPreview);
 
       // ── Replicate editor's cm→px scaling logic exactly ──
-      const effectiveMaxW = technique?.maxWidth && technique.maxWidth > 0 ? technique.maxWidth : null;
-      const effectiveMaxH = technique?.maxHeight && technique.maxHeight > 0 ? technique.maxHeight : null;
+      const effectiveMaxW =
+        technique?.maxWidth && technique.maxWidth > 0 ? technique.maxWidth : null;
+      const effectiveMaxH =
+        technique?.maxHeight && technique.maxHeight > 0 ? technique.maxHeight : null;
       const prodH = productHeightCm && productHeightCm > 0 ? productHeightCm : null;
       const prodW = productWidthCm && productWidthCm > 0 ? productWidthCm : null;
 
-      const physW = prodW || (prodH ? prodH * 0.4 : (effectiveMaxW ? effectiveMaxW * 2 : 8));
-      const physH = prodH || (prodW ? prodW * 2.5 : (effectiveMaxH ? effectiveMaxH * 2.5 : 20));
+      const physW = prodW || (prodH ? prodH * 0.4 : effectiveMaxW ? effectiveMaxW * 2 : 8);
+      const physH = prodH || (prodW ? prodW * 2.5 : effectiveMaxH ? effectiveMaxH * 2.5 : 20);
 
       const scaleByW = (renderedImgW * bounds.fractionX) / physW;
       const scaleByH = (renderedImgH * bounds.fractionY) / physH;
@@ -265,31 +285,34 @@ export function MockupLayoutButtons({
       ctx.rotate(rotation);
       ctx.scale(userScale, userScale);
 
-      ctx.drawImage(
-        logoImg,
-        -areaW / 2 + offsetX,
-        -areaH / 2 + offsetY,
-        containW,
-        containH
-      );
+      ctx.drawImage(logoImg, -areaW / 2 + offsetX, -areaH / 2 + offsetY, containW, containH);
       ctx.restore();
 
-      const dataUrl = canvas.toDataURL("image/png");
+      const dataUrl = canvas.toDataURL('image/png');
       // Save to history automatically
       onStaticGenerated?.(dataUrl, {
         locationName: technique?.locationName || activeArea?.name || undefined,
-        colorsCount: colorsCount,
+        colorsCount,
       });
-      const data = buildApprovalData(dataUrl, "static");
+      const data = buildApprovalData(dataUrl, 'static');
       setApprovalData(data);
       setPreviewOpen(true);
     } catch (err) {
-      console.error("Static composition error:", err);
-      toast.error("Erro ao gerar composição estática. Verifique se as imagens estão acessíveis.");
+      logger.error('Static composition error:', err);
+      toast.error('Erro ao gerar composição estática. Verifique se as imagens estão acessíveis.');
     } finally {
       setIsGeneratingStatic(false);
     }
-  }, [product, activeArea, technique, productHeightCm, productWidthCm, buildApprovalData]);
+  }, [
+    product,
+    activeArea,
+    technique,
+    productHeightCm,
+    productWidthCm,
+    buildApprovalData,
+    onStaticGenerated,
+    colorsCount,
+  ]);
 
   // Don't show if no product/technique selected
   if (!product || !technique || !activeArea) return null;
@@ -304,12 +327,12 @@ export function MockupLayoutButtons({
                 size="sm"
                 onClick={handleLayoutStatic}
                 disabled={!activeArea?.logoPreview || isGeneratingStatic}
-                className="w-full gap-1.5 !bg-primary hover:!bg-primary/80 !text-primary-foreground font-semibold shadow-md shadow-primary/30 hover:shadow-lg hover:shadow-primary/40 transition-all disabled:!opacity-40 disabled:cursor-not-allowed"
+                className="w-full gap-1.5 !bg-primary font-semibold !text-primary-foreground shadow-md shadow-primary/30 transition-all hover:!bg-primary/80 hover:shadow-lg hover:shadow-primary/40 disabled:cursor-not-allowed disabled:!opacity-40"
               >
                 {isGeneratingStatic ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <ImageIcon className="h-3.5 w-3.5" />
+                  <ImageIcon aria-hidden="true" className="h-3.5 w-3.5" />
                 )}
                 Gerar Layout
               </Button>
@@ -329,12 +352,12 @@ export function MockupLayoutButtons({
                 size="sm"
                 onClick={handleLayoutAI}
                 disabled={!activeArea?.logoPreview || isGeneratingMockup}
-                className="w-full gap-1.5 !bg-primary hover:!bg-primary/80 !text-primary-foreground font-semibold shadow-md shadow-primary/30 hover:shadow-lg hover:shadow-primary/40 transition-all disabled:!opacity-40 disabled:cursor-not-allowed"
+                className="w-full gap-1.5 !bg-primary font-semibold !text-primary-foreground shadow-md shadow-primary/30 transition-all hover:!bg-primary/80 hover:shadow-lg hover:shadow-primary/40 disabled:cursor-not-allowed disabled:!opacity-40"
               >
                 {isGeneratingMockup ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
+                  <Sparkles aria-hidden="true" className="h-3.5 w-3.5" />
                 )}
                 Gerar Layout - IA
               </Button>
@@ -384,7 +407,7 @@ async function loadImageWithFallback(src: string): Promise<HTMLImageElement> {
 function loadImage(src: string, useCors: boolean): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    if (useCors) img.crossOrigin = "anonymous";
+    if (useCors) img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
     img.src = src;

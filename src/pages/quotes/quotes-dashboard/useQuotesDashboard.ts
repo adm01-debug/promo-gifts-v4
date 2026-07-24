@@ -7,13 +7,15 @@ import { selectCrm } from '@/lib/crm-db';
 import { useQuotes } from '@/hooks/quotes';
 import { format, differenceInHours, startOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// jsPDF + jspdf-autotable são carregados sob demanda (dynamic import) dentro de
+// exportToPdf, mantendo ~bibliotecas pesadas fora do chunk da rota de orçamentos.
 import { QUOTE_STATUS_CONFIG } from '@/lib/quote-status-config';
 
+import { logger } from '@/lib/logger';
 interface Client {
   id: string;
   name: string;
+  nome_fantasia?: string;
 }
 
 const statusConfig = Object.fromEntries(
@@ -34,7 +36,7 @@ export function formatResponseTime(hours: number) {
 }
 
 export function useQuotesDashboard() {
-  const { quotes, isLoading } = useQuotes();
+  const { quotes, isLoading, error } = useQuotes();
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'quarter' | 'year'>('month');
   const [selectedClientId, setSelectedClientId] = useState<string>('all');
   const [clients, setClients] = useState<Client[]>([]);
@@ -46,12 +48,14 @@ export function useQuotesDashboard() {
       try {
         const data = await selectCrm<Client>('companies', {
           select: 'id,nome_fantasia',
+          filters: { is_customer: true },
           orderBy: 'nome_fantasia',
-          limit: 500,
+          limit: 200,
         });
+
         setClients(data.map((c: Client) => ({ id: c.id, name: c.nome_fantasia || c.id })));
       } catch (err) {
-        console.error('Error fetching clients:', err);
+        logger.error('Error fetching clients:', err);
       }
       setLoadingClients(false);
     })();
@@ -110,7 +114,7 @@ export function useQuotesDashboard() {
         break;
     }
 
-    let filtered = quotes.filter((q) => new Date(q.created_at) >= startDate);
+    let filtered = quotes.filter((q) => new Date(q.created_at ?? 0) >= startDate);
     if (selectedClientId !== 'all')
       filtered = filtered.filter((q) => q.client_id === selectedClientId);
 
@@ -132,40 +136,36 @@ export function useQuotesDashboard() {
       averageResponseTime =
         withResponse.reduce((s, q) => {
           if (!q.client_response_at) return s;
-          return s + differenceInHours(new Date(q.client_response_at), new Date(q.created_at));
+          return s + differenceInHours(new Date(q.client_response_at), new Date(q.created_at ?? 0));
         }, 0) / withResponse.length;
     }
 
-    const statusCounts = filtered.reduce(
-      (a, q) => {
-        a[q.status] = (a[q.status] || 0) + 1;
-        return a;
-      },
-      {} as Record<string, number>,
-    );
+    const statusCounts = filtered.reduce<Record<string, number>>((a, q) => {
+      a[q.status] = (a[q.status] || 0) + 1;
+      return a;
+    }, {});
     const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
       name: statusConfig[status]?.label || status,
       value: count,
       color: statusConfig[status]?.color || 'hsl(var(--muted))',
     }));
 
-    const monthlyGroups = filtered.reduce(
-      (a, q) => {
-        const m = format(new Date(q.created_at), 'MMM', { locale: ptBR });
-        if (!a[m]) a[m] = { month: m, total: 0, approved: 0, rejected: 0, value: 0 };
-        a[m].total++;
-        if (q.status === 'approved') {
-          a[m].approved++;
-          a[m].value += q.total || 0;
-        }
-        if (q.status === 'rejected') a[m].rejected++;
-        return a;
-      },
-      {} as Record<
+    const monthlyGroups = filtered.reduce<
+      Record<
         string,
         { month: string; total: number; approved: number; rejected: number; value: number }
-      >,
-    );
+      >
+    >((a, q) => {
+      const m = format(new Date(q.created_at ?? 0), 'MMM', { locale: ptBR });
+      if (!a[m]) a[m] = { month: m, total: 0, approved: 0, rejected: 0, value: 0 };
+      a[m].total++;
+      if (q.status === 'approved') {
+        a[m].approved++;
+        a[m].value += q.total || 0;
+      }
+      if (q.status === 'rejected') a[m].rejected++;
+      return a;
+    }, {});
 
     const conversionFunnel = [
       { stage: 'Criados', count: totalQuotes, fill: 'hsl(var(--primary))' },
@@ -193,7 +193,11 @@ export function useQuotesDashboard() {
     };
   }, [quotes, selectedPeriod, selectedClientId]);
 
-  const exportToPdf = useCallback(() => {
+  const exportToPdf = useCallback(async () => {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
     const doc = new jsPDF();
     const periodLabel =
       selectedPeriod === 'month' ? 'Mês Atual' : selectedPeriod === 'quarter' ? 'Trimestre' : 'Ano';
@@ -276,7 +280,7 @@ export function useQuotesDashboard() {
         startY: startY + 4,
         head: [['Orçamento', 'Status', 'Data', 'Valor']],
         body: recentResponses.map((q) => [
-          q.quote_number || q.id,
+          q.quote_number || q.id || '',
           statusConfig[q.status]?.label || q.status,
           q.client_response_at ? format(new Date(q.client_response_at), 'dd/MM/yyyy HH:mm') : '-',
           formatCurrency(q.total || 0),
@@ -293,6 +297,7 @@ export function useQuotesDashboard() {
   return {
     quotes,
     isLoading,
+    error,
     selectedPeriod,
     setSelectedPeriod,
     selectedClientId,

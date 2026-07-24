@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /**
  * Garante que o destaque (active state) e a auto-expansão do grupo "Orçamentos"
  * permanecem consistentes para "Novo Orçamento" — em paridade com "Orçamentos"
@@ -9,7 +10,10 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
-import { createMemoryRouter, RouterProvider, Outlet, type Router } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider, Outlet } from 'react-router-dom';
+// react-router-dom exports `Router` as a component value, not a type. Derive the
+// data-router type from the factory's return instead.
+type Router = ReturnType<typeof createMemoryRouter>;
 import { Plus, FileText, ShoppingCart } from 'lucide-react';
 import { type NavGroup, SidebarNavGroup } from '../SidebarNavGroup';
 import { isNavItemActive } from '@/lib/navigation/active-match';
@@ -45,7 +49,7 @@ function Layout() {
     <>
       <SidebarNavGroup
         group={group}
-        isOpen={true}
+        isOpen
         isCollapsed={false}
         onToggle={() => {}}
         onMobileClose={() => {}}
@@ -75,7 +79,7 @@ function getLink(label: string): HTMLAnchorElement {
 }
 
 function isActive(label: string): boolean {
-  return getLink(label).className.includes('bg-orange/[0.03]');
+  return getLink(label).className.includes('bg-primary/10');
 }
 
 /**
@@ -97,6 +101,7 @@ function groupShouldAutoOpen(pathname: string): boolean {
 }
 
 async function go(router: Router, delta: number) {
+  // eslint-disable-next-line @typescript-eslint/require-await
   await act(async () => {
     router.navigate(delta);
   });

@@ -28,9 +28,7 @@ export function useWizardPricing({ state, dispatch }: UseWizardPricingParams) {
   const recalcTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    const persToRecalc = state.personalizations.filter(
-      (p) => (p.pricing as unknown)?._needsRecalc === true,
-    );
+    const persToRecalc = state.personalizations.filter((p) => p.pricing._needsRecalc === true);
     if (persToRecalc.length === 0) return;
 
     if (recalcTimerRef.current) clearTimeout(recalcTimerRef.current);
@@ -159,7 +157,7 @@ export function useWizardPricing({ state, dispatch }: UseWizardPricingParams) {
             rpcParams,
           );
 
-          if (!result || !result.success) {
+          if (!result?.success) {
             allResults.push(createUnavailableResult(tech, 'Erro no cálculo de preço'));
             return;
           }
@@ -235,7 +233,10 @@ export function useWizardPricing({ state, dispatch }: UseWizardPricingParams) {
       dispatch({ type: 'SELECT_COMPARISON', payload: comparison });
 
       const personalization: Personalization = {
-        id: `pers-${Date.now()}`,
+        // techniqueId in the id keeps it unique when several techniques are confirmed
+        // in one synchronous loop (Date.now() alone collides within the same ms).
+        // The reducer re-indexes `index`, so the value here is just a provisional hint.
+        id: `pers-${Date.now()}-${comparison.techniqueId}`,
         index: state.isEditingPersonalization
           ? state.currentPersonalizationIndex + 1
           : state.personalizations.length + 1,

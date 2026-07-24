@@ -1,13 +1,22 @@
 /**
- * Hooks: Áreas de Gravação (Print Areas)
- * 
- * FONTE ÚNICA: tabela 'print_area_techniques' no BD externo.
- * Técnicas resolvidas via lookup em 'tabela_preco_gravacao_oficial'.
+ * Hooks: Areas de Gravacao (Print Areas)
+ *
+ * FONTE UNICA: tabela 'print_area_techniques' no BD local (Supabase PostgREST).
+ * Tecnicas resolvidas via lookup em 'tabela_preco_gravacao_oficial'.
+ *
+ * BUG-14 FIX: substituidas todas as chamadas a external-db-bridge por PostgREST
+ * nativo. print_area_techniques, tabela_preco_gravacao_oficial e tecnicas_gravacao
+ * sao tabelas LOCAIS do Supabase. Apos o merge do Caminho B
+ * (PRs #230-232), o external-db-bridge foi deprecated para tabelas locais.
+ *
+ * NOTA (auditoria 2026-05-31): `tecnicas_gravacao` e o nome real da tabela local
+ * (era `tecnica_gravacao`, inexistente -> corrigido). Ja `v_technique_stats` NAO
+ * existe no banco interno (e view do BD externo/bridge) — ver useTechniqueStats().
  */
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import type { PrintAreaWithTechniques, TecnicaGravacao } from '@/types/gravacao';
-import { logger } from "@/lib/logger";
+import { untypedFrom } from '@/lib/supabase-untyped';
+import type { PrintAreaWithTechniques, TecnicaGravacao, AreaShape } from '@/types/gravacao';
+import { logger } from '@/lib/logger';
 import {
   adaptPrintAreaTechniqueRows,
   adaptTabelaPrecoRows,
@@ -16,43 +25,32 @@ import {
   type TabelaPrecoCanonical,
 } from '@/lib/personalization/adapters';
 
-// ============================================
-// FUNÇÕES AUXILIARES
-// ============================================
-
 /**
- * Busca áreas de gravação de um produto via print_area_techniques.
+ * Busca areas de gravacao de um produto via print_area_techniques (PostgREST nativo).
+ * BUG-14 FIX: era via external-db-bridge. Substituido por supabase.from().
  */
 async function fetchProductPrintAreas(productId: string): Promise<PrintAreaTechniqueCanonical[]> {
   try {
-    const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-      body: {
-        table: 'print_area_techniques',
-        operation: 'select',
-        filters: { product_id: productId, is_active: true },
-        orderBy: { column: 'technique_order', ascending: true },
-        limit: 50,
-      },
-    });
+    const { data, error } = await untypedFrom('print_area_techniques')
+      .select('*')
+      .eq('product_id', productId)
+      .eq('is_active', true)
+      .order('technique_order', { ascending: true })
+      .limit(50);
 
-    if (error || !data?.success) {
-      logger.warn('[usePrintAreas] Erro ao buscar print_area_techniques:', error?.message || data?.error);
+    if (error) {
+      logger.warn('[usePrintAreas] Erro ao buscar print_area_techniques:', error.message);
       return [];
     }
-
-    return adaptPrintAreaTechniqueRows(data.data?.records || []);
+    return adaptPrintAreaTechniqueRows(data || []);
   } catch (err) {
-    logger.warn('[usePrintAreas] Exceção ao buscar áreas:', err);
+    logger.warn('[usePrintAreas] Excecao ao buscar areas:', err);
     return [];
   }
 }
 
-// ============================================
-// HOOKS
-// ============================================
-
 /**
- * Hook: Busca áreas de gravação de um produto com técnicas resolvidas
+ * Hook: Busca areas de gravacao de um produto com tecnicas resolvidas
  */
 export function usePrintAreas(productId: string | null) {
   return useQuery({
@@ -63,28 +61,22 @@ export function usePrintAreas(productId: string | null) {
       const areas = await fetchProductPrintAreas(productId);
       if (!areas.length) return [];
 
-      // Coletar tabela_preco_ids (lê tanto PT quanto EN graças ao adapter)
       const priceTableIds = new Set<string>();
       for (const area of areas) {
         const id = area.price_table_id ?? area.tabela_preco_id;
         if (id) priceTableIds.add(id);
       }
 
-      // Buscar técnicas ativas
-      const { data: techData, error: techError } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
-          table: 'tabela_preco_gravacao_oficial',
-          operation: 'select',
-          filters: { ativo: true },
-          limit: 100,
-        },
-      });
+      // BUG-14 FIX: PostgREST nativo para tabela_preco_gravacao_oficial
+      const { data: techRaw, error: techError } = await untypedFrom('tabela_preco_gravacao_oficial')
+        .select('*')
+        .eq('ativo', true)
+        .limit(100);
 
       if (techError) throw new Error(techError.message);
-      if (!techData?.success) throw new Error(techData?.error || 'Erro ao buscar técnicas');
 
-      const allTechs: TabelaPrecoCanonical[] = adaptTabelaPrecoRows(techData.data?.records || []);
-      const techById = new Map(allTechs.map(t => [t.id, t]));
+      const allTechs: TabelaPrecoCanonical[] = adaptTabelaPrecoRows(techRaw || []);
+      const techById = new Map(allTechs.map((t) => [t.id, t]));
 
       return areas.map((area, idx) => {
         const techId = area.price_table_id ?? area.tabela_preco_id ?? null;
@@ -92,12 +84,10 @@ export function usePrintAreas(productId: string | null) {
         const techniques: { id: string; nome: string; codigo: string }[] = [];
 
         if (tech) {
-          const techNome = tech.name ?? tech.nome ?? '';
-          const techCodigo = tech.codigo_curto ?? tech.codigo_tabela ?? tech.code ?? tech.codigo ?? '';
           techniques.push({
             id: tech.id,
-            nome: techNome,
-            codigo: techCodigo,
+            nome: tech.name ?? tech.nome ?? '',
+            codigo: tech.codigo_curto ?? tech.codigo_tabela ?? tech.code ?? tech.codigo ?? '',
           });
         }
 
@@ -109,14 +99,16 @@ export function usePrintAreas(productId: string | null) {
           area_id: area.id,
           area_code: locationCode,
           area_name: locationName
-            ? (techNomeForLabel ? `${locationName} — ${techNomeForLabel}` : locationName)
-            : `Área ${idx + 1}`,
+            ? techNomeForLabel
+              ? `${locationName} -- ${techNomeForLabel}`
+              : locationName
+            : `Area ${idx + 1}`,
           component_name: null,
           location_name: locationName,
           max_width: area.max_width ?? area.largura_max ?? 0,
           max_height: area.max_height ?? area.altura_max ?? 0,
           unit: 'cm',
-          shape: area.shape || 'rectangle',
+          shape: (area.shape || 'rectangle') as AreaShape,
           is_curved: area.is_curved ?? false,
           is_primary: idx === 0,
           display_order: area.technique_order ?? idx,
@@ -130,77 +122,51 @@ export function usePrintAreas(productId: string | null) {
 }
 
 /**
- * Hook: Busca todas as técnicas de gravação ativas
+ * Hook: Busca todas as tecnicas de gravacao ativas
+ * BUG-14 FIX: era via external-db-bridge. Substituido por PostgREST nativo.
  */
 export function useTechniques() {
   return useQuery({
     queryKey: ['techniques-all'],
     queryFn: async (): Promise<TecnicaGravacao[]> => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
-          table: 'tecnica_gravacao',
-          operation: 'select',
-          filters: { ativo: true },
-          orderBy: { column: 'ordem_exibicao', ascending: true },
-        },
-      });
+      const { data, error } = await untypedFrom('tecnicas_gravacao')
+        .select('*')
+        .eq('ativo', true)
+        .order('ordem_exibicao', { ascending: true });
 
       if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || 'Erro ao buscar técnicas');
-
-      return adaptTecnicaRows(data.data?.records || []) as unknown as TecnicaGravacao[];
+      return adaptTecnicaRows(data || []) as unknown as TecnicaGravacao[];
     },
     staleTime: 5 * 60 * 1000,
   });
 }
 
 /**
- * Hook: Busca estatísticas de uso das técnicas
+ * @deprecated v_technique_stats is a view that only exists in the external bridge DB,
+ * not in the local Supabase (Fase 3 decision). Returns empty data without hitting the DB.
  */
 export function useTechniqueStats() {
-  return useQuery({
-    queryKey: ['technique-stats'],
-    queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
-          table: 'v_technique_stats',
-          operation: 'select',
-          orderBy: { column: 'produtos_com_tecnica', ascending: false },
-        },
-      });
-
-      if (error) throw new Error(error.message);
-      if (!data?.success) throw new Error(data?.error || 'Erro ao buscar estatísticas');
-
-      return data.data?.records || [];
-    },
-    staleTime: 10 * 60 * 1000,
-  });
+  return { data: [] as unknown[], isLoading: false, error: null };
 }
 
 /**
- * Hook: Verifica se um produto tem áreas de gravação
+ * Hook: Verifica se um produto tem areas de gravacao
+ * BUG-14 FIX: era via external-db-bridge. Substituido por PostgREST nativo.
  */
 export function useHasPrintAreas(productId: string | null) {
   return useQuery({
     queryKey: ['has-print-areas', productId],
     queryFn: async (): Promise<boolean> => {
       if (!productId) return false;
-
       try {
-        const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'print_area_techniques',
-            operation: 'select',
-            select: 'id',
-            filters: { product_id: productId, is_active: true },
-            limit: 1,
-          },
-        });
+        const { data, error } = await untypedFrom('print_area_techniques')
+          .select('id')
+          .eq('product_id', productId)
+          .eq('is_active', true)
+          .limit(1);
 
-        if (error || !data?.success) return false;
-        const records = data.data?.records || [];
-        return records.length > 0;
+        if (error) return false;
+        return (data || []).length > 0;
       } catch {
         return false;
       }

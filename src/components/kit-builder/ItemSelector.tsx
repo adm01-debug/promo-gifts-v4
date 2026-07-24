@@ -12,7 +12,13 @@ import { ItemCardSkeleton } from './KitCardSkeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { KitItem, ItemFilters, CompatibilityResult } from '@/lib/kit-builder';
 import type { VariantSelectionData } from './VariantSelector';
 
@@ -66,31 +72,35 @@ export function ItemSelector({
   // Extract unique categories for filter
   const categories = useMemo(() => {
     const cats = new Set<string>();
-    items.forEach(i => { if (i.category) cats.add(i.category); });
+    items.forEach((i) => {
+      if (i.category) cats.add(i.category);
+    });
     return Array.from(cats).sort();
   }, [items]);
 
-  const selectedItemIds = new Set(selectedItems.map(i => i.id));
+  const selectedItemIds = new Set(selectedItems.map((i) => i.id));
 
   return (
     <div className="space-y-4">
       {!boxSelected && (
-        <div className="bg-warning/10 border border-warning/30 rounded-lg p-4 flex items-center gap-3">
-          <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0" />
-          <p className="text-sm">Selecione uma caixa primeiro para verificar a compatibilidade dos itens.</p>
+        <div className="flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4">
+          <AlertTriangle className="h-5 w-5 flex-shrink-0 text-warning" />
+          <p className="text-sm">
+            Selecione uma caixa primeiro para verificar a compatibilidade dos itens.
+          </p>
         </div>
       )}
 
       {lastError && (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-          <X className="h-5 w-5 text-destructive flex-shrink-0" />
+        <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 animate-in fade-in slide-in-from-top-2">
+          <X className="h-5 w-5 flex-shrink-0 text-destructive" />
           <p className="text-sm text-destructive">{lastError}</p>
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Buscar item..."
             value={searchValue}
@@ -98,17 +108,15 @@ export function ItemSelector({
             className="pl-10"
           />
         </div>
-        
+
         {boxSelected && (
           <div className="flex items-center gap-2">
             <Switch
               id="only-fitting"
               checked={filters.onlyFitting || false}
-              onCheckedChange={(checked) => 
-                onFiltersChange({ ...filters, onlyFitting: checked })
-              }
+              onCheckedChange={(checked) => onFiltersChange({ ...filters, onlyFitting: checked })}
             />
-            <Label htmlFor="only-fitting" className="text-sm cursor-pointer">
+            <Label htmlFor="only-fitting" className="cursor-pointer text-sm">
               Apenas itens que cabem
             </Label>
           </div>
@@ -119,15 +127,19 @@ export function ItemSelector({
       {categories.length > 1 && (
         <Select
           value={filters.category || 'all'}
-          onValueChange={(v) => onFiltersChange({ ...filters, category: v === 'all' ? undefined : v })}
+          onValueChange={(v) =>
+            onFiltersChange({ ...filters, category: v === 'all' ? undefined : v })
+          }
         >
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as categorias</SelectItem>
-            {categories.map(cat => (
-              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat} value={cat}>
+                {cat}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -143,19 +155,19 @@ export function ItemSelector({
 
       <ScrollArea className="h-[50vh] pr-4">
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {[1, 2, 3, 4, 5, 6].map(i => (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <ItemCardSkeleton key={i} />
             ))}
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+          <div className="py-12 text-center">
+            <Package className="mx-auto mb-3 h-12 w-12 text-muted-foreground" />
             <p className="text-muted-foreground">Nenhum item encontrado</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {items.map(item => (
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {items.map((item) => (
               <ItemCard
                 key={item.id}
                 item={item}

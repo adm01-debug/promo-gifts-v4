@@ -3,8 +3,8 @@
  * Sources: variant_supplier_sources (lead_time_days) + suppliers (active flag).
  * Falls back to deterministic mock when no real data is available.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db/bridge';
 import { type SupplierTrustData, getMockSupplierTrust } from '@/components/common/SocialProof';
 import { logger } from '@/lib/logger';
 
@@ -34,7 +34,7 @@ export function useSupplierTrust(productId?: string) {
 
       try {
         // 1. Get variant IDs for this product first
-        const variantResult = await invokeExternalDb<{ id: string }>({
+        const variantResult = await dbInvoke<{ id: string }>({
           table: 'product_variants',
           operation: 'select',
           select: 'id',
@@ -49,7 +49,7 @@ export function useSupplierTrust(productId?: string) {
         }
 
         // 2. Get preferred supplier source using variant_id
-        const vssResult = await invokeExternalDb<VSSRecord>({
+        const vssResult = await dbInvoke<VSSRecord>({
           table: 'variant_supplier_sources',
           operation: 'select',
           select: 'id,supplier_id,lead_time_days,is_preferred,is_active',
@@ -73,7 +73,7 @@ export function useSupplierTrust(productId?: string) {
         let isVerified = false;
         if (preferred.supplier_id) {
           try {
-            const supplierResult = await invokeExternalDb<SupplierRecord>({
+            const supplierResult = await dbInvoke<SupplierRecord>({
               table: 'suppliers',
               operation: 'select',
               select: 'id,name,active',
@@ -82,7 +82,7 @@ export function useSupplierTrust(productId?: string) {
               countMode: 'none',
             });
             if (supplierResult.records.length) {
-              isVerified = supplierResult.records[0].active !== false;
+              isVerified = supplierResult.records[0].active;
             }
           } catch {
             // Supplier lookup failed — mark as not verified

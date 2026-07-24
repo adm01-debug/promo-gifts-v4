@@ -1,10 +1,10 @@
 /**
  * Services: Personalização
- * 
+ *
  * Ponto de entrada para todos os serviços de negócio.
  */
 
-export { 
+export {
   PricingService,
   type PricingRequest,
   type PricingResponse,

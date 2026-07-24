@@ -1,13 +1,23 @@
 /**
- * Constantes de tabelas e views do banco externo Promobrind.
- * 
- * SINCRONIZADO 2026-03-26 — Validado contra whitelist real do external-db-bridge.
- * Esta lista DEVE espelhar exatamente o que o bridge aceita.
+ * @deprecated LEGACY — Listas de tabelas da bridge (descomissionada 2026-05-30).
+ *
+ * As whitelists agora vivem em rest-native.ts:
+ *   - REST_NATIVE_SAFE_TABLES (READ)
+ *   - REST_NATIVE_WRITE_TABLES (WRITE)
+ *   - TABLE_ALIASES / WRITE_TABLE_ALIASES
+ *
+ * Este arquivo é mantido apenas para:
+ *   1. O tipo ExternalTable (usado por useExternalDatabase.ts)
+ *   2. Compatibilidade com re-exports em external-db/index.ts
+ *
+ * ExternalTable foi migrado para rest-native.ts (concluído). Arquivo mantido apenas para as
+ * constantes PRODUCT_TABLES / BRIDGE_ALIASES / PRODUCT_VIEWS usadas como documentação.
  */
 
 // ============================================
 // Tabelas REAIS do BD externo (whitelist do bridge)
 // ============================================
+/** @deprecated Use REST_NATIVE_SAFE_TABLES em rest-native.ts */
 export const PRODUCT_TABLES = [
   // Principais
   'products',
@@ -20,13 +30,13 @@ export const PRODUCT_TABLES = [
   'product_variants',
   'product_materials',
   'product_tags',
-  'product_categories',                    // alias legacy → product_category_assignments
-  'product_category_assignments',          // vínculo N:N produto-categoria
-  'product_suppliers',                     // fontes de fornecimento por produto
-  'product_print_areas',                   // áreas de impressão por produto
+  'product_categories', // alias legacy → product_category_assignments
+  'product_category_assignments', // vínculo N:N produto-categoria
+  'product_suppliers', // fontes de fornecimento por produto
+  'product_print_areas', // áreas de impressão por produto
   'product_kit_components',
-  'product_attributes',                    // alias legacy → product_properties
-  'product_properties',                    // atributos/propriedades de produto (nome real)
+  'product_attributes', // alias legacy → product_properties
+  'product_properties', // atributos/propriedades de produto (nome real)
   // Cores
   'color_groups',
   'color_nuances',
@@ -40,8 +50,8 @@ export const PRODUCT_TABLES = [
   'supplier_materials',
   // Atributos e definições
   'supplier_attribute_definitions',
-  'supplier_product_attributes',           // alias legacy → supplier_property_mappings
-  'supplier_property_mappings',            // mapeamentos de propriedades (nome real)
+  'supplier_product_attributes', // alias legacy → supplier_property_mappings
+  'supplier_property_mappings', // mapeamentos de propriedades (nome real)
   'category_attributes',
   // Preços e variações
   'price_lists',
@@ -64,14 +74,14 @@ export const PRODUCT_TABLES = [
   // NOTA: business_sectors removida (PGRST205 — não exposta no PostgREST externo)
   // NOTA: mockup_drafts e generated_mockups são tabelas LOCAIS (Lovable Cloud), não do BD externo
   // Técnicas de Gravação — tabelas REAIS
-  'tecnicas_gravacao',                       // catálogo de técnicas (16 técnicas-mãe)
-  'print_area_techniques',                   // 2654 áreas de gravação vinculadas a produtos (SSOT)
+  'tecnicas_gravacao', // catálogo de técnicas (16 técnicas-mãe)
+  'print_area_techniques', // 2654 áreas de gravação vinculadas a produtos (SSOT)
   // Sistema de Preços v2
-  'tabela_preco_gravacao_oficial',           // 54 variantes de preço com configurações
-  'tabela_preco_gravacao_oficial_faixa',     // 301 faixas de preço
-  'organization_markup_customization',       // 59 configurações de markup (v5.1)
-  'category_area_techniques',                // vínculos área×técnica com variante_id
-  'tabela_preco_fornecedores_gravacao',      // preços de gravação por fornecedor
+  'tabela_preco_gravacao_oficial', // 54 variantes de preço com configurações
+  'tabela_preco_gravacao_oficial_faixa', // 301 faixas de preço
+  'organization_markup_customization', // 59 configurações de markup (v5.1)
+  'category_area_techniques', // vínculos área×técnica com variante_id
+  'tabela_preco_fornecedores_gravacao', // preços de gravação por fornecedor
   // Histórico de preços
   'price_history',
   // Histórico de estoque
@@ -88,14 +98,16 @@ export const PRODUCT_TABLES = [
 // O external-db-bridge mapeia esses nomes para tabelas reais.
 // Mantidos para que o TypeScript aceite código legado.
 // ============================================
+/** @deprecated Aliases agora vivem em TABLE_ALIASES em rest-native.ts */
 export const BRIDGE_ALIASES = [
-  'tecnica_gravacao',              // → tabela_preco_gravacao_oficial
-  'personalization_techniques',    // → tecnicas_gravacao (via bridge alias)
-  'customization_price_tables',    // → tabela_preco_fornecedores_gravacao (via bridge alias)
-  'customization_price_tiers',     // → tabela_preco_gravacao_oficial_faixa
+  'tecnica_gravacao', // → tabela_preco_gravacao_oficial
+  'personalization_techniques', // real table (uuid PK, EN cols) — NOT aliased; see rest-native.ts "BUG A"
+  'customization_price_tables', // → tabela_preco_fornecedores_gravacao (via bridge alias)
+  'customization_price_tiers', // → tabela_preco_gravacao_oficial_faixa
 ] as const;
 
 // Views e Materialized Views (somente leitura) — do bridge
+/** @deprecated Views agora vivem em REST_NATIVE_SAFE_TABLES em rest-native.ts */
 export const PRODUCT_VIEWS = [
   // Views de produtos
   'v_products_with_techniques',
@@ -135,13 +147,10 @@ export const PRODUCT_VIEWS = [
 ] as const;
 
 // Tabelas de EMPRESAS/CLIENTES — acessadas via crm-db-bridge (não external-db-bridge)
-export const COMPANY_TABLES = [
-  'client_contacts',
-  'organizations',
-] as const;
+export const COMPANY_TABLES = ['client_contacts', 'organizations', 'companies'] as const;
 
-export type ProductTable = typeof PRODUCT_TABLES[number];
-export type BridgeAlias = typeof BRIDGE_ALIASES[number];
-export type ProductView = typeof PRODUCT_VIEWS[number];
-export type CompanyTable = typeof COMPANY_TABLES[number];
-export type ExternalTable = ProductTable | BridgeAlias | ProductView | CompanyTable;
+export type ProductTable = (typeof PRODUCT_TABLES)[number];
+export type BridgeAlias = (typeof BRIDGE_ALIASES)[number];
+export type ProductView = (typeof PRODUCT_VIEWS)[number];
+export type CompanyTable = (typeof COMPANY_TABLES)[number];
+export type ExternalTable = BridgeAlias | CompanyTable | ProductTable | ProductView;

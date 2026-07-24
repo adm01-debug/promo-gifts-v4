@@ -1,187 +1,349 @@
 /**
  * ProductCardImage — Image section with carousel, badges, and color dots.
- * Extracted from ProductCard.tsx.
+ * Updated to match the props interface used by ProductCard.tsx.
+ *
+ * FIX 2026-06-01: Props were mismatched (ProductCard passed cardImageUrl,
+ * product, allMatchingVariants, etc. but this component still expected
+ * the old imageUrl, name, sku, colorVariants interface). Result: imageUrl
+ * was undefined → activeSrc undefined → OptimizedImage rendered blank.
+ *
+ * FEAT 2026-06-02: Hover crossfade to set_image_url (image with all color
+ * variations grouped together). When the user hovers a product card that
+ * has a set_image_url, the main image fades out and the "todas as cores"
+ * image fades in. The effect is suppressed when the user is actively
+ * navigating color variants in the mini-carousel (showing the selected
+ * variant's image takes priority over the set image).
+ *
+ * BUG-SPOT-CORS FIX (2026-06-23):
+ * urlOriginal passava a URL bruta spotgifts.com.br para OptimizedImage como
+ * fallback quando a imagem Cloudflare falhava. O browser tentava carregar
+ * diretamente → bloqueado por CORS policy ("No 'Access-Control-Allow-Origin'").
+ * Fix: getProxiedImageUrl() envolve a URL antes de passar para OptimizedImage,
+ * roteando o fallback pelo edge function image-proxy (que tem CORS configurado).
  */
-import { memo } from "react";
-import { Sparkles, Package } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { NoveltyBadge } from "./NoveltyBadge";
-import { cn } from "@/lib/utils";
-import { isLightColor } from "@/hooks/products";
-import { OptimizedImage } from "@/components/ui/OptimizedImage";
-import type { MatchedColorVariant } from "@/utils/color-variant-carousel";
+import { memo } from 'react';
+import { Package } from 'lucide-react';
+import { m as motion, AnimatePresence } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { resolveNoveltyDaysRemaining } from '@/lib/products/novelty-days';
+import { ProductStatusBadge } from './ProductStatusBadge';
+import { cn } from '@/lib/utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { deriveOriginalUrl, getProxiedImageUrl } from '@/utils/imageProxy';
+import { getCdnUrl } from '@/utils/image-utils';
+import { isProductKit } from '@/lib/products/kit-detection';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
+import type { MatchedColorVariant } from '@/utils/color-variant-carousel';
+import type { Product } from '@/types/product-catalog';
+import type { ActiveColorFilter } from '@/utils/color-image-resolver';
+
+const DEFAULT_IMAGE_CONFIG = {
+  blurAmount: 12,
+  zoomAmount: 1.08,
+  duration: 600,
+};
+
+const VALID_STOCK_STATUSES = new Set(['in-stock', 'low-stock', 'out-of-stock']);
 
 interface ProductCardImageProps {
-  priority?: boolean;
-  product: {
-    name: string;
-    featured?: boolean;
-    newArrival?: boolean;
-    isKit?: boolean;
-    onSale?: boolean;
-    images: string[];
-    colors: Array<{ hex: string; name: string; group: string; groupSlug?: string; variationSlug?: string }>;
-  };
+  /** Full product object — used for name (alt), sku, and badge flags */
+  product: Product;
+  /** Pre-computed card-size CDN URL (getCdnUrl(rawUrl, 'card')) */
   cardImageUrl: string;
+  /** srcSet for responsive loading */
   cardSrcSet?: string;
-  activeColorName: string | null;
-  colorSpecificImage: string | null;
+  /** Name of the currently highlighted color variant */
+  activeColorName?: string | null;
+  /** Color-specific image URL (may differ from cardImageUrl when a color is selected) */
+  colorSpecificImage?: string | null;
+  /** Whether the main image has finished loading */
   imageLoaded: boolean;
+  /** Whether the card is currently hovered */
   isHovered: boolean;
+  /** CSS transform scale for the image */
   computedImageScale: number;
-  isNovelty: boolean;
+  /** Whether this is a novelty product */
+  isNovelty?: boolean;
+  /** Days remaining for the novelty period */
   noveltyDaysRemaining?: number;
+  /** Highlight colors for the card border */
   highlightColors?: string[];
-  activeColorFilter?: { groups?: string[]; variations?: string[] } | null;
-  // Multi-variant carousel
+  /** Active color filter applied to the catalog */
+  activeColorFilter?: ActiveColorFilter | null;
+  /** All color variants matching the active filter (for the mini-carousel) */
   allMatchingVariants: MatchedColorVariant[];
+  /** Whether there are multiple matching variants */
   hasMultipleVariants: boolean;
+  /** Safe index into allMatchingVariants (bounds-checked) */
   safeVariantIdx: number;
-  onImageLoad: () => void;
-  onVariantChange: (idx: number) => void;
+  /** Called when the image finishes loading */
+  onImageLoad?: () => void;
+  /** Whether to eagerly load the image (first visible cards) */
+  priority?: boolean;
+  /** Blurhash da imagem primária para usar como placeholder de cor */
+  cardImageBlurhash?: string | null;
+  /** Called when the user clicks a status/badge pill */
+  onStatusClick?: (type: string) => void;
+  /** Whether a color update is in progress (shows loading state) */
+  isUpdatingColor?: boolean;
+  /** Leaf category name/path resolved outside the card, used as fallback for kit detection */
+  categoryName?: string | null;
+  categoryPath?: readonly string[] | null;
 }
 
-export const ProductCardImage = memo(function ProductCardImage({
-  product, cardImageUrl, cardSrcSet, activeColorName, colorSpecificImage,
-  imageLoaded, isHovered, computedImageScale, isNovelty, noveltyDaysRemaining,
-  highlightColors, activeColorFilter,
-  allMatchingVariants, hasMultipleVariants, safeVariantIdx,
-  onImageLoad, onVariantChange,
-  priority = false,
-}: ProductCardImageProps) {
-  return (
-    <div
-      className="relative aspect-[4/5] overflow-hidden product-img-container bg-muted/30"
-      style={{ zIndex: 0 }}
-      onTouchStart={hasMultipleVariants ? (e) => {
-        (e.currentTarget as HTMLElement & { _swipeX?: number })._swipeX = e.touches[0].clientX;
-      } : undefined}
-      onTouchEnd={hasMultipleVariants ? (e) => {
-        const el = e.currentTarget as HTMLElement & { _swipeX?: number };
-        const startX = el._swipeX;
-        if (startX === null) return;
-        const diff = e.changedTouches[0].clientX - startX;
-        if (Math.abs(diff) > 40) {
-          e.stopPropagation();
-          onVariantChange(diff < 0
-            ? (safeVariantIdx + 1) % allMatchingVariants.length
-            : (safeVariantIdx - 1 + allMatchingVariants.length) % allMatchingVariants.length);
-        }
-        el._swipeX = undefined;
-      } : undefined}
-    >
-      {/* Image */}
-      <OptimizedImage
-        src={cardImageUrl}
-        alt={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
-        title={activeColorName ? `${product.name} - ${activeColorName}` : product.name}
-        className={cn(
-          "w-full h-full object-contain ease-out",
-          hasMultipleVariants ? "transition-all duration-300" : "transition-all duration-700"
-        )}
-        style={imageLoaded ? { transform: `scale(${computedImageScale})`, willChange: "transform" } : undefined}
-        onLoad={onImageLoad}
-        containerClassName="h-full w-full"
-        priority={priority}
-      />
+export const ProductCardImage = memo(
+  ({
+    product,
+    cardImageUrl,
+    cardSrcSet,
+    activeColorName: _activeColorName,
+    colorSpecificImage: _colorSpecificImage,
+    imageLoaded: _imageLoaded,
+    isHovered,
+    computedImageScale,
+    isNovelty,
+    noveltyDaysRemaining,
+    highlightColors: _highlightColors,
+    activeColorFilter: _activeColorFilter,
+    allMatchingVariants,
+    hasMultipleVariants,
+    safeVariantIdx,
+    onImageLoad,
+    priority = false,
+    cardImageBlurhash,
+    onStatusClick,
+    isUpdatingColor = false,
+    categoryName,
+    categoryPath,
+  }: ProductCardImageProps) => {
+    // Resolve the active image: prefer the variant-specific image (if a color is
+    // selected in the carousel), otherwise fall back to the card image URL.
+    const activeVariant = hasMultipleVariants ? allMatchingVariants[safeVariantIdx] : null;
+    const activeSrc = activeVariant?.image || cardImageUrl;
 
-      {/* Active color badge (mobile) */}
-      {activeColorName && colorSpecificImage && (
-        <div className="absolute top-2 right-2 z-10 sm:hidden">
-          <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 bg-card/90 backdrop-blur-sm shadow-sm">{activeColorName}</Badge>
+    // ───────────────────────────────────────────────────────────────────────
+    // Hover image: set_image_url (todas as cores juntas)
+    // Only show it when the user is NOT actively browsing variants — in that
+    // case showing the variant-specific image takes priority. When the
+    // product has only one variant (or no variants), hover swaps to the
+    // grouped "all colors" shot so the user sees the full palette at a glance.
+    // ───────────────────────────────────────────────────────────────────────
+    const setImageRaw = product.set_image_url ?? null;
+    const setImageSrc = setImageRaw ? getCdnUrl(setImageRaw, 'card') : null;
+    const hasSetHover = Boolean(setImageSrc) && !hasMultipleVariants;
+
+    // Derive badge flags from the product object
+    const featured = product.featured;
+    const newArrival = product.newArrival;
+    const isKit = isProductKit(product, { categoryName, categoryPath });
+    const onSale = product.onSale;
+    const hasPackaging = product.hasCommercialPackaging === true;
+    // Status de estoque para badges. Fallback defensivo: quando `product.stockStatus`
+    // vem ausente/inválido ou divergente de `product.stock` (ex.: marcado como
+    // "low-stock" porém quantidade = 0), derivamos do número via SSOT
+    // `getCatalogStockStatus`. Isso evita que a badge "Estoque baixo" fique presa
+    // quando o backend devolve um payload parcial.
+    const stockQty =
+      typeof product.stock === 'number' && Number.isFinite(product.stock) ? product.stock : null;
+    const rawStatus = VALID_STOCK_STATUSES.has(product.stockStatus as string)
+      ? product.stockStatus
+      : stockQty !== null
+        ? getCatalogStockStatus(stockQty, undefined, product.minQuantity)
+        : undefined;
+    const reconciledStatus =
+      rawStatus === 'low-stock' && stockQty !== null && stockQty <= 0 ? 'out-of-stock' : rawStatus;
+    const stockStatus: 'low' | 'ok' | 'unavailable' =
+      reconciledStatus === 'out-of-stock'
+        ? 'unavailable'
+        : reconciledStatus === 'low-stock'
+          ? 'low'
+          : 'ok';
+
+    return (
+      <div className="relative aspect-square w-full overflow-hidden bg-muted/20">
+        {/* Loading overlay for color change / skeleton transition */}
+        {isUpdatingColor && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/90 duration-200 animate-in fade-in">
+            <div className="flex h-full w-full animate-pulse items-center justify-center bg-muted/30">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          </div>
+        )}
+
+        {/* Main image container with crossfade transition */}
+        <div className="relative h-full w-full overflow-hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={activeSrc}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              className="absolute inset-0 h-full w-full"
+            >
+              {activeSrc === '/placeholder.svg' ? (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/40">
+                    <Package className="h-6 w-6 text-muted-foreground/40" />
+                  </div>
+                  <span className="text-[10px] font-medium uppercase tracking-tight text-muted-foreground">
+                    Sem foto disponível
+                  </span>
+                </div>
+              ) : (
+                <OptimizedImage
+                  src={activeSrc}
+                  alt={product.name}
+                  srcSet={cardSrcSet}
+                  className={cn(
+                    'h-full w-full object-contain',
+                    'transition-opacity duration-300 ease-in-out',
+                    hasSetHover && isHovered && 'opacity-0',
+                  )}
+                  style={{
+                    transform: `scale(${computedImageScale})`,
+                    willChange: 'transform',
+                    transition: 'transform 0.3s ease-out, opacity 0.3s ease-in-out',
+                  }}
+                  containerClassName="h-full w-full"
+                  urlOriginal={
+                    // BUG-SPOT-CORS FIX (2026-06-23): getProxiedImageUrl() garante que
+                    // URLs spotgifts.com.br passem pelo edge function image-proxy antes
+                    // de chegar ao browser. Sem isso, OptimizedImage tentava carregar
+                    // diretamente a URL original → bloqueada por CORS policy.
+                    getProxiedImageUrl(
+                      deriveOriginalUrl(activeSrc) || product.primary_image_fallback_url
+                    ) || null
+                  }
+                  blurhash={cardImageBlurhash}
+                  priority={priority}
+                  onLoad={onImageLoad}
+                  {...DEFAULT_IMAGE_CONFIG}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
-      )}
 
-      {/* Hover gradient */}
-      <div className={cn("absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent transition-opacity duration-500", isHovered ? "opacity-100" : "opacity-0")} />
+        {/* Set image (todas as cores) — fades in on hover, only when no variant is active */}
+        {hasSetHover && setImageSrc && (
+          <img
+            src={setImageSrc}
+            alt={`${product.name} — todas as cores`}
+            loading="lazy"
+            decoding="async"
+            className={cn(
+              'pointer-events-none absolute inset-0 h-full w-full object-contain',
+              'opacity-0 transition-opacity duration-300 ease-in-out',
+              isHovered && 'opacity-100',
+            )}
+            style={{
+              transform: `scale(${computedImageScale})`,
+              willChange: 'transform, opacity',
+            }}
+            onError={(e) => {
+              // Hide broken set image gracefully — main image will remain visible
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        )}
 
-      {/* Featured glow */}
-      {product.featured && <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/5 pointer-events-none" />}
+        {/* Badges - Dynamic layout to prevent overlapping */}
+        <div className="absolute inset-x-0 top-0 z-10 flex flex-wrap items-start justify-between gap-1 p-2 sm:p-3">
+          {/* Left-aligned badges (Novelty, Featured, etc.) */}
+          <div className="flex flex-1 flex-wrap items-start gap-1 sm:gap-1.5">
+            {featured && (
+              <ProductStatusBadge
+                type="featured"
+                size="sm"
+                onClick={() => onStatusClick?.('featured')}
+              />
+            )}
 
-      {/* Badges - Top Left */}
-      <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1 sm:gap-1.5 z-10">
-        {product.featured && (
-          <Badge className="bg-gradient-to-r from-primary to-primary-glow text-primary-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shadow-lg animate-glow-pulse">
-            <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
-            <span className="hidden sm:inline">Destaque</span><span className="sm:hidden">★</span>
-          </Badge>
-        )}
-        {isNovelty && noveltyDaysRemaining !== undefined ? (
-          <NoveltyBadge daysRemaining={noveltyDaysRemaining} size="sm" />
-        ) : product.newArrival && (
-          <Badge className="bg-gradient-to-r from-info to-info/80 text-info-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shadow-md">
-            <span className="hidden sm:inline">Novidade</span><span className="sm:hidden">Novo</span>
-          </Badge>
-        )}
-        {product.isKit && (
-          <Badge className="bg-gradient-to-r from-warning to-warning/80 text-warning-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shadow-md">
-            <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />Kit
-          </Badge>
-        )}
-        {product.onSale && (
-          <Badge className="bg-gradient-to-r from-destructive to-destructive/80 text-destructive-foreground text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shadow-md animate-pulse">
-            <span className="hidden sm:inline">Promoção</span><span className="sm:hidden">%</span>
-          </Badge>
-        )}
-      </div>
-
-      {/* Color dots on hover — hidden if multi-variant carousel is active to avoid overlap */}
-      {product.colors.length > 0 && !hasMultipleVariants && (
-        <div className={cn("absolute bottom-3 left-3 right-3 z-10 transition-all duration-400 ease-out", isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")}>
-          <div className="flex items-center gap-1.5 bg-card/95 backdrop-blur-md rounded-full px-3 py-2 shadow-lg border border-border/50">
-            {product.colors.slice(0, 6).map((color, idx) => {
-              const isDotHighlighted = highlightColors?.includes(color.group) ||
-                (activeColorFilter?.groups?.includes(color.groupSlug || '') ?? false) ||
-                (activeColorFilter?.variations?.includes(color.variationSlug || '') ?? false);
-              return (
-                <Tooltip key={idx}>
-                  <TooltipTrigger asChild>
-                    <div className={cn("w-5 h-5 rounded-full border-2 shadow-sm cursor-pointer transition-all duration-200 hover:scale-125 hover:shadow-md",
-                      isDotHighlighted ? "border-success ring-2 ring-success/30 scale-110" : "border-border/50"
-                    )} style={{ backgroundColor: color.hex, borderColor: color.hex === '#FFFFFF' ? 'hsl(var(--border))' : undefined }} />
-                  </TooltipTrigger>
-                  <TooltipContent>{color.name}</TooltipContent>
-                </Tooltip>
+            {(() => {
+              // Compute days remaining from product.created_at when explicit
+              // novelty props are not provided (catálogo/super filtro/etc).
+              const resolvedDaysRemaining = resolveNoveltyDaysRemaining(
+                product.created_at,
+                noveltyDaysRemaining,
+                newArrival,
               );
-            })}
-            {product.colors.length > 6 && <span className="text-xs font-medium text-muted-foreground ml-1">+{product.colors.length - 6}</span>}
+              const showNovelty = (isNovelty && noveltyDaysRemaining !== undefined) || newArrival;
+              if (!showNovelty) return null;
+              return (
+                <ProductStatusBadge
+                  type="novelty"
+                  daysRemaining={resolvedDaysRemaining}
+                  size="sm"
+                  onClick={() => onStatusClick?.('novelty')}
+                />
+              );
+            })()}
+
+            {isKit && (
+              <ProductStatusBadge type="kit" size="sm" onClick={() => onStatusClick?.('kit')} />
+            )}
+
+            {onSale && (
+              <ProductStatusBadge
+                type="promotion"
+                size="sm"
+                onClick={() => onStatusClick?.('promotion')}
+              />
+            )}
+
+            {hasPackaging && (
+              <ProductStatusBadge
+                type="packaging"
+                size="sm"
+                packagingMetadata={{
+                  packingType: product.packingType,
+                  boxWidthMm: product.boxWidthMm,
+                  boxHeightMm: product.boxHeightMm,
+                  boxLengthMm: product.boxLengthMm,
+                  packagingContext: product.packagingContext,
+                }}
+                onClick={() => onStatusClick?.('packaging')}
+              />
+            )}
+          </div>
+
+          {/* Right-aligned badges (Stock Status) */}
+          <div className="flex shrink-0 flex-col items-end gap-1 sm:gap-1.5">
+            {stockStatus === 'unavailable' && (
+              <ProductStatusBadge
+                type="out-of-stock"
+                size="sm"
+                onClick={() => onStatusClick?.('out-of-stock')}
+              />
+            )}
+
+            {stockStatus === 'low' && (
+              <ProductStatusBadge
+                type="urgency"
+                urgencyType="limited-stock"
+                value="Estoque baixo"
+                size="sm"
+                onClick={() => onStatusClick?.('urgency')}
+              />
+            )}
           </div>
         </div>
-      )}
 
-      {/* Multi-variant carousel dots */}
-      {hasMultipleVariants && (
-        <div
-          role="tablist"
-          aria-label={`Variantes de cor: ${allMatchingVariants.map(v => v.name).join(', ')}`}
-          className="absolute bottom-3 left-3 z-20 flex items-center gap-1.5 bg-card/95 backdrop-blur-lg rounded-full px-2.5 py-1.5 shadow-[0_2px_12px_rgba(0,0,0,0.15)] border border-border/40 dark:shadow-[0_2px_12px_rgba(0,0,0,0.4)]"
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); onVariantChange((safeVariantIdx + 1) % allMatchingVariants.length); }
-            else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); onVariantChange((safeVariantIdx - 1 + allMatchingVariants.length) % allMatchingVariants.length); }
-          }}
-        >
-          {allMatchingVariants.map((v, i) => (
-            <button key={v.groupSlug || v.variationSlug || i} role="tab" type="button"
-              tabIndex={i === safeVariantIdx ? 0 : -1} aria-selected={i === safeVariantIdx}
-              aria-current={i === safeVariantIdx ? 'true' : undefined}
-              onClick={(e) => { e.stopPropagation(); onVariantChange(i); }}
-              aria-label={`Ver variante ${v.name}`} title={v.name}
-              className={cn("w-5 h-5 rounded-full border-2 transition-all duration-200 hover:scale-125 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-                i === safeVariantIdx ? "ring-2 ring-offset-2 ring-offset-card scale-110" : "border-border/50 opacity-70 hover:opacity-100"
-              )}
-              style={{
-                backgroundColor: v.hex,
-                borderColor: i === safeVariantIdx ? (isLightColor(v.hex) ? 'hsl(var(--muted-foreground))' : v.hex) : undefined,
-                ['--tw-ring-color' as string]: i === safeVariantIdx ? (isLightColor(v.hex) ? 'hsl(var(--muted-foreground) / 0.6)' : v.hex) : undefined,
-              }}
-            />
-          ))}
-          <span className="text-[10px] font-medium text-muted-foreground ml-0.5 max-w-[60px] truncate hidden sm:inline" title={allMatchingVariants[safeVariantIdx]?.name}>{allMatchingVariants[safeVariantIdx]?.name}</span>
-          <span className="text-[10px] font-medium text-muted-foreground ml-0.5" aria-live="polite">{safeVariantIdx + 1}/{allMatchingVariants.length}</span>
+        {/* SKU badge - bottom right */}
+        <div className="absolute bottom-1.5 right-1.5 z-10">
+          <Badge
+            variant="secondary"
+            data-testid="product-card-sku"
+            aria-label={`Código do produto: ${product.sku}`}
+            className="h-auto bg-background/80 px-1.5 py-0.5 text-[10.5px] font-medium leading-none backdrop-blur-sm"
+          >
+            {product.sku}
+          </Badge>
         </div>
-      )}
-    </div>
-  );
-});
+
+        {/* Color / variant dots - REMOVED from image area as requested */}
+      </div>
+    );
+  },
+);

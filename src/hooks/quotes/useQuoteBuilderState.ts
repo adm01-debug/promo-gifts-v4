@@ -3,22 +3,29 @@
  * Extrai toda a lógica de estado, cálculos e ações do QuoteBuilderPage.
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
-import { useAutoSaveQuote, useDiscountApproval, useQuoteItems, useQuotes, useSellerDiscountLimits, type QuoteItem, type QuoteItemPersonalization } from "@/hooks/quotes";
+import {
+  useAutoSaveQuote,
+  useDiscountApproval,
+  useQuoteItems,
+  useQuotes,
+  useSellerDiscountLimits,
+  type Quote,
+  type QuoteItem,
+  type QuoteItemPersonalization,
+} from '@/hooks/quotes';
 import { useQuery } from '@tanstack/react-query';
 import Fuse from 'fuse.js';
-import { format, addDays } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import type { ConflictInfo } from '@/hooks/quotes/useQuoteConcurrencyGuard';
+import { format, addDays, startOfDay } from 'date-fns';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import { formatCurrency as fmtCurrency } from '@/lib/format';
 import { validateQuoteForm, QUOTE_FIELD_LABELS } from '@/lib/validations';
-import {
-  useQuoteTemplates,
-  type QuoteTemplate,
-  type QuoteTemplateItem,
-} from '@/hooks/quotes';
 import { useAuth } from '@/contexts/AuthContext';
-import { findKnownHex, type ExternalVariantStock } from "@/hooks/products";
+import { findKnownHex, type ExternalVariantStock } from '@/hooks/products';
 import { useDebounce } from '@/hooks/common';
 import type {
   SelectedCompanyInfo,
@@ -32,6 +39,25 @@ import {
 } from '@/utils/product-search';
 import { getPriceFreshness } from '@/utils/price-freshness';
 import * as QuoteCalc from '@/logic/quotes/calculations';
+import type { PromobrindProduct } from '@/lib/external-db';
+import { isValidQuoteTransition, getQuoteStatusLabel } from '@/lib/quote-status-config';
+import type { QuoteStatus } from '@/types/quote';
+
+import { logger } from '@/lib/logger';
+import { trackQuoteHandoff } from '@/lib/telemetry/quoteHandoffTelemetry';
+
+const VALIDITY_PRESETS = ['1', '3', '7', '15', '30'] as const;
+
+function syncValidityDaysFromDate(dateStr: string): string {
+  try {
+    const daysFromNow = Math.round(
+      (new Date(dateStr).getTime() - startOfDay(new Date()).getTime()) / (1000 * 60 * 60 * 24),
+    );
+    return VALIDITY_PRESETS.find((p) => parseInt(p, 10) === daysFromNow) ?? '';
+  } catch {
+    return '';
+  }
+}
 
 interface Product {
   id: string;
@@ -42,6 +68,8 @@ interface Product {
   colors?: { name: string; hex?: string; stock?: number }[];
   minQuantity?: number;
   totalStock?: number;
+  categoryId?: string | null;
+  categoryName?: string | null;
 }
 
 interface RawProductColor {
@@ -63,7 +91,7 @@ function mapQuoteSearchProduct(
     sku: p.sku,
     price: p.sale_price ?? p.base_price ?? 0,
     images,
-    colors: (p.colors || []).map((c: string | RawProductColor) => {
+    colors: (p.colors || []).map((c: RawProductColor | string) => {
       const name = typeof c === 'string' ? c : c.name || '';
       const hex = (typeof c === 'string' ? undefined : c.hex) || findKnownHex(name) || undefined;
       return { name, hex, stock: typeof c === 'string' ? undefined : c.stock };
@@ -72,10 +100,12 @@ function mapQuoteSearchProduct(
     totalStock:
       p.stock_quantity ??
       (p.colors || []).reduce(
-        (sum: number, c: string | RawProductColor) =>
+        (sum: number, c: RawProductColor | string) =>
           sum + (typeof c === 'object' ? (c.stock ?? 0) : 0),
         0,
       ),
+    categoryId: (p as { category_id?: string | null }).category_id ?? null,
+    categoryName: (p as { category_name?: string | null }).category_name ?? null,
   };
 }
 
@@ -88,11 +118,12 @@ async function loadQuoteSearchProducts(search: string): Promise<Product[]> {
     return productsData.map((p) => mapQuoteSearchProduct(p, getProductImageUrl));
   }
 
-  // Two-layer search: prefix matches (1st layer) + broad matches (2nd layer)
-  const [prefixMatches, broadMatches] = await Promise.all([
+  const [prefixResult, broadResult] = await Promise.allSettled([
     fetchPromobrindProducts({ filters: { _name_prefix: normalizedSearch }, limit: 200 }),
     fetchPromobrindProducts({ search: normalizedSearch, limit: 500 }),
   ]);
+  const prefixMatches = prefixResult.status === 'fulfilled' ? prefixResult.value : [];
+  const broadMatches = broadResult.status === 'fulfilled' ? broadResult.value : [];
 
   const mergedProducts = dedupeById([...prefixMatches, ...broadMatches]).map((product) =>
     mapQuoteSearchProduct(product, getProductImageUrl),
@@ -111,7 +142,7 @@ export function useQuoteBuilderState() {
 
   const { user } = useAuth();
   const { createQuote, updateQuote, fetchQuote, isLoading: quotesLoading } = useQuotes();
-  const { templates } = useQuoteTemplates();
+  
   const { myLimit: maxDiscountPercent } = useSellerDiscountLimits();
   const { requestApproval } = useDiscountApproval();
 
@@ -120,14 +151,23 @@ export function useQuoteBuilderState() {
   const [contactId, setContactId] = useState('');
   const [companyInfo, setCompanyInfo] = useState<SelectedCompanyInfo | null>(null);
   const [contactInfo, setContactInfo] = useState<SelectedContactInfo | null>(null);
+
+  // QBP-08 FIX: rastrear versão carregada do quote para ativar o lock server-side
+  const quoteVersionRef = useRef<number | null>(null);
+
+  // Detecção de concorrência: armazena updated_at ao abrir o orçamento
+  const baselineUpdatedAtRef = useRef<string | null>(null);
+  // BUG-011: Prevents double-submit when the user clicks "Save" twice rapidly
+  const isSavingRef = useRef(false);
+  const [conflictInfo, setConflictInfo] = useState<ConflictInfo | null>(null);
+  const pendingSaveStatusRef = useRef<'draft' | 'pending_approval' | 'pending'>('draft');
+  const pendingSellerNotesRef = useRef<string | undefined>(undefined);
   const [validityDays, setValidityDays] = useState('7');
   const [validUntil, setValidUntil] = useState(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
-  const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
+  const [discountType, setDiscountType] = useState<'amount' | 'percent'>('percent');
   const [discountValue, setDiscountValue] = useState(0);
-  /** Margem de negociação interna 0–50%. Default 0 (desligado). */
   const [negotiationMarkup, setNegotiationMarkup] = useState(0);
   const [notes, setNotes] = useState('');
-  const [internalNotes, setInternalNotes] = useState('');
   const {
     items,
     setItems,
@@ -150,49 +190,76 @@ export function useQuoteBuilderState() {
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentTerms, setPaymentTerms] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
-  const [deliveryMode, setDeliveryMode] = useState<'prazo' | 'data'>('prazo');
+  const [deliveryMode, setDeliveryMode] = useState<'data' | 'prazo'>('prazo');
   const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
   const [shippingType, setShippingType] = useState('');
   const [shippingCost, setShippingCost] = useState(0);
 
-  const handleDeliveryModeChange = useCallback((mode: 'prazo' | 'data') => {
+  // QBP-07 FIX: defer shippingType restore via state+useEffect com cleanup
+  // Evita chamar setShippingType em componente desmontado (setTimeout sem cleanup)
+  const [pendingShippingTypeRestore, setPendingShippingTypeRestore] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pendingShippingTypeRestore) return;
+    let mounted = true;
+    const id = setTimeout(() => {
+      if (mounted) {
+        setShippingType(pendingShippingTypeRestore);
+        setPendingShippingTypeRestore(null);
+      }
+    }, 0);
+    return () => {
+      mounted = false;
+      clearTimeout(id);
+    };
+  }, [pendingShippingTypeRestore]);
+
+  const handleDeliveryModeChange = useCallback((mode: 'data' | 'prazo') => {
     setDeliveryMode(mode);
     setDeliveryTime('');
     setDeliveryDate(undefined);
   }, []);
 
   const handleDeliveryDateChange = useCallback((date: Date | undefined) => {
-    setDeliveryDate(date);
     if (date) {
-      setDeliveryTime(`date:${format(date, 'yyyy-MM-dd')}`);
+      // FIX-E07: normalize to LOCAL noon to prevent UTC-midnight dates (returned by some
+      // Calendar implementations) from shifting the day in UTC-3 (Brazil) timezone.
+      // Without this, a UTC midnight date like 2026-07-15T00:00:00Z would format as
+      // July 14 with date-fns (local time), silently storing the wrong day.
+      const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+      setDeliveryDate(normalized);
+      setDeliveryTime(`date:${format(normalized, 'yyyy-MM-dd')}`);
     } else {
+      setDeliveryDate(undefined);
       setDeliveryTime('');
     }
   }, []);
 
-  const handleShippingTypeChange = useCallback((value: string) => {
-    setShippingType(value);
-    if (value !== 'fob_pre' && shippingCost !== 0) {
-      setShippingCost(0);
-    }
-    setTimeout(() => {
-      // Pequeno delay para garantir que o estado foi processado antes de avisar
-      toast.success(`Frete alterado para: ${
-        value === 'cif' ? 'CIF' : 
-        value === 'fob' ? 'FOB' : 
-        'FOB Pré-negociado'
-      }`, {
-        description: value === 'fob_pre' ? 'Lembre-se de informar o valor acordado.' : 'O custo será zerado no orçamento.',
-      });
-    }, 50);
-  }, [shippingCost]);
+  const handleShippingTypeChange = useCallback(
+    (value: string) => {
+      setShippingType(value);
+      if (value !== 'fob_pre' && shippingCost !== 0) {
+        setShippingCost(0);
+      }
+      toast.success(
+        `Frete alterado para: ${
+          value === 'cif' ? 'CIF' : value === 'fob' ? 'FOB' : 'FOB Pré-negociado'
+        }`,
+        {
+          description:
+            value === 'fob_pre'
+              ? 'Lembre-se de informar o valor acordado.'
+              : 'O custo será zerado no orçamento.',
+        },
+      );
+    },
+    [shippingCost],
+  );
 
   const [productSearchOpen, setProductSearchOpen] = useState(false);
   const [productSearch, setProductSearch] = useState('');
   const [selectedProductForColor, setSelectedProductForColor] = useState<Product | null>(null);
-  const [templateApplied, setTemplateApplied] = useState<string | null>(null);
+  
   const [loadingQuote, setLoadingQuote] = useState(isEditMode);
-  // Removido estado duplicado de items e activeItemIndex (gerenciados pelo useQuoteItems)
 
   const debouncedProductSearch = useDebounce(productSearch, 400);
 
@@ -205,16 +272,30 @@ export function useQuoteBuilderState() {
     const steps: QuoteBuilderStep[] = [];
     if (clientId && contactId) steps.push('client');
     if (paymentMethod && paymentTerms && deliveryTime && shippingType) {
-      if (shippingType !== 'fob_pre' || (shippingCost > 0)) {
-        steps.push('conditions');
+      if (shippingType !== 'fob_pre' || shippingCost > 0) {
+        // BUG-005 FIX: validUntil missing from condition check
+        // FIX-C04b: usar T23:59:59 (hora local) para evitar falso negativo de validade expirada.
+        // new Date('yyyy-MM-dd') é midnight UTC, que em BRT (UTC-3) é 21h do dia anterior,
+        // fazendo validUntil=hoje parecer expirado mesmo não sendo.
+        const validityOk = validUntil && new Date(`${validUntil}T23:59:59`) > new Date();
+        if (validityOk) steps.push('conditions');
       }
     }
     if (items.length > 0) steps.push('items');
-    // Consideramos personalização "concluída" se houver itens e pelo menos um item tiver personalização
     const hasAnyPersonalization = items.some((it) => (it.personalizations?.length ?? 0) > 0);
     if (items.length > 0 && hasAnyPersonalization) steps.push('personalization');
     return steps;
-  }, [clientId, contactId, items, paymentMethod, paymentTerms, deliveryTime, shippingType, shippingCost]);
+  }, [
+    clientId,
+    contactId,
+    items,
+    paymentMethod,
+    paymentTerms,
+    deliveryTime,
+    shippingType,
+    shippingCost,
+    validUntil,
+  ]);
 
   const announce = useCallback((message: string) => {
     const announcer = document.getElementById('quote-builder-announcer');
@@ -223,75 +304,94 @@ export function useQuoteBuilderState() {
     }
   }, []);
 
-  const validateStep = useCallback((step: QuoteBuilderStep): boolean => {
-    switch (step) {
-      case 'client':
-        if (!clientId) {
-          toast.error('Selecione um cliente');
-          announce('Erro: Selecione um cliente');
-          return false;
-        }
-        if (!contactId) {
-          toast.error('Selecione um contato');
-          announce('Erro: Selecione um contato');
-          return false;
-        }
-        return true;
-      case 'conditions': {
-        const errors = validateQuoteForm({
-          clientId,
-          contactId,
-          paymentMethod,
-          paymentTerms,
-          deliveryTime,
-          shippingType,
-          shippingCost,
-          itemsCount: items.length,
-        });
+  const validateStep = useCallback(
+    (step: QuoteBuilderStep): boolean => {
+      switch (step) {
+        case 'client':
+          if (!clientId) {
+            toast.error('Selecione um cliente');
+            announce('Erro: Selecione um cliente');
+            return false;
+          }
+          if (!contactId) {
+            toast.error('Selecione um contato');
+            announce('Erro: Selecione um contato');
+            return false;
+          }
+          return true;
+        case 'conditions': {
+          const errors = validateQuoteForm({
+            clientId,
+            contactId,
+            paymentMethod,
+            paymentTerms,
+            deliveryTime,
+            shippingType,
+            shippingCost,
+            itemsCount: items.length,
+          });
 
-        if (errors.includes('forma_pagamento')) {
-          toast.error('Selecione a forma de pagamento');
-          return false;
+          if (errors.includes('forma_pagamento')) {
+            toast.error('Selecione a forma de pagamento');
+            return false;
+          }
+          if (errors.includes('prazo_pagamento')) {
+            toast.error('Selecione o prazo de pagamento');
+            return false;
+          }
+          if (errors.includes('prazo_entrega')) {
+            toast.error('Defina o prazo de entrega');
+            return false;
+          }
+          if (errors.includes('frete')) {
+            toast.error('Selecione a modalidade de frete');
+            announce('Erro: Selecione a modalidade de frete');
+            return false;
+          }
+          if (errors.includes('valor_frete')) {
+            toast.error('Informe o valor do frete pré-negociado');
+            return false;
+          }
+          return true;
         }
-        if (errors.includes('prazo_pagamento')) {
-          toast.error('Selecione o prazo de pagamento');
-          return false;
-        }
-        if (errors.includes('prazo_entrega')) {
-          toast.error('Defina o prazo de entrega');
-          return false;
-        }
-        if (errors.includes('frete')) {
-          toast.error('Selecione a modalidade de frete');
-          announce('Erro: Selecione a modalidade de frete');
-          return false;
-        }
-        if (errors.includes('valor_frete')) {
-          toast.error('Informe o valor do frete pré-negociado');
-          return false;
-        }
-        return true;
+        case 'items':
+          if (items.length === 0) {
+            toast.error('Adicione pelo menos um item');
+            announce('Erro: Adicione pelo menos um item');
+            return false;
+          }
+          return true;
+        case 'personalization':
+          return true;
+        case 'review':
+          return true;
+        default:
+          return true;
       }
-      case 'items':
-        if (items.length === 0) {
-          toast.error('Adicione pelo menos um item');
-          announce('Erro: Adicione pelo menos um item');
-          return false;
-        }
-        return true;
-      case 'personalization':
-        return true;
-      case 'review':
-        return true;
-      default:
-        return true;
-    }
-  }, [clientId, contactId, paymentMethod, paymentTerms, deliveryTime, shippingType, shippingCost, items, announce]);
+    },
+    [
+      clientId,
+      contactId,
+      paymentMethod,
+      paymentTerms,
+      deliveryTime,
+      shippingType,
+      shippingCost,
+      items,
+      announce,
+    ],
+  );
 
   const nextStep = useCallback(() => {
-    const steps: QuoteBuilderStep[] = ['client', 'conditions', 'items', 'personalization', 'review'];
+    const steps: QuoteBuilderStep[] = [
+      'client',
+      'conditions',
+      'items',
+      'personalization',
+      'review',
+    ];
     const currentIndex = steps.indexOf(currentStep);
-    
+
     if (validateStep(currentStep)) {
       if (currentIndex < steps.length - 1) {
         setCurrentStep(steps[currentIndex + 1]);
@@ -301,34 +401,62 @@ export function useQuoteBuilderState() {
   }, [currentStep, validateStep]);
 
   const prevStep = useCallback(() => {
-    const steps: QuoteBuilderStep[] = ['client', 'conditions', 'items', 'personalization', 'review'];
+    const steps: QuoteBuilderStep[] = [
+      'client',
+      'conditions',
+      'items',
+      'personalization',
+      'review',
+    ];
     const currentIndex = steps.indexOf(currentStep);
-    
+
     if (currentIndex > 0) {
       setCurrentStep(steps[currentIndex - 1]);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [currentStep]);
-  
-  const goToStep = useCallback((step: QuoteBuilderStep) => {
-    const steps: QuoteBuilderStep[] = ['client', 'conditions', 'items', 'personalization', 'review'];
-    const targetIndex = steps.indexOf(step);
-    const currentIndex = steps.indexOf(currentStep);
 
-    if (targetIndex === currentIndex) return;
+  const goToStep = useCallback(
+    (step: QuoteBuilderStep) => {
+      const steps: QuoteBuilderStep[] = [
+        'client',
+        'conditions',
+        'items',
+        'personalization',
+        'review',
+      ];
+      const targetIndex = steps.indexOf(step);
+      const currentIndex = steps.indexOf(currentStep);
 
-    // Se estiver tentando ir para uma etapa posterior, validar as anteriores
-    if (targetIndex > currentIndex) {
-      // Validar cada etapa entre a atual e a alvo (não inclusiva da alvo, pois a alvo é onde queremos chegar)
-      for (let i = currentIndex; i < targetIndex; i++) {
-        if (!validateStep(steps[i])) return;
+      if (targetIndex === currentIndex) return;
+
+      if (targetIndex > currentIndex) {
+        for (let i = currentIndex; i < targetIndex; i++) {
+          if (!validateStep(steps[i])) return;
+        }
       }
-    }
 
-    setCurrentStep(step);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentStep, validateStep]);
+      setCurrentStep(step);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [currentStep, validateStep],
+  );
+
   // ── AutoSave ──
+  // RACE-PROOF: quando o reorder granular está em voo (drag-and-drop ou
+  // "Agrupar"), o autosave global NÃO deve persistir `sort_order` — caso
+  // contrário o LocalStorage (e qualquer save posterior) sobrescreveria
+  // a ordem recém-gravada pelo persistItemsOrder com um snapshot intermediário.
+  // O componente de Resumo liga/desliga essa flag em volta do drag.
+  const [skipAutosaveSortOrder, setSkipAutosaveSortOrder] = useState(false);
+  const autosaveItems = useMemo(
+    () =>
+      skipAutosaveSortOrder
+        ? items.map(({ sort_order: _omit, ...rest }) => rest as QuoteItem)
+        : items,
+    [items, skipAutosaveSortOrder],
+  );
+
   const { clearAutoSave } = useAutoSaveQuote({
     enabled: (!!clientId || items.length > 0) && !isEditMode,
     data: {
@@ -336,7 +464,7 @@ export function useQuoteBuilderState() {
       contactId,
       contactInfo,
       companyInfo,
-      items,
+      items: autosaveItems,
       discountType,
       discountValue,
       negotiationMarkup,
@@ -346,17 +474,20 @@ export function useQuoteBuilderState() {
       shippingType,
       shippingCost,
       notes,
-      internalNotes,
       validUntil,
     },
+
     onRestore: (saved) => {
-      // Exemplo: Restaurar campos se o usuário desejar ou automaticamente
-      // Para evitar sobrescrever um carregamento de rascunho real (via URL),
-      // só restauramos se não estiver em modo edição.
       if (!isEditMode) {
         if (saved.clientId) setClientId(saved.clientId);
         if (saved.contactId) setContactId(saved.contactId);
+        if (saved.companyInfo) setCompanyInfo(saved.companyInfo);
+        if (saved.contactInfo) setContactInfo(saved.contactInfo);
         if (saved.items) setItems(saved.items);
+        if (saved.discountType) setDiscountType(saved.discountType);
+        if (typeof saved.discountValue === 'number') setDiscountValue(saved.discountValue);
+        if (typeof saved.negotiationMarkup === 'number' && saved.negotiationMarkup > 0)
+          setNegotiationMarkup(saved.negotiationMarkup);
         if (saved.paymentMethod) setPaymentMethod(saved.paymentMethod);
         if (saved.paymentTerms) setPaymentTerms(saved.paymentTerms);
         if (saved.deliveryTime) {
@@ -364,84 +495,114 @@ export function useQuoteBuilderState() {
           if (saved.deliveryTime.startsWith('date:')) {
             setDeliveryMode('data');
             try {
-              setDeliveryDate(new Date(saved.deliveryTime.slice(5) + 'T12:00:00'));
+              setDeliveryDate(new Date(`${saved.deliveryTime.slice(5)}T12:00:00`));
             } catch (e) {
-              console.warn('Failed to restore delivery date', e);
+              logger.warn('Failed to restore delivery date', e);
             }
           } else {
             setDeliveryMode('prazo');
           }
         }
         if (saved.shippingType) {
-          // Usar setTimeout para garantir que o Radix Select reaja após a montagem do componente
-          setTimeout(() => setShippingType(saved.shippingType), 0);
+          // QBP-07 FIX: usar state pendente + useEffect com cleanup (evita setState em desmontado)
+          setPendingShippingTypeRestore(saved.shippingType);
         }
         if (saved.shippingCost) setShippingCost(saved.shippingCost);
-        if (saved.validUntil) setValidUntil(saved.validUntil);
+        if (saved.validUntil) {
+          setValidUntil(saved.validUntil);
+          // QBP-12 FIX: sincronizar validityDays Select ao restaurar AutoSave
+          // Antes: o Select ficava em "Selecione" mesmo com data válida restaurada
+          setValidityDays(syncValidityDaysFromDate(saved.validUntil));
+        }
         if (saved.notes) setNotes(saved.notes);
-        if (saved.internalNotes) setInternalNotes(saved.internalNotes);
       }
     },
   });
 
-  // Note: beforeunload is now handled by useUnsavedChangesGuard in QuoteBuilderPage
-
   // ── Load existing quote ──
   useEffect(() => {
     if (!isEditMode || !quoteId) return;
+    let isMounted = true;
     setLoadingQuote(true);
-    fetchQuote(quoteId).then((quote) => {
-      if (quote) {
-        setClientId(quote.client_id || '');
-        setContactId(quote.client_id || '');
-        setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
-        setNotes(quote.notes || '');
-        setInternalNotes(quote.internal_notes || '');
-        setQuoteNumber(quote.quote_number || '');
-        setCurrentStatus(quote.status);
-        if (quote.client_name) {
-          setContactInfo({
-            id: '',
-            name: quote.client_name,
-            email: quote.client_email || undefined,
-            phone: quote.client_phone || undefined,
-          });
-        }
-        if (quote.client_company) {
-          setCompanyInfo({
-            id: quote.client_id || '',
-            name: quote.client_company,
-            cnpj: quote.client_cnpj || undefined,
-            ramo_atividade: undefined,
-          });
-        }
-        if (quote.discount_percent && quote.discount_percent > 0) {
-          setDiscountType('percent');
-          setDiscountValue(quote.discount_percent);
-        } else if (quote.discount_amount && quote.discount_amount > 0) {
-          setDiscountType('amount');
-          setDiscountValue(quote.discount_amount);
-        }
-        if (typeof quote.negotiation_markup_percent === 'number')
-          setNegotiationMarkup(quote.negotiation_markup_percent);
-        if (quote.payment_method) setPaymentMethod(quote.payment_method);
-        if (quote.payment_terms) setPaymentTerms(quote.payment_terms);
-        if (quote.shipping_type) setShippingType(quote.shipping_type);
-        if (quote.shipping_cost) setShippingCost(quote.shipping_cost);
-        if (quote.delivery_time) {
-          if (quote.delivery_time.startsWith('date:')) {
-            setDeliveryMode('data');
-            setDeliveryDate(new Date(quote.delivery_time.slice(5) + 'T12:00:00'));
-          } else {
-            setDeliveryMode('prazo');
+    fetchQuote(quoteId)
+      .then((quote) => {
+        if (!isMounted) return;
+        if (quote) {
+          setClientId(quote.client_id || '');
+          setContactId(quote.contact_id || '');
+          setValidUntil(quote.valid_until || format(addDays(new Date(), 30), 'yyyy-MM-dd'));
+          // BUG-007 FIX: sync validityDays Select ao carregar quote existente
+          if (quote.valid_until) {
+            setValidityDays(syncValidityDaysFromDate(quote.valid_until));
           }
-          setDeliveryTime(quote.delivery_time);
+          setNotes(quote.notes || '');
+          setQuoteNumber(quote.quote_number || '');
+          setCurrentStatus(quote.status);
+          if (quote.client_name) {
+            setContactInfo({
+              id: '',
+              name: quote.client_name,
+              email: quote.client_email || undefined,
+              phone: quote.client_phone || undefined,
+            });
+          }
+          if (quote.client_company) {
+            setCompanyInfo({
+              id: quote.client_id || '',
+              name: quote.client_company,
+              cnpj: quote.client_cnpj || undefined,
+              ramo_atividade: undefined,
+            });
+          }
+          // BUG-003 FIX: log quando ambos os campos de desconto estão preenchidos
+          if ((quote.discount_percent ?? 0) > 0 && (quote.discount_amount ?? 0) > 0) {
+            logger.warn(
+              '[useQuoteBuilderState] Both discount_percent and discount_amount are set on loaded quote — possible data corruption. Picking percent.',
+              { quoteId: quote.id },
+            );
+          }
+          if (quote.discount_percent && quote.discount_percent > 0) {
+            setDiscountType('percent');
+            setDiscountValue(quote.discount_percent);
+          } else if (quote.discount_amount && quote.discount_amount > 0) {
+            setDiscountType('amount');
+            setDiscountValue(quote.discount_amount);
+          }
+          if (typeof quote.negotiation_markup_percent === 'number')
+            setNegotiationMarkup(quote.negotiation_markup_percent);
+          if (quote.payment_method) setPaymentMethod(quote.payment_method);
+          if (quote.payment_terms) setPaymentTerms(quote.payment_terms);
+          if (quote.shipping_type) setShippingType(quote.shipping_type);
+          // BUG-004 FIX: falsy check skips 0 (valid for CIF); use explicit null check
+          if (quote.shipping_cost !== null && quote.shipping_cost !== undefined)
+            setShippingCost(quote.shipping_cost);
+          if (quote.delivery_time) {
+            if (quote.delivery_time.startsWith('date:')) {
+              setDeliveryMode('data');
+              setDeliveryDate(new Date(`${quote.delivery_time.slice(5)}T12:00:00`));
+            } else {
+              setDeliveryMode('prazo');
+            }
+            setDeliveryTime(quote.delivery_time);
+          }
+          if (quote.items) setItems(quote.items);
+          // Salva baseline para detecção de conflito
+          baselineUpdatedAtRef.current = quote.updated_at ?? null;
+          // QBP-08 FIX: salvar versão carregada para ativar optimistic lock server-side
+          quoteVersionRef.current = quote.version ?? null;
         }
-        if (quote.items) setItems(quote.items);
-      }
-      setLoadingQuote(false);
-    });
-  }, [isEditMode, quoteId]);
+        setLoadingQuote(false);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        logger.error('[useQuoteBuilderState] fetchQuote failed:', err);
+        setLoadingQuote(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, quoteId, fetchQuote]);
 
   // ── Pre-fill from simulator ──
   useEffect(() => {
@@ -452,6 +613,7 @@ export function useQuoteBuilderState() {
         quantity?: number;
         personalizations?: Array<{
           technique?: { id: string; name: string };
+          location?: { locationCode?: string; locationName?: string } | null;
           specs?: { colors?: number; width?: number; height?: number };
           pricing?: { setupPrice?: number; unitPrice?: number; totalPrice?: number };
         }>;
@@ -460,18 +622,34 @@ export function useQuoteBuilderState() {
     if (!state?.fromSimulator || !state.simulationData) return;
     const { product, quantity, personalizations } = state.simulationData;
     if (!product) return;
-    const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => ({
-      technique_id: p.technique?.id || '',
-      technique_name: p.technique?.name || '',
-      colors_count: p.specs?.colors || 1,
-      positions_count: 1,
-      width_cm: p.specs?.width || undefined,
-      height_cm: p.specs?.height || undefined,
-      area_cm2: (p.specs?.width || 0) * (p.specs?.height || 0),
-      setup_cost: p.pricing?.setupPrice || 0,
-      unit_cost: p.pricing?.unitPrice || 0,
-      total_cost: p.pricing?.totalPrice || 0,
-    }));
+    // TELEMETRY: handoff simulador → orçamento (persistido em frontend_telemetry
+    // para auditoria em `/admin/telemetria`).
+    trackQuoteHandoff('fromSimulator', {
+      product_id: product.id,
+      items_count: 1,
+    });
+    clearAutoSave();
+    const quotePersonalizations: QuoteItemPersonalization[] = (personalizations || []).map((p) => {
+      // Fallback: wizard pode vir sem location explícito — usa 'Frente' como padrão
+      // consistente para que a proposta SEMPRE exiba Lado A/B/Circular/Frente.
+      const locName = p.location?.locationName?.trim() || 'Frente';
+      const locCode = p.location?.locationCode?.trim() || undefined;
+      const colors = p.specs?.colors && p.specs.colors > 0 ? p.specs.colors : 1;
+      return {
+        technique_id: p.technique?.id ?? '',
+        technique_name: p.technique?.name ?? '',
+        location_code: locCode,
+        location_name: locName,
+        colors_count: colors,
+        positions_count: 1,
+        width_cm: p.specs?.width || undefined,
+        height_cm: p.specs?.height || undefined,
+        area_cm2: (p.specs?.width || 0) * (p.specs?.height || 0),
+        setup_cost: p.pricing?.setupPrice || 0,
+        unit_cost: p.pricing?.unitPrice || 0,
+        total_cost: p.pricing?.totalPrice || 0,
+      };
+    });
     const newItem: QuoteItem = {
       product_id: product.id,
       product_name: product.name,
@@ -488,6 +666,7 @@ export function useQuoteBuilderState() {
       `Produto "${product.name}" importado do simulador com ${quotePersonalizations.length} gravação(ões)`,
     );
     window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   // ── Pre-fill from cart ──
@@ -509,6 +688,16 @@ export function useQuoteBuilderState() {
       }>;
     } | null;
     if (!state?.fromCart || !state.items?.length) return;
+    // BUG-CART-HANDOFF FIX: descarta autosave anterior para não sobrescrever o
+    // cliente/itens vindos do carrinho quando o hook de autosave habilita.
+    // TELEMETRY: registrar handoff carrinho → orçamento (persistido em
+    // frontend_telemetry) para detectar regressões do autosave em PROD.
+    trackQuoteHandoff('fromCart', {
+      company_id: state.companyId ?? null,
+      company_name: state.companyName ?? null,
+      items_count: state.items.length,
+    });
+    clearAutoSave();
     if (state.companyId) setClientId(state.companyId);
     const cartItems: QuoteItem[] = state.items.map((i) => ({
       product_id: i.product_id,
@@ -531,6 +720,7 @@ export function useQuoteBuilderState() {
       description: companyLabel || undefined,
     });
     window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   // ── Pre-fill from collection ──
@@ -549,6 +739,11 @@ export function useQuoteBuilderState() {
       }>;
     } | null;
     if (!state?.fromCollection || !state.preloadProducts?.length) return;
+    trackQuoteHandoff('fromCollection', {
+      collection_name: state.fromCollection,
+      items_count: state.preloadProducts.length,
+    });
+    clearAutoSave();
     const collectionItems: QuoteItem[] = state.preloadProducts.map((p) => ({
       product_id: p.product_id,
       product_name: p.product_name,
@@ -565,15 +760,14 @@ export function useQuoteBuilderState() {
       `${collectionItems.length} produto(s) importado(s) da coleção "${state.fromCollection}"`,
     );
     window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
-  // ── Pre-fill from URL params (single product or bulk items[]) ──
+  // ── Pre-fill from URL params ──
   useEffect(() => {
     if (isEditMode) return;
-    // Avoid duplicating if items already exist (e.g. restored draft)
     if (items.length > 0) return;
 
-    // ── Bulk: items[] JSON array from catalog/filter selection ──
     const rawItems = searchParams.getAll('items[]');
     if (rawItems.length > 0) {
       try {
@@ -585,13 +779,17 @@ export function useQuoteBuilderState() {
             product_sku: p.product_sku || '',
             product_image_url: p.product_image || undefined,
             quantity: Math.max(1, p.quantity || 1),
-            unit_price: parseFloat(p.product_price || '0'),
+            unit_price: parseFloat(p.product_price) || 0,
             color_name: p.color_name || undefined,
             color_hex: p.color_hex || undefined,
             personalizations: [],
           };
         });
         if (parsedItems.length > 0) {
+          trackQuoteHandoff('fromUrlParams', {
+            items_count: parsedItems.length,
+          });
+          clearAutoSave();
           setItems(parsedItems);
           setActiveItemIndex(0);
           toast.success(
@@ -601,11 +799,10 @@ export function useQuoteBuilderState() {
           return;
         }
       } catch {
-        console.warn('Failed to parse items[] params');
+        logger.warn('Failed to parse items[] params');
       }
     }
 
-    // ── Single product: product_id param ──
     const productId = searchParams.get('product_id') || searchParams.get('productId');
     if (!productId) return;
     const productName = searchParams.get('product_name') || '';
@@ -617,11 +814,17 @@ export function useQuoteBuilderState() {
       product_sku: searchParams.get('product_sku') || '',
       product_image_url: searchParams.get('product_image') || undefined,
       quantity: Math.max(1, parseInt(searchParams.get('min_quantity') || '1', 10)),
-      unit_price: parseFloat(searchParams.get('product_price') || '0'),
+      unit_price: parseFloat(searchParams.get('product_price') ?? '') || 0,
       color_name: colorName,
       color_hex: colorHex,
       personalizations: [],
     };
+    trackQuoteHandoff('fromUrlParamsSingle', {
+      product_id: productId,
+      has_color: !!colorName,
+      items_count: 1,
+    });
+    clearAutoSave();
     setItems([newItem]);
     setActiveItemIndex(0);
     if (productName) {
@@ -629,8 +832,8 @@ export function useQuoteBuilderState() {
         `Produto "${productName}" adicionado ao orçamento${colorName ? ` — ${colorName}` : ''}`,
       );
     }
-    // Clean URL params without triggering React Router re-render
     window.history.replaceState({}, document.title, location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const { data: products } = useQuery({
@@ -643,7 +846,7 @@ export function useQuoteBuilderState() {
 
   const filteredProducts = useMemo(() => {
     return products || [];
-  }, [products, productSearch]);
+  }, [products]);
 
   // ── Calculations ──
   const formatCurrency = useCallback((value: number) => {
@@ -662,7 +865,6 @@ export function useQuoteBuilderState() {
     });
   }, []);
 
-  // ── Subtotal real (sem markup) e apresentado (com markup) ──
   const realSubtotal = useMemo(
     () =>
       QuoteCalc.calculateSubtotal(
@@ -691,11 +893,29 @@ export function useQuoteBuilderState() {
     return QuoteCalc.round2(baseTotal + shipping);
   }, [subtotal, discountAmount, shippingCost, shippingType]);
 
-  // ── Desconto REAL (sobre subtotal real) — usado para alçada ──
   const realDiscountPercent = useMemo(
     () => QuoteCalc.calculateRealDiscountPercent(realSubtotal, subtotal, discountAmount),
     [realSubtotal, subtotal, discountAmount],
   );
+
+  // BUG-032 FIX: Clamp amount-mode discount when markup decreases below discountValue.
+  // FIX-E09: notify the user when the clamp actually fires so they're not surprised.
+  useEffect(() => {
+    if (discountType !== 'amount') return;
+    setDiscountValue((prev) => {
+      if (prev > subtotal) {
+        const clamped = QuoteCalc.round2(subtotal);
+        toast.warning('Desconto ajustado automaticamente', {
+          description: `O desconto foi reduzido para ${formatCurrency(clamped)} pois a margem de negociação diminuiu.`,
+          duration: 5000,
+        });
+        return clamped;
+      }
+      return prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subtotal, discountType]); // formatCurrency omitted: stable reference; toast omitted: stable
+
   const handleProductClick = useCallback((product: Product) => {
     setSelectedProductForColor(product);
   }, []);
@@ -715,69 +935,20 @@ export function useQuoteBuilderState() {
     const ts = new Date().toISOString();
     setItems((prev) =>
       prev.map((item) => {
-        if (item.price_confirmed_at) return item;
+        // BUG-STALE-CONFIRM FIX: skip only when confirmed AND confirmation postdates
+        // the last price update. If price was updated AFTER confirmation, the confirmation
+        // is stale and the warning must re-appear.
+        if (
+          item.price_confirmed_at &&
+          (!item.price_updated_at || item.price_confirmed_at >= item.price_updated_at)
+        )
+          return item;
         const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
         return f.shouldWarn ? { ...item, price_confirmed_at: ts } : item;
       }),
     );
   }, [setItems]);
 
-  // ── Template ──
-  const applyTemplate = useCallback((template: QuoteTemplate) => {
-    const newItems: QuoteItem[] = template.items_data.map((item) => ({
-      product_id: item.productId || '',
-      product_name: item.productName,
-      product_sku: item.productSku,
-      product_image_url: item.productImageUrl,
-      quantity: item.quantity,
-      unit_price: item.unitPrice,
-      color_name: item.colorName,
-      color_hex: item.colorHex,
-      personalizations: item.personalizations?.map((p) => ({
-        technique_id: p.techniqueId,
-        technique_name: p.techniqueName,
-        colors_count: p.colorsCount,
-        positions_count: p.positionsCount,
-        unit_cost: p.unitCost,
-        setup_cost: p.setupCost,
-      })),
-    }));
-    setItems(newItems);
-    if (template.discount_percent > 0) {
-      setDiscountType('percent');
-      setDiscountValue(template.discount_percent);
-    } else if (template.discount_amount > 0) {
-      setDiscountType('amount');
-      setDiscountValue(template.discount_amount);
-    }
-    if (template.notes) setNotes(template.notes);
-    if (template.internal_notes) setInternalNotes(template.internal_notes);
-    if (template.validity_days)
-      setValidUntil(format(addDays(new Date(), template.validity_days), 'yyyy-MM-dd'));
-    setTemplateApplied(template.name);
-    toast.success(`Template "${template.name}" aplicado!`);
-  }, []);
-
-  const getTemplateItems = useCallback((): QuoteTemplateItem[] => {
-    return items.map((item) => ({
-      productId: item.product_id,
-      productSku: item.product_sku,
-      productName: item.product_name,
-      productImageUrl: item.product_image_url,
-      quantity: item.quantity,
-      unitPrice: item.unit_price,
-      colorName: item.color_name,
-      colorHex: item.color_hex,
-      personalizations: item.personalizations?.map((p) => ({
-        techniqueId: p.technique_id,
-        techniqueName: p.technique_name || '',
-        colorsCount: p.colors_count,
-        positionsCount: p.positions_count,
-        unitCost: p.unit_cost,
-        setupCost: p.setup_cost,
-      })),
-    }));
-  }, [items]);
 
   // ── Validation ──
   const validationErrors = useMemo(
@@ -792,99 +963,197 @@ export function useQuoteBuilderState() {
         shippingCost,
         itemsCount: items.length,
       }),
-    [clientId, contactId, paymentMethod, paymentTerms, deliveryTime, shippingType, shippingCost, items],
+    [
+      clientId,
+      contactId,
+      paymentMethod,
+      paymentTerms,
+      deliveryTime,
+      shippingType,
+      shippingCost,
+      items,
+    ],
   );
 
   const isFormValid = validationErrors.length === 0;
   const isDraftValid = !!clientId;
 
-  // ── Discount limit check ──
   const isDiscountExceeded = useMemo(() => {
     if (maxDiscountPercent === null) return false;
-    if (discountType === 'percent') return discountValue > maxDiscountPercent;
-    // For amount type, calculate effective percent
-    if (subtotal > 0) {
-      const effectivePercent = (discountValue / subtotal) * 100;
-      return effectivePercent > maxDiscountPercent;
-    }
-    return false;
-  }, [maxDiscountPercent, discountType, discountValue, subtotal]);
+    return realDiscountPercent > maxDiscountPercent;
+  }, [maxDiscountPercent, realDiscountPercent]);
 
   // ── Save ──
   const handleSaveQuote = useCallback(
-    async (status: 'draft' | 'pending' | 'pending_approval' = 'draft', sellerNotes?: string) => {
-      if (status === 'draft') {
-        if (!isDraftValid) {
-          toast.error('Selecione uma empresa para salvar o rascunho.');
-          return;
-        }
-      } else if (!isFormValid) {
-        const missing = validationErrors.map((e) => QUOTE_FIELD_LABELS[e] || e).join(', ');
-        toast.error(`Preencha os campos obrigatórios: ${missing}`);
+    async (status: 'draft' | 'pending_approval' | 'pending' = 'draft', sellerNotes?: string) => {
+      if (isSavingRef.current) {
+        toast.error('Salvamento em andamento. Aguarde.');
         return;
       }
-
-      // ── Bloqueio de fechamento: itens com preço defasado precisam de confirmação ──
-      // Só validamos ao fechar (pending / pending_approval). Rascunho permanece livre.
-      if (status !== 'draft') {
-        const staleUnconfirmed = items.filter((item) => {
-          if (item.price_confirmed_at) return false;
-          const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
-          return f.isStale;
-        });
-        if (staleUnconfirmed.length > 0) {
-          const names = staleUnconfirmed
-            .slice(0, 3)
-            .map((i) => i.product_name)
-            .filter(Boolean)
-            .join(', ');
-          const extra = staleUnconfirmed.length > 3 ? ` e mais ${staleUnconfirmed.length - 3}` : '';
-          toast.error('Confirme os preços defasados antes de fechar o orçamento', {
-            description: `${staleUnconfirmed.length} ${staleUnconfirmed.length === 1 ? 'item está' : 'itens estão'} com preço possivelmente defasado: ${names}${extra}. Use o botão "Confirmar com fornecedor" em cada item ou "Confirmar todos" no resumo.`,
-            duration: 8000,
-          });
+      isSavingRef.current = true;
+      try {
+        if (status === 'draft') {
+          if (!isDraftValid) {
+            toast.error('Selecione uma empresa para salvar o rascunho.');
+            return;
+          }
+        } else if (!isFormValid) {
+          const missing = validationErrors.map((e) => QUOTE_FIELD_LABELS[e] || e).join(', ');
+          toast.error(`Preencha os campos obrigatórios: ${missing}`);
           return;
         }
-      }
 
-      const effectiveStatus = status === 'pending_approval' ? 'pending_approval' : status;
+        // BUG-Q FIX: require validUntil for non-draft saves (empty was silently ignored)
+        // BUG-015 FIX: Block sending with past validity date
+        // FIX-C04: usar T23:59:59 (hora local) para não bloquear no mesmo dia da validade.
+        // new Date('yyyy-MM-dd') = midnight UTC = 21h BRT do dia anterior — causava
+        // bloqueio indevido quando o usuário tentava enviar no próprio dia da validade.
+        if (status !== 'draft') {
+          if (!validUntil) {
+            toast.error('Informe a data de validade da proposta antes de finalizar.');
+            return;
+          }
+          if (new Date(`${validUntil}T23:59:59`) < new Date()) {
+            toast.error(
+              'A data de validade da proposta está no passado. Atualize a validade antes de enviar.',
+            );
+            return;
+          }
+        }
 
-      const quoteData = {
-        client_id: clientId || undefined,
-        client_name: contactInfo?.name || undefined,
-        client_company: companyInfo?.name || undefined,
-        client_cnpj: companyInfo?.cnpj || undefined,
-        client_email: contactInfo?.email || undefined,
-        client_phone: contactInfo?.phone || undefined,
-        status: effectiveStatus,
-        discount_percent: discountType === 'percent' ? discountValue : 0,
-        discount_amount: discountType === 'amount' ? discountValue : 0,
-        negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
-        notes: notes || undefined,
-        internal_notes: internalNotes || undefined,
-        valid_until: validUntil || undefined,
-        payment_method: paymentMethod || undefined,
-        payment_terms: paymentTerms || undefined,
-        delivery_time: deliveryTime || undefined,
-        shipping_type: shippingType || undefined,
-        shipping_cost:
-          shippingType === 'fob_pre' ? (shippingCost || 0) : 0,
-      };
-      let result;
-      if (isEditMode && quoteId) {
-        result = await updateQuote(quoteId, quoteData, items);
-      } else {
-        result = await createQuote(quoteData, items);
-      }
+        // BUG-008 FIX: Validate status transition before hitting DB
+        if (isEditMode && quoteId && currentStatus && currentStatus !== status) {
+          if (!isValidQuoteTransition(currentStatus as QuoteStatus, status as QuoteStatus)) {
+            toast.error(
+              `Não é possível alterar o status de "${getQuoteStatusLabel(currentStatus)}" para "${getQuoteStatusLabel(status)}".`,
+            );
+            return;
+          }
+        }
 
-      // If pending_approval, create approval request usando desconto REAL (não aparente)
-      if (result && status === 'pending_approval' && maxDiscountPercent !== null) {
-        await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
-      }
+        // Bloqueio de fechamento: preços defasados precisam de confirmação
+        if (status !== 'draft') {
+          const staleUnconfirmed = items.filter((item) => {
+            // BUG-STALE-CONFIRM FIX: a confirmation is only valid when it postdates
+            // the last price update. If price_updated_at is newer, re-flag as unconfirmed.
+            if (
+              item.price_confirmed_at &&
+              (!item.price_updated_at || item.price_confirmed_at >= item.price_updated_at)
+            )
+              return false;
+            const f = getPriceFreshness(item.price_updated_at, item.price_freshness_threshold_days);
+            return f.isStale;
+          });
+          if (staleUnconfirmed.length > 0) {
+            const names = staleUnconfirmed
+              .slice(0, 3)
+              .map((i) => i.product_name)
+              .filter(Boolean)
+              .join(', ');
+            const extra =
+              staleUnconfirmed.length > 3 ? ` e mais ${staleUnconfirmed.length - 3}` : '';
+            toast.error('Confirme os preços defasados antes de fechar o orçamento', {
+              description: `${staleUnconfirmed.length} ${staleUnconfirmed.length === 1 ? 'item está' : 'itens estão'} com preço possivelmente defasado: ${names}${extra}. Use o botão "Confirmar com fornecedor" em cada item ou "Confirmar todos" no resumo.`,
+              duration: 8000,
+            });
+            return;
+          }
+        }
 
-      if (result) {
-        clearAutoSave();
-        navigate(`/orcamentos/${result.id}`);
+        const effectiveStatus = status === 'pending_approval' ? 'pending_approval' : status;
+
+        const quoteData: Partial<Quote> = {
+          client_id: clientId || undefined,
+          contact_id: contactId || undefined,
+          client_name: contactInfo?.name || undefined,
+          client_company: companyInfo?.name || undefined,
+          client_cnpj: companyInfo?.cnpj || undefined,
+          client_email: contactInfo?.email || undefined,
+          client_phone: contactInfo?.phone || undefined,
+          status: effectiveStatus,
+          discount_percent: discountType === 'percent' ? discountValue : 0,
+          discount_amount: discountType === 'amount' ? discountAmount : 0,
+          negotiation_markup_percent: Math.min(50, Math.max(0, negotiationMarkup || 0)),
+          notes: notes || undefined,
+          valid_until: validUntil || undefined,
+          payment_method: paymentMethod || undefined,
+          payment_terms: paymentTerms || undefined,
+          delivery_time: deliveryTime || undefined,
+          shipping_type: shippingType || undefined,
+          shipping_cost: shippingType === 'fob_pre' ? shippingCost || 0 : 0,
+        };
+        let result;
+        if (isEditMode && quoteId) {
+          // Detecção de concorrência via updated_at baseline
+          if (baselineUpdatedAtRef.current) {
+            // BUG-CONFLICT-CHECK-SILENT-FAIL FIX: previously { error } was not destructured.
+            // A network failure or RLS denial returned { data: null, error } silently,
+            // disabling concurrency protection for this save without any log trace.
+            const { data: remoteQuote, error: conflictCheckErr } = await supabase
+              .from('quotes') // rls-allow: SELECT por id (conflict check); RLS valida ownership
+              .select('updated_at')
+              .eq('id', quoteId)
+              .single();
+            if (conflictCheckErr)
+              logger.warn('Conflict check query failed, proceeding without check:', conflictCheckErr);
+
+            const remoteTs = remoteQuote?.updated_at;
+            if (remoteTs && new Date(remoteTs) > new Date(baselineUpdatedAtRef.current)) {
+              const label = new Date(remoteTs).toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'America/Sao_Paulo',
+              });
+              pendingSaveStatusRef.current = status;
+              pendingSellerNotesRef.current = sellerNotes;
+              setConflictInfo({ modifiedAt: remoteTs, label });
+              return;
+            }
+          }
+          // QBP-08 FIX: passar versão ao atualizar para ativar lock server-side
+          result = await updateQuote(quoteId, quoteData, items, quoteVersionRef.current ?? undefined);
+        } else {
+          result = await createQuote(quoteData, items);
+        }
+
+        if (result?.id && status === 'pending_approval' && maxDiscountPercent !== null) {
+          // BUG-APPROVAL-CATCH FIX: wrap requestApproval in its own try-catch.
+          // If this fails, the quote is already saved as pending_approval, so we
+          // warn the user rather than letting the exception silently bubble up.
+          try {
+            await requestApproval(result.id, realDiscountPercent, maxDiscountPercent, sellerNotes);
+          } catch (approvalError) {
+            logger.error('Erro ao criar solicitação de aprovação:', approvalError);
+            toast.warning(
+              'Orçamento salvo, mas a solicitação de aprovação não pôde ser criada. Contate o administrador.',
+              { duration: 8000 },
+            );
+          }
+        }
+
+        if (result?.id) {
+          clearAutoSave();
+          navigate(`/orcamentos/${result.id}`);
+        }
+
+        // Atualizar versão após save bem-sucedido
+        const newVersion = result?.version;
+        if (newVersion !== null && newVersion !== undefined) quoteVersionRef.current = newVersion;
+
+        return result?.updated_at ?? undefined;
+      } catch (error) {
+        // BUG-SAVE-CATCH FIX: handleSaveQuote previously had no catch block — any
+        // network error, RLS denial or DB error from createQuote/updateQuote would
+        // propagate uncaught, crashing the component with no user feedback.
+        logger.error('Erro ao salvar orçamento:', error);
+        toast.error('Erro ao salvar orçamento. Tente novamente.', {
+          description: sanitizeError(error),
+        });
+      } finally {
+        isSavingRef.current = false;
       }
     },
     [
@@ -892,14 +1161,15 @@ export function useQuoteBuilderState() {
       isFormValid,
       validationErrors,
       clientId,
+      contactId,
       contactInfo,
       companyInfo,
       discountType,
       discountValue,
+      discountAmount,
       negotiationMarkup,
       realDiscountPercent,
       notes,
-      internalNotes,
       validUntil,
       paymentMethod,
       paymentTerms,
@@ -908,6 +1178,7 @@ export function useQuoteBuilderState() {
       shippingCost,
       isEditMode,
       quoteId,
+      currentStatus,
       items,
       navigate,
       updateQuote,
@@ -918,19 +1189,67 @@ export function useQuoteBuilderState() {
     ],
   );
 
-  const defaultTemplate = useMemo(() => templates.find((t) => t.is_default), [templates]);
+  const isBuilderBootstrapping = loadingQuote;
+
+  /**
+   * Limpa todos os campos do orçamento em construção (empresa, contato,
+   * itens, condições de pagamento/entrega, frete, desconto, markup, notas)
+   * e descarta o autosave local. Em modo edição, navega para `/orcamentos/novo`
+   * para garantir que o orçamento persistido NÃO seja sobrescrito.
+   */
+  const resetQuote = useCallback(() => {
+    if (isEditMode) {
+      navigate('/orcamentos/novo');
+      return;
+    }
+    clearAutoSave();
+    setClientId('');
+    setContactId('');
+    setCompanyInfo(null);
+    setContactInfo(null);
+    setItems([]);
+    setNotes('');
+    setPaymentMethod('');
+    setPaymentTerms('');
+    setDeliveryTime('');
+    setDeliveryMode('prazo');
+    setDeliveryDate(undefined);
+    setShippingType('');
+    setShippingCost(0);
+    setDiscountType('percent');
+    setDiscountValue(0);
+    setNegotiationMarkup(0);
+    setValidityDays('7');
+    setValidUntil(format(addDays(new Date(), 7), 'yyyy-MM-dd'));
+    setActiveItemIndex(0);
+    setExpandedItems(new Set());
+    setProductSearch('');
+    setProductSearchOpen(false);
+    setSelectedProductForColor(null);
+    setCurrentStep('client');
+    setConflictInfo(null);
+  }, [
+    isEditMode,
+    navigate,
+    clearAutoSave,
+    setClientId,
+    setContactId,
+    setCompanyInfo,
+    setContactInfo,
+    setItems,
+    setExpandedItems,
+    setActiveItemIndex,
+  ]);
 
   return {
-    // Navigation
+    resetQuote,
     navigate,
     quoteId,
     isEditMode,
-    loadingQuote,
+    loadingQuote: isBuilderBootstrapping,
     currentStep,
     setCurrentStep,
-    // Auth
     user,
-    // State setters
     clientId,
     setClientId,
     contactId,
@@ -951,10 +1270,11 @@ export function useQuoteBuilderState() {
     setNegotiationMarkup,
     notes,
     setNotes,
-    internalNotes,
-    setInternalNotes,
     items,
     setItems,
+    skipAutosaveSortOrder,
+    setSkipAutosaveSortOrder,
+
     quoteNumber,
     currentStatus,
     paymentMethod,
@@ -977,13 +1297,10 @@ export function useQuoteBuilderState() {
     setProductSearch,
     selectedProductForColor,
     setSelectedProductForColor,
-    templateApplied,
-    setTemplateApplied,
     expandedItems,
     setExpandedItems,
     activeItemIndex,
     setActiveItemIndex,
-    // Computed
     completedSteps,
     activeStep,
     filteredProducts,
@@ -996,12 +1313,8 @@ export function useQuoteBuilderState() {
     isFormValid,
     isDraftValid,
     quotesLoading,
-    templates,
-    defaultTemplate,
-    // Discount limits
     maxDiscountPercent,
     isDiscountExceeded,
-    // Actions
     validateStep,
     nextStep,
     prevStep,
@@ -1018,8 +1331,23 @@ export function useQuoteBuilderState() {
     removeItem,
     confirmItemPrice,
     confirmAllStalePrices,
-    applyTemplate,
-    getTemplateItems,
     handleSaveQuote,
+    conflictInfo,
+    dismissConflict: () => setConflictInfo(null),
+    overwriteAndSave: async (status?: 'draft' | 'pending_approval' | 'pending') => {
+      const effectiveStatus = status ?? pendingSaveStatusRef.current;
+      const sellerNotes =
+        effectiveStatus === 'pending_approval' ? pendingSellerNotesRef.current : undefined;
+      setConflictInfo(null);
+      const previousBaseline = baselineUpdatedAtRef.current;
+      baselineUpdatedAtRef.current = null;
+      try {
+        const savedUpdatedAt = await handleSaveQuote(effectiveStatus, sellerNotes);
+        baselineUpdatedAtRef.current = savedUpdatedAt ?? new Date().toISOString();
+      } catch (err) {
+        baselineUpdatedAtRef.current = previousBaseline;
+        throw err;
+      }
+    },
   };
 }

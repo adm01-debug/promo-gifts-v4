@@ -107,6 +107,59 @@ evitar criação de dados de teste no BD compartilhado. Para suíte completa
 com cleanup, configure uma edge function `e2e-cleanup` gated por header
 secreto.
 
+## Checklist reutilizável para fluxos críticos (padrão de automação)
+
+Use o template abaixo em todo fluxo crítico (frontend + backend), para remover
+ambiguidade ao escrever cenários E2E, contratos de API e critérios de aceite.
+
+### Template padrão por fluxo
+
+| Item | O que definir | Exemplo de preenchimento |
+|------|----------------|--------------------------|
+| **Fluxo** | Nome único e objetivo de negócio | `Checkout > Finalizar pedido B2B` |
+| **Pré-condições** | Estado inicial obrigatório | `Usuário autenticado, carrinho com 1 item válido` |
+| **Gatilho** | Ação que inicia o fluxo | `Clique em "Finalizar pedido"` |
+| **Sucesso esperado** | Resultado funcional visível | `Pedido criado e tela de confirmação exibida` |
+| **Erro esperado** | Falha tratada e comportamento esperado | `Falha de pagamento mantém carrinho e exibe retry` |
+| **Mensagem de validação (sucesso)** | Texto/chave de i18n que deve aparecer | `"Pedido enviado com sucesso"` / `checkout.success` |
+| **Mensagem de validação (erro)** | Texto/chave de i18n de erro esperado | `"Não foi possível processar o pagamento"` |
+| **Persistência de estado (frontend)** | O que persiste em storage/cache/UI | `Carrinho limpo no sucesso; mantido no erro` |
+| **Persistência de estado (backend)** | Efeitos em banco/filas/eventos | `INSERT em orders + evento order.created` |
+| **Status HTTP esperado** | Código por cenário | `201 (sucesso), 400 (validação), 401/403 (auth), 409 (conflito), 500 (inesperado)` |
+| **Contrato de erro** | Shape mínimo padronizado da resposta | `{ code, message, details?, requestId }` |
+| **Observabilidade** | Logs, métricas e rastreabilidade | `requestId propagado e log estruturado com outcome` |
+
+### Checklist rápido (copiar/colar em issue, PR ou spec)
+
+- [ ] **Sucesso** descrito de ponta a ponta (UI + API + dados).
+- [ ] **Erro de negócio** descrito (regra violada, conflito ou bloqueio).
+- [ ] **Erro técnico** descrito (timeout, indisponibilidade, exceção inesperada).
+- [ ] **Mensagens de validação** definidas com texto final ou chave i18n.
+- [ ] **Persistência frontend** definida (estado antes/depois, inclusive reload).
+- [ ] **Persistência backend** definida (transação, idempotência, side effects).
+- [ ] **Códigos HTTP** mapeados por cenário (2xx/4xx/5xx sem ambiguidade).
+- [ ] **Contrato de erro** validado nos testes (campos mínimos e consistência).
+- [ ] **Evidências de teste** previstas (screenshot/log/trace para falhas).
+
+### Matriz mínima de status sugerida (backend)
+
+- `200 OK`: consulta/ação síncrona concluída sem criação de recurso.
+- `201 Created`: recurso criado com sucesso.
+- `202 Accepted`: processamento assíncrono aceito (com rastreio posterior).
+- `204 No Content`: sucesso sem payload.
+- `400 Bad Request`: payload inválido/sintaxe semântica incorreta.
+- `401 Unauthorized`: sem autenticação válida.
+- `403 Forbidden`: autenticado sem permissão.
+- `404 Not Found`: recurso inexistente ou não acessível no contexto.
+- `409 Conflict`: conflito de estado/concorrência/idempotência.
+- `422 Unprocessable Entity`: regra de negócio não satisfeita.
+- `429 Too Many Requests`: limite/rate limit excedido.
+- `500 Internal Server Error`: falha inesperada no servidor.
+- `503 Service Unavailable`: dependência externa indisponível.
+
+> Dica: sempre associe cada status a um cenário explícito no spec (`Given/When/Then`) e
+> valide no teste tanto o código quanto a mensagem/código de erro retornado.
+
 ## Cleanup automático (pós-suite)
 
 Para evitar acúmulo de favoritos, carrinhos, coleções, comparações e

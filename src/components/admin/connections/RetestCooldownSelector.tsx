@@ -1,17 +1,14 @@
-import { Timer } from "lucide-react";
+import { Timer } from 'lucide-react';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import {
-  RETEST_COOLDOWN_PRESETS_MS,
-  useRetestCooldownSetting,
-} from "@/hooks/admin";
+} from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { RETEST_COOLDOWN_PRESETS_MS, useRetestCooldownSetting } from '@/hooks/admin';
 
 interface Props {
   className?: string;
@@ -27,21 +24,21 @@ export function RetestCooldownSelector({ className }: Props) {
   const { cooldownMs, loading, saving, save } = useRetestCooldownSetting();
 
   return (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={cn("inline-flex items-center gap-1.5", className)}>
+          <div className={cn('inline-flex items-center gap-1.5', className)}>
             <Timer className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
             <Select
               value={String(cooldownMs)}
               disabled={loading || saving}
               onValueChange={(v) => {
-                const ms = Number.parseInt(v, 10);
+                const ms = parseInt(v, 10);
                 if (Number.isFinite(ms) && ms > 0) void save(ms);
               }}
             >
               <SelectTrigger
-                className="h-7 w-[88px] text-xs px-2"
+                className="h-7 w-[88px] px-2 text-xs"
                 aria-label="Cooldown entre testes manuais"
               >
                 <SelectValue />
@@ -56,9 +53,9 @@ export function RetestCooldownSelector({ className }: Props) {
             </Select>
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs text-xs leading-snug">
+        <TooltipContent side="top" className="leading-snug">
           <p className="font-medium">Cooldown entre testes manuais</p>
-          <p className="text-muted-foreground mt-0.5">
+          <p className="mt-0.5 text-muted-foreground">
             Tempo mínimo de espera após disparar "Testar novamente". Vale para todos os admins
             (configuração global).
           </p>

@@ -42,7 +42,8 @@ test.describe("Mockup Module Upload Flow and Validations", () => {
 
     // 5. Upload Logo
     const fileInput = page.locator('input[data-testid^="mockup-logo-upload-input-"]').first();
-    const logoPath = path.resolve("public/placeholder.svg");
+    // PNG (not SVG): SVG logos are rejected — they cannot be rasterised by the compositor.
+    const logoPath = path.resolve("public/images/promo-brindes-logo.png");
     await fileInput.setInputFiles(logoPath);
 
     // 6. Verify buttons are now ENABLED
@@ -56,9 +57,9 @@ test.describe("Mockup Module Upload Flow and Validations", () => {
     // Find the hidden input inside the dropzone
     const artInput = artDropzone.locator('input[type="file"]');
     await artInput.setInputFiles(logoPath); // Reusing the same file for testing
-    
+
     // Verify art file is listed
-    await expect(page.getByText("placeholder.svg")).toBeVisible();
+    await expect(page.getByText("promo-brindes-logo.png")).toBeVisible();
 
     // 8. Generate and verify success
     await generateLayoutAiBtn.click();

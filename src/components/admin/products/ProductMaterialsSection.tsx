@@ -6,7 +6,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { materialService, type MaterialType } from '@/services/materialService';
-import { supabase } from '@/integrations/supabase/client';
+import { dbInvoke, dbInvokeDelete } from '@/lib/db/postgrest';
+import { untypedFrom } from '@/lib/supabase-untyped';
 import { MaterialBadge } from '@/components/materials/MaterialBadge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -16,6 +17,7 @@ import { X, Search, Gem, Save, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MaterialGroupTree } from './MaterialGroupTree';
+import { ORGANIZATION_ID } from './new-supplier/types';
 
 interface ProductMaterialsSectionProps {
   productId: string;
@@ -118,16 +120,13 @@ export function ProductMaterialsSection({ productId }: ProductMaterialsSectionPr
   >({
     queryKey: ['product-materials-full', productId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('external-db-bridge', {
-        body: {
-          table: 'product_materials',
-          operation: 'select',
-          filters: { product_id: productId },
-          limit: 200,
-        },
+      const { records } = await dbInvoke<LinkedMaterial>({
+        table: 'product_materials',
+        operation: 'select',
+        filters: { product_id: productId },
+        limit: 200,
       });
-      if (error) throw new Error(error.message);
-      return data?.data?.records || [];
+      return records;
     },
     enabled: !!productId,
   });
@@ -157,25 +156,22 @@ export function ProductMaterialsSection({ productId }: ProductMaterialsSectionPr
             toast.error('Registro não encontrado');
             return;
           }
-          const { error: delError } = await supabase.functions.invoke('external-db-bridge', {
-            body: { table: 'product_materials', operation: 'delete', id: linked.id },
-          });
-          if (delError) throw new Error(delError.message);
+          await dbInvokeDelete({ table: 'product_materials', id: linked.id });
           toast.success('Material removido');
         } else {
-          const { error } = await supabase.functions.invoke('external-db-bridge', {
-            body: {
-              table: 'product_materials',
-              operation: 'insert',
-              data: { product_id: productId, material_id: materialId },
-            },
+          const { error } = await untypedFrom('product_materials').insert({
+            product_id: productId,
+            material_id: materialId,
+            // organization_id is NOT NULL on product_materials and is gated by the
+            // is_org_owner_or_admin(organization_id) RLS INSERT policy.
+            organization_id: ORGANIZATION_ID,
           });
           if (error) throw new Error(error.message);
           toast.success('Material adicionado');
         }
         queryClient.invalidateQueries({ queryKey: ['product-materials-full', productId] });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao alterar material');
+      } catch {
+        toast.error('Erro ao alterar material');
       }
     },
     [productId, queryClient, linkedMap],
@@ -190,24 +186,19 @@ export function ProductMaterialsSection({ productId }: ProductMaterialsSectionPr
       if (!linked?.id) return;
 
       try {
-        const { error } = await supabase.functions.invoke('external-db-bridge', {
-          body: {
-            table: 'product_materials',
-            operation: 'update',
-            id: linked.id,
-            data: {
-              part: data.part.trim() || null,
-              percentage: data.percentage,
-              notes: data.notes.trim() || null,
-            },
-          },
-        });
+        const { error } = await untypedFrom('product_materials')
+          .update({
+            part: data.part.trim() || null,
+            percentage: data.percentage,
+            notes: data.notes.trim() || null,
+          })
+          .eq('id', linked.id);
         if (error) throw new Error(error.message);
         toast.success('Detalhes atualizados');
         setEditingMaterialId(null);
         queryClient.invalidateQueries({ queryKey: ['product-materials-full', productId] });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Erro ao atualizar');
+      } catch {
+        toast.error('Erro ao atualizar');
       }
     },
     [productId, queryClient, linkedMap],

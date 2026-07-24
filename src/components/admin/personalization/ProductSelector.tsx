@@ -45,7 +45,7 @@ export function ProductSelector({
         group?.group_name.toLowerCase().includes(query) ||
         group?.group_code.toLowerCase().includes(query);
       return matchesName || matchesSku || matchesGroup;
-    }) || [];
+    }) ?? [];
 
   return (
     <Card>

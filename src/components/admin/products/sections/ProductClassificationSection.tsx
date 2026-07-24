@@ -138,7 +138,7 @@ export default function ProductClassificationSection({
           subtitle="Gênero, cor, tamanho e capacidade"
           icon={Settings2}
           iconColor="bg-primary/10 text-primary"
-          defaultOpen={true}
+          defaultOpen
         >
           <ProductVariationAxesConfig
             productId={productId || ''}
@@ -153,7 +153,7 @@ export default function ProductClassificationSection({
           subtitle="Paleta de cores disponíveis"
           icon={Palette}
           iconColor="bg-primary/10 text-primary"
-          defaultOpen={showFullContent}
+          defaultOpen={!!showFullContent}
           disabled={!showFullContent}
         >
           {savedProductId ? (
@@ -187,7 +187,7 @@ export default function ProductClassificationSection({
           title="Tags"
           subtitle="Etiquetas de busca e filtro"
           icon={Tag}
-          iconColor="bg-orange/10 text-orange"
+          iconColor="bg-brand-primary/10 text-brand-primary"
           disabled={!showFullContent}
         >
           {savedProductId ? (

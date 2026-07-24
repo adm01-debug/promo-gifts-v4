@@ -6,6 +6,8 @@ import { Loader2, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { validateFile } from '@/lib/security/file-validation';
 
+import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface ImageUploadButtonProps {
   currentImageUrl: string | null;
   onUpload: (url: string) => void;
@@ -43,10 +45,6 @@ export function ImageUploadButton({
     setIsUploading(true);
 
     try {
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const _fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
       const formData = new FormData();
       formData.append('file', file);
       formData.append('folder', folder);
@@ -58,7 +56,7 @@ export function ImageUploadButton({
 
       while (retryCount < maxRetries && !uploadSuccess) {
         try {
-          const { data, error } = await supabase.functions.invoke('secure-upload', {
+          const { data, error } = await invokeEdge<{ url: string }>('secure-upload', {
             body: formData,
           });
 
@@ -70,7 +68,7 @@ export function ImageUploadButton({
             throw error;
           }
 
-          onUpload(data.url);
+          onUpload(data!.url);
           toast.success('Imagem enviada com segurança!');
           uploadSuccess = true;
         } catch (error: unknown) {
@@ -89,12 +87,14 @@ export function ImageUploadButton({
 
           retryCount++;
           if (retryCount < maxRetries) {
-            const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 2s, 4s
-            console.warn(
+            const delay = 2 ** retryCount * 1000; // Exponential backoff: 2s, 4s
+            logger.warn(
               `Tentativa ${retryCount} falhou. Tentando novamente em ${delay}ms...`,
               error,
             );
-            await new Promise((resolve) => setTimeout(resolve, delay));
+            await new Promise((resolve) => {
+              setTimeout(resolve, delay);
+            });
           }
         }
       }
@@ -103,7 +103,7 @@ export function ImageUploadButton({
         throw lastError;
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast.error('Erro ao enviar imagem');
     } finally {
       setIsUploading(false);
@@ -121,12 +121,17 @@ export function ImageUploadButton({
       const urlParts = currentImageUrl.split('/personalization-images/');
       if (urlParts.length > 1) {
         const filePath = urlParts[1];
-        await supabase.storage.from('personalization-images').remove([filePath]);
+        // BUG-IMAGEUPLOAD-REMOVE-SILENT-FAIL FIX: storage.remove returns { data, error }
+        // — bare await discarded the error, calling onRemove even on failure.
+        const { error: removeErr } = await supabase.storage
+          .from('personalization-images')
+          .remove([filePath]);
+        if (removeErr) throw removeErr;
       }
       onRemove();
       toast.success('Imagem removida!');
     } catch (error) {
-      console.error('Remove error:', error);
+      logger.error('Remove error:', error);
       toast.error('Erro ao remover imagem');
     }
   };

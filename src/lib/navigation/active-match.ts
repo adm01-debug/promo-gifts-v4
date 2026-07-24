@@ -9,13 +9,9 @@
  *   OR is a child route (`href` followed by `/`). This avoids false positives
  *   like "/orcamentos" matching "/orcamentos-publicos".
  */
-export function isNavItemActive(
-  pathname: string,
-  href: string,
-  exact?: boolean,
-): boolean {
+export function isNavItemActive(pathname: string, href: string, exact?: boolean): boolean {
   if (!href) return false;
-  if (href === "/" || exact) return pathname === href;
+  if (href === '/' || exact) return pathname === href;
   if (pathname === href) return true;
-  return pathname.startsWith(href.endsWith("/") ? href : `${href}/`);
+  return pathname.startsWith(href.endsWith('/') ? href : `${href}/`);
 }

@@ -1,96 +1,96 @@
-import { useState } from "react";
-import { Package, Tag, Palette, Truck } from "lucide-react";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import type { Product } from "@/hooks/products";
+import { Package, Tag, Palette, Truck } from 'lucide-react';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import type { Product } from '@/hooks/products';
+import { getCdnUrl } from '@/utils/image-utils';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
+import { useLocation } from 'react-router-dom';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useBadgeVisibilityStore } from '@/stores/useBadgeVisibilityStore';
+
+// BUG-HP-05 FIX (2026-06-21): Intl.NumberFormat dentro de formatPrice era recriado a cada render.
+const priceFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const formatPrice = (price: number) => priceFormatter.format(price);
 
 interface ProductHoverPreviewProps {
   product: Product;
   children: React.ReactNode;
-  side?: "top" | "bottom" | "left" | "right";
-  align?: "start" | "center" | "end";
+  side?: 'bottom' | 'left' | 'right' | 'top';
+  align?: 'center' | 'end' | 'start';
 }
 
-export function ProductHoverPreview({ 
-  product, 
-  children, 
-  side = "right",
-  align = "center"
+export function ProductHoverPreview({
+  product,
+  children,
+  side = 'right',
+  align = 'center',
 }: ProductHoverPreviewProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(price);
-  };
+  // Respeita o toggle "Etiquetas dos Produtos" — fix_version: badge-toggle-v2
+  const location = useLocation();
+  const { actualTheme } = useTheme();
+  const badgesEnabled = useBadgeVisibilityStore((s) => {
+    const settings = s.routeSettings[location.pathname];
+    if (settings) return actualTheme === 'dark' ? settings.dark : settings.light;
+    return s.badgesEnabled;
+  });
 
   return (
     <HoverCard openDelay={300} closeDelay={100}>
-      <HoverCardTrigger asChild>
-        {children}
-      </HoverCardTrigger>
-      <HoverCardContent 
-        side={side} 
+      <HoverCardTrigger asChild>{children}</HoverCardTrigger>
+      <HoverCardContent
+        side={side}
         align={align}
-        className="w-80 p-0 overflow-hidden"
+        className="w-80 overflow-hidden p-0"
         sideOffset={8}
       >
         {/* Image */}
-        <div className="relative aspect-[16/10] bg-muted overflow-hidden">
-          {!imageLoaded && (
-            <div className="absolute inset-0 bg-muted/30" />
-          )}
-          <img
-            src={product.images[0]}
+        <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+          <OptimizedImage
+            src={getCdnUrl(product.images?.[0] ?? '', 'medium')}
+            urlOriginal={getProxiedImageUrl(product.images?.[0] ?? '') ?? null}
             alt={product.name}
-            className={cn(
-              "w-full h-full object-cover transition-all duration-700 ease-out",
-              imageLoaded ? "opacity-100 blur-0 scale-100" : "opacity-40 blur-md scale-105"
-            )}
-            onLoad={() => setImageLoaded(true)}
+            className="object-cover"
+            containerClassName="h-full w-full"
           />
-          
-          {/* Badges overlay */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {product.featured && (
-              <Badge className="bg-primary text-primary-foreground text-xs">
-                Destaque
-              </Badge>
-            )}
-            {product.newArrival && (
-              <Badge className="bg-info text-info-foreground text-xs">
-                Novidade
-              </Badge>
-            )}
-          </div>
-          
+
+          {/* Badges overlay — ocultados quando toggle "Etiquetas dos Produtos" está OFF */}
+          {badgesEnabled && (
+            <div className="absolute left-2 top-2 flex flex-col gap-1">
+              {product.featured && (
+                <Badge className="bg-primary text-xs text-primary-foreground">Destaque</Badge>
+              )}
+              {product.newArrival && (
+                <Badge className="bg-info text-xs text-info-foreground">Novidade</Badge>
+              )}
+            </div>
+          )}
+
           {/* Price overlay */}
           <div className="absolute bottom-2 right-2">
-            <span className="bg-card/95 backdrop-blur-sm text-foreground font-bold px-3 py-1.5 rounded-full text-sm shadow-lg">
+            <span className="rounded-full bg-card/95 px-3 py-1.5 text-sm font-bold text-foreground shadow-lg backdrop-blur-sm">
               {formatPrice(product.price)}
             </span>
           </div>
         </div>
-        
+
         {/* Content */}
-        <div className="p-4 space-y-3">
+        <div className="space-y-3 p-4">
           {/* Header */}
           <div>
-            <p className="text-xs text-muted-foreground font-medium">{product.supplier.name}</p>
-            <h4 className="font-semibold text-foreground line-clamp-2 mt-0.5">{product.name}</h4>
+            <p className="text-xs font-medium text-muted-foreground">{product.supplier?.name}</p>
+            <h4 className="mt-0.5 line-clamp-2 font-semibold text-foreground">{product.name}</h4>
           </div>
-          
+
           <Separator />
-          
+
           {/* Quick Info */}
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Package className="h-3.5 w-3.5 text-primary" />
-              <span>{product.stock.toLocaleString('pt-BR')} un.</span>
+              <span>{(product.stock ?? 0).toLocaleString('pt-BR')} un.</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Tag className="h-3.5 w-3.5 text-primary" />
@@ -98,38 +98,41 @@ export function ProductHoverPreview({
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Palette className="h-3.5 w-3.5 text-primary" />
-              <span>{product.colors.length} cores</span>
+              <span>{(product.colors ?? []).length} cores</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Truck className="h-3.5 w-3.5 text-primary" />
               <span>Consultar prazo</span>
             </div>
           </div>
-          
+
           {/* Colors preview */}
-          {product.colors.length > 0 && (
+          {(product.colors ?? []).length > 0 && (
             <div className="flex items-center gap-1.5 pt-1">
-              {product.colors.slice(0, 8).map((color, idx) => (
-                <div
-                  key={idx}
-                  className="w-4 h-4 rounded-full border border-border/50 shadow-sm"
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
-                />
+              {(product.colors ?? []).slice(0, 8).map((color, idx) => (
+                <Tooltip key={`${color.hex}-${idx}`}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className="h-4 w-4 rounded-full border border-border/50 shadow-sm"
+                      style={{ backgroundColor: color.hex }}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{color.name}</TooltipContent>
+                </Tooltip>
               ))}
-              {product.colors.length > 8 && (
-                <span className="text-xs text-muted-foreground ml-1">
-                  +{product.colors.length - 8}
+              {(product.colors ?? []).length > 8 && (
+                <span className="ml-1 text-xs text-muted-foreground">
+                  +{(product.colors ?? []).length - 8}
                 </span>
               )}
             </div>
           )}
-          
+
           {/* Materials */}
           {Array.isArray(product.materials) && product.materials.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {product.materials.slice(0, 3).map((material) => (
-                <Badge key={material} variant="secondary" className="text-xs py-0 h-5">
+                <Badge key={material} variant="secondary" className="h-5 py-0 text-xs">
                   {material}
                 </Badge>
               ))}

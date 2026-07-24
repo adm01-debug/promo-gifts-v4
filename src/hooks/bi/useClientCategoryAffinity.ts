@@ -5,11 +5,11 @@
  * e dobra o resultado por categoria via `categoryResolver`. Quando vazio,
  * cai para mock determinístico baseado em MOCK_CLIENT_STATS.topCategories.
  */
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { resolveBICategory, type BICategorySlug } from "@/lib/bi/categoryResolver";
-import { MOCK_CLIENT_STATS } from "@/lib/bi/mockData";
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { resolveBICategory, type BICategorySlug } from '@/lib/bi/categoryResolver';
+import { MOCK_CLIENT_STATS } from '@/lib/bi/mockData';
 
 export interface ClientTopProductRow {
   product_id: string | null;
@@ -23,7 +23,7 @@ export interface ClientTopProductRow {
 }
 
 export interface CategoryAggregate {
-  slug: BICategorySlug | "outros";
+  slug: BICategorySlug | 'outros';
   label: string;
   occurrences: number;
   totalQuantity: number;
@@ -37,7 +37,7 @@ export interface CategoryAggregate {
   /** Variação % entre janela recente e anterior (null se sem dados anteriores) */
   deltaPct: number | null;
   /** Tendência categórica baseada em deltaPct (limiar ±15%) */
-  trend: "up" | "down" | "stable";
+  trend: 'down' | 'stable' | 'up';
   /** Top produtos REAIS dessa categoria (até 5) */
   topProducts: Array<{
     productId: string | null;
@@ -66,9 +66,10 @@ function buildMockResult(): ClientCategoryAffinityResult {
     const recentBias = 0.55 + ((i % 3) - 1) * 0.12; // 0.43, 0.55, 0.67
     const revenueRecent = c.revenue * recentBias;
     const revenuePrevious = c.revenue * (1 - recentBias);
-    const deltaPct = revenuePrevious > 0 ? ((revenueRecent - revenuePrevious) / revenuePrevious) * 100 : null;
-    const trend: CategoryAggregate["trend"] =
-      deltaPct === null ? "stable" : deltaPct > 15 ? "up" : deltaPct < -15 ? "down" : "stable";
+    const deltaPct =
+      revenuePrevious > 0 ? ((revenueRecent - revenuePrevious) / revenuePrevious) * 100 : null;
+    const trend: CategoryAggregate['trend'] =
+      deltaPct === null ? 'stable' : deltaPct > 15 ? 'up' : deltaPct < -15 ? 'down' : 'stable';
     return {
       slug: meta.slug,
       label: c.category,
@@ -93,12 +94,12 @@ function buildMockResult(): ClientCategoryAffinityResult {
 
 export function useClientCategoryAffinity(clientId?: string) {
   const query = useQuery<ClientTopProductRow[]>({
-    queryKey: ["bi-client-category-affinity-raw", clientId],
+    queryKey: ['bi-client-category-affinity-raw', clientId],
     enabled: !!clientId,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       if (!clientId) return [];
-      const { data, error } = await supabase.rpc("get_client_top_products", {
+      const { data, error } = await supabase.rpc('get_client_top_products', {
         _client_id: clientId,
         _limit: 50,
       });
@@ -132,7 +133,7 @@ export function useClientCategoryAffinity(clientId?: string) {
           revenueRecent: 0,
           revenuePrevious: 0,
           deltaPct: null,
-          trend: "stable" as const,
+          trend: 'stable' as const,
           topProducts: [],
         } satisfies CategoryAggregate);
       const revenue = Number(r.total_revenue) || 0;
@@ -169,8 +170,8 @@ export function useClientCategoryAffinity(clientId?: string) {
             : c.revenueRecent > 0
               ? 100
               : null;
-        const trend: CategoryAggregate["trend"] =
-          deltaPct === null ? "stable" : deltaPct > 15 ? "up" : deltaPct < -15 ? "down" : "stable";
+        const trend: CategoryAggregate['trend'] =
+          deltaPct === null ? 'stable' : deltaPct > 15 ? 'up' : deltaPct < -15 ? 'down' : 'stable';
         return {
           ...c,
           revenueSharePct: (c.totalRevenue / totalRev) * 100,

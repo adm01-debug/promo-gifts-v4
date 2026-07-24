@@ -1,0 +1,100 @@
+
+CREATE OR REPLACE FUNCTION public.fn_standardize_raw(p_raw_id uuid, p_override_reference text DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql AS $$
+DECLARE
+  r          public.supplier_products_raw%ROWTYPE;
+  m          RECORD;
+  v_val      text; v_tx text; v_path text;
+  v_assigns  jsonb := '{}'::jsonb;
+  v_errs     jsonb := '[]'::jsonb;
+  v_ncm text; v_ncm_raw text;
+  v_pad_id uuid; v_ref text;
+  v_status public.produtos_padronizacao_status;
+  v_cols text[] := ARRAY[
+    'name','description','short_description','cost_price','suggested_price','stock_quantity',
+    'primary_image_url','images','ncm_code','weight_g','height_cm','width_cm','length_cm',
+    'dimensions_display','box_length_cm','box_width_cm','box_height_cm','box_weight_kg',
+    'box_volume_cm3','box_quantity','box_inner_quantity','brand','packing_type','repacking_type',
+    'capacities','capacity_ml','min_quantity','warranty_months','ipi_rate','engraving_type','is_active'];
+BEGIN
+  SELECT * INTO r FROM public.supplier_products_raw WHERE id = p_raw_id;
+  IF NOT FOUND THEN RETURN jsonb_build_object('success', false, 'error', 'raw_nao_encontrado'); END IF;
+  v_ref := COALESCE(NULLIF(TRIM(p_override_reference),''), r.supplier_reference);
+
+  FOR m IN
+    SELECT source_field, source_path, target_field, transform_type, transform_config, source_unit, target_unit
+    FROM public.supplier_field_mappings
+    WHERE supplier_id=r.supplier_id AND target_table='products' AND is_active=TRUE AND target_field=ANY(v_cols)
+    ORDER BY priority NULLS LAST
+  LOOP
+    v_path := NULLIF(regexp_replace(COALESCE(NULLIF(m.source_path,''), m.source_field, ''), '^\$\.?', ''), '');
+    IF v_path IS NULL THEN v_val := NULL;
+    ELSIF position('.' IN v_path) > 0 THEN v_val := r.raw_data #>> string_to_array(v_path, '.');
+    ELSE v_val := r.raw_data ->> v_path; END IF;
+    CONTINUE WHEN v_val IS NULL OR TRIM(v_val)='';
+
+    BEGIN
+      v_tx := public.fn_apply_transform(v_val, m.transform_type, m.transform_config, m.source_unit, m.target_unit, r.supplier_id);
+    EXCEPTION WHEN OTHERS THEN v_tx := v_val;
+      v_errs := v_errs || jsonb_build_object('field',m.target_field,'stage','transform','msg',SQLERRM);
+    END;
+    -- transforms órfãos (ex. bool_sim_nao) retornam o valor cru; a coerção final trata
+    IF v_tx IS NOT NULL THEN v_assigns := v_assigns || jsonb_build_object(m.target_field, v_tx); END IF;
+  END LOOP;
+
+  -- NCM: inclui Taric (Spot usa código aduaneiro Taric em vez de Ncm)
+  v_ncm_raw := COALESCE(v_assigns->>'ncm_code', r.raw_data->>'ncm', r.raw_data->>'Ncm', r.raw_data->>'Taric');
+  v_ncm := public.fn_normalize_ncm(v_ncm_raw);
+  IF v_ncm IS NOT NULL THEN v_assigns := v_assigns || jsonb_build_object('ncm_code', v_ncm);
+  ELSIF v_ncm_raw IS NOT NULL THEN
+    v_errs := v_errs || jsonb_build_object('field','ncm_code','stage','validate','msg','ncm_invalido','raw',v_ncm_raw);
+    v_assigns := v_assigns - 'ncm_code';
+  END IF;
+
+  v_status := (CASE WHEN jsonb_array_length(v_errs)>0 AND v_assigns->>'name' IS NULL THEN 'rejected' ELSE 'standardized' END)::public.produtos_padronizacao_status;
+
+  INSERT INTO public.produtos_padronizacao AS pad (
+    raw_id, supplier_id, supplier_reference,
+    name, description, short_description, cost_price, suggested_price, stock_quantity,
+    primary_image_url, images, ncm_code, weight_g, height_cm, width_cm, length_cm,
+    dimensions_display, box_length_cm, box_width_cm, box_height_cm, box_weight_kg,
+    box_volume_cm3, box_quantity, box_inner_quantity, brand, packing_type, repacking_type,
+    capacities, capacity_ml, min_quantity, warranty_months, ipi_rate, engraving_type, is_active,
+    status, validation_errors, standardized_at
+  ) VALUES (
+    r.id, r.supplier_id, v_ref,
+    v_assigns->>'name', v_assigns->>'description', v_assigns->>'short_description',
+    public.fn_safe_num(v_assigns->>'cost_price'), public.fn_safe_num(v_assigns->>'suggested_price'), public.fn_safe_int(v_assigns->>'stock_quantity'),
+    v_assigns->>'primary_image_url',
+    CASE WHEN v_assigns ? 'images' THEN (v_assigns->'images') ELSE NULL END,
+    v_assigns->>'ncm_code', public.fn_safe_int(v_assigns->>'weight_g'),
+    public.fn_safe_num(v_assigns->>'height_cm'), public.fn_safe_num(v_assigns->>'width_cm'), public.fn_safe_num(v_assigns->>'length_cm'),
+    v_assigns->>'dimensions_display',
+    public.fn_safe_num(v_assigns->>'box_length_cm'), public.fn_safe_num(v_assigns->>'box_width_cm'), public.fn_safe_num(v_assigns->>'box_height_cm'),
+    public.fn_safe_num(v_assigns->>'box_weight_kg'), public.fn_safe_num(v_assigns->>'box_volume_cm3'),
+    public.fn_safe_int(v_assigns->>'box_quantity'), public.fn_safe_int(v_assigns->>'box_inner_quantity'),
+    v_assigns->>'brand', v_assigns->>'packing_type', v_assigns->>'repacking_type',
+    v_assigns->>'capacities', public.fn_safe_int(v_assigns->>'capacity_ml'), public.fn_safe_int(v_assigns->>'min_quantity'),
+    public.fn_safe_int(v_assigns->>'warranty_months'), public.fn_safe_num(v_assigns->>'ipi_rate'), v_assigns->>'engraving_type',
+    COALESCE(public.fn_safe_bool(v_assigns->>'is_active'), true),
+    v_status, CASE WHEN jsonb_array_length(v_errs)>0 THEN v_errs ELSE NULL END, now()
+  )
+  ON CONFLICT (supplier_id, supplier_reference) DO UPDATE SET
+    raw_id=EXCLUDED.raw_id, name=EXCLUDED.name, description=EXCLUDED.description,
+    short_description=EXCLUDED.short_description, cost_price=EXCLUDED.cost_price,
+    suggested_price=EXCLUDED.suggested_price, stock_quantity=EXCLUDED.stock_quantity,
+    primary_image_url=EXCLUDED.primary_image_url, images=EXCLUDED.images, ncm_code=EXCLUDED.ncm_code,
+    weight_g=EXCLUDED.weight_g, height_cm=EXCLUDED.height_cm, width_cm=EXCLUDED.width_cm, length_cm=EXCLUDED.length_cm,
+    dimensions_display=EXCLUDED.dimensions_display, box_length_cm=EXCLUDED.box_length_cm, box_width_cm=EXCLUDED.box_width_cm,
+    box_height_cm=EXCLUDED.box_height_cm, box_weight_kg=EXCLUDED.box_weight_kg, box_volume_cm3=EXCLUDED.box_volume_cm3,
+    box_quantity=EXCLUDED.box_quantity, box_inner_quantity=EXCLUDED.box_inner_quantity, brand=EXCLUDED.brand,
+    packing_type=EXCLUDED.packing_type, repacking_type=EXCLUDED.repacking_type, capacities=EXCLUDED.capacities,
+    capacity_ml=EXCLUDED.capacity_ml, min_quantity=EXCLUDED.min_quantity, warranty_months=EXCLUDED.warranty_months,
+    ipi_rate=EXCLUDED.ipi_rate, engraving_type=EXCLUDED.engraving_type, is_active=EXCLUDED.is_active,
+    status=EXCLUDED.status, validation_errors=EXCLUDED.validation_errors, standardized_at=now(), updated_at=now()
+  RETURNING pad.id INTO v_pad_id;
+
+  RETURN jsonb_build_object('success',true,'padronizacao_id',v_pad_id,'reference',v_ref,
+                            'campos',(SELECT count(*) FROM jsonb_object_keys(v_assigns)),'erros',v_errs);
+END;
+$$;

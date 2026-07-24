@@ -13,14 +13,16 @@ export interface QuoteItemCalculationParams {
  * Utilitário para arredondamento monetário de 2 casas decimais (Half-up).
  */
 export const round2 = (n: number | null | undefined): number => {
-  const v = typeof n === "number" && Number.isFinite(n) ? n : 0;
+  const v = typeof n === 'number' && Number.isFinite(n) ? n : 0;
   return Math.round((v + Number.EPSILON) * 100) / 100;
 };
 
 /**
  * Calcula o total de personalizações de um item.
  */
-export const calculateItemPersonalizationTotal = (item: Pick<QuoteItemCalculationParams, 'personalizations'>): number => {
+export const calculateItemPersonalizationTotal = (
+  item: Pick<QuoteItemCalculationParams, 'personalizations'>,
+): number => {
   return (item.personalizations || []).reduce((sum, p) => sum + (p.total_cost || 0), 0);
 };
 
@@ -28,7 +30,7 @@ export const calculateItemPersonalizationTotal = (item: Pick<QuoteItemCalculatio
  * Calcula o total bruto de um item (quantidade * preço + gravações) com arredondamento.
  */
 export const calculateItemTotal = (item: QuoteItemCalculationParams): number => {
-  return round2((item.quantity * item.unitPrice) + calculateItemPersonalizationTotal(item));
+  return round2(item.quantity * item.unitPrice + calculateItemPersonalizationTotal(item));
 };
 
 /**
@@ -52,15 +54,16 @@ export const applyMarkup = (baseValue: number, markupPercent: number): number =>
  * Calcula o valor absoluto do desconto com arredondamento.
  */
 export const calculateDiscountAmount = (
-  subtotal: number, 
-  discountType: 'percent' | 'amount', 
-  discountValue: number
+  subtotal: number,
+  discountType: 'amount' | 'percent',
+  discountValue: number,
 ): number => {
   const safeValue = Math.max(0, discountValue || 0);
+  const safeSubtotal = Math.max(0, subtotal || 0);
   if (discountType === 'percent') {
-    return round2((subtotal || 0) * (safeValue / 100));
+    return round2(safeSubtotal * (Math.min(100, safeValue) / 100));
   }
-  return round2(safeValue);
+  return round2(Math.min(safeSubtotal, safeValue));
 };
 
 /**
@@ -70,10 +73,10 @@ export const calculateDiscountAmount = (
 export const calculateRealDiscountPercent = (
   realSubtotal: number,
   presentedSubtotal: number,
-  discountAmount: number
+  discountAmount: number,
 ): number => {
   if (realSubtotal <= 0) return 0;
   const finalBeforeShipping = Math.max(0, presentedSubtotal - discountAmount);
-  // SSOT: Arredondamento para 2 casas decimais no percentual
-  return round2(((realSubtotal - finalBeforeShipping) / realSubtotal) * 100);
+  // SSOT: Arredondamento para 2 casas decimais no percentual; Math.max(0,...) evita negativo quando markup > desconto
+  return round2(Math.max(0, ((realSubtotal - finalBeforeShipping) / realSubtotal) * 100));
 };

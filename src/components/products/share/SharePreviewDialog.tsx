@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { MessageCircle, Send, Eye, Pencil } from 'lucide-react';
+import { MessageCircle, Send, Eye, Pencil, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -22,6 +22,7 @@ interface SelectedVariantInfo {
   variantName?: string | null;
   colorHex?: string | null;
   thumbnailUrl?: string | null;
+  variantImages?: string[] | null;
 }
 
 interface SharePreviewDialogProps {
@@ -47,13 +48,19 @@ export function SharePreviewDialog({
   const mainImages = useMemo(() => {
     const preferredImages: string[] = [];
 
-    if (selectedVariant?.thumbnailUrl) {
-      preferredImages.push(selectedVariant.thumbnailUrl);
-    }
+    const variantImages =
+      selectedVariant?.variantImages && selectedVariant.variantImages.length > 0
+        ? selectedVariant.variantImages
+        : selectedVariant?.thumbnailUrl
+          ? [selectedVariant.thumbnailUrl]
+          : [];
+
+    preferredImages.push(...variantImages);
 
     if (!product.colors || product.colors.length === 0) {
       preferredImages.push(...product.images);
-      return Array.from(new Set(preferredImages));
+      const all = [...new Set(preferredImages)].filter(Boolean);
+      return all.length > 0 ? all : product.images?.[0] ? [product.images[0]] : [];
     }
 
     const colorImageUrls = new Set<string>();
@@ -62,13 +69,15 @@ export function SharePreviewDialog({
       color.images?.forEach((img) => colorImageUrls.add(img));
     });
 
-    const filtered = product.images.filter((img) => !colorImageUrls.has(img));
-    preferredImages.push(
-      ...(filtered.length > 0 ? filtered : product.images[0] ? [product.images[0]] : []),
-    );
+    const mainOnly = product.images.filter((img) => !colorImageUrls.has(img));
+    preferredImages.push(...mainOnly);
 
-    return Array.from(new Set(preferredImages));
-  }, [product.images, product.colors, selectedVariant?.thumbnailUrl]);
+    // Fallback: if everything empty, at least use the product's primary image
+    const final = [...new Set(preferredImages)].filter(Boolean);
+    if (final.length === 0 && product.images?.[0]) return [product.images[0]];
+
+    return final;
+  }, [product.images, product.colors, selectedVariant]);
 
   const [selectedImages, setSelectedImages] = useState<Set<number>>(
     () => new Set(mainImages.map((_, i) => i)),
@@ -118,7 +127,24 @@ export function SharePreviewDialog({
     setCustomMessage(null);
   };
 
+  const phoneError = useMemo(() => {
+    if (!contactSelection?.contactPhone) return null;
+    const digits = contactSelection.contactPhone.replace(/\D/g, '');
+    if (digits.length < 10) return 'Telefone muito curto (mínimo 10 dígitos)';
+    if (digits.length > 13) return 'Telefone muito longo';
+    return null;
+  }, [contactSelection?.contactPhone]);
+
   const handleSend = () => {
+    if (phoneError) {
+      toast({
+        title: 'Telefone inválido',
+        description: phoneError,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const target = contactSelection?.contactName || contactSelection?.companyName || 'destinatário';
 
     const { opened } = openWhatsAppShare({
@@ -250,11 +276,17 @@ export function SharePreviewDialog({
 
           {/* Contact selector */}
           <div className="space-y-2">
-            <span className="text-xs font-medium text-muted-foreground">Destinatário</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">Destinatário</span>
+              {phoneError && (
+                <span className="flex items-center gap-1 text-[10px] font-medium text-destructive">
+                  <AlertCircle className="h-3 w-3" /> {phoneError}
+                </span>
+              )}
+            </div>
             <ShareContactSelector selection={contactSelection} onSelect={setContactSelection} />
           </div>
 
-          {/* Actions */}
           <div className="flex gap-2 pt-1">
             <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
               Cancelar
@@ -262,6 +294,7 @@ export function SharePreviewDialog({
             <Button
               className="flex-1 gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={handleSend}
+              disabled={!!phoneError}
             >
               <Send className="h-4 w-4" />
               Enviar - WhatsApp

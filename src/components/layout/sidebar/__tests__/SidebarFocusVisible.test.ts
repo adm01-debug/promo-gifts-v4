@@ -4,7 +4,7 @@
 // https://github.com/adm01-debug/Promo_Gifts/issues/151
 //
 // CAUSA: tentei re-habilitar em 2026-05-12 reescrevendo as assertions para
-// refletir tokens atuais (ring-1 + ring-orange/N em vez de ring-2 +
+// refletir tokens atuais (ring-1 + ring-brand-primary/N em vez de ring-2 +
 // ring-primary + ring-offset). Localmente passava (grep confirma 3
 // ocorrências de cada padrão no componente), mas o CI do PR #168 falhou
 // no job 'Lint, Typecheck & Test'.
@@ -32,34 +32,33 @@
  * que se comporta igual em todas as larguras — o que precisamos garantir é
  * que as classes Tailwind estão presentes.
  */
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { describe, it, expect } from "vitest";
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, it, expect } from 'vitest';
 
-const FILE = "src/components/layout/sidebar/SidebarNavGroup.tsx";
+const FILE = 'src/components/layout/sidebar/SidebarNavGroup.tsx';
 
-describe.skip("Sidebar — focus-visible por teclado em todos os interativos", () => {
-  const content = readFileSync(resolve(process.cwd(), FILE), "utf8");
+describe.skip('Sidebar — focus-visible por teclado em todos os interativos', () => {
+  const content = readFileSync(resolve(process.cwd(), FILE), 'utf8');
 
   const ringMatches = content.match(/focus-visible:ring-1\b/g) ?? [];
-  const orangeMatches = content.match(/focus-visible:ring-orange\/\d+/g) ?? [];
+  const orangeMatches = content.match(/focus-visible:ring-brand-primary\/\d+/g) ?? [];
 
-  it("tem pelo menos 3 elementos interativos com ring de foco", () => {
+  it('tem pelo menos 3 elementos interativos com ring de foco', () => {
     expect(ringMatches.length).toBeGreaterThanOrEqual(3);
   });
 
-  it("todos os rings de foco usam a cor brand orange (visível em light + dark)", () => {
+  it('todos os rings de foco usam a cor brand orange (visível em light + dark)', () => {
     expect(orangeMatches.length).toBe(ringMatches.length);
   });
 
-  it("não usa outline padrão removido sem ring de substituição na mesma linha", () => {
-    const lines = content.split("\n");
+  it('não usa outline padrão removido sem ring de substituição na mesma linha', () => {
+    const lines = content.split('\n');
     for (const line of lines) {
-      if (line.includes("focus-visible:outline-none")) {
-        expect(
-          line,
-          `Linha removeu outline mas não tem ring de foco: ${line.trim()}`,
-        ).toMatch(/focus-visible:ring-\d+/);
+      if (line.includes('focus-visible:outline-none')) {
+        expect(line, `Linha removeu outline mas não tem ring de foco: ${line.trim()}`).toMatch(
+          /focus-visible:ring-\d+/,
+        );
       }
     }
   });

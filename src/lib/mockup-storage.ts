@@ -1,12 +1,13 @@
 /**
  * Mockup Storage Utilities
- * 
+ *
  * Handles uploading logos and mockup assets to the storage bucket
  * instead of storing base64 in the database.
  */
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 
+import { logger } from '@/lib/logger';
 /**
  * Upload a base64 image to the mockup-assets bucket.
  * Returns the public URL of the uploaded file.
@@ -14,48 +15,43 @@ import { supabase } from "@/integrations/supabase/client";
 export async function uploadLogoToStorage(
   userId: string,
   base64Data: string,
-  fileName?: string
+  fileName?: string,
 ): Promise<string | null> {
   try {
     // Convert base64 to blob
-    const base64Content = base64Data.split(",")[1];
+    const base64Content = base64Data.split(',')[1];
     if (!base64Content) return null;
 
-    const mimeMatch = base64Data.match(/data:([^;]+);/);
-    const mimeType = mimeMatch?.[1] || "image/png";
-    const extension = mimeType.split("/")[1] || "png";
+    const mimeMatch = /data:([^;]+);/.exec(base64Data);
+    const mimeType = mimeMatch?.[1] || 'image/png';
+    const extension = mimeType.split('/')[1] || 'png';
 
-    const byteCharacters = atob(base64Content);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
+    // BUG-09 FIX: Uint8Array.from with a mapping callback is ~10× faster than a manual
+    // for-loop iterating char by char over strings that can reach ~2.7 MB (2 MB logo → base64).
+    const byteArray = Uint8Array.from(atob(base64Content), (c) => c.charCodeAt(0));
     const blob = new Blob([byteArray], { type: mimeType });
 
     // Generate unique file path: userId/logos/timestamp-name.ext
-    const safeName = (fileName || "logo").replace(/[^a-zA-Z0-9-_]/g, "_");
+    const safeName = (fileName || 'logo').replace(/[^a-zA-Z0-9-_]/g, '_');
     const filePath = `${userId}/logos/${Date.now()}-${safeName}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("mockup-assets")
+      .from('mockup-assets')
       .upload(filePath, blob, {
         contentType: mimeType,
         upsert: false,
       });
 
     if (uploadError) {
-      console.error("[mockup-storage] Upload error:", uploadError);
+      logger.error('[mockup-storage] Upload error:', uploadError);
       return null;
     }
 
-    const { data: urlData } = supabase.storage
-      .from("mockup-assets")
-      .getPublicUrl(filePath);
+    const { data: urlData } = supabase.storage.from('mockup-assets').getPublicUrl(filePath);
 
     return urlData?.publicUrl || null;
   } catch (err) {
-    console.error("[mockup-storage] Exception during upload:", err);
+    logger.error('[mockup-storage] Exception during upload:', err);
     return null;
   }
 }
@@ -64,16 +60,18 @@ export async function uploadLogoToStorage(
  * Download an image from a URL as a blob and trigger browser download.
  * Works for cross-origin URLs by fetching the image first.
  */
-export async function downloadImageFromUrl(
-  url: string,
-  fileName: string
-): Promise<void> {
+export async function downloadImageFromUrl(url: string, fileName: string): Promise<void> {
   try {
-    const response = await fetch(url, { cache: "no-store" });
+    const response = await fetch(url, { cache: 'no-store' });
+    // BUG-07 FIX: without this check a 404/CORS error body was silently turned into a corrupt
+    // blob, which then downloaded as a broken file with no user-visible error.
+    if (!response.ok) {
+      throw new Error(`Falha ao baixar imagem (${response.status})`);
+    }
     const blob = await response.blob();
     const blobUrl = URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = blobUrl;
     link.download = fileName;
     document.body.appendChild(link);
@@ -83,23 +81,20 @@ export async function downloadImageFromUrl(
     // Cleanup blob URL after short delay
     setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
   } catch (err) {
-    console.error("[mockup-storage] Download error:", err);
+    logger.error('[mockup-storage] Download error:', err);
     // Fallback: open in new tab
-    window.open(url, "_blank");
+    window.open(url, '_blank');
   }
 }
 
 /**
  * Download an image URL wrapped inside a single-page PDF.
  */
-export async function downloadImageAsPdfFromUrl(
-  url: string,
-  fileName: string
-): Promise<void> {
+export async function downloadImageAsPdfFromUrl(url: string, fileName: string): Promise<void> {
   try {
     const [{ jsPDF }, response] = await Promise.all([
-      import("jspdf"),
-      fetch(url, { cache: "no-store" }),
+      import('jspdf'),
+      fetch(url, { cache: 'no-store' }),
     ]);
 
     if (!response.ok) {
@@ -110,8 +105,8 @@ export async function downloadImageAsPdfFromUrl(
     const dataUrl = await blobToDataUrl(blob);
     const imageInfo = await getImageInfo(dataUrl);
 
-    const orientation = imageInfo.width > imageInfo.height ? "landscape" : "portrait";
-    const pdf = new jsPDF({ orientation, unit: "mm", format: "a4" });
+    const orientation = imageInfo.width > imageInfo.height ? 'landscape' : 'portrait';
+    const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
 
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
@@ -132,14 +127,23 @@ export async function downloadImageAsPdfFromUrl(
       offsetX = (pageWidth - renderWidth) / 2;
     }
 
-    const imageFormat = blob.type.includes("png") ? "PNG" : "JPEG";
-    pdf.addImage(dataUrl, imageFormat, offsetX, offsetY, renderWidth, renderHeight, undefined, "FAST");
+    const imageFormat = blob.type.includes('png') ? 'PNG' : 'JPEG';
+    pdf.addImage(
+      dataUrl,
+      imageFormat,
+      offsetX,
+      offsetY,
+      renderWidth,
+      renderHeight,
+      undefined,
+      'FAST',
+    );
 
-    const pdfFileName = fileName.toLowerCase().endsWith(".pdf") ? fileName : `${fileName}.pdf`;
+    const pdfFileName = fileName.toLowerCase().endsWith('.pdf') ? fileName : `${fileName}.pdf`;
     pdf.save(pdfFileName);
   } catch (err) {
-    console.error("[mockup-storage] PDF download error:", err);
-    window.open(url, "_blank");
+    logger.error('[mockup-storage] PDF download error:', err);
+    window.open(url, '_blank');
   }
 }
 
@@ -147,7 +151,7 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error("Falha ao converter blob para data URL"));
+    reader.onerror = () => reject(new Error('Falha ao converter blob para data URL'));
     reader.readAsDataURL(blob);
   });
 }
@@ -156,8 +160,7 @@ function getImageInfo(src: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    img.onerror = () => reject(new Error("Falha ao carregar imagem para PDF"));
+    img.onerror = () => reject(new Error('Falha ao carregar imagem para PDF'));
     img.src = src;
   });
 }
-

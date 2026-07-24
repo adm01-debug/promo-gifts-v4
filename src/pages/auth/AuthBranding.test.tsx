@@ -1,6 +1,6 @@
 import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SpaceScene } from "@/pages/auth/AuthBranding";
+import { SpaceScene } from '@/pages/auth/AuthBranding';
 
 // Mock lucide-react para evitar render real de ícones no teste.
 vi.mock('lucide-react', () => ({

@@ -37,11 +37,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Calculator, Save, FolderOpen, Trash2, Loader2, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { SelectedProduct } from '@/types/domain/simulator-wizard';
+import { cn } from '@/lib/utils';
 
 interface PreSelectedProductState {
   id: string;
@@ -92,6 +93,7 @@ export default function SimuladorWizard() {
         duration: 3000,
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, wizard.selectProduct]);
 
   const isInPersonalizationFlow =
@@ -123,198 +125,202 @@ export default function SimuladorWizard() {
 
   const handleLoadDraft = (draft: (typeof drafts)[0]) => {
     if (draft.product_data) {
-      wizard.selectProduct(draft.product_data);
-      wizard.setQuantity(draft.quantity);
-      // Personalizations will be restored via the product selection flow
+      // Restore the full draft (product + quantity + personalizations) atomically.
+      // selectProduct alone would wipe personalizations — see LOAD_DRAFT reducer.
+      wizard.loadDraft({
+        product: draft.product_data,
+        quantity: draft.quantity,
+        personalizations: draft.personalizations ?? [],
+      });
       toast.success(`Rascunho "${draft.title}" carregado`);
     }
   };
 
   return (
     <>
-        <PageSEO
-          title="Simulador de Personalização"
-          description="Simule personalizações de brindes com cálculo automático de custos."
-          path="/simulador"
-        />
-        <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in min-h-[calc(100vh-8rem)]">
-          {/* Compact Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mb-4 flex items-center justify-between gap-3 px-1"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="rounded-lg bg-gradient-to-br from-primary to-primary/80 p-2 shadow-md shadow-primary/25">
-                <Calculator className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <h1
-                data-testid="page-title-simulador"
-                className="font-display text-lg font-bold tracking-tight"
-              >
-                Simulador
-              </h1>
+      <PageSEO
+        title="Simulador de Personalização"
+        description="Simule personalizações de brindes com cálculo automático de custos."
+        path="/simulador"
+      />
+      <div className="mx-auto min-h-[calc(100vh-8rem)] w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
+        {/* Compact Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mb-4 flex items-center justify-between gap-3 px-1"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="rounded-lg bg-gradient-to-br from-primary to-primary/80 p-2 shadow-md shadow-primary/25">
+              <Calculator className="h-4 w-4 text-primary-foreground" />
             </div>
-
-            {/* Draft Actions */}
-            <div className="flex items-center gap-1.5">
-              {wizard.selectedProduct && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1.5 px-2.5"
-                  onClick={() => {
-                    setDraftTitle(`${wizard.selectedProduct?.name} - ${wizard.quantity}un`);
-                    setSaveDialogOpen(true);
-                  }}
-                >
-                  <Save className="h-3.5 w-3.5" />
-                  <span className="hidden text-xs sm:inline">Salvar</span>
-                </Button>
-              )}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5">
-                    <FolderOpen className="h-3.5 w-3.5" />
-                    <span className="hidden text-xs sm:inline">Rascunhos</span>
-                    {drafts.length > 0 && (
-                      <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
-                        {drafts.length}
-                      </Badge>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-72">
-                  {draftsLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    </div>
-                  ) : drafts.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      Nenhum rascunho salvo
-                    </div>
-                  ) : (
-                    drafts.map((draft) => (
-                      <DropdownMenuItem
-                        key={draft.id}
-                        className="flex items-start justify-between gap-2 p-3"
-                        onClick={() => handleLoadDraft(draft)}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{draft.title}</p>
-                          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />
-                            {format(new Date(draft.updated_at), 'dd/MM HH:mm', { locale: ptBR })}
-                            <span>• {draft.quantity}un</span>
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Excluir"
-                          className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteDraft(draft.id);
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuItem>
-                    ))
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </motion.div>
-
-          {/* Layout com Sidebar */}
-          <div className={`flex gap-6 ${showSidebar ? 'lg:pr-80' : ''}`}>
-            {/* Main Content */}
-            <div className="min-w-0 flex-1">
-              {/* Context Bar */}
-              {isInPersonalizationFlow && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                  className="mb-4"
-                >
-                  <WizardContextBar wizard={wizard} />
-                </motion.div>
-              )}
-
-              {/* Step Indicator */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mb-8"
-              >
-                <WizardStepIndicator wizard={wizard} />
-              </motion.div>
-
-              {/* Tabs de Personalizações */}
-              {isInPersonalizationFlow && wizard.personalizations.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
-                  className="mx-auto mb-6 max-w-5xl"
-                >
-                  <PersonalizationTabs wizard={wizard} onAddNew={handleAddNewPersonalization} />
-                </motion.div>
-              )}
-
-              {/* Step Content */}
-              <SimulatorErrorBoundary
-                onReset={wizard.resetWizard}
-                onGoBack={() => wizard.setStep('product')}
-              >
-                <motion.div
-                  key={wizard.currentStep}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="pb-16"
-                >
-                  {wizard.currentStep === 'product' && <StepProduct wizard={wizard} />}
-                  {wizard.currentStep === 'location' && <StepLocation wizard={wizard} />}
-                  {wizard.currentStep === 'specs' && <StepSpecs wizard={wizard} />}
-                  {wizard.currentStep === 'comparison' && <StepComparison wizard={wizard} />}
-                </motion.div>
-              </SimulatorErrorBoundary>
-            </div>
-
-            {/* Sidebar - Resumo */}
-            {showSidebar && (
-              <motion.aside
-                initial={{ opacity: 0, x: 40 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                className="fixed bottom-8 right-4 top-32 hidden w-72 overflow-hidden rounded-2xl border bg-card shadow-xl lg:block"
-              >
-                <PersonalizationSummary
-                  wizard={wizard}
-                  onAddNew={handleAddNewPersonalization}
-                  onGenerateQuote={handleGenerateQuote}
-                  showAddButton={!wizard.isEditingPersonalization}
-                />
-              </motion.aside>
-            )}
+            <h1
+              data-testid="page-title-simulador"
+              className="font-display text-lg font-bold tracking-tight"
+            >
+              Simulador
+            </h1>
           </div>
 
-          {/* Mobile Summary Bottom Bar */}
+          {/* Draft Actions */}
+          <div className="flex items-center gap-1.5">
+            {wizard.selectedProduct && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2.5"
+                onClick={() => {
+                  setDraftTitle(`${wizard.selectedProduct?.name} - ${wizard.quantity}un`);
+                  setSaveDialogOpen(true);
+                }}
+              >
+                <Save className="h-3.5 w-3.5" />
+                <span className="hidden text-xs sm:inline">Salvar</span>
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-2.5">
+                  <FolderOpen className="h-3.5 w-3.5" />
+                  <span className="hidden text-xs sm:inline">Rascunhos</span>
+                  {drafts.length > 0 && (
+                    <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+                      {drafts.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                {draftsLoading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </div>
+                ) : drafts.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    Nenhum rascunho salvo
+                  </div>
+                ) : (
+                  drafts.map((draft) => (
+                    <DropdownMenuItem
+                      key={draft.id}
+                      className="flex items-start justify-between gap-2 p-3"
+                      onClick={() => handleLoadDraft(draft)}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{draft.title}</p>
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {format(new Date(draft.updated_at), 'dd/MM HH:mm', { locale: ptBR })}
+                          <span>• {draft.quantity}un</span>
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Excluir"
+                        className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteDraft(draft.id);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </motion.div>
+
+        {/* Layout com Sidebar */}
+        <div className={cn('flex gap-6', showSidebar && 'lg:pr-80')}>
+          {/* Main Content */}
+          <div className="min-w-0 flex-1">
+            {/* Context Bar */}
+            {isInPersonalizationFlow && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="mb-4"
+              >
+                <WizardContextBar wizard={wizard} />
+              </motion.div>
+            )}
+
+            {/* Step Indicator */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-8"
+            >
+              <WizardStepIndicator wizard={wizard} />
+            </motion.div>
+
+            {/* Tabs de Personalizações */}
+            {isInPersonalizationFlow && wizard.personalizations.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="mx-auto mb-6 max-w-5xl"
+              >
+                <PersonalizationTabs wizard={wizard} onAddNew={handleAddNewPersonalization} />
+              </motion.div>
+            )}
+
+            {/* Step Content */}
+            <SimulatorErrorBoundary
+              onReset={wizard.resetWizard}
+              onGoBack={() => wizard.setStep('product')}
+            >
+              <motion.div
+                key={wizard.currentStep}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="pb-16"
+              >
+                {wizard.currentStep === 'product' && <StepProduct wizard={wizard} />}
+                {wizard.currentStep === 'location' && <StepLocation wizard={wizard} />}
+                {wizard.currentStep === 'specs' && <StepSpecs wizard={wizard} />}
+                {wizard.currentStep === 'comparison' && <StepComparison wizard={wizard} />}
+              </motion.div>
+            </SimulatorErrorBoundary>
+          </div>
+
+          {/* Sidebar - Resumo */}
           {showSidebar && (
-            <MobilePersonalizationSummary
-              wizard={wizard}
-              onAddNew={handleAddNewPersonalization}
-              onGenerateQuote={handleGenerateQuote}
-            />
+            <motion.aside
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="fixed bottom-8 right-4 top-32 hidden w-72 overflow-hidden rounded-2xl border bg-card shadow-xl lg:block"
+            >
+              <PersonalizationSummary
+                wizard={wizard}
+                onAddNew={handleAddNewPersonalization}
+                onGenerateQuote={handleGenerateQuote}
+                showAddButton={!wizard.isEditingPersonalization}
+              />
+            </motion.aside>
           )}
         </div>
+
+        {/* Mobile Summary Bottom Bar */}
+        {showSidebar && (
+          <MobilePersonalizationSummary
+            wizard={wizard}
+            onAddNew={handleAddNewPersonalization}
+            onGenerateQuote={handleGenerateQuote}
+          />
+        )}
+      </div>
 
       {/* Save Draft Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>

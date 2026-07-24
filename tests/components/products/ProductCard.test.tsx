@@ -9,6 +9,7 @@ import React from "react";
 vi.mock("@/utils/image-utils", () => ({
   getCdnUrl: vi.fn((url: string) => url),
   getSrcSet: vi.fn(() => ""),
+  getBlurhashDominantColor: vi.fn(() => null),
 }));
 
 vi.mock("@/components/collections/AddToCollectionModal", () => ({
@@ -169,7 +170,7 @@ describe("ProductCard", () => {
     expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
   });
 
-  it("shows carousel dots when 2+ color filters match", async () => {
+  it("shows color swatches when 2+ color filters match", async () => {
     const { ProductCard } = await import("@/components/products/ProductCard");
     renderWithProviders(
       <ProductCard
@@ -177,16 +178,15 @@ describe("ProductCard", () => {
         activeColorFilter={{ groups: ["rosa", "azul"], variations: [] }}
       />
     );
-    const tablist = screen.getByRole("tablist");
-    expect(tablist).toBeInTheDocument();
-    // Should have 2 tab buttons
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(2);
-    // Counter shows "1/2"
-    expect(screen.getByText("1/2")).toBeInTheDocument();
+    // Tablist was removed; color swatches are now a radiogroup
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    const radiogroup = screen.getByRole("radiogroup");
+    expect(radiogroup).toBeInTheDocument();
+    const radios = screen.getAllByRole("radio");
+    expect(radios.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("shows 3 carousel dots when 3 colors match", async () => {
+  it("shows 3 color swatches when product has 3 colors", async () => {
     const { ProductCard } = await import("@/components/products/ProductCard");
     renderWithProviders(
       <ProductCard
@@ -194,12 +194,13 @@ describe("ProductCard", () => {
         activeColorFilter={{ groups: ["rosa", "azul", "verde"], variations: [] }}
       />
     );
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(3);
-    expect(screen.getByText("1/3")).toBeInTheDocument();
+    // Tablist was removed; color swatches are now a radiogroup
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    const radios = screen.getAllByRole("radio");
+    expect(radios).toHaveLength(3);
   });
 
-  it("carousel dots have correct aria-labels", async () => {
+  it("color swatches have correct aria-labels", async () => {
     const { ProductCard } = await import("@/components/products/ProductCard");
     renderWithProviders(
       <ProductCard
@@ -207,11 +208,11 @@ describe("ProductCard", () => {
         activeColorFilter={{ groups: ["rosa", "azul"], variations: [] }}
       />
     );
-    expect(screen.getByLabelText("Ver variante Rosa Pink")).toBeInTheDocument();
-    expect(screen.getByLabelText("Ver variante Azul Royal")).toBeInTheDocument();
+    expect(screen.getByLabelText("Opção de cor: Rosa Pink")).toBeInTheDocument();
+    expect(screen.getByLabelText("Opção de cor: Azul Royal")).toBeInTheDocument();
   });
 
-  it("first dot is selected by default (aria-selected)", async () => {
+  it("first color swatch is selected by default (aria-checked)", async () => {
     const { ProductCard } = await import("@/components/products/ProductCard");
     renderWithProviders(
       <ProductCard
@@ -219,12 +220,13 @@ describe("ProductCard", () => {
         activeColorFilter={{ groups: ["rosa", "azul"], variations: [] }}
       />
     );
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs[0]).toHaveAttribute("aria-selected", "true");
-    expect(tabs[1]).toHaveAttribute("aria-selected", "false");
+    const pinkSwatch = screen.getByLabelText("Opção de cor: Rosa Pink");
+    expect(pinkSwatch).toHaveAttribute("aria-checked", "true");
+    const blueSwatch = screen.getByLabelText("Opção de cor: Azul Royal");
+    expect(blueSwatch).toHaveAttribute("aria-checked", "false");
   });
 
-  it("renders product without colors and no filter gracefully", async () => {
+  it("renders product without colors gracefully", async () => {
     const { ProductCard } = await import("@/components/products/ProductCard");
     renderWithProviders(
       <ProductCard
@@ -232,11 +234,9 @@ describe("ProductCard", () => {
         activeColorFilter={{ groups: ["rosa", "azul"], variations: [] }}
       />
     );
-    // Should render fallback dots from COLOR_GROUP_HEX
-    const tablist = screen.getByRole("tablist");
-    expect(tablist).toBeInTheDocument();
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs).toHaveLength(2);
+    // No tablist and no radiogroup — product has no colors
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+    expect(screen.getByText("Caneta Premium")).toBeInTheDocument();
   });
 });
 
@@ -272,10 +272,10 @@ describe("ProductCard — category line (PR)", () => {
     expect(emptyBadge).toBeUndefined();
   });
 
-  it("renders the sparkline section label as 'Vendas 30d' (not the old label)", async () => {
+  it("renders a sales stats button with 'Vendas Xd' label (not the old 'Vendas no Fornecedor' label)", async () => {
     const { ProductCard } = await import("@/components/products/ProductCard");
     renderWithProviders(<ProductCard product={mockProduct as any} />);
-    expect(screen.getByText("Vendas 30d")).toBeInTheDocument();
+    expect(screen.getByText(/^Vendas \d+d$/)).toBeInTheDocument();
     expect(screen.queryByText(/Vendas no Fornecedor/i)).not.toBeInTheDocument();
   });
 

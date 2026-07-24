@@ -1,9 +1,12 @@
+// supabase/functions/quote-followup-reminders/index.ts
+// BUG-EF-007 FIXED: supabase-js@2.45.0 -> @2.49.4
 /**
  * quote-followup-reminders
- * Cria notificações para vendedores cujos orçamentos enviados há ≥2 dias
- * ainda não foram visualizados pelo cliente. Idempotente por dia (não duplica).
+ * Cria notificacoes para vendedores cujos orcamentos enviados ha >=2 dias
+ * ainda nao foram visualizados pelo cliente. Idempotente por dia (nao duplica).
  */
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+// BULK-SDK-FIX: Changed from esm.sh URL to npm: direct — removes import_map dependency.
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { buildPublicCorsHeaders } from "../_shared/cors.ts";
 import { authorizeCron } from "../_shared/dispatcher-auth.ts";
 
@@ -12,7 +15,7 @@ const corsHeaders = buildPublicCorsHeaders();
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Cron: exige x-cron-secret para evitar chamadas diretas não autorizadas
+  // Cron: exige x-cron-secret para evitar chamadas diretas nao autorizadas
   const cronAuth = await authorizeCron(req, {
     corsHeaders: {},
     secretEnvName: "CRON_SECRET",
@@ -28,12 +31,18 @@ Deno.serve(async (req) => {
 
     const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
 
-    // 1) Orçamentos enviados há ≥2d
+    // 1) Orcamentos enviados ha >=2d sem resposta do cliente.
+    // Usa sent_at (data em que o status virou 'sent') como referência — não updated_at,
+    // pois qualquer edição no orçamento reseta updated_at e zeraria o timer de follow-up.
+    // Fallback: quotes sem sent_at preenchido (legados) são ignorados intencionalmente.
+    // BUG-N FIX: include 'viewed' — client opened link but hasn't responded yet;
+    // still needs follow-up after 2 days just as much as 'sent' quotes.
     const { data: quotes, error: qErr } = await supabase
       .from("quotes")
-      .select("id, quote_number, client_name, seller_id, updated_at")
-      .in("status", ["sent", "pending"])
-      .lte("updated_at", twoDaysAgo)
+      .select("id, quote_number, client_name, seller_id, sent_at, status")
+      .in("status", ["sent", "viewed"])
+      .not("sent_at", "is", null)
+      .lte("sent_at", twoDaysAgo)
       .limit(500);
 
     if (qErr) throw qErr;
@@ -43,14 +52,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const quoteIds = quotes.map((q) => q.id);
-
-    // 2) Todos os orçamentos com ≥2d são candidatos
-    // (Tokens públicos foram removidos em 07/05/2026 — não há mais sinal de "visualização externa".
-    //  A heurística agora é puramente temporal: orçamento parado há ≥2d gera lembrete.)
     const candidates = quotes;
 
-    // 3) Idempotência: ignora os que já têm reminder hoje
+    // 2) Idempotencia: ignora os que ja tem reminder hoje
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const { data: existing } = await supabase
@@ -60,18 +64,28 @@ Deno.serve(async (req) => {
       .gte("created_at", todayStart.toISOString());
     const existingSet = new Set((existing || []).map((e) => e.quote_id));
 
+    // BUG-N FIX: reminder_type and message differ by status:
+    // 'sent'   → client hasn't opened the link yet (no_view)
+    // 'viewed' → client opened but hasn't responded (no_response)
     const toInsert = candidates
       .filter((c) => !existingSet.has(c.id) && c.seller_id)
-      .map((c) => ({
-        quote_id: c.id,
-        seller_id: c.seller_id!,
-        reminder_type: "no_view",
-        scheduled_for: new Date().toISOString(),
-        title: `Orçamento ${c.quote_number} sem visualização`,
-        notes: `Cliente ${c.client_name || "—"} ainda não abriu o link. Considere enviar follow-up.`,
-        is_sent: true,
-        sent_at: new Date().toISOString(),
-      }));
+      .map((c) => {
+        const isViewed = c.status === "viewed";
+        return {
+          quote_id: c.id,
+          seller_id: c.seller_id!,
+          reminder_type: isViewed ? "no_response" : "no_view",
+          scheduled_for: new Date().toISOString(),
+          title: isViewed
+            ? `Orcamento ${c.quote_number} sem resposta`
+            : `Orcamento ${c.quote_number} sem visualizacao`,
+          notes: isViewed
+            ? `Cliente ${c.client_name || "--"} visualizou mas nao respondeu. Considere entrar em contato.`
+            : `Cliente ${c.client_name || "--"} ainda nao abriu o link. Considere enviar follow-up.`,
+          is_sent: true,
+          sent_at: new Date().toISOString(),
+        };
+      });
 
     let inserted = 0;
     if (toInsert.length > 0) {

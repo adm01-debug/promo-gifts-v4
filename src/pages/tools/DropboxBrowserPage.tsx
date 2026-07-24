@@ -3,9 +3,10 @@ import { useDropboxFiles } from '@/hooks/intelligence';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Folder, File, ArrowUp, Image, RefreshCw, CloudOff, Cloud } from 'lucide-react';
+import { Folder, File, ArrowUp, Image, RefreshCw, Cloud } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { EdgeFallback } from '@/components/shared/EdgeFallback';
 
 export default function DropboxBrowserPage() {
   const {
@@ -13,17 +14,19 @@ export default function DropboxBrowserPage() {
     isLoading,
     isConnected,
     currentPath,
+    error,
     checkConnection,
     listFiles,
     navigateToFolder,
     navigateUp,
+    retry,
   } = useDropboxFiles();
 
   useEffect(() => {
     checkConnection().then((connected) => {
       if (connected) listFiles('');
     });
-  }, []);
+  }, [checkConnection, listFiles]);
 
   const formatSize = (bytes?: number) => {
     if (!bytes) return '';
@@ -43,20 +46,21 @@ export default function DropboxBrowserPage() {
           path="/dropbox"
           noIndex
         />
-        <CloudOff className="h-16 w-16 text-muted-foreground" />
-        <h2 className="font-display text-xl font-semibold text-foreground">
-          Dropbox não conectado
-        </h2>
-        <p className="max-w-md text-center text-muted-foreground">
-          Configure o token de acesso do Dropbox nas variáveis de ambiente para usar esta
-          integração.
-        </p>
+        <EdgeFallback
+          variant="disconnected"
+          title="Dropbox não conectado"
+          description="Configure a integração do Dropbox nas conexões do painel administrativo para navegar seus arquivos por aqui."
+          tip="Se você é administrador, valide o token em Admin › Conexões."
+          onRetry={retry}
+          retryLabel="Verificar novamente"
+          isRetrying={isLoading}
+        />
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
       <div className="flex items-center justify-between">
         <div>
           <h1
@@ -87,7 +91,7 @@ export default function DropboxBrowserPage() {
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2"
-                  onClick={() => listFiles('/' + pathParts.slice(0, i + 1).join('/'))}
+                  onClick={() => listFiles(`/${pathParts.slice(0, i + 1).join('/')}`)}
                 >
                   {part}
                 </Button>
@@ -110,12 +114,28 @@ export default function DropboxBrowserPage() {
         <CardContent>
           {isLoading ? (
             <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
+              {Array.from({ length: 5 }, (_, i) => (
                 <Skeleton key={i} className="h-12 w-full" />
               ))}
             </div>
+          ) : error ? (
+            <EdgeFallback
+              variant="error"
+              title="Não foi possível listar os arquivos"
+              error={error}
+              tip="Verifique sua conexão ou tente novamente em alguns instantes."
+              onRetry={retry}
+              isRetrying={isLoading}
+            />
           ) : entries.length === 0 ? (
-            <p className="py-8 text-center text-muted-foreground">Pasta vazia</p>
+            <EdgeFallback
+              variant="empty"
+              title="Pasta vazia"
+              description="Nenhum arquivo ou subpasta nesta localização."
+              onRetry={retry}
+              retryLabel="Recarregar"
+              isRetrying={isLoading}
+            />
           ) : (
             <div className="divide-y">
               {entries

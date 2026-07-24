@@ -19,14 +19,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 const SLA_MEDIAN_MS = 3500;
 const SLA_HARD_CEILING_MS = 8000;
-const REGRESSION_RATIO = 1.5;          // 50% mais lento que o baseline = regressão
-const MIN_SAMPLES_CURRENT = 5;         // mínimo para considerar a janela atual significativa
-const MIN_SAMPLES_BASELINE = 10;       // mínimo para que o baseline seja confiável
+const REGRESSION_RATIO = 1.5; // 50% mais lento que o baseline = regressão
+const MIN_SAMPLES_CURRENT = 5; // mínimo para considerar a janela atual significativa
+const MIN_SAMPLES_BASELINE = 10; // mínimo para que o baseline seja confiável
 
-export type LatencyAlertSeverity = 'ok' | 'warning' | 'critical';
+export type LatencyAlertSeverity = 'critical' | 'ok' | 'warning';
 
 export interface LatencyAlertReason {
-  code: 'sla-breach' | 'regression' | 'spike-very-slow' | 'insufficient-data';
+  code: 'insufficient-data' | 'regression' | 'sla-breach' | 'spike-very-slow';
   message: string;
 }
 
@@ -61,13 +61,13 @@ function percentile(sortedValues: number[], p: number): number {
 
 function summarize(rows: TelemetryRow[]) {
   if (rows.length === 0) return { samples: 0, avgMs: 0, p95Ms: 0, verySlowCount: 0 };
-  const durations = rows.map(r => r.duration_ms).sort((a, b) => a - b);
+  const durations = rows.map((r) => r.duration_ms).sort((a, b) => a - b);
   const sum = durations.reduce((acc, v) => acc + v, 0);
   return {
     samples: rows.length,
     avgMs: Math.round(sum / rows.length),
     p95Ms: percentile(durations, 0.95),
-    verySlowCount: rows.filter(r => r.severity === 'very_slow').length,
+    verySlowCount: rows.filter((r) => r.severity === 'very_slow').length,
   };
 }
 
@@ -107,9 +107,8 @@ export function useProductsListingLatencyAlert() {
       const current = summarize(currentRows);
       const baseline = summarize(baselineRows);
 
-      const avgDeltaPct = baseline.avgMs > 0
-        ? (current.avgMs - baseline.avgMs) / baseline.avgMs
-        : 0;
+      const avgDeltaPct =
+        baseline.avgMs > 0 ? (current.avgMs - baseline.avgMs) / baseline.avgMs : 0;
 
       const reasons: LatencyAlertReason[] = [];
       let severity: LatencyAlertSeverity = 'ok';
@@ -119,10 +118,12 @@ export function useProductsListingLatencyAlert() {
         // mas sinalizamos a razão para transparência.
         return {
           severity: 'ok',
-          reasons: [{
-            code: 'insufficient-data',
-            message: `Apenas ${current.samples} amostra(s) lenta(s) na última hora — sem sinal estatístico para alerta.`,
-          }],
+          reasons: [
+            {
+              code: 'insufficient-data',
+              message: `Apenas ${current.samples} amostra(s) lenta(s) na última hora — sem sinal estatístico para alerta.`,
+            },
+          ],
           current,
           baseline,
           avgDeltaPct,
@@ -137,7 +138,9 @@ export function useProductsListingLatencyAlert() {
           message: `Latência média ${current.avgMs}ms ≥ teto absoluto de ${SLA_HARD_CEILING_MS}ms.`,
         });
       } else if (current.avgMs >= SLA_MEDIAN_MS) {
-        severity = severity === 'critical' ? 'critical' : 'warning';
+        // Nesta ramificação `else if`, `severity` ainda é 'ok' (o teto absoluto
+        // não foi atingido), portanto o alerta de SLA é sempre 'warning'.
+        severity = 'warning';
         reasons.push({
           code: 'sla-breach',
           message: `Latência média ${current.avgMs}ms ≥ SLA alvo de ${SLA_MEDIAN_MS}ms.`,

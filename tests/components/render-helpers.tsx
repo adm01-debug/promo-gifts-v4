@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
+import { SellerCartProvider } from "@/contexts/SellerCartContext";
 import { vi } from "vitest";
 
 // --- Supabase mock ---
@@ -40,6 +41,8 @@ vi.mock("@/integrations/supabase/client", () => {
   };
 
   return {
+    SUPABASE_URL: "https://test.supabase.co",
+    SUPABASE_PUBLISHABLE_KEY: "test-anon-key",
     supabase: {
       auth: {
         getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
@@ -87,6 +90,8 @@ vi.mock("@/integrations/supabase/client", () => {
         }),
       },
     },
+    SUPABASE_URL: 'https://test.supabase.co',
+    SUPABASE_PUBLISHABLE_KEY: 'test-anon-key',
   };
 });
 
@@ -156,6 +161,23 @@ vi.mock("react-hot-toast", () => ({
   }),
 }));
 
+// --- Collections context mock (cards renderizam ProductQuickActionsFAB → AddToCollectionModal) ---
+vi.mock("@/components/collections/AddToCollectionModal", () => ({
+  AddToCollectionModal: () => null,
+}));
+vi.mock("@/contexts/CollectionsContext", () => ({
+  useCollectionsContext: () => ({
+    collections: [],
+    activeCollection: null,
+    loading: false,
+    addToCollection: vi.fn(),
+    removeFromCollection: vi.fn(),
+    createCollection: vi.fn(),
+    setActiveCollection: vi.fn(),
+  }),
+  CollectionsProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 export function createTestQueryClient() {
   return new QueryClient({
     defaultOptions: {
@@ -182,7 +204,9 @@ export function renderWithProviders(
         <QueryClientProvider client={queryClient}>
           <MemoryRouter initialEntries={[route]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <TooltipProvider>
-              {children}
+              <SellerCartProvider>
+                {children}
+              </SellerCartProvider>
             </TooltipProvider>
           </MemoryRouter>
         </QueryClientProvider>

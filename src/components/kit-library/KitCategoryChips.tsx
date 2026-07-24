@@ -13,7 +13,7 @@ interface Props {
 export function KitCategoryChips({ categories, selected, onSelect }: Props) {
   if (categories.length === 0) return null;
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex flex-wrap items-center gap-1.5">
       <Button
         size="sm"
         variant={selected === null ? 'default' : 'outline'}

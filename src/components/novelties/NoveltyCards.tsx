@@ -2,215 +2,537 @@
  * NoveltyCards — Grid, List, Table, and Skeleton card components for novelties.
  * Follows the same info pattern as ProductCard (catalog).
  */
-import { memo } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Package, Building2, FolderTree, Sparkles } from "lucide-react";
-import { NoveltyBadge } from "@/components/products/NoveltyBadge";
-import { ProductSparkline } from "@/components/products/ProductSparkline";
-import { SelectionCheckbox } from "@/components/common/SelectionCheckbox";
-import { cn } from "@/lib/utils";
-import type { NoveltyWithDetails } from "@/hooks/products";
 
-function isFresh(detectedAt: string): boolean {
-  return Math.floor((Date.now() - new Date(detectedAt).getTime()) / 86400000) <= 2;
-}
+import { memo, useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Package, Building2, Clock } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { NoveltyBadge } from '@/components/products/NoveltyBadge';
+import { ProductStatusBadge } from '@/components/products/ProductStatusBadge';
+import {
+  ProductColorSwatches,
+  type ColorDotLike,
+} from '@/components/products/ProductColorSwatches';
+import type { NoveltyWithDetails } from '@/hooks/products/useNovelties';
+import { ProductQuickActionsFAB } from '@/components/products/ProductQuickActionsFAB';
+import { HoverSetImage } from '@/components/products/HoverSetImage';
+import { ProductCategoryBadges } from '@/components/products/ProductCategoryBadges';
+import { getSupplierColors } from '@/lib/supplier-colors';
+import { QuickViewThumb } from '@/components/products/QuickViewThumb';
+import { StockBadge } from '@/components/inventory/StockBadge';
+import { getCatalogStockStatus } from '@/lib/catalog-stock-status';
+import { Clickable } from '@/components/shared/Clickable';
 
-function formatPrice(price: number) {
-  return price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
+const BRL_FORMATTER = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-function getStockStatusColor(status: string) {
-  switch (status) { case 'in-stock': return 'in-stock'; case 'low-stock': return 'low-stock'; case 'out-of-stock': return 'out-of-stock'; default: return 'in-stock'; }
-}
-
-function getStockStatusLabel(status: string) {
-  switch (status) { case 'in-stock': return 'Em estoque'; case 'low-stock': return 'Estoque baixo'; case 'out-of-stock': return 'Sem estoque'; default: return 'Em estoque'; }
-}
-
-export interface NoveltyCardProps {
+interface NoveltyCardProps {
   product: NoveltyWithDetails;
-  onClick: () => void;
-  selectionMode: boolean;
-  isSelected: boolean;
-  onToggleSelect: () => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: string) => void;
+  onStatusClick?: (type: 'featured' | 'kit' | 'novelty' | 'promotion') => void;
+  colors?: readonly ColorDotLike[];
+  /**
+   * Quando true, renderiza placeholders no lugar do preço e do estoque.
+   * Útil enquanto os dados de pricing/estoque ainda estão sendo carregados
+   * (ex.: hidratação assíncrona após o primeiro paint do card).
+   */
+  isPriceStockLoading?: boolean;
+  /** Carrega imagem com alta prioridade (LCP) — true para cards above-the-fold */
+  priority?: boolean;
 }
 
-export const NoveltyGridCard = memo(function NoveltyGridCard({ product, onClick, selectionMode, isSelected, onToggleSelect }: NoveltyCardProps) {
-  const fresh = isFresh(product.detected_at);
-  const stockQty = product.stock_quantity ?? 0;
-  const stockStatus = product.stock_status ?? 'in-stock';
+// ── Skeleton ─────────────────────────────────────────────────────────────────
+export function NoveltyGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <Card
-      className={cn(
-        "group cursor-pointer overflow-hidden transition-all duration-300 rounded-xl sm:rounded-2xl",
-        "border-border/50 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30",
-        fresh && "border-success/30 shadow-[0_0_16px_hsl(var(--success)/0.1)]",
-        isSelected && "ring-2 ring-primary border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.15)]"
-      )}
-      onClick={selectionMode ? onToggleSelect : onClick}
-    >
-      <CardContent className="p-0">
-        {/* Image */}
-        <div className="relative aspect-square bg-gradient-to-br from-muted/50 to-muted/30 overflow-hidden">
-          {product.product_image ? (
-            <img src={product.product_image} alt={product.product_name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center"><Package className="h-12 w-12 text-muted-foreground/20" /></div>
-          )}
-          {selectionMode && (
-            <div className="absolute top-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
-              <SelectionCheckbox checked={isSelected} onChange={onToggleSelect} size="md" animateEntry />
-            </div>
-          )}
-          <div className="absolute top-2 left-2"><NoveltyBadge daysRemaining={product.days_remaining} size="sm" /></div>
-          {fresh && !selectionMode && (
-            <div className="absolute top-2 right-2">
-              <Badge className="bg-success/90 text-success-foreground text-[9px] px-1.5 py-0 gap-0.5 border-0"><Sparkles className="h-2.5 w-2.5" />NEW</Badge>
-            </div>
-          )}
-          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex flex-col gap-2 rounded-xl border bg-card p-3">
+          <Skeleton className="aspect-square w-full rounded-lg" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
         </div>
+      ))}
+    </div>
+  );
+}
 
-        {/* Info section — matching catalog ProductCard */}
-        <div className="relative p-2.5 sm:p-4 space-y-2 sm:space-y-3 bg-card">
-          {/* SKU + Supplier */}
-          <div className="flex items-center justify-between gap-2">
-            {product.product_sku && <span className="text-[10px] sm:text-xs text-muted-foreground font-mono truncate">{product.product_sku}</span>}
-            {product.supplier_name && (
-              <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium truncate max-w-[120px] flex items-center gap-1 shrink-0">
-                <Building2 className="h-3 w-3 shrink-0" />
-                {product.supplier_name}
-              </span>
+// ── Grid Card ────────────────────────────────────────────────────────────────
+export const NoveltyGridCard = memo(
+  ({
+    product,
+    selectionMode = false,
+    isSelected = false,
+    onSelect,
+    onStatusClick,
+    colors,
+    isPriceStockLoading = false,
+    priority = false,
+  }: NoveltyCardProps) => {
+    // "recém-chegado" = is_highlighted (days_as_novelty ≤ NOVELTY_FRESH_DAYS = 5), a fonte
+    // de verdade da pipeline e mutuamente exclusivo com o badge de "expirando". Derivar
+    // `fresh` de getRecencyVariant estreitava a janela para ≤2 dias ('hot'), divergindo do
+    // predicado/comentário e quebrando o teste-guarda NoveltyGridCard.expiringBadge (que
+    // modela fresh ⇔ is_highlighted).
+    const fresh = product.is_highlighted;
+
+    // Mini-carrossel de variantes (paridade com ProductCard do catálogo): clicar
+    // num swatch troca a foto principal pela imagem da variante selecionada.
+    const [activeColorName, setActiveColorName] = useState<string | null>(null);
+    const activeImage = useMemo(() => {
+      if (!activeColorName || !colors?.length) return product.product_image;
+      const match = colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
+      return match?.image || product.product_image;
+    }, [activeColorName, colors, product.product_image]);
+
+    // Estoque/status da cor selecionada (paridade com a lista/tabela do Catálogo).
+    // Com cor ativa, mostra o estoque DAQUELA cor (soma das variantes, vinda de
+    // useProductsColorsBatch.stockQty); sem cor, mostra o total do produto.
+    const activeColor = useMemo(() => {
+      if (!activeColorName || !colors?.length) return undefined;
+      return colors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase());
+    }, [activeColorName, colors]);
+    const hasColorStock = typeof activeColor?.stockQty === 'number';
+    const displayStockQty = hasColorStock ? (activeColor?.stockQty ?? 0) : product.stock_quantity;
+    const displayStockStatus = hasColorStock
+      ? getCatalogStockStatus(activeColor?.stockQty ?? 0)
+      : product.stock_status;
+
+    return (
+      <Clickable
+        as="article"
+        data-testid="novelty-grid-card"
+        aria-label={`Novidade: ${product.product_name ?? 'Produto'}`}
+        isPressed={isSelected}
+        showFocusRing={false}
+        className={cn(
+          'group relative flex flex-col gap-2 rounded-xl border bg-card p-3 transition-all',
+          'hover:border-primary/40 hover:shadow-md',
+          // Altura flexível com piso — o virtualizer (measureElement) precisa medir a
+          // altura REAL do card. Alturas fixas + overflow-hidden recortam conteúdo (nomes
+          // longos + skeleton de preço/estoque) e corrompem a medição/scroll de /novidades.
+          // Guarda coberta por tests/components/product-cards-parity.test.tsx.
+          'min-h-[420px]',
+          isSelected && 'border-primary ring-2 ring-primary/20',
+        )}
+        onClick={() => onSelect?.(product.product_id)}
+      >
+        {/* Selection indicator */}
+        {selectionMode && (
+          <div
+            className={cn(
+              'absolute left-2 top-2 z-20 flex h-5 w-5 items-center justify-center rounded-full border-2 transition-all',
+              isSelected
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-muted-foreground bg-card',
+            )}
+          >
+            {isSelected && (
+              <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
+                <path
+                  d="M2 6L5 9L10 3"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             )}
           </div>
+        )}
 
-          {/* Product name */}
-          <h3 className="font-display font-semibold text-foreground line-clamp-2 min-h-[2.25rem] sm:min-h-[2.75rem] text-sm sm:text-base leading-snug group-hover:text-primary transition-colors duration-300">
-            {product.product_name}
-          </h3>
+        {/* FAB "+" — paridade total com ProductCard (Carrinho/Orçamento/Coleção/Favoritar/Comparar/QuickView/Compartilhar) */}
+        {!selectionMode && (
+          <ProductQuickActionsFAB
+            productId={product.product_id}
+            productName={product.product_name}
+            productSku={product.product_sku}
+            productImageUrl={activeImage}
+            productPrice={product.base_price ?? 0}
+            productMinQuantity={product.min_quantity || 1}
+            isOutOfStock={displayStockStatus === 'out-of-stock'}
+          />
+        )}
 
-          {/* Price + Stock */}
-          <div className="flex items-end justify-between pt-0.5 sm:pt-1">
-            <div>
-              {product.base_price !== null && product.base_price > 0 ? (
-                <>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground mb-0.5">A partir de</p>
-                  <span className="text-base sm:text-xl font-display font-bold text-foreground">{formatPrice(product.base_price)}</span>
-                </>
-              ) : (
-                <span className="text-xs text-muted-foreground">Preço sob consulta</span>
-              )}
-            </div>
-            <div className="flex flex-col items-end gap-0.5 sm:gap-1">
-              <span className={cn("stock-indicator text-[10px] sm:text-xs", getStockStatusColor(stockStatus))}>
-                <Package className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                <span className="hidden sm:inline">{getStockStatusLabel(stockStatus)}</span>
-                <span className="sm:hidden">{stockStatus === 'in-stock' ? '✓' : stockStatus === 'low-stock' ? '!' : '✗'}</span>
-              </span>
-              <span className="text-[10px] sm:text-xs text-muted-foreground">{stockQty.toLocaleString('pt-BR')} un.</span>
-            </div>
+        {/* Image */}
+        <div className="relative aspect-square overflow-hidden rounded-lg bg-muted/20">
+          <QuickViewThumb
+            productId={product.product_id}
+            productName={product.product_name ?? 'Produto'}
+            testId="novelty-grid-card-thumb"
+            className="h-full w-full"
+          >
+            <HoverSetImage
+              key={activeImage ?? product.product_image ?? 'placeholder'}
+              primary={activeImage}
+              // Desativa o crossfade "todas as cores" quando o usuário está navegando
+              // pelas variantes — a foto da cor selecionada tem prioridade.
+              set={activeColorName ? null : product.product_set_image}
+              alt={product.product_name}
+              fallbackIconClassName="h-8 w-8 text-muted-foreground/30"
+              priority={priority}
+            />
+          </QuickViewThumb>
+          <div className="absolute left-2 top-2 flex flex-col gap-1">
+            <NoveltyBadge
+              daysRemaining={product.days_remaining}
+              daysElapsed={product.days_as_novelty}
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStatusClick?.('novelty');
+              }}
+            />
           </div>
-
-          {/* Category badge */}
-          {product.category_name && (
-            <div className="flex flex-wrap gap-1.5 pt-1.5 mt-0.5 border-t border-primary/20">
-              <span className="text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold flex items-center gap-1 shadow-sm shadow-primary/10">
-                <FolderTree className="h-2.5 w-2.5" aria-hidden="true" />{product.category_name}
+          {fresh && !selectionMode && (
+            <div className="absolute right-2 top-2">
+              <ProductStatusBadge
+                type="novelty"
+                value="NEW"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusClick?.('novelty');
+                }}
+              />
+            </div>
+          )}
+          {/* Urgência: novidade saindo da janela (≤7 dias). Mutuamente exclusiva
+            com "NEW" (fresh = detectado há ≤5d). */}
+          {product.status === 'expiring_soon' && !fresh && !selectionMode && (
+            <div className="absolute right-2 top-2">
+              <span
+                data-testid="novelty-expiring-badge"
+                className="inline-flex items-center gap-0.5 rounded-full bg-warning px-1.5 py-0.5 text-[9px] font-bold text-warning-foreground shadow-md"
+              >
+                <Clock className="h-2.5 w-2.5" />
+                {product.days_remaining <= 1 ? 'Último dia' : `Últimos ${product.days_remaining}d`}
               </span>
             </div>
           )}
+        </div>
 
-          {/* Vendas 30d sparkline */}
-          <div className="pt-1.5 sm:pt-2 border-t border-border/30">
-            <div className="flex items-center justify-between mb-0.5">
-              <span className="text-[9px] sm:text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Vendas 30d</span>
+        {/* Info */}
+        <div className="flex flex-1 flex-col gap-1">
+          {/* 1 — Categoria */}
+          {product.category_id && product.category_name && (
+            <ProductCategoryBadges
+              category={{ id: product.category_id, name: product.category_name }}
+              categoryUuid={product.category_id}
+              className="flex-wrap"
+            />
+          )}
+
+          {/* 2 — Fornecedor + 3 — SKU (mesma linha) */}
+          {(product.supplier_name || product.product_sku) && (
+            <div className="flex min-w-0 items-center justify-between gap-2">
+              {product.supplier_name ? (
+                <span
+                  className="flex min-w-0 items-center gap-1.5 truncate rounded-lg border border-border/20 bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:text-xs"
+                  title={`Fornecedor: ${product.supplier_name}`}
+                >
+                  <Building2
+                    className={cn(
+                      'h-3 w-3 shrink-0',
+                      getSupplierColors(product.supplier_name).text,
+                    )}
+                    aria-hidden="true"
+                  />
+                  <span className="truncate">{product.supplier_name}</span>
+                </span>
+              ) : (
+                <span />
+              )}
+              {product.product_sku && (
+                <span
+                  className="shrink-0 truncate font-mono text-[10px] text-muted-foreground sm:text-xs"
+                  aria-label={`Código do produto: ${product.product_sku}`}
+                >
+                  {product.product_sku}
+                </span>
+              )}
             </div>
-            <ProductSparkline productId={product.product_id} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
+          )}
 
-export const NoveltyListCard = memo(function NoveltyListCard({ product, onClick, selectionMode, isSelected, onToggleSelect }: NoveltyCardProps) {
-  const fresh = isFresh(product.detected_at);
-  const stockQty = product.stock_quantity ?? 0;
-  const stockStatus = product.stock_status ?? 'in-stock';
-  return (
-    <Card className={cn("group cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30", fresh && "border-success/30 shadow-[0_0_12px_hsl(var(--success)/0.08)]", isSelected && "ring-2 ring-primary border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.15)]")} onClick={selectionMode ? onToggleSelect : onClick}>
-      <CardContent className="p-2.5 flex items-center gap-2.5">
-        {selectionMode && <div className="shrink-0" onClick={(e) => e.stopPropagation()}><SelectionCheckbox checked={isSelected} onChange={onToggleSelect} size="md" animateEntry /></div>}
-        <div className="shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-muted overflow-hidden relative">
-          {product.product_image ? <img src={product.product_image} alt={product.product_name} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center"><Package className="h-5 w-5 text-muted-foreground/30" /></div>}
-          {fresh && <div className="absolute inset-0 ring-2 ring-success/40 rounded-lg" />}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <NoveltyBadge daysRemaining={product.days_remaining} size="sm" />
-            {fresh && <Badge className="bg-success/90 text-success-foreground text-[9px] px-1 py-0 border-0">NEW</Badge>}
-          </div>
-          <h4 className="font-medium text-sm line-clamp-1 group-hover:text-primary transition-colors">{product.product_name}</h4>
-          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            {product.product_sku && <p className="text-[10px] text-muted-foreground">SKU: {product.product_sku}</p>}
-            {product.supplier_name && <Badge variant="outline" className="text-[9px] border-info/30 text-info px-1 py-0"><Building2 className="h-2.5 w-2.5 mr-0.5" />{product.supplier_name}</Badge>}
-            {product.category_name && <Badge variant="outline" className="text-[9px] px-1 py-0"><FolderTree className="h-2.5 w-2.5 mr-0.5" />{product.category_name}</Badge>}
-            <span className={cn("stock-indicator text-[9px]", getStockStatusColor(stockStatus))}>
-              <Package className="h-2.5 w-2.5" />{getStockStatusLabel(stockStatus)}
-            </span>
-            <span className="text-[9px] text-muted-foreground">{stockQty.toLocaleString('pt-BR')} un.</span>
-          </div>
-        </div>
-        {product.base_price !== null && product.base_price > 0 && <div className="shrink-0 text-right"><p className="text-[10px] text-muted-foreground">A partir de</p><p className="text-sm font-semibold tabular-nums">{formatPrice(product.base_price)}</p></div>}
-      </CardContent>
-    </Card>
-  );
-});
+          {/* 4 — Nome do produto (altura reservada para 2 linhas evita CLS no rodapé) */}
+          <p
+            data-testid="product-card-name"
+            className="line-clamp-2 max-h-[2.4rem] min-h-[2.4rem] break-words font-display text-[11.2px] font-bold leading-tight tracking-tight sm:max-h-[2.8rem] sm:min-h-[2.8rem] sm:text-[12.8px]"
+            title={product.product_name ?? undefined}
+          >
+            {product.product_name ?? '—'}
+          </p>
 
-export function NoveltyTableView({ products, onProductClick, selectionMode, selectedIds, onToggleSelect }: {
-  products: NoveltyWithDetails[]; onProductClick: (id: string) => void;
-  selectionMode: boolean; selectedIds: Set<string>; onToggleSelect: (id: string) => void;
+          <div className="mt-0.5">
+            <ProductColorSwatches
+              colors={colors}
+              max={5}
+              size="sm"
+              wrap
+              hideWhenEmpty={false}
+              selectedName={activeColorName}
+              onSelect={(c) => setActiveColorName(c.name)}
+              onClear={() => setActiveColorName(null)}
+            />
+          </div>
+
+          {/* Preço + Estoque — ancorados ao final do card; altura mínima reservada
+            para não colapsar enquanto carrega ou quando os valores faltam. */}
+          <div
+            data-testid="novelty-card-footer"
+            className="mt-auto flex min-h-[2.75rem] items-end justify-between gap-2 pt-2"
+          >
+            {isPriceStockLoading ? (
+              <>
+                <div
+                  data-testid="novelty-card-price-skeleton"
+                  aria-busy="true"
+                  aria-label="Carregando preço"
+                  className="h-4 w-20 animate-pulse rounded bg-muted"
+                />
+                <div
+                  data-testid="novelty-card-stock-skeleton"
+                  aria-label="Carregando estoque"
+                  className="h-4 w-16 animate-pulse rounded bg-muted"
+                />
+              </>
+            ) : (
+              <>
+                {typeof product.base_price === 'number' &&
+                Number.isFinite(product.base_price) &&
+                product.base_price > 0 ? (
+                  <div
+                    data-testid="novelty-card-price"
+                    className="flex min-w-0 flex-col leading-tight"
+                  >
+                    <span
+                      data-testid="novelty-card-price-prefix"
+                      className="text-[10px] font-medium text-muted-foreground"
+                    >
+                      A partir de
+                    </span>
+                    <p className="truncate text-sm font-semibold text-primary">
+                      {BRL_FORMATTER.format(product.base_price)}
+                    </p>
+                  </div>
+                ) : (
+                  <span
+                    data-testid="novelty-card-price-unavailable"
+                    className="text-xs italic text-muted-foreground"
+                  >
+                    Sob consulta
+                  </span>
+                )}
+                <StockBadge
+                  status={displayStockStatus}
+                  quantity={displayStockQty}
+                  showQuantity
+                  size="sm"
+                />
+              </>
+            )}
+          </div>
+        </div>
+      </Clickable>
+    );
+  },
+);
+
+// ── Table View ───────────────────────────────────────────────────────────────
+export function NoveltyTableView({
+  products,
+  selectionMode = false,
+  selectedIds = [],
+  onSelect,
+  onStatusClick,
+  colorsByProduct,
+}: {
+  products: NoveltyWithDetails[];
+  selectionMode?: boolean;
+  /** Aceita Set<string> (preferencial) ou string[] para retro-compatibilidade. */
+  selectedIds?: Set<string> | string[];
+  onSelect?: (id: string) => void;
+  onStatusClick?: (type: 'featured' | 'kit' | 'novelty' | 'promotion') => void;
+  colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }) {
+  // ISSUE-23 FIX: normaliza para Set uma única vez — evita O(n²) via Array.includes()
+  // quando há muitos produtos selecionados. NoveltyProductGrid.tsx já tem sel.selectedIds
+  // como Set; o spread [...] anterior causava Set→Array→includes() por linha.
+  const selectedSet: Set<string> = selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
+
+  // Seleção de cor por linha (productId → nome da cor). Troca a foto e o estoque
+  // exibidos para a cor escolhida; "Todos" limpa. Estado por id (seguro p/ tabela).
+  const [colorByProduct, setColorByProduct] = useState<Map<string, string>>(new Map());
+
   return (
-    <div className="rounded-lg border border-border/50 overflow-hidden">
+    <div className="overflow-x-auto rounded-lg border">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/30 hover:bg-muted/30">
-            {selectionMode && <TableHead className="w-[40px] px-2"></TableHead>}
-            <TableHead className="w-[44px] px-2">Img</TableHead>
-            <TableHead className="px-2">Produto</TableHead>
-            <TableHead className="hidden sm:table-cell px-2">SKU</TableHead>
-            <TableHead className="hidden md:table-cell px-2">Fornecedor</TableHead>
-            <TableHead className="hidden lg:table-cell px-2">Categoria</TableHead>
-            <TableHead className="text-center px-2">Status</TableHead>
-            <TableHead className="text-center px-2">Estoque</TableHead>
-            <TableHead className="text-right px-2">Preço</TableHead>
+          <TableRow>
+            {selectionMode && <TableHead className="w-10" />}
+            <TableHead className="min-w-[200px]">Produto</TableHead>
+            <TableHead>SKU</TableHead>
+            <TableHead>Novidade</TableHead>
+            <TableHead>Preço</TableHead>
+            <TableHead>Cores</TableHead>
+            <TableHead>Categoria</TableHead>
+            <TableHead>Fornecedor</TableHead>
+            <TableHead className="text-right">Estoque</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {products.map((product) => {
-            const fresh = isFresh(product.detected_at);
-            const isSelected = selectedIds.has(product.product_id);
-            const stockQty = product.stock_quantity ?? 0;
-            const stockStatus = product.stock_status ?? 'in-stock';
+            const isSelected = selectedSet.has(product.product_id);
+            const rowColors = colorsByProduct?.get(product.product_id);
+            const activeColorName = colorByProduct.get(product.product_id) ?? null;
+            const activeColor =
+              activeColorName && rowColors
+                ? rowColors.find((c) => c.name?.toLowerCase() === activeColorName.toLowerCase())
+                : undefined;
+            const rowImage = activeColor?.image || product.product_image;
+            const hasColorStock = typeof activeColor?.stockQty === 'number';
+            const rowStockQty = hasColorStock
+              ? (activeColor?.stockQty ?? 0)
+              : (product.stock_quantity ?? 0);
+            const rowStockStatus = hasColorStock
+              ? getCatalogStockStatus(activeColor?.stockQty ?? 0)
+              : product.stock_status;
             return (
-              <TableRow key={product.novelty_id} className={cn("cursor-pointer transition-colors", fresh && "bg-success/5", isSelected && "bg-primary/10")} onClick={() => selectionMode ? onToggleSelect(product.product_id) : onProductClick(product.product_id)}>
-                {selectionMode && <TableCell className="p-1.5"><div onClick={(e) => e.stopPropagation()}><SelectionCheckbox checked={isSelected} onChange={() => onToggleSelect(product.product_id)} size="sm" /></div></TableCell>}
-                <TableCell className="p-1.5"><div className="w-9 h-9 rounded bg-muted overflow-hidden">{product.product_image ? <img src={product.product_image} alt={product.product_name} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center"><Package className="h-3.5 w-3.5 text-muted-foreground/30" /></div>}</div></TableCell>
-                <TableCell className="px-2 py-1.5"><p className="font-medium text-xs line-clamp-1">{product.product_name}</p></TableCell>
-                <TableCell className="hidden sm:table-cell px-2 py-1.5"><span className="text-[11px] text-muted-foreground">{product.product_sku || "—"}</span></TableCell>
-                <TableCell className="hidden md:table-cell px-2 py-1.5"><span className="text-[11px] text-muted-foreground">{product.supplier_name || "—"}</span></TableCell>
-                <TableCell className="hidden lg:table-cell px-2 py-1.5"><span className="text-[11px] text-muted-foreground">{product.category_name || "—"}</span></TableCell>
-                <TableCell className="text-center px-2 py-1.5"><NoveltyBadge daysRemaining={product.days_remaining} size="sm" /></TableCell>
-                <TableCell className="text-center px-2 py-1.5">
-                  <span className={cn("stock-indicator text-[10px]", getStockStatusColor(stockStatus))}>
-                    <Package className="h-2.5 w-2.5" />{getStockStatusLabel(stockStatus)}
-                  </span>
-                  <p className="text-[10px] text-muted-foreground">{stockQty.toLocaleString('pt-BR')} un.</p>
+              <TableRow
+                key={product.novelty_id}
+                tabIndex={0}
+                aria-label={`Produto: ${product.product_name ?? 'Sem nome'}`}
+                className={cn(
+                  'cursor-pointer transition-colors hover:bg-muted/50',
+                  isSelected && 'bg-primary/5',
+                )}
+                onClick={() => onSelect?.(product.product_id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect?.(product.product_id);
+                  }
+                }}
+              >
+                {selectionMode && (
+                  <TableCell className="px-2 py-1.5">
+                    <div
+                      className={cn(
+                        'flex h-4 w-4 items-center justify-center rounded border-2',
+                        isSelected ? 'border-primary bg-primary' : 'border-muted-foreground',
+                      )}
+                    >
+                      {isSelected && (
+                        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none">
+                          <path
+                            d="M2 6L5 9L10 3"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </TableCell>
+                )}
+                <TableCell className="px-2 py-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded bg-muted/20">
+                      <QuickViewThumb
+                        productId={product.product_id}
+                        productName={product.product_name ?? 'Produto'}
+                        testId="novelty-table-row-thumb"
+                        className="h-full w-full"
+                      >
+                        {rowImage ? (
+                          <img
+                            src={rowImage}
+                            alt={product.product_name}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
+                            }}
+                            className="h-full w-full object-contain"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center">
+                            <Package className="h-4 w-4 text-muted-foreground/30" />
+                          </div>
+                        )}
+                      </QuickViewThumb>
+                    </div>
+                    <span
+                      className="line-clamp-1 text-sm font-medium"
+                      title={product.product_name ?? undefined}
+                    >
+                      {product.product_name ?? '—'}
+                    </span>
+                  </div>
                 </TableCell>
-                <TableCell className="text-right px-2 py-1.5">{product.base_price !== null && product.base_price > 0 ? <span className="text-xs font-semibold tabular-nums">{formatPrice(product.base_price)}</span> : <span className="text-[11px] text-muted-foreground">—</span>}</TableCell>
+                <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
+                  {product.product_sku ?? '—'}
+                </TableCell>
+                <TableCell className="px-2 py-1.5 text-center">
+                  <NoveltyBadge
+                    daysRemaining={product.days_remaining}
+                    daysElapsed={product.days_as_novelty}
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onStatusClick?.('novelty');
+                    }}
+                  />
+                </TableCell>
+                <TableCell className="px-2 py-1.5 text-sm font-medium">
+                  {typeof product.base_price === 'number' &&
+                  Number.isFinite(product.base_price) &&
+                  product.base_price > 0
+                    ? BRL_FORMATTER.format(product.base_price)
+                    : '—'}
+                </TableCell>
+                <TableCell className="px-2 py-1.5">
+                  <ProductColorSwatches
+                    colors={rowColors}
+                    max={5}
+                    size="sm"
+                    hideWhenEmpty={false}
+                    selectedName={activeColorName}
+                    onSelect={(c) =>
+                      setColorByProduct((prev) => new Map(prev).set(product.product_id, c.name))
+                    }
+                    onClear={() =>
+                      setColorByProduct((prev) => {
+                        const next = new Map(prev);
+                        next.delete(product.product_id);
+                        return next;
+                      })
+                    }
+                  />
+                </TableCell>
+                <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
+                  {product.category_name ?? '—'}
+                </TableCell>
+                <TableCell className="px-2 py-1.5 text-xs text-muted-foreground">
+                  {product.supplier_name ?? '—'}
+                </TableCell>
+                {/* ISSUE-15 FIX: usa StockBadge consistente com ProductListItem */}
+                <TableCell className="px-2 py-1.5 text-right">
+                  <StockBadge
+                    status={rowStockStatus}
+                    quantity={rowStockQty}
+                    showQuantity
+                    size="sm"
+                  />
+                </TableCell>
               </TableRow>
             );
           })}
@@ -218,16 +540,4 @@ export function NoveltyTableView({ products, onProductClick, selectionMode, sele
       </Table>
     </div>
   );
-}
-
-type ViewMode = "grid" | "list" | "table";
-
-export function NoveltyCardSkeleton({ viewMode }: { viewMode: ViewMode }) {
-  if (viewMode === "list") {
-    return (<Card className="border-border/50"><CardContent className="p-2.5 flex items-center gap-2.5"><div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg shimmer" /><div className="flex-1 space-y-1.5"><div className="h-3 w-16 rounded shimmer" /><div className="h-3.5 w-full rounded shimmer" style={{ animationDelay: '150ms' }} /><div className="h-3 w-24 rounded shimmer" style={{ animationDelay: '300ms' }} /></div></CardContent></Card>);
-  }
-  if (viewMode === "table") {
-    return (<div className="flex items-center gap-2 px-2 py-1.5 border-b border-border/30"><div className="w-9 h-9 rounded shimmer" /><div className="flex-1 h-3 rounded shimmer" style={{ animationDelay: '100ms' }} /><div className="w-14 h-3 rounded shimmer" style={{ animationDelay: '200ms' }} /><div className="w-14 h-3 rounded shimmer" style={{ animationDelay: '300ms' }} /></div>);
-  }
-  return (<Card className="border-border/50 overflow-hidden"><CardContent className="p-0"><div className="aspect-square shimmer" /><div className="p-2.5 space-y-1.5"><div className="h-3.5 w-full rounded shimmer" style={{ animationDelay: '100ms' }} /><div className="h-3.5 w-3/4 rounded shimmer" style={{ animationDelay: '200ms' }} /><div className="flex justify-between"><div className="h-3 w-14 rounded shimmer" style={{ animationDelay: '300ms' }} /><div className="h-4 w-12 rounded shimmer" style={{ animationDelay: '400ms' }} /></div></div></CardContent></Card>);
 }

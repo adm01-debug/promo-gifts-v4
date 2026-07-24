@@ -19,18 +19,14 @@ export interface LaserToneConfig {
   whiteThreshold?: number;
 }
 
-const LASER_TONES: Record<"claro" | "escuro", LaserToneConfig> = {
-  claro: { hex: "#BEBEBE", opacity: 0.85, whiteThreshold: 220 },
-  escuro: { hex: "#3A3A3A", opacity: 0.92, whiteThreshold: 220 },
+const LASER_TONES: Record<'claro' | 'escuro', LaserToneConfig> = {
+  claro: { hex: '#BEBEBE', opacity: 0.85, whiteThreshold: 220 },
+  escuro: { hex: '#3A3A3A', opacity: 0.92, whiteThreshold: 220 },
 };
 
 function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace("#", "");
-  return [
-    parseInt(h.slice(0, 2), 16),
-    parseInt(h.slice(2, 4), 16),
-    parseInt(h.slice(4, 6), 16),
-  ];
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
 
 /**
@@ -40,7 +36,7 @@ function hexToRgb(hex: string): [number, number, number] {
  */
 export async function processLogoForLaser(
   imageUrl: string,
-  tone: "claro" | "escuro"
+  tone: 'claro' | 'escuro',
 ): Promise<string> {
   const config = LASER_TONES[tone];
   const [tR, tG, tB] = hexToRgb(config.hex);
@@ -54,14 +50,14 @@ export async function processLogoForLaser(
     const img = new Image();
 
     img.onload = () => {
-      const canvas = document.createElement("canvas");
+      const canvas = document.createElement('canvas');
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
 
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext('2d');
       if (!ctx) {
         URL.revokeObjectURL(blobUrl);
-        reject(new Error("Canvas 2D context not available"));
+        reject(new Error('Canvas 2D context not available'));
         return;
       }
 
@@ -102,12 +98,12 @@ export async function processLogoForLaser(
       }
 
       ctx.putImageData(imageData, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
+      resolve(canvas.toDataURL('image/png'));
     };
 
     img.onerror = () => {
       URL.revokeObjectURL(blobUrl);
-      reject(new Error("Failed to load image"));
+      reject(new Error('Failed to load image'));
     };
 
     img.src = blobUrl;
@@ -126,7 +122,7 @@ export async function processLogoForLaser(
  */
 export async function processLogoForSerigrafia(
   imageUrl: string,
-  selectedColors: { hex: string; pantoneCode: string }[]
+  selectedColors: { hex: string; pantoneCode: string }[],
 ): Promise<string> {
   if (selectedColors.length === 0) {
     // No colors selected — return original
@@ -144,14 +140,14 @@ export async function processLogoForSerigrafia(
     const img = new Image();
 
     img.onload = () => {
-      const canvas = document.createElement("canvas");
+      const canvas = document.createElement('canvas');
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
 
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext('2d');
       if (!ctx) {
         URL.revokeObjectURL(blobUrl);
-        reject(new Error("Canvas 2D context not available"));
+        reject(new Error('Canvas 2D context not available'));
         return;
       }
 
@@ -201,12 +197,12 @@ export async function processLogoForSerigrafia(
       }
 
       ctx.putImageData(imageData, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
+      resolve(canvas.toDataURL('image/png'));
     };
 
     img.onerror = () => {
       URL.revokeObjectURL(blobUrl);
-      reject(new Error("Failed to load image for serigrafia processing"));
+      reject(new Error('Failed to load image for serigrafia processing'));
     };
 
     img.src = blobUrl;
@@ -214,25 +210,21 @@ export async function processLogoForSerigrafia(
 }
 
 function hexToRgbInternal(hex: string): [number, number, number] {
-  const h = hex.replace("#", "");
-  return [
-    parseInt(h.slice(0, 2), 16),
-    parseInt(h.slice(2, 4), 16),
-    parseInt(h.slice(4, 6), 16),
-  ];
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
 }
 
 async function fetchAsBlob(url: string): Promise<Blob> {
   // For blob: and data: URLs, fetch directly
-  if (url.startsWith("blob:") || url.startsWith("data:")) {
+  if (url.startsWith('blob:') || url.startsWith('data:')) {
     const response = await fetch(url);
     return response.blob();
   }
 
   // For remote URLs, fetch with no-cors fallback
   try {
-    const response = await fetch(url, { mode: "cors" });
-    return response.blob();
+    const response = await fetch(url, { mode: 'cors' });
+    return await response.blob();
   } catch {
     // Fallback: try without CORS mode (may lose some headers but works for same-origin)
     const response = await fetch(url);

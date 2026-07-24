@@ -1,7 +1,7 @@
 /**
  * Shared types and small components for CompanyContactSelector
  */
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 export interface CompanyOption {
   id: string;
@@ -21,13 +21,39 @@ export interface ContactOption {
   phone: string | null;
 }
 
-export function CompanyAvatar({ name, logoUrl, size = "md" }: { name: string; logoUrl?: string | null; size?: "sm" | "md" }) {
-  const dim = size === "sm" ? "w-7 h-7 text-[10px]" : "w-8 h-8 text-xs";
+export function CompanyAvatar({
+  name,
+  logoUrl,
+  size = 'md',
+}: {
+  name: string;
+  logoUrl?: string | null;
+  size?: 'md' | 'sm';
+}) {
+  const dim = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-8 h-8 text-xs';
   if (logoUrl) {
-    return <img src={logoUrl} alt="" className={cn(dim, "rounded-full object-cover bg-background border border-border flex-shrink-0")} loading="lazy" />;
+    return (
+      <img
+        src={logoUrl}
+        alt=""
+        className={cn(
+          dim,
+          'flex-shrink-0 rounded-full border border-border bg-background object-cover',
+        )}
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).style.display = 'none';
+        }}
+        loading="lazy"
+      />
+    );
   }
   return (
-    <div className={cn(dim, "rounded-full flex items-center justify-center font-bold text-primary-foreground bg-primary flex-shrink-0")}>
+    <div
+      className={cn(
+        dim,
+        'flex flex-shrink-0 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground',
+      )}
+    >
       {name.substring(0, 2).toUpperCase()}
     </div>
   );

@@ -13,7 +13,7 @@ import { mapConnectionToTester } from './SecretField.utils';
 export interface FlashState {
   masked_suffix: string | null;
   length: number;
-  action: 'set' | 'rotate';
+  action: 'rotate' | 'set';
   was_update: boolean;
   was_env_fallback: boolean;
   key: number;
@@ -33,7 +33,7 @@ export function useSecretField({ secretName, status, connectionId, onSaved }: Us
   const legacyDraftKey = `secret-draft:${secretName}`;
 
   const [editing, setEditing] = useState(false);
-  const [mode, setMode] = useState<'set' | 'rotate'>('set');
+  const [mode, setMode] = useState<'rotate' | 'set'>('set');
   const [value, setValue] = useState('');
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -97,7 +97,6 @@ export function useSecretField({ secretName, status, connectionId, onSaved }: Us
   };
 
   useEffect(() => {
-    const _scopeKey = `${draftScope}:${secretName}`;
     const abortController = abortRef.current;
 
     // Reset transients on change
@@ -150,7 +149,7 @@ export function useSecretField({ secretName, status, connectionId, onSaved }: Us
   }, [editing, value, mode, draftKey]);
 
   const performSave = async (
-    currentMode: 'set' | 'rotate',
+    currentMode: 'rotate' | 'set',
     currentValue: string,
     notes?: string,
   ) => {
@@ -299,7 +298,7 @@ export function useSecretField({ secretName, status, connectionId, onSaved }: Us
   const storedLooksSuspicious =
     !editing && !!status?.has_value && !!minLen && (status.length ?? 0) < minLen;
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!canSave) return;
     if (mode === 'rotate') {
       setRotateConfirmError(null);
@@ -330,7 +329,7 @@ export function useSecretField({ secretName, status, connectionId, onSaved }: Us
     else if (!res.cancelled) setRotateConfirmError(res.errorDescription);
   };
 
-  const startEdit = (m: 'set' | 'rotate') => {
+  const startEdit = (m: 'rotate' | 'set') => {
     setMode(m);
     setEditing(true);
   };

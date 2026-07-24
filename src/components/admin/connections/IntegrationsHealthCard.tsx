@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Activity,
   Webhook,
@@ -24,11 +25,13 @@ import {
   Minus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useCredentialsSourceFilter, resolveSource } from './CredentialsSourceFilterContext';
 import type { SecretStatus } from '@/hooks/admin';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface HealthData {
   activeWebhooks: number;
@@ -135,19 +138,28 @@ async function fetchHealth(): Promise<HealthData> {
   };
 }
 
+const STATUS_BADGE_CLASSES = {
+  success: 'bg-success/10 text-success border-success/20',
+  warning: 'bg-warning/10 text-warning border-warning/20',
+  destructive: 'bg-destructive/10 text-destructive border-destructive/20',
+  muted: 'bg-muted text-muted-foreground border-border',
+} as const;
+
+const METRIC_ICON_CLASSES = {
+  default: 'text-muted-foreground',
+  success: 'text-success',
+  warning: 'text-warning',
+  destructive: 'text-destructive',
+} as const;
+
 function StatusBadge({
   tone,
   children,
 }: {
-  tone: 'success' | 'warning' | 'destructive' | 'muted';
+  tone: 'destructive' | 'muted' | 'success' | 'warning';
   children: React.ReactNode;
 }) {
-  const cls = {
-    success: 'bg-success/10 text-success border-success/20',
-    warning: 'bg-warning/10 text-warning border-warning/20',
-    destructive: 'bg-destructive/10 text-destructive border-destructive/20',
-    muted: 'bg-muted text-muted-foreground border-border',
-  }[tone];
+  const cls = STATUS_BADGE_CLASSES[tone];
   return (
     <Badge variant="outline" className={cn('font-medium', cls)}>
       {children}
@@ -160,16 +172,12 @@ interface MetricProps {
   label: string;
   value: string;
   badge?: React.ReactNode;
-  tone?: 'default' | 'success' | 'warning' | 'destructive';
+  tone?: 'default' | 'destructive' | 'success' | 'warning';
 }
 
-function Metric({ icon: Icon, label, value, badge, tone = 'default' }: MetricProps) {
-  const iconCls = {
-    default: 'text-muted-foreground',
-    success: 'text-success',
-    warning: 'text-warning',
-    destructive: 'text-destructive',
-  }[tone];
+function Metric({ icon: iconElement, label, value, badge, tone = 'default' }: MetricProps) {
+  const Icon = iconElement;
+  const iconCls = METRIC_ICON_CLASSES[tone];
 
   return (
     <div className="flex flex-col gap-1.5 rounded-lg border border-border/50 bg-muted/30 p-3">
@@ -185,8 +193,14 @@ function Metric({ icon: Icon, label, value, badge, tone = 'default' }: MetricPro
   );
 }
 
+const SOURCE_COUNT_CHIP_CLS: Record<'muted' | 'success' | 'warning', string> = {
+  success: 'border-success/30 bg-success/10 text-success hover:bg-success/15',
+  warning: 'border-warning/40 bg-warning/10 text-warning hover:bg-warning/15',
+  muted: 'border-border bg-muted text-muted-foreground hover:bg-muted/70',
+} as const;
+
 function SourceCountChip({
-  icon: Icon,
+  icon: iconElement,
   tone,
   count,
   label,
@@ -194,17 +208,14 @@ function SourceCountChip({
   emphasize,
 }: {
   icon: React.ElementType;
-  tone: 'success' | 'warning' | 'muted';
+  tone: 'muted' | 'success' | 'warning';
   count: number;
   label: string;
   onClick: () => void;
   emphasize?: boolean;
 }) {
-  const cls = {
-    success: 'border-success/30 bg-success/10 text-success hover:bg-success/15',
-    warning: 'border-warning/40 bg-warning/10 text-warning hover:bg-warning/15',
-    muted: 'border-border bg-muted text-muted-foreground hover:bg-muted/70',
-  }[tone];
+  const Icon = iconElement;
+  const cls = SOURCE_COUNT_CHIP_CLS[tone];
   return (
     <button
       type="button"
@@ -222,6 +233,8 @@ function SourceCountChip({
 }
 
 export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatus[] }) {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 5 HEAD requests sem JWT validado.
+  const { rolesLoaded, isAdmin } = useAuth();
   const [auditing, setAuditing] = useState(false);
   const { setFilter } = useCredentialsSourceFilter();
   const sourceCounts = useMemo(() => {
@@ -240,14 +253,21 @@ export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatu
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['integrations-health'],
     queryFn: fetchHealth,
+    enabled: rolesLoaded && Boolean(isAdmin),
     refetchInterval: 60_000,
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const handleAudit = async () => {
     setAuditing(true);
     try {
-      const { data: report, error } = await supabase.functions.invoke('connections-hub-audit');
+      const { data: report, error } = await invokeEdge<{
+        score: number;
+        passed: number;
+        total: number;
+      }>('connections-hub-audit');
       if (error) throw error;
       const score = report?.score ?? 0;
       const passed = report?.passed ?? 0;
@@ -257,7 +277,7 @@ export function IntegrationsHealthCard({ secrets = [] }: { secrets?: SecretStatu
       else if (score >= 5) toast.warning(msg);
       else toast.error(msg);
     } catch (err) {
-      toast.error(`Falha na auditoria: ${(err as Error).message}`);
+      toast.error(`Falha na auditoria: ${toErrorMessage(err)}`);
     } finally {
       setAuditing(false);
     }

@@ -9,9 +9,10 @@ interface SearchStore {
 
 export const useSearchStore = create<SearchStore>((set) => ({
   open: false,
-  setOpen: (open) => set((state) => ({ 
-    open: typeof open === 'function' ? open(state.open) : open 
-  })),
+  setOpen: (open) =>
+    set((state) => ({
+      open: typeof open === 'function' ? open(state.open) : open,
+    })),
   voiceOverlayOpen: false,
   setVoiceOverlayOpen: (open) => set({ voiceOverlayOpen: open }),
 }));

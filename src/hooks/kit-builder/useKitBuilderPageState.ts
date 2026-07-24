@@ -1,11 +1,19 @@
-import { useState, useEffect } from 'react';
+import { dbInvoke } from '@/lib/db/postgrest';
+import { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { useSearchParams } from 'react-router-dom';
-import { transformToKitItem, useCustomKitPersistence, useDuplicateKitDetector, useKitAutoSave, useKitBuilder, useKitUndoRedo, useTemplateSnapshot } from "@/hooks/kit-builder";
+import {
+  transformToKitItem,
+  useCustomKitPersistence,
+  useDuplicateKitDetector,
+  useKitAutoSave,
+  useKitBuilder,
+  useKitUndoRedo,
+  useTemplateSnapshot,
+} from '@/hooks/kit-builder';
 import { useKitBuilderQuote } from '@/pages/kit-builder/useKitBuilderQuote';
-import { invokeExternalDb, type PromobrindProduct } from '@/lib/external-db';
+import { calculateTotalKitPrice, type ExternalProductForKit } from '@/lib/kit-builder';
 import { logger } from '@/lib/logger';
-import { calculateTotalKitPrice } from '@/lib/kit-builder';
 
 export function useKitBuilderPageState() {
   const [searchParams] = useSearchParams();
@@ -25,6 +33,8 @@ export function useKitBuilderPageState() {
     isLoadingItems,
     boxFilters,
     itemFilters,
+    setBoxFilters,
+    setItemFilters,
     setKitName,
     selectBox,
     clearBox,
@@ -41,6 +51,7 @@ export function useKitBuilderPageState() {
     nextStep,
     prevStep,
     resetKit,
+    restoreKitSnapshot,
   } = useKitBuilder();
 
   const { isSaving } = useCustomKitPersistence();
@@ -51,15 +62,60 @@ export function useKitBuilderPageState() {
     isSaving: isAutoSaving,
     autoSavedKitId,
   } = useKitAutoSave(kitState, kitQuantity, currentKitId, (id) => setCurrentKitId(id));
-  const { undo, redo, canUndo, canRedo } = useKitUndoRedo();
+  const {
+    pushSnapshot,
+    undo: undoSnapshot,
+    redo: redoSnapshot,
+    canUndo,
+    canRedo,
+    isRestoring,
+  } = useKitUndoRedo();
   useDuplicateKitDetector();
+
+  // Captura snapshot a cada mudança significativa do kit. O pushSnapshot
+  // deduplica snapshots idênticos e respeita isRestoring (o próprio undo/redo
+  // não gera novo snapshot). Isto liga o undo/redo, que antes era inerte
+  // (pushSnapshot nunca era chamado → canUndo sempre false).
+  useEffect(() => {
+    if (isRestoring.current) return;
+    pushSnapshot({
+      name: kitState.name,
+      kitType: kitState.kitType,
+      box: kitState.box,
+      items: kitState.items,
+      personalization: kitState.personalization,
+      kitQuantity,
+      identity: kitState.identity,
+    });
+  }, [
+    kitState.name,
+    kitState.kitType,
+    kitState.box,
+    kitState.items,
+    kitState.personalization,
+    kitState.identity,
+    kitQuantity,
+    pushSnapshot,
+    isRestoring,
+  ]);
+
+  // undo/redo aplicam o snapshot retornado de volta no estado do kit.
+  const undo = useCallback(() => {
+    const snap = undoSnapshot();
+    if (snap) restoreKitSnapshot(snap);
+  }, [undoSnapshot, restoreKitSnapshot]);
+
+  const redo = useCallback(() => {
+    const snap = redoSnapshot();
+    if (snap) restoreKitSnapshot(snap);
+  }, [redoSnapshot, restoreKitSnapshot]);
 
   // Load Logic (Simplified for the pattern example)
   useEffect(() => {
     if (productIdParam && !kitIdParam) {
       (async () => {
         try {
-          const result = await invokeExternalDb<PromobrindProduct>({
+          const result = await dbInvoke<ExternalProductForKit>({
             table: 'products',
             operation: 'select',
             filters: { id: productIdParam },
@@ -74,6 +130,7 @@ export function useKitBuilderPageState() {
         }
       })();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productIdParam, kitIdParam]);
 
   // Effects (Confetti, Title, etc.)
@@ -81,6 +138,7 @@ export function useKitBuilderPageState() {
     if (kitState.isValid && kitState.items.length > 0) {
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.85, x: 0.5 }, colors: ['#f97316'] });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kitState.isValid]);
 
   const pricing = calculateTotalKitPrice(
@@ -103,6 +161,8 @@ export function useKitBuilderPageState() {
       isLoadingItems,
       boxFilters,
       itemFilters,
+      setBoxFilters,
+      setItemFilters,
       occasion,
       setOccasion,
     },

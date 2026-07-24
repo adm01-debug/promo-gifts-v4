@@ -1,20 +1,42 @@
-# Donos de código — Promo Brindes
-# Ref: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-security/customizing-your-repository/about-code-owners
+# CODEOWNERS — proteção de arquivos críticos contra sobrescrita por bots
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 #
-# Sintaxe: <padrão>  <@usuário ou @org/team>
-# A última regra que casa vence.
+# NOTA: Este arquivo é DEFESA SECUNDÁRIA.
+# Defesa primária = .lovableignore (bloqueia antes do commit).
+# Este arquivo garante que PRs que toquem arquivos críticos
+# requeiram aprovação manual de @adm01-debug.
 
-# Default — qualquer arquivo
-*                           @adm01-debug
+# ============================================================
+# SSOT — Incidente 401 (2026-06-11): Lovable revertiu estes
+# arquivos 6+ vezes em 10 minutos causando 401 em produção.
+# Qualquer alteração nestes arquivos EXIGE revisão humana.
+# ============================================================
+src/integrations/supabase/client.ts             @adm01-debug
+src/integrations/supabase/                      @adm01-debug
+scripts/validate-supabase-config.mjs            @adm01-debug
+scripts/                                        @adm01-debug
+.env.example                                    @adm01-debug
+.env.e2e.example                                @adm01-debug
 
-# Áreas críticas — revisão obrigatória
-/.github/                   @adm01-debug
-/supabase/migrations/       @adm01-debug
-/supabase/functions/        @adm01-debug
-*.yaml                      @adm01-debug
-*.yml                       @adm01-debug
-.coderabbit.yaml            @adm01-debug
-.env.example                @adm01-debug
-package.json                @adm01-debug
-pnpm-lock.yaml              @adm01-debug
-package-lock.json           @adm01-debug
+# ============================================================
+# CI/CD — workflows são infraestrutura, não UI
+# Alterações podem quebrar o pipeline inteiro
+# ============================================================
+.github/workflows/                              @adm01-debug
+.github/CODEOWNERS                              @adm01-debug
+.lovableignore                                  @adm01-debug
+
+# ============================================================
+# Edge functions com correções de segurança aplicadas manualmente
+# ============================================================
+supabase/functions/send-transactional-email/    @adm01-debug
+supabase/functions/analyze-logo-colors/         @adm01-debug
+supabase/functions/webhook-inbound/             @adm01-debug
+supabase/functions/_shared/external-fetch.ts    @adm01-debug
+supabase/functions/_shared/ai-router/           @adm01-debug
+supabase/functions/_shared/ai-usage.ts          @adm01-debug
+supabase/functions/_shared/credentials.ts       @adm01-debug
+supabase/functions/sync-quote-bitrix/           @adm01-debug
+supabase/functions/dropbox-list/                @adm01-debug
+supabase/functions/elevenlabs-tts/              @adm01-debug
+supabase/functions/generate-mockup/             @adm01-debug

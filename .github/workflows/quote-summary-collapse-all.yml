@@ -1,0 +1,73 @@
+name: Quote Summary — Collapse/Expand All (fuzz + e2e)
+
+# Bloqueia merges se qualquer invariante do botão "Recolher / Expandir" quebrar
+# (tooltip dinâmico, aria-expanded, data-open-count, focus-visible, motion-reduce,
+# persistência por quoteId, coexistência com "Agrupar").
+#
+# Cobertura:
+# - Vitest fuzz (~1.550 simulações) — src/components/quotes/__tests__/QuoteBuilderSummaryCollapseAll.fuzz.test.ts
+# - Playwright e2e — e2e/quotes/quote-summary-collapse-all.spec.ts
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'src/components/quotes/QuoteBuilderSummaryColumn.tsx'
+      - 'src/components/quotes/__tests__/QuoteBuilderSummaryCollapseAll.fuzz.test.ts'
+      - 'src/lib/quotes/collapsedItemsStorage.ts'
+      - 'e2e/quotes/quote-summary-collapse-all.spec.ts'
+      - '.github/workflows/quote-summary-collapse-all.yml'
+  push:
+    branches: [main, master]
+    paths:
+      - 'src/components/quotes/QuoteBuilderSummaryColumn.tsx'
+      - 'src/components/quotes/__tests__/QuoteBuilderSummaryCollapseAll.fuzz.test.ts'
+      - 'src/lib/quotes/collapsedItemsStorage.ts'
+      - 'e2e/quotes/quote-summary-collapse-all.spec.ts'
+
+concurrency:
+  group: quote-summary-collapse-all-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: Vitest fuzz — invariantes Recolher/Expandir (1.550 sims)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Run fuzz suite
+        run: npx vitest run src/components/quotes/__tests__/QuoteBuilderSummaryCollapseAll.fuzz.test.ts
+
+  e2e:
+    name: Playwright e2e — Recolher/Expandir tudo
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: fuzz
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      E2E_BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run e2e spec
+        run: npx playwright test e2e/quotes/quote-summary-collapse-all.spec.ts --project=chromium-authed --retries=2
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-collapse-all
+          path: playwright-report/
+          retention-days: 14

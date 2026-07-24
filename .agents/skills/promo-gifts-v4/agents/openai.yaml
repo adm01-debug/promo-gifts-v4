@@ -1,0 +1,6 @@
+interface:
+  display_name: "Promo Gifts V4"
+  short_description: "Repo-specific patterns and workflows for promo-gifts-v4"
+  default_prompt: "Use the promo-gifts-v4 repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true

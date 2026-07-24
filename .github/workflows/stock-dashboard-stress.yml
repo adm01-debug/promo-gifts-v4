@@ -1,0 +1,81 @@
+name: Estoque — Stress Loop (anti-flake)
+
+# Roda os 4 specs do /estoque em loop (N repetições) para detectar flakiness
+# antes que chegue ao main. Falha se qualquer iteração quebrar OU se o tempo
+# médio por iteração ultrapassar o limite.
+#
+# Disparo manual (workflow_dispatch) + nightly (cron 03:00 UTC).
+# Não bloqueia PRs por padrão — promova para required check depois de calibrar.
+
+on:
+  workflow_dispatch:
+    inputs:
+      repeat:
+        description: 'Repetições por spec (default 200)'
+        required: false
+        default: '200'
+      max_avg_seconds:
+        description: 'Tempo médio máximo por iteração em segundos (default 8)'
+        required: false
+        default: '8'
+  schedule:
+    - cron: '0 3 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  stress:
+    timeout-minutes: 90
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        spec:
+          - e2e/admin/stock-health-badges.spec.ts
+          - e2e/admin/stock-dashboard-layout.spec.ts
+          - e2e/admin/stock-dashboard-visual.spec.ts
+          - e2e/admin/stock-dashboard-empty.spec.ts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run spec ${{ matrix.spec }} x${{ github.event.inputs.repeat || '200' }}
+        env:
+          CI: true
+          REPEAT: ${{ github.event.inputs.repeat || '200' }}
+          MAX_AVG: ${{ github.event.inputs.max_avg_seconds || '8' }}
+        run: |
+          set -eo pipefail
+          START=$(date +%s)
+          npx playwright test "${{ matrix.spec }}" \
+            --repeat-each="$REPEAT" \
+            --workers=2 \
+            --reporter=line
+          END=$(date +%s)
+          ELAPSED=$((END - START))
+          AVG=$(awk "BEGIN { printf \"%.2f\", $ELAPSED / $REPEAT }")
+          echo "::notice::Spec=${{ matrix.spec }} repeats=$REPEAT elapsed=${ELAPSED}s avg=${AVG}s/iter"
+          awk "BEGIN { exit ($AVG > $MAX_AVG) ? 1 : 0 }" || {
+            echo "::error::Avg ${AVG}s/iter excede limite ${MAX_AVG}s"
+            exit 1
+          }
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-report-${{ strategy.job-index }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

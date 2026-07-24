@@ -1,0 +1,174 @@
+name: E2E · Quote Conditions visual PR check
+# Roda o spec visual do card "Condições" em PRs para main nos viewports 375/768/1280.
+# NÃO atualiza baselines — falha em divergência. Atualização via workflow manual
+# "E2E · Update Quote Conditions snapshots".
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "e2e/ui/quote-conditions-visual.spec.ts"
+      - "e2e/ui/__screenshots__/quote-conditions-visual.spec.ts/**"
+      - "src/pages/quotes/QuoteBuilderPage.tsx"
+      - "src/components/quotes/**"
+      - "package.json"
+      - "playwright.config.ts"
+      - ".github/workflows/e2e-quote-conditions-pr-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: e2e-quote-conditions-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+      - name: Bootstrap (install deps + chromium)
+        run: npm run e2e:bootstrap
+      - name: Start Vite (background)
+        run: |
+          nohup bun run dev > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080 >/dev/null; then
+              echo "vite up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "vite não subiu em 60s" >&2
+          tail -n 100 /tmp/vite.log >&2
+          exit 1
+      - name: Run quote-conditions spec (fail-on-diff, trace+video on failure)
+        run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME=playwright-report/results.json \
+          npx playwright test e2e/ui/quote-conditions-visual.spec.ts \
+            --project=chromium-public \
+            --trace=retain-on-failure \
+            --reporter=list,html,json
+      - name: Coletar diffs
+        if: failure()
+        run: |
+          mkdir -p diff-artifacts
+          if [ -d test-results ]; then
+            find test-results -type f \( -name "*-diff.png" -o -name "*-actual.png" -o -name "*-expected.png" \) \
+              -exec cp --parents {} diff-artifacts/ \; || true
+          fi
+      - name: Gerar HTML preview (baseline × actual × diff)
+        if: failure()
+        run: |
+          node scripts/build-visual-diff-report.mjs \
+            --results test-results \
+            --out visual-diff-report/index.html \
+            --title "Card Condições — PR #${{ github.event.pull_request.number || github.run_id }}"
+      - name: Upload Playwright HTML report + traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quote-conditions
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload HTML diff preview
+        if: failure()
+        id: upload_preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-conditions-visual-diff-preview
+          path: visual-diff-report/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Upload diff PNGs on failure
+        if: failure()
+        id: upload_diff
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-conditions-visual-diffs
+          path: diff-artifacts/
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Comentar no PR em caso de falha
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          DIFF_URL: ${{ steps.upload_diff.outputs.artifact-url }}
+          PREVIEW_URL: ${{ steps.upload_preview.outputs.artifact-url }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const runUrl = process.env.RUN_URL;
+            const diffUrl = process.env.DIFF_URL || `${runUrl}#artifacts`;
+            const previewUrl = process.env.PREVIEW_URL || `${runUrl}#artifacts`;
+
+            // Matriz esperada: 3 viewports × 2 temas
+            const VIEWPORTS = ['375', '768', '1280'];
+            const THEMES = ['light', 'dark'];
+            const status = new Map();
+            for (const v of VIEWPORTS) for (const t of THEMES) status.set(`${v}|${t}`, { changed: false, anchor: null });
+
+            let total = 0;
+            try {
+              const raw = fs.readFileSync(path.join('visual-diff-report', 'summary.json'), 'utf8');
+              const summary = JSON.parse(raw);
+              total = summary.total || 0;
+              for (const c of summary.cases || []) {
+                if (!c.viewport || !c.theme) continue;
+                const key = `${c.viewport}|${c.theme}`;
+                if (status.has(key)) status.set(key, { changed: true, anchor: c.anchor });
+              }
+            } catch (e) {
+              core.warning(`summary.json ausente/ilegível: ${e.message}`);
+            }
+
+            const rows = [];
+            for (const v of VIEWPORTS) {
+              for (const t of THEMES) {
+                const s = status.get(`${v}|${t}`);
+                const badge = s.changed ? '🔴 mudou' : '🟢 ok';
+                const link = s.changed && s.anchor
+                  ? `[ver diff](${previewUrl}#${s.anchor})`
+                  : '—';
+                rows.push(`| ${v}px | ${t} | ${badge} | ${link} |`);
+              }
+            }
+
+            const body = [
+              '❌ **Snapshot visual do card "Condições" divergiu.**',
+              '',
+              `**Resumo por viewport/tema** (${total} caso(s) divergente(s)):`,
+              '',
+              '| Viewport | Tema | Status | Diff |',
+              '|---|---|---|---|',
+              ...rows,
+              '',
+              `🖼️ [HTML preview: baseline × actual × diff](${previewUrl})`,
+              `📎 [PNGs de diff](${diffUrl}) · [Playwright HTML report + traces](${runUrl}#artifacts)`,
+              `🔗 Run: ${runUrl}`,
+              '',
+              'Se a mudança é intencional, dispare **E2E · Update Quote Conditions snapshots** (modo `safe_mode=true` recomendado).',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+

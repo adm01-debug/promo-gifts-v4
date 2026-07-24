@@ -1,0 +1,83 @@
+name: stock-filter-stress
+
+on:
+  pull_request:
+    paths:
+      - 'src/lib/inventory/**'
+      - 'src/types/stock.ts'
+      - 'src/components/inventory/**'
+      - '.github/workflows/stock-filter-stress.yml'
+  schedule:
+    # Nightly 03:17 UTC — seed rotativa por data para ampliar cobertura
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      master_seed:
+        description: 'STRESS_MASTER_SEED (decimal ou 0x...)'
+        required: false
+        default: ''
+      sims:
+        description: 'STRESS_SIMS'
+        required: false
+        default: ''
+      replay_seed:
+        description: 'STRESS_REPLAY_SEED (reexecuta só essa iteração)'
+        required: false
+        default: ''
+
+jobs:
+  stress:
+    name: stock-filter stress (PR=5k / nightly=25k)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Default PR
+      STRESS_SIMS: '5000'
+      STRESS_MASTER_SEED: '48879' # 0xbeef
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Configura seeds (nightly = rotativa, dispatch = inputs)
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "STRESS_SIMS=25000" >> "$GITHUB_ENV"
+            # seed rotativa baseada na data (YYYYMMDD)
+            DATE_SEED=$(date -u +%Y%m%d)
+            echo "STRESS_MASTER_SEED=${DATE_SEED}" >> "$GITHUB_ENV"
+            echo "STRESS_UNIVERSE_SEED=${DATE_SEED}" >> "$GITHUB_ENV"
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ -n "${{ inputs.master_seed }}" ] && echo "STRESS_MASTER_SEED=${{ inputs.master_seed }}" >> "$GITHUB_ENV" || true
+            [ -n "${{ inputs.sims }}" ]        && echo "STRESS_SIMS=${{ inputs.sims }}"                >> "$GITHUB_ENV" || true
+            [ -n "${{ inputs.replay_seed }}" ] && echo "STRESS_REPLAY_SEED=${{ inputs.replay_seed }}"  >> "$GITHUB_ENV" || true
+          fi
+
+      - name: Roda stress vs oráculo (logs reproduzíveis)
+        run: |
+          mkdir -p .stress-artifacts
+          echo "::group::Seeds da execução"
+          echo "event=${{ github.event_name }}"
+          echo "STRESS_MASTER_SEED=${STRESS_MASTER_SEED}"
+          echo "STRESS_UNIVERSE_SEED=${STRESS_UNIVERSE_SEED:-default}"
+          echo "STRESS_SIMS=${STRESS_SIMS}"
+          echo "STRESS_REPLAY_SEED=${STRESS_REPLAY_SEED:-none}"
+          echo "::endgroup::"
+          npx vitest run src/lib/inventory/__tests__/stock-filter.stress.test.ts \
+            --reporter=verbose 2>&1 | tee .stress-artifacts/stress.log
+        env:
+          CI: 'true'
+
+      - name: Upload logs (para replay)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-filter-stress-${{ github.run_id }}
+          path: .stress-artifacts/
+          retention-days: 30

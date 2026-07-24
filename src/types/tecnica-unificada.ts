@@ -1,18 +1,15 @@
 /**
  * Types: Técnica Unificada
- * 
+ *
  * Tipos para técnicas de personalização/gravação.
  * SSOT: BD Externo (Promobrind) é o master.
- * 
+ *
  * Este arquivo exporta tipos em português para compatibilidade
  * com o código existente.
  */
 
 // Re-export dos tipos de infraestrutura (Promobrind)
-export type {
-  PersonalizationTechniqueRaw,
-  CustomizationPriceTableRaw,
-} from './infrastructure';
+export type { PersonalizationTechniqueRaw, CustomizationPriceTableRaw } from './infrastructure';
 
 // ============================================
 // TIPOS PORTUGUESE (para compatibilidade)
@@ -32,38 +29,38 @@ export interface TecnicaUnificada {
   descricao: string | null;
   categoria: string;
   icone: string | null;
-  
+
   // === Configuração de Cores ===
   permiteCores: boolean;
   minCores: number;
   maxCores: number;
   precoPorCor: boolean;
   precoCorExtra: number;
-  
+
   // === Configuração de Cobrança ===
   precoPorArea: boolean;
   precoPorPontos: boolean;
   areaMinimaCm2: number | null;
   areaMaximaCm2: number | null;
   pontosMaximos: number | null;
-  
+
   // === Custos Base ===
   custoSetup: number;
   custoManuseio: number;
   multiplicadorCusto: number;
-  
+
   // === Produção ===
   quantidadeMinima: number | null;
   prazoEstimado: number | null;
-  
+
   // === Características ===
   aplicaSuperficieCurva: boolean;
   promptSuffix: string | null;
-  
+
   // === Status ===
   ativo: boolean;
   ordemExibicao: number;
-  
+
   // === Metadados ===
   fonte: 'externo';
   criadoEm: string;
@@ -76,33 +73,33 @@ export interface TecnicaUnificada {
  */
 export interface TabelaPrecoTecnica {
   id: string;
-  
+
   // === Identificação ===
   codigoTabela: string;
   codigoTabelaOpcao: string;
   codigoServico: string | null;
   nomeTecnica: string;
   tecnicaId: string | null;
-  
+
   // === Dimensões ===
   maxCores: number | null;
   larguraMaxCm: number | null;
   alturaMaxCm: number | null;
   areaMinCm2: number | null;
   areaMaxCm2: number | null;
-  
+
   // === Tipo de Cobrança ===
   precoPorCor: boolean;
   precoPorArea: boolean;
   precoPorPontos: boolean;
-  
+
   // === Custos Base ===
   precoSetup: number;
   precoManuseio: number;
-  
+
   // === Faixas de Quantidade (15 faixas) ===
   faixas: FaixaQuantidade[];
-  
+
   // === Metadados ===
   fornecedorId: string | null;
   organizacaoId: string | null;
@@ -116,7 +113,7 @@ export interface TabelaPrecoTecnica {
  * Faixa de quantidade com preço e SLA
  */
 export interface FaixaQuantidade {
-  faixa: number;           // 1-15
+  faixa: number; // 1-15
   quantidadeMinima: number;
   precoUnitario: number;
   slaDias: number | null;

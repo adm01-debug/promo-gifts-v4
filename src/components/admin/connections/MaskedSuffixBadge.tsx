@@ -46,7 +46,7 @@ export function MaskedSuffixBadge({
   // Sempre usa o resolvedor com fallback derivado — garante layout estável
   // mesmo quando o sufixo cru é nulo/curto.
   const display = formatDisplaySuffix(suffix, { length });
-  const isFallback = diagnosis.status !== 'valid' && (suffix ?? '').trim().length === 0;
+  const isFallback = diagnosis.status !== 'valid' && (suffix ?? '').trim() === '';
 
   if (diagnosis.status === 'valid' && !showWhenValid) {
     return showSuffix ? (
@@ -105,7 +105,7 @@ export function MaskedSuffixBadge({
           <span className="hidden sm:inline">— {diagnosis.label}</span>
         </span>
       </TooltipTrigger>
-      <TooltipContent side="top" align="start" className="max-w-xs text-xs leading-relaxed">
+      <TooltipContent side="top" align="start" className="leading-relaxed">
         <p className="mb-1 font-medium">{diagnosis.label}</p>
         <p className="text-muted-foreground">{diagnosis.message}</p>
         {isFallback && length !== null && length !== undefined && length > 0 && (

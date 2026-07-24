@@ -1,0 +1,183 @@
+name: Full CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  quality-gate:
+    name: Lint, Typecheck & Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      # Zero-dep (so node:fs), roda ANTES do install. Se o lock estiver fora de sincronia
+      # o `npm ci` morre no install e typecheck/lint/testes viram `skipped` — o job fica
+      # vermelho sem nunca ter checado nada. Aqui a falha vem em 2s, dizendo o que rodar.
+      - name: Guard — package-lock em sincronia
+        run: node scripts/check-lockfile-sync.mjs
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Typecheck
+        # Baseline ratchet sobre .tsc-baseline.json (bloqueia apenas erros novos).
+        # Inspeção completa: `npm run qa:typecheck`.
+        run: npm run typecheck
+
+      - name: Lint
+        # Baseline ratchet sobre .eslint-baseline.json (bloqueia apenas regressões).
+        # Inspeção completa: `npm run qa:lint`.
+        run: npm run lint:baseline
+
+      - name: Unit & Integration Tests (Coverage)
+        run: npm run test:ci-core:coverage
+        env:
+          TZ: America/Sao_Paulo
+
+      - name: Validate Coverage Threshold
+        run: |
+          # Validação simples de threshold (exemplo: 50% lines)
+          # No projeto real, vitest --coverage.thresholds faz isso, 
+          # mas aqui garantimos a extração para o log.
+          pct=$(node -e "console.log(require('./coverage/coverage-summary.json').total.lines.pct)")
+          echo "Current Coverage: $pct%"
+          if (( $(echo "$pct < 50" | bc -l) )); then
+            echo "Coverage below 50% threshold!"
+            # exit 1 # Opcional: descomentar para falhar build se coverage cair
+          fi
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  e2e-tests:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    needs: quality-gate
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Cache Playwright Browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Browsers
+        if: steps.cache-playwright.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Vitest — stress + fuzz badges (blocking)
+        run: |
+          npx vitest run \
+            src/hooks/products/__tests__/useProductIntelligenceBadges.test.tsx \
+            src/hooks/products/__tests__/useProductIntelligenceBadges.stress.test.tsx \
+            src/hooks/admin/__tests__/useIntelligenceBadgeSettings.fuzz.test.ts
+
+      - name: Run Playwright tests (Sharded Parallel)
+        run: |
+          npx playwright test --shard=${{ matrix.shard }}/2 \
+            e2e/catalog.spec.ts \
+            e2e/kit-builder.spec.ts \
+            e2e/login.spec.ts \
+            e2e/mockup-generate.spec.ts \
+            e2e/routes/app/replenishment-grid-visual.spec.ts \
+            e2e/catalog/product-card-badges-visual.spec.ts \
+            e2e/catalog/product-card-to-superfilter.spec.ts \
+            --project=chromium-authed
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+      
+      - name: Upload Playwright Artifacts (Screenshots & Diffs)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-artifacts-shard-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            e2e-artifacts/
+          retention-days: 7
+
+      - name: Upload Playwright Report (Always)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 7
+
+
+
+  audit-report:
+    name: Final Audit Report
+    runs-on: ubuntu-latest
+    needs: [quality-gate, e2e-tests]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download Coverage Summary
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+
+      - name: Generate Audit Report
+        run: node scripts/generate-audit-report.mjs
+
+      - name: Upload Audit Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-audit-report
+          path: audit-report.txt
+          retention-days: 30

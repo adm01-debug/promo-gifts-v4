@@ -9,7 +9,7 @@ import { logger } from '@/lib/logger';
  * Os nomes legados admin/manager/seller permanecem na tabela `role_permissions`
  * por compatibilidade — mapeamos transparentemente abaixo.
  */
-export type RoleName = 'dev' | 'supervisor' | 'agente';
+export type RoleName = 'agente' | 'dev' | 'supervisor';
 
 export interface Role {
   id: string;
@@ -51,7 +51,7 @@ function normalizeRole(raw: string | null | undefined): RoleName {
  * (mantemos os enums legados nessa tabela enquanto a migração não desce).
  */
 function toDbRole(role: RoleName): 'admin' | 'manager' | 'vendedor' {
-  if (role === 'dev') return 'admin';        // dev herda permissões de admin no banco
+  if (role === 'dev') return 'admin'; // dev herda permissões de admin no banco
   if (role === 'supervisor') return 'manager';
   return 'vendedor';
 }
@@ -84,6 +84,14 @@ export function useRBAC() {
 
   const dbRole = toDbRole(roleName);
 
+  /**
+   * BUG-04 FIX: dev nunca consulta role_permissions — já tem wildcard hardcoded.
+   *
+   * PROBLEMA ORIGINAL: a query era habilitada para todos os usuários autenticados
+   * (`enabled: !!user`), incluindo dev. Isso causava uma consulta desnecessária
+   * ao banco e mantinha `permissionsLoading: true` transitório para admins dev,
+   * podendo flickar guards de UI.
+   */
   const { data: dbPermissions, isLoading: permissionsLoading } = useQuery({
     queryKey: ['role-permissions', dbRole],
     queryFn: async () => {
@@ -98,7 +106,8 @@ export function useRBAC() {
       }
       return data.map((row: { permission_code: string }) => row.permission_code);
     },
-    enabled: !!user,
+    // FIX: dev sempre tem wildcard — não precisa consultar o banco
+    enabled: !!user && roleName !== 'dev',
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -113,7 +122,7 @@ export function useRBAC() {
   }, [roleName, dbPermissions]);
 
   const role: Role = {
-    id: profile?.id || '',
+    id: profile?.id ?? '',
     name: roleName,
     description: getDescriptionForRole(roleName),
   };
@@ -122,7 +131,7 @@ export function useRBAC() {
     return permissions.some(
       (p) =>
         (p.action === '*' || p.action === action) &&
-        (p.resource === '*' || p.resource === resource)
+        (p.resource === '*' || p.resource === resource),
     );
   };
 
@@ -149,7 +158,8 @@ export function useRBAC() {
 
   return {
     role,
-    isLoading: authLoading || permissionsLoading,
+    // FIX: dev nunca terá permissionsLoading=true (query desabilitada)
+    isLoading: authLoading || (roleName !== 'dev' && permissionsLoading),
     hasPermission,
     hasPermissionByCode,
     hasRole,
@@ -166,13 +176,14 @@ export function useRBAC() {
   };
 }
 
+const ROLE_DESCRIPTIONS: Record<RoleName, string> = {
+  dev: 'Desenvolvedor',
+  supervisor: 'Supervisor',
+  agente: 'Agente',
+} as const;
+
 function getDescriptionForRole(role: RoleName): string {
-  const descriptions: Record<RoleName, string> = {
-    dev: 'Desenvolvedor',
-    supervisor: 'Supervisor',
-    agente: 'Agente',
-  };
-  return descriptions[role] || 'Agente';
+  return ROLE_DESCRIPTIONS[role] || 'Agente';
 }
 
 export default useRBAC;

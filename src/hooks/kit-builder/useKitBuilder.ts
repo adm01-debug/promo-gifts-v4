@@ -24,6 +24,7 @@ import {
   calculateTotalKitPrice,
 } from '@/lib/kit-builder';
 import { useKitBuilderQueries } from '@/hooks/kit-builder/useKitBuilderQueries';
+import type { KitSnapshot } from '@/hooks/kit-builder/useKitUndoRedo';
 
 // ============================================
 // HOOK PRINCIPAL
@@ -381,6 +382,20 @@ export function useKitBuilder() {
     [],
   );
 
+  /**
+   * Restaura um snapshot completo (undo/redo). Diferente de `loadKit`, NÃO
+   * força o passo "summary" — undo/redo preserva o passo atual do usuário.
+   */
+  const restoreKitSnapshot = useCallback((snap: KitSnapshot) => {
+    setKitName(snap.name);
+    setKitType(snap.kitType);
+    setSelectedBox(snap.box);
+    setSelectedItems(snap.items);
+    setPersonalization(snap.personalization ?? { box: { enabled: false }, items: {} });
+    setKitQuantity(snap.kitQuantity || 1);
+    if (snap.identity) setIdentity(snap.identity);
+  }, []);
+
   // ============================================
   // FILTROS COM COMPATIBILIDADE
   // ============================================
@@ -453,5 +468,6 @@ export function useKitBuilder() {
     prevStep,
     resetKit,
     loadKit,
+    restoreKitSnapshot,
   };
 }

@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock supabase before importing the module
 vi.mock("@/integrations/supabase/client", () => {
   return {
+    SUPABASE_URL: "https://test.supabase.co",
+    SUPABASE_PUBLISHABLE_KEY: "test-anon-key",
     supabase: {
       auth: {
         getSession: () =>
@@ -11,6 +13,8 @@ vi.mock("@/integrations/supabase/client", () => {
           }),
       },
     },
+    SUPABASE_URL: "https://test.supabase.co",
+    SUPABASE_PUBLISHABLE_KEY: "test-anon-key",
   };
 });
 

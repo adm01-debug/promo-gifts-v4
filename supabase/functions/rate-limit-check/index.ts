@@ -1,4 +1,5 @@
 import { getCorsHeaders, handleCorsPreflightIfNeeded } from '../_shared/cors.ts';
+import { safeErrorResponse } from '../_shared/error-response.ts';
 import { logSecurityEvent } from '../_shared/security.ts';
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
@@ -124,11 +125,14 @@ Deno.serve(async (req) => {
         },
       }
     );
-  } catch (error: any) {
-    console.error('Rate limit check error:', error);
-    return new Response(
-      JSON.stringify({ allowed: true, error: error.message }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  } catch (error) {
+    // Fail-open: em erro interno liberamos a requisição, sem vazar o motivo.
+    return safeErrorResponse(error, {
+      corsHeaders,
+      status: 200,
+      publicMessage: 'rate_limit_unavailable',
+      logLabel: 'Rate limit check error:',
+      extra: { allowed: true },
+    });
   }
 });

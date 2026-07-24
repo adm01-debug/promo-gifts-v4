@@ -1,13 +1,13 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { 
-  useExternalCategories, 
-  useExternalTechniques, 
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import {
+  useExternalCategories,
+  useExternalTechniques,
   useExternalSuppliers,
   useExternalDatabase,
   type ExternalCategory,
   type ExternalTechnique,
   type ExternalSupplier,
-} from "@/hooks/intelligence/useExternalDatabase";
+} from '@/hooks/intelligence/useExternalDatabase';
 
 // Re-exportar tipos e constantes dos novos arquivos
 export type {
@@ -22,23 +22,30 @@ export type {
   TagData,
 } from '@/types/advancedFilters';
 
-export {
-  defaultAdvancedFilters,
-  STOCK_FILTER_OPTIONS,
-  SORT_OPTIONS,
-} from '@/constants/filters';
+export { defaultAdvancedFilters, STOCK_FILTER_OPTIONS, SORT_OPTIONS } from '@/constants/filters';
 
-import type { CategoryOption, TechniqueOption, SupplierOption, ColorOption, ColorGroupData, TagData, AdvancedFilterState } from '@/types/advancedFilters';
+import type {
+  CategoryOption,
+  TechniqueOption,
+  SupplierOption,
+  ColorOption,
+  ColorGroupData,
+  TagData,
+  AdvancedFilterState,
+} from '@/types/advancedFilters';
 import { defaultAdvancedFilters } from '@/constants/filters';
 
+import { logger } from '@/lib/logger';
 // ============================================
 // HOOK PRINCIPAL
 // ============================================
 
 export function useAdvancedFilters() {
   const [filters, setFilters] = useState<AdvancedFilterState>(defaultAdvancedFilters);
-  const [isLoading, setIsLoading] = useState(true);
-  
+  // BUG-LOADING-01 FIX: isLoading inicializava como true antes de qualquer fetch ter ocorrido,
+  // causando um flash de skeleton desnecessario quando os dados ja estavam em cache.
+  const [isLoading, setIsLoading] = useState(false);
+
   // Hooks para buscar dados do banco externo
   const categoriesDB = useExternalCategories();
   const techniquesDB = useExternalTechniques();
@@ -46,29 +53,65 @@ export function useAdvancedFilters() {
   const colorGroupsDB = useExternalDatabase<ColorGroupData>('color_groups');
   const tagsDB = useExternalDatabase<TagData>('tags');
 
-  // Buscar dados iniciais
+  // BUG-AF-01 FIX: Captura referencias das funcoes em refs para evitar stale closure
+  // sem adicionar as funcoes como deps (o que causaria re-fetch infinito).
+  // O efeito roda uma vez no mount — comportamento intencional para pre-carregar opcoes de filtro.
+  const fetchRefsRef = useRef({
+    categoriesFetch: categoriesDB.fetchAll,
+    techniquesFetch: techniquesDB.fetchAll,
+    suppliersFetch: suppliersDB.fetchAll,
+    colorGroupsFetch: colorGroupsDB.fetchAll,
+    tagsFetch: tagsDB.fetchAll,
+  });
+
+  // Mantém as refs atualizadas sem triggerar o efeito
   useEffect(() => {
+    fetchRefsRef.current = {
+      categoriesFetch: categoriesDB.fetchAll,
+      techniquesFetch: techniquesDB.fetchAll,
+      suppliersFetch: suppliersDB.fetchAll,
+      colorGroupsFetch: colorGroupsDB.fetchAll,
+      tagsFetch: tagsDB.fetchAll,
+    };
+  }, [
+    categoriesDB.fetchAll,
+    techniquesDB.fetchAll,
+    suppliersDB.fetchAll,
+    colorGroupsDB.fetchAll,
+    tagsDB.fetchAll,
+  ]);
+
+  // Buscar dados iniciais — roda uma vez no mount
+  useEffect(() => {
+    let isMounted = true;
+
     const loadFilterOptions = async () => {
       setIsLoading(true);
       try {
         await Promise.all([
-          categoriesDB.fetchAll({ filters: { is_active: true }, limit: 500 }),
-          techniquesDB.fetchAll({ filters: { is_active: true }, limit: 100 }),
-          suppliersDB.fetchAll({ limit: 100 }),
-          colorGroupsDB.fetchAll({ filters: { is_active: true }, limit: 100 }),
-          tagsDB.fetchAll({ limit: 200 }),
+          fetchRefsRef.current.categoriesFetch({ filters: { is_active: true }, limit: 500 }),
+          fetchRefsRef.current.techniquesFetch({ filters: { is_active: true }, limit: 100 }),
+          fetchRefsRef.current.suppliersFetch({ limit: 100 }),
+          fetchRefsRef.current.colorGroupsFetch({ filters: { is_active: true }, limit: 100 }),
+          fetchRefsRef.current.tagsFetch({ limit: 200 }),
         ]);
       } catch (error) {
-        console.error('Erro ao carregar opções de filtros:', error);
+        logger.error('Erro ao carregar opcoes de filtros:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadFilterOptions();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Transformar categorias em árvore hierárquica
+  // Transformar categorias em arvore hierarquica
   const categoryTree = useMemo((): CategoryOption[] => {
     const categories = categoriesDB.data as ExternalCategory[];
     if (!categories?.length) return [];
@@ -76,7 +119,7 @@ export function useAdvancedFilters() {
     const categoryMap = new Map<string, CategoryOption>();
     const roots: CategoryOption[] = [];
 
-    categories.forEach(cat => {
+    categories.forEach((cat) => {
       categoryMap.set(cat.id, {
         id: cat.id,
         name: cat.name,
@@ -87,11 +130,11 @@ export function useAdvancedFilters() {
       });
     });
 
-    categoryMap.forEach(cat => {
+    categoryMap.forEach((cat) => {
       if (cat.parentId) {
         const parent = categoryMap.get(cat.parentId);
         if (parent) {
-          parent.children = parent.children || [];
+          parent.children ||= [];
           parent.children.push(cat);
         }
       } else {
@@ -102,10 +145,10 @@ export function useAdvancedFilters() {
     return roots;
   }, [categoriesDB.data]);
 
-  // Lista plana de categorias para seleção
+  // Lista plana de categorias para selecao
   const categoryOptions = useMemo((): CategoryOption[] => {
     const flattenCategories = (cats: CategoryOption[], level = 0): CategoryOption[] => {
-      return cats.flatMap(cat => [
+      return cats.flatMap((cat) => [
         { ...cat, level },
         ...flattenCategories(cat.children || [], level + 1),
       ]);
@@ -113,82 +156,89 @@ export function useAdvancedFilters() {
     return flattenCategories(categoryTree);
   }, [categoryTree]);
 
-  // Técnicas de personalização
+  // Tecnicas de personalizacao
   const techniqueOptions = useMemo((): TechniqueOption[] => {
     const techniques = techniquesDB.data as ExternalTechnique[];
-    return techniques?.map(tech => ({
-      id: tech.id,
-      name: tech.name,
-      code: tech.code || '',
-      estimatedDays: tech.estimated_days,
-      minQuantity: tech.min_quantity,
-    })) || [];
+    return (
+      techniques?.map((tech) => ({
+        id: tech.id,
+        name: tech.name,
+        code: tech.code || '',
+        estimatedDays: tech.estimated_days,
+        minQuantity: tech.min_quantity,
+      })) ?? []
+    );
   }, [techniquesDB.data]);
 
   // Fornecedores
   const supplierOptions = useMemo((): SupplierOption[] => {
     const suppliers = suppliersDB.data as ExternalSupplier[];
-    return suppliers?.map(sup => ({
-      id: sup.id,
-      name: sup.name,
-      code: sup.code,
-      leadTimeDays: sup.lead_time_days,
-    })) || [];
+    return (
+      suppliers?.map((sup) => ({
+        id: sup.id,
+        name: sup.name,
+        code: sup.code,
+        leadTimeDays: sup.lead_time_days,
+      })) ?? []
+    );
   }, [suppliersDB.data]);
 
   // Cores
   const colorOptions = useMemo((): ColorOption[] => {
     const colors = colorGroupsDB.data as ColorGroupData[];
-    return colors?.map(color => ({
-      id: color.id,
-      name: color.name,
-      hex: color.hex_code || '#cccccc',
-    })) || [];
+    return (
+      colors?.map((color) => ({
+        id: color.id,
+        name: color.name,
+        hex: color.hex_code || '#cccccc',
+      })) ?? []
+    );
   }, [colorGroupsDB.data]);
 
   // Tags
   const tagOptions = useMemo(() => {
     const tags = tagsDB.data as TagData[];
-    return tags?.map(tag => ({
-      id: tag.id,
-      name: tag.name,
-      slug: tag.slug,
-      color: tag.color,
-    })) || [];
+    return (
+      tags?.map((tag) => ({
+        id: tag.id,
+        name: tag.name,
+        slug: tag.slug,
+        color: tag.color,
+      })) ?? []
+    );
   }, [tagsDB.data]);
 
-  // Funções para manipular filtros
-  const updateFilter = useCallback(<K extends keyof AdvancedFilterState>(
-    key: K,
-    value: AdvancedFilterState[K]
-  ) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  }, []);
+  // Funcoes para manipular filtros
+  const updateFilter = useCallback(
+    <K extends keyof AdvancedFilterState>(key: K, value: AdvancedFilterState[K]) => {
+      setFilters((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
-  const toggleArrayFilter = useCallback(<K extends keyof AdvancedFilterState>(
-    key: K,
-    value: string
-  ) => {
-    setFilters(prev => {
-      const currentValues = prev[key] as string[];
-      const newValues = currentValues.includes(value)
-        ? currentValues.filter(v => v !== value)
-        : [...currentValues, value];
-      return { ...prev, [key]: newValues };
-    });
-  }, []);
+  const toggleArrayFilter = useCallback(
+    <K extends keyof AdvancedFilterState>(key: K, value: string) => {
+      setFilters((prev) => {
+        const currentValues = prev[key];
+        if (!Array.isArray(currentValues)) return prev;
+        const arr = currentValues as string[];
+        const newValues = arr.includes(value) ? arr.filter((v) => v !== value) : arr.concat(value);
+        return { ...prev, [key]: newValues };
+      });
+    },
+    [],
+  );
 
   const resetFilters = useCallback(() => {
     setFilters(defaultAdvancedFilters);
   }, []);
 
   const resetFilterGroup = useCallback((keys: (keyof AdvancedFilterState)[]) => {
-    setFilters(prev => {
-      const updates: Partial<AdvancedFilterState> = {};
-      keys.forEach(key => {
-        updates[key] = defaultAdvancedFilters[key] as never;
-      });
-      return { ...prev, ...updates };
+    setFilters((prev) => {
+      const defaults = Object.fromEntries(
+        keys.map((key) => [key, defaultAdvancedFilters[key]]),
+      ) as Partial<AdvancedFilterState>;
+      return { ...prev, ...defaults };
     });
   }, []);
 
@@ -210,8 +260,9 @@ export function useAdvancedFilters() {
     if (filters.endomarketing.length) count += filters.endomarketing.length;
     if (filters.ramosAtividade.length) count += filters.ramosAtividade.length;
     if (filters.segmentosAtividade.length) count += filters.segmentosAtividade.length;
-    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 1000) count++;
-    if (filters.quantityRange[0] > 1 || filters.quantityRange[1] < 10000) count++;
+    // Threshold alinhado com PRICE_RANGE_MAX = 9999 em useCatalogFiltering
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count++;
+    // BUG-SF-16 FIX: quantityRange removido de AdvancedFilterState (era campo orphaned).
     if (filters.stockStatus !== 'all') count++;
     if (filters.isKit) count++;
     if (filters.isFeatured) count++;
@@ -222,21 +273,24 @@ export function useAdvancedFilters() {
     return count;
   }, [filters]);
 
-  // Verificar se há filtros ativos em um grupo específico
-  const hasActiveFiltersInGroup = useCallback((keys: (keyof AdvancedFilterState)[]) => {
-    return keys.some(key => {
-      const value = filters[key];
-      const defaultValue = defaultAdvancedFilters[key];
-      
-      if (Array.isArray(value)) {
-        return value.length > 0;
-      }
-      if (typeof value === 'object' && value !== null) {
-        return JSON.stringify(value) !== JSON.stringify(defaultValue);
-      }
-      return value !== defaultValue;
-    });
-  }, [filters]);
+  // Verificar se ha filtros ativos em um grupo especifico
+  const hasActiveFiltersInGroup = useCallback(
+    (keys: (keyof AdvancedFilterState)[]) => {
+      return keys.some((key) => {
+        const value = filters[key];
+        const defaultValue = defaultAdvancedFilters[key];
+
+        if (Array.isArray(value)) {
+          return value.length > 0;
+        }
+        if (typeof value === 'object' && value !== null) {
+          return JSON.stringify(value) !== JSON.stringify(defaultValue);
+        }
+        return value !== defaultValue;
+      });
+    },
+    [filters],
+  );
 
   return {
     filters,

@@ -5,11 +5,16 @@ export interface CategoryIcon {
   id: string;
   category_name: string;
   icon: string;
-  description?: string;
+  description?: string | null;
 }
 
 /**
- * Hook para buscar ícones das categorias do Supabase
+ * Hook para buscar ícones das categorias do Supabase.
+ *
+ * Retorna a tabela `category_icons` completa para uso no `getCategoryIcon()`.
+ * Resultados ficam em cache por 30 min (dados muito estáveis).
+ *
+ * @see docs/CATEGORY_ICONS_GUIDE.md
  */
 export function useCategoryIcons() {
   return useQuery<CategoryIcon[]>({
@@ -21,110 +26,359 @@ export function useCategoryIcons() {
         .eq('is_active', true);
 
       if (error) throw new Error(`Failed to fetch category icons: ${error.message}`);
-      
-      return data || [];
+      return (data || []) as CategoryIcon[];
     },
-    staleTime: 30 * 60 * 1000, // 30 min (dados estáveis)
+    staleTime: 30 * 60 * 1000,
   });
 }
 
-// Mapeamento de palavras-chave para ícones (fallback inteligente)
+/**
+ * Mapeamento palavra-chave → nome do ícone Lucide.
+ *
+ * Usado como fallback no pass 3 de `getCategoryIcon()`, quando o nome
+ * da categoria não encontra match no banco de dados.
+ *
+ * ### Regras
+ * - Valores SEMPRE em PascalCase: nomes válidos do ICON_MAP em CategoryIcon.tsx
+ * - Palavras-chave em português (minúsculas, sem acentos is OK)
+ * - Ordenar por tipo de produto para facilitar manutenção
+ *
+ * @see src/components/ui/CategoryIcon.tsx — ICON_MAP com todos os ícones disponíveis
+ * @see docs/CATEGORY_ICONS_GUIDE.md — guia completo
+ */
 const KEYWORD_ICONS: Record<string, string> = {
-  // Bar / Cozinha / Gourmet
-  copo: '🥤', taça: '🍷', caneca: '☕', garrafa: '🍾', squeeze: '💧',
-  térmica: '🧊', térm: '🧊', kit: '🎁', vinho: '🍷', cerveja: '🍺',
-  café: '☕', churrasco: '🥩', gourmet: '🍽️', caipirinha: '🍹',
-  // Utensílios
-  tábua: '🪵', faca: '🔪', talher: '🍴', pegador: '🥢', abridor: '🍾',
-  saca: '🍾', colher: '🥄', garfo: '🍴', espátula: '🍳',
-  // Sulista / Chimarrão
-  cuia: '🧉', chimarrão: '🧉', tereré: '🧉', bomba: '🧉', mateira: '🧉',
-  // Bolsas / Acessórios
-  bolsa: '👜', mochila: '🎒', necessaire: '👝', carteira: '👛', 
-  pochete: '👜', sacola: '🛍️', pasta: '💼', maleta: '💼',
-  // Roupas
-  camisa: '👔', camiseta: '👕', boné: '🧢', chapéu: '🎩', 
-  calça: '👖', jaqueta: '🧥', avental: '👨‍🍳', toalha: '🏖️', lenço: '🧣',
-  // Escritório / Papelaria
-  caneta: '🖊️', lápis: '✏️', caderno: '📓', agenda: '📅', 
-  bloco: '📝', calculadora: '🧮', porta: '✏️', clips: '📎',
-  // Tecnologia
-  cabo: '🔌', carregador: '🔋', fone: '🎧', mouse: '🖱️', 
-  teclado: '⌨️', pendrive: '💾', 'caixa de som': '🔊', 'power bank': '🔋',
-  celular: '📱', suporte: '📱', ring: '📱',
-  // Ferramentas
-  ferramenta: '🔧', chave: '🔩', lanterna: '🔦', trena: '📏', 
-  alicate: '🔧', martelo: '🔨', fita: '📐',
-  // Esportes / Lazer
-  bola: '⚽', raquete: '🏸', yoga: '🧘', fitness: '💪', 
-  esporte: '🏃', praia: '🏖️', piscina: '🏊',
-  // Jogos
-  jogo: '🎮', dominó: '🎲', baralho: '🃏', xadrez: '♟️', 
-  brinquedo: '🧸', quebra: '🧩',
-  // Casa / Decoração
-  vela: '🕯️', 'porta-retrato': '🖼️', relógio: '⏰', almofada: '🛋️',
-  organizador: '📦', vaso: '🌱', decoração: '🏠',
-  // Saúde / Beleza
-  espelho: '🪞', escova: '🪥', massageador: '💆', 'kit higiene': '🧴',
-  álcool: '🧴', máscara: '😷', sabonete: '🧼', perfume: '🌸',
-  // Pet
-  pet: '🐾', cachorro: '🐕', gato: '🐈', coleira: '🐾', 
-  comedouro: '🐾', 'brinquedo pet': '🐾',
-  // Embalagens
-  embalagem: '📦', caixa: '📦', papel: '📄',
-  // Chaveiros
-  chaveiro: '🔑', mosquetão: '🔗',
-  // Infantil
-  infantil: '👶', criança: '🧒', bebê: '👶',
-  // Premium / Corporativo
-  troféu: '🏆', medalha: '🥇', placa: '🏅', pin: '📌', botton: '📌',
-  // Alimentos
-  doce: '🍫', chocolate: '🍫', bombom: '🍬', biscoito: '🍪', 
-  comida: '🍔', alimento: '🍎', castanha: '🥜',
-  // Eco / Sustentável
-  eco: '🌿', reciclado: '♻️', bambu: '🎋', sustentável: '🌱', madeira: '🪵',
+  // ── BAR / COZINHA / GOURMET ─────────────────────────────────
+  copo: 'GlassWater',
+  taça: 'Wine',
+  caneca: 'Coffee',
+  xícara: 'Coffee',
+  squeeze: 'Droplets',  // fix: before 'garrafa' — 'Garrafa squeeze' deve dar Droplets
+  garrafa: 'Wine',
+  térmica: 'Thermometer',
+  térm: 'Thermometer',
+  cooler: 'Thermometer',
+  iso: 'Thermometer',
+  vinho: 'Wine',
+  cerveja: 'Beer',
+  café: 'Coffee',
+  crachá: 'CreditCard', // fix: before 'chá' (substring)
+  chá: 'Coffee',
+  xícaras: 'Coffee',
+  chimarrão: 'Coffee',
+  cuia: 'Coffee',
+  tereré: 'Coffee',
+  mateira: 'Coffee',
+  erva: 'Coffee',
+  churrasco: 'Flame',
+  gourmet: 'ChefHat',
+  caipirinha: 'Wine',
+  fondue: 'ChefHat',
+  queijo: 'ChefHat',
+  drink: 'Wine',
+  baralho: 'Dices', // fix: before 'bar' (Wine) — bar is substring of baralho
+  bar: 'Wine',
+  coquetel: 'Wine',
+  shakeira: 'Wine',
+
+  // ── UTENSÍLIOS DE COZINHA ───────────────────────────────
+  tábua: 'Utensils',
+  faca: 'Scissors',
+  cutelaria: 'Scissors',
+  canivete: 'Scissors',
+  talher: 'Utensils',
+  pegador: 'Utensils',
+  abridor: 'Wine',
+  colher: 'Utensils',
+  garfo: 'Utensils',
+  espátula: 'Utensils',
+  bowl: 'Utensils',
+  petisqueira: 'Utensils',
+  pizza: 'Utensils',
+  alimentos: 'Utensils',
+  comida: 'Utensils',
+
+  // ── BOLSAS / ACESSÓRIOS ────────────────────────────────
+  bolsa: 'ShoppingBag',
+  mochila: 'Backpack',
+  sacochila: 'Backpack',
+  necessaire: 'ShoppingBag',
+  frasqueira: 'ShoppingBag',
+  carteira: 'Wallet',
+  pochete: 'ShoppingBag',
+  sacola: 'Recycle',
+  pasta: 'Briefcase',
+  maleta: 'Briefcase',
+  mala: 'Luggage',
+  viagem: 'Luggage',
+  'kit viagem': 'Luggage',
+  'bolsa viagem': 'Luggage',
+
+  // ── VESTUÁRIO / CALÇADOS ───────────────────────────────
+  camisa: 'Shirt',
+  camiseta: 'Shirt',
+  boné: 'Tag',
+  chapéu: 'Sun',
+  calça: 'Shirt',
+  jaqueta: 'Shirt',
+  colete: 'Shirt',
+  moletão: 'Shirt',
+  avental: 'ChefHat',
+  toalha: 'Layers',
+  manta: 'Layers',
+  cobertor: 'Layers',
+  lenço: 'Tag',
+  óculos: 'Glasses',
+  viseira: 'Sun',
+  chinelo: 'Dumbbell',
+  calçado: 'Dumbbell',
+  botína: 'Dumbbell',
+  sandália: 'Dumbbell',
+
+  // ── ESCRITÓRIO / PAPELARIA ────────────────────────────
+  caneta: 'PenLine',
+  lápis: 'Pencil',
+  lapiseira: 'Pencil',
+  caderno: 'Notebook',
+  caderneta: 'Notebook',
+  bloco: 'Notebook',
+  agenda: 'Calendar',
+  calendário: 'Calendar',
+  calculadora: 'Calculator',
+  clips: 'Paperclip',
+  papelaria: 'Notebook',
+
+  // ── TECNOLOGIA ───────────────────────────────────────
+  cabo: 'Plug',
+  carregador: 'Battery',
+  powerbank: 'Battery',
+  'power bank': 'Battery',
+  fone: 'Headphones',
+  mouse: 'Mouse',
+  teclado: 'Keyboard',
+  pendrive: 'HardDrive',
+  'pen drive': 'HardDrive',
+  'caixa de som': 'Speaker',
+  celular: 'Smartphone',
+  smartphone: 'Smartphone',
+  notebook: 'Laptop',
+  laptop: 'Laptop',
+  tecnologia: 'Cpu',
+
+  // ── FERRAMENTAS ──────────────────────────────────────
+  ferramenta: 'Wrench',
+  chave: 'Key',
+  chaveiro: 'Key',
+  mosquetão: 'Key',
+  lanterna: 'Flashlight',
+  luminária: 'Lamp',
+  lâmpada: 'Lamp',
+  trena: 'Ruler',
+  alicate: 'Wrench',
+  martelo: 'Hammer',
+  fita: 'Ruler',
+  'anti furto': 'Lock',
+  cadeado: 'Lock',
+  trava: 'Lock',
+  pin: 'Pin',
+  botton: 'Pin',
+  broche: 'Pin',
+
+  // ── ESPORTES / LAZER ────────────────────────────────
+  bola: 'CircleDot',
+  futebol: 'CircleDot',
+  vôlei: 'CircleDot',
+  basquete: 'CircleDot',
+  raquete: 'Dumbbell',
+  yoga: 'Heart',
+  fitness: 'Dumbbell',
+  academia: 'Dumbbell',
+  esporte: 'Dumbbell',
+  corrida: 'Dumbbell',
+  'guarda-chuva': 'Umbrella', // fix: before 'praia' (Sun) — guarda-sol de praia deve dar Umbrella
+  'guarda-sol': 'Umbrella',   // fix: before 'praia' (Sun)
+  guarda: 'Umbrella',
+  chuva: 'Umbrella',
+  praia: 'Sun',
+  piscina: 'Droplets',
+
+  // ── SAÚDE / BELEZA ─────────────────────────────────
+  espelho: 'Sparkles',
+  escova: 'Scissors',
+  pente: 'Scissors',
+  manicure: 'Scissors',
+  massageador: 'Heart',
+  massagem: 'Heart',
+  'kit higiene': 'Droplets',
+  álcool: 'Droplets',
+  máscara: 'Heart',
+  sabonete: 'Droplets',
+  perfume: 'Sparkles',
+  beleza: 'Sparkles',
+  maquiagem: 'Sparkles',
+  comprimido: 'Pill',
+  remédio: 'Pill',
+  farmácia: 'Pill',
+  medicamento: 'Pill',
+  spa: 'Droplets',
+  banho: 'Droplets',
+  roupa: 'Droplets',
+
+  // ── JOGOS ─────────────────────────────────────────
+  jogo: 'Gamepad2',
+  dominó: 'Dices',
+  xadrez: 'Dices',
+  quebra: 'Layers',
+  // brinquedo movido para o final da seção JOGOS — após brinquedo pet (PET section)
+  // para que 'brinquedo pet' (PawPrint) tome precedência sobre 'brinquedo' (Star)
+
+  // ── CASA / DECORAÇÃO ──────────────────────────────
+  vela: 'Flame',
+  'porta-retrato': 'Image',
+  retrato: 'Image',
+  relógio: 'Clock',
+  almofada: 'Layers',
+  organizador: 'Package',
+  vaso: 'Flower2',
+  planta: 'Leaf',
+  decoração: 'Home',
+  despertador: 'AlarmClock',
+
+  // ── PET ────────────────────────────────────────────
+  'brinquedo pet': 'PawPrint', // fix: before 'brinquedo' (Star) — produto pet precede genérico
+  pet: 'PawPrint',
+  cachorro: 'PawPrint',
+  gato: 'PawPrint',
+  coleira: 'PawPrint',
+  comedouro: 'PawPrint',
+  bebedouro: 'PawPrint',
+  ração: 'PawPrint',
+  cama: 'PawPrint',
+  casinha: 'PawPrint',
+  brinquedo: 'Star',          // fix: movido para cá — depois de 'brinquedo pet'
+
+  // ── EMBALAGENS / CAIXAS ─────────────────────────────
+  embalagem: 'Package',
+  caixa: 'Package',
+  estojo: 'Package',
+  berço: 'Package',
+  papel: 'Paperclip',
+  marmita: 'Package',
+  lancheira: 'Package',
+
+  // ── INFANTIL ───────────────────────────────────────
+  infantil: 'Star',
+  criança: 'Star',
+  bebê: 'Heart',
+
+  // ── PREMIUM / PREMIAÇÕES ────────────────────────────
+  troféu: 'Trophy',
+  medalha: 'Medal',
+  placa: 'Award',
+  certificado: 'Award',
+  premiação: 'Award',
+  motivação: 'Award',
+  premium: 'Crown',
+  vip: 'Crown',
+  executivo: 'Crown',
+  festas: 'Sparkles',
+  evento: 'Sparkles',
+
+  // ── ALIMENTOS / DOCES ─────────────────────────────
+  doce: 'Gift',
+  chocolate: 'Heart',
+  bombom: 'Gift',
+  biscoito: 'Gift',
+  alimento: 'Utensils',
+  castanha: 'Leaf',
+
+  // ── ECO / SUSTENTÁVEL / AGRO ────────────────────────
+  bambu: 'TreePine',   // fix: before 'eco' — produto de bambu deve dar TreePine
+  eco: 'Leaf',
+  ecológico: 'Leaf',
+  reciclado: 'Recycle',
+  sustentável: 'Leaf',
+  madeira: 'TreePine',
+  cortiça: 'TreePine',
+  flor: 'Flower2',
+  agro: 'Sprout',
+  cultivo: 'Sprout',
+  semente: 'Sprout',
+  broto: 'Sprout',
+  muda: 'Sprout',
+
+  // ── IDENTIFICAÇÃO / CACHÉ ───────────────────────────
+  credencial: 'CreditCard',
+  identificação: 'CreditCard',
+  cordão: 'CreditCard',
+
+  // ── VEÍCULOS / AUTOMOTIVO ───────────────────────────
+  veículo: 'Car',
+  carro: 'Car',
+  automotivo: 'Car',
+  moto: 'Car',
+
+  // ── FALLBACK GENÉRICO (deve ficar ÚLTIMO — é substring de muitas palavras) ─
+  kit: 'Gift', // fix: moved to end — 'Kit X' resolves to X's icon first
 };
 
 /**
- * Função utilitária para obter o ícone de uma categoria pelo nome
- * Usa busca fuzzy com correspondência de palavras-chave
+ * Retorna o ícone (nome Lucide ou emoji) de uma categoria pelo nome.
+ *
+ * ## Pipeline de resolução (4 passes)
+ *
+ * | Pass | Fonte                        | Exemplo                          |
+ * |------|------------------------------|----------------------------------|
+ * | 1    | Busca exata em category_icons  | "Canecas" → "Coffee"            |
+ * | 2    | Busca parcial (contém)         | "Canecas | Vidro" → "Coffee"    |
+ * | 3    | KEYWORD_ICONS (mapa estático)  | "caneca" → "Coffee"             |
+ * | 4    | Primeira palavra no banco      | "Kit" → busca no banco          |
+ * | -    | Fallback                       | '📦' (Package como emoji)          |
+ *
+ * ## Valores retornados
+ *
+ * - Nome Lucide: `"Coffee"`, `"Luggage"`, `"CircleDot"` → CategoryIcon renderiza SVG
+ * - Emoji legado: `"☕"` (se ainda no DB) → CategoryIcon renderiza como `<span>`
+ * - Fallback: `"📦"` → CategoryIcon renderiza como `<span>` com Package emoji
+ *
+ * @param categoryName Nome da categoria (ex: "Canecas | Porcelana")
+ * @param icons Lista de ícones do banco (via useCategoryIcons)
+ * @returns String com nome Lucide ou emoji/fallback
+ *
+ * @see src/components/ui/CategoryIcon.tsx — renderizador final
+ * @see docs/CATEGORY_ICONS_GUIDE.md — guia completo
  */
 export function getCategoryIcon(
-  categoryName: string | undefined | null, 
-  icons: CategoryIcon[]
+  categoryName: string | null | undefined,
+  icons: CategoryIcon[],
 ): string {
   if (!categoryName) return '📦';
-  
+
   const nameLower = categoryName.toLowerCase();
-  
+
   // 1. Busca exata no banco
-  const exact = icons.find(
-    i => i.category_name.toLowerCase() === nameLower
-  );
+  const exact = icons.find((i) => i.category_name?.toLowerCase() === nameLower);
   if (exact) return exact.icon;
-  
+
   // 2. Busca parcial (contém) no banco
-  const partial = icons.find(
-    i => nameLower.includes(i.category_name.toLowerCase()) ||
-         i.category_name.toLowerCase().includes(nameLower)
-  );
+  const partial = icons.find((i) => {
+    const n = i.category_name?.toLowerCase();
+    return n && (nameLower.includes(n) || n.includes(nameLower));
+  });
   if (partial) return partial.icon;
-  
-  // 3. Busca por palavras-chave no mapa estático
-  for (const [keyword, icon] of Object.entries(KEYWORD_ICONS)) {
+
+  // 3. Busca por palavras-chave no mapa estático (retorna nome Lucide)
+  for (const [keyword, iconName] of Object.entries(KEYWORD_ICONS)) {
     if (nameLower.includes(keyword)) {
-      return icon;
+      return iconName;
     }
   }
-  
+
   // 4. Busca por primeira palavra significativa no banco
   const firstWord = nameLower.split(/[\s|]/)[0];
   if (firstWord.length > 2) {
-    const firstWordMatch = icons.find(
-      i => i.category_name.toLowerCase().includes(firstWord)
-    );
+    const firstWordMatch = icons.find((i) => i.category_name?.toLowerCase().includes(firstWord));
     if (firstWordMatch) return firstWordMatch.icon;
   }
-  
-  return '📦'; // Padrão
+
+  return '📦'; // Fallback final — CategoryIcon renderiza como emoji Package
 }

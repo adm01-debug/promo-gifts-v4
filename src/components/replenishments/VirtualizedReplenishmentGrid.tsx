@@ -1,31 +1,10 @@
-import { useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import type { ReplenishmentWithDetails } from "@/hooks/products";
-import type { ColumnCount } from "@/components/products/ColumnSelector";
-import { ReplenishmentGridCard } from "./ReplenishmentCards";
-
-function colsToNum(cols: ColumnCount): number {
-  return typeof cols === 'number' ? cols : 5;
-}
-
-function getGridColsClass(cols: ColumnCount): string {
-  const map: Record<ColumnCount, string> = {
-    3: "grid-cols-2 sm:grid-cols-3",
-    4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
-    5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-    6: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
-    8: "grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8",
-  };
-  return map[cols] ?? map[5];
-}
-
-function getGridGapClass(cols: ColumnCount): string {
-  if (cols >= 8) return "gap-x-4 gap-y-8";
-  if (cols >= 6) return "gap-x-6 gap-y-8";
-  return "gap-x-8 gap-y-8";
-}
-
-export { getGridColsClass, getGridGapClass };
+import { useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import type { ReplenishmentWithDetails } from '@/hooks/products';
+import type { ColumnCount } from '@/components/products/ColumnSelector';
+import { useResponsiveColumns, getGridColsClass, getGridGapClass } from './grid-layout';
+import { ReplenishmentGridCard } from './ReplenishmentCards';
+import type { ColorDotLike } from '@/components/products/ProductColorSwatches';
 
 interface VirtualizedGridProps {
   products: ReplenishmentWithDetails[];
@@ -34,7 +13,13 @@ interface VirtualizedGridProps {
   selectedIds: Set<string>;
   onToggleSelect: (id: string) => void;
   onProductClick: (id: string) => void;
+  colorsByProduct?: ReadonlyMap<string, readonly ColorDotLike[]>;
 }
+
+const SCROLL_CONTAINER_STYLE = {
+  maxHeight:
+    'calc(100vh - var(--header-h, 56px) - var(--breadcrumb-h, 0px) - var(--replenishment-sticky-h, 180px) - 1rem)',
+} as const;
 
 export function VirtualizedReplenishmentGrid({
   products,
@@ -43,33 +28,40 @@ export function VirtualizedReplenishmentGrid({
   selectedIds,
   onToggleSelect,
   onProductClick,
+  colorsByProduct,
 }: VirtualizedGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const numCols = Math.min(colsToNum(gridColumns), products.length);
+
+  // Usamos o hook reativo para que o número de colunas mude com a tela
+  const numCols = useResponsiveColumns(gridColumns);
   const rowCount = Math.ceil(products.length / numCols);
 
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 340,
+    estimateSize: () => 430,
     overscan: 3,
+    measureElement: (el) => el?.getBoundingClientRect().height ?? 430,
   });
 
-  const effectiveCols = Math.min(gridColumns, products.length) as ColumnCount;
+  const effectiveCols = gridColumns;
 
   return (
     <div
       ref={parentRef}
-      className="overflow-auto"
-      style={{ maxHeight: "calc(100vh - 280px)" }}
+      className="overflow-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      style={SCROLL_CONTAINER_STYLE}
       role="list"
-      aria-label="Grade de produtos repostos"
+      aria-label={`Grade de produtos repostos — ${products.length} item${products.length !== 1 ? 's' : ''}`}
+      aria-live="polite"
+      aria-relevant="additions removals"
+      tabIndex={0}
     >
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
-          width: "100%",
-          position: "relative",
+          width: '100%',
+          position: 'relative',
         }}
       >
         {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -79,15 +71,16 @@ export function VirtualizedReplenishmentGrid({
           return (
             <div
               key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
               style={{
-                position: "absolute",
+                position: 'absolute',
                 top: 0,
                 left: 0,
-                width: "100%",
-                height: `${virtualRow.size}px`,
+                width: '100%',
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className={`grid ${getGridColsClass(effectiveCols)} ${getGridGapClass(effectiveCols)}`}
+              className={`grid ${getGridColsClass(effectiveCols)} ${getGridGapClass(effectiveCols)} pb-8`}
             >
               {rowProducts.map((product) => (
                 <div key={product.replenishment_id} role="listitem">
@@ -97,6 +90,8 @@ export function VirtualizedReplenishmentGrid({
                     selectionMode={selectionMode}
                     isSelected={selectedIds.has(product.product_id)}
                     onToggleSelect={() => onToggleSelect(product.product_id)}
+                    colors={colorsByProduct?.get(product.product_id)}
+                    priority={virtualRow.index === 0}
                   />
                 </div>
               ))}

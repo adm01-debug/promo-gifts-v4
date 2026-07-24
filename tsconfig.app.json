@@ -5,6 +5,7 @@
     "jsx": "react-jsx",
     "lib": [
       "ES2020",
+      "ES2022",
       "DOM",
       "DOM.Iterable"
     ],
@@ -28,5 +29,14 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
+    "src/**/__tests__/**",
+    "src/test/**",
+    "src/tests/**"
   ]
 }

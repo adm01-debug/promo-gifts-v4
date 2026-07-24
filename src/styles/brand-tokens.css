@@ -1,0 +1,21 @@
+/**
+ * Brand color tokens
+ *
+ * Sincronizado para sempre usar valores de modo escuro.
+ */
+
+:root {
+  --brand-primary: 217 91% 60%;
+  --brand-primary-hover: 217 91% 66%;
+  --brand-primary-active: 217 91% 72%;
+  --brand-primary-glow: 217 91% 74%;
+  --brand-primary-foreground: 217 91% 6%;
+}
+
+.dark {
+  --brand-primary: 217 91% 60%;
+  --brand-primary-hover: 217 91% 66%;
+  --brand-primary-active: 217 91% 72%;
+  --brand-primary-glow: 217 91% 74%;
+  --brand-primary-foreground: 217 91% 6%;
+}

@@ -58,9 +58,9 @@ export function MyRecentQuotesWidget() {
         .order('updated_at', { ascending: false })
         .limit(PAGE_SIZE);
       if (pageParam) q = q.lt('updated_at', pageParam);
-      const { data, error } = await q;
+      const { data: queryRows, error } = await q;
       if (error) throw error;
-      return data ?? [];
+      return queryRows ?? [];
     },
     getNextPageParam: (last) =>
       last.length < PAGE_SIZE ? undefined : (last[last.length - 1]?.updated_at ?? undefined),
@@ -81,7 +81,7 @@ export function MyRecentQuotesWidget() {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const sentinelRef = useInfiniteScroll<HTMLDivElement>(handleLoadMore, {
+  const sentinelRef = useInfiniteScroll(handleLoadMore, {
     enabled: !!hasNextPage,
   });
 
@@ -136,11 +136,11 @@ export function MyRecentQuotesWidget() {
                       variant={q.status === 'draft' ? 'secondary' : 'outline'}
                       className="px-1.5 py-0 text-[10px]"
                     >
-                      {STATUS_LABELS[q.status] ?? q.status}
+                      {(q.status ? STATUS_LABELS[q.status] : undefined) ?? q.status}
                     </Badge>
                     <span className="flex items-center gap-0.5">
                       <Clock className="h-2.5 w-2.5" />
-                      {formatDistanceToNow(new Date(q.updated_at), {
+                      {formatDistanceToNow(new Date(q.updated_at ?? Date.now()), {
                         addSuffix: true,
                         locale: ptBR,
                       })}

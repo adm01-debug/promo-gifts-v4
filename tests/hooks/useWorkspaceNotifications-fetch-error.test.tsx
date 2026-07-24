@@ -24,21 +24,39 @@ import { renderHook, waitFor } from "@testing-library/react";
 const limitMock = vi.fn();
 
 vi.mock("@/integrations/supabase/client", () => {
-  const buildSelectChain = () => ({
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        order: vi.fn().mockReturnValue({
-          limit: (...args: unknown[]) => limitMock(...args),
-        }),
-      }),
-    }),
-  });
-  return { supabase: { from: vi.fn(() => buildSelectChain()) } };
+  let lastData = [];
+  const buildSelectChain = () => {
+    let headCount = false;
+    const chain = {};
+    for (const m of ["select", "eq", "order", "range", "gte", "limit"]) {
+      chain[m] = (...args) => {
+        if (m === "select" && args[1] && args[1].head) headCount = true;
+        if (m === "limit") return limitMock(...args);
+        return chain;
+      };
+    }
+    chain.then = async (resolve, reject) => {
+      try {
+        if (headCount) { resolve({ count: lastData.filter((n) => !n.is_read).length, error: null }); return; }
+        const base = await limitMock();
+        lastData = (base && base.data) || [];
+        resolve({ ...base, count: lastData.length });
+      } catch (e) { reject(e); }
+    };
+    return chain;
+  };
+  return {
+    supabase: {
+      from: vi.fn(() => buildSelectChain()),
+      channel: vi.fn(() => ({ on: vi.fn().mockReturnThis(), subscribe: vi.fn() })),
+      removeChannel: vi.fn(),
+    },
+  };
 });
 
 const STABLE_USER = { id: "user-fetch-error-1" };
 vi.mock("@/contexts/AuthContext", () => ({
-  useAuth: () => ({ user: STABLE_USER }),
+  useAuth: () => ({ user: STABLE_USER, rolesLoaded: true }),
 }));
 
 const CACHE_KEY = `workspace_notifications_cache:${STABLE_USER.id}`;
@@ -50,7 +68,7 @@ beforeEach(() => {
   sessionStorage.clear();
   localStorage.setItem("debug:notifications", "1");
   limitMock.mockReset();
-  consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+  consoleLogSpy = vi.spyOn(console, "info").mockImplementation(() => {});
   consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -64,8 +82,8 @@ afterEach(() => {
 
 function findBadgeRenderLogs() {
   return consoleLogSpy.mock.calls
-    .filter((args) => typeof args[0] === "string" && (args[0] as string).includes("notifications:badge-render"))
-    .map((args) => args[2] as Record<string, unknown>);
+    .filter((args) => typeof args[0] === "string" && (args[0] as string).includes("notifications.badge-render"))
+    .map((args) => args[1] as Record<string, unknown>);
 }
 
 function findErrorLogs() {

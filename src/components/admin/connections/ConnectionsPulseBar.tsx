@@ -62,6 +62,20 @@ const SEVERITY_META: Record<
   },
 };
 
+const MINI_KPI_ICON_CLASSES = {
+  default: 'text-muted-foreground',
+  success: 'text-success',
+  warning: 'text-warning',
+  destructive: 'text-destructive',
+} as const;
+
+const MINI_KPI_VALUE_CLASSES = {
+  default: 'text-foreground',
+  success: 'text-success',
+  warning: 'text-warning',
+  destructive: 'text-destructive',
+} as const;
+
 function MiniKpi({
   icon: iconComponent,
   label,
@@ -73,24 +87,14 @@ function MiniKpi({
   icon: typeof Activity;
   label: string;
   value: string;
-  tone?: 'default' | 'success' | 'warning' | 'destructive';
+  tone?: 'default' | 'destructive' | 'success' | 'warning';
   tooltip?: string;
   explain?: KpiExplain;
 }) {
   const { enabled: explainOn } = useExplainMode();
   const Icon = iconComponent;
-  const iconCls = {
-    default: 'text-muted-foreground',
-    success: 'text-success',
-    warning: 'text-warning',
-    destructive: 'text-destructive',
-  }[tone];
-  const valueCls = {
-    default: 'text-foreground',
-    success: 'text-success',
-    warning: 'text-warning',
-    destructive: 'text-destructive',
-  }[tone];
+  const iconCls = MINI_KPI_ICON_CLASSES[tone];
+  const valueCls = MINI_KPI_VALUE_CLASSES[tone];
 
   const content = (
     <div
@@ -116,7 +120,7 @@ function MiniKpi({
           {content}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-xs">
+      <TooltipContent side="bottom">
         <p className="text-xs leading-relaxed">{tooltip}</p>
       </TooltipContent>
     </Tooltip>
@@ -143,7 +147,7 @@ export function ConnectionsPulseBar() {
   const webhookTone = (data?.kpis.activeWebhooks ?? 0) > 0 ? 'success' : 'default';
 
   return (
-    <TooltipProvider delayDuration={150}>
+    <TooltipProvider>
       <div
         role="status"
         aria-live="polite"
@@ -195,7 +199,7 @@ export function ConnectionsPulseBar() {
                 </div>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-sm">
+            <TooltipContent side="bottom">
               <p className="mb-1 text-xs font-semibold">{meta.description}</p>
               {data && data.reasons.length > 0 ? (
                 <ul className="list-disc space-y-1 pl-4 text-xs">

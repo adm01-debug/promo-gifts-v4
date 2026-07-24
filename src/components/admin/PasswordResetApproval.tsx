@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Check, X, Clock, Mail, Shield, Loader2 } from 'lucide-react';
@@ -14,10 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  usePasswordResetRequests,
-  type PasswordResetRequest,
-} from '@/hooks/auth';
+import { usePasswordResetRequests, type PasswordResetRequest } from '@/hooks/auth';
 
 export function PasswordResetApproval() {
   const { requests, isLoading, approveRequest, rejectRequest } = usePasswordResetRequests();
@@ -26,8 +23,11 @@ export function PasswordResetApproval() {
   const [notes, setNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const pendingRequests = requests.filter((r) => r.status === 'pending');
-  const processedRequests = requests.filter((r) => r.status !== 'pending');
+  const pendingRequests = useMemo(() => requests.filter((r) => r.status === 'pending'), [requests]);
+  const processedRequests = useMemo(
+    () => requests.filter((r) => r.status !== 'pending'),
+    [requests],
+  );
 
   const handleAction = async () => {
     if (!selectedRequest || !action) return;
@@ -77,7 +77,7 @@ export function PasswordResetApproval() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="h-8 w-8 animate-spin text-orange" />
+        <Loader2 className="h-8 w-8 animate-spin text-brand-primary" />
       </div>
     );
   }
@@ -88,7 +88,7 @@ export function PasswordResetApproval() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-orange" />
+            <Shield className="h-5 w-5 text-brand-primary" />
             <CardTitle>Solicitações Pendentes</CardTitle>
           </div>
           <CardDescription>Aprove ou rejeite solicitações de recuperação de senha</CardDescription>

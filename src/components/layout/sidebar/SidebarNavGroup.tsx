@@ -1,10 +1,10 @@
 import React, { forwardRef, useState, useCallback } from 'react';
+import { TruncatedTooltip } from '@/components/ui/truncated-tooltip';
 import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRBAC } from '@/hooks/auth';
 import { getPrefetchHandlers } from '@/lib/routePrefetch';
@@ -17,15 +17,14 @@ export interface NavItem {
   href: string;
   tourId?: string;
   adminOnly?: boolean;
-  /** Restrito ao papel `dev` — rotas técnicas/infra. */
   devOnly?: boolean;
   requiredPermission?: { action: string; resource: string };
-  badge?: string | number;
-
+  badge?: number | string;
   exact?: boolean;
   children?: NavItem[];
-  /** Keyboard shortcut hint (e.g. "Alt+P") */
   shortcut?: string;
+  /** Texto curto e comercial exibido em tooltip ao passar o mouse. */
+  tooltip?: string;
 }
 
 export interface NavGroup {
@@ -35,7 +34,6 @@ export interface NavGroup {
   items: NavItem[];
   defaultOpen?: boolean;
   adminOnly?: boolean;
-  /** Grupo inteiro restrito a `dev`. */
   devOnly?: boolean;
 }
 
@@ -43,59 +41,59 @@ interface SidebarNavGroupProps {
   group: NavGroup;
   isOpen: boolean;
   isCollapsed: boolean;
-  /** Receives the next open state from Radix Collapsible. */
   onToggle: (next: boolean) => void;
   onMobileClose: () => void;
   isMobileSidebarOpen: boolean;
 }
 
 export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
-  function SidebarNavGroup(
-    { group, isOpen, isCollapsed, onToggle, onMobileClose, isMobileSidebarOpen },
-    _ref,
-  ) {
+  ({ group, isOpen, isCollapsed, onToggle, onMobileClose, isMobileSidebarOpen }, _ref) => {
     const location = useLocation();
     const { isAdmin, isDev } = useAuth();
     const { hasPermission } = useRBAC();
 
-    const isItemActive = (href: string, exact?: boolean) => {
-      // Hrefs with query params (e.g. /admin/cadastros?tab=products): match
-      // both pathname and search exactly — query items are leaf navigation.
-      if (href.includes('?')) {
-        const [path, search] = href.split('?');
-        return location.pathname === path && location.search === `?${search}`;
-      }
-      // Delegate to SSOT: prefix-aware matching that avoids false positives
-      // like "/orcamentos" matching "/orcamentos-publicos".
-      return isNavItemActive(location.pathname, href, exact);
-    };
+    // Stable active-item checker — only recreated when location changes
+    const isItemActive = useCallback(
+      (href: string, exact?: boolean) => {
+        if (href.includes('?')) {
+          const [path, search] = href.split('?');
+          return location.pathname === path && location.search === `?${search}`;
+        }
+        return isNavItemActive(location.pathname, href, exact);
+      },
+      [location.pathname, location.search],
+    );
 
     const hasActiveItem = group.items.some((item) => isItemActive(item.href, item.exact));
     const GroupIcon = group.icon;
     const groupToggleLabel = `${isOpen ? 'Recolher' : 'Expandir'} grupo ${group.label}`;
 
-    const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({});
+    // Sub-menu state computed on mount — no useEffect to avoid render-loop
+    const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>(() => {
+      const initial: Record<string, boolean> = {};
+      group.items.forEach((item) => {
+        if (
+          item.children?.some((child) => {
+            if (child.href.includes('?')) {
+              const [p, s] = child.href.split('?');
+              return location.pathname === p && location.search === `?${s}`;
+            }
+            return isNavItemActive(location.pathname, child.href, child.exact);
+          })
+        ) {
+          initial[item.label] = true;
+        }
+      });
+      return initial;
+    });
 
     const toggleSubMenu = useCallback((label: string) => {
       setOpenSubMenus((prev) => ({ ...prev, [label]: !prev[label] }));
     }, []);
 
-    // Auto-open sub-menus that contain active items
-    React.useEffect(() => {
-      group.items.forEach((item) => {
-        if (item.children?.some((child) => isItemActive(child.href, child.exact))) {
-          setOpenSubMenus((prev) => ({ ...prev, [item.label]: true }));
-        }
-      });
-    }, [location.pathname]);
-
     const renderNavLink = (item: NavItem, depth = 0): React.ReactNode => {
-      // 1) Flags declarativas
       if (item.devOnly && !isDev) return null;
       if (item.adminOnly && !isAdmin) return null;
-      // 2) Defense-in-depth: SSOT por path. Garante que mesmo um item sem flag
-      //    devOnly/adminOnly seja escondido se sua rota for técnica/admin e o
-      //    usuário não tiver o papel — supervisor sem dev nunca enxerga rotas dev.
       if (item.href && isDevOnlyPath(item.href) && !isDev) return null;
       if (item.href && isAdminOnlyPath(item.href) && !isAdmin) return null;
       if (
@@ -104,63 +102,65 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
       )
         return null;
 
-      // If item has children, render as expandable sub-menu
       if (item.children && item.children.length > 0) {
         const hasActiveChild = item.children.some((child) => isItemActive(child.href, child.exact));
         const isSubOpen = openSubMenus[item.label] ?? hasActiveChild;
         const Icon = item.icon;
+        const triggerButton = (
+          <button
+            aria-expanded={isSubOpen}
+            aria-controls={`submenu-${item.label}`}
+            aria-label={`Expandir ${item.label}`}
+            onClick={() => toggleSubMenu(item.label)}
+            className={cn(
+              'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-all duration-150',
+              'hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary/20 active:scale-[0.995]',
+              hasActiveChild
+                ? 'bg-primary/[0.03] font-semibold text-primary before:absolute before:bottom-[20%] before:left-0 before:top-[20%] before:w-[1.5px] before:rounded-r-full before:bg-primary'
+                : 'text-sidebar-foreground/75 hover:text-sidebar-foreground',
+            )}
+          >
+            <Icon
+              className={cn(
+                'h-4 w-4 shrink-0 transition-colors',
+                hasActiveChild ? 'text-primary' : 'group-hover:text-primary/70',
+              )}
+            />
+            {!isCollapsed && (
+              <>
+                <span className="flex-1 truncate text-left text-sm">{item.label}</span>
+                <ChevronDown
+                  className={cn(
+                    'h-3 w-3 text-sidebar-foreground/30 transition-transform duration-200',
+                    isSubOpen && 'rotate-180',
+                  )}
+                />
+              </>
+            )}
+          </button>
+        );
+        const wrappedTrigger = item.tooltip ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex w-full" data-tooltip-label={item.tooltip}>
+                {triggerButton}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="z-[100] max-w-[240px]">
+              <p className="text-tooltip">{item.tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          triggerButton
+        );
 
         return (
           <div key={item.label}>
-            <button
-              aria-expanded={isSubOpen}
-              aria-controls={`submenu-${item.label}`}
-              aria-label={`Expandir ${item.label}`}
-              onClick={() => toggleSubMenu(item.label)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  toggleSubMenu(item.label);
-                }
-              }}
-              className={cn(
-                'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-all duration-150',
-                'hover:bg-sidebar-accent/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-orange/20 active:scale-[0.995]',
-                hasActiveChild
-                  ? 'bg-primary/[0.03] font-semibold text-primary before:absolute before:bottom-[20%] before:left-0 before:top-[20%] before:w-[1.5px] before:rounded-r-full before:bg-primary'
-                  : 'text-sidebar-foreground/75 hover:text-sidebar-foreground',
-              )}
-            >
-              <Icon
-                className={cn(
-                  'h-4 w-4 shrink-0 transition-colors',
-                  hasActiveChild ? 'text-primary' : 'group-hover:text-primary/70',
-                )}
-              />
-              {!isCollapsed && (
-                <>
-                  <span className="flex-1 truncate text-left text-sm">{item.label}</span>
-                  <ChevronDown
-                    className={cn(
-                      'h-3 w-3 text-sidebar-foreground/30 transition-transform duration-200',
-                      isSubOpen && 'rotate-180',
-                    )}
-                  />
-                </>
-              )}
-            </button>
+            {wrappedTrigger}
             {isSubOpen && !isCollapsed && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="mt-0.5 space-y-0.5 pl-4" id={`submenu-${item.label}`} role="group">
-                  {item.children.map((child) => renderNavLink(child, depth + 1))}
-                </div>
-              </motion.div>
+              <div className="mt-0.5 space-y-0.5 pl-4" id={`submenu-${item.label}`} role="group">
+                {item.children.map((child) => renderNavLink(child, depth + 1))}
+              </div>
             )}
           </div>
         );
@@ -168,7 +168,6 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
 
       const isActive = isItemActive(item.href, item.exact);
       const Icon = item.icon;
-
       const prefetch = getPrefetchHandlers(item.href);
 
       const linkContent = (
@@ -177,10 +176,9 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
           data-tour={item.tourId}
           className={cn(
             'group relative flex items-center gap-3 rounded-xl px-3 py-2 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 active:scale-[0.98]',
-
             'hover:translate-x-1 hover:bg-white/[0.04]',
             isActive
-              ? 'bg-primary/10 font-bold text-white shadow-[0_0_15px_rgba(255,165,0,0.1)] ring-1 ring-primary/20 before:absolute before:bottom-[15%] before:left-0 before:top-[15%] before:w-[3px] before:rounded-r-full before:bg-primary'
+              ? 'bg-primary/10 font-bold text-white shadow-[0_0_15px_rgba(255,165,0,0.1)] before:absolute before:bottom-[15%] before:left-0 before:top-[15%] before:w-[3px] before:rounded-r-full before:bg-primary'
               : 'text-sidebar-foreground/60 before:absolute before:left-0 before:top-1/2 before:h-0 before:w-[2px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary/50 before:transition-all before:duration-500 hover:text-sidebar-foreground hover:before:h-5',
           )}
           onClick={() => isMobileSidebarOpen && onMobileClose()}
@@ -195,7 +193,9 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
                 : 'group-hover:scale-110 group-hover:text-primary',
             )}
           />
-          {!isCollapsed && <span className="flex-1 truncate text-sm">{item.label}</span>}
+          {!isCollapsed && (
+            <TruncatedTooltip className="flex-1 text-sm">{item.label}</TruncatedTooltip>
+          )}
           {!isCollapsed && item.shortcut && (
             <kbd className="ml-auto hidden rounded bg-muted/30 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/40 lg:inline-block">
               {item.shortcut}
@@ -211,24 +211,37 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
 
       if (isCollapsed) {
         return (
-          <Tooltip key={item.href} delayDuration={0}>
+          <Tooltip key={item.href}>
             <TooltipTrigger asChild>
               <div>{linkContent}</div>
             </TooltipTrigger>
-            <TooltipContent side="right" className="z-[100] border-border bg-card">
-              <div className="flex items-center gap-2">
-                <span>{item.label}</span>
-                {item.shortcut && (
-                  <kbd className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[9px] text-muted-foreground/60">
-                    {item.shortcut}
-                  </kbd>
-                )}
-                {item.badge !== null && (
-                  <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                    {item.badge}
-                  </span>
+            <TooltipContent side="right" className="z-[100] max-w-[240px]">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{item.label}</span>
+                  {item.shortcut && (
+                    <kbd className="text-tooltip rounded bg-muted/50 px-1 py-0.5 font-mono text-muted-foreground/60">
+                      {item.shortcut}
+                    </kbd>
+                  )}
+                </div>
+                {item.tooltip && (
+                  <p className="text-tooltip text-muted-foreground">{item.tooltip}</p>
                 )}
               </div>
+            </TooltipContent>
+          </Tooltip>
+        );
+      }
+
+      if (item.tooltip) {
+        return (
+          <Tooltip key={item.href}>
+            <TooltipTrigger asChild>
+              <div data-tooltip-label={item.tooltip}>{linkContent}</div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="z-[100] max-w-[240px]">
+              <p className="text-tooltip">{item.tooltip}</p>
             </TooltipContent>
           </Tooltip>
         );
@@ -237,7 +250,6 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
       return <div key={item.href}>{linkContent}</div>;
     };
 
-    // Collapsed mode: flat list with tooltips
     if (isCollapsed) {
       return <div className="space-y-0.5 py-1">{group.items.map(renderNavLink)}</div>;
     }
@@ -273,20 +285,10 @@ export const SidebarNavGroup = forwardRef<HTMLDivElement, SidebarNavGroupProps>(
             />
           </button>
         </CollapsibleTrigger>
-
-        {isOpen && (
-          <CollapsibleContent forceMount>
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-              className="overflow-hidden"
-            >
-              <div className="mt-1 space-y-0.5 pb-1 pl-3">{group.items.map(renderNavLink)}</div>
-            </motion.div>
-          </CollapsibleContent>
-        )}
+        {/* CollapsibleContent sem forceMount nem framer-motion — elimina render loops */}
+        <CollapsibleContent>
+          <div className="mt-1 space-y-0.5 pb-1 pl-3">{group.items.map(renderNavLink)}</div>
+        </CollapsibleContent>
       </Collapsible>
     );
   },

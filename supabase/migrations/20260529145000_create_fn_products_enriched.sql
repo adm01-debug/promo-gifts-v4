@@ -1,0 +1,15 @@
+-- =====================================================================
+-- [REVERTIDO em 2026-05-29] PR #512 — RPC de catálogo enriquecido.
+--
+-- As funções fn_products_enriched / fn_product_colors_enriched /
+-- fn_product_images_enriched foram REMOVIDAS do banco (DROP) a pedido do
+-- dono, e o código voltou ao caminho legacy (bridge + enrichProducts).
+--
+-- Este arquivo foi esvaziado (mantido apenas como tombstone para não
+-- dessincronizar o histórico) — NÃO recria nenhuma função. O catálogo é
+-- servido pelo bridge com o kill-switch edge_external_db_bridge LIGADO.
+--
+-- Histórico: o CREATE original e o DROP de reversão estão registrados no
+-- histórico de migrations do Supabase (schema_migrations).
+-- =====================================================================
+-- (intencionalmente sem operações)

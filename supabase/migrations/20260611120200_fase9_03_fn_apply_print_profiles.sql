@@ -1,0 +1,28 @@
+-- ════════════════════════════════════════════════════════════════
+-- MEDALLION — Fase 9 / Item B: áreas de gravação por PERFIL DE CATEGORIA
+-- ════════════════════════════════════════════════════════════════
+-- Contexto (simulação massiva 2026-06-11):
+--   • print_area_techniques alimenta a calculadora de preço (fn_simular_
+--     combo_gravacao_v12 JOIN por product_id+tabela_preco_id+location_code).
+--   • O legado silver_print_areas e supplier_technique_mappings foram
+--     DROPADOS entre sessões — fonte de extração do raw não existe mais.
+--   • As 13k áreas existentes (carga de abril) seguem PERFIS consistentes
+--     por categoria (LADO-A/B rígidos, FRENTE têxtil, CIRCULAR cilíndricos).
+--   • GATE DE PARIDADE (1.848 cenários reais — cada produto-com-área):
+--     o fingerprint modal da categoria reproduz EXATAMENTE 91,8% dos casos.
+--   • Catálogo cresce ~380 produtos/dia SEM ganhar áreas → não cotáveis.
+--
+-- fn_apply_print_profiles(p_limit, p_dry_run):
+--   • fill-only: só produtos ativos SEM nenhuma área;
+--   • gate de confiança: categoria com >=3 exemplares E dominância >=60%
+--     do fingerprint modal (senão skip — não carimba preço sem evidência);
+--   • copia as áreas do produto-exemplar modal (template) da categoria;
+--   • auditável: notes='profile_inference v1 (cat=…, conf=…%, n=…)'
+--     → rollback simples: DELETE WHERE notes LIKE 'profile_inference%';
+--   • SECURITY DEFINER com EXECUTE restrito a postgres/service_role.
+--
+-- Aplicado em produção (dry-run validado antes): 8.027 áreas / 1.198
+-- produtos; 0 tabelas inativas, 0 dims inválidas; cobertura 1.848→3.046
+-- produtos (+65%). Teste de fogo: produto inferido cotado pela v12
+-- (custo 190.00 / venda 408.50, motivo_erro NULL).
+-- Corpo completo aplicado via MCP (fase9_03_fn_apply_print_profiles).

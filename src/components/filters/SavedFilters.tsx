@@ -1,23 +1,9 @@
-import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import {
   Bookmark,
   BookmarkPlus,
@@ -28,9 +14,10 @@ import {
   Filter,
   X,
   Check,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { toast } from 'sonner';
 
+import { logger } from '@/lib/logger';
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -67,82 +54,100 @@ export function useSavedFilters<T = Record<string, unknown>>(storageKey: string)
       if (stored) {
         const parsed = JSON.parse(stored) as SavedFilter<T>[];
         // Convert date strings back to Date objects
-        setSavedFilters(parsed.map(f => ({
-          ...f,
-          createdAt: new Date(f.createdAt),
-          lastUsed: f.lastUsed ? new Date(f.lastUsed) : undefined,
-        })));
+        setSavedFilters(
+          parsed.map((f) => ({
+            ...f,
+            createdAt: new Date(f.createdAt),
+            lastUsed: f.lastUsed ? new Date(f.lastUsed) : undefined,
+          })),
+        );
       }
     } catch (e) {
-      console.error("Failed to load saved filters:", e);
+      logger.error('Failed to load saved filters:', e);
     }
   }, [storageKey]);
 
   // Save to localStorage whenever filters change
-  const persistFilters = React.useCallback((filters: SavedFilter<T>[]) => {
-    try {
-      localStorage.setItem(`filters_${storageKey}`, JSON.stringify(filters));
-    } catch (e) {
-      console.error("Failed to save filters:", e);
-    }
-  }, [storageKey]);
+  const persistFilters = React.useCallback(
+    (filters: SavedFilter<T>[]) => {
+      try {
+        localStorage.setItem(`filters_${storageKey}`, JSON.stringify(filters));
+      } catch (e) {
+        logger.error('Failed to save filters:', e);
+      }
+    },
+    [storageKey],
+  );
 
-  const saveFilter = React.useCallback((name: string, filters: T) => {
-    const newFilter: SavedFilter<T> = {
-      id: crypto.randomUUID(),
-      name,
-      filters,
-      createdAt: new Date(),
-    };
-    
-    setSavedFilters(prev => {
-      const updated = [...prev, newFilter];
-      persistFilters(updated);
-      return updated;
-    });
+  const saveFilter = React.useCallback(
+    (name: string, filters: T) => {
+      const newFilter: SavedFilter<T> = {
+        id: crypto.randomUUID(),
+        name,
+        filters,
+        createdAt: new Date(),
+      };
 
-    return newFilter;
-  }, [persistFilters]);
+      setSavedFilters((prev) => {
+        const updated = [...prev, newFilter];
+        persistFilters(updated);
+        return updated;
+      });
 
-  const deleteFilter = React.useCallback((id: string) => {
-    setSavedFilters(prev => {
-      const updated = prev.filter(f => f.id !== id);
-      persistFilters(updated);
-      return updated;
-    });
-  }, [persistFilters]);
+      return newFilter;
+    },
+    [persistFilters],
+  );
 
-  const updateFilter = React.useCallback((id: string, updates: Partial<SavedFilter<T>>) => {
-    setSavedFilters(prev => {
-      const updated = prev.map(f => f.id === id ? { ...f, ...updates } : f);
-      persistFilters(updated);
-      return updated;
-    });
-  }, [persistFilters]);
+  const deleteFilter = React.useCallback(
+    (id: string) => {
+      setSavedFilters((prev) => {
+        const updated = prev.filter((f) => f.id !== id);
+        persistFilters(updated);
+        return updated;
+      });
+    },
+    [persistFilters],
+  );
 
-  const setDefaultFilter = React.useCallback((id: string) => {
-    setSavedFilters(prev => {
-      const updated = prev.map(f => ({
-        ...f,
-        isDefault: f.id === id,
-      }));
-      persistFilters(updated);
-      return updated;
-    });
-  }, [persistFilters]);
+  const updateFilter = React.useCallback(
+    (id: string, updates: Partial<SavedFilter<T>>) => {
+      setSavedFilters((prev) => {
+        const updated = prev.map((f) => (f.id === id ? { ...f, ...updates } : f));
+        persistFilters(updated);
+        return updated;
+      });
+    },
+    [persistFilters],
+  );
 
-  const markAsUsed = React.useCallback((id: string) => {
-    setSavedFilters(prev => {
-      const updated = prev.map(f => 
-        f.id === id ? { ...f, lastUsed: new Date() } : f
-      );
-      persistFilters(updated);
-      return updated;
-    });
-  }, [persistFilters]);
+  const setDefaultFilter = React.useCallback(
+    (id: string) => {
+      setSavedFilters((prev) => {
+        const updated = prev.map((f) => ({
+          ...f,
+          isDefault: f.id === id,
+        }));
+        persistFilters(updated);
+        return updated;
+      });
+    },
+    [persistFilters],
+  );
+
+  const markAsUsed = React.useCallback(
+    (id: string) => {
+      setSavedFilters((prev) => {
+        const updated = prev.map((f) => (f.id === id ? { ...f, lastUsed: new Date() } : f));
+        persistFilters(updated);
+        return updated;
+      });
+    },
+    [persistFilters],
+  );
 
   const getDefaultFilter = React.useCallback(() => {
-    return savedFilters.find(f => f.isDefault);
+    return savedFilters.find((f) => f.isDefault);
   }, [savedFilters]);
 
   return {
@@ -170,26 +175,21 @@ export function SavedFilters<T = Record<string, unknown>>({
 }: SavedFiltersProps<T>) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSaveMode, setIsSaveMode] = React.useState(false);
-  const [newFilterName, setNewFilterName] = React.useState("");
+  const [newFilterName, setNewFilterName] = React.useState('');
   const [deleteConfirmId, setDeleteConfirmId] = React.useState<string | null>(null);
-  
-  const {
-    savedFilters,
-    saveFilter,
-    deleteFilter,
-    setDefaultFilter,
-    markAsUsed,
-  } = useSavedFilters<T>(storageKey);
+
+  const { savedFilters, saveFilter, deleteFilter, setDefaultFilter, markAsUsed } =
+    useSavedFilters<T>(storageKey);
 
   const handleSaveFilter = () => {
     if (!newFilterName.trim()) {
-      toast.error("Digite um nome para o filtro");
+      toast.error('Digite um nome para o filtro');
       return;
     }
 
     saveFilter(newFilterName.trim(), currentFilters);
-    toast.success("Filtro salvo com sucesso!");
-    setNewFilterName("");
+    toast.success('Filtro salvo com sucesso!');
+    setNewFilterName('');
     setIsSaveMode(false);
   };
 
@@ -203,16 +203,16 @@ export function SavedFilters<T = Record<string, unknown>>({
   const handleDeleteFilter = (id: string) => {
     deleteFilter(id);
     setDeleteConfirmId(null);
-    toast.success("Filtro excluído");
+    toast.success('Filtro excluído');
   };
 
   const handleSetDefault = (id: string, currentDefault: boolean) => {
     if (currentDefault) {
-      setDefaultFilter("");
-      toast.info("Filtro removido dos favoritos");
+      setDefaultFilter('');
+      toast.info('Filtro removido dos favoritos');
     } else {
       setDefaultFilter(id);
-      toast.success("Filtro definido como favorito");
+      toast.success('Filtro definido como favorito');
     }
   };
 
@@ -223,11 +223,7 @@ export function SavedFilters<T = Record<string, unknown>>({
           <Button
             variant="outline"
             size="sm"
-            className={cn(
-              "gap-2",
-              hasActiveFilters && "border-primary text-primary",
-              className
-            )}
+            className={cn('gap-2', hasActiveFilters && 'border-primary text-primary', className)}
           >
             <Bookmark className="h-4 w-4" />
             Filtros salvos
@@ -241,109 +237,94 @@ export function SavedFilters<T = Record<string, unknown>>({
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="start">
           <div className="border-b p-3">
-            <h4 className="font-semibold text-sm">Filtros Salvos</h4>
+            <h4 className="text-sm font-semibold">Filtros Salvos</h4>
             <p className="text-xs text-muted-foreground">
               Acesse rapidamente suas configurações de filtro
             </p>
           </div>
 
-          <AnimatePresence mode="wait">
-            {isSaveMode ? (
-              <motion.div
-                key="save"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="p-3 border-b"
-              >
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Nome do filtro..."
-                    value={newFilterName}
-                    onChange={(e) => setNewFilterName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveFilter()}
-                    autoFocus
-                    className="h-8"
-                  />
-                  <Button size="sm" onClick={handleSaveFilter} className="h-8">
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setIsSaveMode(false);
-                      setNewFilterName("");
-                    }}
-                    className="h-8"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </motion.div>
-            ) : hasActiveFilters ? (
-              <motion.div
-                key="save-button"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="p-3 border-b"
-              >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsSaveMode(true)}
-                  className="w-full gap-2"
-                >
-                  <BookmarkPlus className="h-4 w-4" />
-                  Salvar filtros atuais
+          {isSaveMode ? (
+            <div className="border-b p-3 duration-200 animate-in fade-in">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nome do filtro..."
+                  value={newFilterName}
+                  onChange={(e) => setNewFilterName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveFilter()}
+                  autoFocus
+                  className="h-8"
+                />
+                <Button size="sm" onClick={handleSaveFilter} className="h-8">
+                  <Check className="h-4 w-4" />
                 </Button>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsSaveMode(false);
+                    setNewFilterName('');
+                  }}
+                  className="h-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ) : hasActiveFilters ? (
+            <div className="border-b p-3 duration-200 animate-in fade-in">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsSaveMode(true)}
+                className="w-full gap-2"
+              >
+                <BookmarkPlus className="h-4 w-4" />
+                Salvar filtros atuais
+              </Button>
+            </div>
+          ) : null}
 
           <div className="max-h-64 overflow-auto">
             {savedFilters.length === 0 ? (
               <div className="p-6 text-center text-muted-foreground">
-                <Filter className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <Filter className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 <p className="text-sm">Nenhum filtro salvo</p>
-                <p className="text-xs">
-                  Aplique filtros e salve para acesso rápido
-                </p>
+                <p className="text-xs">Aplique filtros e salve para acesso rápido</p>
               </div>
             ) : (
               <ul className="py-1">
                 {savedFilters.map((filter) => (
                   <li key={filter.id}>
-                    <div className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 group">
+                    <div className="group flex items-center gap-2 px-3 py-2 hover:bg-muted/50">
                       <button
                         onClick={() => handleApplyFilter(filter)}
                         className="flex-1 text-left"
                       >
-                        <span className="text-sm font-medium">
-                          {filter.name}
-                        </span>
+                        <span className="text-sm font-medium">{filter.name}</span>
                         {filter.lastUsed && (
                           <span className="block text-xs text-muted-foreground">
                             Usado: {filter.lastUsed.toLocaleDateString()}
                           </span>
                         )}
                       </button>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                         <Button
                           variant="ghost"
-                          size="icon" aria-label="Favoritar"
+                          size="icon"
+                          aria-label="Favoritar"
                           className="h-7 w-7"
                           onClick={() => handleSetDefault(filter.id, !!filter.isDefault)}
                         >
                           {filter.isDefault ? (
-                            <Star className="h-4 w-4 text-warning fill-yellow-500" />
+                            <Star className="h-4 w-4 fill-yellow-500 text-warning" />
                           ) : (
                             <StarOff className="h-4 w-4 text-muted-foreground" />
                           )}
                         </Button>
                         <Button
                           variant="ghost"
-                          size="icon" aria-label="Excluir"
+                          size="icon"
+                          aria-label="Excluir"
                           className="h-7 w-7 text-destructive hover:text-destructive"
                           onClick={() => setDeleteConfirmId(filter.id)}
                         >
@@ -365,7 +346,7 @@ export function SavedFilters<T = Record<string, unknown>>({
                 onClick={onClearFilters}
                 className="w-full text-muted-foreground"
               >
-                <X className="h-4 w-4 mr-2" />
+                <X className="mr-2 h-4 w-4" />
                 Limpar filtros atuais
               </Button>
             </div>
@@ -374,25 +355,17 @@ export function SavedFilters<T = Record<string, unknown>>({
       </Popover>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir filtro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O filtro será removido permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteConfirmId && handleDeleteFilter(deleteConfirmId)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(o) => !o && setDeleteConfirmId(null)}
+        variant="destructive"
+        title="Excluir filtro?"
+        description="Esta ação não pode ser desfeita. O filtro será removido permanentemente."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={() => { if (deleteConfirmId) handleDeleteFilter(deleteConfirmId); }}
+        testId="saved-filters-delete-dialog"
+      />
     </>
   );
 }
@@ -410,25 +383,23 @@ export interface FilterChipProps {
 
 export function FilterChip({ label, value, onRemove, className }: FilterChipProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
+    <div
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-full text-sm",
-        className
+        'inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-sm text-primary',
+        'duration-200 animate-in fade-in zoom-in-90',
+        className,
       )}
     >
       <span className="text-xs text-muted-foreground">{label}:</span>
       <span className="font-medium">{value}</span>
       <button
         onClick={onRemove}
-        className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+        className="ml-1 rounded-full p-0.5 transition-colors hover:bg-primary/20"
         aria-label={`Remover filtro ${label}`}
       >
         <X className="h-3 w-3" />
       </button>
-    </motion.div>
+    </div>
   );
 }
 
@@ -448,24 +419,22 @@ export function ActiveFiltersBar({
   if (filters.length === 0) return null;
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+    <div className={cn('flex flex-wrap items-center gap-2', className)}>
       <span className="text-sm text-muted-foreground">Filtros ativos:</span>
-      <AnimatePresence>
-        {filters.map((filter) => (
-          <FilterChip
-            key={filter.key}
-            label={filter.label}
-            value={filter.value}
-            onRemove={() => onRemoveFilter(filter.key)}
-          />
-        ))}
-      </AnimatePresence>
+      {filters.map((filter) => (
+        <FilterChip
+          key={filter.key}
+          label={filter.label}
+          value={filter.value}
+          onRemove={() => onRemoveFilter(filter.key)}
+        />
+      ))}
       {filters.length > 1 && (
         <Button
           variant="ghost"
           size="sm"
           onClick={onClearAll}
-          className="text-xs text-muted-foreground h-7"
+          className="h-7 text-xs text-muted-foreground"
         >
           Limpar todos
         </Button>

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * Teste de regressão visual para garantir que o layout da página de login
@@ -16,6 +16,38 @@ import { test, expect } from '@playwright/test';
  *   3. Remover `test.fixme` (voltar a `test`)
  * Ref: docs/redeploy/REDEPLOY-T14-UPDATE-9-FIXME.md
  */
+async function expectStarfieldVisible(page: Page) {
+  const canvas = page.getByTestId('starfield-canvas');
+  if ((await canvas.count()) > 0) {
+    await expect(canvas).toBeVisible();
+    await expect
+      .poll(
+        () =>
+          canvas.evaluate((node) => {
+            const canvasNode = node as HTMLCanvasElement;
+            const context = canvasNode.getContext('2d');
+            if (!context || canvasNode.width === 0 || canvasNode.height === 0) return false;
+
+            const pixels = context.getImageData(0, 0, canvasNode.width, canvasNode.height).data;
+            for (let i = 3; i < pixels.length; i += 4) {
+              if (pixels[i] > 0) return true;
+            }
+            return false;
+          }),
+        { timeout: 5_000 },
+      )
+      .toBe(true);
+    return;
+  }
+
+  const firstStar = page.getByTestId(/^star-breathing-/).first();
+  await expect(firstStar).toBeVisible();
+
+  const boxShadow = await firstStar.evaluate((el) => window.getComputedStyle(el).boxShadow);
+  expect(boxShadow.split(',').length).toBeGreaterThanOrEqual(1);
+  expect(boxShadow).toContain('rgb(59, 130, 246)');
+}
+
 test.describe('Auth Page Visual Regression @smoke', () => {
   // Ignoramos a dependência de auth para este teste específico de branding
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -29,40 +61,39 @@ test.describe('Auth Page Visual Regression @smoke', () => {
     });
 
     // 2. Navegação para área pública
-    await page.goto('/auth/login');
+    await page.goto('/login');
 
     // 3. Aguardar estabilização
     await expect(page.getByTestId('space-scene')).toBeVisible();
-    await expect(page.getByTestId(/^star-breathing-/).first()).toBeVisible();
+    await expectStarfieldVisible(page);
 
     // 4. Pausar animações
     await page.addStyleTag({
-      content: `*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }`
+      content: `*, *::before, *::after { animation-play-state: paused !important; transition: none !important; }`,
     });
 
     // 5. Capturar snapshot
     const brandingPanel = page.locator('.lg\\:flex.lg\\:w-1\\/2');
     const viewportSize = page.viewportSize();
-    
+
     if (viewportSize && viewportSize.width >= 1024) {
       await expect(brandingPanel).toHaveScreenshot('auth-branding-space-scene.png', {
         maxDiffPixelRatio: 0.05,
         threshold: 0.2,
       });
     } else {
-      await expect(page.getByTestId('space-scene')).toHaveScreenshot('auth-mobile-space-scene.png', {
-        maxDiffPixelRatio: 0.05,
-      });
+      await expect(page.getByTestId('space-scene')).toHaveScreenshot(
+        'auth-mobile-space-scene.png',
+        {
+          maxDiffPixelRatio: 0.05,
+        },
+      );
     }
   });
 
-  test('should verify star brightness presence in DOM', async ({ page }) => {
-    await page.goto('/auth/login');
-    const firstStar = page.getByTestId(/^star-breathing-/).first();
-    await expect(firstStar).toBeVisible();
-    
-    const boxShadow = await firstStar.evaluate((el) => window.getComputedStyle(el).boxShadow);
-    expect(boxShadow.split(',').length).toBeGreaterThanOrEqual(1);
-    expect(boxShadow).toContain('rgb(59, 130, 246)');
+  test('should verify star brightness presence in the scene', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByTestId('space-scene')).toBeVisible();
+    await expectStarfieldVisible(page);
   });
 });

@@ -1,13 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useFavoritesStore } from '@/stores/useFavoritesStore';
 import {
+  useEnrichedFavoriteItems,
   useFavoriteLists,
+  useFavoritesGlobalShortcuts,
   useFavoriteTrash,
   useLegacyFavoritesMigration,
 } from '@/hooks/favorites';
-import { useEnrichedFavoriteItems, useFavoritesGlobalShortcuts } from "@/hooks/favorites";
 import { useProductsContext } from '@/contexts/ProductsContext';
 import { useCatalogSelection } from '@/components/catalog/useCatalogSelection';
+import type { Product } from '@/hooks/products';
 import { useUndoStack } from '@/hooks/common';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
 import type { FavoritesSort } from '@/components/favorites/FavoritesSortBar';
@@ -68,16 +70,12 @@ export function useFavoritesPageState() {
   useUndoStack();
   useLegacyFavoritesMigration();
 
-  const { favorites, clearFavorites, favoriteCount, toggleFavorite } = useFavoritesStore();
-  const {
-    lists,
-    createList,
-    updateList,
-    deleteList,
-    generateShareToken,
-    revokeShareToken,
-    moveItem,
-  } = useFavoriteLists();
+  const favorites = useFavoritesStore((s) => s.favorites);
+  const clearFavorites = useFavoritesStore((s) => s.clearFavorites);
+  const favoriteCount = useFavoritesStore((s) => s.favoriteCount);
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const { lists, createList, updateList, deleteList, generateShareToken, revokeShareToken } =
+    useFavoriteLists();
   const { items: trashItems } = useFavoriteTrash();
   const { getProductsByIds, products: _cacheSignal } = useProductsContext();
 
@@ -112,8 +110,17 @@ export function useFavoritesPageState() {
     enriched,
     rawItems,
     removeItem,
+    moveItem,
     updateItem: _updateItem,
   } = useEnrichedFavoriteItems(selectedListId);
+
+  // Auto-select default list when none is selected and lists are loaded
+  useEffect(() => {
+    if (selectedListId === null && lists.length > 0) {
+      const def = lists.find((l) => l.is_default) ?? lists[0];
+      setSelectedListId(def.id);
+    }
+  }, [lists, selectedListId]);
 
   // Data persistence
   useEffect(() => {
@@ -177,7 +184,7 @@ export function useFavoritesPageState() {
     }
     const legacyProducts = getProductsByIds(favorites.map((f) => f.productId));
     return legacyProducts.map((product) => {
-      const variant = variantMap.get(product.id);
+      const variant = variantMap.get(product.id) as { thumbnail?: string } | undefined;
       if (variant?.thumbnail) {
         return { ...product, images: [variant.thumbnail, ...(product.images || [])] };
       }
@@ -185,24 +192,69 @@ export function useFavoritesPageState() {
     });
   }, [enriched, favorites, getProductsByIds, variantMap, isRemoteListView]);
 
+  const enrichedMetaMap = useMemo(() => {
+    const m = new Map<string, { priceDiffPct: number | null }>();
+    if (isRemoteListView) {
+      enriched.forEach((e) => m.set(e.item.product_id, { priceDiffPct: e.priceDiffPct }));
+    }
+    return m;
+  }, [enriched, isRemoteListView]);
+
   const filteredProducts = useMemo(() => {
     let list = [...productsWithVariant];
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+      const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const q = norm(searchQuery.trim());
       list = list.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.sku?.toLowerCase().includes(q) ||
-          p.brand?.toLowerCase().includes(q),
+          norm(p.name).includes(q) ||
+          (p.sku && norm(p.sku).includes(q)) ||
+          ((p as { brand?: string }).brand &&
+            norm((p as { brand?: string }).brand ?? '').includes(q)),
       );
     }
-    // Sorting and drops logic... (Simplified for brevity as per instructions)
-    return list;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productsWithVariant, searchQuery, sort, onlyPriceDrops, isRemoteListView]);
+    if (onlyPriceDrops && isRemoteListView) {
+      list = list.filter((p) => {
+        const meta = enrichedMetaMap.get(p.id);
+        return (
+          meta?.priceDiffPct !== null && meta?.priceDiffPct !== undefined && meta.priceDiffPct < -2
+        );
+      });
+    }
+    const sorted = [...list];
+    switch (sort) {
+      case 'price-asc':
+        sorted.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+        break;
+      case 'price-desc':
+        sorted.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+        break;
+      case 'name-asc':
+        sorted.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+        break;
+      case 'name-desc':
+        sorted.sort((a, b) => b.name.localeCompare(a.name, 'pt-BR'));
+        break;
+      case 'category':
+        sorted.sort((a, b) =>
+          ((a as { category_name?: string }).category_name ?? '').localeCompare(
+            (b as { category_name?: string }).category_name ?? '',
+            'pt-BR',
+          ),
+        );
+        break;
+      case 'oldest':
+        sorted.reverse();
+        break;
+      case 'recent':
+      default:
+        break;
+    }
+    return sorted;
+  }, [productsWithVariant, searchQuery, sort, onlyPriceDrops, isRemoteListView, enrichedMetaMap]);
 
   // Bulk selection
-  const selection = useCatalogSelection(filteredProducts, selectionMode);
+  const selection = useCatalogSelection(filteredProducts as Product[], selectionMode);
 
   // Handlers
   const handleClearAll = () => {

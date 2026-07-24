@@ -85,6 +85,7 @@ export const APP_ROUTES: RouteEntry[] = [
   { path: "/ferramentas/bi/comparar", area: "app", feature: "bi-compare", smoke: true, description: "BI — Comparador de clientes" },
   { path: "/match", area: "app", titleSlug: "match-produtos", feature: "match", smoke: true, description: "Match de produtos" },
   { path: "/dropbox", area: "app", titleSlug: "dropbox", feature: "dropbox", smoke: true, description: "Dropbox browser" },
+  { path: "/magazine/templates", area: "app", titleSlug: "magazine-templates", feature: "magazine-templates-gallery", smoke: true, description: "Galeria de Templates de Revista" },
 ];
 
 /* ============================================================
@@ -95,7 +96,7 @@ export const QUOTES_ROUTES: RouteEntry[] = [
   { path: "/orcamentos/dashboard", area: "quotes", titleSlug: "orcamentos-dashboard", feature: "quotes-dashboard", smoke: true, description: "Dashboard de orçamentos" },
   { path: "/orcamentos/lista", area: "quotes", titleSlug: "orcamentos", feature: "quotes-list-alt" },
   { path: "/orcamentos/kanban", area: "quotes", titleSlug: "orcamentos-funil", feature: "quotes-kanban", smoke: true, description: "Funil (Kanban) de orçamentos" },
-  { path: "/orcamentos/templates", area: "quotes", titleSlug: "orcamentos-templates", feature: "quotes-templates", smoke: true, description: "Templates de orçamento" },
+  
   { path: "/orcamentos/novo", area: "quotes", titleSlug: "orcamento-novo", feature: "quote-new", smoke: true, description: "Criar novo orçamento (wizard)" },
   { path: `/orcamentos/${SAMPLE_ID}`, area: "quotes", feature: "quote-detail" },
   { path: `/orcamentos/${SAMPLE_ID}/editar`, area: "quotes", feature: "quote-edit" },
@@ -106,6 +107,7 @@ export const QUOTES_ROUTES: RouteEntry[] = [
  * ============================================================ */
 export const ADMIN_ROUTES: RouteEntry[] = [
   { path: "/admin/usuarios", area: "admin", requiresAdmin: true, feature: "admin-users" },
+  { path: "/admin/v4-callbacks", area: "admin", requiresAdmin: true, titleSlug: "v4-callbacks", feature: "admin-v4-callbacks" },
   { path: "/admin/limites-desconto", area: "admin", requiresAdmin: true, feature: "admin-discount-limits" },
   { path: "/admin/cadastros", area: "admin", requiresAdmin: true, feature: "admin-registrations" },
   { path: "/admin/permissoes", area: "admin", requiresAdmin: true, feature: "admin-permissions" },

@@ -27,7 +27,7 @@ export function seededRandom(seed: number): number {
 export function hashCode(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = (hash << 5) - hash + str.charCodeAt(i);
     hash |= 0;
   }
   return Math.abs(hash);
@@ -36,12 +36,12 @@ export function hashCode(str: string): number {
 // ---------- Safe velocity helpers ----------
 
 export function safeVelocityTrend(trend: number | null | undefined): number | null {
-  if (trend === null || !Number.isFinite(trend)) return null;
+  if (trend === null || trend === undefined || !Number.isFinite(trend)) return null;
   return trend;
 }
 
 export function safeNumber(value: number | null | undefined): number | null {
-  if (value === null || !Number.isFinite(value)) return null;
+  if (value === null || value === undefined || !Number.isFinite(value)) return null;
   return value;
 }
 
@@ -70,7 +70,9 @@ export function generateMockStockData(productId: string, days: number): MockChar
     const dayIdx = days - 1 - i;
     const depleted = Math.floor(seededRandom(baseSeed + dayIdx * 3) * 25) + 3;
     const isRestock = seededRandom(baseSeed + dayIdx * 3 + 1) < 0.08;
-    const restocked = isRestock ? Math.floor(seededRandom(baseSeed + dayIdx * 3 + 2) * 200) + 100 : 0;
+    const restocked = isRestock
+      ? Math.floor(seededRandom(baseSeed + dayIdx * 3 + 2) * 200) + 100
+      : 0;
     stock = Math.max(50, stock - depleted + restocked);
     data.push({
       date: format(d, 'yyyy-MM-dd'),
@@ -88,7 +90,13 @@ export function generateMockStockData(productId: string, days: number): MockChar
 
 // ---------- Mock intelligence (consistent with chart data) ----------
 
-const MOCK_SUPPLIER_NAMES = ['Spot Promo', 'Asia Import', 'Brasil Brindes', 'Premium Gifts', 'Master Promo'];
+const MOCK_SUPPLIER_NAMES = [
+  'Spot Promo',
+  'Asia Import',
+  'Brasil Brindes',
+  'Premium Gifts',
+  'Master Promo',
+];
 
 export interface MockVelocityData {
   variant_supplier_source_id: string;
@@ -128,10 +136,12 @@ export function generateMockVelocities(productId: string): MockVelocityData[] {
   for (let i = 0; i < supplierCount; i++) {
     const seed = baseSeed + 100 + i * 50;
     // First supplier has highest velocity, others progressively less
-    const velocityFactor = 1 - (i * 0.25);
+    const velocityFactor = 1 - i * 0.25;
     const depletion7d = (8 + seededRandom(seed) * 12) * velocityFactor;
     const depletion30d = (6 + seededRandom(seed + 1) * 10) * velocityFactor;
-    const currentStock = Math.floor((200 + seededRandom(seed + 2) * 400) * (1 + seededRandom(seed + 3) * 0.5));
+    const currentStock = Math.floor(
+      (200 + seededRandom(seed + 2) * 400) * (1 + seededRandom(seed + 3) * 0.5),
+    );
     const daysToStockout = depletion7d > 0.5 ? Math.round(currentStock / depletion7d) : null;
 
     velocities.push({
@@ -169,7 +179,9 @@ export function generateMockSupplierNames(productId: string): Map<string, string
   const count = 2 + Math.floor(seededRandom(baseSeed + 300) * 3);
   const map = new Map<string, string>();
   for (let i = 0; i < count; i++) {
-    const nameIdx = (Math.floor(seededRandom(baseSeed + 400 + i) * MOCK_SUPPLIER_NAMES.length)) % MOCK_SUPPLIER_NAMES.length;
+    const nameIdx =
+      Math.floor(seededRandom(baseSeed + 400 + i) * MOCK_SUPPLIER_NAMES.length) %
+      MOCK_SUPPLIER_NAMES.length;
     map.set(`mock-supplier-${i}`, MOCK_SUPPLIER_NAMES[nameIdx]);
   }
   return map;
@@ -251,7 +263,7 @@ export const COMMERCIAL_FLAG_CONFIG: Record<IntelligenceFlag, FlagConfig> = {
     colors: 'bg-amber-500/15 text-amber-600 border-amber-500/30',
     description: 'Demanda do mercado está consumindo o estoque — feche antes que acabe',
   },
-  'stagnant': {
+  stagnant: {
     icon: Eye,
     label: 'Baixa Procura',
     colors: 'bg-muted text-muted-foreground border-border',
@@ -291,7 +303,7 @@ export const OPERATIONAL_FLAG_CONFIG: Record<IntelligenceFlag, FlagConfig> = {
     colors: 'bg-destructive/15 text-destructive border-destructive/30',
     description: 'Menos de 7 dias de estoque restante no fornecedor',
   },
-  'stagnant': {
+  stagnant: {
     icon: Moon,
     label: 'Estagnado',
     colors: 'bg-muted text-muted-foreground border-border',
@@ -319,32 +331,53 @@ export const OPERATIONAL_FLAG_CONFIG: Record<IntelligenceFlag, FlagConfig> = {
 
 // ---------- Trend display helpers ----------
 
-export function formatVelocityTrendOperational(trend: number | null): { value: string; label: string } {
+export function formatVelocityTrendOperational(trend: number | null): {
+  value: string;
+  label: string;
+} {
   if (trend === null) return { value: '—', label: '' };
   const pct = (trend - 1) * 100;
   if (!Number.isFinite(pct)) return { value: '—', label: '' };
   return {
     value: `${pct > 0 ? '+' : ''}${pct.toFixed(0)}%`,
-    label: trend > 1.5 ? 'acelerando!' : trend > 1 ? 'crescendo' : trend > 0.5 ? 'desacelerando' : 'caindo',
+    label:
+      trend > 1.5
+        ? 'acelerando!'
+        : trend > 1
+          ? 'crescendo'
+          : trend > 0.5
+            ? 'desacelerando'
+            : 'caindo',
   };
 }
 
-export function formatVelocityTrendCommercial(trend: number | null): { value: string; sub: string; isPositive: boolean } {
+export function formatVelocityTrendCommercial(trend: number | null): {
+  value: string;
+  sub: string;
+  isPositive: boolean;
+} {
   if (trend === null) return { value: '—', sub: '', isPositive: false };
   const pct = (trend - 1) * 100;
   if (!Number.isFinite(pct)) return { value: '—', sub: '', isPositive: false };
   return {
     value: `${pct > 0 ? '+' : ''}${pct.toFixed(0)}%`,
-    sub: trend > 1.5 ? 'acelerando forte!' :
-         trend > 1 ? 'demanda crescente' :
-         trend > 0.5 ? 'desacelerando' : 'queda de interesse',
+    sub:
+      trend > 1.5
+        ? 'acelerando forte!'
+        : trend > 1
+          ? 'demanda crescente'
+          : trend > 0.5
+            ? 'desacelerando'
+            : 'queda de interesse',
     isPositive: trend > 1,
   };
 }
 
 // ---------- Safe date formatting ----------
 
-export function safeParseDateForChart(dateStr: string): { dateFormatted: string; fullDate: string } | null {
+export function safeParseDateForChart(
+  dateStr: string,
+): { dateFormatted: string; fullDate: string } | null {
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return null;

@@ -2,7 +2,7 @@
  * ComparisonScoreCard — Card com score ponderado + popover para ajustar pesos.
  * Mostra o vencedor recomendado com badge Crown.
  */
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { Crown, Sliders, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,15 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import {
   useComparisonScore,
-  DEFAULT_SCORE_WEIGHTS,
+  useComparisonWeights,
+  mapWeightsToScore,
+  mapScoreToWeights,
   type ComparisonScoreWeights,
 } from '@/hooks/comparison';
+import type { Product } from '@/types/product-catalog';
 
 interface ComparisonScoreCardProps {
-  products: Record<string, unknown>[];
+  products: Product[];
   className?: string;
 }
 
@@ -31,7 +34,14 @@ const WEIGHT_LABELS: Record<keyof ComparisonScoreWeights, string> = {
 };
 
 export function ComparisonScoreCard({ products, className }: ComparisonScoreCardProps) {
-  const [weights, setWeights] = useState<ComparisonScoreWeights>(DEFAULT_SCORE_WEIGHTS);
+  // Weights persist per-user (user_preferences.comparison_weights) with a
+  // localStorage fallback — so "Ajustar pesos" survives reloads and devices.
+  const { weights: persistedWeights, setWeights: persistWeights, reset } = useComparisonWeights();
+  const weights = useMemo<ComparisonScoreWeights>(
+    () => mapWeightsToScore(persistedWeights),
+    [persistedWeights],
+  );
+  const setWeights = (next: ComparisonScoreWeights) => persistWeights(mapScoreToWeights(next));
   const scores = useComparisonScore(products, weights);
   const winner = scores.find((s) => s.isWinner);
   const winnerProduct = winner ? products.find((p) => String(p.id) === winner.productId) : null;
@@ -79,27 +89,24 @@ export function ComparisonScoreCard({ products, className }: ComparisonScoreCard
                   Ajuste para refletir suas prioridades.
                 </p>
               </div>
-              {(Object.keys(weights) as Array<keyof ComparisonScoreWeights>).map((key) => (
-                <div key={key} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">{WEIGHT_LABELS[key]}</Label>
-                    <span className="font-mono text-xs text-muted-foreground">{weights[key]}</span>
+              {(Object.entries(weights) as [keyof ComparisonScoreWeights, number][]).map(
+                ([key, weight]) => (
+                  <div key={key} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">{WEIGHT_LABELS[key]}</Label>
+                      <span className="font-mono text-xs text-muted-foreground">{weight}</span>
+                    </div>
+                    <Slider
+                      value={[weight]}
+                      onValueChange={(v) => setWeights({ ...weights, [key]: v[0] })}
+                      min={0}
+                      max={50}
+                      step={5}
+                    />
                   </div>
-                  <Slider
-                    value={[weights[key]]}
-                    onValueChange={(v) => setWeights({ ...weights, [key]: v[0] })}
-                    min={0}
-                    max={50}
-                    step={5}
-                  />
-                </div>
-              ))}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full"
-                onClick={() => setWeights(DEFAULT_SCORE_WEIGHTS)}
-              >
+                ),
+              )}
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => reset()}>
                 Restaurar padrão
               </Button>
             </div>

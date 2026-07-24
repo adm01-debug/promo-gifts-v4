@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
 import Fuse from 'fuse.js';
-import type { Product } from "@/hooks/products/useProducts";
+import type { Product } from '@/hooks/products/useProducts';
 import { createProductFuseOptions, rankProductSearchResults } from '@/utils/product-search';
 
 /**
@@ -13,19 +13,19 @@ const fuseOptions = createProductFuseOptions<Product>();
 /**
  * Hook para busca fuzzy de produtos
  * Usa Fuse.js para encontrar produtos mesmo com erros de digitação
- * 
+ *
  * Otimizações:
  * - Fuse index é recriado apenas quando os produtos mudam (referência estável)
  * - Busca com debounce deve ser feita pelo consumidor (ex: useDebounce)
  * - Match exato de SKU tem prioridade máxima
- * 
+ *
  * @param products - Lista de produtos para buscar
  * @param searchQuery - Termo de busca (idealmente já com debounce)
  * @returns Produtos filtrados (ordenados por relevância se houver busca)
  */
 export function useProductFuzzySearch(
   products: Product[],
-  searchQuery: string
+  searchQuery: string,
 ): { results: Product[]; hasSearch: boolean } {
   // Memoizar referência dos produtos para evitar recriações do Fuse.js index
   const productsRef = useRef<Product[]>([]);
@@ -45,8 +45,8 @@ export function useProductFuzzySearch(
 
   // Executar busca
   return useMemo(() => {
-    const query = searchQuery?.trim() || '';
-    
+    const query = searchQuery?.trim() ?? '';
+
     if (!query || query.length < 2) {
       return { results: products, hasSearch: false };
     }

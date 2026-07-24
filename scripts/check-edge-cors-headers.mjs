@@ -50,6 +50,11 @@ const SERVER_ONLY_ALLOWLIST = new Set([
   "connections-auto-test",
   "connections-health-check",
   "connections-hub-audit",
+  // pg_cron jobs — called via net.http_post internally, never by a browser.
+  "backfill-image-dimensions",
+  "asia-ingestion",
+  "hash-product-images",
+  "generate-blurhashes",
 ]);
 
 function listFunctionDirs() {

@@ -8,12 +8,12 @@
  *
  * Estado de loading sincroniza com isFetching das queries afetadas.
  */
-import { useCallback, useState } from "react";
-import { RefreshCw } from "lucide-react";
-import { useIsFetching, useQueryClient } from "@tanstack/react-query";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { useCallback, useState } from 'react';
+import { RefreshCw } from 'lucide-react';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export interface ZoneRefreshButtonProps {
   /** Lista de queryKeys (prefix match) que serão invalidadas */
@@ -39,10 +39,7 @@ export function ZoneRefreshButton({
 
   // isFetching agregado para qualquer uma das queryKeys da zona
   const fetchingCount = useIsFetching({
-    predicate: (q) =>
-      queryKeys.some((target) =>
-        target.every((seg, i) => q.queryKey[i] === seg),
-      ),
+    predicate: (q) => queryKeys.some((target) => target.every((seg, i) => q.queryKey[i] === seg)),
   });
   const isLoading = pending || fetchingCount > 0;
 
@@ -61,7 +58,7 @@ export function ZoneRefreshButton({
   }, [qc, queryKeys, onRefresh, successMessage]);
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <button
@@ -70,20 +67,20 @@ export function ZoneRefreshButton({
             disabled={isLoading}
             aria-label={label}
             className={cn(
-              "inline-flex items-center gap-1 rounded-md border border-border/50 bg-background/60 px-2 py-1 text-[11px] text-muted-foreground",
-              "hover:text-foreground hover:bg-muted/60 transition-colors",
-              "disabled:opacity-60 disabled:cursor-wait",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+              'inline-flex items-center gap-1 rounded-md border border-border/50 bg-background/60 px-2 py-1 text-[11px] text-muted-foreground',
+              'transition-colors hover:bg-muted/60 hover:text-foreground',
+              'disabled:cursor-wait disabled:opacity-60',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
               className,
             )}
           >
-            <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
-            <span>{isLoading ? "Atualizando…" : "Atualizar"}</span>
+            <RefreshCw className={cn('h-3 w-3', isLoading && 'animate-spin')} />
+            <span>{isLoading ? 'Atualizando…' : 'Atualizar'}</span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-[220px]">
+        <TooltipContent side="bottom">
           <p className="text-xs">{label}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
             Refresca apenas esta zona, sem recarregar o restante da página.
           </p>
         </TooltipContent>

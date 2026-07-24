@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useQuoteBuilderState } from "@/hooks/quotes/useQuoteBuilderState";
+import { useQuoteBuilderState } from '@/hooks/quotes/useQuoteBuilderState';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import React from 'react';
@@ -34,7 +34,6 @@ vi.mock('@/hooks/quotes', () => ({
     fetchQuote: vi.fn(),
     isLoading: false,
   })),
-  useQuoteTemplates: vi.fn(() => ({ templates: [] })),
   useQuoteItems: vi.fn(() => ({
     items: [],
     setItems: vi.fn(),
@@ -79,7 +78,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('prevents nextStep if client/contact not selected', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.nextStep();
     });
@@ -90,7 +89,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('allows nextStep if client/contact are selected', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.setClientId('company-1');
       result.current.setContactId('contact-1');
@@ -105,7 +104,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('prevents moving to conditions if items are missing when skipping', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.setClientId('company-1');
       result.current.setContactId('contact-1');
@@ -122,7 +121,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('allows jumping back to a previous step without validation', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.setClientId('company-1');
       result.current.setContactId('contact-1');
@@ -133,7 +132,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
     expect(result.current.contactId).toBe('contact-1');
 
     act(() => {
-      result.current.nextStep(); 
+      result.current.nextStep();
     });
 
     expect(result.current.currentStep).toBe('conditions');
@@ -147,7 +146,7 @@ describe('useQuoteBuilderState Navigation and Validation', () => {
 
   it('announces errors for screen readers', () => {
     const { result } = renderHook(() => useQuoteBuilderState(), { wrapper });
-    
+
     act(() => {
       result.current.nextStep();
     });

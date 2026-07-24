@@ -1,0 +1,182 @@
+name: Lovable Edit Tracker
+
+# Rastreia edições do Lovable extraindo X-Lovable-Edit-ID de cada commit.
+#
+# Problema resolvido: 96% dos commits do Lovable têm mensagem "Changes" ou
+# "Fast Visual Edit" — zero informação sobre o que foi alterado. Quando um
+# bug é introduzido, é impossível saber qual prompt causou o problema.
+#
+# Solução: cada commit do Lovable carrega um campo X-Lovable-Edit-ID no corpo.
+# Este workflow extrai esses IDs, cria um log de auditoria e os exibe no
+# Step Summary para que @adm01-debug possa correlacionar com prompts enviados
+# no dashboard do Lovable (https://lovable.dev).
+#
+# Exemplo de commit Lovable:
+#   Changes
+#
+#   X-Lovable-Edit-ID: edt-9af5ccd1-71a1-431d-9bf7-8ecc9781d7ec
+#   Co-authored-by: adm01-debug <...>
+#
+# Com o Edit ID, você pode acessar:
+#   https://lovable.dev/projects/<project>/edits/edt-9af5ccd1-71a1-431d-9bf7-8ecc9781d7ec
+# para ver exatamente qual prompt causou a mudança.
+#
+# Análise: 200 commits analisados em 2026-06-11 revelaram que 73 commits
+# "Changes" e 15 "Fast Visual Edit" não têm informação útil na mensagem.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  track-lovable-edits:
+    name: Rastrear edições do Lovable
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Checkout com histórico
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50  # últimos 50 commits para análise
+
+      - name: Extrair e catalogar Edit IDs do Lovable
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.event.after }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          
+          # Determina range de commits a analisar
+          ZERO_SHA="0000000000000000000000000000000000000000"
+          
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            # Em dispatch manual: analisa últimos 10 commits
+            COMMITS=$(git log -10 --pretty=%H)
+            RANGE_DESC="últimos 10 commits (workflow_dispatch)"
+          elif [[ "$PUSH_BEFORE" == "$ZERO_SHA" ]]; then
+            # Branch nova: analisa só o HEAD
+            COMMITS=$(git rev-parse HEAD)
+            RANGE_DESC="commit inicial"
+          else
+            # Push normal: analisa commits do push
+            if git cat-file -e "$PUSH_BEFORE" 2>/dev/null; then
+              # Verifica se é merge commit de PR (não precisa analisar range)
+              HEAD_SUBJECT=$(git log -1 --pretty=%s "$PUSH_AFTER")
+              if echo "$HEAD_SUBJECT" | grep -qE '^Merge pull request #[0-9]+'; then
+                COMMITS=$(git rev-parse "$PUSH_AFTER")
+                RANGE_DESC="merge commit de PR"
+              else
+                COMMITS=$(git log --pretty=%H "${PUSH_BEFORE}..${PUSH_AFTER}")
+                RANGE_DESC="push ${PUSH_BEFORE:0:7}..${PUSH_AFTER:0:7}"
+              fi
+            else
+              COMMITS=$(git rev-parse HEAD)
+              RANGE_DESC="HEAD (fallback — PUSH_BEFORE inacessível)"
+            fi
+          fi
+          
+          # Conta e cataloga commits do Lovable
+          TOTAL_COMMITS=0
+          LOVABLE_COMMITS=0
+          EDIT_IDS=()
+          LOVABLE_SHAS=()
+          LOVABLE_MESSAGES=()
+          
+          for SHA in $COMMITS; do
+            TOTAL_COMMITS=$((TOTAL_COMMITS + 1))
+            AUTHOR=$(git log -1 --pretty=%an "$SHA")
+            
+            # Detecta commits do Lovable
+            if echo "$AUTHOR" | grep -qE '(gpt-engineer-app|lovable)'; then
+              LOVABLE_COMMITS=$((LOVABLE_COMMITS + 1))
+              SUBJECT=$(git log -1 --pretty=%s "$SHA")
+              FULL_BODY=$(git log -1 --pretty=%B "$SHA")
+              
+              # Extrai o X-Lovable-Edit-ID
+              EDIT_ID=$(echo "$FULL_BODY" | grep -oP 'X-Lovable-Edit-ID:\s*\K[\w-]+' || echo "")
+              
+              LOVABLE_SHAS+=("${SHA:0:7}")
+              LOVABLE_MESSAGES+=("$SUBJECT")
+              
+              if [ -n "$EDIT_ID" ]; then
+                EDIT_IDS+=("$EDIT_ID")
+              fi
+            fi
+          done
+          
+          # Gera Step Summary com o log de auditoria
+          {
+            echo "## 🤖 Lovable Edit Tracker"
+            echo ""
+            echo "**Range analisado:** $RANGE_DESC"
+            echo "**Commits analisados:** $TOTAL_COMMITS | **Commits do Lovable:** $LOVABLE_COMMITS"
+            echo ""
+            
+            if [ $LOVABLE_COMMITS -gt 0 ]; then
+              echo "### Edições do Lovable neste push"
+              echo ""
+              echo "| SHA | Mensagem | Edit ID | Link Lovable |"
+              echo "|-----|----------|---------|--------------|"
+              
+              IDX=0
+              for SHA in "${LOVABLE_SHAS[@]}"; do
+                MSG="${LOVABLE_MESSAGES[$IDX]}"
+                # Edit ID pode não existir para todos
+                EID="${EDIT_IDS[$IDX]:-N/A}"
+                
+                if [ "$EID" != "N/A" ]; then
+                  LINK="[🔗 Ver edição](https://lovable.dev/projects/edits/$EID)"
+                else
+                  LINK="—"
+                fi
+                
+                # Trunca mensagem longa
+                SHORT_MSG="${MSG:0:50}"
+                if [ ${#MSG} -gt 50 ]; then
+                  SHORT_MSG="${SHORT_MSG}..."
+                fi
+                
+                echo "| \`$SHA\` | $SHORT_MSG | \`${EID:0:30}\` | $LINK |"
+                IDX=$((IDX + 1))
+              done
+              
+              echo ""
+              echo "### 📝 Como usar estes IDs"
+              echo ""
+              echo "Se um commit do Lovable introduziu um bug:"
+              echo "1. Identifique o SHA do commit suspeito acima"
+              echo "2. Use o Edit ID para abrir o link do Lovable e ver o prompt exato"
+              echo "3. O diff do commit mostra o que foi alterado:"
+              echo "   \`git show <sha>\`"
+              echo ""
+              echo "> **Dica:** O Lovable registra o prompt que gerou cada Edit ID."
+              echo "> Com ele, você pode entender o contexto da mudança e refatorar"
+              echo "> com um prompt mais específico."
+              
+              # Alerta se muitos commits "Changes" sem Edit ID
+              NO_ID_COUNT=$(echo "${EDIT_IDS[@]:-}" | tr ' ' '\n' | grep -c "^$" || echo "0")
+              if [ "$NO_ID_COUNT" -gt 0 ]; then
+                echo ""
+                echo "⚠️ **$NO_ID_COUNT commit(s) do Lovable sem X-Lovable-Edit-ID** — rastreabilidade parcial."
+              fi
+              
+            else
+              echo "✅ Nenhum commit do Lovable neste push."
+            fi
+            
+            echo ""
+            echo "---"
+            echo "*Workflow gerado pela análise de 200 commits (2026-06-11).*"
+            echo "*Gap identificado: 73 commits 'Changes' sem informação útil.*"
+          } >> "$GITHUB_STEP_SUMMARY"
+          
+          echo "✅ Rastreamento concluído: $LOVABLE_COMMITS commit(s) do Lovable em $TOTAL_COMMITS total."
+          if [ ${#EDIT_IDS[@]} -gt 0 ]; then
+            echo "Edit IDs encontrados: ${EDIT_IDS[*]}"
+          fi

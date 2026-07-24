@@ -2,10 +2,16 @@
  * useSecurityData — Hook que carrega métricas, logins e alertas de segurança
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { type createClient } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+// 'notifications' table not yet in generated schema — bypass type checking via raw client cast
+const db = supabase as unknown as ReturnType<typeof createClient>;
 import { use2FA } from '@/hooks/auth';
 import { useAllowedIPs } from '@/hooks/admin';
 
+import { logger } from '@/lib/logger';
 export interface SecurityMetrics {
   score: number;
   mfaEnabled: boolean;
@@ -42,12 +48,23 @@ export interface UserProfile {
 }
 
 const defaultMetrics: SecurityMetrics = {
-  score: 0, mfaEnabled: false, ipRestrictionsActive: false,
-  knownDevicesCount: 0, recentLoginAttempts: 0, failedLoginAttempts: 0, securityAlerts: 0,
+  score: 0,
+  mfaEnabled: false,
+  ipRestrictionsActive: false,
+  knownDevicesCount: 0,
+  recentLoginAttempts: 0,
+  failedLoginAttempts: 0,
+  securityAlerts: 0,
 };
 
-export function useSecurityData(effectiveUserId: string | undefined, isManagingOther: boolean, selectedUserId: string | null) {
-  const { is2FAEnabled, isLoading: is2FALoading } = use2FA(isManagingOther ? selectedUserId! : undefined);
+export function useSecurityData(
+  effectiveUserId: string | undefined,
+  isManagingOther: boolean,
+  selectedUserId: string | null,
+) {
+  const { is2FAEnabled, isLoading: is2FALoading } = use2FA(
+    isManagingOther ? (selectedUserId ?? undefined) : undefined,
+  );
   const { allowedIPs } = useAllowedIPs();
   const [metrics, setMetrics] = useState<SecurityMetrics>(defaultMetrics);
   const [loginAttempts, setLoginAttempts] = useState<LoginAttempt[]>([]);
@@ -57,33 +74,42 @@ export function useSecurityData(effectiveUserId: string | undefined, isManagingO
   // Guarda de montagem: evita setState após o unmount (await que resolve
   // após o teardown vaza "window is not defined" em testes).
   const mountedRef = useRef(true);
+  // BUG-HEAD-GUARD FIX (2026-06-23): HEAD em user_known_devices sem guard.
+  const { rolesLoaded } = useAuth();
 
   const loadSecurityData = useCallback(async () => {
-    if (!effectiveUserId) return;
+    if (!effectiveUserId || !rolesLoaded) return;
     if (mountedRef.current) setIsLoading(true);
     try {
       const { data: attempts } = await supabase
-        .from('login_attempts').select('*')
+        .from('login_attempts')
+        .select('*')
         .eq('user_id', effectiveUserId)
-        .order('created_at', { ascending: false }).limit(20);
+        .order('created_at', { ascending: false })
+        .limit(20);
 
       if (!mountedRef.current) return;
       setLoginAttempts((attempts as LoginAttempt[]) || []);
 
       const { count: devicesCount } = await supabase
-        .from('user_known_devices').select('*', { count: 'exact', head: true })
+        .from('user_known_devices')
+        .select('*', { count: 'exact', head: true })
         .eq('user_id', effectiveUserId);
 
-      const { data: notifs } = await supabase
-        .from('notifications').select('*')
-        .eq('user_id', effectiveUserId).eq('type', 'security')
-        .order('created_at', { ascending: false }).limit(10);
+      const { data: notifs } = await db
+        .from('notifications')
+        .select('*')
+        .eq('user_id', effectiveUserId)
+        .eq('type', 'security')
+        .order('created_at', { ascending: false })
+        .limit(10);
 
       if (!mountedRef.current) return;
-      setNotifications((notifs as SecurityNotification[]) || []);
+      const typedNotifs = notifs as SecurityNotification[] | null;
+      setNotifications(typedNotifs || []);
 
-      const failedAttempts = attempts?.filter(a => !a.success).length || 0;
-      const unreadAlerts = notifs?.filter(n => !n.is_read).length || 0;
+      const failedAttempts = attempts?.filter((a) => !a.success).length || 0;
+      const unreadAlerts = typedNotifs?.filter((n) => !n.is_read).length || 0;
 
       let score = 40;
       if (is2FAEnabled) score += 30;
@@ -102,35 +128,43 @@ export function useSecurityData(effectiveUserId: string | undefined, isManagingO
       });
     } catch (error) {
       if (!mountedRef.current) return;
-      console.error('Error loading security data:', error);
+      logger.error('Error loading security data:', error);
     } finally {
       if (mountedRef.current) setIsLoading(false);
     }
-  }, [effectiveUserId, is2FAEnabled, allowedIPs]);
+  }, [effectiveUserId, rolesLoaded, is2FAEnabled, allowedIPs]); // BUG-HEAD-GUARD
 
   useEffect(() => {
     mountedRef.current = true;
-    if (effectiveUserId) loadSecurityData();
+    if (effectiveUserId && rolesLoaded) loadSecurityData();
     return () => {
       mountedRef.current = false;
     };
-  }, [effectiveUserId, loadSecurityData]);
+  }, [effectiveUserId, loadSecurityData, rolesLoaded]);
 
-  return { metrics, loginAttempts, notifications, isLoading, is2FAEnabled, is2FALoading, allowedIPs };
+  return {
+    metrics,
+    loginAttempts,
+    notifications,
+    isLoading,
+    is2FAEnabled,
+    is2FALoading,
+    allowedIPs,
+  };
 }
 
 // Score helpers
 export function getScoreColor(score: number) {
   if (score >= 80) return 'text-success';
   if (score >= 60) return 'text-warning';
-  if (score >= 40) return 'text-orange';
+  if (score >= 40) return 'text-brand-primary';
   return 'text-destructive';
 }
 
 export function getScoreProgressColor(score: number) {
   if (score >= 80) return 'bg-success';
   if (score >= 60) return 'bg-warning';
-  if (score >= 40) return 'bg-orange';
+  if (score >= 40) return 'bg-brand-primary';
   return 'bg-destructive';
 }
 

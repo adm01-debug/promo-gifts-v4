@@ -60,6 +60,8 @@ export type PageSlug =
   | "estoque"
   | "detalhe-produto"
   | "admin-produto"
+  | "cadastros"
+  | "magazine-templates"
   | "termos"
   | "privacidade"
   | "404";
@@ -91,34 +93,6 @@ export const Sel = {
      * Title proxy de uma página por slug. Convenção: `data-testid="page-title-<slug>"`
      * no `<h1>` (ou `<h2>` principal) da página. Os specs SEMPRE devem usar este
      * helper — nunca `getByRole("heading", { name })` ou `getByText`.
-     *
-     * Slugs canônicos atualmente cobertos pela UI:
-     *   - "produtos"                     → /produtos (FiltersPage)
-     *   - "favoritos"                    → /favoritos
-     *   - "colecoes"                     → /colecoes
-     *   - "carrinhos"                    → /carrinhos
-     *   - "pedidos"                      → /pedidos
-     *   - "clientes"                     → /clientes
-     *   - "comparador"                   → /comparar
-     *   - "tendencias"                   → /tendencias
-     *   - "kits"                         → /kits
-     *   - "magic-up"                     → /magic-up
-     *   - "mockup-historico"             → /mockup-historico
-     *   - "simulador"                    → /simulador (wizard)
-     *   - "simulador-precos"             → /simulador-precos
-     *   - "simulador-personalizacao"     → /simulador-personalizacao
-     *   - "busca-avancada-preco"         → /busca-avancada-preco
-     *   - "dashboard"                    → /
-     *   - "dropbox"                      → /dropbox
-     *   - "inteligencia-mercado"         → /inteligencia-mercado
-     *   - "bi"                           → /bi
-     *   - "match-produtos"               → /match-produtos
-     *   - "orcamentos"                   → /orcamentos
-     *   - "orcamentos-dashboard"         → /orcamentos/dashboard
-     *   - "orcamentos-funil"             → /orcamentos/funil
-     *   - "orcamentos-templates"         → /orcamentos/templates
-     *   - "orcamento-novo"               → /orcamentos/novo
-     *   - "404"                          → NotFound
      */
     title: (slug: PageSlug | string) => TID(`page-title-${slug}`),
   },
@@ -127,7 +101,30 @@ export const Sel = {
   catalog: {
     /** Input da busca global do catálogo (SmartSearchInput). */
     searchInput: TID("catalog-search-input"),
+    /** Trigger do <Select> de ordenação (CatalogToolbar + FiltersPage). */
+    sortTrigger: TID("catalog-sort-trigger"),
+    /** Item específico do dropdown de ordenação (kebab-case do value). */
+    sortItem: (value: string) => TID(`catalog-sort-item-${value}`),
+    /** Qualquer item do dropdown (prefix match — útil para contagem). */
+    sortItems: TID_PREFIX("catalog-sort-item-"),
   },
+
+  // ---------- Galeria de Templates de Revista ----------
+  magazineTemplates: {
+    /** Filtro por família: 'all' | 'editorial' | 'catalog' | 'corporate'. */
+    familyTab: (id: string) => TID(`template-family-${id}`),
+    /** Card do template pelo id do registry (prefix match para contar todos). */
+    card: (id: string) => TID(`template-card-${id}`),
+    cards: TID_PREFIX("template-card-"),
+    /** Botão da miniatura (abre dialog de preview). */
+    preview: (id: string) => TID(`template-preview-${id}`),
+    /** Botão principal "Usar este template" / "Criar revista". */
+    use: (id: string) => TID(`template-use-${id}`),
+    /** Botão estrela de favorito. */
+    favorite: (id: string) => TID(`template-favorite-${id}`),
+  },
+
+
   product: {
     card: TID("product-card"),
     /** Nome no card do catálogo (ProductCard / EnhancedProductCard). */
@@ -136,8 +133,27 @@ export const Sel = {
     rowName: TID("product-row-name"),
     /** Nome no item da view de lista (ProductListItem). */
     listName: TID("product-list-name"),
+    /** Thumb clicável na view de lista (abre QuickView). */
+    listItemThumb: TID("product-list-item-thumb"),
+    /** Thumb clicável na view de tabela (abre QuickView). */
+    tableRowThumb: TID("product-table-row-thumb"),
+    /** Thumbs do QuickView em módulos satélite (Novidades / Reposição / Estoque). */
+    noveltyGridThumb: TID("novelty-grid-card-thumb"),
+    noveltyListThumb: TID("novelty-list-card-thumb"),
+    noveltyTableThumb: TID("novelty-table-row-thumb"),
+    replenishmentGridThumb: TID("replenishment-grid-card-thumb"),
+    replenishmentTableThumb: TID("replenishment-table-row-thumb"),
+    stockTableThumb: TID("stock-table-row-thumb"),
     /** Nome no QuickView (ProductQuickView). */
     quickViewName: TID("product-quickview-name"),
+    /** Botões padronizados do ProductQuickView (ordem canônica fixa). */
+    quickViewCart: TID("product-quickview-cart"),
+    quickViewQuote: TID("product-quickview-quote"),
+    quickViewCollection: TID("product-quickview-collection"),
+    quickViewFavorite: TID("product-quickview-favorite"),
+    quickViewCompare: TID("product-quickview-compare"),
+    quickViewShare: TID("product-quickview-share"),
+    quickViewActions: TID("product-quickview-actions"),
     /** Nome no detalhe do produto (ProductDetailHero h1). */
     name: TID("product-name"),
     /** Qualquer nome de produto (catálogo + detalhe + lista + tabela + quickview). */
@@ -173,12 +189,42 @@ export const Sel = {
       TID("product-card-quick-add"),
       TID("product-quickview-add-to-quote"),
     ].join(", "),
+    /** Badge de personalização no detalhe do produto. */
+    personalizationBadge: TID("product-personalization-badge"),
+    /** Badge de mockup no detalhe do produto. */
+    mockupBadge: TID("product-mockup-badge"),
+    /** Badge de kit no detalhe do produto. */
+    kitBadge: TID("product-kit-badge"),
+    /** SKU no detalhe do produto (ProductInfoBar). */
+    sku: TID("product-sku"),
   },
 
-  // ---------- Variant Picker ----------
-  variant: {
-    /** Botão "Sem cor específica" do SingleVariantPicker. */
-    noVariant: TID("variant-picker-no-variant"),
+  // ---------- Admin / Cadastros ----------
+  admin: {
+    /** Botão de criar novo recurso na listagem (Produtos, Fornecedores, Técnicas). */
+    createBtn: TID("admin-create-btn"),
+    /** Modal/Dialog de formulário. */
+    form: TID("admin-form"),
+    /** Input de nome no formulário. */
+    nameInput: TID("admin-name-input"),
+    /** Input de código/SKU no formulário. */
+    codeInput: TID("admin-code-input"),
+    /** Botão de salvar no formulário. */
+    saveBtn: TID("admin-save-btn"),
+    /** Tabela de listagem. */
+    table: TID("admin-table"),
+    /** Linha da tabela (prefixo). */
+    row: (id: string) => TID(`admin-row-${id}`),
+    /** Botão de deletar na linha. */
+    deleteBtn: TID("admin-delete-btn"),
+    /** Dialog de confirmação de deleção. */
+    confirmDeleteDialog: TID("admin-confirm-delete-dialog"),
+    /** Botão de confirmar deleção. */
+    confirmDeleteBtn: TID("admin-confirm-delete-btn"),
+    /** Input de busca. */
+    searchInput: TID("admin-search-input"),
+    /** Tabs de cadastro (products, suppliers, personalizacao). */
+    tab: (id: string) => TID(`admin-tab-${id}`),
   },
 
   // ---------- Orçamentos ----------
@@ -205,171 +251,121 @@ export const Sel = {
     /** Wizard nav. */
     next: TID("wizard-next-button"),
     prev: TID("wizard-prev-button"),
-    /** Totais. */
-    summarySubtotal: TID("summary-subtotal-products"),
-    summaryTotal: TID("summary-total"),
-    summaryTotalValue: TID("summary-total-value"),
-    /** Desconto: Input numérico (% ou R$, dependendo do toggle). */
-    discountInput: TID("quote-discount-input"),
-    /** Desconto: Toggle entre percentage (%) e amount (R$). */
-    discountTypeSelect: TID("quote-discount-type-select"),
-    /** Botão "Solicitar Aprovação" — aparece quando desconto > maxDiscountPercent. */
-    requestApprovalButton: TID("quote-request-approval-button"),
-    /** Dialog "Solicitar Aprovação de Desconto". */
-    approvalDialog: TID("quote-approval-dialog"),
-    /** Dentro do dialog: card "Seu Limite" (mostra maxDiscountPercent). */
-    approvalLimit: TID("quote-approval-limit"),
-    /** Dentro do dialog: card "Solicitado" (mostra discountValue). */
-    approvalRequested: TID("quote-approval-requested"),
-    /** Dentro do dialog: textarea de justificativa. */
-    approvalJustification: TID("quote-approval-justification"),
-    /** Dentro do dialog: botão "Enviar para Aprovação". */
-    approvalSubmit: TID("quote-approval-submit"),
-  },
-
-  // ---------- Pedidos ----------
-  order: {
-    card: TID("order-card"),
-  },
-
-  // ---------- Favoritos ----------
-  favorites: {
-    list: TID("favorites-list"),
-    item: TID("favorite-item"),
-    remove: TID("favorite-remove"),
-    title: TID("page-title-favoritos"),
-    icon: TID("favorites-icon"),
-    count: TID("favorites-count"),
-    countItems: TID("favorites-count-items"),
-    countLists: TID("favorites-count-lists"),
-    emptyState: TID("favorites-empty-state"),
-    emptyCta: TID("favorites-empty-cta"),
-  },
-
-  // ---------- Carrinho ----------
-  cart: {
-    trigger: TID("cart-trigger"),
-    drawer: TID("cart-drawer"),
-    /** Aba/empresa do carrinho. */
-    tab: TID("cart-tab"),
-    /** Contador de itens dentro da aba (data-count=N). */
-    tabCount: TID("cart-tab-count"),
-    /** Indicador de follow-up (sem movimento há X dias). */
-    tabFollowUp: TID("cart-tab-followup"),
-    /** Botão "+ Novo" para criar um novo carrinho. */
-    tabNew: TID("cart-tab-new"),
-    /** Card de item no carrinho. Tem também `data-cart-item-id` e `data-product-id`. */
-    item: TID("cart-item"),
-    /** Subcomponentes do item. */
-    itemName: TID("cart-item-name"),
-    itemSku: TID("cart-item-sku"),
-    itemImage: TID("cart-item-image"),
-    itemView: TID("cart-item-view"),
-    itemColor: TID("cart-item-color"),
-    itemColorName: TID("cart-item-color-name"),
-    itemUnitPrice: TID("cart-item-unit-price"),
-    itemTotal: TID("cart-item-total"),
-    itemStockLow: TID("cart-item-stock-low"),
-    itemStockOut: TID("cart-item-stock-out"),
-    itemQtyStepper: TID("cart-item-qty-stepper"),
-    itemNotesToggle: TID("cart-item-notes-toggle"),
-    itemNotesInput: TID("cart-item-notes-input"),
-    /** Menu de ações do item (Ver/Simular/Mover/Duplicar/Remover). */
-    itemMenuTrigger: TID("cart-item-menu-trigger"),
-    itemActionView: TID("cart-item-action-view"),
-    itemActionSimulate: TID("cart-item-action-simulate"),
-    itemActionMove: TID("cart-item-action-move"),
-    itemActionDuplicate: TID("cart-item-action-duplicate"),
-    itemActionRemove: TID("cart-item-action-remove"),
-    /** Alvos dos submenus Mover/Duplicar — usam `data-target-cart-id`. */
-    itemMoveTarget: TID("cart-item-move-target"),
-    itemDuplicateTarget: TID("cart-item-duplicate-target"),
-    /** Stepper de quantidade. `cart-qty-badge` expõe `data-qty=N`. */
-    qtyBadge: TID("cart-qty-badge"),
-    increment: TID("cart-qty-increment"),
-    decrement: TID("cart-qty-decrement"),
-    qtyDecrementIcon: TID("cart-qty-decrement-icon"),
-    qtyRemoveIcon: TID("cart-qty-remove-icon"),
-    checkoutCta: TID("cart-checkout-cta"),
     /**
-     * Diálogo de confirmação do checkout (Gerar Orçamento). Renderizado pelo
-     * ConfirmDialog com `testId="cart-confirm-dialog"` — o wrapper deriva
-     * automaticamente os testids escopados abaixo.
+     * QuoteViewPage (desktop) — ÚNICO gatilho do fluxo de export de PDF.
+     * Abre o `PdfGenerationDialog` que contém o confirm.
      */
-    confirmDialog: TID("cart-confirm-dialog"),
-    confirmDialogTitle: TID("cart-confirm-dialog-title"),
-    confirmDialogDescription: TID("cart-confirm-dialog-description"),
-    confirmDialogYes: TID("cart-confirm-dialog-yes"),
-    confirmDialogNo: TID("cart-confirm-dialog-no"),
-    /** Diálogo "Limpar todos os itens?" do carrinho ativo. */
-    clearDialog: TID("cart-clear-dialog"),
-    clearDialogYes: TID("cart-clear-dialog-yes"),
-    clearDialogNo: TID("cart-clear-dialog-no"),
-    /** Diálogo "Excluir carrinho?" (DeleteConfirmDialog escopado). */
-    deleteDialog: TID("cart-delete-dialog"),
-    deleteDialogYes: TID("cart-delete-dialog-yes"),
-    deleteDialogNo: TID("cart-delete-dialog-no"),
-    /** Botão de seleção de empresa no CartCompanyPickerDialog. */
-    companyPickerSelect: TID("cart-company-picker-select"),
+    pdfPreviewTrigger: TID("pdf-preview-trigger"),
+    /** Confirm dentro do `PdfGenerationDialog` que dispara o download. */
+    pdfGenerateConfirm: TID("pdf-generate-confirm"),
+    /** Mobile action bar — download direto sem dialog. */
+    pdfExportMobile: TID("pdf-export-mobile"),
   },
 
-  // ---------- Diálogos genéricos (ConfirmDialog) ----------
-  dialog: {
-    /**
-     * Botões/título genéricos. Use APENAS quando o diálogo for criado sem
-     * `testId` próprio. Quando o consumidor passar `testId="x"`, prefira os
-     * derivados `x-yes` / `x-no` / `x-title` / `x-description`.
-     */
-    confirmYes: TID("confirm-dialog-yes"),
-    confirmNo: TID("confirm-dialog-no"),
-    confirmTitle: TID("confirm-dialog-title"),
-    confirmDescription: TID("confirm-dialog-description"),
-    /** Helpers para diálogos escopados — combinam com qualquer `testId`. */
-    yesFor: (testId: string) => TID(`${testId}-yes`),
-    noFor: (testId: string) => TID(`${testId}-no`),
-    titleFor: (testId: string) => TID(`${testId}-title`),
-    descriptionFor: (testId: string) => TID(`${testId}-description`),
+  // ---------- Lista de orçamentos (QuotesConfigurableList) ----------
+  quotesList: {
+    /** Container scrollável (root do IntersectionObserver). */
+    scrollContainer: TID("quotes-scroll-container"),
+    /** Sentinel observado pelo IO — só existe quando há mais itens. */
+    infiniteSentinel: TID("quotes-infinite-sentinel"),
+    /** Footer com "Exibindo N de M …" (vazio quando chega ao fim). */
+    footerCount: TID("quotes-footer-count"),
+    /** Indicador "Carregando mais…" durante refetch em background. */
+    footerLoadingMore: TID("quotes-footer-loading-more"),
+    /** Banner de erro no rodapé + botão de retry. */
+    footerLoadError: TID("quotes-footer-load-error"),
+    footerRetry: TID("quotes-footer-retry"),
+    /** Estado vazio (sem orçamentos) + botão "Atualizar lista". */
+    emptyState: TID("quotes-empty-state"),
+    emptyRefresh: TID("quotes-empty-refresh"),
+    /** Linhas: cada `quote-row-more-<id>` é único por orçamento. */
+    rowMorePrefix: TID_PREFIX("quote-row-more-"),
+    /** Busca / ordenação / chips de status na header da página de orçamentos. */
+    searchInput: TID("quotes-search-input"),
+    sortTrigger: TID("quotes-sort-trigger"),
+    sortItem: (value: string) => TID(`quotes-sort-item-${value}`),
+    chip: (key: string) => TID(`quotes-chip-${key}`),
+    /** Tooltip Radix emitido ao hover/focus no chip de status. */
+    chipTooltip: (key: string) => TID(`quotes-chip-tooltip-${key}`),
+    /** Badge de status dentro da linha da tabela + seu tooltip. */
+    statusBadge: (key: string) => TID(`quote-status-badge-${key}`),
+    statusBadgeTooltip: (key: string) => TID(`quote-status-badge-tooltip-${key}`),
   },
+
+
+  // ---------- Estoque (Stock Dashboard) ----------
+  stock: {
+    /** Botão dedicado "Em Estoque / Estoque Futuro" no toolbar. */
+    futureStockToggleButton: TID("future-stock-toggle-button"),
+    /** Switch dentro do popover do botão dedicado. */
+    futureStockSwitch: TID("future-stock-switch"),
+    /** Pílulas de janela (7/15/30 dias). */
+    futureStockWindow: (d: 7 | 15 | 30) => TID(`future-stock-window-${d}`),
+    /** Botão da toolbar "Risco de Ruptura" (PopoverTrigger). */
+    ruptureRiskToggleButton: TID("rupture-horizon-control"),
+    /** Switch on/off do filtro de Risco de Ruptura no popover. */
+    ruptureRiskSwitch: TID("rupture-risk-switch"),
+    /** Badge "Nd" no botão — visível só quando o filtro está ON. */
+    ruptureRiskHorizonBadge: TID("rupture-risk-horizon-badge"),
+    /** Pílulas de horizonte (3/7/15/30 dias). */
+    ruptureRiskHorizon: (d: 3 | 7 | 15 | 30) => TID(`rupture-horizon-${d}`),
+    /** Grid de cards de estatística do dashboard de estoque. */
+    statCard: TID("stock-stat-card"),
+    statCardBySlug: (slug: string) => `[data-testid="stock-stat-card"][data-stat-slug="${slug}"]`,
+    statCardTitle: TID("stock-stat-card-title"),
+    statCardValue: TID("stock-stat-card-value"),
+    statCardSubtitle: TID("stock-stat-card-subtitle"),
+    statCardTrend: TID("stock-stat-card-trend"),
+  },
+
+  // ---------- Carrinhos (lista) ----------
+  carts: {
+    pageTitle: TID("page-title-carrinhos"),
+    // Header do carrinho ativo (substitui page-title-carrinhos como âncora
+    // de "cabeçalho do /carrinhos" após o header agregado ter sido removido).
+    activeHeader: TID("active-cart-header"),
+    activeCompanyName: TID("active-cart-company-name"),
+    activeMeta: TID("active-cart-meta"),
+    activeCnpj: TID("active-cart-cnpj"),
+    rowCnpj: (id: string) => TID(`cart-row-cnpj-${id}`),
+    selectToggle: TID("carts-select-toggle"),
+    selectAll: TID("carts-select-all"),
+    bulkDeleteTop: TID("carts-bulk-delete-top"),
+    bulkDeleteDialog: TID("carts-bulk-delete-dialog"),
+    bulkDeleteConfirm: TID("carts-bulk-delete-confirm"),
+    selectionLive: TID("carts-selection-live"),
+    rowCheckbox: (id: string) => TID(`cart-row-checkbox-${id}`),
+    row: (id: string) => TID(`cart-row-${id}`),
+    rows: TID_PREFIX("cart-row-"),
+    listNew: TID("carts-list-new"),
+    listSearch: TID("carts-list-search"),
+    listSort: TID("carts-list-sort"),
+    rowMore: (id: string) => TID(`cart-row-more-${id}`),
+    rowMenu: (id: string) => TID(`cart-row-menu-${id}`),
+    rowMenuEdit: (id: string) => TID(`cart-row-menu-edit-${id}`),
+    rowMenuDuplicate: (id: string) => TID(`cart-row-menu-duplicate-${id}`),
+    rowMenuDelete: (id: string) => TID(`cart-row-menu-delete-${id}`),
+    rowDeleteDialog: TID("cart-row-delete-dialog"),
+    rowDeleteConfirm: TID("cart-row-delete-confirm"),
+    emptyNone: TID("carts-empty-none"),
+    emptyFiltered: TID("carts-empty-filtered"),
+  },
+
+
+
 
   // ---------- App genérico ----------
   app: {
-    /**
-     * Toast da aplicação — usamos a lib `sonner`, cujo `data-sonner-toast` é
-     * contrato público estável. Não há `app-toast` próprio em uso.
-     */
     toast: "[data-sonner-toast]",
     errorBanner: TID("app-error-banner"),
-    /** Tela 404 (NotFound page). */
     notFound: TID("app-not-found"),
-    /** Tela de acesso negado (DevAccessDeniedPage). */
     accessDenied: TID("app-access-denied"),
-    /**
-     * Header global do MainLayout — sticky no topo do viewport.
-     * Alias de `Sel.app.layout.header`, mantido para retrocompatibilidade.
-     */
     header: TID("app-header"),
-    /**
-     * Sub-namespace do layout fixo (header + breadcrumb bar). Use estes
-     * seletores em qualquer asserção de sticky/stacking. Fonte única:
-     *  - `app-header`     → `<header>` global em `src/components/layout/Header.tsx`
-     *  - `breadcrumb-bar` → wrapper sticky em `src/components/layout/MainLayout.tsx`
-     *  - `breadcrumb`     → `<nav>` em `src/components/common/PersistentBreadcrumbs.tsx`
-     */
     layout: {
       header: TID("app-header"),
-      breadcrumbBar: TID("breadcrumb-bar"),
-      breadcrumb: TID("breadcrumb"),
-      /**
-       * Botão flutuante "voltar ao topo" — `src/components/common/ScrollProgress.tsx`.
-       * Aparece após `window.scrollY > threshold` (default 150 no MainLayout).
-       */
       scrollToTop: TID("scroll-to-top"),
+      teleport: TID("app-teleport-btn"),
+      teleportTooltip: TID("app-teleport-tooltip"),
     },
-  },
-
-  // ---------- Bibliotecas externas (contratos estáveis) ----------
-  ext: {
-    /** Toast da lib `sonner` — atributo público da lib. */
-    sonnerToast: "[data-sonner-toast]",
   },
 } as const;

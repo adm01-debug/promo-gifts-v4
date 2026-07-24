@@ -9,6 +9,7 @@
  */
 import type * as SentryNS from '@sentry/react';
 
+import { logger } from '@/lib/logger';
 type SentryModule = typeof SentryNS;
 
 let sentryRef: SentryModule | null = null;
@@ -20,12 +21,51 @@ interface BufferedError {
   context?: Record<string, unknown>;
 }
 const ERROR_BUFFER: BufferedError[] = [];
-let bufferedUser: { id: string; email?: string } | null | undefined = undefined;
+let bufferedUser: { id: string; email?: string } | null | undefined;
 const BUFFER_MAX = 50;
+
+/**
+ * Valida o formato do DSN do Sentry/GlitchTip.
+ *
+ * Formato esperado: protocol://<public_key>[:<secret_key>]@<host>[:<port>]/<project_id>
+ *
+ * IMPORTANTE: o parser do `@sentry/utils` (parseDsn) usa `\w` que NÃO aceita
+ * hífens no public_key. Se o GlitchTip gerou um DSN com UUID (ex.:
+ * `https://66323199-858e-4295-...@host/4`), o SDK rejeita e loga
+ * "Invalid Sentry Dsn" no console do usuário.
+ *
+ * Workaround: validamos aqui ANTES de chamar `mod.init()` e fazemos no-op
+ * silencioso se o DSN estiver malformado, evitando poluir o console em prod
+ * sem quebrar o build. Em dev, loga warning para alertar o time.
+ *
+ * Para gerar um DSN compatível no GlitchTip, regenere a Client Key do projeto
+ * — versões recentes do GlitchTip emitem chaves alfanuméricas (sem hífens)
+ * compatíveis com o SDK Sentry 8.x.
+ */
+function isValidSentryDsn(dsn: string | undefined): dsn is string {
+  if (!dsn) return false;
+  // Regex compatível com o parser do @sentry/utils:
+  // protocol://public_key[:secret_key]@host[:port]/project_id
+  // \w = [A-Za-z0-9_] — não aceita hífens (UUIDs falham aqui).
+  const SENTRY_DSN_REGEX = /^(?:(\w+):)\/\/(?:(\w+)(?::(\w+))?@)([\w.-]+)(?::(\d+))?\/(.+)/;
+  return SENTRY_DSN_REGEX.test(dsn);
+}
 
 function shouldLoadSentry(): boolean {
   const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
-  return !!dsn;
+  if (!dsn) return false;
+  if (!isValidSentryDsn(dsn)) {
+    if (import.meta.env.DEV) {
+      logger.warn(
+        '[sentry] VITE_SENTRY_DSN tem formato inválido — Sentry não será inicializado. ' +
+          'Formato esperado: https://<public_key>@<host>/<project_id> ' +
+          '(public_key sem hífens — UUIDs do GlitchTip não são compatíveis com SDK Sentry 8.x). ' +
+          'Regenere a Client Key no GlitchTip para obter uma chave alfanumérica compatível.',
+      );
+    }
+    return false;
+  }
+  return true;
 }
 
 async function loadSentry(): Promise<SentryModule | null> {
@@ -158,4 +198,38 @@ export function setSentryUser(user: { id: string; email?: string } | null): void
  */
 export function getSentryErrorBoundary(): typeof SentryNS.ErrorBoundary | null {
   return sentryRef?.ErrorBoundary ?? null;
+}
+
+/**
+ * Envia uma mensagem informativa/aviso ao Sentry (breadcrumb-like). Usado por
+ * `navigationMetrics` para reportar Web Vitals com tags de rota/device.
+ * Mensagens emitidas antes do Sentry carregar são silenciosamente descartadas
+ * (não faz sentido bufferizar métricas de navegação com TTL indefinido).
+ */
+export function captureMessage(
+  message: string,
+  level: 'error' | 'info' | 'warning' = 'info',
+  tagsAndExtras?: Record<string, unknown>,
+): void {
+  if (!shouldLoadSentry()) return;
+  if (!sentryRef || !initialized) {
+    void loadSentry();
+    return;
+  }
+  try {
+    const tags: Record<string, string> = {};
+    const extras: Record<string, unknown> = {};
+    if (tagsAndExtras) {
+      for (const [k, v] of Object.entries(tagsAndExtras)) {
+        if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+          tags[k] = String(v);
+        } else {
+          extras[k] = v;
+        }
+      }
+    }
+    sentryRef.captureMessage(message, { level, tags, extra: extras });
+  } catch {
+    /* noop */
+  }
 }

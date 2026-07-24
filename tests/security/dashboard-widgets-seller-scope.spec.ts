@@ -35,6 +35,7 @@ describe("seller scope — defesa em profundidade nos widgets do dashboard", () 
         if (!usesTable) continue;
         const hasSellerFilter =
           /\.eq\(\s*["']seller_id["']\s*,\s*user[!?]?\.id\s*\)/.test(src) ||
+          /\.eq\(\s*["']seller_id["']\s*,\s*userId\s*\)/.test(src) ||
           /applySellerScope\(/.test(src);
         expect(
           hasSellerFilter,

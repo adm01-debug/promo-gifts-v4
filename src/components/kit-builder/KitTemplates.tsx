@@ -68,29 +68,38 @@ export function KitTemplates({ onSelectTemplate, visible }: KitTemplatesProps) {
   return (
     <Card className="border-dashed border-primary/20 bg-primary/5">
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
           <Sparkles className="h-4 w-4 text-primary" />
           Comece com um Template
-          <Badge variant="secondary" className="text-[10px]">Atalho</Badge>
+          <Badge variant="secondary" className="text-[10px]">
+            Atalho
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="pb-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {TEMPLATES.map(template => {
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+          {TEMPLATES.map((template) => {
             const Icon = template.icon;
             return (
               <button
                 key={template.id}
                 onClick={() => onSelectTemplate(template)}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 p-3 rounded-lg border border-border/50",
-                  "bg-card hover:bg-accent hover:border-primary/30 transition-all",
-                  "text-center cursor-pointer group"
+                  'flex flex-col items-center gap-1.5 rounded-lg border border-border/50 p-3',
+                  'bg-card transition-all hover:border-primary/30 hover:bg-accent',
+                  'group cursor-pointer text-center',
                 )}
               >
-                <Icon className={cn("h-5 w-5 group-hover:scale-110 transition-transform", template.color)} />
+                <Icon
+                  className={cn(
+                    'h-5 w-5 transition-transform group-hover:scale-110',
+                    template.color,
+                  )}
+                />
                 <span className="text-xs font-medium">{template.name}</span>
-                <span className="text-[10px] text-muted-foreground leading-tight">{template.description}</span>
+                <span className="text-[10px] leading-tight text-muted-foreground">
+                  {template.description}
+                </span>
               </button>
             );
           })}

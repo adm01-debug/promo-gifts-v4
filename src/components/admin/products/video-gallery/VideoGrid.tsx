@@ -19,7 +19,7 @@ import {
   type VideoVariant,
   VIDEO_TYPES,
   formatBytes,
-} from "./types";
+} from './types';
 import { VideoMetaEditor } from './VideoMetaEditor';
 
 interface Props {
@@ -145,9 +145,7 @@ export function VideoGrid({
                         style={{ backgroundColor: link.variant_color_hex || '#999' }}
                       />
                     </TooltipTrigger>
-                    <TooltipContent className="text-[10px]">
-                      {link.variant_name || 'Variação'}
-                    </TooltipContent>
+                    <TooltipContent>{link.variant_name || 'Variação'}</TooltipContent>
                   </Tooltip>
                 ))}
               </div>
@@ -187,7 +185,7 @@ export function VideoGrid({
                     <Type className="h-3 w-3" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="text-xs">Editar metadados</TooltipContent>
+                <TooltipContent>Editar metadados</TooltipContent>
               </Tooltip>
               {variants.length > 0 && (
                 <Tooltip>
@@ -206,7 +204,7 @@ export function VideoGrid({
                       <Link2 className="h-3 w-3" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="text-xs">Vincular a variação</TooltipContent>
+                  <TooltipContent>Vincular a variação</TooltipContent>
                 </Tooltip>
               )}
               {!video.url_thumbnail && !video.source_youtube_id && (
@@ -215,7 +213,7 @@ export function VideoGrid({
                     <Button
                       type="button"
                       size="icon"
-                      aria-label="Carregando"
+                      aria-label={regeneratingId === video.id ? 'Gerando miniatura...' : 'Gerar miniatura'}
                       variant="ghost"
                       className="h-6 w-6 bg-foreground/50 text-primary-foreground hover:bg-warning"
                       disabled={regeneratingId === video.id}
@@ -231,7 +229,7 @@ export function VideoGrid({
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="text-xs">Gerar thumbnail</TooltipContent>
+                  <TooltipContent>Gerar thumbnail</TooltipContent>
                 </Tooltip>
               )}
               <Tooltip>
@@ -250,7 +248,7 @@ export function VideoGrid({
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent className="text-xs">Remover vídeo</TooltipContent>
+                <TooltipContent>Remover vídeo</TooltipContent>
               </Tooltip>
             </div>
 

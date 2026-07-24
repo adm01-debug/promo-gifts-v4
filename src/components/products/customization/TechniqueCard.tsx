@@ -1,14 +1,13 @@
 /**
  * TechniqueCard — Card de técnica de gravação
- * 
+ *
  * Mostra nome, grupo, dimensões efetivas, setup e info de cores.
  * Baseado no briefing v6 (12/02/2026).
  */
 
-import { Check, Maximize2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import type { TechniqueOption } from "@/types/customization";
+import { Check, Maximize2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { TechniqueOption } from '@/types/customization';
 
 interface TechniqueCardProps {
   technique: TechniqueOption;
@@ -16,23 +15,25 @@ interface TechniqueCardProps {
   onSelect: (technique: TechniqueOption) => void;
 }
 
-const GROUP_COLORS: Record<string, string> = {
-  LASER: "bg-info/10 text-info border-info/20",
-  SERIGRAFIA: "bg-success/10 text-success border-success/20",
-  UV_DIGITAL: "bg-primary/10 text-primary border-primary/20",
-  SUBLIMACAO: "bg-orange/10 text-orange border-orange/20",
-  BORDADO: "bg-destructive/10 text-destructive border-destructive/20",
-  TAMPOGRAFIA: "bg-success/10 text-success border-success/20",
-  TRANSFER: "bg-warning/10 text-warning border-warning/20",
-  HOT_STAMPING: "bg-warning/10 text-warning border-warning/20",
+const GROUP_ACCENT: Record<string, string> = {
+  LASER: 'before:bg-info',
+  SERIGRAFIA: 'before:bg-success',
+  UV_DIGITAL: 'before:bg-primary',
+  SUBLIMACAO: 'before:bg-brand-primary',
+  BORDADO: 'before:bg-destructive',
+  TAMPOGRAFIA: 'before:bg-success',
+  TRANSFER: 'before:bg-warning',
+  HOT_STAMPING: 'before:bg-warning',
 };
 
-function getGroupColor(grupo: string): string {
-  return GROUP_COLORS[grupo] || "bg-muted text-muted-foreground border-border";
+function getGroupAccent(grupo: string): string {
+  return GROUP_ACCENT[grupo] || 'before:bg-border';
 }
 
 export function TechniqueCard({ technique, isSelected, onSelect }: TechniqueCardProps) {
-  const isDigitalTechnique = ['UV_DIGITAL', 'SUBLIMACAO', 'TRANSFER'].includes(technique.grupo_tecnica);
+  const isDigitalTechnique = ['UV_DIGITAL', 'SUBLIMACAO', 'TRANSFER'].includes(
+    technique.grupo_tecnica,
+  );
   const colorLabel = technique.cobra_por_cor
     ? `até ${technique.max_cores} cor${technique.max_cores !== 1 ? 'es' : ''}`
     : isDigitalTechnique
@@ -44,50 +45,55 @@ export function TechniqueCard({ technique, isSelected, onSelect }: TechniqueCard
       type="button"
       role="radio"
       aria-checked={isSelected}
-      aria-label={`${technique.tecnica_nome} — ${technique.grupo_tecnica}, ${colorLabel}, até ${technique.efetiva_largura_max} por ${technique.efetiva_altura_max} centímetros${isSelected ? " (selecionada)" : ""}`}
+      aria-label={`${technique.tecnica_nome} — ${technique.grupo_tecnica}, ${colorLabel}, até ${technique.efetiva_largura_max} por ${technique.efetiva_altura_max} centímetros${isSelected ? ' (selecionada)' : ''}`}
       className={cn(
-        "w-full p-3 rounded-lg flex items-start gap-3 transition-all duration-200 border text-left",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        'relative flex w-full items-center gap-3 overflow-hidden rounded-lg border px-3 py-2 text-left transition-all duration-150',
+        'before:absolute before:inset-y-0 before:left-0 before:w-[3px]',
+        getGroupAccent(technique.grupo_tecnica),
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         isSelected
-          ? "bg-primary/10 border-primary/60 ring-2 ring-primary/30 shadow-sm"
-          : "bg-secondary/50 border-border/50 hover:bg-secondary/80 hover:border-border",
+          ? 'border-primary/60 bg-primary/[0.06]'
+          : 'border-border/60 bg-card hover:border-border hover:bg-secondary/40',
       )}
       data-technique-id={technique.technique_id}
       data-testid={`customization-technique-card-${technique.technique_id}`}
       onClick={() => onSelect(technique)}
     >
-      {/* Radio */}
-      <div className={cn(
-        "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors mt-0.5 flex-shrink-0",
-        isSelected
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-muted-foreground/40"
-      )}>
-        {isSelected && <Check className="h-3 w-3" />}
+      <div
+        className={cn(
+          'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border transition-colors',
+          isSelected
+            ? 'border-primary bg-primary text-primary-foreground'
+            : 'border-muted-foreground/40',
+        )}
+        aria-hidden
+      >
+        {isSelected && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-sm text-foreground">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-1.5">
+          <span className="truncate text-[13px] font-medium text-foreground">
             {technique.tecnica_nome}
           </span>
-          <Badge variant="outline" className={cn("text-[10px] h-5 border", getGroupColor(technique.grupo_tecnica))}>
-            {technique.grupo_tecnica}
-          </Badge>
-        </div>
-
-        <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-          <span className="flex items-center gap-1">
-            <Maximize2 className="h-3 w-3" />
-            até {technique.efetiva_largura_max} × {technique.efetiva_altura_max} cm
+          <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/80">
+            · {technique.grupo_tecnica.replace('_', ' ')}
           </span>
+        </div>
+        <div className="mt-0.5 flex items-center gap-2 text-[11px] tabular-nums text-muted-foreground">
+          <Maximize2 className="h-2.5 w-2.5" aria-hidden />
+          <span>até {technique.efetiva_largura_max}×{technique.efetiva_altura_max}cm</span>
+          <span className="text-muted-foreground/40">·</span>
           <span>{colorLabel}</span>
           {technique.is_curved && (
-            <Badge variant="outline" className="text-[10px] h-4">curvo</Badge>
+            <>
+              <span className="text-muted-foreground/40">·</span>
+              <span>curvo</span>
+            </>
           )}
         </div>
       </div>
     </button>
   );
 }
+

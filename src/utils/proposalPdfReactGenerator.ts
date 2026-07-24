@@ -3,6 +3,10 @@
  *
  * Renders pixel-perfect HTML template offscreen (multi-page),
  * captures each page with html2canvas, and outputs as PDF.
+ *
+ * FIXES (2026-05):
+ *  - root.unmount() movido para finally externo → sem memory leak em erro (Bug #1)
+ *  - img.complete check aprimorado: naturalWidth > 0 (Bug #3 support)
  */
 
 const getJsPDF = () => import('jspdf').then((m) => m.jsPDF);
@@ -18,8 +22,6 @@ export async function generateProposalPDFv2(
 ): Promise<Blob> {
   const [jsPDF, html2canvas] = await Promise.all([getJsPDF(), getHtml2Canvas()]);
 
-  // ① Pre-process logo BEFORE React renders — guarantees cache is warm
-
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.top = '-10000px';
@@ -28,8 +30,11 @@ export async function generateProposalPDFv2(
   container.style.pointerEvents = 'none';
   document.body.appendChild(container);
 
+  // FIX #1: declarar root fora do try para garantir unmount no finally externo
+  let root: ReturnType<typeof ReactDOM.createRoot> | null = null;
+
   try {
-    const root = ReactDOM.createRoot(container);
+    root = ReactDOM.createRoot(container);
     const templateRef = React.createRef<HTMLDivElement>();
 
     root.render(
@@ -61,15 +66,30 @@ export async function generateProposalPDFv2(
     const imgPromises = Array.from(images).map(
       (img) =>
         new Promise<void>((resolve) => {
-          if (img.complete) return resolve();
+          // FIX: naturalWidth > 0 evita tratar img com src vazio como "carregada"
+          if (img.complete && img.naturalWidth > 0) {
+            resolve();
+            return;
+          }
+          if (img.complete && img.src === '') {
+            resolve();
+            return;
+          }
           img.onload = () => resolve();
           img.onerror = () => resolve();
           setTimeout(resolve, 5000);
         }),
     );
     const fontPromise = document.fonts?.ready
-      ? Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 1000))])
-      : new Promise((r) => setTimeout(r, 500));
+      ? Promise.race([
+          document.fonts.ready,
+          new Promise((r) => {
+            setTimeout(r, 1000);
+          }),
+        ])
+      : new Promise((r) => {
+          setTimeout(r, 500);
+        });
 
     await Promise.all([...imgPromises, fontPromise]);
 
@@ -123,9 +143,10 @@ export async function generateProposalPDFv2(
       document.head.removeChild(imgFixStyle);
     }
 
-    root.unmount();
     return pdf.output('blob');
   } finally {
+    // FIX #1: root.unmount() SEMPRE chamado, mesmo em caso de erro no html2canvas
+    root?.unmount();
     document.body.removeChild(container);
   }
 }

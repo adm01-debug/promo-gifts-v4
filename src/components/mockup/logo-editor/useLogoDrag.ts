@@ -1,11 +1,11 @@
-import { useRef, useCallback } from "react";
-import { clamp } from "./logoTechniqueFilters";
+import { useRef, useCallback, useEffect } from 'react';
+import { clamp } from './logoTechniqueFilters';
 
 export function useLogoDrag(
   containerRef: React.RefObject<HTMLElement | null>,
   positionX: number,
   positionY: number,
-  onPositionChange: (x: number, y: number) => void
+  onPositionChange: (x: number, y: number) => void,
 ) {
   const draggingRef = useRef<{
     startClientX: number;
@@ -15,6 +15,13 @@ export function useLogoDrag(
   } | null>(null);
 
   const rafRef = useRef<number | null>(null);
+
+  // BUG-DRAG1 FIX: track the exact function references added to window so
+  // the unmount cleanup can remove them even if the callbacks were recreated.
+  const activeListenersRef = useRef<{
+    move: (e: PointerEvent) => void;
+    up: () => void;
+  } | null>(null);
 
   const handlePointerMove = useCallback(
     (e: PointerEvent) => {
@@ -35,14 +42,15 @@ export function useLogoDrag(
         onPositionChange(Math.round(clamp(nextX, 5, 95)), Math.round(clamp(nextY, 5, 95)));
       });
     },
-    [onPositionChange, containerRef]
+    [onPositionChange, containerRef],
   );
 
   const handlePointerUp = useCallback(() => {
     draggingRef.current = null;
+    activeListenersRef.current = null;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    window.removeEventListener("pointermove", handlePointerMove);
-    window.removeEventListener("pointerup", handlePointerUp);
+    window.removeEventListener('pointermove', handlePointerMove);
+    window.removeEventListener('pointerup', handlePointerUp);
   }, [handlePointerMove]);
 
   const handlePointerDown = useCallback(
@@ -57,11 +65,26 @@ export function useLogoDrag(
         startPosY: positionY,
       };
 
-      window.addEventListener("pointermove", handlePointerMove);
-      window.addEventListener("pointerup", handlePointerUp, { once: true });
+      activeListenersRef.current = { move: handlePointerMove, up: handlePointerUp };
+      window.addEventListener('pointermove', handlePointerMove);
+      window.addEventListener('pointerup', handlePointerUp, { once: true });
     },
-    [positionX, positionY, handlePointerMove, handlePointerUp]
+    [positionX, positionY, handlePointerMove, handlePointerUp],
   );
+
+  // BUG-DRAG1 FIX: clean up window listeners if component unmounts mid-drag
+  useEffect(() => {
+    return () => {
+      const listeners = activeListenersRef.current;
+      if (listeners) {
+        window.removeEventListener('pointermove', listeners.move);
+        window.removeEventListener('pointerup', listeners.up);
+      }
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      draggingRef.current = null;
+      activeListenersRef.current = null;
+    };
+  }, []);
 
   return { handlePointerDown };
 }

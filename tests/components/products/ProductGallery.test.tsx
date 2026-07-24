@@ -12,6 +12,9 @@ vi.mock("@/utils/colorSorting", () => ({
 
 vi.mock("@/utils/image-utils", () => ({
   getCdnUrl: vi.fn((url: string) => url),
+  getSrcSet: vi.fn(() => ''),
+  getImageSizes: vi.fn(() => ''),
+  getBlurhashDominantColor: vi.fn(() => null),
 }));
 
 describe("ProductGallery", () => {

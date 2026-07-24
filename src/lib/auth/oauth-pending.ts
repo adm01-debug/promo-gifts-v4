@@ -56,11 +56,7 @@ export function readOAuthPending(now: number = Date.now()): OAuthPendingState | 
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<OAuthPendingState>;
-    if (
-      !parsed ||
-      typeof parsed.provider !== 'string' ||
-      typeof parsed.startedAt !== 'number'
-    ) {
+    if (!parsed || typeof parsed.provider !== 'string' || typeof parsed.startedAt !== 'number') {
       clearOAuthPending();
       return null;
     }

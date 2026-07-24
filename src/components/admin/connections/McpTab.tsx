@@ -1,23 +1,29 @@
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Plug, Copy, Trash2, Plus, Github, ShieldAlert } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Plug, Copy, Trash2, Plus, Plug2, ShieldAlert } from 'lucide-react';
+import { supabase, SUPABASE_URL } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger,
-} from "@/components/ui/dialog";
-import { ConnectionTestHistoryPanel } from "./ConnectionTestHistoryPanel";
-import { SecretField } from "./SecretField";
-import { useSecretsManager } from "@/hooks/admin";
-import { GitHubCredentialsTester } from "./GitHubCredentialsTester";
-import { IssueMcpKeyForm } from "./IssueMcpKeyForm";
-import { isFullAccess } from "@/lib/mcp/scopes";
-import { useDevChallenge } from "@/contexts/DevChallengeContext";
-import { sanitizeError } from "@/lib/security/sanitize-error";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { ConnectionTestHistoryPanel } from './ConnectionTestHistoryPanel';
+import { SecretField } from './SecretField';
+import { useSecretsManager } from '@/hooks/admin';
+import { GitHubCredentialsTester } from './GitHubCredentialsTester';
+import { IssueMcpKeyForm } from './IssueMcpKeyForm';
+import { isFullAccess } from '@/lib/mcp/scopes';
+import { useDevChallenge } from '@/contexts/DevChallengeContext';
+import { sanitizeError } from '@/lib/security/sanitize-error';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 
 interface McpKey {
   id: string;
@@ -30,15 +36,15 @@ interface McpKey {
   created_at: string;
 }
 
-const MCP_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mcp-server`;
+const MCP_URL = `${SUPABASE_URL}/functions/v1/mcp-server`;
 
 function formatExpiresIn(expiresAt: string | null): string | null {
   if (!expiresAt) return null;
   const ms = new Date(expiresAt).getTime() - Date.now();
-  if (ms <= 0) return "expirada";
+  if (ms <= 0) return 'expirada';
   const days = Math.floor(ms / (24 * 60 * 60 * 1000));
-  if (days === 0) return "expira hoje";
-  if (days === 1) return "expira em 1d";
+  if (days === 0) return 'expira hoje';
+  if (days === 1) return 'expira em 1d';
   return `expira em ${days}d`;
 }
 
@@ -51,37 +57,52 @@ export function McpTab() {
 
   const getSecret = (n: string) => secrets.find((s) => s.name === n);
 
-  useEffect(() => { list(); }, [list]);
+  useEffect(() => {
+    list();
+  }, [list]);
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("mcp_api_keys")
-      .select("*").order("created_at", { ascending: false });
-    if (error) toast.error("Erro ao carregar chaves", { description: error.message });
+    const { data, error } = await supabase
+      .from('mcp_api_keys')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error)
+      toast.error('Erro ao carregar chaves', {
+        description: 'Não foi possível carregar as chaves MCP.',
+      });
     else setKeys((data ?? []) as McpKey[]);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const revoke = async (id: string) => {
     // Step-up obrigatório: senha + OTP recentes antes de revogar.
     const token = await challenge({
-      action: "mcp_key_revoke",
-      actionLabel: "Revogar chave MCP",
+      action: 'mcp_key_revoke',
+      actionLabel: 'Revogar chave MCP',
       targetRef: id,
     });
     if (!token) return; // cancelado pelo usuário
 
-    const { data, error } = await supabase.functions.invoke("mcp-keys-revoke", {
+    const { data, error } = await invokeEdge('mcp-keys-revoke', {
       body: { key_id: id, step_up_token: token },
     });
     if (error || (data && (data as { error?: string }).error)) {
-      toast.error("Erro ao revogar", { description: sanitizeError(error ?? data) });
-    } else { toast.success("Chave revogada"); load(); }
+      toast.error('Erro ao revogar', { description: sanitizeError(error ?? data) });
+    } else {
+      toast.success('Chave revogada');
+      load();
+    }
   };
 
-  const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copiado!"); };
+  const copy = (s: string) => {
+    navigator.clipboard.writeText(s);
+    toast.success('Copiado!');
+  };
 
   return (
     <div className="space-y-4">
@@ -92,20 +113,22 @@ export function McpTab() {
             <CardTitle>Servidor MCP</CardTitle>
           </div>
           <CardDescription>
-            Endpoint público compatível com o Model Context Protocol (Claude Desktop, outros projetos Lovable).
+            Endpoint público compatível com o Model Context Protocol (Claude Desktop, outros
+            projetos Lovable).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <Label className="text-xs text-muted-foreground">Endpoint</Label>
-            <div className="flex gap-2 mt-1">
+            <div className="mt-1 flex gap-2">
               <Input value={MCP_URL} readOnly className="font-mono text-xs" />
               <Button size="sm" variant="outline" onClick={() => copy(MCP_URL)}>
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Autentique enviando o header <code className="bg-muted px-1 rounded">X-MCP-Key</code> com sua chave.
+            <p className="mt-1 text-xs text-muted-foreground">
+              Autentique enviando o header <code className="rounded bg-muted px-1">X-MCP-Key</code>{' '}
+              com sua chave.
             </p>
           </div>
           <ConnectionTestHistoryPanel type="mcp" label="Servidor MCP" />
@@ -115,23 +138,23 @@ export function McpTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Github className="h-5 w-5 text-primary" />
+            <Plug2 className="h-5 w-5 text-primary" />
             <CardTitle>GitHub — código-fonte do app</CardTitle>
           </div>
           <CardDescription>
-            Credenciais usadas pelas tools de código do MCP server
-            (<code className="bg-muted px-1 rounded text-xs">list_repo_files</code>,{" "}
-            <code className="bg-muted px-1 rounded text-xs">read_repo_file</code>,{" "}
-            <code className="bg-muted px-1 rounded text-xs">write_repo_file</code>).
-            Necessárias quando uma chave com escopo <code className="bg-muted px-1 rounded text-xs">*</code>{" "}
+            Credenciais usadas pelas tools de código do MCP server (
+            <code className="rounded bg-muted px-1 text-xs">list_repo_files</code>,{' '}
+            <code className="rounded bg-muted px-1 text-xs">read_repo_file</code>,{' '}
+            <code className="rounded bg-muted px-1 text-xs">write_repo_file</code>). Necessárias
+            quando uma chave com escopo <code className="rounded bg-muted px-1 text-xs">*</code>{' '}
             (full access) precisa editar o repositório.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 max-w-2xl">
+        <CardContent className="max-w-2xl space-y-4">
           <SecretField
             label="Personal Access Token"
             secretName="GITHUB_TOKEN"
-            status={getSecret("GITHUB_TOKEN")}
+            status={getSecret('GITHUB_TOKEN')}
             onSaved={list}
             connectionId="mcp"
             helperText="Fine-grained PAT com permissões: Contents (read & write), Metadata (read). Gere em github.com/settings/tokens?type=beta"
@@ -139,7 +162,7 @@ export function McpTab() {
           <SecretField
             label="Repositório (owner/repo)"
             secretName="GITHUB_REPO"
-            status={getSecret("GITHUB_REPO")}
+            status={getSecret('GITHUB_REPO')}
             onSaved={list}
             connectionId="mcp"
             helperText="Ex: minha-org/promo-gifts"
@@ -147,7 +170,7 @@ export function McpTab() {
           <SecretField
             label="Branch padrão para escrita"
             secretName="GITHUB_DEFAULT_BRANCH"
-            status={getSecret("GITHUB_DEFAULT_BRANCH")}
+            status={getSecret('GITHUB_DEFAULT_BRANCH')}
             onSaved={list}
             connectionId="mcp"
             helperText="Recomendado: mcp-edits/main (evita commits diretos em main). Aceita qualquer branch existente."
@@ -162,19 +185,25 @@ export function McpTab() {
             <CardTitle className="text-base">Chaves emitidas</CardTitle>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Nova chave</Button>
+                <Button size="sm">
+                  <Plus className="mr-1 h-4 w-4" /> Nova chave
+                </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Gerar nova chave MCP</DialogTitle>
                   <DialogDescription>
-                    A chave será exibida apenas uma vez. Geração e validação
-                    ocorrem 100% no servidor — apenas administradores podem
-                    emitir, e escopo <code className="font-mono">*</code> exige
-                    expiração + justificativa + confirmação.
+                    A chave será exibida apenas uma vez. Geração e validação ocorrem 100% no
+                    servidor — apenas administradores podem emitir, e escopo{' '}
+                    <code className="font-mono">*</code> exige expiração + justificativa +
+                    confirmação.
                   </DialogDescription>
                 </DialogHeader>
-                <IssueMcpKeyForm onIssued={() => { load(); }} />
+                <IssueMcpKeyForm
+                  onIssued={() => {
+                    load();
+                  }}
+                />
               </DialogContent>
             </Dialog>
           </div>
@@ -189,34 +218,38 @@ export function McpTab() {
               {keys.map((k) => {
                 const full = isFullAccess(k.scopes);
                 const expiresLabel = formatExpiresIn(k.expires_at);
-                const expired = expiresLabel === "expirada";
+                const expired = expiresLabel === 'expirada';
                 return (
-                  <div key={k.id} className="flex items-center justify-between p-3 border border-border rounded-md">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
+                  <div
+                    key={k.id}
+                    className="flex items-center justify-between rounded-md border border-border p-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">{k.name}</span>
                         <code className="text-xs text-muted-foreground">{k.key_prefix}…</code>
                         {full && (
-                          <Badge variant="destructive" className="text-xs gap-1">
+                          <Badge variant="destructive" className="gap-1 text-xs">
                             <ShieldAlert className="h-3 w-3" /> FULL
                           </Badge>
                         )}
-                        {k.revoked_at && <Badge variant="destructive" className="text-xs">Revogada</Badge>}
+                        {k.revoked_at && (
+                          <Badge variant="destructive" className="text-xs">
+                            Revogada
+                          </Badge>
+                        )}
                         {expiresLabel && !k.revoked_at && (
-                          <Badge
-                            variant={expired ? "destructive" : "outline"}
-                            className="text-xs"
-                          >
+                          <Badge variant={expired ? 'destructive' : 'outline'} className="text-xs">
                             {expiresLabel}
                           </Badge>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-1 mt-1">
+                      <div className="mt-1 flex flex-wrap gap-1">
                         {k.scopes.map((s) => (
                           <Badge
                             key={s}
-                            variant={s === "*" ? "destructive" : "secondary"}
-                            className="text-xs font-mono"
+                            variant={s === '*' ? 'destructive' : 'secondary'}
+                            className="font-mono text-xs"
                           >
                             {s}
                           </Badge>
@@ -224,7 +257,12 @@ export function McpTab() {
                       </div>
                     </div>
                     {!k.revoked_at && (
-                      <Button size="sm" variant="ghost" onClick={() => revoke(k.id)} aria-label="Revogar chave">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => revoke(k.id)}
+                        aria-label="Revogar chave"
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}

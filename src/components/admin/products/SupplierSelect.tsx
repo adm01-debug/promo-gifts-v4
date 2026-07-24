@@ -21,13 +21,10 @@ export function SupplierSelect({ value, onChange, error }: SupplierSelectProps) 
   const filtered = useMemo(() => {
     if (!search) return suppliers;
     const q = search.toLowerCase();
-    return suppliers.filter(s => s.name.toLowerCase().includes(q));
+    return suppliers.filter((s) => s.name.toLowerCase().includes(q));
   }, [suppliers, search]);
 
-  const selected = useMemo(
-    () => suppliers.find(s => s.id === value),
-    [suppliers, value]
-  );
+  const selected = useMemo(() => suppliers.find((s) => s.id === value), [suppliers, value]);
 
   return (
     <div className="space-y-1">
@@ -40,7 +37,7 @@ export function SupplierSelect({ value, onChange, error }: SupplierSelectProps) 
             className={cn(
               'w-full justify-between font-normal',
               !value && 'text-muted-foreground',
-              error && 'border-destructive'
+              error && 'border-destructive',
             )}
           >
             <span className="flex items-center gap-2 truncate">
@@ -61,11 +58,11 @@ export function SupplierSelect({ value, onChange, error }: SupplierSelectProps) 
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[350px] p-0" align="start">
-          <div className="p-2 border-b">
+          <div className="border-b p-2">
             <Input
               placeholder="Buscar fornecedor..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="h-8"
               autoFocus
             />
@@ -73,17 +70,19 @@ export function SupplierSelect({ value, onChange, error }: SupplierSelectProps) 
           <ScrollArea className="h-[240px]">
             <div className="p-1">
               {isLoading ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Carregando...</p>
+                <p className="py-4 text-center text-sm text-muted-foreground">Carregando...</p>
               ) : filtered.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Nenhum fornecedor encontrado</p>
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  Nenhum fornecedor encontrado
+                </p>
               ) : (
-                filtered.map(s => (
+                filtered.map((s) => (
                   <button
                     key={s.id}
                     type="button"
                     className={cn(
-                      'w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent text-left',
-                      value === s.id && 'bg-accent'
+                      'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent',
+                      value === s.id && 'bg-accent',
                     )}
                     onClick={() => {
                       onChange(s.id, s.name, s.defaultMarkupPercent);
@@ -91,7 +90,12 @@ export function SupplierSelect({ value, onChange, error }: SupplierSelectProps) 
                       setSearch('');
                     }}
                   >
-                    <Check className={cn('h-4 w-4 shrink-0', value === s.id ? 'opacity-100' : 'opacity-0')} />
+                    <Check
+                      className={cn(
+                        'h-4 w-4 shrink-0',
+                        value === s.id ? 'opacity-100' : 'opacity-0',
+                      )}
+                    />
                     <span className="truncate">{s.name}</span>
                   </button>
                 ))

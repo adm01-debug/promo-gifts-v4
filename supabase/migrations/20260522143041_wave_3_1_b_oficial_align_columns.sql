@@ -8,7 +8,9 @@ ALTER TABLE public.organizations
   ADD COLUMN IF NOT EXISTS settings jsonb DEFAULT '{}'::jsonb,
   ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now() NOT NULL;
 
-UPDATE public.organizations SET slug=lower(regexp_replace(name,'[^a-zA-Z0-9]+','-','g')) WHERE slug IS NULL;
+UPDATE public.organizations
+SET slug = lower(regexp_replace(name,'[^a-zA-Z0-9]+','-','g'))
+WHERE slug IS NULL OR btrim(slug) = '';
 ALTER TABLE public.organizations ALTER COLUMN slug SET NOT NULL;
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='organizations_slug_key' AND conrelid='public.organizations'::regclass) THEN

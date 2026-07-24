@@ -29,7 +29,7 @@ on:
 
 env:
   # Defina em Settings → Secrets and variables → Actions → Variables
-  # como SUPABASE_PROJECT_REF (ex.: pqpdolkaeqlyzpdpbizo).
+  # como SUPABASE_PROJECT_REF (ex.: doufsxqlfjyuvxuezpln).
   SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'doufsxqlfjyuvxuezpln' }}
 
 permissions:
@@ -43,7 +43,7 @@ jobs:
       functions: ${{ steps.detect.outputs.functions }}
       count: ${{ steps.detect.outputs.count }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Detect edge functions
         id: detect
@@ -95,7 +95,7 @@ jobs:
       matrix:
         fn: ${{ fromJSON(needs.list-functions.outputs.functions) }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2

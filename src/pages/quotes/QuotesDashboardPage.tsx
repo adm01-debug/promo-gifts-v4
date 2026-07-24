@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageSEO } from '@/components/seo/PageSEO';
+import { Clickable } from '@/components/shared/Clickable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,12 +52,25 @@ export default function QuotesDashboardPage() {
   const navigate = useNavigate();
   const s = useQuotesDashboard();
 
+  const recentClientResponses = useMemo(
+    () =>
+      s.quotes
+        .filter((q) => q.client_response_at)
+        .sort((a, b) => {
+          const bResponseAt = b.client_response_at ?? '';
+          const aResponseAt = a.client_response_at ?? '';
+          return new Date(bResponseAt).getTime() - new Date(aResponseAt).getTime();
+        })
+        .slice(0, 5),
+    [s.quotes],
+  );
+
   if (s.isLoading) {
     return (
       <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
         <Skeleton className="h-10 w-64" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+          {Array.from({ length: 4 }, (_, i) => (
             <Skeleton key={i} className="h-32" />
           ))}
         </div>
@@ -63,6 +78,17 @@ export default function QuotesDashboardPage() {
           <Skeleton className="h-80" />
           <Skeleton className="h-80" />
         </div>
+      </div>
+    );
+  }
+
+  if (s.error) {
+    return (
+      <div className="mx-auto w-full max-w-[1920px] px-3 py-12 text-center sm:px-4 lg:px-6">
+        <p className="text-sm text-destructive">{s.error}</p>
+        <Button variant="outline" className="mt-4" onClick={() => navigate('/orcamentos')}>
+          Voltar para orçamentos
+        </Button>
       </div>
     );
   }
@@ -337,55 +363,40 @@ export default function QuotesDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {s.quotes
-                .filter((q) => q.client_response_at)
-                .sort((a, b) => {
-                  const bResponseAt = b.client_response_at ?? '';
-                  const aResponseAt = a.client_response_at ?? '';
-                  return new Date(bResponseAt).getTime() - new Date(aResponseAt).getTime();
-                })
-                .slice(0, 5)
-                .map((quote) => (
-                  <div
-                    key={quote.id}
-                    className="flex cursor-pointer items-center justify-between rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/50"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => navigate(`/orcamentos/${quote.id}`)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        navigate(`/orcamentos/${quote.id}`);
-                      }
-                    }}
-                    aria-label={`Ver orçamento ${quote.quote_number}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      {quote.status === 'approved' ? (
-                        <CheckCircle className="h-5 w-5 text-success" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-destructive" />
-                      )}
-                      <div>
-                        <p className="font-medium text-foreground">{quote.quote_number}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {quote.client_response_at &&
-                            format(new Date(quote.client_response_at), "dd/MM/yyyy 'às' HH:mm", {
-                              locale: ptBR,
-                            })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant={quote.status === 'approved' ? 'default' : 'destructive'}>
-                        {statusConfig[quote.status]?.label || quote.status}
-                      </Badge>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {formatCurrency(quote.total || 0)}
+              {recentClientResponses.map((quote) => (
+                <Clickable
+                  key={quote.id}
+                  className="flex items-center justify-between rounded-lg bg-muted/30 p-3 transition-colors hover:bg-muted/50"
+                  onClick={() => navigate(`/orcamentos/${quote.id}`)}
+                  aria-label={`Ver orçamento ${quote.quote_number}`}
+                >
+
+                  <div className="flex items-center gap-3">
+                    {quote.status === 'approved' ? (
+                      <CheckCircle className="h-5 w-5 text-success" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-destructive" />
+                    )}
+                    <div>
+                      <p className="font-medium text-foreground">{quote.quote_number}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {quote.client_response_at &&
+                          format(new Date(quote.client_response_at), "dd/MM/yyyy 'às' HH:mm", {
+                            locale: ptBR,
+                          })}
                       </p>
                     </div>
                   </div>
-                ))}
+                  <div className="text-right">
+                    <Badge variant={quote.status === 'approved' ? 'default' : 'destructive'}>
+                      {statusConfig[quote.status]?.label || quote.status}
+                    </Badge>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {formatCurrency(quote.total || 0)}
+                    </p>
+                  </div>
+                </Clickable>
+              ))}
               {s.quotes.filter((q) => q.client_response_at).length === 0 && (
                 <div className="py-8 text-center text-muted-foreground">
                   Nenhuma resposta de cliente registrada ainda

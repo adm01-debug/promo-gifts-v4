@@ -3,13 +3,13 @@
  * Implementação leve in-house (sem react-joyride) com overlay + tooltip
  * ancorado em data-attrs (`data-tour="..."`). Persiste conclusão em localStorage.
  */
-import { useEffect, useState, useLayoutEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { X, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
-import { createPortal } from "react-dom";
+import { useEffect, useState, useLayoutEffect, useRef } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { X, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
-const STORAGE_KEY = "bi.tour.completed.v1";
+const STORAGE_KEY = 'bi.tour.completed.v1';
 
 interface Step {
   selector: string;
@@ -20,28 +20,31 @@ interface Step {
 const STEPS: Step[] = [
   {
     selector: '[data-tour="health-hero"]',
-    title: "Health Score",
-    description: "Diagnóstico 0-100 do cliente combinando recência, frequência, ticket, crescimento e share-of-wallet.",
+    title: 'Health Score',
+    description:
+      'Diagnóstico 0-100 do cliente combinando recência, frequência, ticket, crescimento e share-of-wallet.',
   },
   {
     selector: '[data-tour="churn-banner"]',
-    title: "Risco de churn",
-    description: "Aparece quando há sinais de perda. Sugere abordagem prioritária com canal e janela ideal.",
+    title: 'Risco de churn',
+    description:
+      'Aparece quando há sinais de perda. Sugere abordagem prioritária com canal e janela ideal.',
   },
   {
     selector: '[data-tour="orders-timeline"]',
-    title: "Linha do tempo",
-    description: "Pedidos recentes com sparkline, tendência e marcação de pedidos atípicos (±2σ).",
+    title: 'Linha do tempo',
+    description: 'Pedidos recentes com sparkline, tendência e marcação de pedidos atípicos (±2σ).',
   },
   {
     selector: '[data-tour="seasonality"]',
-    title: "Sazonalidade",
-    description: "Mês a mês × setor + projeção 6 meses. Identifica próxima janela ideal para abordagem.",
+    title: 'Sazonalidade',
+    description:
+      'Mês a mês × setor + projeção 6 meses. Identifica próxima janela ideal para abordagem.',
   },
   {
     selector: '[data-tour="copilot"]',
-    title: "Pergunte ao BI",
-    description: "Copilot conversacional. Pergunte em linguagem natural sobre o cliente.",
+    title: 'Pergunte ao BI',
+    description: 'Copilot conversacional. Pergunte em linguagem natural sobre o cliente.',
   },
 ];
 
@@ -64,7 +67,7 @@ export function BITourGuide({ force = false, onClose }: Props) {
       return;
     }
     try {
-      const done = localStorage.getItem(STORAGE_KEY) === "1";
+      const done = localStorage.getItem(STORAGE_KEY) === '1';
       if (!done) {
         // Pequeno delay para garantir mount dos targets
         const t = setTimeout(() => setActive(true), 800);
@@ -84,25 +87,25 @@ export function BITourGuide({ force = false, onClose }: Props) {
       if (el) {
         const r = el.getBoundingClientRect();
         setRect(r);
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       } else {
         setRect(null);
       }
     };
     updateRect();
     const t = setTimeout(updateRect, 350); // após scroll
-    window.addEventListener("resize", updateRect);
-    window.addEventListener("scroll", updateRect, true);
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('scroll', updateRect, true);
     return () => {
       clearTimeout(t);
-      window.removeEventListener("resize", updateRect);
-      window.removeEventListener("scroll", updateRect, true);
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect, true);
     };
   }, [active, currentStep, stepIdx]);
 
   const finish = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, "1");
+      localStorage.setItem(STORAGE_KEY, '1');
     } catch {
       // ignore
     }
@@ -122,10 +125,10 @@ export function BITourGuide({ force = false, onClose }: Props) {
   const tooltipStyle: React.CSSProperties = (() => {
     if (!rect) {
       return {
-        position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
         zIndex: 10000,
       };
     }
@@ -137,7 +140,7 @@ export function BITourGuide({ force = false, onClose }: Props) {
     let left = rect.left + rect.width / 2 - tooltipWidth / 2;
     left = Math.max(margin, Math.min(left, window.innerWidth - tooltipWidth - margin));
     return {
-      position: "fixed",
+      position: 'fixed',
       top: Math.max(margin, top),
       left,
       width: tooltipWidth,
@@ -148,16 +151,16 @@ export function BITourGuide({ force = false, onClose }: Props) {
   // Spotlight (recorte) via box-shadow gigante
   const spotlightStyle: React.CSSProperties | null = rect
     ? {
-        position: "fixed",
+        position: 'fixed',
         top: rect.top - 8,
         left: rect.left - 8,
         width: rect.width + 16,
         height: rect.height + 16,
         borderRadius: 12,
-        boxShadow: "0 0 0 9999px hsl(0 0% 0% / 0.65)",
-        pointerEvents: "none",
+        boxShadow: '0 0 0 9999px hsl(0 0% 0% / 0.65)',
+        pointerEvents: 'none',
         zIndex: 9999,
-        transition: "all 0.3s ease",
+        transition: 'all 0.3s ease',
       }
     : null;
 
@@ -168,44 +171,44 @@ export function BITourGuide({ force = false, onClose }: Props) {
         <div
           aria-hidden="true"
           style={{
-            position: "fixed",
+            position: 'fixed',
             inset: 0,
-            background: "hsl(0 0% 0% / 0.65)",
+            background: 'hsl(0 0% 0% / 0.65)',
             zIndex: 9999,
           }}
         />
       )}
       <div ref={tooltipRef} style={tooltipStyle}>
-        <Card className="p-4 border-2 border-primary/40 shadow-2xl">
-          <div className="flex items-start justify-between gap-2 mb-2">
+        <Card className="border-2 border-primary/40 p-4 shadow-2xl">
+          <div className="mb-2 flex items-start justify-between gap-2">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-primary/15 flex items-center justify-center">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
               </div>
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   Passo {stepIdx + 1} de {STEPS.length}
                 </div>
-                <h4 className="font-display font-semibold text-sm">{currentStep.title}</h4>
+                <h4 className="font-display text-sm font-semibold">{currentStep.title}</h4>
               </div>
             </div>
             <button
               onClick={finish}
               aria-label="Fechar tour"
-              className="h-7 w-7 rounded-md hover:bg-muted flex items-center justify-center text-muted-foreground"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+          <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
             {currentStep.description}
           </p>
-          <div className="flex gap-1 mb-3">
+          <div className="mb-3 flex gap-1">
             {STEPS.map((_, i) => (
               <div
                 key={i}
                 className={`h-1 flex-1 rounded-full transition-colors ${
-                  i === stepIdx ? "bg-primary" : i < stepIdx ? "bg-primary/40" : "bg-muted"
+                  i === stepIdx ? 'bg-primary' : i < stepIdx ? 'bg-primary/40' : 'bg-muted'
                 }`}
               />
             ))}
@@ -221,12 +224,12 @@ export function BITourGuide({ force = false, onClose }: Props) {
             </Button>
             <div className="flex gap-1">
               {stepIdx > 0 && (
-                <Button variant="outline" size="sm" onClick={prev} className="gap-1 h-8">
+                <Button variant="outline" size="sm" onClick={prev} className="h-8 gap-1">
                   <ChevronLeft className="h-3 w-3" /> Voltar
                 </Button>
               )}
-              <Button size="sm" onClick={next} className="gap-1 h-8">
-                {stepIdx === STEPS.length - 1 ? "Concluir" : "Próximo"}
+              <Button size="sm" onClick={next} className="h-8 gap-1">
+                {stepIdx === STEPS.length - 1 ? 'Concluir' : 'Próximo'}
                 {stepIdx < STEPS.length - 1 && <ChevronRight className="h-3 w-3" />}
               </Button>
             </div>

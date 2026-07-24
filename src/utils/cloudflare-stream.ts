@@ -1,5 +1,9 @@
 const CLOUDFLARE_STREAM_ID_REGEX = /(?:^|\/)([a-f0-9]{32})(?:[/?#]|$)/i;
 
+// Cloudflare Stream customer subdomain (accountHash, NOT accountId).
+// Must match the value used by the DB functions (fn_*_link_video) and the VPS importer.
+const CF_STREAM_SUBDOMAIN = 'customer-ksi0mrlcw6rwzezz.cloudflarestream.com';
+
 export function extractCloudflareStreamId(url: string | null | undefined): string | null {
   if (!url) return null;
 
@@ -12,10 +16,10 @@ export function extractCloudflareStreamId(url: string | null | undefined): strin
 
   try {
     const pathname = new URL(trimmed).pathname;
-    const match = pathname.match(CLOUDFLARE_STREAM_ID_REGEX);
+    const match = CLOUDFLARE_STREAM_ID_REGEX.exec(pathname);
     return match?.[1] ?? null;
   } catch {
-    const match = trimmed.match(CLOUDFLARE_STREAM_ID_REGEX);
+    const match = CLOUDFLARE_STREAM_ID_REGEX.exec(trimmed);
     return match?.[1] ?? null;
   }
 }
@@ -24,7 +28,7 @@ interface CloudflareThumbnailOptions {
   time?: string;
   height?: number;
   width?: number;
-  fit?: 'crop' | 'scale-down' | 'contain';
+  fit?: 'contain' | 'crop' | 'scale-down';
 }
 
 function appendThumbnailOptions(url: URL, options: CloudflareThumbnailOptions = {}) {
@@ -36,12 +40,14 @@ function appendThumbnailOptions(url: URL, options: CloudflareThumbnailOptions = 
 
 export function getCloudflareThumbnailUrl(
   url: string | null | undefined,
-  options: CloudflareThumbnailOptions = {}
+  options: CloudflareThumbnailOptions = {},
 ) {
   const streamId = extractCloudflareStreamId(url);
   if (!streamId) return null;
 
-  const thumbnailUrl = new URL(`https://videodelivery.net/${streamId}/thumbnails/thumbnail.jpg`);
+  const thumbnailUrl = new URL(
+    `https://${CF_STREAM_SUBDOMAIN}/${streamId}/thumbnails/thumbnail.jpg`,
+  );
   appendThumbnailOptions(thumbnailUrl, options);
 
   return thumbnailUrl.toString();
@@ -52,7 +58,10 @@ interface CloudflareEmbedOptions {
   poster?: string | null;
 }
 
-function normalizeCloudflarePoster(url: string | null | undefined, poster: string | null | undefined) {
+function normalizeCloudflarePoster(
+  url: string | null | undefined,
+  poster: string | null | undefined,
+) {
   const streamId = extractCloudflareStreamId(url);
   if (!streamId) return poster?.trim() || null;
 
@@ -67,12 +76,12 @@ function normalizeCloudflarePoster(url: string | null | undefined, poster: strin
 
 export function getCloudflareEmbedUrl(
   url: string | null | undefined,
-  options: CloudflareEmbedOptions = {}
+  options: CloudflareEmbedOptions = {},
 ) {
   const streamId = extractCloudflareStreamId(url);
   if (!streamId) return null;
 
-  const embedUrl = new URL(`https://iframe.videodelivery.net/${streamId}`);
+  const embedUrl = new URL(`https://iframe.cloudflarestream.com/${streamId}`);
 
   if (options.autoplay) {
     embedUrl.searchParams.set('autoplay', 'true');
@@ -84,4 +93,16 @@ export function getCloudflareEmbedUrl(
   }
 
   return embedUrl.toString();
+}
+
+export function getCloudflareHlsUrl(url: string | null | undefined) {
+  const streamId = extractCloudflareStreamId(url);
+  if (!streamId) return null;
+  return `https://${CF_STREAM_SUBDOMAIN}/${streamId}/manifest/video.m3u8`;
+}
+
+export function getCloudflareMp4Url(url: string | null | undefined) {
+  const streamId = extractCloudflareStreamId(url);
+  if (!streamId) return null;
+  return `https://${CF_STREAM_SUBDOMAIN}/${streamId}/downloads/default.mp4`;
 }

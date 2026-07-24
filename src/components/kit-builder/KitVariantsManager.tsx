@@ -18,7 +18,8 @@ interface Props {
 }
 
 export function KitVariantsManager({ kitMasterId, currentState, currentQuantity }: Props) {
-  const { variants, isLoading, createVariant, removeVariant, isCreating } = useKitVariants(kitMasterId);
+  const { variants, isLoading, createVariant, removeVariant, isCreating } =
+    useKitVariants(kitMasterId);
   const [label, setLabel] = useState('');
 
   if (!kitMasterId) {
@@ -33,17 +34,23 @@ export function KitVariantsManager({ kitMasterId, currentState, currentQuantity 
 
   const handleCreate = async () => {
     if (!label.trim()) return;
-    await createVariant({ label: label.trim(), kitState: currentState, kitQuantity: currentQuantity });
+    await createVariant({
+      label: label.trim(),
+      kitState: currentState,
+      kitQuantity: currentQuantity,
+    });
     setLabel('');
   };
 
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-sm">
           <Layers className="h-4 w-4 text-primary" />
           Variantes do Kit
-          <Badge variant="secondary" className="ml-auto">{variants.length}</Badge>
+          <Badge variant="secondary" className="ml-auto">
+            {variants.length}
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -53,26 +60,29 @@ export function KitVariantsManager({ kitMasterId, currentState, currentQuantity 
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Nome da variante (P, M, G, Premium...)"
             className="h-9"
-            onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreate();
+            }}
           />
           <Button size="sm" onClick={handleCreate} disabled={isCreating || !label.trim()}>
-            {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {isCreating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
         {isLoading && <p className="text-xs text-muted-foreground">Carregando…</p>}
 
         {variants.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {variants.map((v) => {
               const itemsCount = Array.isArray(v.items_data) ? v.items_data.length : 0;
               return (
-                <div
-                  key={v.id}
-                  className="border rounded-lg p-3 space-y-1 bg-muted/30"
-                >
+                <div key={v.id} className="space-y-1 rounded-lg border bg-muted/30 p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-sm">{v.label}</span>
+                    <span className="text-sm font-medium">{v.label}</span>
                     <Button
                       size="icon"
                       variant="ghost"
@@ -83,8 +93,12 @@ export function KitVariantsManager({ kitMasterId, currentState, currentQuantity 
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground">{itemsCount} {itemsCount === 1 ? 'item' : 'itens'} · qtd {v.kit_quantity}</p>
-                  <p className="text-sm font-semibold text-primary">{formatCurrency(Number(v.total_price))}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {itemsCount} {itemsCount === 1 ? 'item' : 'itens'} · qtd {v.kit_quantity}
+                  </p>
+                  <p className="text-sm font-semibold text-primary">
+                    {formatCurrency(Number(v.total_price))}
+                  </p>
                 </div>
               );
             })}

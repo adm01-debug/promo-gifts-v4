@@ -26,7 +26,7 @@ import { useInfiniteScroll } from './widget-filters/useInfiniteScroll';
 
 const PAGE_SIZE = 100;
 
-type Source = 'quote' | 'order';
+type Source = 'order' | 'quote';
 
 interface ClientRow {
   key: string;
@@ -101,9 +101,9 @@ function aggregate(
     else r.orders += 1;
     r.total += Number(row.total ?? 0);
     if (row.updated_at > r.lastInteraction) r.lastInteraction = row.updated_at;
-    r.email = r.email || row.client_email;
-    r.phone = r.phone || row.client_phone;
-    r.company = r.company || row.client_company;
+    r.email ||= row.client_email;
+    r.phone ||= row.client_phone;
+    r.company ||= row.client_company;
   };
   for (const q of quotes) upsert('quote', q);
   for (const o of orders) upsert('order', o);
@@ -151,14 +151,22 @@ export function MyClientsWidget() {
       const more = last.quotes.length >= PAGE_SIZE || last.orders.length >= PAGE_SIZE;
       if (!more) return undefined;
       // Cursor = o mais antigo entre os dois lotes para garantir cobertura.
-      const cursor = [lastQ, lastO].filter(Boolean).sort()[0];
+      const cursor = [lastQ, lastO]
+        .filter(Boolean)
+        .sort((a, b) => (a ?? '').localeCompare(b ?? ''))[0];
       return cursor ?? undefined;
     },
   });
 
   const clients = useMemo(() => {
-    const allQ = data?.pages.flatMap((p) => p.quotes) ?? [];
-    const allO = data?.pages.flatMap((p) => p.orders) ?? [];
+    const allQ = (data?.pages.flatMap((p) => p.quotes) ?? []).map((q) => ({
+      ...q,
+      updated_at: q.updated_at ?? '',
+    }));
+    const allO = (data?.pages.flatMap((p) => p.orders) ?? []).map((o) => ({
+      ...o,
+      updated_at: o.updated_at ?? '',
+    }));
     return aggregate(allQ, allO);
   }, [data]);
 
@@ -174,7 +182,7 @@ export function MyClientsWidget() {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const sentinelRef = useInfiniteScroll<HTMLDivElement>(handleLoadMore, {
+  const sentinelRef = useInfiniteScroll(handleLoadMore, {
     enabled: !!hasNextPage,
   });
 

@@ -1,6 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+/**
+ * OrganizationContext — SINGLE-TENANT (Promo Brindes).
+ *
+ * O sistema é de uso exclusivo da Promo Brindes. A camada multi-organização
+ * foi removida do front-end. Este contexto agora expõe sempre a organização
+ * fixa para manter compatibilidade com hooks (useCurrentOrgId, useOrgData,
+ * useQuotes etc.) sem quebrar consumidores existentes.
+ */
+import { createContext, useContext, type ReactNode } from 'react';
 
 export interface Organization {
   id: string;
@@ -18,160 +24,57 @@ export interface OrgMember {
   id: string;
   organization_id: string;
   user_id: string;
-  role: "owner" | "admin" | "member";
+  role: 'admin' | 'member' | 'owner';
   joined_at: string;
 }
 
 interface OrganizationContextType {
   organizations: Organization[];
   currentOrg: Organization | null;
-  currentRole: OrgMember["role"] | null;
+  currentRole: OrgMember['role'] | null;
   isLoading: boolean;
   switchOrganization: (orgId: string) => void;
   createOrganization: (name: string, slug: string) => Promise<Organization | null>;
   refetch: () => Promise<void>;
 }
 
-const OrganizationContext = createContext<OrganizationContextType | null>(null);
+// Organização fixa — corresponde ao ÚNICO registro real existente em `organizations`
+// (id canônico de produção; owner = admin; dona de todos os orçamentos).
+// IMPORTANTE: este id DEVE bater com organizations.id no banco; caso contrário a RLS
+// de `quotes` (user_is_org_member) bloqueia a criação de orçamentos.
+const FIXED_ORG: Organization = {
+  id: '5db5aee1-064b-4ef4-9193-345dcd8274ea', // allowed: canonical prod org (organizations.id)
+  name: 'Promo Brindes',
+  slug: 'promo-brindes',
+  logo_url: null,
+  description: null,
+  is_active: true,
+  settings: {},
+  created_at: '1970-01-01T00:00:00.000Z',
+  updated_at: '1970-01-01T00:00:00.000Z',
+};
 
-const ORG_STORAGE_KEY = "selected_org_id";
+const noop = () => {};
+const noopAsync = async () => {};
+
+const FIXED_VALUE: OrganizationContextType = {
+  organizations: [FIXED_ORG],
+  currentOrg: FIXED_ORG,
+  currentRole: 'owner',
+  isLoading: false,
+  switchOrganization: noop,
+  createOrganization: () => Promise.resolve(FIXED_ORG),
+  refetch: noopAsync,
+};
+
+const OrganizationContext = createContext<OrganizationContextType>(FIXED_VALUE);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
-  const [currentRole, setCurrentRole] = useState<OrgMember["role"] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchOrganizations = useCallback(async () => {
-    if (!user) {
-      setOrganizations([]);
-      setCurrentOrg(null);
-      setCurrentRole(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Fetch orgs via members join
-      const { data: members, error: membersError } = await supabase
-        .from("organization_members")
-        .select("organization_id, role")
-        .eq("user_id", user.id);
-
-      if (membersError) throw membersError;
-
-      if (!members || members.length === 0) {
-        setOrganizations([]);
-        setCurrentOrg(null);
-        setCurrentRole(null);
-        setIsLoading(false);
-        return;
-      }
-
-      const orgIds = members.map((m) => m.organization_id);
-
-      const { data: orgs, error: orgsError } = await supabase
-        .from("organizations")
-        .select("*")
-        .in("id", orgIds)
-        .eq("is_active", true);
-
-      if (orgsError) throw orgsError;
-
-      const orgList = (orgs || []) as Organization[];
-      setOrganizations(orgList);
-
-      // Restore saved org or pick first
-      const savedOrgId = localStorage.getItem(ORG_STORAGE_KEY);
-      const savedOrg = orgList.find((o) => o.id === savedOrgId);
-      const selected = savedOrg || orgList[0] || null;
-
-      setCurrentOrg(selected);
-
-      if (selected) {
-        const membership = members.find((m) => m.organization_id === selected.id);
-        setCurrentRole((membership?.role as OrgMember["role"]) || null);
-        localStorage.setItem(ORG_STORAGE_KEY, selected.id);
-      }
-    } catch (err) {
-      console.error("Failed to fetch organizations:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchOrganizations();
-  }, [fetchOrganizations]);
-
-  const switchOrganization = useCallback(
-    (orgId: string) => {
-      const org = organizations.find((o) => o.id === orgId);
-      if (org) {
-        setCurrentOrg(org);
-        localStorage.setItem(ORG_STORAGE_KEY, orgId);
-        // Update role
-        supabase
-          .from("organization_members")
-          .select("role")
-          .eq("organization_id", orgId)
-          .eq("user_id", user?.id ?? "")
-          .single()
-          .then(({ data }) => {
-            setCurrentRole((data?.role as OrgMember["role"]) || null);
-          });
-      }
-    },
-    [organizations, user]
-  );
-
-  const createOrganization = useCallback(
-    async (name: string, slug: string): Promise<Organization | null> => {
-      if (!user) return null;
-
-      // Use atomic RPC to create org + add owner in a single transaction
-      const { data: orgId, error } = await supabase.rpc(
-        "create_organization_with_owner",
-        { _name: name, _slug: slug }
-      );
-
-      if (error) {
-        console.error("Failed to create organization:", error);
-        return null;
-      }
-
-      await fetchOrganizations();
-      switchOrganization(orgId);
-
-      // Return the org from the freshly fetched list
-      return organizations.find((o) => o.id === orgId) || ({ id: orgId, name, slug } as Organization);
-    },
-    [user, fetchOrganizations, switchOrganization, organizations]
-  );
-
   return (
-    <OrganizationContext.Provider
-      value={{
-        organizations,
-        currentOrg,
-        currentRole,
-        isLoading,
-        switchOrganization,
-        createOrganization,
-        refetch: fetchOrganizations,
-      }}
-    >
-      {children}
-    </OrganizationContext.Provider>
+    <OrganizationContext.Provider value={FIXED_VALUE}>{children}</OrganizationContext.Provider>
   );
 }
 
 export function useOrganization() {
-  const ctx = useContext(OrganizationContext);
-  if (!ctx) {
-    throw new Error("useOrganization must be used within OrganizationProvider");
-  }
-  return ctx;
+  return useContext(OrganizationContext);
 }

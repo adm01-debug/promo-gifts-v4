@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Domain Selectors: Personalização
  *
  * Funções puras para seleção e filtragem de dados.
@@ -35,9 +35,7 @@ export function selectBestTable(
   // Filtrar por nome da técnica
   if (criteria.techniqueName) {
     const techniqueName = criteria.techniqueName.toLowerCase();
-    const byName = candidates.filter((t) =>
-      t.techniqueName.toLowerCase().includes(techniqueName),
-    );
+    const byName = candidates.filter((t) => t.techniqueName.toLowerCase().includes(techniqueName));
     if (byName.length > 0) candidates = byName;
   }
 

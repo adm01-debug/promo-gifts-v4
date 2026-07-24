@@ -2,15 +2,15 @@
  * UnmetDemandCard — Demanda Reprimida.
  * Top termos buscados que retornaram 0 resultados = oportunidades perdidas.
  */
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle, Search, Plus } from "lucide-react";
-import { subDays } from "date-fns";
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, Search, Plus } from 'lucide-react';
+import { subDays } from 'date-fns';
 
 interface UnmetDemandItem {
   term: string;
@@ -27,27 +27,30 @@ export function UnmetDemandCard({ days }: UnmetDemandCardProps) {
   const since = subDays(new Date(), days).toISOString();
 
   const { data, isLoading } = useQuery({
-    queryKey: ["unmet-demand", days],
+    queryKey: ['unmet-demand', days],
     queryFn: async (): Promise<UnmetDemandItem[]> => {
-      const { isDemoMode, MOCK_UNMET_DEMAND } = await import("@/pages/trends/trends-mock");
+      const { isDemoMode, MOCK_UNMET_DEMAND } = await import('@/pages/trends/trends-mock');
       if (isDemoMode()) {
         const now = new Date().toISOString();
-        return MOCK_UNMET_DEMAND.map(d => ({
-          term: d.term, searchCount: d.count, lastSearchedAt: now,
+        return MOCK_UNMET_DEMAND.map((d) => ({
+          term: d.term,
+          searchCount: d.count,
+          lastSearchedAt: now,
         }));
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: rows, error } = await (supabase.from as any)("search_analytics")
-        .select("search_term, created_at")
-        .eq("results_count", 0)
-        .gte("created_at", since)
-        .order("created_at", { ascending: false })
+      const { data: rows, error } = await supabase
+        .from('search_analytics')
+        .select('search_term, created_at')
+        .eq('results_count', 0)
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
         .limit(500);
       if (error) throw error;
 
       const map = new Map<string, { count: number; last: string }>();
-      (rows ?? []).forEach((r: { search_term: string; created_at: string }) => {
-        const key = r.search_term.trim().toLowerCase();
+      (rows ?? []).forEach((r) => {
+        const raw = typeof r.search_term === 'string' ? r.search_term : '';
+        const key = raw.trim().toLowerCase();
         if (!key) return;
         const existing = map.get(key) ?? { count: 0, last: r.created_at };
         existing.count += 1;
@@ -67,21 +70,21 @@ export function UnmetDemandCard({ days }: UnmetDemandCardProps) {
 
   return (
     <Card className="overflow-hidden border-warning/30">
-      <CardHeader className="pb-3 bg-warning/5">
+      <CardHeader className="bg-warning/5 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <CardTitle className="text-base flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-warning/20 flex items-center justify-center">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-warning/20">
                 <AlertTriangle className="h-3.5 w-3.5 text-warning" />
               </div>
               Demanda Reprimida
             </CardTitle>
-            <CardDescription className="text-xs mt-0.5">
+            <CardDescription className="mt-0.5 text-xs">
               Buscas sem resultado · oportunidades perdidas em {days} dias
             </CardDescription>
           </div>
           {totalLostSearches > 0 && (
-            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
+            <Badge variant="outline" className="border-warning/30 bg-warning/10 text-warning">
               {totalLostSearches} buscas perdidas
             </Badge>
           )}
@@ -89,27 +92,29 @@ export function UnmetDemandCard({ days }: UnmetDemandCardProps) {
       </CardHeader>
       <CardContent className="p-0">
         {isLoading ? (
-          <div className="p-3 space-y-2">
-            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
+          <div className="space-y-2 p-3">
+            {Array.from({ length: 5 }, (_, i) => (
+              <Skeleton key={i} className="h-12 rounded-lg" />
+            ))}
           </div>
         ) : !data?.length ? (
           <div className="flex flex-col items-center py-10 text-muted-foreground">
-            <Search className="h-8 w-8 mb-2 opacity-30" />
+            <Search className="mb-2 h-8 w-8 opacity-30" />
             <p className="text-xs">Nenhuma busca sem resultado registrada 🎉</p>
-            <p className="text-[10px] mt-1 opacity-70">Seu catálogo está cobrindo a demanda</p>
+            <p className="mt-1 text-[10px] opacity-70">Seu catálogo está cobrindo a demanda</p>
           </div>
         ) : (
           <div className="divide-y divide-border">
             {data.map((item, index) => (
               <div
                 key={item.term}
-                className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/30 transition-colors"
+                className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/30"
               >
-                <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-warning/15 text-warning shrink-0">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-warning/15 text-[10px] font-bold text-warning">
                   {index + 1}
                 </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">"{item.term}"</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">"{item.term}"</p>
                   <p className="text-[10px] text-muted-foreground">
                     {item.searchCount} buscas · sem produtos cadastrados
                   </p>
@@ -117,7 +122,7 @@ export function UnmetDemandCard({ days }: UnmetDemandCardProps) {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 text-[10px] gap-1 shrink-0"
+                  className="h-7 shrink-0 gap-1 text-[10px]"
                   onClick={() => navigate(`/catalogo?busca=${encodeURIComponent(item.term)}`)}
                   aria-label={`Pesquisar ${item.term} no catálogo`}
                 >

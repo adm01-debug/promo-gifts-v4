@@ -1,9 +1,12 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 import type { UseFormGetValues, UseFormSetValue } from 'react-hook-form';
 import type { ProductFormData } from '@/components/admin/products/ProductFormSchema';
 
+import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface SeoAIResult {
   meta_title: string;
   meta_description: string;
@@ -14,7 +17,12 @@ interface SeoAIResult {
 }
 
 const SEO_FIELDS: (keyof SeoAIResult)[] = [
-  'meta_title', 'meta_description', 'meta_keywords', 'slug', 'key_benefits', 'use_cases',
+  'meta_title',
+  'meta_description',
+  'meta_keywords',
+  'slug',
+  'key_benefits',
+  'use_cases',
 ];
 
 export function useProductSeoAI(
@@ -42,7 +50,7 @@ export function useProductSeoAI(
         sale_price: getValues('sale_price'),
       };
 
-      const { data, error } = await supabase.functions.invoke('generate-product-seo', {
+      const { data, error } = await invokeEdge<Partial<SeoAIResult> & { error?: string; slug?: string }>('generate-product-seo', {
         body: { product },
       });
 
@@ -50,20 +58,21 @@ export function useProductSeoAI(
       if (data?.error) throw new Error(data.error);
 
       for (const field of SEO_FIELDS) {
-        if (data[field]) {
-          setValue(field, data[field], { shouldDirty: true });
+        const value = data?.[field];
+        if (value !== undefined && value !== null) {
+          setValue(field, value, { shouldDirty: true });
         }
       }
 
       // Generate canonical_url from slug
-      if (data.slug) {
+      if (data?.slug) {
         setValue('canonical_url', `/produto/${data.slug}`, { shouldDirty: true });
       }
 
       toast.success('Campos SEO e marketing preenchidos com IA!');
     } catch (err) {
-      console.error('SEO AI error:', err);
-      toast.error(err instanceof Error ? err.message : 'Erro ao gerar conteúdo com IA');
+      logger.error('SEO AI error:', err);
+      toast.error('Erro ao gerar conteúdo com IA', { description: sanitizeError(err) });
     } finally {
       setIsGenerating(false);
     }

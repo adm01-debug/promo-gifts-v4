@@ -323,8 +323,9 @@ Deno.serve(async (req) => {
           { onConflict: "secret_name" },
         );
       if (upsertErr) {
+        console.error("secrets-manager upsert error:", upsertErr.message);
         return new Response(
-          JSON.stringify({ ok: false, error: { code: "db_error", message: upsertErr.message } }),
+          JSON.stringify({ ok: false, error: { code: "db_error", message: "Falha ao gravar o segredo" } }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }

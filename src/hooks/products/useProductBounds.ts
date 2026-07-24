@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { detectProductBounds, type ProductBounds } from "@/lib/product-bounds-detector";
+import { useState, useEffect } from 'react';
+import { detectProductBounds, type ProductBounds } from '@/lib/product-bounds-detector';
 
 const DEFAULT: ProductBounds = {
   fractionX: 0.85,
@@ -23,11 +23,11 @@ type ProductBoundsDetectOptions = {
  */
 export function useProductBounds(
   imageUrl: string | null | undefined,
-  options?: ProductBoundsDetectOptions
+  options?: ProductBoundsDetectOptions,
 ): ProductBounds {
   const [bounds, setBounds] = useState<ProductBounds>(DEFAULT);
 
-  const optionsKey = `${options?.whiteThreshold ?? ""}|${options?.alphaThreshold ?? ""}|${options?.margin ?? ""}|${options?.maxSize ?? ""}`;
+  const optionsKey = `${options?.whiteThreshold ?? ''}|${options?.alphaThreshold ?? ''}|${options?.margin ?? ''}|${options?.maxSize ?? ''}`;
 
   useEffect(() => {
     if (!imageUrl) {
@@ -44,8 +44,8 @@ export function useProductBounds(
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageUrl, optionsKey]);
 
   return bounds;
 }
-

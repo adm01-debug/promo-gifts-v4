@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getCdnUrl,
   getSrcSet,
+  isImageDeliveryUrl,
   getImageSizes,
   getCardImage,
   getHeroImage,
@@ -11,7 +12,6 @@ import {
   getColorThumbnail,
   categorizeImages,
   type ProductImageMeta,
-  type CdnVariant,
 } from '@/utils/image-utils';
 
 // Helper to create test image
@@ -19,7 +19,6 @@ const makeImage = (overrides: Partial<ProductImageMeta> = {}): ProductImageMeta 
   id: 'img-1',
   url_cdn: 'https://imagedelivery.net/abc/img1/public',
   url_original: null,
-  filename: 'test.jpg',
   image_type: 'main',
   is_primary: false,
   is_og_image: false,
@@ -49,10 +48,9 @@ describe('image-utils', () => {
       expect(getCdnUrl(url)).toBe(url);
     });
 
-    it('proxia URLs não-Cloudflare via image-proxy', () => {
+    it('retorna URL original para domínios não-Cloudflare', () => {
       const url = 'https://www.spotgifts.com.br/foto.jpg';
-      const result = getCdnUrl(url);
-      expect(result).toContain('image-proxy');
+      expect(getCdnUrl(url)).toBe(url);
     });
 
     it('retorna URL original para domínios desconhecidos', () => {
@@ -63,31 +61,58 @@ describe('image-utils', () => {
 
   describe('getSrcSet', () => {
     it('retorna vazio para URL vazia', () => {
-      expect(getSrcSet('')).toBe('');
+      expect(getSrcSet('')).toBeUndefined();
     });
 
     it('gera srcSet com todas as variantes', () => {
       const srcSet = getSrcSet('https://imagedelivery.net/abc/img1/public');
       expect(srcSet).toContain('thumbnail 150w');
-      expect(srcSet).toContain('small 300w');
+      expect(srcSet).toContain('small 400w');
       expect(srcSet).toContain('card 480w');
-      expect(srcSet).toContain('medium 720w');
-      expect(srcSet).toContain('large 1000w');
+      expect(srcSet).toContain('medium 800w');
+      expect(srcSet).toContain('large 1200w');
+    });
+  });
+
+  describe('isImageDeliveryUrl — validação de host (anti substring-bypass)', () => {
+    it('aceita o host canônico e subdomínios', () => {
+      expect(isImageDeliveryUrl('https://imagedelivery.net/abc/img/public')).toBe(true);
+      expect(isImageDeliveryUrl('https://cdn.imagedelivery.net/abc/img/public')).toBe(true);
+    });
+
+    it('rejeita hosts maliciosos que contêm a string mas não são o host', () => {
+      expect(isImageDeliveryUrl('https://evil.com/?x=imagedelivery.net')).toBe(false);
+      expect(isImageDeliveryUrl('https://imagedelivery.net.evil.com/img')).toBe(false);
+      expect(isImageDeliveryUrl('https://evil.com/imagedelivery.net/img')).toBe(false);
+    });
+
+    it('rejeita nulo, vazio e URLs malformadas', () => {
+      expect(isImageDeliveryUrl(null)).toBe(false);
+      expect(isImageDeliveryUrl(undefined)).toBe(false);
+      expect(isImageDeliveryUrl('')).toBe(false);
+      expect(isImageDeliveryUrl('/relativo/img.png')).toBe(false);
+      expect(isImageDeliveryUrl('não-é-url')).toBe(false);
+    });
+
+    it('getCdnUrl/getSrcSet ignoram URLs com host forjado', () => {
+      const forged = 'https://evil.com/imagedelivery.net/abc/img/public';
+      expect(getCdnUrl(forged)).toBe(forged); // não transforma
+      expect(getSrcSet(forged)).toBeUndefined();
     });
   });
 
   describe('getImageSizes', () => {
     it('retorna sizes correto para card', () => {
-      expect(getImageSizes('card')).toContain('400px');
+      expect(getImageSizes('card')).toContain('640px');
     });
     it('retorna sizes correto para gallery', () => {
-      expect(getImageSizes('gallery')).toContain('600px');
+      expect(getImageSizes('gallery')).toContain('768px');
     });
     it('retorna sizes correto para hero', () => {
-      expect(getImageSizes('hero')).toContain('1200px');
+      expect(getImageSizes('hero')).toContain('768px');
     });
     it('retorna sizes correto para thumb', () => {
-      expect(getImageSizes('thumb')).toBe('150px');
+      expect(getImageSizes('thumb')).toBe('80px');
     });
   });
 
@@ -158,22 +183,23 @@ describe('image-utils', () => {
   });
 
   describe('getColorImages', () => {
-    it('retorna imagens específicas da cor + genéricas', () => {
+    it('retorna hero genérico + imagens específicas da cor', () => {
       const images = [
-        makeImage({ id: '1', applies_to_color: true, supplier_code: '001' }),
-        makeImage({ id: '2', applies_to_color: true, supplier_code: '002' }),
-        makeImage({ id: '3', applies_to_color: false }),
-        makeImage({ id: '4', applies_to_color: null }),
+        makeImage({ id: '1', applies_to_color: true, supplier_code: '001', image_type: 'main' }),
+        makeImage({ id: '2', applies_to_color: true, supplier_code: '002', image_type: 'gallery' }),
+        makeImage({ id: '3', applies_to_color: false, image_type: 'main' }),
+        makeImage({ id: '4', applies_to_color: null, image_type: 'gallery' }),
       ];
       const result = getColorImages(images, '001');
-      expect(result.length).toBe(3); // 1 specific + 2 generic
-      expect(result[0].id).toBe('1'); // specific first
+      expect(result.length).toBe(2); // hero generic + 1 specific
+      expect(result[0].id).toBe('3'); // generic main hero first
+      expect(result[1].id).toBe('1'); // specific after
     });
 
-    it('retorna apenas genéricas se cor não encontrada', () => {
+    it('retorna apenas específicas se cor não encontrada', () => {
       const images = [
-        makeImage({ id: '1', applies_to_color: true, supplier_code: '001' }),
-        makeImage({ id: '2', applies_to_color: false }),
+        makeImage({ id: '1', applies_to_color: true, supplier_code: '001', image_type: 'gallery' }),
+        makeImage({ id: '2', applies_to_color: false, image_type: 'main' }),
       ];
       const result = getColorImages(images, '999');
       expect(result.length).toBe(1);

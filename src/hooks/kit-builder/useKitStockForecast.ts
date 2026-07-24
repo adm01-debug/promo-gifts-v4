@@ -2,8 +2,8 @@
  * useKitStockForecast — calcula data ideal de fechamento do kit
  * com base nas previsões de reposição (variant_supplier_sources) dos itens.
  */
+import { dbInvoke } from '@/lib/db/postgrest';
 import { useQuery } from '@tanstack/react-query';
-import { invokeExternalDb } from '@/lib/external-db';
 import type { KitItem } from '@/lib/kit-builder';
 
 export interface KitStockForecast {
@@ -23,28 +23,39 @@ const BUFFER_DAYS = 3;
 
 export function useKitStockForecast(items: KitItem[], kitQuantity: number) {
   return useQuery({
-    queryKey: ['kit-stock-forecast', items.map(i => `${i.id}:${i.quantity}`).join('|'), kitQuantity],
+    queryKey: [
+      'kit-stock-forecast',
+      items.map((i) => `${i.id}:${i.quantity}`).join('|'),
+      kitQuantity,
+    ],
     queryFn: async (): Promise<KitStockForecast> => {
-      if (items.length === 0) return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
+      if (items.length === 0)
+        return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
 
-      const productIds = Array.from(new Set(items.map(i => i.id).filter(Boolean)));
-      if (productIds.length === 0) return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
+      const productIds = [...new Set(items.map((i) => i.id).filter(Boolean))];
+      if (productIds.length === 0)
+        return { idealClosingDate: null, bufferDays: BUFFER_DAYS, itemsAtRisk: [], ready: true };
 
       // Busca fontes de fornecimento
-      const result = await invokeExternalDb<{
+      const result = await dbInvoke<{
         product_id: string;
         stock_quantity: number | null;
         next_entry_date: string | null;
         next_entry_quantity: number | null;
       }>({
-        table: 'variant_supplier_sources',
+        // FIX 2026-06-26: product_id/stock_quantity/next_entry_date/next_entry_quantity vivem em product_variants,
+        // nao em variant_supplier_sources (gerava 42703 engolido pelo .catch -> forecast de kit sempre vazio).
+        table: 'product_variants',
         operation: 'select',
         select: 'product_id, stock_quantity, next_entry_date, next_entry_quantity',
         filters: { product_id: productIds, is_active: true },
         limit: 500,
       }).catch(() => ({ records: [] }));
 
-      const stockByProduct = new Map<string, { current: number; nextDate: string | null; nextQty: number }>();
+      const stockByProduct = new Map<
+        string,
+        { current: number; nextDate: string | null; nextQty: number }
+      >();
       for (const r of result.records) {
         const cur = stockByProduct.get(r.product_id) || { current: 0, nextDate: null, nextQty: 0 };
         cur.current += r.stock_quantity || 0;

@@ -1,8 +1,8 @@
 /**
  * useVoiceHistory — Stores recent voice commands in localStorage for quick reference.
  */
-import { useState, useCallback, useEffect } from "react";
-import type { VoiceAgentAction } from "@/hooks/voice/types";
+import { useState, useCallback, useEffect } from 'react';
+import type { VoiceAgentAction } from '@/hooks/voice/types';
 
 export interface VoiceHistoryEntry {
   transcript: string;
@@ -10,7 +10,7 @@ export interface VoiceHistoryEntry {
   timestamp: number;
 }
 
-const STORAGE_KEY = "voice_command_history";
+const STORAGE_KEY = 'voice_command_history';
 const MAX_ENTRIES = 5;
 
 function loadHistory(): VoiceHistoryEntry[] {
@@ -27,7 +27,9 @@ function loadHistory(): VoiceHistoryEntry[] {
 function saveHistory(entries: VoiceHistoryEntry[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, MAX_ENTRIES)));
-  } catch { /* quota exceeded — ignore */ }
+  } catch {
+    /* quota exceeded — ignore */
+  }
 }
 
 export function useVoiceHistory() {
@@ -38,8 +40,8 @@ export function useVoiceHistory() {
     const handler = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY) setHistory(loadHistory());
     };
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
   }, []);
 
   const addEntry = useCallback((transcript: string, action: VoiceAgentAction) => {

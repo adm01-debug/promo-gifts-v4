@@ -51,7 +51,7 @@ export function recordFailedAttempt(email: string): { locked: boolean; remaining
   const now = Date.now();
   let record = records[key];
 
-  if (!record || (now - record.firstAttemptAt > LOCKOUT_MS)) {
+  if (!record || now - record.firstAttemptAt > LOCKOUT_MS) {
     record = { count: 1, firstAttemptAt: now, lockedUntil: null };
   } else {
     record.count++;

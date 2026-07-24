@@ -1,11 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { useSecretsManager, type RotationHistoryEntry } from "@/hooks/admin";
-import { History, RefreshCw, Save, ArrowRight, Clock, User } from "lucide-react";
-import { formatMaskedSuffix } from "@/lib/masked-suffix";
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { useSecretsManager, type RotationHistoryEntry } from '@/hooks/admin';
+import { History, RefreshCw, Save, ArrowRight, Clock, User } from 'lucide-react';
+import { formatMaskedSuffix } from '@/lib/masked-suffix';
 
 interface Props {
   secretName: string;
@@ -16,15 +29,21 @@ interface Props {
 function formatDateTime(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function formatRelative(iso: string): string {
   const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
+  if (Number.isNaN(then)) return '';
   const diffMs = Date.now() - then;
   const sec = Math.floor(diffMs / 1000);
-  if (sec < 60) return "há instantes";
+  if (sec < 60) return 'há instantes';
   const min = Math.floor(sec / 60);
   if (min < 60) return `há ${min}m`;
   const hr = Math.floor(min / 60);
@@ -33,8 +52,8 @@ function formatRelative(iso: string): string {
   return `há ${d}d`;
 }
 
-function ActionBadge({ type }: { type: "set" | "rotate" }) {
-  if (type === "rotate") {
+function ActionBadge({ type }: { type: 'rotate' | 'set' }) {
+  if (type === 'rotate') {
     return (
       <Badge variant="secondary" className="gap-1 font-medium">
         <RefreshCw className="h-3 w-3" /> Rotação
@@ -62,7 +81,9 @@ export function RotationHistoryDialog({ secretName, open, onOpenChange }: Props)
       setEntries(data);
       setLoading(false);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [open, secretName, getRotationHistory]);
 
   const last = useMemo(() => entries[0] ?? null, [entries]);
@@ -76,11 +97,13 @@ export function RotationHistoryDialog({ secretName, open, onOpenChange }: Props)
             Histórico da credencial
             {!loading && entries.length > 0 && (
               <Badge variant="outline" className="ml-1 font-mono text-[10px]">
-                {entries.length} {entries.length === 1 ? "registro" : "registros"}
+                {entries.length} {entries.length === 1 ? 'registro' : 'registros'}
               </Badge>
             )}
           </DialogTitle>
-          <DialogDescription className="font-mono text-xs break-all">{secretName}</DialogDescription>
+          <DialogDescription className="break-all font-mono text-xs">
+            {secretName}
+          </DialogDescription>
         </DialogHeader>
 
         {loading ? (
@@ -91,36 +114,42 @@ export function RotationHistoryDialog({ secretName, open, onOpenChange }: Props)
             ))}
           </div>
         ) : entries.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">
+          <p className="py-8 text-center text-sm text-muted-foreground">
             Nenhuma operação registrada para esta credencial ainda.
           </p>
         ) : (
           <>
             {last && (
-              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2 animate-in fade-in duration-200">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-3 duration-200 animate-in fade-in">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     <Clock className="h-3.5 w-3.5" /> Última operação
                   </div>
-                  <ActionBadge type={(last.action_type ?? "rotate") as "set" | "rotate"} />
+                  <ActionBadge type={(last.action_type ?? 'rotate') as 'rotate' | 'set'} />
                 </div>
-                <div className="flex items-center gap-2 flex-wrap text-sm">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="font-mono text-xs">
-                    {last.previous_suffix ? formatMaskedSuffix(last.previous_suffix) : <span className="text-muted-foreground">(env / vazio)</span>}
+                    {last.previous_suffix ? (
+                      formatMaskedSuffix(last.previous_suffix)
+                    ) : (
+                      <span className="text-muted-foreground">(env / vazio)</span>
+                    )}
                   </span>
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="font-mono text-xs font-semibold text-primary">
-                    {last.new_suffix ? formatMaskedSuffix(last.new_suffix) : "—"}
+                    {last.new_suffix ? formatMaskedSuffix(last.new_suffix) : '—'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-2 flex-wrap text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <User className="h-3 w-3" />
-                    Por <span
-                      className="text-foreground font-medium"
+                    Por{' '}
+                    <span
+                      className="font-medium text-foreground"
                       title={last.rotated_by ?? undefined}
                     >
-                      {last.rotated_by_email ?? (last.rotated_by ? `${last.rotated_by.slice(0, 8)}…` : "—")}
+                      {last.rotated_by_email ??
+                        (last.rotated_by ? `${last.rotated_by.slice(0, 8)}…` : '—')}
                     </span>
                   </span>
                   <span title={formatDateTime(last.rotated_at)}>
@@ -128,7 +157,7 @@ export function RotationHistoryDialog({ secretName, open, onOpenChange }: Props)
                   </span>
                 </div>
                 {last.notes && (
-                  <div className="text-xs text-muted-foreground italic border-t border-primary/10 pt-2">
+                  <div className="border-t border-primary/10 pt-2 text-xs italic text-muted-foreground">
                     "{last.notes}"
                   </div>
                 )}
@@ -155,19 +184,27 @@ export function RotationHistoryDialog({ secretName, open, onOpenChange }: Props)
                         <div className="text-muted-foreground">{formatDateTime(e.rotated_at)}</div>
                       </TableCell>
                       <TableCell>
-                        <ActionBadge type={(e.action_type ?? "rotate") as "set" | "rotate"} />
+                        <ActionBadge type={(e.action_type ?? 'rotate') as 'rotate' | 'set'} />
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {e.previous_suffix ? formatMaskedSuffix(e.previous_suffix) : <span className="text-muted-foreground">(env / vazio)</span>}
+                        {e.previous_suffix ? (
+                          formatMaskedSuffix(e.previous_suffix)
+                        ) : (
+                          <span className="text-muted-foreground">(env / vazio)</span>
+                        )}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {e.new_suffix ? formatMaskedSuffix(e.new_suffix) : "—"}
+                        {e.new_suffix ? formatMaskedSuffix(e.new_suffix) : '—'}
                       </TableCell>
                       <TableCell className="text-xs">
-                        {e.rotated_by_email ?? <span className="text-muted-foreground font-mono">{e.rotated_by?.slice(0, 8) ?? "—"}…</span>}
+                        {e.rotated_by_email ?? (
+                          <span className="font-mono text-muted-foreground">
+                            {e.rotated_by?.slice(0, 8) ?? '—'}…
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {e.notes || "—"}
+                        {e.notes || '—'}
                       </TableCell>
                     </TableRow>
                   ))}

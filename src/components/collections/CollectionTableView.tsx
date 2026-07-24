@@ -2,7 +2,7 @@
  * CollectionTableView — Table view for local collections with sorting.
  */
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import {
   MoreVertical,
   Pencil,
@@ -28,8 +28,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Collection } from '@/hooks/collections';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { getCdnUrl } from '@/utils/image-utils';
+import { getProxiedImageUrl } from '@/utils/imageProxy';
 
-type SortKey = 'name' | 'products' | 'featured' | 'updated';
+type SortKey = 'featured' | 'name' | 'products' | 'updated';
 type SortDir = 'asc' | 'desc';
 
 function SortHeader({
@@ -107,9 +110,10 @@ function CollectionTableRow({
   updatedAgo,
   index,
 }: CollectionTableRowProps) {
-  const previewImage = products[0]?.images?.[0];
+  const previewImage = products[0]?.image_url;
   const iconChar = collection.icon || '📁';
-  const iconColor = collection.iconColor || '#6366f1';
+  const iconColor =
+    (collection as unknown as { iconColor?: string }).iconColor || collection.color || '#6366f1';
 
   return (
     <motion.tr
@@ -123,12 +127,18 @@ function CollectionTableRow({
       onClick={onNavigate}
     >
       <td className="w-10 px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-        <SelectionCheckbox isSelected={isSelected} onToggle={onToggleSelect} size="sm" />
+        <SelectionCheckbox checked={isSelected} onChange={onToggleSelect} size="sm" />
       </td>
       <td className="px-3 py-2.5">
         <div className="flex items-center gap-2.5">
           {previewImage ? (
-            <img src={previewImage} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />
+            <OptimizedImage
+              src={getCdnUrl(previewImage, 'thumbnail')}
+              urlOriginal={getProxiedImageUrl(previewImage) ?? null}
+              alt=""
+              className="rounded object-cover"
+              containerClassName="h-8 w-8 shrink-0"
+            />
           ) : (
             <div
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-sm"
@@ -308,7 +318,15 @@ export function CollectionTableView({
                   <CollectionTableRow
                     key={collection.id}
                     collection={collection}
-                    products={getCollectionProducts(collection.id)}
+                    products={
+                      getCollectionProducts(collection.id) as {
+                        id: string;
+                        name: string;
+                        image_url?: string | null;
+                        sku?: string;
+                        price?: number | null;
+                      }[]
+                    }
                     isSelected={selectedCollectionIds.has(collection.id)}
                     isSelectionMode={isSelectionMode}
                     onToggleSelect={() => onToggleSelect(collection.id)}

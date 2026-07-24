@@ -33,12 +33,13 @@
  *   dos mocks, retornando 401/403 do Supabase real e redirecionando para
  *   /login. Refatorar para mockar todos os endpoints ou usar sessão real.
  */
-import { test, expect } from "../fixtures/test-base";
-import { gotoAndSettle } from "../helpers/nav";
-import { expectVisibleByTestId } from "../helpers/waits";
+import { test, expect } from '../fixtures/test-base';
+import { gotoAndSettle } from '../helpers/nav';
+import { expectVisibleByTestId } from '../helpers/waits';
 
-const SUPABASE_URL = (process.env.VITE_SUPABASE_URL ?? "https://pqpdolkaeqlyzpdpbizo.supabase.co")
-  .replace(/\/+$/, "");
+const SUPABASE_URL = (
+  process.env.VITE_SUPABASE_URL ?? 'https://doufsxqlfjyuvxuezpln.supabase.co'
+).replace(/\/+$/, '');
 const AUTHORIZE_GLOB = `${SUPABASE_URL}/auth/v1/authorize*`;
 const TOKEN_GLOB = `${SUPABASE_URL}/auth/v1/token*`;
 const USER_GLOB = `${SUPABASE_URL}/auth/v1/user*`;
@@ -48,32 +49,32 @@ function fakeSessionPayload() {
   const now = Math.floor(Date.now() / 1000);
   // JWT mock — não validado pelo client; só precisa ter o formato header.payload.sig
   const fakeJwt =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
     Buffer.from(
       JSON.stringify({
-        sub: "00000000-0000-0000-0000-000000000001",
-        email: "e2e-google@example.com",
-        aud: "authenticated",
-        role: "authenticated",
+        sub: '00000000-0000-0000-0000-000000000001',
+        email: 'e2e-google@example.com',
+        aud: 'authenticated',
+        role: 'authenticated',
         exp: now + 3600,
         iat: now,
       }),
-    ).toString("base64url") +
-    ".sig";
+    ).toString('base64url') +
+    '.sig';
   return {
     access_token: fakeJwt,
-    refresh_token: "fake-refresh-token-e2e",
-    token_type: "bearer",
+    refresh_token: 'fake-refresh-token-e2e',
+    token_type: 'bearer',
     expires_in: 3600,
     expires_at: now + 3600,
     user: {
-      id: "00000000-0000-0000-0000-000000000001",
-      aud: "authenticated",
-      role: "authenticated",
-      email: "e2e-google@example.com",
+      id: '00000000-0000-0000-0000-000000000001',
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'e2e-google@example.com',
       email_confirmed_at: new Date().toISOString(),
-      app_metadata: { provider: "google", providers: ["google"] },
-      user_metadata: { full_name: "E2E Google User" },
+      app_metadata: { provider: 'google', providers: ['google'] },
+      user_metadata: { full_name: 'E2E Google User' },
       identities: [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -81,7 +82,7 @@ function fakeSessionPayload() {
   };
 }
 
-test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
+test.describe('@smoke Google OAuth — wiring até /auth/callback', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test.fixme("clique em 'Continuar com Google' dispara authorize com provider=google", async ({
@@ -95,8 +96,8 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
       await route.abort();
     });
 
-    await gotoAndSettle(page, "/login");
-    await expectVisibleByTestId(page, "social-login-google");
+    await gotoAndSettle(page, '/login');
+    await expectVisibleByTestId(page, 'social-login-google');
 
     // O click provoca navegação top-level via window.location — aguardamos via
     // waitForRequest na rota de authorize.
@@ -105,16 +106,16 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
     const req = await waitForAuthorize;
 
     const url = new URL(req.url());
-    expect(url.pathname).toBe("/auth/v1/authorize");
-    expect(url.searchParams.get("provider")).toBe("google");
+    expect(url.pathname).toBe('/auth/v1/authorize');
+    expect(url.searchParams.get('provider')).toBe('google');
     // redirect_to deve apontar para /auth/callback no preview
-    const redirectTo = url.searchParams.get("redirect_to") ?? "";
+    const redirectTo = url.searchParams.get('redirect_to') ?? '';
     expect(redirectTo).toMatch(/\/auth\/callback/);
 
     expect(authorizeUrls).toHaveLength(1);
   });
 
-  test.fixme("/auth/callback com code válido troca por sessão e autentica usuário", async ({
+  test.fixme('/auth/callback com code válido troca por sessão e autentica usuário', async ({
     page,
   }) => {
     const session = fakeSessionPayload();
@@ -124,12 +125,12 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
       const url = new URL(route.request().url());
       // grant_type=pkce|authorization_code → devolve sessão completa
       if (
-        url.searchParams.get("grant_type") === "pkce" ||
-        url.searchParams.get("grant_type") === "authorization_code"
+        url.searchParams.get('grant_type') === 'pkce' ||
+        url.searchParams.get('grant_type') === 'authorization_code'
       ) {
         await route.fulfill({
           status: 200,
-          contentType: "application/json",
+          contentType: 'application/json',
           body: JSON.stringify(session),
         });
         return;
@@ -137,7 +138,7 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
       // refresh_token (caso o cliente faça refresh logo após login)
       await route.fulfill({
         status: 200,
-        contentType: "application/json",
+        contentType: 'application/json',
         body: JSON.stringify(session),
       });
     });
@@ -146,7 +147,7 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
     await page.route(USER_GLOB, async (route) => {
       await route.fulfill({
         status: 200,
-        contentType: "application/json",
+        contentType: 'application/json',
         body: JSON.stringify(session.user),
       });
     });
@@ -154,10 +155,10 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
     // 3. Visita o callback com um code fake (PKCE).
     //    O SSOCallbackPage detecta `?code=` e chama exchangeCodeForSession,
     //    que cai no nosso mock acima.
-    await page.goto("/auth/callback?code=e2e-mock-code", { waitUntil: "domcontentloaded" });
+    await page.goto('/auth/callback?code=e2e-mock-code', { waitUntil: 'domcontentloaded' });
 
     // 4. Verifica que a UI passou pelos estados sem cair em "failed".
-    await expectVisibleByTestId(page, "sso-callback-title", { timeout: 8_000 });
+    await expectVisibleByTestId(page, 'sso-callback-title', { timeout: 8_000 });
     const container = page.locator('[role="status"][data-status]');
     await expect(container).toBeVisible();
 
@@ -171,24 +172,20 @@ test.describe("@smoke Google OAuth — wiring até /auth/callback", () => {
       .not.toMatch(/^\/(auth|login)/);
   });
 
-  test("/auth/callback com ?error= mostra hint detalhado e código do erro", async ({
-    page,
-  }) => {
+  test('/auth/callback com ?error= mostra hint detalhado e código do erro', async ({ page }) => {
     // Cenário de regressão: provider retornou erro de configuração.
     // Deve renderizar o bloco "Como resolver" do explainer.
     await page.goto(
-      "/auth/callback?error=provider_not_enabled&error_description=Provider%20is%20not%20enabled",
-      { waitUntil: "domcontentloaded" },
+      '/auth/callback?error=provider_not_enabled&error_description=Provider%20is%20not%20enabled',
+      { waitUntil: 'domcontentloaded' },
     );
 
-    // O callback redireciona para /login com os params — mas antes de redirecionar
-    // renderiza o estado failed. Verificamos pelo destino /login com query params.
-    await expect
-      .poll(() => new URL(page.url()).pathname, { timeout: 8_000 })
-      .toBe("/login");
+    // O callback redireciona para /login com detalhes; o Auth consome a query,
+    // renderiza o banner de fallback e depois limpa a URL.
+    await expect.poll(() => new URL(page.url()).pathname, { timeout: 8_000 }).toBe('/login');
 
-    const params = new URL(page.url()).searchParams;
-    expect(params.get("error")).toBe("provider_not_enabled");
-    expect(params.get("hint") ?? "").toMatch(/Administrador|admin/i);
+    await expect(page.getByTestId('social-login-error-title')).toBeVisible();
+    await expect(page.getByTestId('social-login-error-code')).toContainText('provider_not_enabled');
+    await expect(page.getByTestId('social-login-error-hint')).toContainText(/Administrador|admin/i);
   });
 });

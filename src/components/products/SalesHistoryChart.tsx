@@ -28,10 +28,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/format';
-import { useSalesHistory, type SellerRanking } from '@/hooks/intelligence';
+import { useSalesHistory, type SellerRanking } from '@/hooks/intelligence/useSalesHistory';
 import { safeParseDateForChart } from '@/lib/stock-chart-utils';
 import { KpiCard } from '@/components/ui/kpi-card';
-import { useProductInsights } from '@/hooks/products';
+import { useProductInsights } from '@/hooks/products/useProductInsights';
 
 interface SalesHistoryChartProps {
   productId: string;
@@ -191,13 +191,13 @@ export function SalesHistoryChart({ productId, productSku }: SalesHistoryChartPr
             icon={FileText}
             label="Orçado (qtd)"
             value={kpis.totalQuotedQty.toLocaleString('pt-BR')}
-            sub={`${formatCurrency(kpis.totalQuotedValue)}`}
+            sub={formatCurrency(kpis.totalQuotedValue)}
           />
           <KpiCard
             icon={ShoppingCart}
             label="Vendido (qtd)"
             value={kpis.totalOrderedQty.toLocaleString('pt-BR')}
-            sub={`${formatCurrency(kpis.totalOrderedValue)}`}
+            sub={formatCurrency(kpis.totalOrderedValue)}
             highlight
           />
           <KpiCard
@@ -369,13 +369,23 @@ function SellerRow({ seller, rank }: { seller: SellerRanking; rank: number }) {
   );
 }
 
+interface ChartDayPayload {
+  quotedQty: number;
+  orderedQty: number;
+  quoteCount: number;
+  orderCount: number;
+  quotedValue: number;
+  orderedValue: number;
+  fullDate?: string;
+}
+
 // #2 fix: SalesTooltip shows fallback when all values are zero
 function SalesTooltip({
   active,
   payload,
 }: {
   active?: boolean;
-  payload?: { payload: Record<string, unknown> }[];
+  payload?: { payload: ChartDayPayload }[];
 }) {
   if (!active || !payload?.length) return null;
   const data = payload[0]?.payload;

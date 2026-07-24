@@ -3,8 +3,11 @@
  * tag+cor+ícone. Usado quando a identidade está vazia ou genérica.
  */
 import { useState } from 'react';
-import * as Lucide from 'lucide-react';
-import { Sparkles, Check, X, Loader2 } from 'lucide-react';
+import {
+  Package, Sparkles, Check, X, Loader2,
+  Gift, Heart, Star, Crown, Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,9 +22,14 @@ interface Props {
   onApply: (identity: Partial<KitIdentity>) => void;
 }
 
-function getIcon(name: string) {
-  const I = (Lucide as unknown as Record<string, Lucide.LucideIcon>)[name];
-  return I ?? Lucide.Package;
+/** Lookup estático dos ícones do PRESET_ICONS — evita namespace import. */
+const ICON_MAP: Record<string, LucideIcon | undefined> = {
+  Package, Gift, Heart, Star, Crown, Sparkles,
+  Briefcase, Coffee, Laptop, Leaf, Trophy, Users,
+};
+
+function getIcon(name: string): LucideIcon {
+  return ICON_MAP[name] ?? Package;
 }
 
 export function IdentitySuggestionButton({ kitName, items, description, current, onApply }: Props) {
@@ -37,11 +45,15 @@ export function IdentitySuggestionButton({ kitName, items, description, current,
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 text-xs gap-1.5 text-primary hover:text-primary"
+        className="h-7 gap-1.5 text-xs text-primary hover:text-primary"
         onClick={() => suggest({ name: kitName, items, description })}
         disabled={isLoading}
       >
-        {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+        {isLoading ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Sparkles className="h-3 w-3" />
+        )}
         {isLoading ? 'Pensando...' : 'Sugerir identidade'}
       </Button>
     );
@@ -49,20 +61,23 @@ export function IdentitySuggestionButton({ kitName, items, description, current,
 
   const Icon = getIcon(suggestion.icon);
   return (
-    <Card className="border-primary/40 bg-primary/5 animate-fade-in">
-      <CardContent className="p-3 space-y-2">
+    <Card className="animate-fade-in border-primary/40 bg-primary/5">
+      <CardContent className="space-y-2 p-3">
         <div className="flex items-center gap-2">
           <div
-            className="h-8 w-8 rounded-md flex items-center justify-center"
+            className="flex h-8 w-8 items-center justify-center rounded-md"
             style={{ backgroundColor: `${suggestion.color}22`, color: suggestion.color }}
           >
             <Icon className="h-4 w-4" />
           </div>
-          <Badge style={{ backgroundColor: suggestion.color, color: 'white' }} className="text-[10px]">
+          <Badge
+            style={{ backgroundColor: suggestion.color, color: 'white' }}
+            className="text-[10px]"
+          >
             {suggestion.tag}
           </Badge>
           {suggestion.rationale && (
-            <p className="text-[10px] text-muted-foreground line-clamp-1 flex-1">
+            <p className="line-clamp-1 flex-1 text-[10px] text-muted-foreground">
               {suggestion.rationale}
             </p>
           )}
@@ -70,20 +85,23 @@ export function IdentitySuggestionButton({ kitName, items, description, current,
         <div className="flex gap-1.5">
           <Button
             size="sm"
-            className="h-7 text-xs flex-1"
+            className="h-7 flex-1 text-xs"
             onClick={() => {
               onApply({ tag: suggestion.tag, color: suggestion.color, icon: suggestion.icon });
               clear();
               setDismissed(true);
             }}
           >
-            <Check className="h-3 w-3 mr-1" /> Aplicar
+            <Check className="mr-1 h-3 w-3" /> Aplicar
           </Button>
           <Button
             size="sm"
             variant="ghost"
             className="h-7 w-7 p-0"
-            onClick={() => { clear(); setDismissed(true); }}
+            onClick={() => {
+              clear();
+              setDismissed(true);
+            }}
           >
             <X className="h-3 w-3" />
           </Button>

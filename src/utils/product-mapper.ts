@@ -1,36 +1,60 @@
 /**
  * Product Mapper
- * 
+ *
  * Converts raw PromobrindProduct to the internal Product format.
  */
-import type { Product } from '@/types/product';
-import { type PromobrindProduct, getProductImageUrl, getProductPrice, getProductStock } from '@/lib/external-db';
+import { getCatalogStockStatus, type CatalogStockStatus } from '@/lib/catalog-stock-status';
+import type { Product, ProductVariation } from '@/types/product-catalog';
+import {
+  type PromobrindProduct,
+  getProductImageUrl,
+  getProductPrice,
+  getProductStock,
+} from '@/lib/external-db';
 import { normalizeColors } from '@/utils/product-colors';
 
-function getStockStatus(stock: number): 'in-stock' | 'low-stock' | 'out-of-stock' {
-  if (stock <= 0) return 'out-of-stock';
-  if (stock < 10) return 'low-stock';
-  return 'in-stock';
+function getStockStatus(stock: number, minQuantity?: number | null): CatalogStockStatus {
+  // Passa min_quantity para a SSOT: estoque positivo abaixo do mínimo pedível
+  // do fornecedor é tratado como zerado (paridade com o catálogo lightweight).
+  return getCatalogStockStatus(stock, undefined, minQuantity);
+}
+
+// Janela de novidade alinhada ao módulo Novidades (useNovelties.NOVELTY_WINDOW_DAYS = 30)
+const NOVELTY_WINDOW_DAYS = 30;
+function isWithinNoveltyWindow(createdAt: unknown): boolean {
+  if (typeof createdAt !== 'string' || !createdAt) return false;
+  const ts = Date.parse(createdAt);
+  if (Number.isNaN(ts)) return false;
+  const elapsedDays = (Date.now() - ts) / 86400000;
+  return elapsedDays >= 0 && elapsedDays <= NOVELTY_WINDOW_DAYS;
 }
 
 function parseMaterials(materials: unknown): string[] {
   if (!materials) return [];
   if (Array.isArray(materials)) return materials.filter(Boolean);
   if (typeof materials === 'string') {
-    return materials.split(/[,;|]/).map(m => m.trim()).filter(Boolean);
+    return materials
+      .split(/[,;|]/)
+      .map((m) => m.trim())
+      .filter(Boolean);
   }
   return [];
 }
 
 function parseTagList(value: unknown): string[] {
   if (!value) return [];
-  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string' && !!v.trim());
-  if (typeof value === 'string') return value.split(/[,;|]/).map(v => v.trim()).filter(Boolean);
+  if (Array.isArray(value))
+    return value.filter((v): v is string => typeof v === 'string' && !!v.trim());
+  if (typeof value === 'string')
+    return value
+      .split(/[,;|]/)
+      .map((v) => v.trim())
+      .filter(Boolean);
   return [];
 }
 
 function normalizeMarketingTags(rawTags: unknown): Product['tags'] {
-  const tags = (rawTags && typeof rawTags === 'object') ? rawTags as Record<string, unknown> : {};
+  const tags = rawTags && typeof rawTags === 'object' ? (rawTags as Record<string, unknown>) : {};
   return {
     publicoAlvo: parseTagList(tags.publicoAlvo ?? tags.publico_alvo),
     datasComemorativas: parseTagList(tags.datasComemorativas ?? tags.datas_comemorativas),
@@ -40,33 +64,63 @@ function normalizeMarketingTags(rawTags: unknown): Product['tags'] {
   };
 }
 
+/**
+ * Extrai tags descritivas planas da coluna `products.tags`.
+ *
+ * No catálogo de produção a coluna `tags` é frequentemente um array plano de
+ * palavras-chave (["caneta", "metal"]). Esse formato não casa com a estrutura
+ * de marketing esperada por `normalizeMarketingTags`, então preservamos os
+ * termos aqui para que o Match de Produtos possa usá-los como sinal de
+ * similaridade. Suporta também o formato objeto `{ descritivas: [...] }`.
+ */
+function extractDescriptiveTags(rawTags: unknown): string[] {
+  let list: string[];
+  if (Array.isArray(rawTags)) {
+    list = parseTagList(rawTags);
+  } else if (rawTags && typeof rawTags === 'object') {
+    const t = rawTags as Record<string, unknown>;
+    list = parseTagList(t.descritivas ?? t.descriptive ?? t.keywords ?? t.palavrasChave);
+  } else if (typeof rawTags === 'string') {
+    list = parseTagList(rawTags);
+  } else {
+    return [];
+  }
+  return list.map((t) => t.trim()).filter(Boolean);
+}
+
 /** Converte produto Promobrind para formato interno */
 export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   const imageUrl = getProductImageUrl(p);
   const stock = getProductStock(p);
-  const colors = normalizeColors(p.colors);
+  const colors = normalizeColors(p.colors ?? undefined);
 
   // Extrair imagens
   let images: string[] = [];
   if (p.images && Array.isArray(p.images)) {
-    images = (p.images as (string | Record<string, string>)[]).map((img) => {
-      if (typeof img === 'string') return img;
-      return img.url || img.src || img.image_url || '';
-    }).filter(Boolean);
+    images = (p.images as (Record<string, string> | string)[])
+      .map((img) => {
+        if (typeof img === 'string') return img;
+        return img.url || img.src || img.image_url || '';
+      })
+      .filter(Boolean);
   }
   if (images.length === 0 && imageUrl) images = [imageUrl];
   if (images.length === 0) images = ['/placeholder.svg'];
 
-  type InternalVariation = {
-    id: string; sku: string; color: { name: string; hex: string };
-    stock: number; image: string | null; images: string[]; videos: unknown[]; size_code: string | null;
-  };
   // Mapear variações
-  const variations: InternalVariation[] = [];
+  const variations: ProductVariation[] = [];
   if (p.colors && Array.isArray(p.colors)) {
     p.colors.forEach((c, index: number) => {
       if (typeof c === 'object' && c !== null && 'name' in c) {
-        const co = c as { name: string; hex?: string; stock?: number; sku?: string; image?: string; images?: string[]; size_code?: string };
+        const co = c as {
+          name: string;
+          hex?: string;
+          stock?: number;
+          sku?: string;
+          image?: string;
+          images?: string[];
+          size_code?: string;
+        };
         variations.push({
           id: `${p.id}-${index}`,
           sku: co.sku || p.sku,
@@ -84,12 +138,21 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
   return {
     id: p.id,
     name: p.name,
-    description: p.description || p.short_description || p.meta_description,
-    category_id: p.category_id || p.main_category_id,
+    description:
+      (p.description?.trim() || null) ??
+      (p.short_description?.trim() || null) ??
+      (p.meta_description?.trim() || null) ??
+      null,
+    shortDescription: p.short_description ?? '',
+    category_id: p.category_id || p.main_category_id || null,
     category_name: p.category_name || null,
     price: getProductPrice(p),
+    sale_price: typeof p.sale_price === 'number' ? p.sale_price : undefined,
     image_url: images[0],
+    primary_image_url: p.primary_image_url || null,
+    primary_image_fallback_url: p.primary_image_fallback_url || null,
     og_image_url: p.og_image_url || undefined,
+    set_image_url: p.set_image_url ?? null,
     images,
     sku: p.sku,
     stock,
@@ -97,36 +160,47 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     materials: parseMaterials(p.materials),
     supplier_reference: p.supplier_reference,
     brand: p.brand,
-    is_active: p.is_active || p.active,
+    is_active: p.is_active ?? p.active,
     minQuantity: p.min_quantity || 1,
-    stockStatus: getStockStatus(stock),
+    stockStatus: getStockStatus(stock, p.min_quantity),
     featured: Boolean(p.is_featured || p.is_bestseller),
-    newArrival: Boolean(p.is_new),
+    newArrival:
+      Boolean(p.is_new) || isWithinNoveltyWindow((p as { created_at?: unknown }).created_at),
     onSale: Boolean(p.is_on_sale),
     isKit: Boolean(p.is_kit),
     gender: p.gender || null,
     category: {
-      id: p.category_id || p.main_category_id || "0",
-      name: p.category_name || "Sem categoria",
+      id: p.category_id || p.main_category_id || '0',
+      name: p.category_name || 'Sem categoria',
     },
     supplier: {
-      id: p.supplier_id || p.supplier_reference || p.brand || "unknown",
-      name: p.supplier_name || p.brand || "Fornecedor",
+      id: p.supplier_id || p.supplier_reference || p.brand || 'unknown',
+      name: p.supplier_name || p.brand || 'Fornecedor',
     },
     tags: normalizeMarketingTags(p.tags),
+    descriptiveTags: extractDescriptiveTags(p.tags),
     dimensions: {
-      height_cm: p.height_cm, width_cm: p.width_cm, length_cm: p.length_cm,
-      diameter_cm: p.diameter_cm, weight_g: p.weight_g, capacity_ml: p.capacity_ml,
+      height_cm: p.height_cm,
+      width_cm: p.width_cm,
+      length_cm: p.length_cm,
+      diameter_cm: p.diameter_cm,
+      circumference_cm: p.circumference_cm,
+      weight_g: p.weight_g,
+      capacity_ml: p.capacity_ml,
     },
     packingType: p.packing_type,
     packingClassification: p.packing_classification,
     hasCommercialPackaging: p.has_commercial_packaging,
+    hasPersonalization: p.allows_personalization,
     repackingType: p.repacking_type,
     packagingContext: p.packaging_context as Product['packagingContext'],
     boxImage: p.box_image,
-    boxWidthMm: p.box_width_mm, boxHeightMm: p.box_height_mm,
-    boxLengthMm: p.box_length_mm, boxWeightKg: p.box_weight_kg,
-    boxQuantity: p.box_quantity, boxVolumeCm3: p.box_volume_cm3,
+    boxWidthMm: p.box_width_mm,
+    boxHeightMm: p.box_height_mm,
+    boxLengthMm: p.box_length_mm,
+    boxWeightKg: p.box_weight_kg,
+    boxQuantity: p.box_quantity,
+    boxVolumeCm3: p.box_volume_cm3,
     leadTimeDays: p.lead_time_days ?? null,
     // SSOT: coluna dedicada `price_updated_at` no BD externo (Promobrind),
     // mantida por trigger automático em mudanças de preço (cost_price,
@@ -137,34 +211,70 @@ export function mapPromobrindToProduct(p: PromobrindProduct): Product {
     priceUpdatedAt:
       (typeof p.price_updated_at === 'string' && p.price_updated_at.trim() !== ''
         ? p.price_updated_at
-        : null)
-      ?? (typeof p.updated_at === 'string' && p.updated_at.trim() !== ''
-        ? p.updated_at
-        : null),
+        : null) ??
+      (typeof p.updated_at === 'string' && p.updated_at.trim() !== '' ? p.updated_at : null),
     priceFreshnessThresholdDays: p.price_freshness_threshold_days ?? null,
     variations: variations.length > 0 ? variations : undefined,
     productVideos: p.product_videos?.length ? p.product_videos : undefined,
-    kitItems: p.kit_components?.map(c => ({
-      id: c.id,
-      productId: c.component_product_id || c.id,
-      productName: c.component_name || 'Componente',
-      quantity: c.quantity || 1,
-      sku: c.component_sku || c.component_code || '',
-      imageUrl: c.primary_image_url || null,
-      isOptional: c.is_optional || false,
-      isPackaging: c.is_packaging || false,
-      isReplaceable: c.is_replaceable || false,
-      allowsPersonalization: c.allows_personalization || false,
-      material: c.material || null,
-      weightG: c.weight_g || null,
-      heightMm: c.height_mm ?? null,
-      widthMm: c.width_mm ?? null,
-      lengthMm: c.length_mm ?? null,
-      componentTypeCode: c.component_type_code ?? null,
-      supplierComponentCode: c.supplier_component_code ?? null,
-      description: c.component_description ?? null,
-      personalizationNotes: c.personalization_notes ?? null,
-      color: c.color ?? null,
-    })) || undefined,
+    kitItems:
+      p.kit_components?.map((c) => {
+        const ck = c as Record<string, unknown>;
+        // Normaliza galeria: aceita string[], {url}[] ou {primary_image_url}[]
+        const rawImages = ck.images;
+        const gallery: string[] = Array.isArray(rawImages)
+          ? rawImages
+              .map((img) => {
+                if (typeof img === 'string') return img;
+                if (img && typeof img === 'object') {
+                  const o = img as Record<string, unknown>;
+                  return (o.url ?? o.image_url ?? o.primary_image_url ?? null) as string | null;
+                }
+                return null;
+              })
+              .filter((u): u is string => typeof u === 'string' && u.length > 0)
+          : [];
+        // Garantir que a capa esteja na galeria
+        const primaryImage = c.primary_image_url || null;
+        if (primaryImage && !gallery.includes(primaryImage)) {
+          gallery.unshift(primaryImage);
+        }
+        return {
+          id: c.id,
+          productId: c.component_product_id || c.id,
+          productName: c.component_name || 'Componente',
+          quantity: c.quantity || 1,
+          sku: c.component_sku || c.component_code || '',
+          imageUrl: primaryImage,
+          images: gallery.length > 0 ? gallery : null,
+          isOptional: c.is_optional ?? false,
+          isPackaging: c.is_packaging ?? false,
+          isReplaceable: c.is_replaceable ?? false,
+          allowsPersonalization: c.allows_personalization ?? false,
+          material: c.material ?? null,
+          weightG: c.weight_g ?? null,
+          heightMm: c.height_mm ?? null,
+          widthMm: c.width_mm ?? null,
+          lengthMm: c.length_mm ?? null,
+          diameterMm: (ck.diameter_mm as number | null | undefined) ?? null,
+          circumferenceMm: (ck.circumference_mm as number | null | undefined) ?? null,
+          volumeMl: (ck.capacity_ml as number | null | undefined) ?? null,
+          componentTypeCode: (ck.component_type_code ?? null) as string | null,
+          supplierComponentCode: (ck.supplier_component_code ?? null) as string | null,
+          description: (ck.component_description ?? null) as string | null,
+          personalizationNotes: (ck.personalization_notes ?? null) as string | null,
+          color: (ck.color ?? null) as string | null,
+        };
+      }) || undefined,
+    // Word Magic — campos gerados por IA
+    aiTitle: p.ai_title ?? null,
+    aiDescription: p.ai_description ?? null,
+    aiSummary: p.ai_summary ?? null,
+    aiVersion: typeof p.ai_version === 'number' ? p.ai_version : null,
+    aiGeneratedAt: p.ai_generated_at ?? null,
+    // V2 — passthrough do JSONB populado por fn_rebuild_color_swatches (trigger no BD externo).
+    color_swatches: (Array.isArray(p.color_swatches)
+      ? (p.color_swatches as Product['color_swatches'])
+      : null),
+    has_colors: typeof p.has_colors === 'boolean' ? p.has_colors : null,
   };
 }

@@ -2,19 +2,34 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { type FilterState, defaultFilters } from '@/components/filters/FilterPanel';
 import { getDefaultColumns, type ColumnCount } from '@/components/products/ColumnSelector';
-import {
-  useColorEnrichment,
-  useProductFuzzySearch,
-  useProductsByCategory,
-  useProductsByColor,
-  useProductsByMaterial,
-  useProductsCatalog,
-  useSupplierSalesRanking,
-} from '@/hooks/products';
-import { useDebounce } from '@/hooks/common';
-import { usePromoSalesRanking } from '@/hooks/intelligence';
-import { sortProducts } from '@/utils/product-sorting';
+import { useColorEnrichment } from '@/hooks/products/useColorEnrichment';
+import { useColorFanout } from '@/hooks/products/useColorFanout';
+import { useColorSystem } from '@/hooks/products/useColorSystem';
+import { useProductFuzzySearch } from '@/hooks/products/useProductFuzzySearch';
+import { useProductsByCategory } from '@/hooks/products/useProductsByCategory';
+import { useProductsByColor } from '@/hooks/products/useProductsByColor';
+import { useProductsByMaterial } from '@/hooks/products/useProductsByMaterial';
+import { useProductsBySize } from '@/hooks/products/useProductsBySize';
+import { useProductsByMetadata } from '@/hooks/products/useProductsByMetadata';
+import { useProductsCatalog } from '@/hooks/products/useProductsLightweight';
+import { useSupplierSalesRanking } from '@/hooks/products/useSupplierSalesRanking';
+import { useDebounce } from '@/hooks/common/useDebounce';
+import { usePromoSalesRanking } from '@/hooks/intelligence/usePromoSalesRanking';
+import { usePromoSales90dByProduct } from '@/hooks/intelligence/usePromoSales90dByProduct';
+import { SORT_OPTIONS } from '@/constants/filters';
 import { toast } from 'sonner';
+import { applyProductFilters } from '@/pages/filters/applyProductFilters';
+
+// Valores de sortBy aceitos: os expostos na UI (SORT_OPTIONS) + os internos
+// suportados pelo pipeline sortProducts (color-match/popularity são definidos
+// upstream; name-asc/name-desc são aliases tratados no sorter).
+const VALID_SORT_VALUES = new Set<string>([
+  ...SORT_OPTIONS.map((o) => o.value),
+  'name-asc',
+  'name-desc',
+  'popularity',
+  'color-match',
+]);
 
 export function useFiltersPageState() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -71,24 +86,83 @@ export function useFiltersPageState() {
     if (sizes.length) f.sizes = sizes;
     const pMin = get('priceMin');
     const pMax = get('priceMax');
-    if (pMin || pMax) f.priceRange = [pMin ? parseInt(pMin) : 0, pMax ? parseInt(pMax) : 9999];
+    // FIX-04: usar parseFloat para preservar centavos (ex: "15.99" → 15.99, não 15)
+    // FIX-28: validar NaN e fazer clamp (min<=max). Valores inválidos na URL
+    // (?priceMin=abc, min>max) caíam como NaN e zeravam a lista sem feedback.
+    if (pMin || pMax) {
+      const PRICE_MAX = 9999; // Consistente com sentinel do pipeline (applyProductFilters) e defaultFilters
+      const parsedMin = pMin ? parseFloat(pMin) : 0;
+      const parsedMax = pMax ? parseFloat(pMax) : PRICE_MAX;
+      let min = Number.isFinite(parsedMin) && parsedMin >= 0 ? parsedMin : 0;
+      let max = Number.isFinite(parsedMax) && parsedMax >= 0 ? parsedMax : PRICE_MAX;
+      if (min > max) [min, max] = [max, min];
+      f.priceRange = [min, max];
+    }
     const ms = get('minStock');
-    if (ms) f.minStock = parseInt(ms);
+    if (ms) {
+      const parsedMs = parseInt(ms, 10);
+      if (Number.isFinite(parsedMs) && parsedMs >= 0) f.minStock = parsedMs;
+    }
+    const mss = get('minSupplierSales90d') ?? get('minSupplierSales30d'); // back-compat URL
+    if (mss) {
+      const n = parseInt(mss, 10);
+      if (Number.isFinite(n) && n >= 0) f.minSupplierSales90d = n;
+    }
+    const mps = get('minPromoSales90d');
+    if (mps) {
+      const n = parseInt(mps, 10);
+      if (Number.isFinite(n) && n >= 0) f.minPromoSales90d = n;
+    }
     if (get('inStock') === '1') f.inStock = true;
     if (get('isKit') === '1') f.isKit = true;
     if (get('featured') === '1') f.featured = true;
     if (get('isNew') === '1') f.isNew = true;
     if (get('hasPersonalization') === '1') f.hasPersonalization = true;
+    if (get('onSale') === '1') f.onSale = true;
     if (get('hasCommercialPackaging') === '1') f.hasCommercialPackaging = true;
+    // FIX-28/B5: só aceitar sortBy da URL se for um valor conhecido — evita
+    // que o Select fique sem opção correspondente (placeholder vazio) e que o
+    // pipeline de sort receba um valor que cai no no-op silencioso.
+    //
+    // Padrão de ordenação (PO):
+    //  - 1º acesso da sessão (sem URL sortBy e sem sessionStorage) → 'newest'.
+    //  - Durante a sessão, mantém a última escolha do usuário (sessionStorage).
+    //  - URL sortBy (ex.: link compartilhado) sempre vence.
     const sortByParam = get('sortBy');
-    if (sortByParam) f.sortBy = sortByParam;
+    if (sortByParam && VALID_SORT_VALUES.has(sortByParam)) {
+      f.sortBy = sortByParam;
+    } else if (typeof window !== 'undefined') {
+      const stored = window.sessionStorage.getItem('catalog:sortBy');
+      f.sortBy = stored && VALID_SORT_VALUES.has(stored) ? stored : 'newest';
+    } else {
+      f.sortBy = 'newest';
+    }
     return f;
   });
 
-  const debouncedServerSearch = useDebounce(filters.search || '', 400);
-  const urlSearch = searchParams.get('search') || '';
-  const debouncedUrlSearch = useDebounce(urlSearch, 400);
-  const serverSearchTerm = debouncedServerSearch || debouncedUrlSearch;
+  // BUG-SF-19 FIX: eram dois useDebounce encadeados (filters.search + urlSearch),
+  // potencialmente causando latência de 800ms e race conditions.
+  // filters.search é fonte primária (imediata após setFilters) — searchParams.get('search')
+  // é o fallback para compatibilidade com links externos que chegam com ?search= na URL
+  // sem nunca passar por setFilters (first render). Com filters inicializados a partir da URL
+  // no useState inicial, filters.search já contém o valor — o fallback é apenas garantia.
+  // FIX-GAP1 2026-06-21: nome REAL da cor (com acento/parenteses) para o chip da toolbar.
+  // slugToLabel naive perdia acentos em 18 cores (ex: "Azul Bebe" vs "Azul Bebe",
+  // "Verde Limao" vs "Verde Limao", "Azul Tiffany (Turquesa)").
+  const { data: colorSystemData } = useColorSystem();
+  const colorNameBySlug = useMemo(() => {
+    const m = new Map<string, string>();
+    if (!colorSystemData) return m;
+    for (const g of colorSystemData.groups) {
+      m.set(g.slug, g.name);
+      for (const v of g.variations) m.set(v.slug, v.name);
+    }
+    for (const n of colorSystemData.nuances) m.set(n.slug, n.name);
+    return m;
+  }, [colorSystemData]);
+
+  const effectiveSearch = filters.search || searchParams.get('search') || '';
+  const serverSearchTerm = useDebounce(effectiveSearch, 400);
 
   const {
     data: catalogData,
@@ -96,7 +170,19 @@ export function useFiltersPageState() {
     hasNextPage,
     fetchNextPage,
     isFetchingNextPage,
-  } = useProductsCatalog(serverSearchTerm ? { search: serverSearchTerm } : undefined);
+  } = useProductsCatalog({
+    search: serverSearchTerm,
+    // BUG-DB-01 FIX (2026-06-18): categoria NAO e filtrada server-side aqui.
+    // fetchCatalogPage aplicava products.category_id IN(selecionadas) de forma EXATA
+    // (categoria PRIMARIA, SEM expandir descendentes). Selecionar uma categoria-pai
+    // (ex.: "Ecologia" 0 diretos / 1.335 c/ descendentes; "Lazer" 0/715) buscava ~0
+    // produtos, e a intersecao client-side com categoryFilteredProductIds (Edge
+    // categories-api, COM descendentes via PCA) so reduzia esse conjunto vazio ->
+    // grade zerada (perda 75-100% em 14+ categorias-pai). A categoria passa a ser
+    // filtrada 100% client-side via categoryFilteredProductIds (mesmo padrao de cor/material).
+    suppliers: filters.suppliers,
+    sortBy: filters.sortBy,
+  });
 
   useEffect(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage();
@@ -105,6 +191,18 @@ export function useFiltersPageState() {
   const realProducts = useMemo(
     () => (catalogData?.pages ? catalogData.pages.flatMap((page) => page.products) : []),
     [catalogData],
+  );
+
+  // FIX-20: o filtro de Técnicas só funciona se os produtos carregados trouxerem
+  // `metadata.techniques`. Quando nenhum produto tem esse dado (caso do catálogo
+  // lightweight atual), selecionar uma técnica não filtra nada — então não
+  // devemos contá-la como filtro ativo nem exibir o chip (evita falso positivo).
+  // Até existir um hook server-side (useProductsByTechnique), este sinal mantém
+  // a UI honesta.
+  const techniquesDataAvailable = useMemo(
+    () =>
+      realProducts.some((p) => ((p.metadata?.techniques as string[] | undefined)?.length || 0) > 0),
+    [realProducts],
   );
   const totalEstimate = catalogData?.pages?.[0]?.totalEstimate ?? null;
   const isFullyLoaded = !hasNextPage && !isFetchingNextPage;
@@ -148,33 +246,123 @@ export function useFiltersPageState() {
     if (filters.priceRange[0] > 0) params.set('priceMin', String(filters.priceRange[0]));
     if (filters.priceRange[1] < 9999) params.set('priceMax', String(filters.priceRange[1]));
     if (filters.minStock > 0) params.set('minStock', String(filters.minStock));
+    if (filters.minSupplierSales90d > 0)
+      params.set('minSupplierSales90d', String(filters.minSupplierSales90d));
+    if (filters.minPromoSales90d > 0)
+      params.set('minPromoSales90d', String(filters.minPromoSales90d));
     if (filters.inStock) params.set('inStock', '1');
     if (filters.isKit) params.set('isKit', '1');
     if (filters.featured) params.set('featured', '1');
     if (filters.isNew) params.set('isNew', '1');
     if (filters.hasPersonalization) params.set('hasPersonalization', '1');
+    if (filters.onSale) params.set('onSale', '1');
     if (filters.hasCommercialPackaging) params.set('hasCommercialPackaging', '1');
-    if (filters.sortBy && filters.sortBy !== 'name') params.set('sortBy', filters.sortBy);
-    setSearchParams(params, { replace: true });
+    if (filters.sortBy && filters.sortBy !== 'newest') params.set('sortBy', filters.sortBy);
+    // FIX-13: use functional updater to preserve non-filter URL params (e.g. viewMode).
+    // Without this, switching filters wipes viewMode from the URL because the params
+    // object is built from scratch and setSearchParams(params) replaces the full URL.
+    // The standalone viewMode effect (below) does NOT re-run when only filters change.
+    setSearchParams(
+      (prev) => {
+        const vm = prev.get('viewMode');
+        if (vm && vm !== 'grid') params.set('viewMode', vm);
+        return params;
+      },
+      { replace: true },
+    );
   }, [filters, setSearchParams]);
 
   const {
     productIds: materialFilteredProductIds,
     hasFilter: hasMaterialFilter,
     isLoading: isLoadingMaterialFilter,
+    error: materialFilterError,
   } = useProductsByMaterial({
     materialGroupSlugs: filters.materialGroups || [],
     materialTypeSlugs: filters.materialTypes || [],
   });
+
+  const prevMaterialErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = materialFilterError ? String(materialFilterError) : null;
+    if (materialFilterError && msg !== prevMaterialErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de materiais', {
+        description: 'O filtro de Materiais falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevMaterialErrorRef.current = msg;
+  }, [materialFilterError]);
+
   const {
     productIds: categoryFilteredProductIds,
     hasFilter: hasCategoryFilter,
     isLoading: isLoadingCategoryFilter,
+    error: categoryFilterError,
   } = useProductsByCategory({ categoryIds: filters.categories, includeDescendants: true });
+  // SF-E: filtragem de tamanho server-side (product_variants). O catálogo leve
+  // não carrega variações, então o match client-side era inerte (sempre vazio).
+  const {
+    productIds: sizeFilteredProductIds,
+    hasFilter: hasSizeFilter,
+    isLoading: isLoadingSizeFilter,
+    error: sizeFilterError,
+  } = useProductsBySize(filters.sizes || []);
+  // BUG-DB-02: datas/tags/ramos/segmentos/público server-side via RPC.
+  const {
+    productIds: metadataFilteredProductIds,
+    hasFilter: hasMetadataFilter,
+    isLoading: isLoadingMetadataFilter,
+    error: metadataFilterError,
+  } = useProductsByMetadata({
+    datas: filters.datasComemorativas,
+    tags: filters.tags || [],
+    ramos: filters.ramosAtividade || [],
+    segmentos: filters.segmentosAtividade || [],
+    publico: filters.publicoAlvo,
+    endomarketing: filters.endomarketing || [],
+  });
+  // FIX-8: notifica erros de todas as RPCs de filtro server-side.
+  // FIX-19: compara mensagem (string) em vez de identidade de objeto — o hook de RPC pode
+  // recriar o objeto de erro a cada render com o mesmo conteúdo, disparando toast infinito.
+  const prevMetadataErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = metadataFilterError ? String(metadataFilterError) : null;
+    if (metadataFilterError && msg !== prevMetadataErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de metadados', {
+        description:
+          'O filtro de Datas/Tags/Público/Nichos falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevMetadataErrorRef.current = msg;
+  }, [metadataFilterError]);
+
+  const prevSizeErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = sizeFilterError ? String(sizeFilterError) : null;
+    if (sizeFilterError && msg !== prevSizeErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de tamanhos', {
+        description: 'O filtro de Tamanhos falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevSizeErrorRef.current = msg;
+  }, [sizeFilterError]);
+
+  const prevCategoryErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = categoryFilterError ? String(categoryFilterError) : null;
+    if (categoryFilterError && msg !== prevCategoryErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de categorias', {
+        description: 'O filtro de Categorias falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevCategoryErrorRef.current = msg;
+  }, [categoryFilterError]);
+
   const {
     productIds: colorFilteredProductIds,
     hasFilter: hasColorFilter,
     isLoading: isLoadingColorFilter,
+    error: colorFilterError,
   } = useProductsByColor({
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
@@ -182,33 +370,54 @@ export function useFiltersPageState() {
     colors: filters.colors,
   });
 
+  const prevColorErrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    const msg = colorFilterError ? String(colorFilterError) : null;
+    if (colorFilterError && msg !== prevColorErrorRef.current) {
+      toast.error('Erro ao aplicar filtro de cores', {
+        description: 'O filtro de Cores falhou temporariamente. Tente alterar o filtro.',
+      });
+    }
+    prevColorErrorRef.current = msg;
+  }, [colorFilterError]);
+
   const [activePresetId, setActivePresetId] = useState<string | undefined>();
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
+  // FIX-9: inicializa viewMode a partir da URL para preservar modo ao compartilhar link.
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>(() => {
+    const vm = searchParams.get('viewMode');
+    if (vm === 'list' || vm === 'table' || vm === 'grid') return vm;
+    return 'grid';
+  });
   const [selectionMode, setSelectionMode] = useState(false);
   const [gridColumns, setGridColumns] = useState<ColumnCount>(getDefaultColumns);
 
-  // Responsive clamp: force appropriate columns on small screens
+  // Responsive clamp: use ref so the listener doesn't re-register on every column change
+  const gridColumnsRef = useRef(gridColumns);
+  gridColumnsRef.current = gridColumns;
   useEffect(() => {
     const handleResize = () => {
-      const w = window.innerWidth;
-      if (w < 640 && gridColumns > 1) {
-        setGridColumns(1);
-      } else if (w >= 640 && w < 768 && gridColumns > 2) {
-        setGridColumns(2);
-      }
+      if (window.innerWidth < 768 && gridColumnsRef.current > 3) setGridColumns(3);
     };
     handleResize();
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
     return () => window.removeEventListener('resize', handleResize);
-  }, [gridColumns]);
-  const [voiceOverlayOpen, setVoiceOverlayOpen] = useState(false);
-  const [commandAction, setCommandAction] = useState<string | null>(null);
-  const [appliedFilters, setAppliedFilters] = useState<
-    Array<{
-      type: 'category' | 'color' | 'price' | 'material' | 'stock' | 'featured' | 'kit';
-      label: string;
-    }>
-  >([]);
+  }, []); // empty deps — handler uses ref to avoid stale closure
+
+  // FIX-9: sincroniza viewMode com URL para preservar modo ao atualizar ou compartilhar link.
+  // Efeito separado do bloco principal (filters) porque viewMode é declarado depois.
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (viewMode !== 'grid') next.set('viewMode', viewMode);
+        else next.delete('viewMode');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [viewMode, setSearchParams]);
+  // FIX-12: removido estado 'appliedFilters' — declarado mas nunca consumido (dead code).
+  // Era exportado no return mas nenhum consumer o utilizava, gerando re-renders desnecessários.
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
 
@@ -219,14 +428,23 @@ export function useFiltersPageState() {
     return () => clearTimeout(timer);
   }, [filtersJson]);
 
-  const sortBy = filters.sortBy || 'name';
+  const sortBy = filters.sortBy || 'newest';
   const setSortBy = useCallback((value: string) => {
     setFilters((prev) => ({ ...prev, sortBy: value }));
+    // Persiste a escolha do usuário durante a sessão (limpo no logout/nova aba).
+    if (typeof window !== 'undefined' && VALID_SORT_VALUES.has(value)) {
+      try {
+        window.sessionStorage.setItem('catalog:sortBy', value);
+      } catch {
+        /* sessionStorage indisponível — ignora */
+      }
+    }
   }, []);
 
   // Promo Brindes sales ranking (lazy — only fetched when needed)
   const { data: promoSalesMap } = usePromoSalesRanking();
   const { data: supplierSalesMap } = useSupplierSalesRanking();
+  const { data: promoSales90dMap } = usePromoSales90dByProduct();
 
   const handleApplyPreset = (presetFilters: FilterState, presetId?: string) => {
     setFilters(presetFilters);
@@ -263,19 +481,22 @@ export function useFiltersPageState() {
       count++;
     if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) count++;
     if (filters.minStock > 0) count++;
+    if (filters.minSupplierSales90d > 0) count++;
+    if (filters.minPromoSales90d > 0) count++;
     if (filters.inStock) count++;
     if (filters.isKit) count++;
     if (filters.featured) count++;
     if (filters.isNew) count++;
     if (filters.hasPersonalization) count++;
+    if (filters.onSale) count++;
     if (filters.hasCommercialPackaging) count++;
-    if ((filters.techniques?.length || 0) > 0) count++;
+    if (techniquesDataAvailable && (filters.techniques?.length || 0) > 0) count++;
     if ((filters.tags?.length || 0) > 0) count++;
     if ((filters.gender?.length || 0) > 0) count++;
     if ((filters.sizes?.length || 0) > 0) count++;
     if (filters.search) count++;
     return count;
-  }, [filters]);
+  }, [filters, techniquesDataAvailable]);
 
   const handleReset = () => {
     const hadFilters = activeFiltersCount > 0;
@@ -285,136 +506,95 @@ export function useFiltersPageState() {
       toast.success('Filtros limpos', { description: 'Todos os filtros foram removidos.' });
   };
 
-  const searchQuery = searchParams.get('search') || '';
+  // BUG-20 FIX: usar filters.search como fonte primária (imediata) em vez de
+  // searchParams.get('search') que fica stale por 1 render frame após setFilters.
+  // O fallback para searchParams mantém compatibilidade com links diretos via URL.
+  const fuzzySearchQuery = filters.search || searchParams.get('search') || '';
   const { results: fuzzySearchResults, hasSearch: hasFuzzySearch } = useProductFuzzySearch(
     realProducts,
-    searchQuery,
+    fuzzySearchQuery,
   );
 
-  // Apply filters
-  const filteredProducts = useMemo(() => {
-    let result = hasFuzzySearch ? [...fuzzySearchResults] : [...realProducts];
-    if (filters.search) {
-      const s = filters.search.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(s) ||
-          (p.sku && p.sku.toLowerCase().includes(s)) ||
-          (p.description && p.description.toLowerCase().includes(s)),
-      );
-    }
-    if (hasColorFilter && colorFilteredProductIds.size > 0)
-      result = result.filter((p) => colorFilteredProductIds.has(p.id));
-    else if (hasColorFilter && colorFilteredProductIds.size === 0 && !isLoadingColorFilter)
-      result = [];
-    if (hasCategoryFilter && categoryFilteredProductIds.size > 0)
-      result = result.filter((p) => categoryFilteredProductIds.has(p.id));
-    else if (hasCategoryFilter && categoryFilteredProductIds.size === 0 && !isLoadingCategoryFilter)
-      result = [];
-    if (filters.suppliers.length > 0)
-      result = result.filter((product) => {
-        const sId = product.supplier?.id || '';
-        const sName = (product.supplier?.name || product.brand || '').toLowerCase();
-        return (
-          filters.suppliers.includes(sId) ||
-          filters.suppliers.some((s) => sName.includes(s.toLowerCase())) ||
-          filters.suppliers.includes(product.supplier_reference || '')
-        );
-      });
-    if (filters.publicoAlvo.length > 0)
-      result = result.filter((product) => {
-        const tags = product.tags?.publicoAlvo || [];
-        return filters.publicoAlvo.some((p) =>
-          tags.some((t: string) => t.toLowerCase() === p.toLowerCase()),
-        );
-      });
-    if (filters.datasComemorativas.length > 0)
-      result = result.filter((product) => {
-        const tags = product.tags?.datasComemorativas || [];
-        return filters.datasComemorativas.some((d) =>
-          tags.some((t: string) => t.toLowerCase().includes(d.toLowerCase())),
-        );
-      });
-    if (filters.endomarketing.length > 0)
-      result = result.filter((product) => {
-        const tags = product.tags?.endomarketing || [];
-        return filters.endomarketing.some((e) =>
-          tags.some((t: string) => t.toLowerCase() === e.toLowerCase()),
-        );
-      });
-    if (filters.ramosAtividade?.length > 0 || filters.segmentosAtividade?.length > 0)
-      result = result.filter((product) => {
-        const ramos = product.tags?.ramo || [];
-        const nichos = product.tags?.nicho || [];
-        const matchesRamo = filters.ramosAtividade?.length
-          ? filters.ramosAtividade.some((r) =>
-              ramos.some((t: string) => t.toLowerCase().includes(r.toLowerCase())),
-            )
-          : true;
-        const matchesSegmento = filters.segmentosAtividade?.length
-          ? filters.segmentosAtividade.some((s) =>
-              nichos.some((t: string) => t.toLowerCase().includes(s.toLowerCase())),
-            )
-          : true;
-        return matchesRamo || matchesSegmento;
-      });
-    if (hasMaterialFilter && materialFilteredProductIds.size > 0)
-      result = result.filter((p) => materialFilteredProductIds.has(p.id));
-    else if (hasMaterialFilter && materialFilteredProductIds.size === 0 && !isLoadingMaterialFilter)
-      result = [];
-    if (!hasMaterialFilter && filters.materiais.length > 0)
-      result = result.filter((product) => {
-        const materialsStr = Array.isArray(product.materials)
-          ? product.materials.join(' ').toLowerCase()
-          : (product.materials || '').toLowerCase();
-        return filters.materiais.some((m) => materialsStr.includes(m.toLowerCase()));
-      });
-    const priceFilterActive = filters.priceRange[0] > 0 || filters.priceRange[1] < 9999;
-    if (priceFilterActive)
-      result = result.filter(
-        (product) =>
-          product.price >= filters.priceRange[0] && product.price <= filters.priceRange[1],
-      );
-    if (filters.minStock > 0)
-      result = result.filter((product) => {
-        if (product.variations && product.variations.length > 0)
-          return product.variations.some(
-            (v: Record<string, unknown>) => ((v.stock as number) ?? 0) >= filters.minStock,
-          );
-        return (product.stock || 0) >= filters.minStock;
-      });
-    if (filters.inStock) result = result.filter((product) => (product.stock || 0) > 0);
-    if (filters.hasCommercialPackaging)
-      result = result.filter((product) => product.hasCommercialPackaging === true);
-    if (filters.isKit) result = result.filter((product) => product.isKit === true);
-    const skipSort = hasFuzzySearch && sortBy === 'name';
-    sortProducts(result, sortBy, { promoSalesMap, supplierSalesMap, skipSort });
-    return result;
-  }, [
-    filters,
-    sortBy,
-    hasFuzzySearch,
-    fuzzySearchResults,
-    realProducts,
-    hasMaterialFilter,
-    materialFilteredProductIds,
-    isLoadingMaterialFilter,
-    hasCategoryFilter,
-    categoryFilteredProductIds,
-    isLoadingCategoryFilter,
-    hasColorFilter,
-    colorFilteredProductIds,
-    isLoadingColorFilter,
-    promoSalesMap,
-    supplierSalesMap,
-  ]);
+  // Apply filters — lógica pura extraída para applyProductFilters (testável).
+  const filteredProducts = useMemo(
+    () =>
+      applyProductFilters(realProducts, filters, sortBy, {
+        hasFuzzySearch,
+        fuzzySearchResults,
+        techniquesDataAvailable,
+        hasColorFilter,
+        colorFilteredProductIds,
+        isLoadingColorFilter,
+        colorFilterError,
+        hasCategoryFilter,
+        categoryFilteredProductIds,
+        isLoadingCategoryFilter,
+        categoryFilterError,
+        hasMaterialFilter,
+        materialFilteredProductIds,
+        isLoadingMaterialFilter,
+        materialFilterError,
+        hasSizeFilter,
+        sizeFilteredProductIds,
+        isLoadingSizeFilter,
+        sizeFilterError,
+        hasMetadataFilter,
+        metadataFilteredProductIds,
+        isLoadingMetadataFilter,
+        metadataFilterError,
+        promoSalesMap,
+        supplierSalesMap,
+        promoSales90dMap,
+      }),
+    [
+      filters,
+      sortBy,
+      hasFuzzySearch,
+      fuzzySearchResults,
+      realProducts,
+      techniquesDataAvailable,
+      hasMaterialFilter,
+      materialFilteredProductIds,
+      isLoadingMaterialFilter,
+      materialFilterError,
+      hasSizeFilter,
+      sizeFilteredProductIds,
+      isLoadingSizeFilter,
+      sizeFilterError,
+      hasMetadataFilter,
+      metadataFilteredProductIds,
+      isLoadingMetadataFilter,
+      metadataFilterError,
+      hasCategoryFilter,
+      categoryFilteredProductIds,
+      isLoadingCategoryFilter,
+      categoryFilterError,
+      hasColorFilter,
+      colorFilteredProductIds,
+      isLoadingColorFilter,
+      colorFilterError,
+      promoSalesMap,
+      supplierSalesMap,
+      promoSales90dMap,
+    ],
+  );
 
   // Color enrichment: fetch variant images/stock for filtered products when color filter is active
   const filteredProductIds = useMemo(() => filteredProducts.map((p) => p.id), [filteredProducts]);
+  // FIX-REGRESSAO 2026-06-21: productMinQuantities reintroduzido (havia sido removido
+  // por engano num push anterior). Sem o MOQ, getCatalogStockStatus nao marca
+  // "estoque zerado" para variantes com stock < min_quantity (532 variantes / 413
+  // produtos exibiam "em estoque" enganosamente).
+  const filteredProductMinQtys = useMemo(
+    () => new Map(filteredProducts.map((p) => [p.id, p.minQuantity])),
+    [filteredProducts],
+  );
   const { data: colorEnrichmentMap } = useColorEnrichment({
     productIds: filteredProductIds,
     colorGroups: filters.colorGroups || [],
     colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
+    productMinQuantities: filteredProductMinQtys,
   });
 
   // Merge color enrichment data into products
@@ -456,6 +636,74 @@ export function useFiltersPageState() {
     });
   }, [filteredProducts, colorEnrichmentMap, filters.colorGroups, filters.colorVariations]);
 
+  // ============================================================
+  // FAN-OUT DE COR (FASE 2): expande produtos em "cards de cor".
+  // Filtro de cor ativo => cada produto vira N cards (1 por cor selecionada que
+  // possui), cards do mesmo produto adjacentes. Foto/estoque/cor por variante.
+  // Sem filtro de cor => displayCards = enrichedFilteredProducts (1-card-por-produto).
+  // ============================================================
+  const { data: colorFanoutMap } = useColorFanout({
+    productIds: filteredProductIds,
+    colorGroups: filters.colorGroups || [],
+    colorVariations: filters.colorVariations || [],
+    colorNuances: filters.colorNuances || [],
+    productMinQuantities: filteredProductMinQtys,
+  });
+
+  const hasFanoutColorFilter =
+    (filters.colorGroups?.length || 0) > 0 ||
+    (filters.colorVariations?.length || 0) > 0 ||
+    (filters.colorNuances?.length || 0) > 0;
+
+  const displayCards = useMemo(() => {
+    // Sem filtro de cor (ou fan-out ainda carregando): 1 card por produto.
+    if (!hasFanoutColorFilter || !colorFanoutMap || colorFanoutMap.size === 0) {
+      return enrichedFilteredProducts;
+    }
+    // Fan-out: 1 card por (produto, cor). Mantém ordem de filteredProducts
+    // (cards do mesmo produto saem adjacentes pois iteramos produto a produto).
+    const cards: typeof filteredProducts = [];
+    for (const product of filteredProducts) {
+      const colorCards = colorFanoutMap.get(product.id);
+      if (!colorCards || colorCards.length === 0) {
+        // produto sem cor correspondente (não esperado pós-filtro) → 1 card neutro
+        cards.push(product);
+        continue;
+      }
+      for (const cc of colorCards) {
+        cards.push({
+          ...product,
+          _cardColorId: cc.colorId,
+          // foto da cor (fallback automático: mantém og/images do produto se cc.image nulo)
+          ...(cc.image
+            ? {
+                og_image_url: cc.image,
+                images: [cc.image, ...product.images.filter((img) => img !== cc.image)],
+              }
+            : {}),
+          stock: cc.stock,
+          stockStatus: cc.stockStatus,
+          // 1 cor por card → resolveColorImage/resolveColorStock casam direto
+          colors: [
+            {
+              name: cc.colorName || "",
+              hex: cc.colorHex || "#CCCCCC",
+              group: cc.colorName || "",
+              groupSlug: cc.groupSlug || undefined,
+              variationSlug: cc.variationSlug || undefined,
+              image: cc.image || undefined,
+              images: cc.image ? [cc.image] : undefined,
+            },
+          ],
+        });
+      }
+    }
+    return cards;
+  }, [hasFanoutColorFilter, colorFanoutMap, enrichedFilteredProducts, filteredProducts]);
+
+  /** Total de cards exibidos (>= nº de produtos quando há fan-out de cor). */
+  const cardCount = displayCards.length;
+
   // Search toast
   const prevSearchRef = useRef<string>('');
   useEffect(() => {
@@ -470,17 +718,33 @@ export function useFiltersPageState() {
   }, [filters.search, enrichedFilteredProducts.length]);
 
   // Active filters summary
+  // FIX-05: adicionados 11 tipos ausentes (priceRange, minStock, inStock, isKit, featured,
+  // isNew, hasPersonalization, hasCommercialPackaging, search, techniques, tags).
+  // Chips removíveis no cabeçalho não apareciam para esses filtros.
   const activeFiltersSummary = useMemo(() => {
     const summary: { label: string; value: string; key: keyof FilterState }[] = [];
+    // FAN-OUT 2026-06-21: seleção múltipla. Chip mostra o nome quando há 1 cor,
+    // ou "N selecionadas" quando múltiplas. colorNameBySlug dá o nome real
+    // (acentos/parênteses); slugToLabel é fallback ("azul-royal" → "Azul Royal").
+    const slugToLabel = (slug: string) =>
+      slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     const totalCores =
       (filters.colorGroups?.length || 0) +
       (filters.colorVariations?.length || 0) +
       (filters.colorNuances?.length || 0) +
       filters.colors.length;
+    const selectedColorSlug =
+      filters.colorGroups?.[0] ??
+      filters.colorVariations?.[0] ??
+      filters.colorNuances?.[0] ??
+      filters.colors?.[0] ??
+      null;
     if (totalCores > 0)
       summary.push({
-        label: 'Cores',
-        value: `${totalCores} selecionada${totalCores > 1 ? 's' : ''}`,
+        label: 'Cor',
+        value: totalCores === 1 && selectedColorSlug
+          ? (colorNameBySlug.get(selectedColorSlug) ?? slugToLabel(selectedColorSlug))
+          : `${totalCores} selecionada${totalCores > 1 ? 's' : ''}`,
         key: 'colors',
       });
     if (filters.categories.length > 0)
@@ -525,13 +789,22 @@ export function useFiltersPageState() {
         value: `${totalMateriais} selecionado${totalMateriais > 1 ? 's' : ''}`,
         key: 'materiais',
       });
-    const totalRamos =
-      (filters.ramosAtividade?.length || 0) + (filters.segmentosAtividade?.length || 0);
-    if (totalRamos > 0)
+    // BUG-SF-05 FIX 2026-06-21: chips separados para ramos e segmentos de atividade.
+    // Antes: chip único 'Nichos' com key='ramosAtividade' era exibido mesmo quando
+    // apenas segmentosAtividade estava ativo, causando label confuso e X que removia ambos.
+    // Agora: chip 'Ramos' (limpa ramos+segmentos via clearSingleFilter) e chip
+    // 'Segmentos' (limpa só segmentos via branch Array.isArray do clearSingleFilter).
+    if ((filters.ramosAtividade?.length || 0) > 0)
       summary.push({
-        label: 'Nichos',
-        value: `${totalRamos} selecionado${totalRamos > 1 ? 's' : ''}`,
+        label: 'Ramos',
+        value: `${filters.ramosAtividade!.length} selecionado${filters.ramosAtividade!.length > 1 ? 's' : ''}`,
         key: 'ramosAtividade',
+      });
+    if ((filters.segmentosAtividade?.length || 0) > 0)
+      summary.push({
+        label: 'Segmentos',
+        value: `${filters.segmentosAtividade!.length} selecionado${filters.segmentosAtividade!.length > 1 ? 's' : ''}`,
+        key: 'segmentosAtividade',
       });
     const genderArr = filters.gender || [];
     if (genderArr.length > 0)
@@ -543,8 +816,59 @@ export function useFiltersPageState() {
         value: `${sizesArr.length} selecionado${sizesArr.length > 1 ? 's' : ''}`,
         key: 'sizes',
       });
+    // Tipos ausentes no original — FIX-05:
+    const techArr = filters.techniques || [];
+    if (techArr.length > 0 && techniquesDataAvailable)
+      summary.push({
+        label: 'Técnicas',
+        value: `${techArr.length} selecionada${techArr.length > 1 ? 's' : ''}`,
+        key: 'techniques',
+      });
+    const tagsArr = filters.tags || [];
+    if (tagsArr.length > 0)
+      summary.push({
+        label: 'Tags',
+        value: `${tagsArr.length} selecionada${tagsArr.length > 1 ? 's' : ''}`,
+        key: 'tags',
+      });
+    if (filters.priceRange[0] > 0 || filters.priceRange[1] < 9999) {
+      const fmt = (n: number) =>
+        n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+      const min = filters.priceRange[0] > 0 ? fmt(filters.priceRange[0]) : '';
+      const max = filters.priceRange[1] < 9999 ? fmt(filters.priceRange[1]) : '';
+      summary.push({
+        label: 'Preço',
+        value: min && max ? `${min}–${max}` : min || max,
+        key: 'priceRange',
+      });
+    }
+    if (filters.minStock > 0)
+      summary.push({ label: 'Estoque mín.', value: `${filters.minStock} un.`, key: 'minStock' });
+    if (filters.minSupplierSales90d > 0)
+      summary.push({
+        label: 'Vendas fornec.',
+        value: `≥ ${filters.minSupplierSales90d} un./90d`,
+        key: 'minSupplierSales90d',
+      });
+    if (filters.minPromoSales90d > 0)
+      summary.push({
+        label: 'Vendas Promo',
+        value: `≥ ${filters.minPromoSales90d} un./90d`,
+        key: 'minPromoSales90d',
+      });
+    if (filters.inStock) summary.push({ label: 'Em estoque', value: 'Sim', key: 'inStock' });
+    if (filters.isKit) summary.push({ label: 'Kit', value: 'Sim', key: 'isKit' });
+    if (filters.featured) summary.push({ label: 'Destaque', value: 'Sim', key: 'featured' });
+    if (filters.isNew) summary.push({ label: 'Lançamento', value: 'Sim', key: 'isNew' });
+    if (filters.hasPersonalization)
+      summary.push({ label: 'Personalizável', value: 'Sim', key: 'hasPersonalization' });
+    if (filters.onSale) summary.push({ label: 'Em Oferta', value: 'Sim', key: 'onSale' });
+    if (filters.hasCommercialPackaging)
+      summary.push({ label: 'Embalagem', value: 'Comercial', key: 'hasCommercialPackaging' });
+    if (filters.search)
+      summary.push({ label: 'Busca', value: `"${filters.search}"`, key: 'search' });
     return summary;
-  }, [filters]);
+  }, [filters, techniquesDataAvailable, colorNameBySlug]);
 
   const clearSingleFilter = (key: keyof FilterState) => {
     if (key === 'colors')
@@ -559,8 +883,13 @@ export function useFiltersPageState() {
       setFilters({ ...filters, materiais: [], materialGroups: [], materialTypes: [] });
     else if (key === 'ramosAtividade')
       setFilters({ ...filters, ramosAtividade: [], segmentosAtividade: [] });
+    // FIX-02: priceRange precisa de valor sentinela [0,9999], não [] (que causaria crash downstream).
+    else if (key === 'priceRange') setFilters({ ...filters, priceRange: [0, 9999] });
+    // FIX-02 (cont): search é string, não boolean nem array.
+    else if (key === 'search') setFilters({ ...filters, search: '' });
     else if (Array.isArray(filters[key])) setFilters({ ...filters, [key]: [] });
     else if (typeof filters[key] === 'boolean') setFilters({ ...filters, [key]: false });
+    else if (typeof filters[key] === 'number') setFilters({ ...filters, [key]: 0 });
     setActivePresetId(undefined);
   };
 
@@ -584,18 +913,17 @@ export function useFiltersPageState() {
     setGridColumns,
     selectionMode,
     setSelectionMode,
-    voiceOverlayOpen,
-    setVoiceOverlayOpen,
-    commandAction,
-    setCommandAction,
-    appliedFilters,
-    setAppliedFilters,
+    // FIX-12: appliedFilters/setAppliedFilters removidos (dead code — nenhum consumer)
     mobileFiltersOpen,
     setMobileFiltersOpen,
     isFiltering,
     sortBy,
     setSortBy,
     filteredProducts: enrichedFilteredProducts,
+    // FAN-OUT: lista expandida (1 card por cor quando filtro de cor ativo).
+    // Sem filtro de cor, === filteredProducts. O grid renderiza displayCards.
+    displayCards,
+    cardCount,
     activeFiltersCount,
     activeFiltersSummary,
     clearSingleFilter,

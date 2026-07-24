@@ -22,14 +22,6 @@ import type {
 
 type Raw = Record<string, unknown>;
 
-function _pick<T = unknown>(obj: Raw, ...keys: string[]): T | undefined {
-  for (const k of keys) {
-    const v = obj[k];
-    if (v !== undefined && v !== null) return v as T;
-  }
-  return undefined;
-}
-
 function toNumberOrNull(v: unknown): number | null {
   if (v === null || v === undefined || v === '') return null;
   if (typeof v === 'number' && Number.isFinite(v)) return v;
@@ -52,7 +44,7 @@ function toBoolOrNull(v: unknown): boolean | null {
  * Mapeamento bidirecional: ao detectar uma das chaves, espelhamos para a outra.
  * `[ptKey, enKey, kind]` — `kind` define a coerção.
  */
-type Kind = 'string' | 'number' | 'bool' | 'raw';
+type Kind = 'bool' | 'number' | 'raw' | 'string';
 const TECNICA_PAIRS: Array<[string, string, Kind]> = [
   ['codigo', 'code', 'string'],
   ['codigo_interno', 'internal_code', 'string'],

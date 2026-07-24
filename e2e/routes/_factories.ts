@@ -20,6 +20,32 @@ import {
   waitRouteReady,
 } from "./_shared";
 
+
+export type RouteTag = "critical" | "smoke" | "regression" | "edge" | "fuzz";
+
+interface SuiteMeta {
+  module: "public" | "app" | "quotes" | "admin";
+  component: string;
+  owner: string;
+}
+
+function sanitizeToken(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function buildRouteMeta(specName: string, fallbackModule: SuiteMeta["module"], owner: string): SuiteMeta {
+  const clean = specName.startsWith("/") ? specName : `/${specName}`;
+  const parts = clean.split("/").filter(Boolean);
+  const module = (parts[0] as SuiteMeta["module"]) || fallbackModule;
+  const component = sanitizeToken(parts[parts.length - 1] || module);
+  return { module: ["public", "app", "quotes", "admin"].includes(module) ? (module as SuiteMeta["module"]) : fallbackModule, component, owner };
+}
+
+function label(title: string, meta: SuiteMeta, tags: RouteTag[]) {
+  const tagsLabel = tags.map(tag => `@${tag}`).join(" ");
+  return `[module:${meta.module}] [component:${meta.component}] [owner:${meta.owner}] ${tagsLabel} ${title}`;
+}
+
 export interface PublicTokenRouteSpec {
   /** Nome legível, usado no describe. Ex.: "/proposta/:token". */
   name: string;
@@ -35,11 +61,12 @@ export interface PublicTokenRouteSpec {
 
 export function buildPublicTokenSuite(spec: PublicTokenRouteSpec) {
   const notFound = spec.notFoundCopy ?? /não encontrad[ao]|inválid[ao]|expirad[ao]|sem.+acesso/i;
+  const meta = buildRouteMeta(spec.name, "public", "team-growth");
 
-  test.describe(spec.name, () => {
+  test.describe(label(`route:${spec.name}`, meta, ["regression"]), () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
-    test("render: rota pública carrega sem auth", async ({ page }) => {
+    test(label("render: rota pública carrega sem auth", meta, ["smoke", "critical"]), async ({ page }) => {
       await mockEdgeFn(page, spec.edgeFnName, 200, spec.successBody);
       await gotoAndSettle(page, spec.buildPath("VALID_TOKEN"));
       await waitRouteReady(page);
@@ -47,7 +74,7 @@ export function buildPublicTokenSuite(spec: PublicTokenRouteSpec) {
       expect(/\/login/.test(page.url())).toBe(false);
     });
 
-    test("happy: dados do token renderizam", async ({ page }) => {
+    test(label("happy: dados do token renderizam", meta, ["smoke"]), async ({ page }) => {
       await mockEdgeFn(page, spec.edgeFnName, 200, spec.successBody);
       await gotoAndSettle(page, spec.buildPath("VALID_TOKEN"));
       await waitRouteReady(page);
@@ -56,21 +83,21 @@ export function buildPublicTokenSuite(spec: PublicTokenRouteSpec) {
       expect(hasHeading).toBe(true);
     });
 
-    test("token inválido: 404 mostra mensagem", async ({ page }) => {
+    test(label("token inválido: 404 mostra mensagem", meta, ["edge"]), async ({ page }) => {
       await mockEdgeFn(page, spec.edgeFnName, 404, { error: "not_found" });
       await gotoAndSettle(page, spec.buildPath("INVALID_TOKEN"));
       await waitRouteReady(page);
       await expect(page.getByText(notFound).first()).toBeVisible({ timeout: 8000 });
     });
 
-    test("token expirado: 410 mostra mensagem", async ({ page }) => {
+    test(label("token expirado: 410 mostra mensagem", meta, ["edge"]), async ({ page }) => {
       await mockEdgeFn(page, spec.edgeFnName, 410, { error: "expired" });
       await gotoAndSettle(page, spec.buildPath("EXPIRED_TOKEN"));
       await waitRouteReady(page);
       await expect(page.getByText(notFound).first()).toBeVisible({ timeout: 8000 });
     });
 
-    test("payload inválido: 400 do backend mostra erro acionável", async ({ page }) => {
+    test(label("payload inválido: 400 do backend mostra erro acionável", meta, ["regression", "edge"]), async ({ page }) => {
       await mockEdgeFn(page, spec.edgeFnName, 400, { error: "bad_request", message: "missing token" });
       await gotoAndSettle(page, spec.buildPath("BAD"));
       await waitRouteReady(page);
@@ -83,7 +110,7 @@ export function buildPublicTokenSuite(spec: PublicTokenRouteSpec) {
       expect(visible).toBe(true);
     });
 
-    test("timeout: edge function lenta não trava render", async ({ page }) => {
+    test(label("timeout: edge function lenta não trava render", meta, ["regression", "fuzz"]), async ({ page }) => {
       await mockEdgeFn(page, spec.edgeFnName, 504, {}, { delayMs: 6000 });
       await gotoAndSettle(page, spec.buildPath("SLOW"));
       // A página deve renderizar ao menos um skeleton/loading antes do timeout
@@ -91,7 +118,7 @@ export function buildPublicTokenSuite(spec: PublicTokenRouteSpec) {
       expect(await page.locator("body").isVisible()).toBe(true);
     });
 
-    test("5xx: erro do backend mostra alerta", async ({ page }) => {
+    test(label("5xx: erro do backend mostra alerta", meta, ["critical", "regression"]), async ({ page }) => {
       await mockEdgeFn(page, spec.edgeFnName, 503, { error: "service_unavailable" });
       await gotoAndSettle(page, spec.buildPath("ANY"));
       await waitRouteReady(page);
@@ -106,14 +133,14 @@ export function buildPublicTokenSuite(spec: PublicTokenRouteSpec) {
       }
     });
 
-    test("@a11y básico", async ({ page }) => {
+    test(label("a11y básico", meta, ["smoke"]), async ({ page }) => {
       await mockEdgeFn(page, spec.edgeFnName, 200, spec.successBody);
       await gotoAndSettle(page, spec.buildPath("VALID_TOKEN"));
       await waitRouteReady(page);
       await basicA11yChecks(page);
     });
 
-    test("@mobile layout sem overflow horizontal", async ({ page }) => {
+    test(label("mobile layout sem overflow horizontal", meta, ["smoke"]), async ({ page }) => {
       await mockEdgeFn(page, spec.edgeFnName, 200, spec.successBody);
       await setMobileViewport(page);
       await gotoAndSettle(page, spec.buildPath("VALID_TOKEN"));
@@ -149,10 +176,12 @@ export function buildAuthedRouteSuite(spec: AuthedRouteSpec) {
     );
   };
 
-  test.describe(spec.name, () => {
+  const meta = buildRouteMeta(spec.path, spec.path.startsWith("/admin") ? "admin" : spec.path.startsWith("/orcamentos") ? "quotes" : "app", "team-growth");
+
+  test.describe(label(`route:${spec.path}`, meta, ["regression"]), () => {
     test.beforeEach(() => requireAuth());
 
-    test("render: rota carrega sem erros JS", async ({ page }) => {
+    test(label("render: rota carrega sem erros JS", meta, ["smoke", "critical"]), async ({ page }) => {
       const errors: string[] = [];
       page.on("pageerror", e => errors.push(e.message));
       await mockSuccess(page);
@@ -161,7 +190,7 @@ export function buildAuthedRouteSuite(spec: AuthedRouteSpec) {
       expect(errors, "page errors: " + errors.join("; ")).toHaveLength(0);
     });
 
-    test("happy: dados principais renderizam", async ({ page }) => {
+    test(label("happy: dados principais renderizam", meta, ["smoke"]), async ({ page }) => {
       await mockSuccess(page);
       await gotoAndSettle(page, spec.path);
       await waitRouteReady(page);
@@ -173,7 +202,7 @@ export function buildAuthedRouteSuite(spec: AuthedRouteSpec) {
       }
     });
 
-    test("auth fail: 401 redireciona para /login ou mostra mensagem", async ({ page }) => {
+    test(label("auth fail: 401 redireciona para /login ou mostra mensagem", meta, ["critical", "edge"]), async ({ page }) => {
       await page.route(route, r =>
         r.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ message: "JWT expired", code: "PGRST301" }) }),
       );
@@ -184,7 +213,7 @@ export function buildAuthedRouteSuite(spec: AuthedRouteSpec) {
       expect(redirected || msg).toBeTruthy();
     });
 
-    test("payload inválido: 400 do backend exibe erro legível", async ({ page }) => {
+    test(label("payload inválido: 400 do backend exibe erro legível", meta, ["regression", "edge"]), async ({ page }) => {
       await page.route(route, r =>
         r.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ message: "invalid input", code: "22P02" }) }),
       );
@@ -194,7 +223,7 @@ export function buildAuthedRouteSuite(spec: AuthedRouteSpec) {
       expect(ok).toBe(true);
     });
 
-    test("timeout: backend lento mostra loading e não trava", async ({ page }) => {
+    test(label("timeout: backend lento mostra loading e não trava", meta, ["regression", "fuzz"]), async ({ page }) => {
       await page.route(route, async r => {
         await new Promise(res => setTimeout(res, 5000));
         await r.fulfill({ status: 504, body: "{}" });
@@ -204,7 +233,7 @@ export function buildAuthedRouteSuite(spec: AuthedRouteSpec) {
       expect(await page.locator("body").isVisible()).toBe(true);
     });
 
-    test("5xx: serviço indisponível mostra alerta", async ({ page }) => {
+    test(label("5xx: serviço indisponível mostra alerta", meta, ["critical", "regression"]), async ({ page }) => {
       await page.route(route, r =>
         r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ message: "service unavailable" }) }),
       );
@@ -219,14 +248,14 @@ export function buildAuthedRouteSuite(spec: AuthedRouteSpec) {
       expect(ok).toBe(true);
     });
 
-    test("@a11y básico", async ({ page }) => {
+    test(label("a11y básico", meta, ["smoke"]), async ({ page }) => {
       await mockSuccess(page);
       await gotoAndSettle(page, spec.path);
       await waitRouteReady(page);
       await basicA11yChecks(page);
     });
 
-    test("@mobile layout sem overflow horizontal", async ({ page }) => {
+    test(label("mobile layout sem overflow horizontal", meta, ["smoke"]), async ({ page }) => {
       await mockSuccess(page);
       await setMobileViewport(page);
       await gotoAndSettle(page, spec.path);

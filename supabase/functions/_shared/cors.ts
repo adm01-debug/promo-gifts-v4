@@ -2,17 +2,22 @@
 /**
  * Centralized CORS configuration — restrict to known origins.
  *
- * Observability: this module emits structured JSON logs (single-line) so they
- * are searchable in Supabase function logs. Event types:
- *   - cors_boot           → emitted once per cold start (config snapshot)
- *   - cors_preflight_ok   → 204 OPTIONS reply with allowed origin reflected
- *   - cors_preflight_warn → preflight from unknown origin OR requesting a
- *                           header that is NOT in Access-Control-Allow-Headers
+ * BUG-07 FIX (2026-06-02): getBestAllowedOrigin() fallback was returning
+ *   the Lovable dev URL (criar-together-now.lovable.app) for unknown origins.
+ *   Changed to production URL (www.promogifts.com.br).
+ *
+ * BUG-08 FIX (2026-06-02): pqpdolkaeqlyzpdpbizo.supabase.co removed from
+ *   EXACT_ALLOWED_ORIGINS. That project is in FORBIDDEN_REFS in client.ts
+ *   and must not be granted CORS access to edge functions.
  */
 
 // --- Configuration ---
 
 const EXACT_ALLOWED_ORIGINS = new Set([
+  // BUG-08 FIX: pqpdolkaeqlyzpdpbizo.supabase.co removed (FORBIDDEN project).
+  // That project is the old Lovable Cloud instance with no catalog. The canonical
+  // production project is doufsxqlfjyuvxuezpln (Gold/Medallion); its origins are
+  // listed below (promogifts.com.br, vercel.app previews, lovable.app, localhost).
   'https://criar-together-now.lovable.app',
   'https://id-preview--1be35a65-1f65-4c2b-9a79-7d563930aacd.lovable.app',
   'https://1be35a65-1f65-4c2b-9a79-7d563930aacd.lovableproject.com',
@@ -52,14 +57,18 @@ const ALLOWED_HEADERS_LIST = [
 const ALLOWED_HEADERS_SET = new Set(ALLOWED_HEADERS_LIST.map((h) => h.toLowerCase()));
 const ALLOWED_HEADERS_VALUE = ALLOWED_HEADERS_LIST.join(', ');
 
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'strict-dynamic'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;",
+} as const;
+
 const CORS_HEADERS_BASE = {
   'Access-Control-Allow-Headers': ALLOWED_HEADERS_VALUE,
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Expose-Headers': 'x-request-id',
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'strict-dynamic'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';",
+  ...SECURITY_HEADERS,
 } as const;
 
 // --- Internal Utilities ---
@@ -80,8 +89,12 @@ function isAllowedOrigin(origin: string): boolean {
 }
 
 function getBestAllowedOrigin(origin: string | null): string {
-  const fallbackOrigin = 'https://criar-together-now.lovable.app';
-  return origin && isAllowedOrigin(origin) ? origin : fallbackOrigin;
+  if (origin && isAllowedOrigin(origin)) return origin;
+  // BUG-07 FIX: Unknown origin now falls back to the PRODUCTION URL instead
+  // of the Lovable development URL (criar-together-now.lovable.app).
+  // The browser still blocks the response if the origin doesn't match anyway,
+  // so this only matters for same-origin requests and server-side callers.
+  return 'https://www.promogifts.com.br';
 }
 
 // --- Structured Logging ---
@@ -163,17 +176,9 @@ export function getCorsHeaders(req?: Request): Record<string, string> {
     logPreflightFromRequest(req, origin);
   }
 
-  // Security Headers for non-OPTIONS responses
-  const securityHeaders = req?.method !== 'OPTIONS' ? {
-    'X-Content-Type-Options': CORS_HEADERS_BASE['X-Content-Type-Options'],
-    'X-Frame-Options': CORS_HEADERS_BASE['X-Frame-Options'],
-    'Strict-Transport-Security': CORS_HEADERS_BASE['Strict-Transport-Security'],
-    'Content-Security-Policy': CORS_HEADERS_BASE['Content-Security-Policy'],
-  } : {};
-
   return {
     ...CORS_HEADERS_BASE,
-    ...securityHeaders,
+    ...SECURITY_HEADERS,
     'Access-Control-Allow-Origin': getBestAllowedOrigin(origin),
   };
 }
@@ -213,9 +218,7 @@ export function buildPublicCorsHeaders(opts: PublicCorsOptions = {}): Record<str
     'Access-Control-Allow-Headers': Array.from(merged).join(', '),
     'Access-Control-Allow-Methods': opts.allowMethods ?? CORS_HEADERS_BASE['Access-Control-Allow-Methods'],
     'Access-Control-Expose-Headers': 'x-request-id',
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; sandbox",
+    ...SECURITY_HEADERS,
   };
 }
 
@@ -251,5 +254,3 @@ export const CORS_INTROSPECTION = Object.freeze({
   allowMethods: CORS_HEADERS_BASE['Access-Control-Allow-Methods'],
   exposeHeaders: CORS_HEADERS_BASE['Access-Control-Expose-Headers'],
 });
-
-

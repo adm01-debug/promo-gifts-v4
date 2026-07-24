@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef } from 'react';
 
 /**
  * Skip links for accessibility (WCAG 2.1 AA)
@@ -11,9 +11,9 @@ interface SkipLink {
 }
 
 const defaultLinks: SkipLink[] = [
-  { href: "#main-content", label: "Pular para o conteúdo principal" },
-  { href: "#main-navigation", label: "Ir para a navegação" },
-  { href: "#search", label: "Ir para a busca" },
+  { href: '#main-content', label: 'Pular para o conteúdo principal' },
+  { href: '#main-navigation', label: 'Ir para a navegação' },
+  { href: '#search', label: 'Ir para a busca' },
 ];
 
 interface SkipToContentProps {
@@ -28,40 +28,32 @@ export const SkipToContent = forwardRef<HTMLDivElement, SkipToContentProps>(
           <a
             key={index}
             href={link.href}
-            className="sr-only focus:not-sr-only focus:absolute focus:z-[9999] 
-                       focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-primary-foreground
-                       focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring
-                       focus:ring-offset-2 focus:ring-offset-background
-                       transition-all duration-200"
-            style={{ top: `${1 + index * 3}rem`, left: "1rem" }}
+            className="sr-only transition-all duration-200 focus:not-sr-only focus:absolute focus:z-[9999] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+            style={{ top: `${1 + index * 3}rem`, left: '1rem' }}
           >
             {link.label}
           </a>
         ))}
       </div>
     );
-  }
+  },
 );
 
-SkipToContent.displayName = "SkipToContent";
+SkipToContent.displayName = 'SkipToContent';
 
 // Simple single skip link for basic usage
 export const SkipLink = forwardRef<HTMLAnchorElement, Partial<SkipLink>>(
-  ({ href = "#main-content", label = "Pular para o conteúdo principal" }, ref) => {
+  ({ href = '#main-content', label = 'Pular para o conteúdo principal' }, ref) => {
     return (
       <a
         ref={ref}
         href={href}
-        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] 
-                   focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-primary-foreground
-                   focus:font-medium focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring
-                   focus:ring-offset-2 focus:ring-offset-background
-                   transition-all duration-200"
+        className="sr-only transition-all duration-200 focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[9999] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
       >
         {label}
       </a>
     );
-  }
+  },
 );
 
-SkipLink.displayName = "SkipLink";
+SkipLink.displayName = 'SkipLink';

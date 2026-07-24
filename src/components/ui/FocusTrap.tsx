@@ -3,8 +3,8 @@
  * Traps keyboard focus within a container for accessibility
  */
 
-import { useEffect, useRef, type ReactNode, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import React, { useEffect, useRef, type ReactNode, useCallback } from 'react';
+import { cn } from '@/lib/utils';
 
 interface FocusTrapProps {
   children: ReactNode;
@@ -26,6 +26,14 @@ const FOCUSABLE_SELECTOR = [
   '[contenteditable]:not([contenteditable="false"])',
 ].join(', ');
 
+const SENTINEL_STYLE: React.CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  margin: -1,
+  opacity: 0,
+};
+
 export function FocusTrap({
   children,
   active = true,
@@ -39,7 +47,7 @@ export function FocusTrap({
   const getFocusableElements = useCallback(() => {
     if (!containerRef.current) return [];
     return Array.from(
-      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
     ).filter((el) => el.offsetParent !== null);
   }, []);
 
@@ -76,12 +84,10 @@ export function FocusTrap({
           e.preventDefault();
           lastElement.focus();
         }
-      } else {
+      } else if (document.activeElement === lastElement) {
         // Tab
-        if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement.focus();
-        }
+        e.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -108,10 +114,7 @@ export function FocusTrap({
     if (!active) return;
 
     const handleFocusIn = (e: FocusEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         e.stopImmediatePropagation();
         focusFirst();
       }
@@ -127,32 +130,32 @@ export function FocusTrap({
       <div
         tabIndex={active ? 0 : -1}
         onFocus={focusLast}
-        style={{ position: 'absolute', width: 1, height: 1, margin: -1, opacity: 0 }}
-        aria-hidden="true"
+        style={SENTINEL_STYLE}
+        aria-hidden={active ? undefined : true}
       />
-      
+
       {children}
-      
+
       {/* End sentinel */}
       <div
         tabIndex={active ? 0 : -1}
         onFocus={focusFirst}
-        style={{ position: 'absolute', width: 1, height: 1, margin: -1, opacity: 0 }}
-        aria-hidden="true"
+        style={SENTINEL_STYLE}
+        aria-hidden={active ? undefined : true}
       />
     </div>
   );
 }
 
 // Hook for managing focus trap
-export function useFocusTrap(active: boolean = true) {
+export function useFocusTrap(active = true) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
   const getFocusableElements = useCallback(() => {
     if (!containerRef.current) return [];
     return Array.from(
-      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
     ).filter((el) => el.offsetParent !== null);
   }, []);
 
@@ -189,11 +192,9 @@ export function useFocusTrap(active: boolean = true) {
           e.preventDefault();
           lastElement.focus();
         }
-      } else {
-        if (document.activeElement === lastElement) {
-          e.preventDefault();
-          firstElement.focus();
-        }
+      } else if (document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -266,16 +267,16 @@ export function AccessibleModal({
         onClick={onClose}
         aria-hidden="true"
       />
-      
+
       {/* Modal content */}
       <div
         ref={containerRef}
         className={cn(
-          "fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
-          "w-full max-w-lg max-h-[85vh] overflow-auto",
-          "bg-background border rounded-lg shadow-lg",
-          "p-6",
-          className
+          'fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
+          'max-h-[85vh] w-full max-w-lg overflow-auto',
+          'rounded-lg border bg-background shadow-lg',
+          'p-6',
+          className,
         )}
       >
         {children}

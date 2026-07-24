@@ -13,6 +13,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface OptimizationMetrics {
   /** Total de respostas servidas a partir do cache LRU nas últimas 24h. */
@@ -28,9 +29,15 @@ export interface OptimizationMetrics {
 const QUERY_KEY = ['telemetry', 'optimization-metrics'];
 
 export function useOptimizationMetrics() {
+  // BUG-HEAD-GUARD FIX (2026-06-23): 2 HEAD requests com refetchInterval=30s sem guard.
+  const { rolesLoaded, isAdmin } = useAuth();
   const { data, isLoading, refetch } = useQuery({
     queryKey: QUERY_KEY,
-    refetchInterval: 30_000,
+    enabled: rolesLoaded && Boolean(isAdmin),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async (): Promise<OptimizationMetrics> => {
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
@@ -54,20 +61,21 @@ export function useOptimizationMetrics() {
 
       const cacheHits24h = hits ?? 0;
       const totalSamples24h = total ?? 0;
-      const cacheHitRate = totalSamples24h > 0
-        ? Math.round((cacheHits24h / totalSamples24h) * 1000) / 10
-        : null;
-      const retriesSaved24h = (retries ?? []).reduce(
-        (sum, r) => sum + (r.retry_count ?? 0),
-        0,
-      );
+      const cacheHitRate =
+        totalSamples24h > 0 ? Math.round((cacheHits24h / totalSamples24h) * 1000) / 10 : null;
+      const retriesSaved24h = (retries ?? []).reduce((sum, r) => sum + (r.retry_count ?? 0), 0);
 
       return { cacheHits24h, totalSamples24h, cacheHitRate, retriesSaved24h };
     },
   });
 
   return {
-    metrics: data ?? { cacheHits24h: 0, totalSamples24h: 0, cacheHitRate: null, retriesSaved24h: 0 },
+    metrics: data ?? {
+      cacheHits24h: 0,
+      totalSamples24h: 0,
+      cacheHitRate: null,
+      retriesSaved24h: 0,
+    },
     isLoading,
     refetch,
   };

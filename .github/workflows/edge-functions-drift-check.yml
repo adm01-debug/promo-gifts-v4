@@ -1,0 +1,250 @@
+name: edge-functions-drift-check
+
+# =============================================================================
+# Drift check entre o repo (supabase/functions/**) e o projeto canônico no
+# Supabase. Falha o build se um ou mais slugs estiverem com hash divergente.
+#
+# Rodadas:
+#   - cron diário (06:00 BRT = 09:00 UTC)
+#   - todo PR que toca supabase/functions/**
+#   - manual via workflow_dispatch
+#
+# Requer um secret: SUPABASE_ACCESS_TOKEN
+#   Personal Access Token de Management API:
+#     https://supabase.com/dashboard/account/tokens
+#
+# Variável (não-secret) que pode ser sobrescrita:
+#   SUPABASE_PROJECT_REF (default: doufsxqlfjyuvxuezpln)
+# =============================================================================
+
+on:
+  schedule:
+    - cron: '0 9 * * *'   # 06:00 BRT
+  pull_request:
+    paths:
+      - 'supabase/functions/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  drift:
+    name: Compare GitHub × Canonical
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || 'doufsxqlfjyuvxuezpln' }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Resolve list of slugs from repo
+        id: list_slugs
+        run: |
+          set -euo pipefail
+          slugs=$(find supabase/functions -mindepth 2 -maxdepth 2 -name 'index.ts' \
+            -exec dirname {} \; | xargs -n1 basename | sort -u)
+          echo "Found $(echo "$slugs" | wc -l) slugs in repo"
+          echo "$slugs" > /tmp/repo_slugs.txt
+
+      - name: List edge functions in canonical
+        run: |
+          set -euo pipefail
+          supabase functions list --project-ref "$SUPABASE_PROJECT_REF" --output json \
+            | jq -r '.[].slug' | sort -u > /tmp/canonical_slugs.txt
+          echo "Found $(wc -l < /tmp/canonical_slugs.txt) functions in canonical"
+
+      - name: Detect orphans and missing deploys
+        id: slug_diff
+        run: |
+          set -euo pipefail
+          comm -23 /tmp/repo_slugs.txt /tmp/canonical_slugs.txt > /tmp/missing_deploy.txt || true
+          comm -13 /tmp/repo_slugs.txt /tmp/canonical_slugs.txt > /tmp/orphans.txt || true
+          {
+            echo "## Slug-level diff"
+            echo
+            echo "**🟨 Pending deploy (in repo, not in canonical):**"
+            if [ -s /tmp/missing_deploy.txt ]; then
+              sed 's/^/- /' /tmp/missing_deploy.txt
+            else
+              echo "- _(none)_"
+            fi
+            echo
+            echo "**🟥 Orphans (in canonical, not in repo):**"
+            if [ -s /tmp/orphans.txt ]; then
+              sed 's/^/- /' /tmp/orphans.txt
+            else
+              echo "- _(none)_"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          {
+            if [ -s /tmp/missing_deploy.txt ]; then echo "has_missing=true"; else echo "has_missing=false"; fi
+            if [ -s /tmp/orphans.txt ]; then echo "has_orphans=true"; else echo "has_orphans=false"; fi
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Download functions from canonical and diff content
+        id: hash_diff
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/canonical_download
+
+          drift_count=0
+          missing_in_dl=0
+          aligned_count=0
+          {
+            echo "slug,status,repo_sha256,canonical_sha256,notes"
+          } > /tmp/drift_report.csv
+
+          for slug in $(comm -12 /tmp/repo_slugs.txt /tmp/canonical_slugs.txt); do
+            target_dir="/tmp/canonical_download/$slug"
+            mkdir -p "$target_dir"
+
+            if ! supabase functions download "$slug" \
+                  --project-ref "$SUPABASE_PROJECT_REF" \
+                  --no-verify-jwt \
+                  --legacy-bundle false \
+                  --output-dir "$target_dir" > /tmp/dl.log 2>&1; then
+              echo "::warning::Falha ao baixar $slug"
+              missing_in_dl=$((missing_in_dl+1))
+              echo "$slug,download_failed,,," >> /tmp/drift_report.csv
+              continue
+            fi
+
+            repo_file="supabase/functions/$slug/index.ts"
+            canon_file="$target_dir/index.ts"
+            if [ ! -f "$canon_file" ]; then
+              canon_file="$(find "$target_dir" -name index.ts -print -quit || true)"
+            fi
+
+            if [ ! -f "$canon_file" ]; then
+              echo "::warning::index.ts não encontrado após download para $slug"
+              missing_in_dl=$((missing_in_dl+1))
+              echo "$slug,no_index_after_download,,," >> /tmp/drift_report.csv
+              continue
+            fi
+
+            repo_sha=$(sha256sum "$repo_file" | awk '{print $1}')
+            canon_sha=$(sha256sum "$canon_file" | awk '{print $1}')
+
+            if [ "$repo_sha" = "$canon_sha" ]; then
+              aligned_count=$((aligned_count+1))
+              echo "$slug,aligned,$repo_sha,$canon_sha," >> /tmp/drift_report.csv
+            else
+              drift_count=$((drift_count+1))
+              echo "$slug,DRIFT,$repo_sha,$canon_sha," >> /tmp/drift_report.csv
+            fi
+          done
+
+          {
+            echo "drift_count=$drift_count"
+            echo "missing_in_dl=$missing_in_dl"
+            echo "aligned_count=$aligned_count"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Hash-level diff"
+            echo
+            echo "| Status | Count |"
+            echo "|---|---|"
+            echo "| ✅ Aligned | $aligned_count |"
+            echo "| 🟧 Drift | $drift_count |"
+            echo "| ⚠️ Download failed | $missing_in_dl |"
+            echo
+            if [ "$drift_count" -gt 0 ]; then
+              echo "### Drifted slugs"
+              awk -F, '$2=="DRIFT" {print "- `"$1"`"}' /tmp/drift_report.csv
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload drift report
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: /tmp/drift_report.csv
+
+      - name: Comment on PR (drift)
+        if: github.event_name == 'pull_request' && (steps.hash_diff.outputs.drift_count != '0' || steps.slug_diff.outputs.has_orphans == 'true' || steps.slug_diff.outputs.has_missing == 'true')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const csv = fs.readFileSync('/tmp/drift_report.csv', 'utf-8');
+            const drifted = csv.split('\n').filter(l => l.includes(',DRIFT,'));
+            const orphans = fs.readFileSync('/tmp/orphans.txt', 'utf-8').trim();
+            const missing = fs.readFileSync('/tmp/missing_deploy.txt', 'utf-8').trim();
+            let body = '## 🛡️ Drift check — GitHub × Supabase\n\n';
+            if (drifted.length > 0) {
+              body += `**🟧 ${drifted.length} function(s) com conteúdo divergente:**\n\n`;
+              for (const line of drifted) {
+                body += `- \`${line.split(',')[0]}\`\n`;
+              }
+              body += '\n';
+            }
+            if (missing) {
+              body += `**🟨 Sem deploy no canônico:**\n${missing.split('\n').map(s=>`- \`${s}\``).join('\n')}\n\n`;
+            }
+            if (orphans) {
+              body += `**🟥 Órfãs no canônico:**\n${orphans.split('\n').map(s=>`- \`${s}\``).join('\n')}\n\n`;
+            }
+            body += '\n_Antes de mergear: aplicar PR conciliador trazendo o source canônico para o repo, ou redeployar o branch do PR._';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+      - name: Open issue (scheduled drift)
+        if: github.event_name == 'schedule' && (steps.hash_diff.outputs.drift_count != '0' || steps.slug_diff.outputs.has_orphans == 'true' || steps.slug_diff.outputs.has_missing == 'true')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const csv = fs.readFileSync('/tmp/drift_report.csv', 'utf-8');
+            const drifted = csv.split('\n').filter(l => l.includes(',DRIFT,'));
+            const today = new Date().toISOString().slice(0,10);
+            const title = `[drift-check] ${drifted.length} function(s) divergentes em ${today}`;
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'drift-check'
+            });
+            const dup = existing.data.find(i => i.title.startsWith('[drift-check]'));
+            const body = `Detectadas ${drifted.length} divergências no cron diário.\n\n` +
+                         drifted.map(l => `- \`${l.split(',')[0]}\``).join('\n') +
+                         '\n\nVer artefato `drift-report` desta execução para os hashes.';
+            if (dup) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: dup.number, body: `Atualização do dia ${today}:\n\n${body}`
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ['drift-check','priority/high']
+              });
+            }
+
+      # ---------------------------------------------------------------
+      # MODO ENFORCE — quebra build/PR se houver qualquer drift.
+      # Validado em 25/05/2026 (run 26413875585): 82/82 aligned, 0 drift.
+      # Histórico: começou em modo observação no PR #342, promovido a
+      # enforce após primeira execução limpa.
+      # ---------------------------------------------------------------
+      - name: Fail if drift detected
+        if: steps.hash_diff.outputs.drift_count != '0' || steps.slug_diff.outputs.has_orphans == 'true' || steps.slug_diff.outputs.has_missing == 'true'
+        run: |
+          echo "::error::Drift detectado entre GitHub e canônico. Veja sumário do job e artefato drift-report.csv."
+          echo "::error::Resoluções possíveis:"
+          echo "::error::  1. Drift de conteúdo: rodar 'supabase functions download <slug>' e commit no repo"
+          echo "::error::  2. Órfã no canônico: deletar via dashboard ou commit em supabase/functions/<slug>/"
+          echo "::error::  3. Sem deploy: aguardar workflow Deploy Edge Functions ou disparar manual"
+          exit 1

@@ -1,6 +1,17 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { PureComponent, type ErrorInfo, type ReactNode } from 'react';
 import { telemetryService } from '@/services/telemetryService';
-import { AlertTriangle, RefreshCw, Home, Bug, ChevronDown, ChevronUp, RotateCcw, Trash2, Copy, Check } from 'lucide-react';
+import {
+  AlertTriangle,
+  RefreshCw,
+  Home,
+  Bug,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw,
+  Trash2,
+  Copy,
+  Check,
+} from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { reportError } from '@/lib/error-reporter';
 import { attemptChunkRecovery, isChunkLoadError } from '@/lib/chunk-recovery';
@@ -63,7 +74,11 @@ const MAX_AUTO_RETRIES = 2;
  * - Structured error logging
  * - Elegant full-screen fallback (ou custom via `fallback` prop)
  */
-class EnhancedErrorBoundary extends Component<Props, State> {
+class EnhancedErrorBoundary extends PureComponent<Props, State> {
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    return { hasError: true, error };
+  }
+
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -76,10 +91,6 @@ class EnhancedErrorBoundary extends Component<Props, State> {
       isClearingCache: false,
       copied: false,
     };
-  }
-
-  static getDerivedStateFromError(error: Error): Partial<State> {
-    return { hasError: true, error };
   }
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
@@ -153,7 +164,11 @@ class EnhancedErrorBoundary extends Component<Props, State> {
     this.setState({ isClearingCache: true });
     try {
       // Best-effort: limpa storages locais que podem estar com dados corrompidos
-      try { sessionStorage.clear(); } catch { /* noop */ }
+      try {
+        sessionStorage.clear();
+      } catch {
+        /* noop */
+      }
       // Preserva tokens auth do supabase para não deslogar; remove apenas chaves de cache de app
       try {
         for (const key of Object.keys(localStorage)) {
@@ -161,7 +176,9 @@ class EnhancedErrorBoundary extends Component<Props, State> {
             localStorage.removeItem(key);
           }
         }
-      } catch { /* noop */ }
+      } catch {
+        /* noop */
+      }
       await attemptChunkRecovery(this.state.error ?? new Error('manual cache reload'));
     } finally {
       // Se attemptChunkRecovery não navegar, libera o botão
@@ -181,15 +198,17 @@ class EnhancedErrorBoundary extends Component<Props, State> {
       await navigator.clipboard.writeText(payload);
       this.setState({ copied: true });
       setTimeout(() => this.setState({ copied: false }), 2000);
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   };
 
   override render() {
     if (this.state.isAutoRecovering) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-center space-y-4 animate-in fade-in duration-300">
-            <RotateCcw className="h-8 w-8 text-primary mx-auto animate-spin" />
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <div className="space-y-4 text-center duration-300 animate-in fade-in">
+            <RotateCcw className="mx-auto h-8 w-8 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Recuperando automaticamente…</p>
           </div>
         </div>
@@ -204,35 +223,39 @@ class EnhancedErrorBoundary extends Component<Props, State> {
 
       const { error, errorInfo, showDetails, retryCount, isClearingCache, copied } = this.state;
       const isChunk = error ? this.isChunkError(error) : false;
-      const currentPath = typeof window !== 'undefined' ? window.location.pathname + window.location.search : '';
+      const currentPath =
+        typeof window !== 'undefined' ? window.location.pathname + window.location.search : '';
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
-          <div className="w-full max-w-md space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+          <div className="w-full max-w-md space-y-6 duration-500 animate-in fade-in slide-in-from-bottom-4">
             {/* Icon */}
             <div className="flex justify-center">
               <div className="relative">
-                <div className="h-20 w-20 rounded-2xl bg-destructive/10 flex items-center justify-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-destructive/10">
                   <AlertTriangle className="h-10 w-10 text-destructive" />
                 </div>
-                <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-destructive/20 flex items-center justify-center">
+                <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-destructive/20">
                   <Bug className="h-3.5 w-3.5 text-destructive" />
                 </div>
               </div>
             </div>
 
             {/* Text */}
-            <div className="text-center space-y-2">
-              <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
+            <div className="space-y-2 text-center">
+              <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
                 {isChunk ? 'Atualização disponível' : 'Ops! Algo deu errado'}
               </h1>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-sm mx-auto">
+              <p className="mx-auto max-w-sm text-sm leading-relaxed text-muted-foreground">
                 {isChunk
                   ? 'Uma nova versão do aplicativo está disponível. Recarregue para atualizar — seus dados não serão perdidos.'
-                  : 'Ocorreu um erro inesperado nesta tela. Tente recarregar, limpar o cache ou voltar ao início.'}
+                  : error?.message?.includes('Invalid JWT') ||
+                      error?.message?.includes('UNAUTHORIZED')
+                    ? 'Ocorreu um problema de autenticação ou conexão com o servidor. Tente sair e entrar novamente ou limpar o cache.'
+                    : 'Ocorreu um erro inesperado nesta tela. Tente recarregar, limpar o cache ou voltar ao início.'}
               </p>
               {currentPath && (
-                <p className="text-[11px] text-muted-foreground/70 font-mono break-all">
+                <p className="break-all font-mono text-[11px] text-muted-foreground/70">
                   rota: {currentPath}
                 </p>
               )}
@@ -246,23 +269,21 @@ class EnhancedErrorBoundary extends Component<Props, State> {
             {/* Error message — restrito a usuários `dev` (gate de infra). Não-dev veem apenas a copy amigável acima. */}
             {error?.message && (
               <DevOnly>
-                <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 space-y-2">
+                <div className="space-y-2 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] uppercase tracking-wider text-destructive/80 font-semibold">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-destructive/80">
                       Mensagem do erro
                     </span>
                     <button
                       onClick={this.handleCopyError}
-                      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                      className="inline-flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
                       aria-label="Copiar detalhes do erro"
                     >
                       {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
                       {copied ? 'Copiado' : 'Copiar'}
                     </button>
                   </div>
-                  <p className="text-sm font-mono text-destructive break-words">
-                    {error.message}
-                  </p>
+                  <p className="break-words font-mono text-sm text-destructive">{error.message}</p>
                 </div>
               </DevOnly>
             )}
@@ -271,7 +292,7 @@ class EnhancedErrorBoundary extends Component<Props, State> {
             <div className="flex gap-3">
               <button
                 onClick={this.handleGoHome}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Home className="h-4 w-4" />
                 Início
@@ -279,7 +300,7 @@ class EnhancedErrorBoundary extends Component<Props, State> {
               <button
                 aria-label="Recarregar"
                 onClick={this.handleReload}
-                className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <RefreshCw className="h-4 w-4" />
                 Recarregar
@@ -290,11 +311,13 @@ class EnhancedErrorBoundary extends Component<Props, State> {
             <button
               onClick={this.handleClearCacheReload}
               disabled={isClearingCache}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-border/60 bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border/60 bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isClearingCache
-                ? <RotateCcw className="h-4 w-4 animate-spin" />
-                : <Trash2 className="h-4 w-4" />}
+              {isClearingCache ? (
+                <RotateCcw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
               {isClearingCache ? 'Limpando cache…' : 'Limpar cache e recarregar'}
             </button>
 
@@ -302,7 +325,7 @@ class EnhancedErrorBoundary extends Component<Props, State> {
             {!isChunk && (
               <button
                 onClick={this.handleRetry}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-border/50 bg-background/50 px-4 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border/50 bg-background/50 px-4 py-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Tentar renderizar novamente
@@ -315,18 +338,22 @@ class EnhancedErrorBoundary extends Component<Props, State> {
               <DevOnly>
                 <div className="pt-2">
                   <button
-                    onClick={() => this.setState(prev => ({ showDetails: !prev.showDetails }))}
-                    className="w-full inline-flex items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                    onClick={() => this.setState((prev) => ({ showDetails: !prev.showDetails }))}
+                    className="inline-flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
                   >
                     <span>Detalhes técnicos</span>
-                    {showDetails
-                      ? <ChevronUp className="h-3.5 w-3.5" />
-                      : <ChevronDown className="h-3.5 w-3.5" />}
+                    {showDetails ? (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    )}
                   </button>
                   {showDetails && (
-                    <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-muted p-4 text-[11px] leading-relaxed text-muted-foreground font-mono">
+                    <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-muted p-4 font-mono text-[11px] leading-relaxed text-muted-foreground">
                       {error?.stack || 'Stack trace não disponível'}
-                      {errorInfo?.componentStack ? `\n\nComponent Stack:${errorInfo.componentStack}` : ''}
+                      {errorInfo?.componentStack
+                        ? `\n\nComponent Stack:${errorInfo.componentStack}`
+                        : ''}
                     </pre>
                   )}
                 </div>

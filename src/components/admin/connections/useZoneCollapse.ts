@@ -6,15 +6,15 @@
  * o colapso mantém o header visível mas oculta o conteúdo, permitindo
  * que o usuário "minimize" zonas para reduzir densidade sem perder navegação.
  */
-import { useCallback, useEffect, useState } from "react";
-import type { ZoneId } from "./useZoneVisibility";
+import { useCallback, useEffect, useState } from 'react';
+import type { ZoneId } from './useZoneVisibility';
 
-const STORAGE_KEY = "connections.zone-collapse.v1";
+const STORAGE_KEY = 'connections.zone-collapse.v1';
 const ALL_EXPANDED: Record<ZoneId, boolean> = {
   health: false,
   operation: false,
   connections: false,
-  "ai-router": false,
+  'ai-router': false,
 };
 
 function loadInitial(): Record<ZoneId, boolean> {
@@ -48,12 +48,13 @@ export function useZoneCollapse() {
   }, []);
 
   const collapseAll = useCallback(
-    () => setCollapsed({
-      health: true,
-      operation: true,
-      connections: true,
-      "ai-router": true,
-    }),
+    () =>
+      setCollapsed({
+        health: true,
+        operation: true,
+        connections: true,
+        'ai-router': true,
+      }),
     [],
   );
   const expandAll = useCallback(() => setCollapsed({ ...ALL_EXPANDED }), []);

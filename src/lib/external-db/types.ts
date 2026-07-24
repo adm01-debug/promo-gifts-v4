@@ -11,6 +11,8 @@ export interface ExternalProduct {
   description?: string;
   short_description?: string;
   price?: number;
+  /** Alguns bridges expõem o preço de venda como sale_price em vez de price. */
+  sale_price?: number;
   cost_price?: number;
   category_id?: string;
   subcategory_id?: string;
@@ -25,6 +27,13 @@ export interface ExternalProduct {
   is_kit?: boolean;
   min_quantity?: number;
   stock?: number;
+  // Colunas reais do products no CRM (sem alias no rest-native):
+  // unit_price/stock_qty são o que o PostgREST devolve de fato.
+  unit_price?: number;
+  stock_qty?: number;
+  margin_pct?: number;
+  min_stock?: number;
+  category?: string;
   lead_time_days?: number;
   created_at?: string;
   updated_at?: string;
@@ -92,7 +101,7 @@ export interface ExternalProductVariant {
   length_cm?: number;
   weight_g?: number;
   images?: unknown[];
-  
+
   selected_thumbnail?: string;
   selected_videos?: unknown[];
   bitrix_product_id?: number;
@@ -124,6 +133,7 @@ export interface ExternalProductKitComponent {
   secondary_material_type_id?: string;
   color?: string;
   primary_image_url?: string;
+  primary_image_fallback_url?: string | null;
   images?: unknown[];
   allowed_variant_ids?: string[];
   supplier_component_code?: string;

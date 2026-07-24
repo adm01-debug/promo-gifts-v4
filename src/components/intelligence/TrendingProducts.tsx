@@ -28,12 +28,12 @@ export function TrendingProducts({
   );
   const navigate = useNavigate();
 
-  const formatCurrency = (v: number) =>
+  const formatCurrency = (v: number | null | undefined) =>
     new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       maximumFractionDigits: 0,
-    }).format(v);
+    }).format(v ?? 0);
 
   const trendIcon = {
     up: <TrendingUp className="h-3 w-3 text-primary" />,
@@ -51,7 +51,7 @@ export function TrendingProducts({
           <Skeleton className="h-5 w-40" />
         </CardHeader>
         <CardContent className="space-y-3">
-          {[...Array(5)].map((_, i) => (
+          {Array.from({ length: 5 }, (_, i) => (
             <Skeleton key={i} className="h-14 rounded-lg" />
           ))}
         </CardContent>
@@ -65,7 +65,7 @@ export function TrendingProducts({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-orange to-warning">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-brand-primary to-warning">
                 <TrendingUp className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
               🔥 Produtos em Alta
@@ -100,7 +100,7 @@ export function TrendingProducts({
                     'flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold',
                     index === 0 && 'bg-warning/20 text-warning',
                     index === 1 && 'bg-muted/50 text-muted-foreground',
-                    index === 2 && 'bg-orange/20 text-orange',
+                    index === 2 && 'bg-brand-primary/20 text-brand-primary',
                     index > 2 && 'bg-muted text-muted-foreground',
                   )}
                 >
@@ -127,7 +127,8 @@ export function TrendingProducts({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-medium">{product.productName}</p>
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                    <span>{product.totalQuantity.toLocaleString('pt-BR')} un.</span>
+                    {/* FIX: null-guard — totalQuantity pode vir null antes de estabilizar */}
+                    <span>{(product.totalQuantity ?? 0).toLocaleString('pt-BR')} un.</span>
                     <span>·</span>
                     <span>{product.orderCount} ped.</span>
                   </div>

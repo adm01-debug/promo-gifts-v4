@@ -1,0 +1,45 @@
+# Lint: cruza chamadas untypedFrom("X") no src/ contra o schema gerado
+# em src/integrations/supabase/types.ts. Existe pra evitar a regressão
+# do colapso de 2026-05-24, quando tabelas inexistentes no banco eram
+# chamadas e quebravam features em silêncio (catch { return []; }).
+#
+# Estado: advisory (continue-on-error) até types.ts ser regenerado
+# após PRs #315 e #317. Quando o build voltar a passar, remova o
+# continue-on-error pra tornar este check required.
+
+name: Lint untypedFrom
+
+on:
+  pull_request:
+    paths:
+      - 'src/**/*.ts'
+      - 'src/**/*.tsx'
+      - 'scripts/lint-untyped-from.sh'
+      - '.github/workflows/lint-untyped-from.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-untyped-from-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Cruza untypedFrom × types.ts
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    # TODO(@adm01-debug): remover continue-on-error após regenerar
+    # src/integrations/supabase/types.ts (supabase gen types typescript)
+    # para que o lint passe naturalmente. A partir daí, qualquer
+    # untypedFrom() apontando para tabela faltante bloqueia o PR.
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run lint
+        run: bash scripts/lint-untyped-from.sh

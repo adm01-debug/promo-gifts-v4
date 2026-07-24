@@ -7,11 +7,13 @@
  *   const { error } = await supabase.from("quotes").update(...).eq("id", id);
  *   if (error) await logRlsDenialIfApplicable(error, { table: "quotes", op: "UPDATE", endpoint: "useQuotes.update", targetId: id });
  */
-import { supabase } from "@/integrations/supabase/client";
-import type { PostgrestError } from "@supabase/supabase-js";
+import { supabase } from '@/integrations/supabase/client';
+import type { PostgrestError } from '@supabase/supabase-js';
 
-export type RlsOperation = "SELECT" | "INSERT" | "UPDATE" | "DELETE";
+/** Tipo de operação SQL cujo acesso foi negado pela política RLS do Supabase. */
+export type RlsOperation = 'DELETE' | 'INSERT' | 'SELECT' | 'UPDATE';
 
+/** Contexto de rastreabilidade para registrar qual endpoint/tabela disparou a negação RLS. */
 export interface LogRlsDenialContext {
   table: string;
   op: RlsOperation;
@@ -31,8 +33,8 @@ export interface LogRlsDenialContext {
  */
 export function isRlsDenialError(error: PostgrestError | null | undefined): boolean {
   if (!error) return false;
-  if (error.code === "42501") return true;
-  const msg = (error.message || "").toLowerCase();
+  if (error.code === '42501') return true;
+  const msg = (error.message || '').toLowerCase();
   return /row[- ]level security|violates row-level|new row violates/.test(msg);
 }
 
@@ -46,18 +48,22 @@ export async function logRlsDenial(
 ): Promise<void> {
   if (!error || !isRlsDenialError(error)) return;
   try {
-    await supabase.rpc("log_rls_denial", {
+    // BUG-RLSLOGGER-SILENT-FAIL FIX: bare RPC await swallowed errors (incl. network failures).
+    // Cannot import logger here (would create a circular dependency). Using console.warn.
+    const { error: rpcErr } = await supabase.rpc('log_rls_denial', {
       p_table_name: ctx.table,
       p_operation: ctx.op,
-      p_endpoint: ctx.endpoint ?? (typeof window !== "undefined" ? window.location.pathname : null),
-      p_query_summary: ctx.querySummary ?? null,
-      p_target_id: ctx.targetId ?? null,
-      p_target_seller_id: ctx.targetSellerId ?? null,
-      p_policy_hint: ctx.policyHint ?? null,
-      p_error_code: error.code ?? null,
-      p_error_message: error.message ?? null,
-      p_user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      p_endpoint:
+        ctx.endpoint ?? (typeof window !== 'undefined' ? window.location.pathname : undefined),
+      p_query_summary: ctx.querySummary ?? undefined,
+      p_target_id: ctx.targetId ?? undefined,
+      p_target_seller_id: ctx.targetSellerId ?? undefined,
+      p_policy_hint: ctx.policyHint ?? undefined,
+      p_error_code: error.code ?? undefined,
+      p_error_message: error.message ?? undefined,
+      p_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
     });
+    if (rpcErr) console.warn('[rls-denial-logger] log_rls_denial RPC failed:', rpcErr);
   } catch {
     // Logging nunca deve quebrar o fluxo do usuário.
   }

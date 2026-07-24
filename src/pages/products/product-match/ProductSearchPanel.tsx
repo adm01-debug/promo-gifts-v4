@@ -9,7 +9,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Search, Target } from 'lucide-react';
 import { getCdnUrl } from '@/utils/image-utils';
-import { createProductFuseOptions, dedupeById, rankProductSearchResults } from '@/utils/product-search';
+import {
+  createProductFuseOptions,
+  dedupeById,
+  rankProductSearchResults,
+} from '@/utils/product-search';
 import Fuse from 'fuse.js';
 
 function formatPrice(value: number) {
@@ -28,12 +32,16 @@ export function ProductSearchPanel({ products, onSelect, selectedId }: ProductSe
 
   const { data: remoteProducts = [], isFetching: isRemoteSearching } = useProducts(
     { search: debouncedSearch.trim(), limit: 120 },
-    { enabled: debouncedSearch.trim().length >= 2, staleTime: 60_000 }
+    { enabled: debouncedSearch.trim().length >= 2, staleTime: 60_000 },
   );
 
   const fuse = useMemo(
-    () => new Fuse(products, createProductFuseOptions<Product>({ threshold: 0.35, minMatchCharLength: 2 })),
-    [products]
+    () =>
+      new Fuse(
+        products,
+        createProductFuseOptions<Product>({ threshold: 0.35, minMatchCharLength: 2 }),
+      ),
+    [products],
   );
 
   const filtered = useMemo(() => {
@@ -47,7 +55,7 @@ export function ProductSearchPanel({ products, onSelect, selectedId }: ProductSe
   return (
     <div className="space-y-3">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Buscar produto por nome ou código..."
           value={search}
@@ -65,25 +73,31 @@ export function ProductSearchPanel({ products, onSelect, selectedId }: ProductSe
               key={p.id}
               onClick={() => onSelect(p)}
               className={cn(
-                'w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all border',
+                'flex w-full items-center gap-3 rounded-lg border p-2.5 text-left transition-all',
                 selectedId === p.id
-                  ? 'bg-primary/10 border-primary/40 shadow-sm'
-                  : 'bg-card/50 border-border/30 hover:bg-accent/50 hover:border-border/60'
+                  ? 'border-primary/40 bg-primary/10 shadow-sm'
+                  : 'border-border/30 bg-card/50 hover:border-border/60 hover:bg-accent/50',
               )}
             >
               <img
                 src={getCdnUrl(p.images?.[0] || p.image_url || '/placeholder.svg', 'thumbnail')}
                 alt={p.name}
-                className="w-10 h-10 rounded-md object-cover bg-muted shrink-0" loading="lazy" />
+                className="h-10 w-10 shrink-0 rounded-md bg-muted object-cover"
+                loading="lazy"
+              />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                <p className="text-[10px] text-muted-foreground">{p.sku} • {formatPrice(p.price)}</p>
+                <p className="truncate text-xs font-semibold text-foreground">{p.name}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {p.sku} • {formatPrice(p.price)}
+                </p>
               </div>
-              {selectedId === p.id && <Target className="h-4 w-4 text-primary shrink-0" />}
+              {selectedId === p.id && <Target className="h-4 w-4 shrink-0 text-primary" />}
             </button>
           ))}
           {filtered.length === 0 && !(search.trim().length >= 2 && isRemoteSearching) && (
-            <p className="text-xs text-muted-foreground text-center py-6">Nenhum produto encontrado</p>
+            <p className="py-6 text-center text-xs text-muted-foreground">
+              Nenhum produto encontrado
+            </p>
           )}
         </div>
       </ScrollArea>

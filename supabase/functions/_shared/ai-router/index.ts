@@ -8,18 +8,17 @@
 //   4) Logar uso (ai_usage_logs) + decisão de routing (ai_routing_decisions)
 //   5) Respeitar quota de usuário (acquireAiQuota) e quota de provider (PR futuro)
 //
-// Uso:
-//   import { callAiForFunction } from "../_shared/ai-router/index.ts";
+// BUG-A11 FIX (26/05/2026): logDecision era `await`ed no path de sucesso,
+// adicionando latência de DB desnecessária a TODA chamada AI bem-sucedida.
+// Agora é fire-and-forget (como já era logAiUsage). Só o path de falha
+// (all_failed, quota_blocked, no_routing) continua aguardando para garantir
+// que o log exista antes de lançar o erro.
 //
-//   const result = await callAiForFunction({
-//     functionName: "expert-chat",
-//     userId: auth.userId,
-//     request: { messages: [...], temperature: 0.5 }
-//   });
-//   // result.content, result.images, result.used_provider_slug, result.attempts
+// BUG-A18 FIX (26/05/2026): quando routing não está configurado para uma
+// função, a mensagem de erro agora inclui instrução clara de onde configurar.
 // =============================================================================
 
-import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.49.4";
 import { getCredential } from "../credentials.ts";
 import { acquireAiQuota, logAiUsage, QuotaExceededError } from "../ai-usage.ts";
 import type { Adapter, AdapterCallOpts, ApiFormat, UnifiedRequest, UnifiedResponse } from "./types.ts";
@@ -93,13 +92,23 @@ const CACHE_TTL_MS = 60_000;
 let _serviceClient: SupabaseClient | null = null;
 function getServiceClient(): SupabaseClient {
   if (_serviceClient) return _serviceClient;
-  _serviceClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
+  // Routing/providers/models tables live in the canonical external DB.
+  // Fallback to internal SUPABASE_URL if external is not configured.
+  const url =
+    Deno.env.get("EXTERNAL_SUPABASE_URL") ??
+    Deno.env.get("EXTERNAL_PROMOBRIND_URL") ??
+    Deno.env.get("SUPABASE_URL")!;
+  const key =
+    Deno.env.get("EXTERNAL_SUPABASE_SERVICE_ROLE_KEY") ??
+    Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ??
+    Deno.env.get("EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY") ??
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  _serviceClient = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   return _serviceClient;
 }
+
 
 async function getRouting(functionName: string): Promise<RoutingRow | null> {
   const cached = ROUTING_CACHE.get(functionName);
@@ -160,13 +169,7 @@ interface CallOpts {
   functionName: string;
   userId: string;
   request: UnifiedRequest;
-  /**
-   * Skip quota acquisition and ai_usage_logs insertion. Use this when the
-   * caller already reserved quota and will perform its own log update
-   * (typical when wrapped by the legacy callAiWithTracking helper).
-   */
   skipQuota?: boolean;
-  /** Optional request id for correlation. */
   requestId?: string;
 }
 
@@ -182,8 +185,8 @@ export interface RouterCallResult extends UnifiedResponse {
 
 interface AttemptOutcome {
   model_id: string;
-  provider_id: string | null;     // uuid (may be null when not resolved)
-  provider_slug: string;          // human-readable label
+  provider_id: string | null;
+  provider_slug: string;
   status: "success" | "error" | "skipped";
   error_kind?: string;
   error_message?: string;
@@ -193,10 +196,11 @@ interface AttemptOutcome {
 export async function callAiForFunction(opts: CallOpts): Promise<RouterCallResult> {
   const t0 = Date.now();
 
-  // 1) Quota check (fail fast antes de qualquer rede)
+  // 1) Quota check
   if (!opts.skipQuota) {
     const quota = await acquireAiQuota(opts.userId, opts.functionName, "router-pending");
     if (!quota.allowed) {
+      // BUG-A11 FIX: await logDecision only on error paths (ensures log exists before throwing)
       await logDecision({
         functionName: opts.functionName,
         userId: opts.userId,
@@ -224,13 +228,15 @@ export async function callAiForFunction(opts: CallOpts): Promise<RouterCallResul
       durationMs: Date.now() - t0,
       requestId: opts.requestId,
     });
+    // BUG-A18 FIX: hint de onde configurar o routing
     throw new AdapterError(
-      `No active routing for function "${opts.functionName}". Configure via /admin/conexoes.`,
+      `Nenhum routing ativo para a função "${opts.functionName}". ` +
+      `Configure em /admin/conexoes > AI Models > Routing e ative a função.`,
       { retryable: false, errorKind: "client" },
     );
   }
 
-  // 3) Build candidate list (primary first, then fallbacks in order)
+  // 3) Build candidate list
   const required = routing.required_capabilities ?? {};
   const candidates: Array<{ modelId: string; modelName: string; providerSlug: string }> = [];
 
@@ -257,15 +263,17 @@ export async function callAiForFunction(opts: CallOpts): Promise<RouterCallResul
 
   if (candidates.length === 0) {
     throw new AdapterError(
-      `No valid models satisfy required capabilities for "${opts.functionName}". Required: ${JSON.stringify(required)}`,
+      `Nenhum modelo satisfaz as capabilities necessárias para "${opts.functionName}". ` +
+      `Necessário: ${JSON.stringify(required)}. ` +
+      `Verifique em /admin/conexoes > AI Models se os modelos estão ativos.`,
       { retryable: false, errorKind: "client" },
     );
   }
 
-  // 4) Apply request overrides from routing
+  // 4) Apply request overrides
   const finalRequest: UnifiedRequest = { ...opts.request, ...(routing.request_overrides ?? {}) };
 
-  // 5) Try each candidate in order
+  // 5) Try each candidate
   const outcomes: AttemptOutcome[] = [];
   let fatalError: unknown = null;
 
@@ -341,7 +349,6 @@ export async function callAiForFunction(opts: CallOpts): Promise<RouterCallResul
         latency_ms: latency,
       });
 
-      // Log uso (apenas se router está cuidando da quota — caso contrário caller cuida)
       if (!opts.skipQuota) {
         logAiUsage({
           userId: opts.userId,
@@ -361,9 +368,11 @@ export async function callAiForFunction(opts: CallOpts): Promise<RouterCallResul
         }).catch((e: unknown) => console.error("[ai-router] log usage failed (non-fatal):", e));
       }
 
-      // Log decisão de routing (sempre, independente de quem cuida da quota)
       const fallbackUsed = outcomes.filter((o) => o.status === "error" || o.status === "skipped").length > 0;
-      await logDecision({
+
+      // BUG-A11 FIX: fire-and-forget no path de SUCESSO — não adiciona latência à resposta.
+      // O log de decisão não é crítico para o usuário; falha de log não deve atrasar a resposta.
+      logDecision({
         functionName: opts.functionName,
         userId: opts.userId,
         outcomes,
@@ -372,7 +381,7 @@ export async function callAiForFunction(opts: CallOpts): Promise<RouterCallResul
         outcome: fallbackUsed ? "fallback_used" : "success",
         durationMs: Date.now() - t0,
         requestId: opts.requestId,
-      });
+      }).catch((e: unknown) => console.error("[ai-router] logDecision failed (non-fatal):", e));
 
       return {
         ...response,
@@ -403,15 +412,13 @@ export async function callAiForFunction(opts: CallOpts): Promise<RouterCallResul
       );
 
       if (!isRetryableError(err)) {
-        // Erro fatal — para de tentar
         fatalError = err;
         break;
       }
-      // Continua para o próximo candidato
     }
   }
 
-  // 6) Todos os candidatos falharam
+  // 6) Todos os candidatos falharam — await aqui para garantir log antes do throw
   await logDecision({
     functionName: opts.functionName,
     userId: opts.userId,
@@ -426,8 +433,9 @@ export async function callAiForFunction(opts: CallOpts): Promise<RouterCallResul
   if (fatalError) throw fatalError;
 
   throw new AdapterError(
-    `All providers failed for "${opts.functionName}". Attempted: ${outcomes.length} models. ` +
-      `Last errors: ${outcomes.slice(-3).map((o) => `${o.provider_slug}=${o.error_kind}`).join("; ")}`,
+    `Todos os providers falharam para "${opts.functionName}". ` +
+      `Tentativas: ${outcomes.length} modelos. ` +
+      `Últimos erros: ${outcomes.slice(-3).map((o) => `${o.provider_slug}=${o.error_kind}`).join("; ")}`,
     {
       retryable: false,
       errorKind: "server",
@@ -455,7 +463,6 @@ async function logDecision(opts: LogDecisionOpts): Promise<void> {
       p_function_name: opts.functionName,
       p_user_id: opts.userId || null,
       p_attempted_models: opts.outcomes.map((o) => o.model_id),
-      // p_attempted_providers expects uuid[] — pass provider_id, not slug
       p_attempted_providers: opts.outcomes.map((o) => o.provider_id),
       p_attempted_outcomes: opts.outcomes,
       p_final_model_id: opts.finalModelId,

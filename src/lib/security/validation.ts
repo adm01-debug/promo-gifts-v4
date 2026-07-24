@@ -1,16 +1,16 @@
-import { z } from "zod";
-import DOMPurify from "dompurify";
+import { z } from 'zod';
+import DOMPurify from 'dompurify';
 
 /**
  * Robustly sanitizes HTML strings to prevent XSS.
  * Removes dangerous tags and attributes using DOMPurify.
  */
 export function sanitizeHtml(html: string): string {
-  if (!html) return "";
-  
+  if (!html) return '';
+
   return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ["b", "i", "u", "p", "span", "br", "ul", "ol", "li", "strong", "em"],
-    ALLOWED_ATTR: ["class", "style"],
+    ALLOWED_TAGS: ['b', 'i', 'u', 'p', 'span', 'br', 'ul', 'ol', 'li', 'strong', 'em'],
+    ALLOWED_ATTR: ['class', 'style'],
   });
 }
 
@@ -18,13 +18,13 @@ export function sanitizeHtml(html: string): string {
  * Sanitizes a string for safe rendering in text context (fully escaped).
  */
 export function sanitizeString(val: string): string {
-  if (!val) return "";
+  if (!val) return '';
   return val
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 
 /**

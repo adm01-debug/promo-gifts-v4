@@ -1,4 +1,5 @@
 import { getCorsHeaders } from '../_shared/cors.ts';
+import { getCredential } from '../_shared/credentials.ts';
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { runBotProtection } from '../_shared/bot-protection.ts';
@@ -75,8 +76,9 @@ Deno.serve(async (req) => {
     console.log(`[INSPECT] Mode: ${mode}, Table: ${tableName || 'all'}`);
 
     // External DB connection
-    const externalUrl = Deno.env.get('EXTERNAL_SUPABASE_URL');
-    const externalKey = Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY');
+    // fix: ssot-bypass — credential vault
+    const externalUrl = await getCredential('EXTERNAL_PROMOBRIND_URL');
+    const externalKey = await getCredential('EXTERNAL_PROMOBRIND_SERVICE_ROLE_KEY');
     if (!externalUrl || !externalKey) {
       console.warn('[external-db-inspect] EXTERNAL_SUPABASE_URL/KEY not configured — returning empty payload');
       return jsonResponse({ data: [], records: [], count: 0, _unconfigured: true, _message: 'Banco externo não configurado' }, 200);
@@ -84,12 +86,12 @@ Deno.serve(async (req) => {
 
     const externalSupabase = createClient(externalUrl, externalKey);
 
-    // Inspect specific table columns
+    // Inspect specific table columns + row count (service-role bypassa RLS — só leitura)
     if (mode === 'columns' && tableName) {
       try {
-        const { data, error } = await externalSupabase
+        const { data, error, count } = await externalSupabase
           .from(tableName)
-          .select('*')
+          .select('*', { count: 'exact', head: false })
           .limit(1);
 
         if (error) {
@@ -100,6 +102,8 @@ Deno.serve(async (req) => {
         return jsonResponse({
           success: true,
           table: tableName,
+          rowCount: count ?? 0,
+          sampleRow: data?.[0] ?? null,
           columns,
           columnTypes: columns.map(col => ({
             name: col,
@@ -133,6 +137,10 @@ Deno.serve(async (req) => {
       'ramo_atividade', 'ramo_atividade_filho', 'produto_ramo_atividade',
       'bitrix_clients', 'organizations', 'client_contacts', 'business_sectors',
       'mockup_drafts', 'generated_mockups',
+      // Arquitetura de Gravação (auditoria do vínculo product↔técnica)
+      'print_area_techniques', 'v_print_area_techniques_public',
+      'tabela_preco_gravacao_oficial', 'tabela_preco_gravacao_oficial_faixa',
+      'tecnicas_gravacao', 'v_audit_paradoxos_gravacao',
     ];
 
     const results: Array<{ name: string; exists: boolean; columns: string[]; rowCount: number; error?: string }> = [];

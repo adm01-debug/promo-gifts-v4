@@ -68,4 +68,71 @@ test.describe("Catalog & Filters", () => {
       expect(page.url()).toContain("page=2");
     }
   });
+
+  // ────────────────────────────────────────────────────────────────────
+  // Regression — Fix #40 (commit 208e80a)
+  // mapLightweightToProduct() retornava "Sem categoria" hardcoded para
+  // 100% dos cards. Após o fix, a maioria carrega o nome real via map
+  // pré-fetch. O threshold aceita ≤5% para tolerar produtos sem
+  // category_id ou queries em paralelo.
+  // ────────────────────────────────────────────────────────────────────
+  test("catalog cards exibem o nome real da categoria (não 'Sem categoria')", async ({ page }) => {
+    await gotoAndSettle(page, "/produtos");
+    await expectVisibleByTestId(page, "product-grid");
+
+    // Aguarda primeiro card hidratar
+    const firstCard = page.locator('[data-testid="product-card"]').first();
+    await expect(firstCard).toBeVisible({ timeout: 15_000 });
+    const totalCards = await page.locator('[data-testid="product-card"]').count();
+    if (totalCards === 0) {
+      test.skip(true, "Sem cards renderizados — provavelmente sem dados.");
+      return;
+    }
+
+    // Conta cards cujo badge de categoria diz literalmente "Sem categoria".
+    // Antes do fix #40, isso era 100% dos cards.
+    const badgesSemCat = page.locator('[data-testid="product-card"]').locator("text=Sem categoria");
+    const countSem = await badgesSemCat.count();
+    const ratio = countSem / totalCards;
+    expect(
+      ratio,
+      `${countSem}/${totalCards} cards ainda exibem 'Sem categoria' (regressão do fix #40)`,
+    ).toBeLessThanOrEqual(0.05);
+  });
+
+  // ────────────────────────────────────────────────────────────────────
+  // Regression — Fix #41 (commit 0676f73)
+  // OptimizedImage perdia o onLoad interno quando o consumer passava o
+  // próprio. Resultado: opacity-0 permanente em todos os <img>.
+  // Aqui asseguramos que após carga, imagens estão visíveis
+  // (opacity-100 ou sem classe opacity-0).
+  // ────────────────────────────────────────────────────────────────────
+  test("OptimizedImage transiciona para opacity-100 após carregar", async ({ page }) => {
+    await gotoAndSettle(page, "/produtos");
+    await expectVisibleByTestId(page, "product-grid");
+
+    // Aguarda primeira imagem do grid carregar (event 'load' real do browser)
+    const firstImg = page.locator('[data-testid="product-grid"] img').first();
+    await expect(firstImg).toBeVisible({ timeout: 15_000 });
+    await firstImg.evaluate((el: HTMLImageElement) => {
+      if (el.complete && el.naturalWidth > 0) return;
+      return new Promise<void>((resolve) => {
+        el.addEventListener("load", () => resolve(), { once: true });
+        el.addEventListener("error", () => resolve(), { once: true });
+      });
+    });
+
+    // Conta quantas imagens permaneceram em opacity-0 (regressão)
+    const opacityZero = await page.locator('[data-testid="product-grid"] img.opacity-0').count();
+    const totalImgs = await page.locator('[data-testid="product-grid"] img').count();
+    if (totalImgs === 0) {
+      test.skip(true, "Sem <img> no grid — provavelmente sem dados.");
+      return;
+    }
+    // Permitimos até 20% ainda em opacity-0 (cards abaixo do viewport / lazy load).
+    expect(
+      opacityZero / totalImgs,
+      `${opacityZero}/${totalImgs} imgs ficaram com opacity-0 após carga`,
+    ).toBeLessThanOrEqual(0.2);
+  });
 });

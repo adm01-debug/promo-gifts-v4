@@ -95,6 +95,39 @@ Link: <https://docs/...>; rel="deprecation"
 Versões inexistentes retornam **406** com `code=unsupported_version` e a
 lista de versões aceitas no `message`.
 
+## Endpoints migrados e sunsets
+
+Esta é a matriz canônica dos contratos ativos. A data de `Sunset` abaixo é a
+mesma declarada nos schemas de `_shared/contracts/schemas/`.
+
+| Lote | Endpoint | Default | Versão deprecated | Sunset |
+| ---- | -------- | ------- | ----------------- | ------ |
+| Base | `product-webhook` | v1 | v1 | 2026-08-31 |
+| Base | `webhook-inbound` | v2 | v1 | 2026-06-30 |
+| Base | `webhook-dispatcher` | v1 | v1 | 2026-09-30 |
+| P0 | `send-transactional-email` | v1 | v1 | 2026-10-31 |
+| P0 | `kit-ai-builder` | v1 | v1 | 2026-10-31 |
+| P0 | `bi-copilot` | v1 | v1 | 2026-10-31 |
+| P0 | `market-intelligence-insights` | v1 | v1 | 2026-10-31 |
+| P0 | `step-up-verify` | v1 | v1 | 2026-10-31 |
+| P1 | `ownership-audit` | v1 | v1 | 2026-11-30 |
+| P1 | `ownership-repair` | v1 | v1 | 2026-11-30 |
+| P1 | `simulation-orchestrator` | v1 | v1 | 2026-11-30 |
+| P1 | `sync-external-db` | v1 | v1 | 2026-11-30 |
+| P1 | `trends-insights` | v1 | v1 | 2026-11-30 |
+| P2 | `force-global-logout` | v1 | v1 | 2026-12-31 |
+| P2 | `e2e-cleanup` | v1 | v1 | 2026-12-31 |
+| P2 | `block-ip-temporarily` | v1 | v1 | 2026-12-31 |
+
+Notas P1 v2:
+
+- `ownership-repair`, `simulation-orchestrator` e `sync-external-db` exigem
+  `idempotency_key` por executarem operacoes com side-effect.
+- `ownership-audit` permanece sem `idempotency_key` porque e leitura/auditoria.
+- `trends-insights` permanece sem `idempotency_key` porque e analise/leitura sem
+  mutacao de dados; v2 strict aceita apenas `days` para limitar o payload do
+  fluxo de IA.
+
 ## Adicionando um novo schema
 
 ```ts

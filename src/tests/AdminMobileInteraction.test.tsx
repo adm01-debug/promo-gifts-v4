@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
+/* eslint-disable @typescript-eslint/require-await */
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -15,14 +16,18 @@ const TestMainLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div role="document">
       <header>
-        <button onClick={() => setIsOpen(true)} aria-label="Abrir menu">Toggle</button>
+        <button onClick={() => setIsOpen(true)} aria-label="Abrir menu">
+          Toggle
+        </button>
       </header>
-      <aside 
+      <aside
         aria-label="Menu principal"
         data-testid="sidebar-aside"
         className={`fixed transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <button onClick={() => setIsOpen(false)} aria-label="Fechar menu">Close</button>
+        <button onClick={() => setIsOpen(false)} aria-label="Fechar menu">
+          Close
+        </button>
       </aside>
       <main role="main" aria-hidden={isOpen}>
         {children}
@@ -40,9 +45,7 @@ describe('Admin Mobile Interaction Pattern', () => {
         <MemoryRouter>
           <ThemeProvider>
             <AuthProvider>
-              <TooltipProvider>
-                {children}
-              </TooltipProvider>
+              <TooltipProvider>{children}</TooltipProvider>
             </AuthProvider>
           </ThemeProvider>
         </MemoryRouter>
@@ -50,12 +53,12 @@ describe('Admin Mobile Interaction Pattern', () => {
     </QueryClientProvider>
   );
 
-  it('should toggle sidebar and manage main content accessibility correctly', async () => {
+  it('should toggle sidebar and manage main content accessibility correctly', () => {
     render(<TestMainLayout>Admin Content</TestMainLayout>, { wrapper });
 
     const sidebar = screen.getByTestId('sidebar-aside');
     const main = screen.getByRole('main');
-    
+
     // Initially closed
     expect(sidebar.className).toContain('-translate-x-full');
     expect(main.getAttribute('aria-hidden')).toBe('false');

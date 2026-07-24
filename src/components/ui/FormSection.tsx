@@ -1,11 +1,7 @@
-import { type ReactNode, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { type ReactNode, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface FormSectionProps {
   title: string;
@@ -20,10 +16,10 @@ interface FormSectionProps {
 
 /**
  * FormSection - Agrupamento semântico de campos de formulário
- * 
+ *
  * @example
- * <FormSection 
- *   title="Informações Básicas" 
+ * <FormSection
+ *   title="Informações Básicas"
  *   description="Preencha os dados principais do produto"
  *   collapsible
  *   defaultOpen
@@ -48,23 +44,19 @@ export function FormSection({
     <div className="flex items-center gap-2">
       <h3 className="font-display text-base font-semibold text-foreground">
         {title}
-        {required && <span className="text-destructive ml-1">*</span>}
+        {required && <span className="ml-1 text-destructive">*</span>}
       </h3>
       {badge}
     </div>
   );
 
   const descriptionContent = description && (
-    <p className="text-sm text-muted-foreground mt-1">{description}</p>
+    <p className="mt-1 text-sm text-muted-foreground">{description}</p>
   );
 
   if (collapsible) {
     return (
-      <Collapsible
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        className={cn("space-y-4", className)}
-      >
+      <Collapsible open={isOpen} onOpenChange={setIsOpen} className={cn('space-y-4', className)}>
         <div className="flex items-start justify-between">
           <div>
             {headerContent}
@@ -73,28 +65,26 @@ export function FormSection({
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="p-1 rounded-md hover:bg-muted transition-colors"
-              aria-label={isOpen ? "Recolher seção" : "Expandir seção"}
+              className="rounded-md p-1 transition-colors hover:bg-muted"
+              aria-label={isOpen ? 'Recolher seção' : 'Expandir seção'}
             >
-              <ChevronDown 
+              <ChevronDown
                 className={cn(
-                  "h-5 w-5 text-muted-foreground transition-transform",
-                  isOpen && "rotate-180"
-                )} 
+                  'h-5 w-5 text-muted-foreground transition-transform',
+                  isOpen && 'rotate-180',
+                )}
                 aria-hidden="true"
               />
             </button>
           </CollapsibleTrigger>
         </div>
-        <CollapsibleContent className="space-y-4">
-          {children}
-        </CollapsibleContent>
+        <CollapsibleContent className="space-y-4">{children}</CollapsibleContent>
       </Collapsible>
     );
   }
 
   return (
-    <fieldset className={cn("space-y-4", className)}>
+    <fieldset className={cn('space-y-4', className)}>
       <legend className="sr-only">{title}</legend>
       <div>
         {headerContent}
@@ -107,12 +97,7 @@ export function FormSection({
 
 // Divider between form sections
 export function FormDivider({ className }: { className?: string }) {
-  return (
-    <div 
-      className={cn("border-t border-border my-6", className)} 
-      role="separator" 
-    />
-  );
+  return <div className={cn('my-6 border-t border-border', className)} role="separator" />;
 }
 
 // Form actions footer
@@ -124,11 +109,11 @@ interface FormActionsProps {
 
 export function FormActions({ children, className, sticky = false }: FormActionsProps) {
   return (
-    <div 
+    <div
       className={cn(
-        "flex items-center justify-end gap-3 pt-6",
-        sticky && "sticky bottom-0 bg-background py-4 border-t border-border -mx-6 px-6",
-        className
+        'flex items-center justify-end gap-3 pt-6',
+        sticky && 'sticky bottom-0 -mx-6 border-t border-border bg-background px-6 py-4',
+        className,
       )}
     >
       {children}

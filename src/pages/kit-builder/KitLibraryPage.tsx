@@ -13,16 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { KitCard, type KitCardData } from '@/components/kit-library/KitCard';
@@ -30,7 +21,12 @@ import { KitCardSkeletonGrid } from '@/components/kit-library/KitCardSkeleton';
 import { KitLibraryFilters, type SortOption } from '@/components/kit-library/KitLibraryFilters';
 import { KitTemplatePreviewDialog } from '@/components/kit-library/KitTemplatePreviewDialog';
 import { KitCategoryChips } from '@/components/kit-library/KitCategoryChips';
-import { useCustomKitPersistence, useKitTemplates, type CustomKitRow, type KitTemplateRow } from "@/hooks/kit-builder";
+import {
+  useCustomKitPersistence,
+  useKitTemplates,
+  type CustomKitRow,
+  type KitTemplateRow,
+} from '@/hooks/kit-builder';
 import { buildCustomKitInsert } from '@/lib/kit-library/buildCustomKitInsert';
 
 function getItemsCount(items: unknown): number {
@@ -77,7 +73,7 @@ export default function KitLibraryPage() {
   const queryClient = useQueryClient();
   const { togglePinned } = useCustomKitPersistence();
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState<'mine' | 'suggested' | 'favorites'>('mine');
+  const [tab, setTab] = useState<'favorites' | 'mine' | 'suggested'>('mine');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -126,6 +122,7 @@ export default function KitLibraryPage() {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['custom-kits'] }),
+    onError: () => toast.error('Erro ao atualizar favorito'),
   });
 
   const duplicateMutation = useMutation({
@@ -202,6 +199,7 @@ export default function KitLibraryPage() {
 
   const pinnedKit = useMemo(
     () => myKits.find((k) => k.is_pinned && matchKit(k)) || null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [myKits, q, selectedTag, selectedColor],
   );
 
@@ -211,6 +209,7 @@ export default function KitLibraryPage() {
         myKits.filter((k) => !k.is_pinned && matchKit(k)),
         sort,
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [myKits, q, selectedTag, selectedColor, sort],
   );
   const filteredFavs = useMemo(
@@ -219,10 +218,12 @@ export default function KitLibraryPage() {
         myKits.filter((k) => k.is_favorite && matchKit(k)),
         sort,
       ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [myKits, q, selectedTag, selectedColor, sort],
   );
   const filteredTpls = useMemo(
     () => applySort(templates.filter(matchTpl), sort),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [templates, q, selectedTag, selectedCategory, sort],
   );
 
@@ -263,7 +264,7 @@ export default function KitLibraryPage() {
   };
 
   return (
-    <div className="w-full max-w-[1920px] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 space-y-3 sm:space-y-4 pb-24 md:pb-6 animate-fade-in">
+    <div className="mx-auto w-full max-w-[1920px] animate-fade-in space-y-3 px-3 py-3 pb-24 sm:space-y-4 sm:px-4 sm:py-4 md:pb-6 lg:px-6 xl:px-8">
       <PageSEO
         title="Biblioteca de Kits — Seus kits salvos e templates do sistema"
         description="Acesse seu banco pessoal de kits e clone templates curados pelo sistema para acelerar a montagem de propostas."
@@ -484,23 +485,17 @@ export default function KitLibraryPage() {
       />
 
       {/* Delete dialog */}
-      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir kit?</AlertDialogTitle>
-            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        variant="destructive"
+        title="Excluir kit?"
+        description="Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        onConfirm={() => { if (deleteId) deleteMutation.mutate(deleteId); }}
+        testId="kit-library-delete-dialog"
+      />
     </div>
   );
 }

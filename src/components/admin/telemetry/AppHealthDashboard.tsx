@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { REQUEST_ID_LOOKUP_EVENT } from '@/lib/edge/invokeExport';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,7 +35,7 @@ const WINDOW_OPTIONS: { value: HealthWindow; label: string }[] = [
 ];
 
 function fmtMs(n: number | null | undefined) {
-  if (n === null) return '—';
+  if (n === null || n === undefined) return '—';
   if (n >= 1000) return `${(n / 1000).toFixed(2)}s`;
   return `${n}ms`;
 }
@@ -52,8 +53,10 @@ export function AppHealthDashboard() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const { data, isLoading, isFetching, refetch } = useAppHealth(windowMinutes);
 
-  const handleLookup = async () => {
-    const id = requestIdQuery.trim();
+  const lookupCardRef = useRef<HTMLDivElement | null>(null);
+
+  const runLookup = async (rawId: string) => {
+    const id = rawId.trim();
     if (!id) return;
     setLookupLoading(true);
     try {
@@ -62,12 +65,30 @@ export function AppHealthDashboard() {
       if (res.event_count === 0) {
         toast.info('Nenhum evento encontrado para este request-id');
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Falha no lookup');
+    } catch {
+      toast.error('Falha no lookup');
     } finally {
       setLookupLoading(false);
     }
   };
+
+  const handleLookup = () => runLookup(requestIdQuery);
+
+  useEffect(() => {
+    const handler = (ev: Event) => {
+      const detail = (ev as CustomEvent<{ requestId?: string }>).detail;
+      const id = detail?.requestId?.trim();
+      if (!id) return;
+      setRequestIdQuery(id);
+      void runLookup(id);
+      if (lookupCardRef.current) {
+        lookupCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    };
+    window.addEventListener(REQUEST_ID_LOOKUP_EVENT, handler as EventListener);
+    return () => window.removeEventListener(REQUEST_ID_LOOKUP_EVENT, handler as EventListener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const kpis = data?.kpis;
   const topRoutesByError = data?.top_routes_by_error ?? [];
@@ -154,7 +175,7 @@ export function AppHealthDashboard() {
       </div>
 
       {/* Lookup por request-id */}
-      <Card>
+      <Card ref={lookupCardRef} data-testid="app-health-lookup-card">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm">
             <Search className="h-4 w-4 text-primary" />
@@ -434,7 +455,7 @@ function KpiCard({
   label: string;
   value: string;
   sub?: string;
-  tone?: 'muted' | 'warning' | 'destructive';
+  tone?: 'destructive' | 'muted' | 'warning';
 }) {
   return (
     <Card
@@ -482,7 +503,7 @@ function StatusBadge({ status, success }: { status: number | null; success: bool
     );
   }
   const variant: 'default' | 'destructive' | 'secondary' =
-    status >= 500 ? 'destructive' : status >= 400 ? 'destructive' : 'secondary';
+    status >= 400 ? 'destructive' : 'secondary';
   return (
     <Badge variant={variant} className="text-[10px] tabular-nums">
       {status}

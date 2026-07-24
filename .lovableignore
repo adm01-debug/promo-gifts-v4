@@ -1,0 +1,82 @@
+# .lovableignore — protege arquivos de segurança de sobrescrita pelo Lovable
+# Sintaxe igual ao .gitignore
+# Docs: https://docs.lovable.dev/tips-tricks/lovable-ignore
+
+# ============================================================
+# SSOT — Sistema de Fontes Únicas de Verdade (CRÍTICO)
+# Estes arquivos causaram incidente 401 em produção (2026-06-11)
+# quando o Lovable reverteu o CURRENT_PROJECT_ID 6+ vezes em 10 min.
+# NÃO alterar via Lovable — requer revisão manual de @adm01-debug
+# ============================================================
+src/integrations/supabase/client.ts
+scripts/validate-supabase-config.mjs
+.env.example
+
+# ============================================================
+# Edge functions com correções de segurança aplicadas manualmente
+# NÃO deve ser alterado pelo Lovable
+# ============================================================
+supabase/functions/send-transactional-email/index.ts
+supabase/functions/analyze-logo-colors/index.ts
+supabase/functions/webhook-inbound/index.ts
+supabase/functions/_shared/external-fetch.ts
+supabase/functions/_shared/ai-router/index.ts
+supabase/functions/sync-quote-bitrix/index.ts
+supabase/functions/dropbox-list/index.ts
+supabase/functions/elevenlabs-tts/index.ts
+supabase/functions/generate-mockup/index.ts
+supabase/functions/cnpj-lookup/index.ts
+supabase/functions/image-proxy/index.ts
+
+# ============================================================
+# Hooks auditados — não editar via Lovable (requer revisão manual)
+# Alterações causam regressões críticas (VOICE-01, KBD-01, CS-02, STAT-01, CS-03)
+# ============================================================
+src/hooks/intelligence/useSpeechRecognition.ts
+src/hooks/products/useCatalogState.ts
+src/hooks/__tests__/hooks-audit-regression.unit.test.ts
+
+# ============================================================
+# Scripts de CI/CD e validação — infraestrutura, não UI
+# ============================================================
+scripts/sentinel-check.sh
+scripts/check-tsc-baseline.mjs
+scripts/check-eslint-baseline.mjs
+scripts/seo-sanity-check.mjs
+# ============================================================
+# Resumo do Orçamento — botão "Recolher / Expandir" + invariantes a11y
+# Lovable já reverteu (2026-06) tooltip dinâmico, aria-expanded,
+# data-open-count, focus-visible:ring-primary e motion-reduce.
+# Alterações destes arquivos exigem revisão manual.
+# ============================================================
+src/components/quotes/QuoteBuilderSummaryColumn.tsx
+src/components/quotes/__tests__/QuoteBuilderSummaryCollapseAll.fuzz.test.ts
+e2e/quotes/quote-summary-collapse-all.spec.ts
+
+# ============================================================
+# Magazine module — arquivos com fixes críticos anti-regressão
+# Lovable reverteu: prefer-object-has-own, state-in-constructor,
+# prefer-readonly, sort-type-constituents (2026-07-16).
+# Qualquer alteração nestes arquivos exige revisão manual.
+# ============================================================
+src/pages/magazine/MagazineEditorPage.tsx
+src/pages/magazine/components/MagazineErrorBoundary.tsx
+src/pages/magazine/components/PublicMagazineToc.tsx
+src/pages/magazine/components/MagazineMiniMap.tsx
+src/pages/magazine/templates-gallery/MagazineTemplatesGalleryPage.tsx
+src/pages/magazine/templates-gallery/TemplatePreviewBoundary.tsx
+src/pages/magazine/templates-gallery/TemplatePreviewDialog.tsx
+src/pages/magazine/templates-gallery/safeReturn.ts
+src/pages/magazine/templates-gallery/__tests__/safeReturn.test.ts
+src/pages/magazine/templates-gallery/__tests__/gallery.test.tsx
+src/pages/magazine/components/__tests__/EditorHero.test.tsx
+src/pages/magazine/__tests__/applyTemplateGuard.test.ts
+src/pages/magazine/__tests__/useMagazineEditor.staleRef.test.ts
+src/pages/magazine/__tests__/publishAwait.regression.test.ts
+src/pages/magazine/hooks/__tests__/useMagazineReaderState.test.ts
+src/pages/magazine/hooks/__tests__/useMagazineGoldImport.test.ts
+src/pages/magazine/hooks/useMagazineReaderState.ts
+src/pages/magazine/hooks/useMagazineGoldImport.ts
+src/pages/magazine/useMagazinePublish.ts
+src/pages/magazine/useMagazineEditor.ts
+src/pages/magazine/PublicMagazineView.tsx

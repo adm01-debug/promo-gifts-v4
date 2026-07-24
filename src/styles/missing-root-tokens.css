@@ -1,0 +1,89 @@
+/**
+ * missing-root-tokens.css
+ *
+ * Complementa o src/index.css com tokens CSS que estavam ausentes do :root.
+ * Força o tema escuro como padrão em todos os tokens.
+ */
+
+:root {
+  /* ─── Motion easing tokens ─────────────────────────── */
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─── Glass morphism tokens (Dark Mode default) ────── */
+  --glass-bg: 240 6% 8% / 0.85;
+  --glass-bg-strong: 240 8% 6% / 0.92;
+  --glass-bg-subtle: 240 5% 10% / 0.65;
+  --glass-border: 217 30% 30% / 0.15;
+  --glass-border-strong: 217 40% 35% / 0.25;
+  --glass-shadow: 0 4px 30px hsl(225 20% 2% / 0.4);
+
+  /* ─── Accent tokens (Dark Mode default) ────────────── */
+  --accent: 24 28% 14%;
+  --accent-foreground: 24 100% 70%;
+
+  /* ─── Chart color tokens ──────────────────────────── */
+  --chart-1: 217 91% 60%;
+  --chart-2: 142 76% 48%;
+  --chart-3: 38 95% 58%;
+  --chart-4: 254 92% 65%;
+  --chart-5: 346 85% 60%;
+
+  /* ─── Cart color tokens ───────────────────────────── */
+  --cart: 217 91% 60%;
+  --cart-hover: 217 91% 66%;
+  --cart-foreground: 0 0% 100%;
+
+  /* ─── Spacing tokens ──────────────────────────────── */
+  --spacing-card: 1.5rem;
+  --spacing-card-sm: 1rem;
+  --spacing-card-lg: 2rem;
+  --spacing-section: 2rem;
+  --spacing-section-lg: 3rem;
+
+  /* ─── Shadow depth tokens (Dark Mode default) ─────── */
+  --shadow-lg: 0 10px 15px -3px hsl(225 20% 2% / 0.7), 0 4px 6px -4px hsl(225 20% 2% / 0.5);
+  --shadow-xl: 0 20px 25px -5px hsl(225 20% 2% / 0.8), 0 8px 10px -6px hsl(225 20% 2% / 0.6);
+  --shadow-header: 0 1px 3px hsl(225 20% 2% / 0.7), inset 0 1px 0 hsl(225 15% 18% / 0.3);
+
+  /* ─── Semantic color tokens ───────────────────────── */
+  --text-secondary: 215 20% 72%;
+  --interactive: 217 91% 60%;
+
+  /* ─── Sidebar alinhado (Dark Mode default) ────────── */
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 5% 16%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-ring: 217 91% 60%;
+
+  /* ─── Notification / Stock alerts panel width ─────── */
+  /* SSOT: largura do painel StockAlertsIndicator. Reduzida 7% (420 → 391px).
+     Alterar aqui propaga desktop + mobile. */
+  --stock-alerts-panel-width: 391px;
+
+  /* ─── Gradient tokens ─────────────────────────────── */
+  --gradient-hero: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.12) 0%,
+    hsl(var(--primary-glow) / 0.06) 50%,
+    hsl(var(--primary) / 0.08) 100%
+  );
+
+  /* ─── Command Palette (Global Search) — Carbon Sleek V2 ──── */
+  --command-surface: 225 18% 6%;
+  --command-surface-raised: 224 16% 9%;
+  --command-surface-soft: 224 14% 12%;
+  --command-accent: 217 91% 60% / 0.1;
+  --command-accent-strong: 217 91% 60% / 0.22;
+  --command-border: 220 14% 24% / 0.72;
+  --command-border-strong: 217 91% 60% / 0.34;
+  --command-text-muted: 220 14% 76%;
+  --command-text-subtle: 220 10% 48%;
+  --command-shadow: 225 35% 2% / 0.78;
+}
+
+/* O bloco .dark agora herda tudo de :root, mantido apenas para compatibilidade com seletores Tailwind */
+.dark {
+  /* Herda de :root */
+}

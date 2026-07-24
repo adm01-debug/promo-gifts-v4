@@ -15,7 +15,7 @@ describe('LoadingScreen', () => {
 
   it('renders spinner', () => {
     const { container } = render(<LoadingScreen />);
-    const spinner = container.querySelector('svg.lucide-loader2');
+    const spinner = container.querySelector('svg.lucide-loader2, svg.lucide-loader-circle');
     expect(spinner).toBeInTheDocument();
   });
 

@@ -1,5 +1,6 @@
-import { Navigate, Route } from "react-router-dom";
+import { Navigate, Route } from 'react-router-dom';
 import {
+  CartsListPage,
   CollectionDetailPage,
   CollectionsPage,
   ComparePage,
@@ -9,8 +10,8 @@ import {
   ProductDetail,
   ReplenishmentsPage,
   SellerCartsPage,
-} from "./lazy-pages";
-import { ValidProductIdRoute } from "./guards/ValidProductIdRoute";
+} from './lazy-pages';
+import { ValidProductIdRoute } from './guards/ValidProductIdRoute';
 
 /**
  * Product routes — products list, detail, filters, novelties, replenishments,
@@ -34,7 +35,7 @@ export const productRoutes = (
     <Route path="/novidades" element={<NoveltiesPage />} />
     <Route path="/reposicao" element={<ReplenishmentsPage />} />
     <Route path="/favoritos" element={<FavoritesPage />} />
-    <Route path="/carrinhos" element={<SellerCartsPage />} />
+    <Route path="/carrinhos" element={<CartsListPage />} />
     <Route path="/carrinhos/:cartId" element={<SellerCartsPage />} />
     <Route path="/comparar" element={<ComparePage />} />
     <Route path="/colecoes" element={<CollectionsPage />} />

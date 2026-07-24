@@ -6,10 +6,51 @@ const getFiniteNumber = (value: unknown): number | null =>
   typeof value === 'number' && Number.isFinite(value) ? value : null;
 
 export const productService = {
-  async fetchProducts(filters?: ProductFilters) {
+  async fetchProducts(filters?: ProductFilters, opts?: { signal?: AbortSignal }) {
+    const externalFilters: Record<string, unknown> = {};
+    if (filters?.categoryId) externalFilters.main_category_id = filters.categoryId;
+    if (filters?.inStock) externalFilters.stock_quantity = { op: 'gt', value: 0 };
+
+    // Mapeamento de ordenação para o backend
+    let orderBy: { column: string; ascending?: boolean } = { column: 'name', ascending: true };
+
+    if (filters?.sortBy) {
+      switch (filters.sortBy) {
+        case 'price-asc':
+          orderBy = { column: 'sale_price', ascending: true };
+          break;
+        case 'price-desc':
+          orderBy = { column: 'sale_price', ascending: false };
+          break;
+        case 'newest':
+          orderBy = { column: 'created_at', ascending: false };
+          break;
+        case 'stock':
+          orderBy = { column: 'stock_quantity', ascending: false };
+          break;
+        case 'best-seller-supplier':
+          orderBy = { column: 'is_bestseller', ascending: false };
+          break;
+        case 'best-seller-promo':
+          orderBy = { column: 'is_featured', ascending: false };
+          break;
+        case 'name-desc':
+          orderBy = { column: 'name', ascending: false };
+          break;
+        case 'name':
+        case 'name-asc':
+        default:
+          orderBy = { column: 'name', ascending: true };
+          break;
+      }
+    }
+
     const products = await fetchPromobrindProducts({
       search: filters?.search,
       limit: filters?.limit,
+      orderBy,
+      filters: Object.keys(externalFilters).length > 0 ? externalFilters : undefined,
+      signal: opts?.signal,
     });
 
     let result = products.map(mapPromobrindToProduct);
@@ -40,6 +81,7 @@ export const productService = {
       });
     }
 
+    // Belt+suspenders: client-side filter kept as safety net for bridge fallback
     if (filters?.inStock) {
       result = result.filter((p) => (p.stock || 0) > 0);
     }
@@ -49,7 +91,11 @@ export const productService = {
 
   async fetchProductById(id: string) {
     const product = await fetchPromobrindProductById(id);
-    return product ? mapPromobrindToProduct(product) : null;
+    if (!product) return null;
+
+    const mapped = mapPromobrindToProduct(product);
+
+    return mapped;
   },
 
   async fetchRelatedProducts(product: Product, limit = 20) {

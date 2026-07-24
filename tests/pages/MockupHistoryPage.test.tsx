@@ -75,7 +75,10 @@ describe("MockupHistoryPage", () => {
   it("renders search input", async () => {
     const { default: Page } = await import("@/pages/mockups/MockupHistoryPage");
     renderWithProviders(<Page />);
-    expect(screen.getByPlaceholderText("Buscar por produto, SKU ou cliente...")).toBeInTheDocument();
+    // The search filters on product_name/product_sku/technique_name only — client_name
+    // is not a real column (lives in area_config JSONB), so it is intentionally excluded
+    // from the .or() filter to avoid a PostgREST 400 (see BUG-400 fix in the page).
+    expect(screen.getByPlaceholderText("Buscar por produto, SKU ou técnica...")).toBeInTheDocument();
   });
 
   it("renders table headers", async () => {

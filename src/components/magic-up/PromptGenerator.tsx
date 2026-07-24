@@ -4,27 +4,40 @@
  * Inclui seleção de local, técnica e dimensões reais do banco de dados
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
-  Wand2, Loader2, Sparkles, Target,
-  Users, CalendarDays, RefreshCw, Check,
-  Lightbulb, MapPin, Paintbrush, Ruler,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import type { ScenePrompt } from "./PromptBank";
-import { OBJECTIVES, TONES, AUDIENCES, SEASONS, getMoodColor } from "./promptGeneratorConstants";
-import type { PrintAreaWithTechniques } from "@/types/gravacao";
-import { PromptCustomizationPanel } from "./PromptCustomizationPanel";
+  Wand2,
+  Loader2,
+  Sparkles,
+  Target,
+  Users,
+  CalendarDays,
+  RefreshCw,
+  Check,
+  Lightbulb,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
+import type { ScenePrompt } from './PromptBank';
+import { OBJECTIVES, TONES, AUDIENCES, SEASONS, getMoodColor } from './promptGeneratorConstants';
+import type { PrintAreaWithTechniques } from '@/types/gravacao';
+import { PromptCustomizationPanel } from './PromptCustomizationPanel';
 
+import { logger } from '@/lib/logger';
+import { invokeEdge } from '@/lib/edge/safeInvokeCall';
 interface GeneratedPrompt {
   title: string;
   prompt: string;
@@ -75,10 +88,10 @@ export function PromptGenerator({
   onCustomizationChange,
 }: PromptGeneratorProps) {
   // Campaign settings
-  const [objective, setObjective] = useState("");
-  const [tone, setTone] = useState("");
-  const [audience, setAudience] = useState("");
-  const [season, setSeason] = useState("none");
+  const [objective, setObjective] = useState('');
+  const [tone, setTone] = useState('');
+  const [audience, setAudience] = useState('');
+  const [season, setSeason] = useState('none');
 
   // Customization from real DB — sync from parent when props change
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(initialLocationId || null);
@@ -102,7 +115,7 @@ export function PromptGenerator({
 
   const selectedArea = useMemo(() => {
     if (!selectedAreaId || !printAreas) return null;
-    return printAreas.find(a => a.area_id === selectedAreaId) || null;
+    return printAreas.find((a) => a.area_id === selectedAreaId) || null;
   }, [selectedAreaId, printAreas]);
 
   const availableTechniques = useMemo(() => {
@@ -112,36 +125,38 @@ export function PromptGenerator({
 
   const selectedTech = useMemo(() => {
     if (!selectedTechId) return null;
-    return availableTechniques.find(t => t.id === selectedTechId) || null;
+    return availableTechniques.find((t) => t.id === selectedTechId) || null;
   }, [selectedTechId, availableTechniques]);
 
   const locationLabel = useMemo(() => {
     if (!selectedArea) return null;
-    return [selectedArea.component_name, selectedArea.location_name].filter(Boolean).join(" — ");
+    return [selectedArea.component_name, selectedArea.location_name].filter(Boolean).join(' — ');
   }, [selectedArea]);
 
   // ─── Sync selections back to MagicUp ───────────────────────────
 
   const handleAreaChange = (areaId: string) => {
-    const isNone = areaId === "none";
+    const isNone = areaId === 'none';
     setSelectedAreaId(isNone ? null : areaId);
     setSelectedTechId(null);
-    const area = isNone ? null : printAreas?.find(a => a.area_id === areaId);
+    const area = isNone ? null : printAreas?.find((a) => a.area_id === areaId);
     onCustomizationChange?.({
       locationId: isNone ? null : areaId,
-      locationName: area ? [area.component_name, area.location_name].filter(Boolean).join(" — ") : null,
+      locationName: area
+        ? [area.component_name, area.location_name].filter(Boolean).join(' — ')
+        : null,
       techniqueId: null,
       techniqueName: null,
       maxWidth: area?.max_width || 0,
       maxHeight: area?.max_height || 0,
-      unit: area?.unit || "cm",
+      unit: area?.unit || 'cm',
     });
   };
 
   const handleTechChange = (techId: string) => {
-    const isNone = techId === "none";
+    const isNone = techId === 'none';
     setSelectedTechId(isNone ? null : techId);
-    const tech = isNone ? null : availableTechniques.find(t => t.id === techId);
+    const tech = isNone ? null : availableTechniques.find((t) => t.id === techId);
     onCustomizationChange?.({
       locationId: selectedAreaId,
       locationName: locationLabel,
@@ -149,7 +164,7 @@ export function PromptGenerator({
       techniqueName: tech?.nome || null,
       maxWidth: selectedArea?.max_width || 0,
       maxHeight: selectedArea?.max_height || 0,
-      unit: selectedArea?.unit || "cm",
+      unit: selectedArea?.unit || 'cm',
     });
   };
 
@@ -157,33 +172,36 @@ export function PromptGenerator({
 
   const handleGenerate = useCallback(async () => {
     if (!productName) {
-      toast.error("Selecione um produto primeiro");
+      toast.error('Selecione um produto primeiro');
       return;
     }
 
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-ad-prompt", {
-        body: {
-          productName,
-          productColor,
-          productCategory: null, // Categoria não disponível nas props atuais — requer prop productCategory
-          techniqueName: selectedTech?.nome || null,
-          locationName: locationLabel || null,
-          maxWidth: selectedArea?.max_width || null,
-          maxHeight: selectedArea?.max_height || null,
-          dimensionUnit: selectedArea?.unit || "cm",
-          isCurved: selectedArea?.is_curved || false,
-          clientName,
-          clientSegment,
-          brandColorName,
-          objective,
-          tone,
-          targetAudience: audience,
-          season: season === "none" ? "" : season,
-          numberOfPrompts: 4,
+      const { data, error } = await invokeEdge<{ prompts?: GeneratedPrompt[]; error?: string }>(
+        'generate-ad-prompt',
+        {
+          body: {
+            productName,
+            productColor,
+            productCategory: null, // Categoria não disponível nas props atuais — requer prop productCategory
+            techniqueName: selectedTech?.nome || null,
+            locationName: locationLabel || null,
+            maxWidth: selectedArea?.max_width || null,
+            maxHeight: selectedArea?.max_height || null,
+            dimensionUnit: selectedArea?.unit || 'cm',
+            isCurved: selectedArea?.is_curved || false,
+            clientName,
+            clientSegment,
+            brandColorName,
+            objective,
+            tone,
+            targetAudience: audience,
+            season: season === 'none' ? '' : season,
+            numberOfPrompts: 4,
+          },
         },
-      });
+      );
 
       if (error) throw error;
 
@@ -192,15 +210,28 @@ export function PromptGenerator({
         setHasGenerated(true);
         toast.success(`✨ ${data.prompts.length} prompts gerados pela IA!`);
       } else {
-        throw new Error(data?.error || "Nenhum prompt retornado");
+        throw new Error(data?.error || 'Nenhum prompt retornado');
       }
     } catch (err: unknown) {
-      console.error("Prompt generation error:", err);
-      toast.error(err instanceof Error ? err.message : "Erro ao gerar prompts");
+      logger.error('Prompt generation error:', err);
+      toast.error('Erro ao gerar prompts', { description: sanitizeError(err) });
     } finally {
       setGenerating(false);
     }
-  }, [productName, productColor, selectedTech, locationLabel, selectedArea, clientName, clientSegment, brandColorName, objective, tone, audience, season]);
+  }, [
+    productName,
+    productColor,
+    selectedTech,
+    locationLabel,
+    selectedArea,
+    clientName,
+    clientSegment,
+    brandColorName,
+    objective,
+    tone,
+    audience,
+    season,
+  ]);
 
   const handleSelectGenerated = (gp: GeneratedPrompt) => {
     const scenePrompt: ScenePrompt = {
@@ -214,14 +245,15 @@ export function PromptGenerator({
 
   // getMoodColor imported from ./promptGeneratorConstants
 
-  const hasPrintAreas = printAreas && printAreas.length > 0;
+  const safePrintAreas = printAreas ?? [];
+  const hasPrintAreas = safePrintAreas.length > 0;
 
   return (
     <div className="space-y-4">
       {/* ─── Customization: Location, Technique & Dimensions ──── */}
       {hasPrintAreas && (
         <PromptCustomizationPanel
-          printAreas={printAreas!}
+          printAreas={safePrintAreas}
           selectedAreaId={selectedAreaId}
           selectedTechId={selectedTechId}
           onAreaChange={handleAreaChange}
@@ -232,7 +264,7 @@ export function PromptGenerator({
       {/* ─── Campaign Configuration ───────────────────────────── */}
       <div className="grid grid-cols-2 gap-2.5">
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground flex items-center gap-1">
+          <Label className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <Target className="h-3 w-3" /> Objetivo
           </Label>
           <Select value={objective} onValueChange={setObjective}>
@@ -240,7 +272,7 @@ export function PromptGenerator({
               <SelectValue placeholder="Escolha..." />
             </SelectTrigger>
             <SelectContent>
-              {OBJECTIVES.map(o => (
+              {OBJECTIVES.map((o) => (
                 <SelectItem key={o.value} value={o.value} className="text-xs">
                   {o.label}
                 </SelectItem>
@@ -250,7 +282,7 @@ export function PromptGenerator({
         </div>
 
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground flex items-center gap-1">
+          <Label className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <Sparkles className="h-3 w-3" /> Tom
           </Label>
           <Select value={tone} onValueChange={setTone}>
@@ -258,7 +290,7 @@ export function PromptGenerator({
               <SelectValue placeholder="Escolha..." />
             </SelectTrigger>
             <SelectContent>
-              {TONES.map(t => (
+              {TONES.map((t) => (
                 <SelectItem key={t.value} value={t.value} className="text-xs">
                   {t.label}
                 </SelectItem>
@@ -268,7 +300,7 @@ export function PromptGenerator({
         </div>
 
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground flex items-center gap-1">
+          <Label className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <Users className="h-3 w-3" /> Público-alvo
           </Label>
           <Select value={audience} onValueChange={setAudience}>
@@ -276,7 +308,7 @@ export function PromptGenerator({
               <SelectValue placeholder="Escolha..." />
             </SelectTrigger>
             <SelectContent>
-              {AUDIENCES.map(a => (
+              {AUDIENCES.map((a) => (
                 <SelectItem key={a.value} value={a.value} className="text-xs">
                   {a.label}
                 </SelectItem>
@@ -286,7 +318,7 @@ export function PromptGenerator({
         </div>
 
         <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground flex items-center gap-1">
+          <Label className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <CalendarDays className="h-3 w-3" /> Temporada
           </Label>
           <Select value={season} onValueChange={setSeason}>
@@ -294,7 +326,7 @@ export function PromptGenerator({
               <SelectValue placeholder="Opcional..." />
             </SelectTrigger>
             <SelectContent>
-              {SEASONS.map(s => (
+              {SEASONS.map((s) => (
                 <SelectItem key={s.value} value={s.value} className="text-xs">
                   {s.label}
                 </SelectItem>
@@ -308,16 +340,24 @@ export function PromptGenerator({
       {(clientSegment || productColor) && (
         <div className="flex flex-wrap gap-1.5">
           {productName && (
-            <Badge variant="secondary" className="text-[9px]">📦 {productName}</Badge>
+            <Badge variant="secondary" className="text-[9px]">
+              📦 {productName}
+            </Badge>
           )}
           {productColor && (
-            <Badge variant="secondary" className="text-[9px]">🎨 {productColor}</Badge>
+            <Badge variant="secondary" className="text-[9px]">
+              🎨 {productColor}
+            </Badge>
           )}
           {clientSegment && (
-            <Badge variant="secondary" className="text-[9px]">🏢 {clientSegment}</Badge>
+            <Badge variant="secondary" className="text-[9px]">
+              🏢 {clientSegment}
+            </Badge>
           )}
           {brandColorName && (
-            <Badge variant="secondary" className="text-[9px]">🖌️ {brandColorName}</Badge>
+            <Badge variant="secondary" className="text-[9px]">
+              🖌️ {brandColorName}
+            </Badge>
           )}
         </div>
       )}
@@ -327,7 +367,7 @@ export function PromptGenerator({
         onClick={handleGenerate}
         disabled={generating || !productName}
         className="w-full gap-2"
-        variant={hasGenerated ? "outline" : "default"}
+        variant={hasGenerated ? 'outline' : 'default'}
         size="sm"
       >
         {generating ? (
@@ -351,49 +391,51 @@ export function PromptGenerator({
       {/* Results */}
       {generatedPrompts.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+          <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <Sparkles className="h-3 w-3 text-primary" />
             {generatedPrompts.length} cenários criados pela IA — clique para usar
           </p>
-          <div className="grid grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-1">
+          <div className="grid max-h-[350px] grid-cols-1 gap-2 overflow-y-auto pr-1">
             {generatedPrompts.map((gp, idx) => {
               const isSelected = selectedPrompt?.prompt === gp.prompt;
               return (
                 <Card
-                  key={idx}
+                  key={`${gp.title}-${idx}`}
                   className={cn(
-                    "cursor-pointer transition-all hover:shadow-md group",
+                    'group cursor-pointer transition-all hover:shadow-md',
                     isSelected
-                      ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-                      : "hover:border-primary/40"
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                      : 'hover:border-primary/40',
                   )}
                   onClick={() => handleSelectGenerated(gp)}
                 >
                   <CardContent className="p-3">
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {isSelected && <Check className="h-4 w-4 text-primary shrink-0" />}
-                        <p className={cn(
-                          "text-sm font-semibold truncate",
-                          isSelected && "text-primary"
-                        )}>
+                    <div className="mb-1.5 flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        {isSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}
+                        <p
+                          className={cn(
+                            'truncate text-sm font-semibold',
+                            isSelected && 'text-primary',
+                          )}
+                        >
                           {gp.title}
                         </p>
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
+                      <div className="flex shrink-0 items-center gap-1">
                         <Badge
                           variant="outline"
-                          className={cn("text-[8px] px-1.5 py-0 border", getMoodColor(gp.mood))}
+                          className={cn('border px-1.5 py-0 text-[8px]', getMoodColor(gp.mood))}
                         >
                           {gp.mood}
                         </Badge>
                       </div>
                     </div>
-                    <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2">
+                    <p className="mb-2 line-clamp-2 text-[11px] text-muted-foreground">
                       {gp.prompt}
                     </p>
                     {gp.bestFor && (
-                      <p className="text-[10px] text-primary/70 flex items-center gap-1">
+                      <p className="flex items-center gap-1 text-[10px] text-primary/70">
                         <Lightbulb className="h-3 w-3 shrink-0" />
                         {gp.bestFor}
                       </p>
@@ -408,13 +450,20 @@ export function PromptGenerator({
 
       {/* Empty state */}
       {!hasGenerated && !generating && (
-        <div className="text-center py-4 text-muted-foreground">
-          <Wand2 className="h-8 w-8 mx-auto mb-2 opacity-30" />
+        <div className="py-4 text-center text-muted-foreground">
+          <Wand2 className="mx-auto mb-2 h-8 w-8 opacity-30" />
           <p className="text-xs">
-            {hasPrintAreas
-              ? <>Selecione o <strong>local e técnica</strong> de personalização, configure o objetivo e clique em <strong>"Gerar Prompts"</strong></>
-              : <>Configure as opções acima e clique em <strong>"Gerar Prompts"</strong> para que a IA crie cenários otimizados</>
-            }
+            {hasPrintAreas ? (
+              <>
+                Selecione o <strong>local e técnica</strong> de personalização, configure o objetivo
+                e clique em <strong>"Gerar Prompts"</strong>
+              </>
+            ) : (
+              <>
+                Configure as opções acima e clique em <strong>"Gerar Prompts"</strong> para que a IA
+                crie cenários otimizados
+              </>
+            )}
           </p>
         </div>
       )}

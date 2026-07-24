@@ -7,7 +7,7 @@ import { useMemo } from 'react';
 import type { Quote } from '@/hooks/quotes';
 
 export interface FunnelStage {
-  id: 'draft' | 'sent' | 'viewed' | 'approved' | 'converted';
+  id: 'approved' | 'converted' | 'draft' | 'sent' | 'viewed';
   label: string;
   count: number;
   /** Taxa relativa à etapa anterior (0–100) */
@@ -28,7 +28,6 @@ export function useQuoteFunnel(
 ): QuoteFunnelData {
   return useMemo(() => {
     const total = quotes.length;
-    const _draft = quotes.filter((q) => q.status === 'draft').length;
     const sent = quotes.filter((q) =>
       ['sent', 'pending', 'pending_approval'].includes(q.status as string),
     ).length;

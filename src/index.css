@@ -22,8 +22,10 @@
   right: 0px;
   width: 100px;
   height: 100%;
-  box-shadow: 0 0 10px hsl(var(--primary)), 0 0 5px hsl(var(--primary));
-  opacity: 1.0;
+  box-shadow:
+    0 0 10px hsl(var(--primary)),
+    0 0 5px hsl(var(--primary));
+  opacity: 1;
   transform: rotate(3deg) translate(0px, -4px);
 }
 
@@ -33,8 +35,12 @@
   animation-duration: 0.4s;
 }
 
-.theme-transitioning {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+html.theme-transitioning,
+html.theme-transitioning * {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease !important;
 }
 
 @keyframes brain-glow {
@@ -53,64 +59,112 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Tooltip Utilities (Ensures build retention) */
-@layer utilities {
-  .text-tooltip {
-    font-size: 11px;
-    line-height: 1.15;
+/* Global performance: prefer reduced motion when user opts in */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-@keyframes orbitSmooth {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  25% { transform: translate(15px, -15px) rotate(1.5deg); }
-  50% { transform: translate(30px, 0) rotate(0deg); }
-  75% { transform: translate(15px, 15px) rotate(-1.5deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+/* Layout containment for heavy sections */
+@layer utilities {
+  .contain-layout {
+    contain: layout style;
+  }
+  .contain-paint {
+    contain: paint;
+  }
+  .contain-strict {
+    contain: strict;
+  }
 }
 
-/* Nova animação de órbita circular perfeita */
-@keyframes circularOrbit {
-  from { transform: rotate(0deg) translateX(25px) rotate(0deg); }
-  to { transform: rotate(360deg) translateX(25px) rotate(-360deg); }
+/* GPU-composited scroll containers — promotes to own layer to avoid repaints on scroll */
+@layer utilities {
+  .scrollbar-products {
+    transform: translateZ(0);
+    will-change: scroll-position;
+  }
 }
 
-@keyframes pulseGlow {
-  0%, 100% { filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5)); opacity: 0.8; }
-  50% { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8)); opacity: 1; }
+/* Custom Tooltip Utilities (Ensures build retention) */
+@layer utilities {
+  /* Tooltip: Standard (13px) */
+  .tooltip-standard .text-tooltip {
+    font-size: 13px !important;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    font-weight: 600;
+  }
+
+  .tooltip-standard .text-tooltip-header {
+    font-size: 11px !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+  }
+
+  /* Tooltip: Compact (10px) */
+  .tooltip-compact .text-tooltip {
+    font-size: 10px !important;
+    line-height: 1.4;
+    letter-spacing: 0.015em;
+    font-weight: 600;
+  }
+
+  .tooltip-compact .text-tooltip-header {
+    font-size: 9px !important;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.7;
+  }
+
+  /* Base/Fallback (defaults to standard) */
+  .text-tooltip {
+    @apply transition-all duration-300;
+    font-size: 13px;
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+
+  .text-tooltip-header {
+    @apply transition-all duration-300;
+    font-size: 11px;
+  }
+
+  .recharts-tooltip-standard {
+    @apply !rounded-md !border-white/10 !bg-[#1a1a1a]/95 !px-3 !py-1.5 !shadow-2xl !backdrop-blur-md;
+    @apply !text-tooltip !font-semibold !text-white;
+  }
+
+  /* Custom line-clamp helpers */
+  .line-clamp-10 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 10;
+    overflow: hidden;
+  }
 }
 
-/* A definição oficial está no final do arquivo */
-
-@keyframes starDrift {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(20px, 20px, 0); }
+/* Protected action button font styles to prevent overrides */
+.font-action-button {
+  font-family: var(--font-display) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.15em !important;
+  text-transform: none;
 }
 
-@keyframes rocketRising {
-  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(-120vh) rotate(-10deg); opacity: 0; }
-}
-
-@keyframes zigzagMovement {
-  0% { transform: translate(0, 0); }
-  33% { transform: translate(10px, -5px); }
-  66% { transform: translate(-5px, 10px); }
-  100% { transform: translate(0, 0); }
-}
-
-@keyframes shootingStar {
-  0% { transform: translateX(0) translateY(0) rotate(45deg) scale(0); opacity: 0; }
-  5% { opacity: 1; scale: 1; }
-  15% { transform: translateX(500px) translateY(500px) rotate(45deg) scale(1); opacity: 0; }
-  100% { opacity: 0; }
-}
-
-@keyframes nebulaDrift {
-  from { transform: translate(-5%, -5%) scale(1); opacity: 0.1; }
-  to { transform: translate(5%, 5%) scale(1.1); opacity: 0.2; }
+/* Responsive tracking for action buttons if needed in the future */
+@screen lg {
+  .font-action-button {
+    letter-spacing: 0.15em !important;
+  }
 }
 
 /* ═══ NUCLEAR SCROLL LOCK PREVENTION ═══
@@ -135,60 +189,61 @@ html[data-scroll-locked] body {
 
 @layer base {
   :root {
-    /* ===== DESIGN TOKENS - ORANGE PREMIUM ===== */
-    
+    /* ===== DESIGN TOKENS - DARK MODE BY DEFAULT ===== */
+
     /* 1. Typography & Contrast Tokens */
     --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-display: 'Outfit', system-ui, sans-serif;
-    
-    /* 2. Surface & Background Tokens (High Contrast) */
-    --background: 0 0% 100%;
-    --foreground: 24 100% 5%;
-    --surface: 24 100% 98%;
-    --surface-hover: 24 100% 95%;
-    --divider: 24 100% 50% / 0.15;
+
+    /* 2. Surface & Background Tokens (Dark Mode) */
+    --background: var(--bg-override, 24 30% 3%);
+    --foreground: 24 10% 98%;
+    --surface: 24 28% 6%;
+    --surface-hover: 24 28% 10%;
+    --divider: 24 100% 60% / 0.3;
 
     /* 3. Component Surfaces */
-    --card: 0 0% 100%;
-    --card-foreground: 24 100% 5%;
-    --card-elevated: 0 0% 100%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 24 100% 5%;
+    --card: 24 28% 6%;
+    --card-foreground: 24 10% 98%;
+    --card-elevated: 24 28% 10%;
+    --popover: 24 28% 7%;
+    --popover-foreground: 24 10% 98%;
 
-    /* 4. Core Brand Colors (Orange Premium) */
+    /* 4. Core Brand Colors (Neon) */
     --primary: 217 91% 60%;
-    --primary-hover: 217 91% 55%;
-    --primary-active: 217 91% 50%;
-    --primary-glow: 217 91% 75%;
-    --primary-foreground: 0 0% 100%;
-
-    --orange: 217 91% 60%;
-    --orange-hover: 217 91% 55%;
-    --orange-active: 217 91% 50%;
-    --orange-glow: 217 91% 75%;
-    --orange-foreground: 0 0% 100%;
+    --primary-hover: 217 91% 66%;
+    --primary-active: 217 91% 72%;
+    --primary-glow: 217 91% 74%;
+    --primary-foreground: 217 91% 6%;
 
     /* 5. Functional Colors (High Saturation) */
-    --success: 142 100% 35%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 100% 45%;
-    --warning-foreground: 0 0% 100%;
-    --destructive: 0 100% 45%;
+    --success: 142 90% 48%;
+    --success-foreground: 142 100% 6%;
+    --warning: 38 100% 58%;
+    --warning-foreground: 38 100% 8%;
+    --destructive: 0 95% 62%;
     --destructive-foreground: 0 0% 100%;
-    --info: 210 100% 45%;
-    --info-foreground: 0 0% 100%;
+    --info: 210 100% 62%;
+    --info-foreground: 210 100% 8%;
+    /* Neon highlights (chips de status e destaques vibrantes) */
+    --neon-blue: 205 100% 60%;
+    --neon-blue-foreground: 205 100% 8%;
+    --neon-green: 142 90% 55%;
+    --neon-green-foreground: 142 100% 8%;
 
     /* 6. Muted & Secondary States */
-    --secondary: 24 40% 96%;
-    --secondary-foreground: 24 100% 10%;
-    --muted: 24 20% 92%;
-    --muted-foreground: 24 40% 25%;
+    --secondary: 24 28% 12%;
+    --secondary-foreground: 24 10% 95%;
+    --muted: 24 22% 10%;
+    --muted-foreground: 24 15% 78%;
+    --accent: 24 28% 14%;
+    --accent-foreground: 24 100% 70%;
 
     /* 7. Borders & Inputs */
-    --border: 24 100% 50% / 0.25;
-    --border-strong: 24 100% 50% / 0.45;
-    --input: 24 100% 50% / 0.1;
-    --ring: 24 100% 50%;
+    --border: 24 100% 60% / 0.32;
+    --border-strong: 24 100% 60% / 0.55;
+    --input: 24 100% 60% / 0.18;
+    --ring: 24 100% 60%;
 
     /* 8. Radius Tokens */
     --radius-xs: 0.25rem;
@@ -209,47 +264,73 @@ html[data-scroll-locked] body {
     --duration-fast: 200ms;
     --duration-normal: 300ms;
     --duration-slow: 500ms;
-    --ease-out: cubic-bezier(0.34, 1.56, 0.64, 1); /* Custom elastic-ish ease out */
+    --ease-out: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
     --transition-standard: all var(--duration-normal) var(--ease-out);
 
-    /* 10. Shadow & Depth Tokens (NEUTRALIZED — orange glow eliminated) */
+    /* 10. Shadow & Depth Tokens (Neutralized) */
     --glow-blur: 0px;
     --glow-intensity: 0;
     --glow-color: 24 100% 50%;
     --glow-blur-hover: 0px;
     --glow-intensity-hover: 0;
-    
-    --overlay-opacity: 0.45;
-    --overlay-blur: 8px;
-    --overlay-color: 24 100% 4%;
-    
-    --shadow-soft: 0 1px 3px hsl(0 0% 0% / 0.06);
-    --shadow-medium: 0 4px 12px hsl(0 0% 0% / 0.08);
-    --shadow-premium: 0 4px 12px hsl(0 0% 0% / 0.08);
+
+    --overlay-opacity: 0.8;
+    --overlay-blur: 12px;
+    --overlay-color: 24 30% 2%;
+
+    --shadow-soft: 0 2px 8px hsl(0 0% 0% / 0.4);
+    --shadow-medium: 0 6px 18px hsl(0 0% 0% / 0.55);
+    --shadow-premium: 0 8px 24px hsl(0 0% 0% / 0.6);
     --shadow-glow: none;
     --shadow-glow-hover: none;
     --shadow-glow-active: none;
-    --shadow-glow-focus: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.4);
-    --shadow-premium-hover: 0 6px 16px hsl(0 0% 0% / 0.12);
+    --shadow-glow-focus: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.5);
+    --shadow-premium-hover: 0 12px 32px hsl(0 0% 0% / 0.7);
 
-    /* 10. Sidebar Specific */
-    --sidebar-background: 24 100% 99%;
-    --sidebar-foreground: 24 100% 10%;
-    --sidebar-primary: 24 100% 50%;
-    --sidebar-border: 24 100% 50% / 0.1;
+    /* 11. Sidebar Specific */
+    --sidebar-background: 24 30% 4%;
+    --sidebar-foreground: 24 10% 98%;
+    --sidebar-primary: 24 100% 60%;
+    --sidebar-border: 24 100% 60% / 0.18;
 
-    /* 11. Gradient Tokens — Orange Premium SSOT
-       Use estes tokens em vez de gradientes literais. */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
-    --gradient-cta: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 45%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(24 100% 97%) 0%, hsl(24 100% 92%) 45%, hsl(24 100% 88%) 100%);
-    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.35) 0%, hsl(var(--primary) / 0.08) 45%, transparent 70%);
+    /* 12. Gradient Tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-cta: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 55%) 100%);
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(24 30% 4%) 0%,
+      hsl(24 35% 8%) 50%,
+      hsl(24 45% 12%) 100%
+    );
+    --gradient-glow: radial-gradient(
+      circle at 50% 0%,
+      hsl(var(--primary) / 0.5) 0%,
+      hsl(var(--primary) / 0.14) 45%,
+      transparent 70%
+    );
     --gradient-subtle: linear-gradient(180deg, hsl(var(--surface)) 0%, hsl(var(--background)) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(var(--muted)) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 45%) 100%);
-    --gradient-highlight: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(210 100% 70%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--surface)) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 55%) 100%);
+    --gradient-highlight: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(38 100% 62%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(var(--card-elevated)) 0%, hsl(var(--card)) 100%);
+
+    /* 13. Product Swatches Tokens */
+    /* 13. Product Swatches Design Tokens (SSOT) */
+    --swatch-size-xxs: 16px;
+    --swatch-size-xs: 20px;
+    --swatch-size-sm: 24.2px;
+    --swatch-size-md: 28.6px;
+    --swatch-size-lg: 32px;
+    --swatch-gap-x: 6px;
+    --swatch-gap-y: 6px;
+    --swatch-scale-hover: 1.1;
+    --swatch-ring-width: 2px;
+    /* py do container acomoda ring (2px) + scale 1.1 (+~1.3px) + glow do ::after
+       quando o swatch está selecionado. Valores <6px causam clipping vertical
+       visível ("bolinha cortada como se estivesse dentro de algo"). */
+    --swatch-container-py: 6px;
+    --swatch-selected-glow: 0 0 12px 2px hsl(var(--primary) / 0.5);
   }
 
   .dark {
@@ -275,12 +356,6 @@ html[data-scroll-locked] body {
     --primary-glow: 217 91% 74%;
     --primary-foreground: 217 91% 6%;
 
-    --orange: 217 91% 60%;
-    --orange-hover: 217 91% 66%;
-    --orange-active: 217 91% 72%;
-    --orange-glow: 217 91% 74%;
-    --orange-foreground: 217 91% 6%;
-
     /* Funcionais — versões mais saturadas para fundos escuros */
     --success: 142 90% 48%;
     --success-foreground: 142 100% 6%;
@@ -290,6 +365,11 @@ html[data-scroll-locked] body {
     --destructive-foreground: 0 0% 100%;
     --info: 210 100% 62%;
     --info-foreground: 210 100% 8%;
+    /* Neon highlights — mais luminância no dark para efeito "glow" */
+    --neon-blue: 205 100% 66%;
+    --neon-blue-foreground: 205 100% 8%;
+    --neon-green: 142 90% 60%;
+    --neon-green-foreground: 142 100% 8%;
 
     /* Estados muted */
     --secondary: 24 28% 12%;
@@ -332,10 +412,20 @@ html[data-scroll-locked] body {
     --shadow-premium-hover: 0 12px 32px hsl(0 0% 0% / 0.7);
 
     /* Gradients — bases escuras + CTA com luminância elevada */
-    --gradient-hero: linear-gradient(135deg, hsl(24 30% 4%) 0%, hsl(24 35% 8%) 50%, hsl(24 45% 12%) 100%);
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(24 30% 4%) 0%,
+      hsl(24 35% 8%) 50%,
+      hsl(24 45% 12%) 100%
+    );
     --gradient-subtle: linear-gradient(180deg, hsl(var(--surface)) 0%, hsl(var(--background)) 100%);
     --gradient-card: linear-gradient(180deg, hsl(var(--card-elevated)) 0%, hsl(var(--card)) 100%);
-    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.5) 0%, hsl(var(--primary) / 0.14) 45%, transparent 70%);
+    --gradient-glow: radial-gradient(
+      circle at 50% 0%,
+      hsl(var(--primary) / 0.5) 0%,
+      hsl(var(--primary) / 0.14) 45%,
+      transparent 70%
+    );
     --gradient-cta: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 100% 55%) 100%);
     --gradient-highlight: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(38 100% 62%) 100%);
   }
@@ -356,12 +446,11 @@ html[data-scroll-locked] body {
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
-    transition: 
+    transition:
       background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
       box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
   }
 
   /* High Contrast and Accessibility Enhancements */
@@ -376,7 +465,8 @@ html[data-scroll-locked] body {
       text-decoration: underline !important;
       color: LinkText !important;
     }
-    button, [role="button"] {
+    button,
+    [role='button'] {
       border: 1px solid CanvasText !important;
       background: Canvas !important;
       color: CanvasText !important;
@@ -385,7 +475,7 @@ html[data-scroll-locked] body {
 
   /* Link Variants - SSOT (no orange glow / text-shadow) */
   .link-primary {
-    @apply transition-all duration-300 underline-offset-4 decoration-2 decoration-primary/40 hover:underline active:opacity-80 active:scale-[0.98];
+    @apply decoration-primary/40 decoration-2 underline-offset-4 transition-all duration-300 hover:underline active:scale-[0.98] active:opacity-80;
     font-weight: 800;
     color: hsl(var(--primary));
   }
@@ -393,11 +483,11 @@ html[data-scroll-locked] body {
     color: hsl(var(--primary-hover));
   }
   .link-primary:focus-visible {
-    @apply outline-none ring-2 ring-primary/50 ring-offset-2 rounded-sm;
+    @apply rounded-sm outline-none ring-2 ring-primary/50 ring-offset-2;
   }
 
   .link-secondary {
-    @apply transition-all duration-300 underline-offset-4 decoration-1 decoration-muted-foreground/30 hover:underline active:opacity-80 active:scale-[0.98];
+    @apply decoration-muted-foreground/30 decoration-1 underline-offset-4 transition-all duration-300 hover:underline active:scale-[0.98] active:opacity-80;
     font-weight: 700;
     color: hsl(var(--muted-foreground));
   }
@@ -406,24 +496,24 @@ html[data-scroll-locked] body {
     @apply decoration-primary/60;
   }
   .link-secondary:focus-visible {
-    @apply outline-none ring-2 ring-primary/50 ring-offset-1 rounded-sm;
+    @apply rounded-sm outline-none ring-2 ring-primary/50 ring-offset-1;
   }
 
   .link-disabled {
-    @apply pointer-events-none opacity-40 grayscale cursor-not-allowed decoration-transparent no-underline;
+    @apply pointer-events-none cursor-not-allowed no-underline decoration-transparent opacity-40 grayscale;
   }
 
   /* Legacy global link support - falls back to primary */
-  :root a:not([class*="link-"]) {
-    @apply transition-all duration-300 underline-offset-4 decoration-2 decoration-primary/40 hover:underline active:opacity-80 active:scale-[0.98];
+  :root a:not([class*='link-']) {
+    @apply decoration-primary/40 decoration-2 underline-offset-4 transition-all duration-300 hover:underline active:scale-[0.98] active:opacity-80;
     font-weight: 800;
     color: hsl(var(--primary));
   }
-  :root a:not([class*="link-"]):hover {
+  :root a:not([class*='link-']):hover {
     color: hsl(var(--primary-hover));
   }
-  :root a:not([class*="link-"]):focus-visible {
-    @apply outline-none ring-2 ring-primary/50 ring-offset-2 rounded-sm;
+  :root a:not([class*='link-']):focus-visible {
+    @apply rounded-sm outline-none ring-2 ring-primary/50 ring-offset-2;
   }
 
   /* Global Typography Consistency */
@@ -470,7 +560,7 @@ html[data-scroll-locked] body {
     letter-spacing: -0.01em;
   }
   .dark .link-primary {
-    @apply transition-all duration-300 underline-offset-4 decoration-2 decoration-primary/50 hover:underline active:opacity-80 active:scale-[0.98];
+    @apply decoration-primary/50 decoration-2 underline-offset-4 transition-all duration-300 hover:underline active:scale-[0.98] active:opacity-80;
     font-weight: 800;
     color: hsl(var(--primary));
   }
@@ -479,7 +569,7 @@ html[data-scroll-locked] body {
     color: hsl(var(--primary-hover));
   }
   .dark .link-secondary {
-    @apply transition-all duration-300 underline-offset-4 decoration-1 decoration-muted-foreground/40 hover:underline active:opacity-80 active:scale-[0.98];
+    @apply decoration-muted-foreground/40 decoration-1 underline-offset-4 transition-all duration-300 hover:underline active:scale-[0.98] active:opacity-80;
     font-weight: 650;
     color: hsl(var(--muted-foreground));
   }
@@ -489,17 +579,17 @@ html[data-scroll-locked] body {
   }
 
   /* Legacy global link support - falls back to primary */
-  .dark a:not([class*="link-"]) {
-    @apply transition-all duration-300 underline-offset-4 decoration-2 decoration-primary/50 hover:underline active:opacity-80 active:scale-[0.98];
+  .dark a:not([class*='link-']) {
+    @apply decoration-primary/50 decoration-2 underline-offset-4 transition-all duration-300 hover:underline active:scale-[0.98] active:opacity-80;
     font-weight: 800;
     color: hsl(var(--primary));
   }
-  .dark a:not([class*="link-"]):hover {
+  .dark a:not([class*='link-']):hover {
     @apply decoration-primary;
     color: hsl(var(--primary-hover));
   }
-  .dark a:not([class*="link-"]):focus-visible {
-    @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background rounded-sm;
+  .dark a:not([class*='link-']):focus-visible {
+    @apply rounded-sm outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
   }
 
   h1,
@@ -624,13 +714,17 @@ html[data-scroll-locked] body {
 
   :focus-visible {
     @apply outline-none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.45);
+    box-shadow:
+      0 0 0 2px hsl(var(--background)),
+      0 0 0 4px hsl(var(--primary) / 0.45);
   }
 
   button:focus-visible,
   [role='button']:focus-visible {
     @apply outline-none;
-    box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--primary) / 0.45);
+    box-shadow:
+      0 0 0 2px hsl(var(--background)),
+      0 0 0 4px hsl(var(--primary) / 0.45);
   }
 
   input:focus-visible,
@@ -641,7 +735,7 @@ html[data-scroll-locked] body {
   }
 
   a:focus-visible {
-    @apply outline-none ring-2 ring-primary/50 ring-offset-2 rounded-sm;
+    @apply rounded-sm outline-none ring-2 ring-primary/50 ring-offset-2;
   }
 }
 
@@ -822,50 +916,14 @@ html[data-scroll-locked] body {
   }
 }
 
-@keyframes rocketLaunch {
-  0% {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-120vh) rotate(-15deg);
-    opacity: 0.8;
-  }
-}
-
 /* Reduced motion support for visual consistency in testing and accessibility */
 @media (prefers-reduced-motion: reduce) {
   .animate-rocket-shake,
-  [data-testid="rocket-item"] {
+  [data-testid='rocket-item'] {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     animation-delay: 0ms !important;
     transition: none !important;
-  }
-}
-
-@keyframes rocketShake {
-  0%,
-  100% {
-    transform: translateX(-1px);
-  }
-  50% {
-    transform: translateX(1px);
-  }
-}
-
-@keyframes flameTrail {
-  0% {
-    opacity: 0.5;
-    transform: translateX(-50%) scaleY(0.8);
-  }
-  100% {
-    opacity: 0.9;
-    transform: translateX(-50%) scaleY(1.2);
   }
 }
 
@@ -881,20 +939,6 @@ html[data-scroll-locked] body {
   }
 }
 
-@keyframes smokeRise {
-  0% {
-    transform: translateY(0) scale(0.5);
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.15;
-  }
-  100% {
-    transform: translateY(-200px) scale(2);
-    opacity: 0;
-  }
-}
-
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -905,10 +949,50 @@ html[data-scroll-locked] body {
 }
 
 @keyframes shimmerTranslate {
-  0% { transform: translateX(-100%) skewX(-25deg); }
-  100% { transform: translateX(300%) skewX(-25deg); }
+  0% {
+    transform: translateX(-100%) skewX(-25deg);
+  }
+  100% {
+    transform: translateX(300%) skewX(-25deg);
+  }
 }
 
+/* Skeleton shimmer - CSS-only replacement for framer-motion */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--foreground) / 0.05) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+:is(.dark) .skeleton-shimmer::after {
+  background: linear-gradient(90deg, transparent 0%, hsl(0 0% 100% / 0.05) 50%, transparent 100%);
+  background-size: 200% 100%;
+}
+
+/* Shimmer cinza-claro para placeholder de imagem do produto */
+.image-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    hsl(0 0% 90%) 0%,
+    hsl(0 0% 95%) 40%,
+    hsl(0 0% 98%) 50%,
+    hsl(0 0% 95%) 60%,
+    hsl(0 0% 90%) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
 
 @keyframes stagger-fade-in {
   0% {
@@ -973,16 +1057,6 @@ html[data-scroll-locked] body {
   }
 }
 
-@keyframes glow-pulse {
-  0%,
-  100% {
-    box-shadow: none;
-  }
-  50% {
-    box-shadow: none;
-  }
-}
-
 @keyframes border-glow {
   0%,
   100% {
@@ -995,54 +1069,39 @@ html[data-scroll-locked] body {
 
 /* Space Scene Animations */
 @keyframes nebulaDrift {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-2%, 2%) scale(1.1); }
-}
-
-@keyframes starDrift {
-  0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(10px, 10px, 0); }
-}
-
-@keyframes breathingStar {
-  0%, 100% { 
-    opacity: 0.2; 
-    transform: scale(1); 
-    filter: blur(0px) brightness(1); 
+  0% {
+    transform: translate(0, 0) scale(1);
   }
-  50% { 
-    opacity: 1; 
-    transform: scale(8); 
-    filter: blur(0.5px) brightness(30);
-    box-shadow: 0 0 20px 2px rgba(59, 130, 246, 0.8), 0 0 40px 4px rgba(255, 255, 255, 0.4);
+  100% {
+    transform: translate(-2%, 2%) scale(1.1);
   }
 }
 
-@keyframes zigzagMovement {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  33% { transform: translate(15px, 20px) rotate(5deg); }
-  66% { transform: translate(-10px, 35px) rotate(-3deg); }
-  100% { transform: translate(5px, 50px) rotate(2deg); }
-}
+/* breathingStar is defined in the Unified Space Scene section below */
 
 @keyframes circularOrbit {
-  from { transform: rotate(0deg) translateX(15px) rotate(0deg); }
-  to { transform: rotate(360deg) translateX(15px) rotate(-360deg); }
+  from {
+    transform: rotate(0deg) translateX(15px) rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(15px) rotate(-360deg);
+  }
 }
 
 @keyframes shootingStar {
-  0% { transform: translateX(0) translateY(0) scale(0); opacity: 0; }
-  10% { transform: translateX(0) translateY(0) scale(1); opacity: 1; }
-  100% { transform: translateX(400px) translateY(200px) scale(0); opacity: 0; }
+  0% {
+    transform: translateX(0) translateY(0) scale(0);
+    opacity: 0;
+  }
+  10% {
+    transform: translateX(0) translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(400px) translateY(200px) scale(0);
+    opacity: 0;
+  }
 }
-
-@keyframes rocketRising {
-  0% { transform: translateY(0) scale(0.8); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(-120vh) scale(1.2); opacity: 0; }
-}
-
 
 @keyframes wiggle {
   0%,
@@ -1175,18 +1234,84 @@ html[data-scroll-locked] body {
   background: none;
 }
 
-/* Fusion-style card border glow on dark mode */
-.dark .card-glow {
-  border: 1.5px solid hsl(var(--primary) / 0.2);
+/* Fusion-style card border glow - INTENSIFIED (Aura + Shine) */
+.card-glow {
+  position: relative;
+  border: 1px solid hsl(var(--primary) / 0.12);
+  background-clip: padding-box;
   transition:
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
+    border-color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.dark .card-glow:hover {
-  border-color: hsl(var(--primary) / 0.45);
+
+.card-glow::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--primary) / 0) 40%,
+    hsl(var(--primary) / 0.35) 50%,
+    hsl(var(--primary) / 0) 60%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card-glow:hover::after {
+  opacity: 1;
+  animation: border-shine 3s linear infinite;
+}
+
+@keyframes border-shine {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+.dark .card-glow {
+  border-color: hsl(var(--primary) / 0.1);
+}
+
+.card-glow:hover {
+  border-color: hsl(var(--primary) / 0.35);
+  transform: translateY(-4px);
   box-shadow:
-    0 0 20px hsl(var(--primary) / 0.12),
-    0 4px 20px hsl(225 20% 2% / 0.5);
+    0 0 0 1px hsl(var(--primary) / 0.15),
+    0 0 15px hsl(var(--primary) / 0.1),
+    0 0 30px hsl(var(--primary) / 0.05),
+    0 15px 30px -10px hsl(var(--primary) / 0.15);
+  background-color: hsl(var(--primary) / 0.01);
+}
+
+.dark .card-glow:hover {
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow:
+    0 0 0 1px hsl(var(--primary) / 0.25),
+    0 0 25px hsl(var(--primary) / 0.15),
+    0 0 50px hsl(var(--primary) / 0.08),
+    0 20px 40px -12px hsl(0 0% 0% / 0.6);
+  background-color: hsl(var(--primary) / 0.03);
 }
 
 @keyframes count-up {
@@ -1230,15 +1355,6 @@ html[data-scroll-locked] body {
 }
 
 /* UI Animations */
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: none;
-  }
-  50% {
-    box-shadow: none;
-  }
-}
 
 /* ===== UTILITÁRIOS ===== */
 @layer utilities {
@@ -1536,6 +1652,16 @@ html[data-scroll-locked] body {
     background-color: hsl(0 0% 100%) !important;
   }
 
+  /*
+   * Status chip glow — SSOT do halo luminoso usado por todos os chips de status
+   * (Carrinhos, Orçamentos, etc). Cada chip define `--chip-glow` apontando para
+   * um token de cor (ex.: `[--chip-glow:var(--neon-blue)]`); esta classe aplica
+   * o box-shadow padrão. Alterar o raio/opacidade aqui propaga para tudo.
+   */
+  .status-chip-glow {
+    box-shadow: 0 0 6px hsl(var(--chip-glow, var(--primary)) / 0.18);
+  }
+
   /* Card Variants */
   .card-base {
     @apply rounded-xl border border-border bg-card p-[var(--spacing-card)] transition-all duration-200;
@@ -1678,7 +1804,7 @@ html[data-scroll-locked] body {
 
   /* Stock Indicators */
   .stock-indicator {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium leading-none;
   }
 
   .stock-indicator.in-stock {
@@ -1830,16 +1956,6 @@ html[data-scroll-locked] body {
   }
 
   /* Reduced motion support */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
 
   /* Mobile bottom nav padding */
   .has-bottom-nav {
@@ -1966,15 +2082,6 @@ html[data-scroll-locked] body {
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
-  }
-
-  @keyframes shimmer {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
-    }
   }
 }
 
@@ -2352,53 +2459,196 @@ body.compare-focus-mode [role='main'] {
    Ciclo total de 14s para máxima tranquilidade, sem variações bruscas. */
 /* Efeito de respiração estelar: brilho intenso que pulsa lentamente */
 @keyframes breathingStar {
-  0%, 100% { 
-    opacity: 0.15; 
-    transform: scale(0.35); 
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.35);
     filter: blur(2px) brightness(0.2);
   }
-  50% { 
-    opacity: 1; 
-    transform: scale(8); 
-    filter: blur(0px) brightness(30) 
-            drop-shadow(0 0 12px #fff) 
-            drop-shadow(0 0 35px #3b82f6) 
-            drop-shadow(0 0 70px #3b82f6) 
-            drop-shadow(0 0 150px #3b82f6);
+  50% {
+    opacity: 1;
+    transform: scale(8);
+    filter: blur(0px) brightness(30) drop-shadow(0 0 12px #fff) drop-shadow(0 0 35px #3b82f6)
+      drop-shadow(0 0 70px #3b82f6) drop-shadow(0 0 150px #3b82f6);
   }
 }
 
 @keyframes starGlowPulse {
-  0%, 100% { filter: brightness(1) contrast(1) saturate(1); transform: scale(1); }
-  50% { filter: brightness(4) contrast(1.8) saturate(2.5); transform: scale(1.15); }
+  0%,
+  100% {
+    filter: brightness(1) contrast(1) saturate(1);
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(4) contrast(1.8) saturate(2.5);
+    transform: scale(1.15);
+  }
 }
-
 
 /* Movimento de deriva estelar — transformado em sub-movimento contínuo para evitar saltos no resize */
 @keyframes starDrift {
-  0%   { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(15px, 10px, 0); }
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(15px, 10px, 0);
+  }
 }
 
 /* Planetas — zigue-zague suave e lento, deslocamento mínimo */
 @keyframes zigzagMovement {
-  0%   { transform: translate(0, 0) rotate(0deg); }
-  25%  { transform: translate(15px, 20px) rotate(2deg); }
-  50%  { transform: translate(-10px, 40px) rotate(-2deg); }
-  75%  { transform: translate(15px, 60px) rotate(2deg); }
-  100% { transform: translate(0, 80px) rotate(0deg); }
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(15px, 20px) rotate(2deg);
+  }
+  50% {
+    transform: translate(-10px, 40px) rotate(-2deg);
+  }
+  75% {
+    transform: translate(15px, 60px) rotate(2deg);
+  }
+  100% {
+    transform: translate(0, 80px) rotate(0deg);
+  }
 }
 
 /* Astronautas — flutuação extremamente suave */
 @keyframes floatMovement {
-  0%   { transform: translate(0, 0) rotate(0deg); }
-  100% { transform: translate(20px, 20px) rotate(5deg); }
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate(20px, 20px) rotate(5deg);
+  }
 }
 
 /* Foguetes — ascensão lenta do rodapé até o topo */
 @keyframes rocketRising {
-  0%   { transform: translateY(0); opacity: 0; }
-  8%   { opacity: 1; }
-  92%  { opacity: 1; }
-  100% { transform: translateY(-120vh); opacity: 0; }
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120vh);
+    opacity: 0;
+  }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Proteção global de formulários quando offline.
+ *
+ * Quando GlobalOfflineAlert detecta a perda de conexão, ele adiciona
+ * data-offline="true" ao <body>. Este bloco desabilita visualmente
+ * todos os botões de submit e campos de formulário enquanto o usuário
+ * está sem internet, prevenindo tentativas de salvar dados que falhariam.
+ *
+ * Componentes que querem opt-in individualmente podem usar:
+ *   data-offline-disabled="true"
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+body[data-offline='true'] button[type='submit'],
+body[data-offline='true'] [data-offline-disabled='true'] {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+  user-select: none;
+}
+
+/* Indicador sutil de estado offline em botões bloqueados */
+body[data-offline='true'] button[type='submit']::after {
+  content: ' (offline)';
+  font-size: 0.7em;
+  opacity: 0.7;
+}
+
+/* ── Performance: Containment para cards do catálogo ──────────────────────── */
+/* content-visibility:auto = o browser pula o layout/paint de cards fora da
+   viewport, reduzindo tempo de renderização inicial em até 7x em catálogos
+   com 200+ cards. Requer size-contain explícito para evitar CLS. */
+@layer utilities {
+  .catalog-card-contain {
+    content-visibility: auto;
+    /* contain-intrinsic-size = estimativa do tamanho antes do render.
+       Previne CLS enquanto o browser ainda não calculou o card. */
+    contain-intrinsic-size: 0 320px;
+  }
+
+  /* GPU layer para elementos animados — promove a compositor layer
+     antes que a animação comece, evitando jank no primeiro frame. */
+  .gpu-layer {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Smooth scroll nativo para contêineres de catálogo */
+  .scroll-smooth-native {
+    scroll-behavior: smooth;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Prevent layout thrash em imagens antes do load */
+  .img-aspect-locked {
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+}
+
+/* ── Redução de repaint em animações de hover ─────────────────────────────── */
+/* Isolate cria novo stacking context sem o custo de will-change permanente */
+@layer utilities {
+  .hover-isolate {
+    isolation: isolate;
+  }
+}
+
+/* ── Font display optimization ────────────────────────────────────────────── */
+/* Evitar FOIT (flash invisible text) com font-display swap inline */
+@font-face {
+  font-family: 'Outfit';
+  font-display: swap;
+  src: local('Outfit');
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-display: swap;
+  src: local('Plus Jakarta Sans');
+}
+
+/* NOTE: prefers-reduced-data block removed — hid ALL lazy images (= product catalog) */
+
+/* Hide Lovable badge (PRO plan) */
+#lovable-badge,
+#lovable-badge-v2,
+[id^="lovable-badge"],
+a[href*="lovable.dev"][target="_blank"] {
+  display: none !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+ * Override determinístico do DropdownMenuContent das linhas de orçamento.
+ *
+ * O shadcn aplica `min-width: 8rem` via classe utilitária no próprio componente.
+ * Aqui forçamos width/min-width pelo seletor `[data-testid^="quote-row-menu-"]`,
+ * que é estável e independente de ordem/casamento de classes do tw-merge.
+ * `!important` garante precedência mesmo se a util `min-w-[8rem]` aparecer
+ * depois no bundle em algum cenário de cache HMR.
+ * Largura efetiva: 6.8rem (~15% menor que o baseline 8rem do shadcn; minimo a prova de corte incl. fallback system-ui em bold/FOUT). NAO reduzir para 6.4rem: corta "Visualizar" no fallback.
+ * ────────────────────────────────────────────────────────────────────────── */
+[data-testid^="quote-row-menu-"][role="menu"],
+[role="menu"][data-testid^="quote-row-menu-"] {
+  width: 6.8rem !important;
+  min-width: 0 !important;
+  max-width: calc(100vw - 1rem) !important;
+}
+[data-testid^="quote-row-menu-"] [role="menuitem"] {
+  white-space: nowrap;
+}
+

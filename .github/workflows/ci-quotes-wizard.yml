@@ -1,0 +1,526 @@
+name: CI - Novo Orçamento E2E
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/pages/quotes/**'
+      - 'src/hooks/quotes/**'
+      - 'src/logic/quotes/**'
+      - 'src/components/quotes/**'
+      - 'e2e/quotes/**'
+      - '.github/workflows/ci-quotes-wizard.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/pages/quotes/**'
+      - 'src/hooks/quotes/**'
+      - 'src/logic/quotes/**'
+      - 'src/components/quotes/**'
+      - 'e2e/quotes/**'
+      - '.github/workflows/ci-quotes-wizard.yml'
+  workflow_dispatch:
+
+env:
+  TZ: America/Sao_Paulo
+  CI: "true"
+
+jobs:
+  validate-quotes:
+    name: Validação Novo Orçamento
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run logic and wizard tests
+        run: npx vitest run src/logic/quotes/__tests__/calculations.test.ts src/pages/quotes/QuoteBuilder.e2e.test.tsx --reporter=verbose
+
+  # Job dedicado ao spec do popover de campos pendentes. Bloqueia merge em
+  # falha de layout/snapshot. Sobe artefatos (HTML report + actual/expected/diff
+  # PNGs + trace) quando falha para revisão rápida do baseline no PR.
+  quote-missing-fields-popover-e2e:
+    name: E2E Popover Campos Pendentes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npm run test:e2e:install
+      - name: Run Playwright — quote-missing-fields-popover
+        run: npx playwright test e2e/quotes/quote-missing-fields-popover.spec.ts --project=chromium-authed --retries=2
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quote-missing-fields
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload snapshot diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-missing-fields-snapshot-diffs
+          path: |
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace.zip
+            test-results/**/*.webm
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # Job dedicado ao spec de layout do stepper pós-Reset. Bloqueia merge em
+  # falha geométrica (amontoamento/clipping) ou de snapshot visual. Sobe
+  # diffs PNG (actual/expected/diff), trace e vídeos quando falha.
+  quote-reset-stepper-layout-e2e:
+    name: E2E Stepper Layout pós-Reset
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npm run test:e2e:install
+      # --reporter=html força geração do report; trace/video/screenshot são
+      # configurados em playwright.config.ts (retain-on-failure) — o spec usa
+      # toHaveScreenshot, que já produz *-actual/*-expected/*-diff em falha.
+      - name: Run Playwright — quote-reset-stepper-layout
+        id: pw_run
+        run: npx playwright test e2e/quotes/quote-reset-stepper-layout.spec.ts --project=chromium-authed --retries=2 --reporter=html
+
+      # Reexecução headed (apenas em falha) com trace/vídeo "on" para facilitar
+      # reprodução local. Usa xvfb para Chromium "headed" em runner CI.
+      # `continue-on-error: true` — o resultado bloqueante é o run acima.
+      - name: Re-run headed on failure (xvfb + trace/video on)
+        if: failure()
+        continue-on-error: true
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb
+          xvfb-run -a npx playwright test \
+            e2e/quotes/quote-reset-stepper-layout.spec.ts \
+            --project=chromium-authed \
+            --headed \
+            --retries=0 \
+            --trace=on \
+            --reporter=list \
+            --output=test-results-headed
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quote-reset-stepper
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload snapshot diffs + traces + vídeos (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-reset-stepper-failure-bundle
+          path: |
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace.zip
+            test-results/**/video.webm
+            test-results/**/*.webm
+            test-results/**/*.png
+            test-results-headed/**/trace.zip
+            test-results-headed/**/*.webm
+            test-results-headed/**/*.png
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Comenta no PR com link para o run + bundle de diffs quando falha.
+      - name: Comment PR with report + diffs (on failure)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '### ❌ E2E `quote-reset-stepper-layout` falhou',
+              '',
+              `- 📊 **Playwright HTML report:** [run #${context.runId}](${runUrl}) → artifact \`playwright-report-quote-reset-stepper\``,
+              '- 🖼️ **Diffs visuais (actual / expected / diff) + traces + vídeos:** artifact `quote-reset-stepper-failure-bundle`',
+              '- 🎥 **Reprodução headed:** pasta `test-results-headed/` dentro do bundle (trace.zip + .webm)',
+              '',
+              '<details><summary>Reproduzir localmente</summary>',
+              '',
+              '```bash',
+              'npx playwright test e2e/quotes/quote-reset-stepper-layout.spec.ts \\',
+              '  --project=chromium-authed --headed --trace=on',
+              '# Aceitar mudança visual intencional:',
+              'npx playwright test e2e/quotes/quote-reset-stepper-layout.spec.ts \\',
+              '  --project=chromium-authed --update-snapshots',
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+
+  # Job dedicado ao spec visual do subtítulo de quote_number. Bloqueia merge
+  # em qualquer regressão visual nos 4 breakpoints (mobile/tablet/desktop/wide).
+  # NUNCA roda com --update-snapshots aqui (use o workflow manual
+  # `update-quote-reset-snapshots.yml` para regenerar baselines).
+  quote-number-subtitle-e2e:
+    name: E2E Subtítulo quote_number (visual)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm run test:e2e:install
+      - name: Run Playwright — quote-number-subtitle (sem --update-snapshots)
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-number-subtitle.spec.ts \
+            --project=chromium-authed \
+            --retries=1 \
+            --reporter=list
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quote-number-subtitle
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload snapshot diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-number-subtitle-failure-bundle
+          path: |
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace.zip
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Comentário automático no PR com resumo por breakpoint + link para
+      # artifact de diffs (actual/expected/diff PNG) e Playwright HTML report.
+      - name: Comment PR with breakpoint diff summary (on failure)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            // Varre test-results em busca dos diffs por breakpoint.
+            const root = 'test-results';
+            const found = new Set();
+            try {
+              const walk = (dir) => {
+                for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                  const full = path.join(dir, entry.name);
+                  if (entry.isDirectory()) walk(full);
+                  else {
+                    const m = entry.name.match(/quote-number-subtitle-(mobile|tablet-portrait|tablet-landscape|desktop|wide)-(?:diff|actual|expected)\.png/);
+                    if (m) found.add(m[1]);
+                  }
+                }
+              };
+              if (fs.existsSync(root)) walk(root);
+            } catch (e) { core.warning(`Scan falhou: ${e}`); }
+            const breakpoints = ['mobile','tablet-portrait','tablet-landscape','desktop','wide'];
+            const rows = breakpoints.map(bp => `| ${bp} | ${found.has(bp) ? '❌ diff gerado' : '✅ ok'} |`).join('\n');
+            const body = [
+              '### 🖼️ `quote-number-subtitle.spec.ts` — regressão visual detectada',
+              '',
+              `- 📊 Playwright HTML report: [run #${context.runId}](${runUrl}) → artifact \`playwright-report-quote-number-subtitle\``,
+              `- 🧷 Diffs PNG por breakpoint: artifact \`quote-number-subtitle-failure-bundle\``,
+              '',
+              '| Breakpoint | Status |',
+              '| --- | --- |',
+              rows,
+              '',
+              '<details><summary>Reproduzir / aceitar mudança visual</summary>',
+              '',
+              '```bash',
+              '# Validar localmente:',
+              'npx playwright test e2e/quotes/quote-number-subtitle.spec.ts \\',
+              '  --project=chromium-authed --headed --trace=on',
+              '',
+              '# Aceitar mudança intencional (regenera baselines):',
+              'npx playwright test e2e/quotes/quote-number-subtitle.spec.ts \\',
+              '  --project=chromium-authed --update-snapshots',
+              '```',
+              '',
+              'Ou dispare o workflow manual **Update Quote Visual Snapshots**.',
+              '</details>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+  # Job dedicado ao spec do PDF exportado. Bloqueia merge em qualquer
+  # regressão de conteúdo do PDF (quote_number ausente, frase legada vazando).
+  quote-pdf-quote-number-e2e:
+    name: E2E PDF exportado · quote_number
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm install -D pdf-parse @types/pdf-parse || true
+      - run: npm run test:e2e:install
+      - name: Run Playwright — quote-pdf-quote-number
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-pdf-quote-number.spec.ts \
+            --project=chromium-authed \
+            --retries=1 \
+            --reporter=list
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-quote-pdf
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Publica TUDO útil para debug: PDFs baixados, HTML do preview, traces,
+      # vídeos e screenshots quando o spec falha.
+      - name: Upload PDF + preview HTML + diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-pdf-failure-bundle
+          path: |
+            test-results/**/*.pdf
+            test-results/**/*.html
+            test-results/**/*.png
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+            test-results/**/trace*.zip
+            test-results/**/*.zip
+            test-results/**/*.webm
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Comment PR with PDF artifacts (on failure)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const artifactsUrl = `${runUrl}#artifacts`;
+
+            // Lista arquivos reais sob test-results/ agrupados por tipo,
+            // com link direto para o trace.zip mais recente.
+            const root = 'test-results';
+            const files = { pdf: [], html: [], png: [], trace: [], other: [] };
+            const walk = (dir) => {
+              if (!fs.existsSync(dir)) return;
+              for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                const full = path.join(dir, entry.name);
+                if (entry.isDirectory()) { walk(full); continue; }
+                const lower = entry.name.toLowerCase();
+                if (lower.endsWith('.pdf')) files.pdf.push(full);
+                else if (lower.endsWith('.html')) files.html.push(full);
+                else if (lower.endsWith('.png')) files.png.push(full);
+                else if (lower === 'trace.zip' || lower.startsWith('trace')) files.trace.push(full);
+                else files.other.push(full);
+              }
+            };
+            walk(root);
+            // Trace mais recente (mtime) — link direto.
+            let latestTrace = null;
+            if (files.trace.length) {
+              latestTrace = files.trace
+                .map((f) => ({ f, m: fs.statSync(f).mtimeMs }))
+                .sort((a, b) => b.m - a.m)[0].f;
+            }
+            const list = (label, arr) =>
+              arr.length
+                ? `<details><summary>${label} (${arr.length})</summary>\n\n${arr
+                    .slice(0, 30)
+                    .map((f) => `- \`${f}\``)
+                    .join('\n')}\n\n</details>`
+                : `- ${label}: _nenhum_`;
+
+            const body = [
+              '### ❌ `quote-pdf-quote-number.spec.ts` falhou',
+              '',
+              `- 📊 Playwright HTML report: [run #${context.runId}](${runUrl}) → artifact \`playwright-report-quote-pdf\``,
+              `- 📦 Todos os artifacts deste run: [abrir lista](${artifactsUrl})`,
+              latestTrace
+                ? `- 🔎 Último trace: \`${latestTrace}\` — baixe em \`quote-pdf-failure-bundle\` e abra com \`npx playwright show-trace <arquivo>\``
+                : '- 🔎 Último trace: _não gerado_',
+              '',
+              '#### Artefatos coletados',
+              list('📄 PDFs', files.pdf),
+              list('🌐 HTML do preview', files.html),
+              list('🖼️ Screenshots (PNG)', files.png),
+              list('🧵 Traces', files.trace),
+              '',
+              '<details><summary>Reproduzir localmente</summary>',
+              '',
+              '```bash',
+              'npx playwright test e2e/quotes/quote-pdf-quote-number.spec.ts \\',
+              '  --project=chromium-authed --headed --trace=on',
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+
+  # Job dedicado aos novos specs de PDF (a11y do trigger, unicidade e
+  # snapshot do header 768/1024). Bloqueia merge em regressão de layout
+  # ou de seletor único. Sobe artifacts específicos do header snapshot
+  # quando houver falha de diff visual.
+  quote-pdf-trigger-and-header-e2e:
+    name: E2E PDF · trigger uniqueness + header snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - run: npm ci
+      - run: npm run test:e2e:install
+
+      - name: Run Playwright — trigger uniqueness + a11y + header snapshot
+        run: |
+          npx playwright test \
+            e2e/quotes/quote-pdf-trigger-uniqueness.spec.ts \
+            e2e/quotes/quote-pdf-trigger-a11y.spec.ts \
+            e2e/quotes/quote-pdf-header-snapshot.spec.ts \
+            --project=chromium-authed \
+            --reporter=list
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-pdf-trigger-header
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Bundle específico para falhas do snapshot do header (768/1024):
+      # traces + actual/expected/diff PNGs + HTML do dialog + videos.
+      - name: Upload header snapshot failure bundle
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quote-pdf-header-snapshot-failure
+          path: |
+            test-results/**/quote-pdf-header-snapshot-*/**/*.png
+            test-results/**/quote-pdf-header-snapshot-*/**/*.html
+            test-results/**/quote-pdf-header-snapshot-*/**/trace*.zip
+            test-results/**/quote-pdf-header-snapshot-*/**/*.webm
+            test-results/**/*-actual.png
+            test-results/**/*-expected.png
+            test-results/**/*-diff.png
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Comment PR on header snapshot failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              '### ❌ Falha em PDF trigger/header snapshot',
+              '',
+              `- 📊 HTML report: [run #${context.runId}](${runUrl}) → \`playwright-report-pdf-trigger-header\``,
+              '- 🖼️ Diffs/traces do header 768/1024: artifact `quote-pdf-header-snapshot-failure`',
+              '',
+              '<details><summary>Regerar baselines (intencional)</summary>',
+              '',
+              '```bash',
+              'npx playwright test e2e/quotes/quote-pdf-header-snapshot.spec.ts \\',
+              '  --project=chromium-authed --update-snapshots',
+              '```',
+              '',
+              'Ou dispare o workflow `Update Quote Visual Snapshots` no Actions.',
+              '',
+              '</details>',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });

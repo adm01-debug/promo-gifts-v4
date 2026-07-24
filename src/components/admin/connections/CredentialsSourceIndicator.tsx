@@ -15,7 +15,7 @@
  * Importante: é apenas leitura, não dispara invocações novas — recebe os
  * `secrets` já carregados pelo hook `useSecretsManager` do componente pai.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Database, Clock, ShieldCheck, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import { resolveSource } from './CredentialsSourceFilterContext';
 import type { SecretStatus } from '@/hooks/admin';
+import { cn } from '@/lib/utils';
 
 interface Props {
   secrets: SecretStatus[];
@@ -72,6 +73,8 @@ function formatAbsolute(iso: string | null): string | null {
   });
 }
 
+const TOOLTIP_LIMIT = 12;
+
 export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, className }: Props) {
   const [refreshing, setRefreshing] = useState(false);
 
@@ -83,9 +86,9 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       toast.success('Credenciais recarregadas', {
         description: 'Cache do secrets-manager invalidado e integration_credentials re-listada.',
       });
-    } catch (err) {
+    } catch {
       toast.error('Falha ao recarregar credenciais', {
-        description: err instanceof Error ? err.message : 'Erro desconhecido.',
+        description: 'Erro desconhecido.',
       });
     } finally {
       setRefreshing(false);
@@ -94,30 +97,26 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
 
   // Agrupa secrets por origem resolvida — usado tanto para os contadores
   // quanto para listar os nomes contribuintes em cada tooltip.
-  const grouped = secrets.reduce(
-    (acc, s) => {
-      const src = resolveSource(s);
-      acc[src].push(s);
-      return acc;
-    },
-    { db: [] as SecretStatus[], env: [] as SecretStatus[], none: [] as SecretStatus[] },
-  );
-
-  // Ordena alfabeticamente para consistência de leitura nos tooltips.
-  (Object.keys(grouped) as Array<'db' | 'env' | 'none'>).forEach((k) => {
-    grouped[k].sort((a, b) => a.name.localeCompare(b.name));
-  });
-
-  const counts = {
-    db: grouped.db.length,
-    env: grouped.env.length,
-    none: grouped.none.length,
-  };
+  const { grouped, counts } = useMemo(() => {
+    const g = secrets.reduce(
+      (acc, s) => {
+        const src = resolveSource(s);
+        acc[src].push(s);
+        return acc;
+      },
+      { db: [] as SecretStatus[], env: [] as SecretStatus[], none: [] as SecretStatus[] },
+    );
+    // Ordena alfabeticamente para consistência de leitura nos tooltips.
+    (Object.keys(g) as Array<'db' | 'env' | 'none'>).forEach((k) => {
+      g[k].sort((a, b) => a.name.localeCompare(b.name));
+    });
+    return { grouped: g, counts: { db: g.db.length, env: g.env.length, none: g.none.length } };
+  }, [secrets]);
 
   // Limita a lista exibida no tooltip para não estourar a viewport
   // quando houver muitos secrets — o restante aparece como "+ N mais".
-  const TOOLTIP_LIMIT = 12;
-  function renderNameList(items: SecretStatus[], tone: 'success' | 'warning' | 'destructive') {
+
+  function renderNameList(items: SecretStatus[], tone: 'destructive' | 'success' | 'warning') {
     if (items.length === 0) {
       return <p className="italic text-muted-foreground">Nenhum secret nesta categoria.</p>;
     }
@@ -172,7 +171,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       <div className="min-w-[260px] flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-medium leading-none">Fonte das credenciais</p>
-          <TooltipProvider delayDuration={200}>
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
@@ -183,7 +182,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                   SSOT
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs text-xs">
+              <TooltipContent side="top" className=" ">
                 Single Source of Truth: os valores exibidos vêm da tabela
                 <code className="mx-1 font-mono">integration_credentials</code>
                 lida via edge function
@@ -203,7 +202,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
         </p>
 
         <div className="flex flex-wrap items-center gap-1.5 pt-1">
-          <TooltipProvider delayDuration={150}>
+          <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
@@ -215,7 +214,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                   DB · {counts.db}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm space-y-1.5 text-xs">
+              <TooltipContent side="top" className="space-y-1.5">
                 <p className="font-semibold">Origem: banco (SSOT) — {counts.db}</p>
                 <p>
                   Valor persistido em <code className="font-mono">integration_credentials</code> e
@@ -244,7 +243,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                   ENV · {counts.env}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm space-y-1.5 text-xs">
+              <TooltipContent side="top" className="space-y-1.5">
                 <p className="font-semibold">
                   Origem: variável de ambiente (legado) — {counts.env}
                 </p>
@@ -276,7 +275,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                   AUSENTE · {counts.none}
                 </Badge>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm space-y-1.5 text-xs">
+              <TooltipContent side="top" className="space-y-1.5">
                 <p className="font-semibold">Sem valor em DB nem em ENV — {counts.none}</p>
                 <p>
                   O <code className="font-mono">secrets-manager</code> não encontrou o segredo em
@@ -323,7 +322,7 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
       </div>
 
       {onRefresh && (
-        <TooltipProvider delayDuration={200}>
+        <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -338,13 +337,13 @@ export function CredentialsSourceIndicator({ secrets, isLoading, onRefresh, clas
                 className="shrink-0 self-start"
               >
                 <RefreshCw
-                  className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`}
+                  className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')}
                   aria-hidden="true"
                 />
                 <span className="ml-1.5 text-xs">{refreshing ? 'Atualizando…' : 'Atualizar'}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs text-xs">
+            <TooltipContent side="top" className=" ">
               Invalida o cache do <code className="font-mono">secrets-manager</code> e recarrega{' '}
               <code className="font-mono">integration_credentials</code> imediatamente. Útil após
               editar secrets em outra aba.

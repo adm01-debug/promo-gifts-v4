@@ -1,0 +1,24 @@
+{
+  "description": "Baseline de arquivos com `role=\"button\"` inline em elementos não-nativos. Regressões (arquivos novos fora da baseline) falham CI. Refatore para `<Clickable>` de @/components/shared/Clickable.",
+  "updated_at": "2026-07-15T18:32:09.789Z",
+  "files": [
+    "src/components/admin/connections/ConnectionTestHistoryPanel.tsx",
+    "src/components/admin/connections/DataSourceDebugTab.tsx",
+    "src/components/cart/CartCompanyPickerDialog.tsx",
+    "src/components/filters/PresetsBar.tsx",
+    "src/components/inventory/supplier-reliability/SupplierReliabilityTable.tsx",
+    "src/components/magic-up/AdImageResult.tsx",
+    "src/components/mockup/AreaCard.tsx",
+    "src/components/mockup/MockupClientSelector.tsx",
+    "src/components/mockup/MockupHistoryPanel.tsx",
+    "src/components/mockup/MockupProductSelector.tsx",
+    "src/components/mockup/logo-editor/LogoPreviewCanvas.tsx",
+    "src/components/products/KitComposition.tsx",
+    "src/components/products/PackagingBadge.tsx",
+    "src/components/products/customization/LocationPanel.tsx",
+    "src/components/quotes/QuoteItemsTable.tsx",
+    "src/components/search/VoiceSearchOverlay.tsx",
+    "src/components/simulator/TechniqueCard.tsx",
+    "src/components/ui/date-picker-field.tsx"
+  ]
+}

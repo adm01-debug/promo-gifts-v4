@@ -1,10 +1,16 @@
 /**
  * Preview rico do template antes de clonar — com seção "Quem usou também usou".
  */
+import type { ComponentType } from 'react';
 import * as Lucide from 'lucide-react';
-import { Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Package, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,13 +30,20 @@ interface Props {
 }
 
 export function KitTemplatePreviewDialog({
-  template, allTemplates = [], open, onOpenChange, onClone, onSelectRelated, isCloning,
+  template,
+  allTemplates = [],
+  open,
+  onOpenChange,
+  onClone,
+  onSelectRelated,
+  isCloning,
 }: Props) {
   if (!template) return null;
 
   const Icon =
-    (Lucide as unknown as Record<string, React.ComponentType<{ className?: string }>>)[template.icon] ||
-    Lucide.Package;
+    (Lucide as unknown as Record<string, ComponentType<{ className?: string }>>)[
+      template.icon
+    ] || Package;
 
   const items = Array.isArray(template.items_data) ? template.items_data : [];
   const box = template.box_data as { name?: string; sku?: string } | null;
@@ -41,18 +54,24 @@ export function KitTemplatePreviewDialog({
         <DialogHeader>
           <div className="flex items-start gap-3">
             <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border"
-              style={{ background: `${template.color}1A`, borderColor: `${template.color}40`, color: template.color }}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border"
+              style={{
+                background: `${template.color}1A`,
+                borderColor: `${template.color}40`,
+                color: template.color,
+              }}
               aria-hidden
             >
               <Icon className="h-6 w-6" />
             </div>
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="font-display flex items-center gap-2 flex-wrap">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="flex flex-wrap items-center gap-2 font-display">
                 {template.name}
-                <Badge variant="outline" className="text-[10px]">{template.category}</Badge>
+                <Badge variant="outline" className="text-[10px]">
+                  {template.category}
+                </Badge>
                 {template.usage_count >= 5 && (
-                  <Badge className="text-[10px] gap-1 bg-warning/15 text-warning border-warning/30">
+                  <Badge className="gap-1 border-warning/30 bg-warning/15 text-[10px] text-warning">
                     <Sparkles className="h-3 w-3" /> Popular
                   </Badge>
                 )}
@@ -66,45 +85,56 @@ export function KitTemplatePreviewDialog({
 
         <div className="space-y-4">
           {box && (
-            <div className="p-3 rounded-lg border bg-muted/30">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Embalagem</p>
-              <p className="font-medium text-sm">{box.name || 'Caixa selecionada'}</p>
+            <div className="rounded-lg border bg-muted/30 p-3">
+              <p className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+                Embalagem
+              </p>
+              <p className="text-sm font-medium">{box.name || 'Caixa selecionada'}</p>
               {box.sku && <p className="text-xs text-muted-foreground">SKU: {box.sku}</p>}
             </div>
           )}
 
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-muted-foreground">
               Itens ({items.length})
             </p>
             <ScrollArea className="max-h-64 rounded-lg border">
               <ul className="divide-y">
                 {items.length === 0 ? (
                   <li className="p-3 text-xs text-muted-foreground">Sem itens cadastrados.</li>
-                ) : items.map((it, i) => {
-                  const item = it as { name?: string; sku?: string; quantity?: number; price?: number };
-                  return (
-                    <li key={i} className="p-3 flex items-center justify-between gap-3 text-sm">
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">{item.name || `Item ${i + 1}`}</p>
-                        {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs text-muted-foreground">x{item.quantity ?? 1}</p>
-                        {typeof item.price === 'number' && (
-                          <p className="text-xs font-medium">{formatCurrency(item.price)}</p>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
+                ) : (
+                  items.map((it, i) => {
+                    const item = it as {
+                      name?: string;
+                      sku?: string;
+                      quantity?: number;
+                      price?: number;
+                    };
+                    return (
+                      <li key={i} className="flex items-center justify-between gap-3 p-3 text-sm">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{item.name || `Item ${i + 1}`}</p>
+                          {item.sku && <p className="text-xs text-muted-foreground">{item.sku}</p>}
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-xs text-muted-foreground">x{item.quantity ?? 1}</p>
+                          {typeof item.price === 'number' && (
+                            <p className="text-xs font-medium">{formatCurrency(item.price)}</p>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })
+                )}
               </ul>
             </ScrollArea>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-lg border bg-primary/5">
+          <div className="flex items-center justify-between rounded-lg border bg-primary/5 p-3">
             <span className="text-sm text-muted-foreground">Total estimado</span>
-            <span className="text-xl font-bold text-primary">{formatCurrency(Number(template.total_price))}</span>
+            <span className="text-xl font-bold text-primary">
+              {formatCurrency(Number(template.total_price))}
+            </span>
           </div>
 
           {onSelectRelated && allTemplates.length > 0 && (
@@ -113,9 +143,15 @@ export function KitTemplatePreviewDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Fechar
+          </Button>
           <Button onClick={onClone} disabled={isCloning} className="gap-2">
-            {isCloning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+            {isCloning ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Wand2 className="h-4 w-4" />
+            )}
             Usar este template
           </Button>
         </DialogFooter>

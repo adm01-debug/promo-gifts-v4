@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { sanitizeError } from '@/lib/security/sanitize-error';
 
 /**
  * Global admin-controlled cooldown (ms) for the "Testar novamente" button on
@@ -9,7 +10,7 @@ import { toast } from "sonner";
  *
  * Only admins can read/write this row (RLS); non-admins fall back to default.
  */
-const SETTING_KEY = "retest_cooldown";
+const SETTING_KEY = 'retest_cooldown';
 const DEFAULT_MS = 3000;
 export const RETEST_COOLDOWN_PRESETS_MS = [3000, 10_000, 30_000, 60_000] as const;
 export type RetestCooldownPreset = (typeof RETEST_COOLDOWN_PRESETS_MS)[number];
@@ -46,9 +47,9 @@ export function useRetestCooldownSetting() {
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", SETTING_KEY)
+        .from('admin_settings')
+        .select('value')
+        .eq('key', SETTING_KEY)
         .maybeSingle<SettingRow>();
       if (cancelled) return;
       if (error || !data) {
@@ -69,14 +70,14 @@ export function useRetestCooldownSetting() {
     setSaving(true);
     try {
       const { error } = await supabase
-        .from("admin_settings")
-        .upsert({ key: SETTING_KEY, value: { ms } }, { onConflict: "key" });
+        .from('admin_settings')
+        .upsert({ key: SETTING_KEY, value: { ms } }, { onConflict: 'key' });
       if (error) {
-        toast.error("Não foi possível salvar o cooldown", { description: error.message });
+        toast.error('Não foi possível salvar o cooldown', { description: sanitizeError(error) });
         return false;
       }
       broadcast(ms);
-      toast.success("Cooldown atualizado", {
+      toast.success('Cooldown atualizado', {
         description: `Novos testes manuais aguardarão ${Math.round(ms / 1000)}s entre disparos.`,
       });
       return true;

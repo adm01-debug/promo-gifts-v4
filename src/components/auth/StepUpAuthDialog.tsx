@@ -20,7 +20,7 @@ interface Props {
   action: StepUpAction;
   targetRef?: string | null;
   actionLabel: string;
-  onVerified: (token: string) => void | Promise<void>;
+  onVerified: (token: string) => Promise<void> | void;
 }
 
 export function StepUpAuthDialog({
@@ -77,7 +77,7 @@ export function StepUpAuthDialog({
     }
   };
 
-  const step: 'loading' | 'password' | 'otp' = !state.challengeId
+  const step: 'loading' | 'otp' | 'password' = !state.challengeId
     ? 'loading'
     : !state.passwordVerified
       ? 'password'

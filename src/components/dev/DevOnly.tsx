@@ -20,7 +20,7 @@
  *   </DevOnly>
  */
 import { memo, type ReactNode } from 'react';
-import { useDevGate } from '@/hooks/admin';
+import { useDevGate } from '@/hooks/admin/useDevGate';
 
 export interface DevOnlyProps {
   children: ReactNode;
@@ -33,11 +33,7 @@ export interface DevOnlyProps {
   strict?: boolean;
 }
 
-export const DevOnly = memo(function DevOnly({
-  children,
-  fallback = null,
-  strict = false,
-}: DevOnlyProps) {
+export const DevOnly = memo(({ children, fallback = null, strict = false }: DevOnlyProps) => {
   const { isAllowed, isDev } = useDevGate();
   const allowed = strict ? isDev : isAllowed;
   return <>{allowed ? children : fallback}</>;

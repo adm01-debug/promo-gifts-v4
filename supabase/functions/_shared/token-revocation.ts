@@ -23,7 +23,7 @@
  * - JWT sem `iat` → fail-open (improvável; getUser já garantiu validade).
  */
 
-import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2.49.4";
 
 interface RevocationCacheEntry {
   /** Timestamp da última revogação em ms (epoch). null se nunca revogado. */

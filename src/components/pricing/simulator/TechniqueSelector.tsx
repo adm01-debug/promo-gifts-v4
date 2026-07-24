@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import { useExternalPrintAreas } from '@/hooks/simulation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import {
   AlertCircle,
   Sparkles,
 } from 'lucide-react';
-import type { ProductTechnique, ComponentData, LocationData, TechniqueData } from "./types";
+import type { ProductTechnique, ComponentData, LocationData, TechniqueData } from './types';
 
 interface TechniqueSelectorProps {
   productId: string;
@@ -51,7 +51,7 @@ export function TechniqueSelector({
     setSelectedComponent(null);
     setSelectedLocation(null);
     onSelect(null);
-  }, [productId]);
+  }, [productId, onSelect]);
 
   const handleComponentSelect = (comp: ComponentData) => {
     setSelectedComponent(comp);
@@ -62,7 +62,11 @@ export function TechniqueSelector({
     }
   };
 
-  const handleLocationSelect = (loc: LocationData, comp: ComponentData = selectedComponent!) => {
+  const handleLocationSelect = (
+    loc: LocationData,
+    comp: ComponentData | null = selectedComponent,
+  ) => {
+    if (!comp) return;
     setSelectedLocation(loc);
     onSelect(null);
     const primaryTech = loc.techniques.find((t) => t.isPrimary);
@@ -74,9 +78,11 @@ export function TechniqueSelector({
 
   const handleTechniqueSelect = (
     tech: TechniqueData,
-    loc: LocationData = selectedLocation!,
-    comp: ComponentData = selectedComponent!
+    loc: LocationData | null = selectedLocation,
+    comp: ComponentData | null = selectedComponent,
   ) => {
+    if (!loc || !comp) return;
+
     const fullTechnique: ProductTechnique = {
       id: tech.id,
       techniqueCode: tech.techniqueCode,
@@ -106,8 +112,8 @@ export function TechniqueSelector({
 
   if (error) {
     return (
-      <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
-        <AlertCircle className="w-5 h-5 mb-2" />
+      <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-destructive">
+        <AlertCircle className="mb-2 h-5 w-5" />
         <p>Erro ao carregar técnicas</p>
       </div>
     );
@@ -115,8 +121,8 @@ export function TechniqueSelector({
 
   if (!components?.length) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <Paintbrush className="w-8 h-8 mx-auto mb-2 opacity-50" />
+      <div className="py-8 text-center text-muted-foreground">
+        <Paintbrush className="mx-auto mb-2 h-8 w-8 opacity-50" />
         <p>Este produto não possui técnicas de personalização cadastradas</p>
       </div>
     );
@@ -130,26 +136,26 @@ export function TechniqueSelector({
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span
           className={cn(
-            'px-2 py-1 rounded',
-            wizardStep >= 1 ? 'bg-primary/20 text-primary font-medium' : 'bg-muted'
+            'rounded px-2 py-1',
+            wizardStep >= 1 ? 'bg-primary/20 font-medium text-primary' : 'bg-muted',
           )}
         >
           Componente
         </span>
-        <ChevronRight className="w-3 h-3" />
+        <ChevronRight className="h-3 w-3" />
         <span
           className={cn(
-            'px-2 py-1 rounded',
-            wizardStep >= 2 ? 'bg-primary/20 text-primary font-medium' : 'bg-muted'
+            'rounded px-2 py-1',
+            wizardStep >= 2 ? 'bg-primary/20 font-medium text-primary' : 'bg-muted',
           )}
         >
           Local
         </span>
-        <ChevronRight className="w-3 h-3" />
+        <ChevronRight className="h-3 w-3" />
         <span
           className={cn(
-            'px-2 py-1 rounded',
-            wizardStep >= 3 ? 'bg-primary/20 text-primary font-medium' : 'bg-muted'
+            'rounded px-2 py-1',
+            wizardStep >= 3 ? 'bg-primary/20 font-medium text-primary' : 'bg-muted',
           )}
         >
           Técnica
@@ -165,11 +171,11 @@ export function TechniqueSelector({
               <button
                 key={`${comp.code}-${idx}`}
                 onClick={() => handleComponentSelect(comp)}
-                className="p-4 rounded-lg border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group"
+                className="group rounded-lg border bg-card p-4 text-left transition-all hover:border-primary/50 hover:bg-accent"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <Package className="w-5 h-5 text-primary" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
+                    <Package className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <p className="font-medium">{comp.name}</p>
@@ -193,7 +199,7 @@ export function TechniqueSelector({
               Onde será a gravação em "{selectedComponent.name}"?
             </p>
             <Button variant="ghost" size="sm" onClick={() => setSelectedComponent(null)}>
-              <X className="w-3 h-3 mr-1" /> Voltar
+              <X className="mr-1 h-3 w-3" /> Voltar
             </Button>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -206,11 +212,11 @@ export function TechniqueSelector({
                 <button
                   key={`${loc.code}-${idx}`}
                   onClick={() => handleLocationSelect(loc)}
-                  className="p-4 rounded-lg border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group"
+                  className="group rounded-lg border bg-card p-4 text-left transition-all hover:border-primary/50 hover:bg-accent"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-orange/10 flex items-center justify-center group-hover:bg-orange/20 transition-colors">
-                      <Ruler className="w-5 h-5 text-orange" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-primary/10 transition-colors group-hover:bg-brand-primary/20">
+                      <Ruler className="h-5 w-5 text-brand-primary" />
                     </div>
                     <div>
                       <p className="font-medium">{loc.name}</p>
@@ -235,7 +241,7 @@ export function TechniqueSelector({
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium">Qual técnica de gravação?</p>
             <Button variant="ghost" size="sm" onClick={() => setSelectedLocation(null)}>
-              <X className="w-3 h-3 mr-1" /> Voltar
+              <X className="mr-1 h-3 w-3" /> Voltar
             </Button>
           </div>
           <div className="grid gap-2">
@@ -243,12 +249,12 @@ export function TechniqueSelector({
               <button
                 key={tech.id}
                 onClick={() => handleTechniqueSelect(tech)}
-                className="p-4 rounded-lg border bg-card hover:bg-accent hover:border-primary/50 transition-all text-left group"
+                className="group rounded-lg border bg-card p-4 text-left transition-all hover:border-primary/50 hover:bg-accent"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center group-hover:bg-success/20 transition-colors">
-                      <Paintbrush className="w-5 h-5 text-success" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success/10 transition-colors group-hover:bg-success/20">
+                      <Paintbrush className="h-5 w-5 text-success" />
                     </div>
                     <div>
                       <p className="font-medium">{tech.areaName || tech.techniqueCode}</p>
@@ -260,8 +266,8 @@ export function TechniqueSelector({
                     </div>
                   </div>
                   {tech.isPrimary && (
-                    <Badge className="bg-success/20 text-success border-success/30">
-                      <Sparkles className="w-3 h-3 mr-1" />
+                    <Badge className="border-success/30 bg-success/20 text-success">
+                      <Sparkles className="mr-1 h-3 w-3" />
                       Recomendado
                     </Badge>
                   )}
@@ -274,10 +280,10 @@ export function TechniqueSelector({
 
       {/* Selected summary */}
       {selectedTechnique && (
-        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+        <div className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Check className="w-5 h-5 text-success" />
+              <Check className="h-5 w-5 text-success" />
               <span className="font-medium">Técnica selecionada</span>
             </div>
             <Button
@@ -294,29 +300,29 @@ export function TechniqueSelector({
           </div>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-muted-foreground text-xs">Componente</p>
+              <p className="text-xs text-muted-foreground">Componente</p>
               <p className="font-medium">{selectedTechnique.componentName}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">Local</p>
+              <p className="text-xs text-muted-foreground">Local</p>
               <p className="font-medium">{selectedTechnique.locationName}</p>
             </div>
             <div>
-              <p className="text-muted-foreground text-xs">Técnica</p>
+              <p className="text-xs text-muted-foreground">Técnica</p>
               <p className="font-medium">{selectedTechnique.techniqueName}</p>
             </div>
           </div>
           {(selectedTechnique.maxWidth || selectedTechnique.maxColors) && (
-            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t">
+            <div className="flex items-center gap-4 border-t pt-2 text-xs text-muted-foreground">
               {selectedTechnique.maxWidth && selectedTechnique.maxHeight && (
                 <span className="flex items-center gap-1">
-                  <Ruler className="w-3 h-3" />
+                  <Ruler className="h-3 w-3" />
                   Área máx: {selectedTechnique.maxWidth}x{selectedTechnique.maxHeight}mm
                 </span>
               )}
               {selectedTechnique.maxColors && (
                 <span className="flex items-center gap-1">
-                  <Palette className="w-3 h-3" />
+                  <Palette className="h-3 w-3" />
                   Até {selectedTechnique.maxColors} cores
                 </span>
               )}

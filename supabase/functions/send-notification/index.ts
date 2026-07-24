@@ -1,5 +1,12 @@
+// supabase/functions/send-notification/index.ts
+// BUG-EF-003 FIXED: Removido o primeiro handler OPTIONS duplicado (sem CORS headers)
+//   que tornava o segundo handler (correto) inacessivel.
+// BUG-NOTIF-003 FIXED: DND check agora passa user_id explicitamente à RPC
+//   is_dnd_active, evitando dependência de auth.uid() que é NULL quando a função
+//   é chamada com service_role_key (sem JWT de usuário autenticado).
 import { getCorsHeaders } from '../_shared/cors.ts';
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+// BULK-SDK-FIX: Changed from esm.sh URL to npm: direct — removes import_map dependency.
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
 import { castRpcResult } from "../_shared/supabase-client-adapter.ts";
 import { authorizeCron } from "../_shared/dispatcher-auth.ts";
@@ -22,15 +29,21 @@ function jsonRes(corsHeaders: Record<string, string>, body: unknown, status = 20
 }
 
 Deno.serve(async (req) => {
-  // Cron: exige x-cron-secret para evitar chamadas diretas não autorizadas
-  if (req.method === "OPTIONS") return new Response(null, { status: 204 });
-  const cronAuth = await authorizeCron(req, { corsHeaders: {}, secretEnvName: "CRON_SECRET", headerName: "x-cron-secret" });
-  if (!cronAuth.ok) return cronAuth.response;
-
+  // BUG-EF-003 FIX: Apenas UM handler OPTIONS, com getCorsHeaders(req) correto.
+  // Antes havia dois: o primeiro retornava 204 sem headers CORS (bloqueando preflight),
+  // o segundo nunca era alcancado.
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
+
+  // Cron: exige x-cron-secret para evitar chamadas diretas nao autorizadas
+  const cronAuth = await authorizeCron(req, {
+    corsHeaders,
+    secretEnvName: "CRON_SECRET",
+    headerName: "x-cron-secret",
+  });
+  if (!cronAuth.ok) return cronAuth.response;
 
   try {
     const supabase = createClient(
@@ -46,18 +59,20 @@ Deno.serve(async (req) => {
 
     const payload = parsed.data;
 
-    // Check DND status
+    // BUG-NOTIF-003 FIX: Passa p_user_id explicitamente à RPC is_dnd_active.
+    // Sem isso, a RPC dependia de auth.uid() que é NULL ao usar service_role_key,
+    // fazendo o DND nunca funcionar corretamente (always returning null/false).
     const { data: isDND } = await castRpcResult<{
       data: boolean | null;
       error: { message: string } | null;
-    }>(supabase.rpc('is_dnd_active'));
+    }>(supabase.rpc('is_dnd_active', { p_user_id: payload.user_id }));
 
     // If DND is active and not urgent, skip
     if (isDND && payload.type !== 'urgent') {
-      return jsonRes(corsHeaders, { 
-        success: true, 
+      return jsonRes(corsHeaders, {
+        success: true,
         skipped: true,
-        reason: 'DND active' 
+        reason: 'DND active',
       });
     }
 
@@ -79,13 +94,13 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    return jsonRes(corsHeaders, { 
-      success: true, 
+    return jsonRes(corsHeaders, {
+      success: true,
       notification_id: notification.id,
     });
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return jsonRes(corsHeaders, { error: errorMessage }, 500);
+    console.error('[send-notification] error:', error instanceof Error ? error.message : 'unknown');
+    return jsonRes(corsHeaders, { error: 'internal_error' }, 500);
   }
 });

@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { getSupabaseClient } from '@/integrations/supabase/lazy-client';
+import type { Session } from '@supabase/supabase-js';
 import { CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
 import { PageSEO } from '@/components/seo/PageSEO';
 import { logger } from '@/lib/logger';
+import { toErrorMessage } from '@/lib/to-error-message';
 import { useAuth } from '@/contexts/AuthContext';
 import { authDebugUrl } from '@/lib/auth/auth-debug';
 import { AuthFlowTracer } from '@/lib/auth/auth-flow-tracer';
 import { consumePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { clearOAuthPending } from '@/lib/auth/oauth-pending';
 import { explainOAuthError, type OAuthErrorExplanation } from '@/lib/auth/oauth-error-explainer';
-import { SpaceScene } from "@/pages/auth/AuthBranding";
-import { motion } from 'framer-motion';
+import { SpaceScene } from '@/pages/auth/AuthBranding';
 
 /**
  * Callback do login social via Supabase Auth.
@@ -29,7 +30,7 @@ import { motion } from 'framer-motion';
  *  - `confirmed`: tudo OK, navegando para destino
  *  - `failed`: erro detectado, redirecionando para /login
  */
-type CallbackStatus = 'processing' | 'slow' | 'confirming' | 'confirmed' | 'failed';
+type CallbackStatus = 'confirmed' | 'confirming' | 'failed' | 'processing' | 'slow';
 
 const CONFIRMED_HOLD_MS = 700;
 const SLOW_HINT_MS = 3000;
@@ -129,7 +130,7 @@ export default function SSOCallbackPage() {
     let timeoutId: number | null = null;
     let confirmedHoldId: number | null = null;
 
-    const goHome = async (session?: import('@supabase/supabase-js').Session | null) => {
+    const goHome = async (session?: Session | null) => {
       if (cancelled) return;
       if (session) tracer.captureSession(session);
       // Status: sessão capturada, atualizando contexto local
@@ -141,7 +142,7 @@ export default function SSOCallbackPage() {
         tracer.stepError('redirect-home', e);
         logger.warn('[sso-callback] refreshSession failed', {
           flowId: tracer.flowId,
-          message: e instanceof Error ? e.message : String(e),
+          message: toErrorMessage(e),
         });
       }
       if (cancelled) return;
@@ -171,29 +172,35 @@ export default function SSOCallbackPage() {
 
     const run = async () => {
       try {
+        const supabase = await getSupabaseClient();
         const code = searchParams.get('code');
 
         // (2) Fluxo PKCE — troca o code por sessão
         if (code) {
           tracer.setFlow('pkce');
-          tracer.step('pkce-exchange-start', { codePrefix: code.slice(0, 6) + '…' });
-          const { data: exData, error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) {
-            tracer.stepError('pkce-exchange-failed', exchangeError);
+          tracer.step('pkce-exchange-start', { codePrefix: `${code.slice(0, 6)}…` });
+          const { authService } = await import('@/services/authService');
+          const exRes = await authService.exchangeCodeForSessionSafe(code);
+          if (exRes.kind === 'err') {
+            tracer.stepError('pkce-exchange-failed', new Error(exRes.userMessage));
             logger.error('[sso-callback] exchangeCodeForSession failed', {
               flowId: tracer.flowId,
-              message: exchangeError.message,
+              errorKind: exRes.errorKind,
             });
-            goLogin(exchangeError.message);
+            goLogin(exRes.userMessage);
             return;
           }
-          tracer.captureSession(exData?.session ?? null);
+          const exData = exRes.data as { session?: unknown } | null;
+          const session = (exData?.session ?? null) as
+            | Parameters<typeof tracer.captureSession>[0];
+          tracer.captureSession(session);
           tracer.step('pkce-exchange-ok', {
-            hasSession: !!exData?.session,
-            provider: exData?.session?.user?.app_metadata?.provider ?? null,
+            hasSession: !!session,
+            provider:
+              (session as { user?: { app_metadata?: { provider?: string } } } | null)?.user
+                ?.app_metadata?.provider ?? null,
           });
-          await goHome(exData?.session ?? null);
+          await goHome(session);
           return;
         }
 
@@ -201,7 +208,7 @@ export default function SSOCallbackPage() {
         // ou supabase-js já parseou o hash fragment automaticamente).
         const {
           data: { session },
-        } = await supabase.auth.getSession();
+        } = await (await getSupabaseClient()).auth.getSession();
         tracer.step('session-check-initial', { hasSession: !!session });
         if (session) {
           tracer.setFlow(hash ? 'implicit' : 'unknown');
@@ -255,7 +262,7 @@ export default function SSOCallbackPage() {
   }, [navigate, searchParams, refreshSession]);
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[#030508] px-4 overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#030508] px-4">
       <SpaceScene />
       <PageSEO
         title="Autenticação SSO"
@@ -272,26 +279,25 @@ export default function SSOCallbackPage() {
       >
         <StatusIcon status={status} />
         <div className="space-y-1">
-          <h1 className="text-xl font-bold text-white tracking-tight" data-testid="sso-callback-title">
+          <h1
+            className="text-xl font-bold tracking-tight text-white"
+            data-testid="sso-callback-title"
+          >
             {status === 'failed' && errorDetail ? errorDetail.title : STATUS_TITLE[status]}
           </h1>
-          <p className="text-[13px] text-white/50 leading-relaxed" data-testid="sso-callback-description">
-            {status === 'failed' && errorMessage
-              ? errorMessage
-              : STATUS_DESCRIPTION[status]}
+          <p
+            className="text-[13px] leading-relaxed text-white/50"
+            data-testid="sso-callback-description"
+          >
+            {status === 'failed' && errorMessage ? errorMessage : STATUS_DESCRIPTION[status]}
           </p>
           {(status === 'confirming' || status === 'confirmed') && userEmail && (
-            <p className="pt-1 text-xs text-muted-foreground/80">
-              {userEmail}
-            </p>
+            <p className="pt-1 text-xs text-muted-foreground/80">{userEmail}</p>
           )}
         </div>
         {status === 'failed' && errorDetail && (
           <div
-            className={
-              'w-full rounded-lg border px-3 py-2 text-left text-xs ' +
-              SEVERITY_STYLES[errorDetail.severity]
-            }
+            className={`w-full rounded-lg border px-3 py-2 text-left text-xs ${SEVERITY_STYLES[errorDetail.severity]}`}
             data-testid="sso-callback-hint"
             data-severity={errorDetail.severity}
             data-error-code={errorDetail.code}
@@ -334,7 +340,7 @@ const SEVERITY_STYLES: Record<OAuthErrorExplanation['severity'], string> = {
 
 function StatusIcon({ status }: { status: CallbackStatus }) {
   if (status === 'confirmed') {
-    return <CheckCircle2 className="h-12 w-12 text-blue-400 animate-fade-in" />;
+    return <CheckCircle2 className="h-12 w-12 animate-fade-in text-blue-400" />;
   }
   if (status === 'failed') {
     return <AlertCircle className="h-12 w-12 text-destructive" />;
@@ -359,16 +365,10 @@ function StatusSteps({ status }: { status: CallbackStatus }) {
         return (
           <li
             key={s.key}
-            className={
-              'flex flex-1 flex-col items-center gap-2 ' +
-              (done ? 'text-white' : '')
-            }
+            className={`flex flex-1 flex-col items-center gap-2 ${done ? 'text-white' : ''}`}
           >
             <span
-              className={
-                'h-1.5 w-full rounded-full transition-all duration-500 ' +
-                (done ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/5')
-              }
+              className={`h-1.5 w-full rounded-full transition-all duration-500 ${done ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-white/5'}`}
               aria-current={active ? 'step' : undefined}
             />
             <span>{s.label}</span>

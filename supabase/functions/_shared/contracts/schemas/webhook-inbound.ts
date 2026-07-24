@@ -7,7 +7,7 @@
  * Isso permite inserir lixo em `inbound_webhook_events.payload`. Este contrato
  * passa a exigir um envelope mínimo, mantendo `data` livre para o emissor.
  *
- * v1 = aceita qualquer payload (forma adotada hoje em produção). Default.
+ * v1 = aceita qualquer payload (forma adotada hoje em produção).
  * v2 = strict envelope: `event`, `occurred_at`, `data` exigidos.
  */
 
@@ -49,11 +49,11 @@ export const WebhookInboundSchemas = {
     "1": WebhookInboundV1,
     "2": WebhookInboundV2,
   },
-  defaultVersion: "1" as const,
+  defaultVersion: "2" as const,
   deprecated: [
     {
       version: "1",
-      sunset: "2026-09-30",
+      sunset: "2026-06-30",
       migrationUrl:
         "https://github.com/adm01-debug/promo-gifts-v4/blob/main/docs/contracts/MIGRATION_GUIDE.md#webhook-inbound-v1-v2",
     },

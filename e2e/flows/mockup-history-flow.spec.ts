@@ -38,7 +38,8 @@ test.describe("Mockup History E2E Flow", () => {
 
     // Upload Logo
     const fileInput = page.locator('input[data-testid^="mockup-logo-upload-input-"]').first();
-    const logoPath = path.resolve("public/placeholder.svg");
+    // PNG (not SVG): SVG logos are rejected — they cannot be rasterised by the compositor.
+    const logoPath = path.resolve("public/images/promo-brindes-logo.png");
     await fileInput.setInputFiles(logoPath);
     await expect(page.locator("img[alt='Logo']")).toBeVisible({ timeout: 10000 });
 

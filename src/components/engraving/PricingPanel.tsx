@@ -1,38 +1,30 @@
-import { useState, useMemo } from "react";
-import Fuse from "fuse.js";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { 
+import { useState, useMemo } from 'react';
+import Fuse from 'fuse.js';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { 
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { 
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { 
-  DollarSign, 
-  Loader2, 
-  Search, 
+} from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  DollarSign,
+  Loader2,
+  Search,
   RotateCcw,
   AlertCircle,
   ChevronDown,
@@ -41,21 +33,22 @@ import {
   Ruler,
   Hash,
   Clock,
-  Info
-} from "lucide-react";
-import { useTabelasPreco, useNomesTecnicasPreco, calcularPreco } from "@/hooks/simulation";
-import type { TabelaPrecoTecnica, TabelaPrecoFiltros } from "@/types/tecnica-unificada";
+  Info,
+} from 'lucide-react';
+import { useTabelasPreco, useNomesTecnicasPreco, calcularPreco } from '@/hooks/simulation';
+import type { TabelaPrecoTecnica, TabelaPrecoFiltros } from '@/types/tecnica-unificada';
+import { cn } from '@/lib/utils';
 
 export function PricingPanel() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterTecnica, setFilterTecnica] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterTecnica, setFilterTecnica] = useState<string>('all');
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
-  const [simuladorQtd, setSimuladorQtd] = useState<Record<string, number>>({});
+  const [simuladorQtd] = useState<Record<string, number>>({});
 
   // Construir filtros
   const filtros: TabelaPrecoFiltros = useMemo(() => {
     const f: TabelaPrecoFiltros = { apenasAtivas: true };
-    if (filterTecnica !== "all") f.nomeTecnica = filterTecnica;
+    if (filterTecnica !== 'all') f.nomeTecnica = filterTecnica;
     return f;
   }, [filterTecnica]);
 
@@ -81,13 +74,13 @@ export function PricingPanel() {
   // Agrupar tabelas por técnica
   const tabelasAgrupadas = useMemo(() => {
     let results = tabelas;
-    
+
     // Aplicar busca fuzzy
     if (searchQuery && searchQuery.length >= 2) {
       const fuseResults = tabelasFuse.search(searchQuery);
       results = fuseResults.map((r) => r.item);
     }
-    
+
     // Agrupar por nome da técnica
     const grupos: Record<string, TabelaPrecoTecnica[]> = {};
     results.forEach((tabela) => {
@@ -96,12 +89,12 @@ export function PricingPanel() {
       }
       grupos[tabela.nomeTecnica].push(tabela);
     });
-    
+
     // Ordenar cada grupo por maxCores
     Object.keys(grupos).forEach((key) => {
       grupos[key].sort((a, b) => (a.maxCores ?? 0) - (b.maxCores ?? 0));
     });
-    
+
     return grupos;
   }, [tabelas, searchQuery, tabelasFuse]);
 
@@ -116,9 +109,9 @@ export function PricingPanel() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
     }).format(value);
   };
 
@@ -131,13 +124,13 @@ export function PricingPanel() {
     return (
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
-          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-          <p className="text-lg font-medium text-destructive mb-2">Erro ao carregar tabelas</p>
-          <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
+          <AlertCircle className="mb-4 h-12 w-12 text-destructive" />
+          <p className="mb-2 text-lg font-medium text-destructive">Erro ao carregar tabelas</p>
+          <p className="mb-4 max-w-md text-center text-sm text-muted-foreground">
             {error?.message || 'Não foi possível conectar ao banco de dados.'}
           </p>
           <Button onClick={() => refetch()} variant="outline">
-            <RotateCcw className="h-4 w-4 mr-2" />
+            <RotateCcw className="mr-2 h-4 w-4" />
             Tentar novamente
           </Button>
         </CardContent>
@@ -148,27 +141,27 @@ export function PricingPanel() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-primary" />
               Tabelas de Preços
             </CardTitle>
             <CardDescription>
-              {isLoading ? "Carregando..." : `${tabelas.length} tabelas de preço do banco externo`}
+              {isLoading ? 'Carregando...' : `${tabelas.length} tabelas de preço do banco externo`}
             </CardDescription>
           </div>
           <Button onClick={() => refetch()} variant="outline" size="sm" disabled={isLoading}>
-            <RotateCcw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+            <RotateCcw className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')} />
             Atualizar
           </Button>
         </div>
       </CardHeader>
       <CardContent>
         {/* Filtros */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar tabelas..."
               value={searchQuery}
@@ -195,10 +188,10 @@ export function PricingPanel() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground mt-2">Carregando tabelas de preço...</p>
+            <p className="mt-2 text-sm text-muted-foreground">Carregando tabelas de preço...</p>
           </div>
         ) : Object.keys(tabelasAgrupadas).length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="py-12 text-center text-muted-foreground">
             Nenhuma tabela de preço encontrada
           </div>
         ) : (
@@ -210,7 +203,7 @@ export function PricingPanel() {
                 onOpenChange={() => toggleExpand(tecnicaNome)}
               >
                 <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 cursor-pointer transition-colors">
+                  <div className="flex cursor-pointer items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50">
                     <div className="flex items-center gap-3">
                       {expandedTables.has(tecnicaNome) ? (
                         <ChevronDown className="h-5 w-5 text-muted-foreground" />
@@ -228,7 +221,9 @@ export function PricingPanel() {
                       {tabelasGrupo[0]?.precoPorCor && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span><Palette className="h-4 w-4 text-primary" /></span>
+                            <span>
+                              <Palette className="h-4 w-4 text-primary" />
+                            </span>
                           </TooltipTrigger>
                           <TooltipContent>Cobra por cor</TooltipContent>
                         </Tooltip>
@@ -236,7 +231,9 @@ export function PricingPanel() {
                       {tabelasGrupo[0]?.precoPorArea && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span><Ruler className="h-4 w-4 text-warning" /></span>
+                            <span>
+                              <Ruler className="h-4 w-4 text-warning" />
+                            </span>
                           </TooltipTrigger>
                           <TooltipContent>Cobra por área</TooltipContent>
                         </Tooltip>
@@ -244,7 +241,9 @@ export function PricingPanel() {
                       {tabelasGrupo[0]?.precoPorPontos && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span><Hash className="h-4 w-4 text-primary" /></span>
+                            <span>
+                              <Hash className="h-4 w-4 text-primary" />
+                            </span>
                           </TooltipTrigger>
                           <TooltipContent>Cobra por pontos</TooltipContent>
                         </Tooltip>
@@ -256,7 +255,7 @@ export function PricingPanel() {
                   </div>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                  <div className="mt-2 rounded-md border overflow-hidden">
+                  <div className="mt-2 overflow-hidden rounded-md border">
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/50">
@@ -275,11 +274,11 @@ export function PricingPanel() {
                             <TableRow key={tabela.id}>
                               <TableCell>
                                 <div className="flex flex-col">
-                                  <Badge variant="outline" className="font-mono text-xs w-fit">
+                                  <Badge variant="outline" className="w-fit font-mono text-xs">
                                     {tabela.codigoTabelaOpcao}
                                   </Badge>
                                   {tabela.codigoServico && (
-                                    <span className="text-xs text-muted-foreground mt-1">
+                                    <span className="mt-1 text-xs text-muted-foreground">
                                       Serv: {tabela.codigoServico}
                                     </span>
                                   )}
@@ -296,7 +295,7 @@ export function PricingPanel() {
                                 {tabela.larguraMaxCm && tabela.alturaMaxCm ? (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <span className="text-sm cursor-default">
+                                      <span className="cursor-default text-sm">
                                         {tabela.larguraMaxCm}×{tabela.alturaMaxCm}cm
                                       </span>
                                     </TooltipTrigger>
@@ -309,23 +308,25 @@ export function PricingPanel() {
                                 )}
                               </TableCell>
                               <TableCell className="text-right font-mono">
-                                {tabela.precoSetup > 0 ? formatCurrency(tabela.precoSetup) : "-"}
+                                {tabela.precoSetup > 0 ? formatCurrency(tabela.precoSetup) : '-'}
                               </TableCell>
                               <TableCell className="text-center">
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span>
-                                      <Badge variant="outline" className="text-xs cursor-default">
+                                      <Badge variant="outline" className="cursor-default text-xs">
                                         {tabela.faixas.length} faixas
                                       </Badge>
                                     </span>
                                   </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
-                                    <div className="text-xs space-y-1">
+                                  <TooltipContent>
+                                    <div className="space-y-1">
                                       {tabela.faixas.slice(0, 5).map((f) => (
                                         <div key={f.faixa} className="flex justify-between gap-4">
                                           <span>≥ {f.quantidadeMinima} un:</span>
-                                          <span className="font-mono">{formatCurrency(f.precoUnitario)}</span>
+                                          <span className="font-mono">
+                                            {formatCurrency(f.precoUnitario)}
+                                          </span>
                                         </div>
                                       ))}
                                       {tabela.faixas.length > 5 && (
@@ -363,12 +364,12 @@ export function PricingPanel() {
         )}
 
         {/* Legenda e Info */}
-        <div className="mt-6 p-4 rounded-lg bg-muted/50 border">
+        <div className="mt-6 rounded-lg border bg-muted/50 p-4">
           <div className="flex items-start gap-2">
-            <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <div className="text-sm text-muted-foreground">
-              <p className="font-medium text-foreground mb-1">Sobre as tabelas de preço</p>
-              <ul className="list-disc list-inside space-y-1">
+              <p className="mb-1 font-medium text-foreground">Sobre as tabelas de preço</p>
+              <ul className="list-inside list-disc space-y-1">
                 <li>Os preços são importados da API do fornecedor (Stricker/Spot)</li>
                 <li>Cada tabela possui 15 faixas de quantidade com preços escalonados</li>
                 <li>O preço exibido é para 100 unidades como referência</li>

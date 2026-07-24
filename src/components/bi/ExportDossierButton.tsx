@@ -1,10 +1,10 @@
 /**
  * ExportDossierButton — botão de exportação do Dossiê BI em PDF.
  */
-import { Button } from "@/components/ui/button";
-import { FileDown, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { useBIDossierExport } from "@/hooks/bi/useBIDossierExport";
+import { Button } from '@/components/ui/button';
+import { FileDown, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useBIDossierExport } from '@/hooks/bi/useBIDossierExport';
 
 interface Props {
   clientId: string;
@@ -16,13 +16,12 @@ export function ExportDossierButton({ clientId }: Props) {
   const handleClick = async () => {
     try {
       await exportPDF();
-      toast.success("Dossiê exportado", {
-        description: "PDF gerado com sucesso.",
+      toast.success('Dossiê exportado', {
+        description: 'PDF gerado com sucesso.',
       });
-    } catch (err) {
-      console.error("[ExportDossierButton] erro ao gerar PDF", err);
-      toast.error("Falha ao gerar dossiê", {
-        description: err instanceof Error ? err.message : "Tente novamente.",
+    } catch {
+      toast.error('Falha ao gerar dossiê', {
+        description: 'Tente novamente.',
       });
     }
   };

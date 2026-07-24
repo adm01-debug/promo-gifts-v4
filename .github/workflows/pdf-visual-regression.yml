@@ -1,0 +1,84 @@
+name: PDF Visual Regression
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/pdf/**'
+      - 'src/lib/pdf/**'
+      - 'src/lib/quotes/personalizationSummary.ts'
+      - 'qa/exports/**'
+      - 'scripts/qa/generate-proposal-pdf.mjs'
+      - 'scripts/qa/diff-proposal-pdfs.mjs'
+      - '.github/workflows/pdf-visual-regression.yml'
+  workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: 'Atualiza qa/exports/baseline/*.png (commit incluso)'
+        type: boolean
+        default: false
+
+jobs:
+  pdf-diff:
+    name: Diff visual dos PDFs de proposta
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      PDF_VISUAL_THRESHOLD_PCT: '0.1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Instalar poppler-utils (pdftoppm)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
+      - name: Instalar dependências
+        run: bun install --frozen-lockfile
+
+      - name: Instalar navegador do Playwright (Chromium)
+        run: bunx playwright install chromium --with-deps
+
+      - name: Executar gate visual
+        if: ${{ github.event.inputs.update_baseline != 'true' }}
+        run: node scripts/qa/diff-proposal-pdfs.mjs
+
+      - name: Atualizar baseline
+        if: ${{ github.event.inputs.update_baseline == 'true' }}
+        run: node scripts/qa/diff-proposal-pdfs.mjs --update-baseline
+
+      - name: Commitar baseline atualizado
+        if: ${{ github.event.inputs.update_baseline == 'true' }}
+        env:
+          HUSKY: '0'
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add qa/exports/baseline/*.png
+          if git diff --cached --quiet; then
+            echo "Nenhuma mudança no baseline."
+          else
+            git commit -m "chore(pdf): atualizar baseline visual dos PDFs de proposta"
+            git push
+          fi
+
+      - name: Publicar artifacts (diffs + renderizações)
+        if: failure() || github.event.inputs.update_baseline == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-visual-diff
+          path: |
+            qa/exports/rendered/*.png
+            qa/exports/diff/*.png
+            qa/exports/proposal-*.pdf
+          if-no-files-found: ignore
+          retention-days: 14

@@ -1,0 +1,378 @@
+name: Cart Invariants Smoke (Chrome + Firefox, sharded)
+
+# Roda em TODO PR (sem paths-filter): garante que os invariants do
+# header/sidebar do carrinho ativo nunca quebrem, em qualquer diff.
+#
+# Sharding dinâmico:
+#   - Um job `prepare-matrix` calcula `total_shards` (padrão: 2) a partir de:
+#       1) input do workflow_dispatch (`total_shards`);
+#       2) repo/environment variable `CART_TOTAL_SHARDS`;
+#       3) fallback fixo (2).
+#     e emite a matriz JSON consumida por `invariants-smoke`.
+#   - O job `invariants-summary` mede a razão (avg / wall) por browser e:
+#       - imprime tabela formatada de duração por shard;
+#       - emite `::warning::` quando algum shard passa do limiar de duração;
+#       - recomenda bumpar para 3 shards quando a média se aproxima do wall.
+#
+# Artefatos:
+#   - trace/screenshot/video: retain-on-failure (config global).
+#   - HTML + page-context.json + debug-context.json: anexados via
+#     `installFailureCapture()` — incluem carts A/B/C, item IDs e
+#     sequência de mutações.
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+  push:
+    branches: [main, master, develop]
+  workflow_dispatch:
+    inputs:
+      total_shards:
+        description: 'Total de shards por browser (padrão: 2, recomendado 2–3).'
+        required: false
+        default: ''
+
+concurrency:
+  group: cart-invariants-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+# Thresholds de duração (segundos) — usados no summary para alertar quando
+# um shard está lento demais e sugerir aumento de sharding.
+env:
+  SHARD_WARN_SECONDS: '480' # 8 min → warning
+  SHARD_FAIL_INFO_SECONDS: '720' # 12 min → alerta forte (não falha o build)
+  AUTO_TUNE_RATIO: '0.75' # avg/wall > 0.75 ⇒ shards já bem balanceados; bump p/ 3
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # 1) Prepara a matriz dinamicamente. total_shards vem de input →
+  #    var repo `CART_TOTAL_SHARDS` → default 2. Clampeia em [1, 4].
+  # ─────────────────────────────────────────────────────────────────────
+  prepare-matrix:
+    name: prepare-matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+      total_shards: ${{ steps.build.outputs.total_shards }}
+    steps:
+      - id: build
+        env:
+          INPUT_TOTAL_SHARDS: ${{ github.event.inputs.total_shards }}
+          VAR_TOTAL_SHARDS: ${{ vars.CART_TOTAL_SHARDS }}
+        run: |
+          set -e
+          RAW="${INPUT_TOTAL_SHARDS:-${VAR_TOTAL_SHARDS:-2}}"
+          # Normaliza para inteiro e clampeia entre 1 e 4.
+          if ! [[ "$RAW" =~ ^[0-9]+$ ]]; then RAW=2; fi
+          if [ "$RAW" -lt 1 ]; then RAW=1; fi
+          if [ "$RAW" -gt 4 ]; then RAW=4; fi
+          TOTAL="$RAW"
+          echo "total_shards=$TOTAL" >> "$GITHUB_OUTPUT"
+
+          # Monta JSON da matriz {include: [{browser,project,shard,total_shards},...]}
+          JSON="["
+          FIRST=1
+          for BROWSER in chromium firefox; do
+            if [ "$BROWSER" = "chromium" ]; then PROJECT="chromium-authed"; else PROJECT="firefox-authed"; fi
+            for SHARD in $(seq 1 "$TOTAL"); do
+              if [ $FIRST -eq 0 ]; then JSON="$JSON,"; fi
+              FIRST=0
+              JSON="$JSON{\"browser\":\"$BROWSER\",\"project\":\"$PROJECT\",\"shard\":$SHARD,\"total_shards\":$TOTAL}"
+            done
+          done
+          JSON="$JSON]"
+          echo "matrix={\"include\":$JSON}" >> "$GITHUB_OUTPUT"
+
+          echo "## 🧩 Matriz do cart-invariants-smoke" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **total_shards por browser:** \`$TOTAL\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **jobs totais:** \`$((TOTAL * 2))\` (chromium + firefox × $TOTAL shards)" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$INPUT_TOTAL_SHARDS" ]; then
+            echo "- **fonte:** workflow_dispatch input" >> "$GITHUB_STEP_SUMMARY"
+          elif [ -n "$VAR_TOTAL_SHARDS" ]; then
+            echo "- **fonte:** repo variable \`CART_TOTAL_SHARDS\`" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- **fonte:** default (2)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ─────────────────────────────────────────────────────────────────────
+  # 2) Execução dos shards (matriz dinâmica).
+  # ─────────────────────────────────────────────────────────────────────
+  invariants-smoke:
+    name: cart-invariants (${{ matrix.project }} · shard ${{ matrix.shard }}/${{ matrix.total_shards }})
+    runs-on: ubuntu-latest
+    needs: [prepare-matrix]
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    env:
+      CI: 'true'
+      E2E_BASE_URL: http://localhost:8080
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://doufsxqlfjyuvxuezpln.supabase.co' }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tjH5qAbZ0e5HTTd872NijQ_s9m6JvYU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser (${{ matrix.browser }})
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      # retries=0: qualquer invariant quebrado FALHA o build. Sem "tentar de novo".
+      - name: Playwright — invariants do header/sidebar (shard ${{ matrix.shard }}/${{ matrix.total_shards }})
+        id: playwright
+        run: |
+          START_TS=$(date +%s)
+          set +e
+          npx playwright test \
+            e2e/carrinhos/header-reflects-active-cart.spec.ts \
+            e2e/carrinhos/sidebar-reflects-active-cart.spec.ts \
+            e2e/carrinhos/active-cart-edge-cases.spec.ts \
+            e2e/carrinhos/active-cart-refresh-consistency.spec.ts \
+            e2e/carrinhos/active-cart-parallel-actions.spec.ts \
+            e2e/carrinhos/active-cart-network-failure.spec.ts \
+            e2e/carrinhos/active-cart-mutations-parallel.spec.ts \
+            e2e/carrinhos/active-cart-intermittent-failure.spec.ts \
+            --project=${{ matrix.project }} \
+            --shard=${{ matrix.shard }}/${{ matrix.total_shards }} \
+            --retries=0
+          RC=$?
+          END_TS=$(date +%s)
+          DURATION=$((END_TS - START_TS))
+          mkdir -p shard-timings
+          cat > "shard-timings/${{ matrix.browser }}-${{ matrix.shard }}.json" <<EOF
+          {
+            "browser": "${{ matrix.browser }}",
+            "project": "${{ matrix.project }}",
+            "shard": ${{ matrix.shard }},
+            "total_shards": ${{ matrix.total_shards }},
+            "duration_seconds": $DURATION,
+            "exit_code": $RC,
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}"
+          }
+          EOF
+          echo "### ⏱️ Shard \`${{ matrix.browser }}\` · shard ${{ matrix.shard }}/${{ matrix.total_shards }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Duração:** ${DURATION}s" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Exit code:** $RC" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$DURATION" -gt "${SHARD_WARN_SECONDS:-480}" ]; then
+            echo "::warning::Shard ${{ matrix.browser }} #${{ matrix.shard }} demorou ${DURATION}s (> ${SHARD_WARN_SECONDS:-480}s)."
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          exit $RC
+
+      - name: Upload timing do shard
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-invariants-timing-${{ matrix.browser }}-shard${{ matrix.shard }}
+          path: shard-timings/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-invariants-report-${{ matrix.browser }}-shard${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Upload artefatos de falha (screenshot/video/HTML/trace/debug-context)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cart-invariants-failure-${{ matrix.browser }}-shard${{ matrix.shard }}
+          path: |
+            test-results/**/*.png
+            test-results/**/*.webm
+            test-results/**/*.html
+            test-results/**/*.json
+            test-results/**/trace.zip
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # ─────────────────────────────────────────────────────────────────────
+  # 3) Summary com tabela por shard, agregados por browser, alertas de
+  #    duração e recomendação de auto-tune de shards.
+  # ─────────────────────────────────────────────────────────────────────
+  invariants-summary:
+    name: cart-invariants-summary
+    runs-on: ubuntu-latest
+    needs: [prepare-matrix, invariants-smoke]
+    if: always()
+    steps:
+      - name: Download timings de todos os shards
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cart-invariants-timing-*
+          path: all-timings
+          merge-multiple: true
+
+      - name: Resumo de duração + alertas + auto-tune
+        id: summary
+        if: always()
+        env:
+          CURRENT_TOTAL_SHARDS: ${{ needs.prepare-matrix.outputs.total_shards }}
+        run: |
+          set -e
+          SUMMARY_FILE="$GITHUB_STEP_SUMMARY"
+          WARN="${SHARD_WARN_SECONDS:-480}"
+          FAIL_INFO="${SHARD_FAIL_INFO_SECONDS:-720}"
+          RATIO="${AUTO_TUNE_RATIO:-0.75}"
+          CUR="${CURRENT_TOTAL_SHARDS:-2}"
+
+          echo "## 📊 Resumo · cart-invariants-smoke" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "- **total_shards atual (por browser):** \`$CUR\`" >> "$SUMMARY_FILE"
+          echo "- **Limiares:** warn=\`${WARN}s\` · alerta forte=\`${FAIL_INFO}s\` · auto-tune ratio=\`${RATIO}\`" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+
+          # Output default (nenhum bump necessário).
+          echo "should_bump=0" >> "$GITHUB_OUTPUT"
+          echo "recommended_shards=$CUR" >> "$GITHUB_OUTPUT"
+
+          if ! ls all-timings/*.json >/dev/null 2>&1; then
+            echo "⚠️ Nenhum arquivo de timing encontrado (shards podem ter falhado antes de gravar)." >> "$SUMMARY_FILE"
+            exit 0
+          fi
+
+          # ── Tabela por shard, com coluna de status/alerta ──
+          echo "### 🧵 Duração por shard" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "| Browser | Shard | Duração (s) | Exit | Status |" >> "$SUMMARY_FILE"
+          echo "|---|---|---|---|---|" >> "$SUMMARY_FILE"
+
+          for f in all-timings/*.json; do
+            B=$(jq -r '.browser' "$f")
+            S=$(jq -r '.shard' "$f")
+            T=$(jq -r '.total_shards' "$f")
+            D=$(jq -r '.duration_seconds' "$f")
+            E=$(jq -r '.exit_code' "$f")
+            STATUS="✅ ok"
+            if [ "$E" != "0" ]; then STATUS="❌ falhou"; fi
+            if [ "$D" -gt "$FAIL_INFO" ]; then
+              STATUS="$STATUS · 🔴 muito lento (> ${FAIL_INFO}s)"
+              echo "::warning::Shard $B #$S excedeu ${FAIL_INFO}s (duração ${D}s)."
+            elif [ "$D" -gt "$WARN" ]; then
+              STATUS="$STATUS · 🟡 lento (> ${WARN}s)"
+              echo "::warning::Shard $B #$S excedeu ${WARN}s (duração ${D}s)."
+            fi
+            echo "| \`$B\` | $S/$T | $D | $E | $STATUS |" >> "$SUMMARY_FILE"
+          done
+
+          echo "" >> "$SUMMARY_FILE"
+          echo "### ⏱️ Agregado por browser" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+          echo "| Browser | Shards | Total CPU (s) | Média (s) | Máx / wall (s) | avg/wall |" >> "$SUMMARY_FILE"
+          echo "|---|---|---|---|---|---|" >> "$SUMMARY_FILE"
+
+          SHOULD_BUMP=0
+          for BROWSER in chromium firefox; do
+            STATS=$(jq -s --arg b "$BROWSER" '
+              [ .[] | select(.browser == $b) | .duration_seconds ] as $d
+              | { n: ($d | length), total: ($d | add // 0), max: ($d | max // 0) }
+              | "\(.n)|\(.total)|\(if .n > 0 then (.total / .n) else 0 end)|\(.max)"
+            ' all-timings/*.json | tr -d '"')
+            IFS='|' read -r N TOTAL AVG_RAW MAX <<< "$STATS"
+            if [ "$N" -gt 0 ]; then
+              AVG_INT=$(printf '%.0f' "$AVG_RAW")
+              if [ "$MAX" -gt 0 ]; then
+                RATIO_VAL=$(awk -v a="$AVG_RAW" -v m="$MAX" 'BEGIN { printf "%.2f", a/m }')
+              else
+                RATIO_VAL="0.00"
+              fi
+              echo "| \`$BROWSER\` | $N | $TOTAL | $AVG_INT | $MAX | $RATIO_VAL |" >> "$SUMMARY_FILE"
+
+              ABOVE_WARN=0
+              if [ "$MAX" -gt "$WARN" ]; then ABOVE_WARN=1; fi
+              RATIO_BUMP=$(awk -v r="$RATIO_VAL" -v t="$RATIO" 'BEGIN { print (r+0 >= t+0) ? 1 : 0 }')
+              if [ "$ABOVE_WARN" = "1" ] && [ "$RATIO_BUMP" = "1" ] && [ "$CUR" -lt 3 ]; then
+                SHOULD_BUMP=1
+                echo "::warning::Browser $BROWSER: avg/wall=${RATIO_VAL} (>= ${RATIO}) e wall=${MAX}s (> ${WARN}s). Recomendado bumpar total_shards para 3."
+              fi
+            fi
+          done
+
+          echo "" >> "$SUMMARY_FILE"
+          WALL=$(jq -s '[.[] | .duration_seconds] | max // 0' all-timings/*.json)
+          SUM=$(jq -s '[.[] | .duration_seconds] | add // 0' all-timings/*.json)
+          echo "- **Wall clock global (máximo entre todos os shards paralelos):** ${WALL}s" >> "$SUMMARY_FILE"
+          echo "- **CPU total (soma de todos os shards):** ${SUM}s" >> "$SUMMARY_FILE"
+          echo "" >> "$SUMMARY_FILE"
+
+          if [ "$SHOULD_BUMP" = "1" ]; then
+            # Recomendação = próximo degrau (3), com teto 4.
+            REC=$((CUR + 1))
+            if [ "$REC" -gt 4 ]; then REC=4; fi
+            echo "should_bump=1" >> "$GITHUB_OUTPUT"
+            echo "recommended_shards=$REC" >> "$GITHUB_OUTPUT"
+            echo "### 🚦 Recomendação de auto-tune" >> "$SUMMARY_FILE"
+            echo "" >> "$SUMMARY_FILE"
+            echo "> Os shards estão **bem balanceados** (avg/wall ≥ ${RATIO}) mas o wall clock" >> "$SUMMARY_FILE"
+            echo "> ultrapassou o limiar de \`${WARN}s\`. Recomendado: **total_shards = \`$REC\`**." >> "$SUMMARY_FILE"
+            echo "> O step seguinte tenta persistir \`vars.CART_TOTAL_SHARDS=$REC\` automaticamente" >> "$SUMMARY_FILE"
+            echo "> (requer secret \`CART_TUNE_PAT\` com permissão \`Variables: Read and write\`)." >> "$SUMMARY_FILE"
+          else
+            echo "> ℹ️ Nenhum ajuste de sharding recomendado neste run." >> "$SUMMARY_FILE"
+          fi
+
+      # Persistência do auto-tune. Só roda:
+      #   - quando o step anterior recomendou bump;
+      #   - no branch default (main/master), fora de PR — evita fork PR
+      #     mutando repo state;
+      #   - se o secret CART_TUNE_PAT estiver presente (a permissão de
+      #     `Variables: Read and write` NÃO existe no GITHUB_TOKEN default).
+      # Caso o secret não exista, o step apenas registra um aviso e segue.
+      - name: Persistir CART_TOTAL_SHARDS (auto-tune)
+        if: >
+          always() &&
+          steps.summary.outputs.should_bump == '1' &&
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+        env:
+          GH_TOKEN: ${{ secrets.CART_TUNE_PAT }}
+          REC: ${{ steps.summary.outputs.recommended_shards }}
+        run: |
+          set -e
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::warning::Secret CART_TUNE_PAT ausente — não é possível persistir CART_TOTAL_SHARDS. Defina manualmente em Settings → Secrets and variables → Actions → Variables."
+            {
+              echo ""
+              echo "> ⚠️ **Auto-tune não persistiu.** Configure o secret \`CART_TUNE_PAT\` (PAT fine-grained com escopo \`Variables: Read and write\` no repo) para habilitar."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          echo "→ Aplicando gh variable set CART_TOTAL_SHARDS=${REC} em ${GITHUB_REPOSITORY}"
+          if gh variable set CART_TOTAL_SHARDS --body "${REC}" --repo "${GITHUB_REPOSITORY}"; then
+            {
+              echo ""
+              echo "### ✅ Auto-tune aplicado"
+              echo ""
+              echo "> \`vars.CART_TOTAL_SHARDS\` foi definido para **\`${REC}\`**. O próximo run já usará essa configuração — sem oscilar de volta para 2."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Falha ao executar 'gh variable set'. Verifique se o PAT tem escopo 'Variables: Read and write' no repositório."
+            {
+              echo ""
+              echo "> ❌ **Auto-tune falhou** ao persistir a variável. Ajuste manualmente para \`${REC}\` ou revise o PAT."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+
+      - name: Falha se algum shard falhou
+        run: |
+          if [ "${{ needs.invariants-smoke.result }}" != "success" ]; then
+            echo "❌ Ao menos um shard/browser do smoke de invariants falhou."
+            exit 1
+          fi
+          echo "✅ Todos os shards de invariants passaram."

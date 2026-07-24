@@ -1,7 +1,7 @@
-import { Navigate, Route } from "react-router-dom";
-import { AdminRoute } from "@/components/layout/AdminRoute";
-import { DevRoute } from "@/components/layout/DevRoute";
-import { DeprecatedRoute } from "@/components/layout/DeprecatedRoute";
+import { Navigate, Route } from 'react-router-dom';
+import { AdminRoute } from '@/components/layout/AdminRoute';
+import { DevRoute } from '@/components/layout/DevRoute';
+import { DeprecatedRoute } from '@/components/layout/DeprecatedRoute';
 import {
   AdminAiUsagePage,
   AdminClientPerformancePage,
@@ -20,7 +20,12 @@ import {
   AdminSegurancaChavesPage,
   AdminSegurancaPage,
   AdminTelemetriaPage,
+  EmaHealthPage,
+  AdminV4CallbacksPage,
+
   AdminUsuariosPage,
+  DiscountRequestDetailPage,
+
   AdminVideoVariantsPage,
   AdminWorkflowsPage,
   DevChallengeExamplesPage,
@@ -30,6 +35,7 @@ import {
   OwnershipAuditAdminPage,
   PermissionsPage,
   PriceFreshnessSettingsPage,
+  IntelligenceBadgeSettingsPage,
   QAPage,
   RateLimitDashboard,
   RlsDenialsAdminPage,
@@ -38,9 +44,11 @@ import {
   SellerDiscountLimitsAdminPage,
   SidebarQAPage,
   StorageTestPage,
+  AdminCloudflareImagesPage,
   SystemStatusPage,
   TrendsPage,
-} from "./lazy-pages";
+  ObservabilityDashboardPage,
+} from './lazy-pages';
 
 /**
  * Admin routes — supervisor + dev (gestão de negócio).
@@ -52,53 +60,60 @@ import {
  * Mounted under ProtectedRoute.
  */
 export const adminRoutes = (
-  <Route element={<AdminRoute />}>
-    <Route path="/admin" element={<Navigate to="/admin/usuarios" replace />} />
-    <Route path="/admin/usuarios" element={<AdminUsuariosPage />} />
-    <Route path="/admin/usuarios/promover" element={<AdminPromoverUsuarioPage />} />
-    <Route path="/admin/limites-desconto" element={<SellerDiscountLimitsAdminPage />} />
-    <Route path="/admin/rls-denials" element={<RlsDenialsAdminPage />} />
-    <Route path="/admin/auditoria-propriedade" element={<OwnershipAuditAdminPage />} />
-    <Route path="/admin/cadastros" element={<AdminCadastrosPage />} />
-    <Route path="/admin/cadastros/produto/:id" element={<AdminProductFormPage />} />
-    <Route path="/admin/permissoes" element={<PermissionsPage />} />
-    <Route path="/admin/roles" element={<RolesPage />} />
-    <Route path="/admin/role-permissoes" element={<RolePermissionsPage />} />
-    <Route path="/admin/video-variantes" element={<AdminVideoVariantsPage />} />
-    <Route path="/admin/kit-templates" element={<KitTemplatesAdminPage />} />
-    <Route path="/admin/kit-templates/metricas" element={<KitTemplatesMetricsPage />} />
-    <Route
-      path="/admin/aprovacoes-desconto"
-      element={<Navigate to="/admin/usuarios?tab=discounts" replace />}
-    />
-    <Route
-      path="/admin/performance"
-      element={
-        <DeprecatedRoute
-          message="O módulo de Performance foi descontinuado. Use o BI Comercial para análises."
-          redirectTo="/ferramentas/bi"
-        />
-      }
-    />
-    <Route
-      path="/admin/performance-comercial"
-      element={
-        <DeprecatedRoute
-          message="O módulo de Performance Comercial foi descontinuado. Use o BI Comercial para análises."
-          redirectTo="/ferramentas/bi"
-        />
-      }
-    />
-    <Route
-      path="/admin/comissoes"
-      element={
-        <DeprecatedRoute
-          message="O módulo de Comissões foi descontinuado nesta plataforma."
-          redirectTo="/admin/usuarios"
-        />
-      }
-    />
+  <>
     <Route path="/tendencias" element={<TrendsPage />} />
+    <Route element={<AdminRoute />}>
+      <Route path="/admin" element={<Navigate to="/admin/usuarios" replace />} />
+      <Route path="/admin/usuarios" element={<AdminUsuariosPage />} />
+      <Route path="/admin/usuarios/promover" element={<AdminPromoverUsuarioPage />} />
+      <Route path="/admin/limites-desconto" element={<SellerDiscountLimitsAdminPage />} />
+      <Route path="/admin/rls-denials" element={<RlsDenialsAdminPage />} />
+      <Route path="/admin/auditoria-propriedade" element={<OwnershipAuditAdminPage />} />
+      <Route path="/admin/cadastros" element={<AdminCadastrosPage />} />
+      <Route path="/admin/cadastros/produto/:id" element={<AdminProductFormPage />} />
+      <Route path="/admin/permissoes" element={<PermissionsPage />} />
+      <Route path="/admin/roles" element={<RolesPage />} />
+      <Route path="/admin/role-permissoes" element={<RolePermissionsPage />} />
+      <Route path="/admin/video-variantes" element={<AdminVideoVariantsPage />} />
+      <Route path="/admin/kit-templates" element={<KitTemplatesAdminPage />} />
+      <Route path="/admin/kit-templates/metricas" element={<KitTemplatesMetricsPage />} />
+      <Route
+        path="/admin/aprovacoes-desconto"
+        element={<Navigate to="/admin/usuarios?tab=discounts" replace />}
+      />
+      <Route
+        path="/admin/aprovacoes-desconto/:id"
+        element={<DiscountRequestDetailPage />}
+      />
+
+      <Route
+        path="/admin/performance"
+        element={
+          <DeprecatedRoute
+            message="O módulo de Performance foi descontinuado. Use o BI Comercial para análises."
+            redirectTo="/ferramentas/bi"
+          />
+        }
+      />
+      <Route
+        path="/admin/performance-comercial"
+        element={
+          <DeprecatedRoute
+            message="O módulo de Performance Comercial foi descontinuado. Use o BI Comercial para análises."
+            redirectTo="/ferramentas/bi"
+          />
+        }
+      />
+      <Route
+        path="/admin/comissoes"
+        element={
+          <DeprecatedRoute
+            message="O módulo de Comissões foi descontinuado nesta plataforma."
+            redirectTo="/admin/usuarios"
+          />
+        }
+      />
+    </Route>
 
     {/* DEV-ONLY — páginas técnicas com risco elevado (telemetria, conexões, secrets, MCP, audit técnico, prompts IA) */}
     <Route element={<DevRoute />}>
@@ -109,7 +124,11 @@ export const adminRoutes = (
       <Route path="/admin/seguranca/migracao-papeis" element={<AdminMigracaoPapeisPage />} />
       <Route path="/admin/prompts-ia" element={<AdminPromptsIAPage />} />
       <Route path="/admin/validade-precos" element={<PriceFreshnessSettingsPage />} />
+      <Route path="/admin/badges-inteligencia" element={<IntelligenceBadgeSettingsPage />} />
       <Route path="/admin/telemetria" element={<AdminTelemetriaPage />} />
+      <Route path="/admin/ema-health" element={<EmaHealthPage />} />
+      <Route path="/admin/v4-callbacks" element={<AdminV4CallbacksPage />} />
+
       <Route path="/admin/design-tokens" element={<AdminDesignTokensPage />} />
       <Route path="/admin/client-performance" element={<AdminClientPerformancePage />} />
       <Route path="/admin/rate-limit" element={<RateLimitDashboard />} />
@@ -125,6 +144,8 @@ export const adminRoutes = (
       <Route path="/admin/storage-test" element={<StorageTestPage />} />
       <Route path="/admin/qa" element={<QAPage />} />
       <Route path="/admin/qa/sidebar" element={<SidebarQAPage />} />
+      <Route path="/admin/observabilidade" element={<ObservabilityDashboardPage />} />
+      <Route path="/admin/cloudflare-images" element={<AdminCloudflareImagesPage />} />
     </Route>
-  </Route>
+  </>
 );

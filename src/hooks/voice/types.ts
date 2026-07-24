@@ -1,5 +1,13 @@
 export interface VoiceAgentAction {
-  action: "search" | "filter" | "navigate" | "sort" | "clear" | "answer" | "open_oracle" | "open_cart";
+  action:
+    | 'answer'
+    | 'clear'
+    | 'filter'
+    | 'navigate'
+    | 'open_cart'
+    | 'open_oracle'
+    | 'search'
+    | 'sort';
   response: string;
   data?: {
     query?: string;
@@ -14,11 +22,20 @@ export interface VoiceAgentAction {
       minPrice?: number;
       inStock?: boolean;
       isKit?: boolean;
+      // FIX-5: campos adicionais mapeados para FilterState
+      gender?: 'Feminino' | 'Infantil' | 'Masculino' | 'Unissex';
+      featured?: boolean;
+      isNew?: boolean;
+      hasPersonalization?: boolean;
+      onSale?: boolean;
+      minStock?: number;
+      publicoAlvo?: string;
+      endomarketing?: boolean;
     };
   };
 }
 
-export type VoiceAgentPhase = "idle" | "listening" | "processing" | "speaking" | "error";
+export type VoiceAgentPhase = 'error' | 'idle' | 'listening' | 'processing' | 'speaking';
 
 export interface UseVoiceAgentOptions {
   onAction?: (action: VoiceAgentAction) => void;

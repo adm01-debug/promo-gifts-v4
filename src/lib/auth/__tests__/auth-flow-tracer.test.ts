@@ -30,11 +30,7 @@ describe('AuthFlowTracer', () => {
     expect(snap?.outcome).toBe('success');
     expect(snap?.redirectTarget).toBe('/dashboard');
     expect(snap?.flow).toBe('pkce');
-    expect(snap?.steps.map((s) => s.phase)).toEqual([
-      'mount',
-      'url-parsed',
-      'pkce-exchange-ok',
-    ]);
+    expect(snap?.steps.map((s) => s.phase)).toEqual(['mount', 'url-parsed', 'pkce-exchange-ok']);
     expect(snap?.durationMs).toBeGreaterThanOrEqual(0);
   });
 
@@ -57,7 +53,7 @@ describe('AuthFlowTracer', () => {
     const payload = btoa(
       JSON.stringify({ iss: 'https://x.supabase.co/auth/v1', sub: 'u1', aud: 'authenticated' }),
     )
-      .replace(/=+$/, '')
+      .replace(/[=]+$/, '')
       .replace(/\+/g, '-')
       .replace(/\//g, '_');
     const access = `h.${payload}.s`;

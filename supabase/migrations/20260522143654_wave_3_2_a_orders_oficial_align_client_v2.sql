@@ -12,7 +12,48 @@ BEGIN
   RETURN COALESCE(NEW,OLD);
 END; $$;
 
-ALTER TABLE public.orders DROP COLUMN total;
-ALTER TABLE public.orders RENAME COLUMN total_amount TO total;
-ALTER TABLE public.orders DROP COLUMN IF EXISTS customer_name, DROP COLUMN IF EXISTS customer_email, DROP COLUMN IF EXISTS customer_phone, DROP COLUMN IF EXISTS tracking_code;
+ALTER TABLE public.orders DROP COLUMN IF EXISTS total;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='orders' AND column_name='total_amount'
+  ) AND NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='orders' AND column_name='total'
+  ) THEN
+    ALTER TABLE public.orders RENAME COLUMN total_amount TO total;
+  END IF;
+END
+$$;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='orders' AND column_name='tracking_code'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='orders' AND column_name='tracking_number'
+  ) THEN
+    UPDATE public.orders
+    SET tracking_number = COALESCE(NULLIF(tracking_number, ''), tracking_code)
+    WHERE tracking_code IS NOT NULL;
+  END IF;
+END
+$$;
+ALTER TABLE public.orders DROP COLUMN IF EXISTS customer_name, DROP COLUMN IF EXISTS customer_email, DROP COLUMN IF EXISTS customer_phone;
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS client_email text, ADD COLUMN IF NOT EXISTS client_phone text, ADD COLUMN IF NOT EXISTS tracking_number text, ADD COLUMN IF NOT EXISTS shipping_type text, ADD COLUMN IF NOT EXISTS delivery_time text;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='orders' AND column_name='tracking_code'
+  ) THEN
+    UPDATE public.orders
+    SET tracking_number = COALESCE(NULLIF(tracking_number, ''), tracking_code)
+    WHERE tracking_code IS NOT NULL;
+
+    ALTER TABLE public.orders DROP COLUMN tracking_code;
+  END IF;
+END
+$$;

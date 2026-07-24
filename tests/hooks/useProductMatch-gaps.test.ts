@@ -36,7 +36,7 @@ describe('FIX 1: useSupplierComparison — price zero guard', () => {
     const { result } = renderHook(() =>
       useSupplierComparison(makeProduct({ price: 0 }))
     );
-    expect(result.current.data).toBeNull();
+    expect(result.current.result).toBeNull();
   });
 });
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -6,11 +6,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import {
   Database,
   KeyRound,
@@ -19,17 +19,13 @@ import {
   UserRound,
   History,
   ExternalLink,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import { ConnectionStatusBadge } from "./ConnectionStatusBadge";
-import { MaskedSuffixBadge } from "./MaskedSuffixBadge";
-import type { resolveSupabaseConnectionStatus } from "./connectionStatus";
-import type { LastTestInfo } from "./LastTestLine";
-import {
-  useSecretsManager,
-  type RotationHistoryEntry,
-  type SecretStatus,
-} from "@/hooks/admin";
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ConnectionStatusBadge } from './ConnectionStatusBadge';
+import { MaskedSuffixBadge } from './MaskedSuffixBadge';
+import type { resolveSupabaseConnectionStatus } from './connectionStatus';
+import type { LastTestInfo } from './LastTestLine';
+import { useSecretsManager, type RotationHistoryEntry, type SecretStatus } from '@/hooks/admin';
 
 type ConnectionStatus = ReturnType<typeof resolveSupabaseConnectionStatus>;
 
@@ -62,14 +58,14 @@ interface Props {
 }
 
 function fmtDate(iso: string | null | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Date(iso).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   } catch {
     return iso;
@@ -142,9 +138,7 @@ export function ConnectionDetailsDialog({
             </div>
             <ConnectionStatusBadge status={status} />
           </div>
-          {description && (
-            <DialogDescription>{description}</DialogDescription>
-          )}
+          {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh] pr-3">
@@ -176,16 +170,12 @@ export function ConnectionDetailsDialog({
                   {last.message && (
                     <>
                       <dt className="text-muted-foreground">Mensagem</dt>
-                      <dd className="truncate font-mono text-xs">
-                        {last.message}
-                      </dd>
+                      <dd className="truncate font-mono text-xs">{last.message}</dd>
                     </>
                   )}
                 </dl>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  Nunca testado.
-                </p>
+                <p className="text-sm text-muted-foreground">Nunca testado.</p>
               )}
             </section>
 
@@ -204,14 +194,11 @@ export function ConnectionDetailsDialog({
               </h3>
               <ul className="space-y-3">
                 {fields.map((f) => {
-                  const status = f.status;
-                  const has = !!status?.has_value;
-                  const last = historyBySecret[f.secretName];
+                  const fieldStatus = f.status;
+                  const has = !!fieldStatus?.has_value;
+                  const fieldLast = historyBySecret[f.secretName];
                   return (
-                    <li
-                      key={f.secretName}
-                      className="rounded-md border bg-background p-3"
-                    >
+                    <li key={f.secretName} className="rounded-md border bg-background p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                           {f.sensitive ? (
@@ -228,8 +215,8 @@ export function ConnectionDetailsDialog({
                         </div>
                         {has ? (
                           <MaskedSuffixBadge
-                            suffix={status?.masked_suffix ?? null}
-                            length={status?.length ?? null}
+                            suffix={fieldStatus?.masked_suffix ?? null}
+                            length={fieldStatus?.length ?? null}
                             secretName={f.secretName}
                             showWhenValid
                           />
@@ -246,45 +233,39 @@ export function ConnectionDetailsDialog({
                       <dl className="mt-2 grid grid-cols-3 gap-x-3 gap-y-1 text-[11px]">
                         <dt className="text-muted-foreground">Tamanho</dt>
                         <dd className="col-span-2 font-mono">
-                          {status?.length ? `${status.length} chars` : "—"}
+                          {fieldStatus?.length ? `${fieldStatus.length} chars` : '—'}
                         </dd>
                         <dt className="text-muted-foreground">Origem</dt>
                         <dd className="col-span-2 capitalize">
-                          {status?.source ?? (has ? "—" : "não configurado")}
+                          {fieldStatus?.source ?? (has ? '—' : 'não configurado')}
                         </dd>
-                        <dt className="text-muted-foreground">
-                          Última rotação
-                        </dt>
+                        <dt className="text-muted-foreground">Última rotação</dt>
                         <dd className="col-span-2">
                           {loading ? (
-                            <span className="text-muted-foreground">
-                              carregando…
-                            </span>
-                          ) : last ? (
+                            <span className="text-muted-foreground">carregando…</span>
+                          ) : fieldLast ? (
                             <span className="flex items-center gap-1.5">
                               <UserRound className="h-3 w-3 text-muted-foreground" />
                               <span className="font-medium">
-                                {last.rotated_by_email ??
-                                  (last.rotated_by
-                                    ? `${last.rotated_by.slice(0, 8)}…`
-                                    : "autor desconhecido")}
+                                {fieldLast.rotated_by_email ??
+                                  (fieldLast.rotated_by
+                                    ? `${fieldLast.rotated_by.slice(0, 8)}…`
+                                    : 'autor desconhecido')}
                               </span>
                               <span className="text-muted-foreground">
-                                · {fmtDate(last.rotated_at)}
+                                · {fmtDate(fieldLast.rotated_at)}
                               </span>
-                              {last.action_type && (
+                              {fieldLast.action_type && (
                                 <Badge
                                   variant="outline"
                                   className="ml-1 px-1 py-0 text-[9px] uppercase"
                                 >
-                                  {last.action_type}
+                                  {fieldLast.action_type}
                                 </Badge>
                               )}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground">
-                              nenhuma registrada
-                            </span>
+                            <span className="text-muted-foreground">nenhuma registrada</span>
                           )}
                         </dd>
                       </dl>
@@ -299,13 +280,13 @@ export function ConnectionDetailsDialog({
         <DialogFooter className="gap-2 sm:justify-between">
           <Button variant="ghost" size="sm" asChild>
             <Link to="/admin/external-db">
-              <ExternalLink className="h-4 w-4 mr-1" /> Ver schema
+              <ExternalLink className="mr-1 h-4 w-4" /> Ver schema
             </Link>
           </Button>
           <div className="flex gap-2">
             {onOpenFullHistory && (
               <Button variant="outline" size="sm" onClick={onOpenFullHistory}>
-                <History className="h-4 w-4 mr-1" /> Histórico de testes
+                <History className="mr-1 h-4 w-4" /> Histórico de testes
               </Button>
             )}
             <Button size="sm" onClick={() => onOpenChange(false)}>

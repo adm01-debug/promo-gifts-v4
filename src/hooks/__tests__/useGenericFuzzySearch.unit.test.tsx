@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { useGenericFuzzySearch } from "@/hooks/common/useGenericFuzzySearch";
+import { useGenericFuzzySearch } from '@/hooks/common/useGenericFuzzySearch';
 
 describe('useGenericFuzzySearch', () => {
   const mockItems = [

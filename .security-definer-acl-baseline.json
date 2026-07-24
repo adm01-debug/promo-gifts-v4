@@ -1,0 +1,12 @@
+{
+  "_comment": "Known-OK SECURITY DEFINER grants — entries here are pre-existing and reviewed. Do NOT add new entries without explicit PO approval and documented justification. See CLAUDE.md REGRA #8.",
+  "_last_reviewed": "2026-07-20",
+  "accepted": [
+    {
+      "function_name": "fn_product_active_for_rls",
+      "arguments": "p_id uuid",
+      "granted_to": "anon",
+      "reason": "RLS policy helper — anon role requires EXECUTE to evaluate catalog browsing row-level security policies. This grant is intentional and necessary for public product catalog access."
+    }
+  ]
+}

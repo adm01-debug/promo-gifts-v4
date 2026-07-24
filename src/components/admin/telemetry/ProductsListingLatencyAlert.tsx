@@ -61,13 +61,13 @@ export function ProductsListingLatencyAlert() {
 
   return (
     <Card className={cn('border-[1.5px] transition-colors', tone.border)}>
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="space-y-3 p-4">
         <div className="flex items-start gap-3">
-          <div className={cn('p-2.5 rounded-lg shrink-0', tone.icon)}>
+          <div className={cn('shrink-0 rounded-lg p-2.5', tone.icon)}>
             <tone.Icon className="h-5 w-5" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 Listings de products · limit &gt; 50
               </p>
@@ -75,42 +75,47 @@ export function ProductsListingLatencyAlert() {
                 {tone.label}
               </Badge>
             </div>
-            <p className={cn('font-display text-base font-semibold leading-tight mt-1', tone.title)}>
+            <p
+              className={cn('mt-1 font-display text-base font-semibold leading-tight', tone.title)}
+            >
               {alert.severity === 'ok'
                 ? 'Latência dentro dos parâmetros esperados.'
                 : 'Possível regressão de latência detectada.'}
             </p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
               Janela atual: 1h · Baseline: 24h prévias · auto-refresh 60s
             </p>
           </div>
         </div>
 
         {/* Métricas */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Metric label="Amostras (1h)" value={current.samples.toString()} />
           <Metric
             label="Média atual"
             value={current.samples > 0 ? formatMs(current.avgMs) : '—'}
             tone={alert.severity}
           />
-          <Metric
-            label="P95 atual"
-            value={current.samples > 0 ? formatMs(current.p95Ms) : '—'}
-          />
+          <Metric label="P95 atual" value={current.samples > 0 ? formatMs(current.p95Ms) : '—'} />
           <Metric
             label="Δ vs baseline"
             value={hasBaseline && current.samples > 0 ? formatPct(avgDeltaPct) : '—'}
-            tone={hasBaseline && avgDeltaPct >= 0.5 ? 'critical' : avgDeltaPct >= 0.25 ? 'warning' : 'ok'}
+            tone={
+              hasBaseline && avgDeltaPct >= 0.5
+                ? 'critical'
+                : avgDeltaPct >= 0.25
+                  ? 'warning'
+                  : 'ok'
+            }
           />
         </div>
 
         {/* Razões */}
         {reasons.length > 0 && (
-          <div className="space-y-1.5 pt-1 border-t border-border/40">
+          <div className="space-y-1.5 border-t border-border/40 pt-1">
             {reasons.map((r, i) => (
               <div key={i} className="flex items-start gap-2 text-xs">
-                <Activity className="h-3.5 w-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                <Activity className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="text-muted-foreground">{r.message}</span>
               </div>
             ))}
@@ -119,7 +124,8 @@ export function ProductsListingLatencyAlert() {
 
         {hasBaseline && (
           <p className="text-[10px] text-muted-foreground">
-            Baseline: {baseline.samples} amostras · média {formatMs(baseline.avgMs)} · p95 {formatMs(baseline.p95Ms)}
+            Baseline: {baseline.samples} amostras · média {formatMs(baseline.avgMs)} · p95{' '}
+            {formatMs(baseline.p95Ms)}
           </p>
         )}
       </CardContent>
@@ -134,14 +140,14 @@ function Metric({
 }: {
   label: string;
   value: string;
-  tone?: 'ok' | 'warning' | 'critical';
+  tone?: 'critical' | 'ok' | 'warning';
 }) {
   return (
-    <div className="p-2.5 rounded-lg bg-muted/30 border border-border/40">
+    <div className="rounded-lg border border-border/40 bg-muted/30 p-2.5">
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
       <p
         className={cn(
-          'font-display text-lg font-bold tabular-nums leading-tight mt-0.5',
+          'mt-0.5 font-display text-lg font-bold tabular-nums leading-tight',
           tone === 'critical' && 'text-destructive',
           tone === 'warning' && 'text-warning',
         )}
