@@ -69,6 +69,10 @@ interface Props {
     key: FilterKey,
     value: { id: string; name: string },
   ) => void;
+  /** Se `true`, o botão "Desfazer" é exibido — reverte a última ação. */
+  canUndo?: boolean;
+  /** Callback disparado ao clicar em "Desfazer". */
+  onUndo?: () => void;
 }
 
 const KEY_LABEL: Record<FilterKey, string> = {
