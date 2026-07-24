@@ -12,6 +12,8 @@ import {
 const FUNCTION_NAME = "market-intelligence-insights";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
 
+type InsightFocus = "auto" | "conversion" | "ticket" | "rupture";
+
 interface RequestBody {
   days?: number;
   categoryId?: string | null;
@@ -21,6 +23,7 @@ interface RequestBody {
   supplierName?: string | null;
   productName?: string | null;
   forceRefresh?: boolean;
+  focus?: InsightFocus;
 }
 
 interface AggregatedSummary {
