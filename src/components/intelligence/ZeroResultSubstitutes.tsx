@@ -41,45 +41,82 @@ function SubstituteRow({
   item: Substitute;
   onApply?: () => void;
 }) {
+  const hasContribs = item.contributors.length > 0;
+  const contribTooltip = hasContribs
+    ? item.contributors
+        .map(
+          (c) =>
+            `${c.name} — ${c.quotes.toLocaleString('pt-BR')} orç · ${c.orders.toLocaleString('pt-BR')} ped (score ${c.score})`,
+        )
+        .join('\n')
+    : undefined;
+
   return (
     <li
-      className="flex items-center justify-between gap-3 rounded-md border border-amber-500/25 bg-background/60 px-2.5 py-1.5"
+      className="flex flex-col gap-1.5 rounded-md border border-amber-500/25 bg-background/60 px-2.5 py-1.5"
       data-testid={`zero-substitute-${axis}-${item.id}`}
     >
-      <div className="flex min-w-0 items-center gap-2">
-        <span
-          className="truncate text-sm font-medium text-foreground"
-          title={item.name}
-        >
-          {item.name}
-        </span>
-        <Badge
-          variant="outline"
-          className="gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[11px] font-medium text-amber-900 dark:text-amber-100"
-        >
-          <FileText className="h-3 w-3" aria-hidden="true" />
-          {item.quotes.toLocaleString('pt-BR')}
-        </Badge>
-        <Badge
-          variant="outline"
-          className="gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[11px] font-medium text-amber-900 dark:text-amber-100"
-        >
-          <ShoppingCart className="h-3 w-3" aria-hidden="true" />
-          {item.orders.toLocaleString('pt-BR')}
-        </Badge>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className="truncate text-sm font-medium text-foreground"
+            title={item.name}
+          >
+            {item.name}
+          </span>
+          <Badge
+            variant="outline"
+            className="gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[11px] font-medium text-amber-900 dark:text-amber-100"
+          >
+            <FileText className="h-3 w-3" aria-hidden="true" />
+            {item.quotes.toLocaleString('pt-BR')}
+          </Badge>
+          <Badge
+            variant="outline"
+            className="gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[11px] font-medium text-amber-900 dark:text-amber-100"
+          >
+            <ShoppingCart className="h-3 w-3" aria-hidden="true" />
+            {item.orders.toLocaleString('pt-BR')}
+          </Badge>
+        </div>
+        {onApply && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onApply}
+            className="h-7 gap-1 px-2 text-xs"
+            data-testid={`zero-substitute-apply-${axis}-${item.id}`}
+            aria-label={`Aplicar ${item.name}`}
+          >
+            Aplicar
+            <ArrowRight className="h-3 w-3" aria-hidden="true" />
+          </Button>
+        )}
       </div>
-      {onApply && (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onApply}
-          className="h-7 gap-1 px-2 text-xs"
-          data-testid={`zero-substitute-apply-${axis}-${item.id}`}
-          aria-label={`Aplicar ${item.name}`}
+      {hasContribs && (
+        <div
+          className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground"
+          data-testid={`zero-substitute-contributors-${axis}-${item.id}`}
+          title={contribTooltip}
         >
-          Aplicar
-          <ArrowRight className="h-3 w-3" aria-hidden="true" />
-        </Button>
+          <span className="font-medium text-amber-900/70 dark:text-amber-200/70">
+            Contribui:
+          </span>
+          {item.contributors.map((c) => (
+            <span
+              key={c.id}
+              className="inline-flex items-center gap-1 rounded border border-amber-500/20 bg-amber-500/[0.06] px-1.5 py-0.5"
+              data-testid={`zero-substitute-contributor-${axis}-${item.id}-${c.id}`}
+            >
+              <span className="max-w-[180px] truncate" title={c.name}>
+                {c.name}
+              </span>
+              <span className="tabular-nums text-amber-900/70 dark:text-amber-200/70">
+                · {c.quotes.toLocaleString('pt-BR')} orç · {c.orders.toLocaleString('pt-BR')} ped
+              </span>
+            </span>
+          ))}
+        </div>
       )}
     </li>
   );
