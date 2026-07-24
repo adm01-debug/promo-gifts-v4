@@ -73,9 +73,46 @@ function buildCacheKey(b: RequestBody): Promise<string> {
       c: b.categoryId ?? null,
       s: b.supplierId ?? null,
       p: b.productId ?? null,
+      f: b.focus ?? "auto",
       day: new Date().toISOString().slice(0, 10),
     }),
   );
+}
+
+const FOCUS_LABELS: Record<InsightFocus, string> = {
+  auto: "priorização automática (identifique o gargalo mais crítico)",
+  conversion: "CONVERSÃO — orçamentos que não viraram pedido, follow-up, taxa de fechamento",
+  ticket: "TICKET MÉDIO — cross-sell, upsell, mix de produtos, precificação",
+  rupture: "RUPTURA/ESTOQUE — risco de falta, cobertura, reposição, produtos em risco",
+};
+
+function focusDirective(focus: InsightFocus): string {
+  return `Foco solicitado pelo analista: ${FOCUS_LABELS[focus]}. Enviese "next_action" para esse eixo, sem inventar dados.`;
+}
+
+function focusFallbackNextAction(focus: InsightFocus, s: AggregatedSummary): string {
+  const conv = s.current.conversion_rate;
+  const avg = s.current.avg_ticket;
+  const top = s.top_products[0]?.name;
+  if (focus === "conversion") {
+    return conv < 60
+      ? `Conversão em ${conv}% — priorize follow-up dos ${s.current.quotes} orçamentos abertos para destravar pedidos.`
+      : `Conversão saudável (${conv}%). Documente o playbook de fechamento e replique nos vendedores com menor performance.`;
+  }
+  if (focus === "ticket") {
+    const avgFmt = avg.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    return top
+      ? `Ticket médio ${avgFmt} — proponha combos/cross-sell a partir de "${top}" para elevar o valor por pedido.`
+      : `Ticket médio ${avgFmt} — construa kits e faixas de desconto por volume para elevar o valor por pedido.`;
+  }
+  if (focus === "rupture") {
+    return top
+      ? `Valide cobertura de estoque de "${top}" e demais top 5 do período; acione compras para os itens com giro alto e saldo baixo.`
+      : `Rode o painel de Ruptura para os produtos com maior giro e antecipe pedidos de reposição aos fornecedores prioritários.`;
+  }
+  return conv < 30
+    ? `Conversão em ${conv}% — revise follow-up dos orçamentos abertos para destravar pedidos.`
+    : "Mantenha o ritmo: foque os 5 produtos de maior giro para sustentar o faturamento.";
 }
 
 function buildEmptyState(s: AggregatedSummary): InsightPayload {
