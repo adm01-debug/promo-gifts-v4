@@ -292,7 +292,21 @@ export function ZeroResultDiagnosisCallout({
           supplierId={supplierId}
           productId={productId}
           culprit={data.culprit}
-          onApplySubstitute={onApplySubstitute}
+          onApplySubstitute={
+            onApplySubstitute
+              ? (key, value) => {
+                  trackZeroResultActionClicked({
+                    action: 'apply_substitute',
+                    culpritBefore: data.culprit,
+                    filterKey: key,
+                    days,
+                    substituteId: value.id,
+                    substituteName: value.name,
+                  });
+                  onApplySubstitute(key, value);
+                }
+              : undefined
+          }
         />
       </AlertDescription>
     </Alert>
