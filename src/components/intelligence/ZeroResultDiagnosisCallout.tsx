@@ -286,10 +286,31 @@ export function ZeroResultDiagnosisCallout({
       <AlertTitle className="text-amber-900 dark:text-amber-200">{title}</AlertTitle>
       <AlertDescription className="space-y-3 text-amber-900/80 dark:text-amber-200/80">
         <p>{body}</p>
-        {actions.length > 0 && (
+        {(actions.length > 0 || (canUndo && onUndo)) && (
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <Filter className="h-3.5 w-3.5 text-amber-700 dark:text-amber-300" aria-hidden="true" />
             {actions}
+            {canUndo && onUndo && (
+              <Button
+                key="undo"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  trackZeroResultActionClicked({
+                    action: 'undo',
+                    culpritBefore: data.culprit,
+                    days,
+                  });
+                  onUndo();
+                }}
+                data-testid="zero-diagnosis-undo"
+                className="gap-1.5 text-amber-900 hover:bg-amber-500/10 dark:text-amber-100"
+                aria-label="Desfazer última ação e restaurar filtros anteriores"
+              >
+                <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Desfazer
+              </Button>
+            )}
           </div>
         )}
         <ZeroResultSubstitutes
