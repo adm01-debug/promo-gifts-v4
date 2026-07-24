@@ -122,6 +122,24 @@ export default function CommercialIntelligencePage() {
           />
         </div>
 
+        {/* Diagnóstico automático quando o painel retorna zero */}
+        {showZeroDiagnosis && (
+          <div className="animate-fade-in" style={{ animationDelay: '75ms' }}>
+            <ZeroResultDiagnosisCallout
+              enabled={showZeroDiagnosis}
+              days={filters.days}
+              categoryId={filters.categoryId}
+              supplierId={filters.supplierId}
+              productId={filters.productId}
+              categoryName={filters.categoryName}
+              supplierName={filters.supplierName}
+              productName={filters.productName}
+              onClearFilter={clearFilter}
+              onWidenWindow={widenWindow}
+            />
+          </div>
+        )}
+
         {/* AI Insights */}
         <div className="animate-fade-in" style={{ animationDelay: '100ms' }}>
           <MarketIntelligenceInsightsCard
