@@ -3,11 +3,22 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type FilterKey = 'category' | 'supplier' | 'product';
 
+export interface LeaveOneOutPreview {
+  quotes: number | null;
+  orders: number | null;
+}
+
 export interface ZeroResultDiagnosis {
   /** Contagem de orçamentos no Gold, sem qualquer filtro de produto/categoria/fornecedor. */
   unfilteredQuoteCount: number;
+  /** Contagem de pedidos no Gold, sem qualquer filtro. */
+  unfilteredOrderCount: number;
   /** Contagem de orçamentos que APARECERIA se cada filtro fosse removido (leave-one-out). */
   leaveOneOut: Record<FilterKey, number | null>;
+  /** Contagem de pedidos que APARECERIA se cada filtro fosse removido (leave-one-out). */
+  leaveOneOutOrders: Record<FilterKey, number | null>;
+  /** Prévia dos totais ao ampliar a janela (dobra a janela, teto 365d). */
+  widenedPreview: { days: number; quotes: number; orders: number } | null;
   /** Filtro apontado como culpado (o único que, quando removido, destrava resultados). */
   culprit: FilterKey | 'intersection' | 'window' | null;
   /** Rótulos legíveis dos filtros que devem ser ampliados. */
