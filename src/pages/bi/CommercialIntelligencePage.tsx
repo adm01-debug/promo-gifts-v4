@@ -190,7 +190,16 @@ export default function CommercialIntelligencePage() {
 
         {/* Filters — sticky no scroll · UI controlada por rawFilters (sem latência), refetch debounced */}
         <div className="sticky top-[calc(var(--header-h,56px)+var(--breadcrumb-h,0px))] z-20 -mx-3 border-b border-border/40 bg-background/85 px-3 py-2 backdrop-blur-md sm:-mx-4 sm:px-4 lg:-mx-6 lg:px-6 xl:-mx-8 xl:px-8">
-          <IntelligenceFilterBar filters={rawFilters} onFiltersChange={setFilters} />
+          <IntelligenceFilterBar
+            filters={rawFilters}
+            onFiltersChange={(next) => {
+              // Alteração manual pelo usuário na barra invalida o snapshot
+              // de undo — não faria sentido "desfazer" para um estado que
+              // ele próprio acabou de sobrescrever.
+              setUndoSnapshot(null);
+              setFilters(next);
+            }}
+          />
         </div>
 
         {/* KPI Summary */}
