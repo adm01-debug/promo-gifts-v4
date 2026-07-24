@@ -71,10 +71,10 @@ describe('safeAuthCall — sucesso e classificação', () => {
 
   it('retenta network e retorna ok na 2ª tentativa', async () => {
     let n = 0;
-    const call = vi.fn(async () => {
+    const call = vi.fn((): Promise<typeof OK> => {
       n++;
-      if (n === 1) throw new TypeError('Failed to fetch');
-      return OK;
+      if (n === 1) return Promise.reject(new TypeError('Failed to fetch'));
+      return Promise.resolve(OK);
     });
     const r = await safeAuthCall(call, { op: 'signIn', maxRetries: 3 });
     expect(call).toHaveBeenCalledTimes(2);
@@ -92,7 +92,7 @@ describe('safeAuthCall — sucesso e classificação', () => {
   it('respeita AbortSignal externo já abortado', async () => {
     const ac = new AbortController();
     ac.abort();
-    const call = vi.fn(async () => OK);
+    const call = vi.fn(() => Promise.resolve(OK));
     const r = await safeAuthCall(call, {
       op: 'signIn',
       signal: ac.signal,
