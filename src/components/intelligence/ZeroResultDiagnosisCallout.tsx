@@ -149,7 +149,17 @@ export function ZeroResultDiagnosisCallout({
           key="widen"
           size="sm"
           variant="outline"
-          onClick={onWidenWindow}
+          onClick={() => {
+            trackZeroResultActionClicked({
+              action: 'widen_window',
+              culpritBefore: 'window',
+              days,
+              previewQuotes: w?.quotes ?? null,
+              previewOrders: w?.orders ?? null,
+              widenedToDays: w?.days ?? null,
+            });
+            onWidenWindow();
+          }}
           data-testid="zero-diagnosis-widen-window"
         >
           Ampliar janela{w ? ` para ${w.days}d` : ''}
